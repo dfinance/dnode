@@ -1,4 +1,4 @@
-module sdk-application-tutorial
+module cosmos-sdk-currecies
 
 go 1.12
 
