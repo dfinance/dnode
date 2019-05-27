@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/cosmos/sdk-application-tutorial/x/nameservice"
+	"cosmos-sdk-currecies/x/nameservice"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,10 +18,11 @@ import (
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"cosmos-sdk-currecies/x/currencies"
 )
 
 const (
-	appName = "nameservice"
+	appName = "nscc"
 )
 
 type nameServiceApp struct {
@@ -31,6 +32,7 @@ type nameServiceApp struct {
 	keyMain          *sdk.KVStoreKey
 	keyAccount       *sdk.KVStoreKey
 	keyNS            *sdk.KVStoreKey
+	keyCC		     *sdk.KVStoreKey
 	keyFeeCollection *sdk.KVStoreKey
 	keyParams        *sdk.KVStoreKey
 	tkeyParams       *sdk.TransientStoreKey
@@ -40,6 +42,7 @@ type nameServiceApp struct {
 	feeCollectionKeeper auth.FeeCollectionKeeper
 	paramsKeeper        params.Keeper
 	nsKeeper            nameservice.Keeper
+	currenciesKeeper    currencies.Keeper
 }
 
 // NewNameServiceApp is a constructor function for nameServiceApp
@@ -59,6 +62,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		keyMain:          sdk.NewKVStoreKey("main"),
 		keyAccount:       sdk.NewKVStoreKey("acc"),
 		keyNS:            sdk.NewKVStoreKey("ns"),
+		keyCC:	  		  sdk.NewKVStoreKey("cc"),
 		keyFeeCollection: sdk.NewKVStoreKey("fee_collection"),
 		keyParams:        sdk.NewKVStoreKey("params"),
 		tkeyParams:       sdk.NewTransientStoreKey("transient_params"),
@@ -93,6 +97,12 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		app.cdc,
 	)
 
+	app.currenciesKeeper = currencies.NewKeeper(
+		app.bankKeeper,
+		app.keyCC,
+		app.cdc,
+	)
+
 	// The AnteHandler handles signature verification and transaction pre-processing
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.feeCollectionKeeper))
 
@@ -100,7 +110,8 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 	// Register the bank and nameservice routes here
 	app.Router().
 		AddRoute("bank", bank.NewHandler(app.bankKeeper)).
-		AddRoute("nameservice", nameservice.NewHandler(app.nsKeeper))
+		AddRoute("nameservice", nameservice.NewHandler(app.nsKeeper)).
+		AddRoute("currencies", currencies.NewHandler(app.currenciesKeeper))
 
 	// The app.QueryRouter is the main query router where each module registers its routes
 	app.QueryRouter().
@@ -114,6 +125,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		app.keyMain,
 		app.keyAccount,
 		app.keyNS,
+		app.keyCC,
 		app.keyFeeCollection,
 		app.keyParams,
 		app.tkeyParams,
@@ -191,6 +203,7 @@ func MakeCodec() *codec.Codec {
 	auth.RegisterCodec(cdc)
 	bank.RegisterCodec(cdc)
 	nameservice.RegisterCodec(cdc)
+	currencies.RegisterCodec(cdc)
 	staking.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
