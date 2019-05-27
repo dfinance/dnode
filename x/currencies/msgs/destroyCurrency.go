@@ -13,7 +13,7 @@ type MsgDestroyCurrency struct {
 }
 
 // Create new message to destory currency
-func NewMessageDestoryCurrency(symbol string, amount int64, sender types.AccAddress) MsgDestroyCurrency {
+func NewMsgDestroyCurrency(symbol string, amount int64, sender types.AccAddress) MsgDestroyCurrency {
 	return MsgDestroyCurrency{
 		Symbol: symbol,
 		Amount: amount,
@@ -21,15 +21,34 @@ func NewMessageDestoryCurrency(symbol string, amount int64, sender types.AccAddr
 	}
 }
 
-// Base route for currencies
+// Base route for currencies package
 func (msg MsgDestroyCurrency) Route() string {
 	return "currencies"
 }
 
+// Indeed type to destory currency
 func (msg MsgDestroyCurrency) Type() string {
-	return "destory-currency"
+	return "destory_currency"
 }
 
+// Validate basic in case of destory message
+func (msg MsgDestroyCurrency) ValidateBasic() types.Error {
+	if msg.Sender.Empty() {
+		return types.ErrInvalidAddress(msg.Sender.String())
+	}
+
+	if len(msg.Symbol) == 0 {
+		return types.ErrUnknownRequest("Symbol should be not empty")
+	}
+
+	if msg.Amount == 0 {
+		return types.ErrUnknownRequest("amount can't be less/equal 0")
+	}
+
+	return nil
+}
+
+// Get message bytes to sign
 func (msg MsgDestroyCurrency) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
 
@@ -40,7 +59,7 @@ func (msg MsgDestroyCurrency) GetSignBytes() []byte {
 	return types.MustSortJSON(b)
 }
 
+// Get signers for message
 func (msg MsgDestroyCurrency) GetSigners() []types.AccAddress {
 	return []types.AccAddress{msg.Sender}
 }
-

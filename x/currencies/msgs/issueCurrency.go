@@ -23,7 +23,7 @@ func NewMsgIssueCurrency(symbol string, supply int64, amount int8, creator types
 	}
 }
 
-// Common router for currencies messagess
+// Common router for currencies package
 func (msg MsgIssueCurrency) Route() string {
 	return "currencies"
 }
@@ -44,7 +44,7 @@ func (msg MsgIssueCurrency) ValidateBasic() types.Error {
 	}
 
 	if msg.Decimals < 0 || msg.Decimals > 8 || msg.Amount <= 0 {
-		return types.ErrUnknownRequest("Decimals or supply can't be less/equal 0, " +
+		return types.ErrUnknownRequest("Decimals or amount can't be less/equal 0, " +
 			"and decimals should be less then 8")
 	}
 

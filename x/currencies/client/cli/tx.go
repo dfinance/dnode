@@ -1,4 +1,4 @@
-package client
+package cli
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -8,11 +8,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/utils"
 	"strconv"
 	"github.com/cosmos/cosmos-sdk/types"
+	"cosmos-sdk-currecies/x/currencies/msgs"
 )
 
-func GetIssueCurrency(cdc *codec.Codec) *cobra.Command {
+// Issue new currency command
+func PostIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "issue-currency [symbol] [supply] [decimals]",
+		Use:   "issue-currency [symbol] [amount] [decimals]",
 		Short: "issue new currency",
 		Args:  cobra.ExactArgs(3),
 		RunE:  func(cmd *cobra.Command, args []string) error {
@@ -23,7 +25,7 @@ func GetIssueCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			supply, err := strconv.ParseInt(args[1], 10, 64)
+			amount, err := strconv.ParseInt(args[1], 10, 64)
 
 			if err != nil {
 				return err
@@ -35,8 +37,8 @@ func GetIssueCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := currencies.NewMsgIssueCurrency(args[0], supply, int8(decimals))
-			err := msg.ValidateBasic()
+			msg := msgs.NewMsgIssueCurrency(args[0], amount, int8(decimals), cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
 
 			if err != nil {
 				return err
@@ -45,6 +47,40 @@ func GetIssueCurrency(cdc *codec.Codec) *cobra.Command {
 			cliCtx.PrintResponse = true
 
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []types.Msg{msg}, false)
-		}
+		},
+	}
+}
+
+// Destroy currency
+func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use: 	"destroy-currency [symbol] [amount]",
+		Short:  "destory issued currency",
+		Args: 	cobra.ExactArgs(2),
+		RunE:   func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+			txBldr := context2.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			if err := cliCtx.EnsureAccountExists(); err != nil {
+				return err
+			}
+
+			amount, err := strconv.ParseInt(args[1], 10, 64)
+
+			if err != nil {
+				return err
+			}
+
+			msg := msgs.NewMsgDestroyCurrency(args[0], amount, cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
+
+			if err != nil {
+				return err
+			}
+
+			cliCtx.PrintResponse = true
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []types.Msg{msg}, false)
+		},
 	}
 }
