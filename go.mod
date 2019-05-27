@@ -1,4 +1,4 @@
-module cosmos-sdk-currecies
+module wings-blockchain
 
 go 1.12
 

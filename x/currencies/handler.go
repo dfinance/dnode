@@ -3,7 +3,7 @@ package currencies
 import (
 	"github.com/cosmos/cosmos-sdk/types"
 	"fmt"
-	"cosmos-sdk-currecies/x/currencies/msgs"
+	"wings-blockchain/x/currencies/msgs"
 )
 
 // Handler for currencies messages, provess issue/destory messages

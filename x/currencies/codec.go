@@ -2,7 +2,7 @@ package currencies
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
-	"cosmos-sdk-currecies/x/currencies/msgs"
+	"wings-blockchain/x/currencies/msgs"
 )
 
 func RegisterCodec(cdc *codec.Codec) {

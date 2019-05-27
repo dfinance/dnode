@@ -4,7 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 	amino "github.com/tendermint/go-amino"
-	"cosmos-sdk-currecies/x/currencies/client/cli"
+	"wings-blockchain/x/currencies/client/cli"
 )
 
 // ModuleClient exports all client functionality from this module

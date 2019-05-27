@@ -19,10 +19,10 @@ import (
 	auth "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 	bank "github.com/cosmos/cosmos-sdk/x/bank/client/rest"
-	app "cosmos-sdk-currecies"
+	app "wings-blockchain"
 	nsclient "github.com/cosmos/sdk-application-tutorial/x/nameservice/client"
 	nsrest "github.com/cosmos/sdk-application-tutorial/x/nameservice/client/rest"
-	nscurrecies "cosmos-sdk-currecies/x/currencies/client"
+	nscurrecies "wings-blockchain/x/currencies/client"
 )
 
 const (
@@ -31,7 +31,7 @@ const (
 	storeCC  = "currencies"
 )
 
-var defaultCLIHome = os.ExpandEnv("$HOME/.nscli")
+var defaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
 
 func main() {
 	cobra.EnableCommandSorting = false
@@ -51,8 +51,8 @@ func main() {
 	}
 
 	rootCmd := &cobra.Command{
-		Use:   "nscli",
-		Short: "nameservice Client",
+		Use:   "wbcli",
+		Short: "wings blockchain client",
 	}
 
 	// Add --chain-id to persistent flags and mark it required

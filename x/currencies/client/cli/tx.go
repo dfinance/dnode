@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/utils"
 	"strconv"
 	"github.com/cosmos/cosmos-sdk/types"
-	"cosmos-sdk-currecies/x/currencies/msgs"
+	"wings-blockchain/x/currencies/msgs"
 )
 
 // Issue new currency command
