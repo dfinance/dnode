@@ -19,14 +19,16 @@ import (
 	auth "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 	bank "github.com/cosmos/cosmos-sdk/x/bank/client/rest"
-	app "github.com/cosmos/sdk-application-tutorial"
+	app "cosmos-sdk-currecies"
 	nsclient "github.com/cosmos/sdk-application-tutorial/x/nameservice/client"
 	nsrest "github.com/cosmos/sdk-application-tutorial/x/nameservice/client/rest"
+	nscurrecies "cosmos-sdk-currecies/x/currencies/client"
 )
 
 const (
 	storeAcc = "acc"
 	storeNS  = "nameservice"
+	storeCC  = "currencies"
 )
 
 var defaultCLIHome = os.ExpandEnv("$HOME/.nscli")
@@ -45,6 +47,7 @@ func main() {
 
 	mc := []sdk.ModuleClients{
 		nsclient.NewModuleClient(storeNS, cdc),
+		nscurrecies.NewModuleClient(storeCC, cdc),
 	}
 
 	rootCmd := &cobra.Command{
