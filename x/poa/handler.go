@@ -7,6 +7,7 @@ import (
 	types "wings-blockchain/x/poa/types"
 )
 
+// New message handler for PoA module
 func NewHandler(keeper Keeper) sdk.Handler {
 	return func (ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
@@ -26,15 +27,24 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
+// Handle MsgAddValidator for add new validator
 func handleMsgAddValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgAddValidator) sdk.Result {
 	if keeper.HasValidator(ctx, msg.Address) {
 		return types.ErrValidatorExists(msg.Address.String()).Result()
+	}
+
+	maxValidators := keeper.GetMaxValidators(ctx)
+	amount        := keeper.GetValidatorAmount(ctx)
+
+	if amount + 1 > maxValidators {
+		return types.ErrMaxValidatorsReached(maxValidators)
 	}
 
 	keeper.AddValidator(ctx, msg.Address, msg.EthAddress)
 	return sdk.Result{}
 }
 
+// Handle MsgRemoveValidator for remove validator
 func handleMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemoveValidator) sdk.Result {
 	if !keeper.HasValidator(ctx, msg.Address) {
 		return types.ErrValidatorDoesntExists(msg.Address.String()).Result()
@@ -51,6 +61,7 @@ func handleMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemove
 	return sdk.Result{}
 }
 
+// Handle MsgReplaceValidator for replace validator
 func handleMsgReplaceValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgReplaceValidator) sdk.Result {
 	if !keeper.HasValidator(ctx, msg.OldValidator) {
 		return types.ErrValidatorDoesntExists(msg.OldValidator.String()).Result()
