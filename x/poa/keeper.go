@@ -7,12 +7,14 @@ import (
 	"wings-blockchain/x/poa/types"
 )
 
+// PoA keeper implementation
 type Keeper struct {
 	storeKey 	sdk.StoreKey
 	cdc 	 	*codec.Codec
 	paramStore  params.Subspace
 }
 
+// Creating new keeper with parameters store
 func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, paramStore params.Subspace) Keeper {
 	return Keeper{
 		storeKey:  storeKey,
@@ -21,6 +23,7 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, paramStore params.Subspa
 	}
 }
 
+// Add new validator to list of PoA validators
 func (keeper Keeper) AddValidator(ctx sdk.Context, address sdk.AccAddress, ethAddress string) {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -30,12 +33,14 @@ func (keeper Keeper) AddValidator(ctx sdk.Context, address sdk.AccAddress, ethAd
 	store.Set(address, keeper.cdc.MustMarshalBinaryBare(validator))
 }
 
+// Check if validator exists in list or not
 func (keeper Keeper) HasValidator(ctx sdk.Context, address sdk.AccAddress) bool {
 	store := ctx.KVStore(keeper.storeKey)
 
 	return store.Has(address)
 }
 
+// Remove validator that exists in validators list
 func (keeper Keeper) RemoveValidator(ctx sdk.Context, address sdk.AccAddress) {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -43,6 +48,7 @@ func (keeper Keeper) RemoveValidator(ctx sdk.Context, address sdk.AccAddress) {
 	keeper.reduceValidatorsAmount(ctx)
 }
 
+// Replace validator with another one
 func (keeper Keeper) ReplaceValidator(ctx sdk.Context, oldAddress sdk.AccAddress, newAddress sdk.AccAddress, ethAddress string)  {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -52,6 +58,7 @@ func (keeper Keeper) ReplaceValidator(ctx sdk.Context, oldAddress sdk.AccAddress
 	store.Set(newAddress, keeper.cdc.MustMarshalBinaryBare(validator))
 }
 
+// Getting validator from storage
 func (keeper Keeper) GetValidator(ctx sdk.Context, address sdk.AccAddress) types.Validator {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -63,6 +70,7 @@ func (keeper Keeper) GetValidator(ctx sdk.Context, address sdk.AccAddress) types
 	return validator
 }
 
+// Get total amount of validators
 func (keeper Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -74,6 +82,7 @@ func (keeper Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
 	return amount
 }
 
+// Increase validators amount by 1
 func (keeper Keeper) increaseValidatorsAmount(ctx sdk.Context) uint16 {
 	amount := keeper.GetValidatorAmount(ctx)
 
@@ -83,6 +92,7 @@ func (keeper Keeper) increaseValidatorsAmount(ctx sdk.Context) uint16 {
 	return amount
 }
 
+// Reduce validators amount by 1
 func (keeper Keeper) reduceValidatorsAmount(ctx sdk.Context) uint16 {
 	amount := keeper.GetValidatorAmount(ctx)
 
@@ -92,6 +102,7 @@ func (keeper Keeper) reduceValidatorsAmount(ctx sdk.Context) uint16 {
 	return amount
 }
 
+// Set new validators amount
 func (keeper Keeper) setValidatorsAmount(ctx sdk.Context, newAmount uint16) {
 	store := ctx.KVStore(keeper.storeKey)
 
