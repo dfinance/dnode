@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	appName = "nscc"
+	appName = "wb"
 )
 
 type nameServiceApp struct {
