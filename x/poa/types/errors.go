@@ -11,6 +11,8 @@ const (
 	CodeMinValidatorsReached 	sdk.CodeType = 104
 
 	CodeWrongEthereumAddress	sdk.CodeType = 201
+
+	CodeNotEnoughValidators		sdk.CodeType = 301
 )
 
 func ErrValidatorExists(address string) sdk.Error {
@@ -31,4 +33,8 @@ func ErrMinValidatorsReached(min uint16) sdk.Error {
 
 func ErrWrongEthereumAddress(address string) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeWrongEthereumAddress, "wrong ethereum address %s for validator", address)
+}
+
+func ErrNotEnoungValidators(actual uint16, min uint16) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeNotEnoughValidators, "%d not enough validators to init genesis, min is %d", actual, min)
 }

@@ -74,10 +74,14 @@ func (keeper Keeper) GetValidator(ctx sdk.Context, address sdk.AccAddress) types
 func (keeper Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
 	store := ctx.KVStore(keeper.storeKey)
 
+	if !store.Has(types.ValidatorsCountKey) {
+		return 0
+	}
+
 	b := store.Get(types.ValidatorsCountKey)
 	var amount uint16
 
-	keeper.cdc.MustUnmarshalBinaryBare(b, &amount)
+	keeper.cdc.MustUnmarshalBinaryLengthPrefixed(b, &amount)
 
 	return amount
 }
@@ -106,5 +110,5 @@ func (keeper Keeper) reduceValidatorsAmount(ctx sdk.Context) uint16 {
 func (keeper Keeper) setValidatorsAmount(ctx sdk.Context, newAmount uint16) {
 	store := ctx.KVStore(keeper.storeKey)
 
-	store.Set(types.ValidatorsCountKey, keeper.cdc.MustMarshalBinaryBare(newAmount))
+	store.Set(types.ValidatorsCountKey, keeper.cdc.MustMarshalBinaryLengthPrefixed(newAmount))
 }

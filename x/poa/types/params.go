@@ -11,36 +11,36 @@ const (
 )
 
 var (
-	KeyMaxValidators = []byte("max_validators")
-	KeyMinValidators = []byte("min_validators")
+	KeyMaxValidators = []byte("MaxValidators")
+	KeyMinValidators = []byte("MinValidators")
 )
 
 type Params struct {
-	MaxValidators uint16
-	MinValidtors  uint16
+	MaxValidators  uint16 `json:"max_validators"`
+	MinValidators  uint16 `json:"min_validators"`
 }
 
 func NewParams(maxValidators uint16, minValidators uint16) Params {
 	return Params{
 		MaxValidators: maxValidators,
-		MinValidtors:  minValidators,
+		MinValidators: minValidators,
 	}
 }
 
 func (p* Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		{KeyMaxValidators, &p.MaxValidators},
-		{KeyMinValidators, &p.MinValidtors},
+		{KeyMinValidators, &p.MinValidators},
 	}
 }
 
 func (p* Params) Equal(p2 Params) bool {
-	return p.MinValidtors == p2.MinValidtors &&
+	return p.MinValidators == p2.MinValidators &&
 		p.MaxValidators == p2.MaxValidators
 }
 
 func (p Params) Validate() error {
-	if p.MinValidtors < DefaultMinValidators {
+	if p.MinValidators < DefaultMinValidators {
 		return fmt.Errorf("minimum amount of validators should be not less %d", DefaultMinValidators)
 	}
 

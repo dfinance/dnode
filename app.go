@@ -145,6 +145,7 @@ type GenesisState struct {
 	AuthData auth.GenesisState   `json:"auth"`
 	BankData bank.GenesisState   `json:"bank"`
 	Accounts []*auth.BaseAccount `json:"accounts"`
+	PoAValidators []*poaTypes.Validator `json:"poa_validators"`
 }
 
 func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
@@ -156,6 +157,13 @@ func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 		panic(err)
 	}
 
+	app.validatorsKeeper.SetParams(ctx, poaTypes.DefaultParams())
+	err = app.validatorsKeeper.InitGenesis(ctx, genesisState.PoAValidators)
+
+	if err != nil {
+		panic(err)
+	}
+
 	for _, acc := range genesisState.Accounts {
 		acc.AccountNumber = app.accountKeeper.GetNextAccountNumber(ctx)
 		app.accountKeeper.SetAccount(ctx, acc)
@@ -163,8 +171,6 @@ func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 
 	auth.InitGenesis(ctx, app.accountKeeper, app.feeCollectionKeeper, genesisState.AuthData)
 	bank.InitGenesis(ctx, app.bankKeeper, genesisState.BankData)
-
-	app.validatorsKeeper.SetParams(ctx, poaTypes.DefaultParams())
 
 	return abci.ResponseInitChain{}
 }

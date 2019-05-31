@@ -29,6 +29,8 @@ import (
 	cfg "github.com/tendermint/tendermint/config"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"wings-blockchain/helpers"
+	"wings-blockchain/x/poa/types"
 )
 
 // DefaultNodeHome sets the folder where the applcation data and configuration will be stored
@@ -52,6 +54,7 @@ func main() {
 
 	rootCmd.AddCommand(InitCmd(ctx, cdc))
 	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc))
+	rootCmd.AddCommand(AddPoAValidatorCmd(ctx, cdc))
 	server.AddCommands(ctx, cdc, rootCmd, newApp, appExporter())
 
 	// prepare and add flags
@@ -135,6 +138,69 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
+// Add PoA validator via cli
+func AddPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:	"add-poa-validator [address] [ethAddress]",
+		Short:  "Adds poa validator go genesis file",
+		Args:   cobra.ExactArgs(2),
+		RunE:	func(_ *cobra.Command, args []string) error {
+			valAddr, err := sdk.AccAddressFromBech32(args[0])
+
+			if err != nil {
+				return err
+			}
+
+			ethAddress := args[1]
+
+			if !helpers.IsEthereumAddress(ethAddress) {
+				return fmt.Errorf("%s is not an ethereum address", ethAddress)
+			}
+
+			var genDoc tmtypes.GenesisDoc
+			config := ctx.Config
+			genFile := config.GenesisFile()
+
+			if !common.FileExists(genFile) {
+				return fmt.Errorf("%s does not exist, run `wb init` first", genFile)
+			}
+
+			genContents, err := ioutil.ReadFile(genFile)
+			if err != nil {
+				return err
+			}
+
+			if err = cdc.UnmarshalJSON(genContents, &genDoc); err != nil {
+				return err
+			}
+
+			var appState app.GenesisState
+			if err = cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
+				return err
+			}
+
+			for _, acc := range appState.PoAValidators {
+				if acc.Address.Equals(valAddr) {
+					return fmt.Errorf("the application state already contains account %s", valAddr.String())
+				}
+			}
+
+			validator := types.NewValidator(
+				valAddr,
+				ethAddress,
+			)
+
+			appState.PoAValidators = append(appState.PoAValidators, &validator)
+			appStateJSON, err := cdc.MarshalJSON(appState)
+			if err != nil {
+				return err
+			}
+
+			return gaiaInit.ExportGenesisFile(genFile, genDoc.ChainID, genDoc.Validators, appStateJSON)
+		},
+	}
+}
+
 // AddGenesisAccountCmd allows users to add accounts to the genesis file
 func AddGenesisAccountCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
@@ -161,7 +227,7 @@ $ nsd add-genesis-account cosmos1tse7r2fadvlrrgau3pa0ss7cqh55wrv6y9alwh 1000STAK
 			config := ctx.Config
 			genFile := config.GenesisFile()
 			if !common.FileExists(genFile) {
-				return fmt.Errorf("%s does not exist, run `gaiad init` first", genFile)
+				return fmt.Errorf("%s does not exist, run `wb init` first", genFile)
 			}
 			genContents, err := ioutil.ReadFile(genFile)
 			if err != nil {
