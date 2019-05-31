@@ -4,12 +4,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
 	"wings-blockchain/x/poa/types"
+	"wings-blockchain/helpers"
 )
 
+// Type for codec
 const (
 	MsgReplaceValidatorType = types.ModuleName + "/replace-validator"
 )
 
+// Message for replace validator
 type MsgReplaceValidator struct {
 	OldValidator sdk.AccAddress
 	NewValidator sdk.AccAddress
@@ -17,6 +20,7 @@ type MsgReplaceValidator struct {
 	Sender 		 sdk.AccAddress
 }
 
+// Create new 'replace validator' message
 func NewMsgReplaceValidator(oldValidator sdk.AccAddress, newValidator sdk.AccAddress, ethAddress string, sender sdk.AccAddress)  MsgReplaceValidator {
 	return MsgReplaceValidator{
 		OldValidator: oldValidator,
@@ -26,14 +30,17 @@ func NewMsgReplaceValidator(oldValidator sdk.AccAddress, newValidator sdk.AccAdd
 	}
 }
 
+// Message route
 func (msg MsgReplaceValidator) Route() string {
 	return types.DefaultRoute
 }
 
+// Message type
 func (msg MsgReplaceValidator) Type() string {
 	return "replace_validator"
 }
 
+// Validate basic 'replace validator' message
 func (msg MsgReplaceValidator) ValidateBasic() sdk.Error {
 	if msg.OldValidator.Empty() {
 		return sdk.ErrInvalidAddress(msg.OldValidator.String())
@@ -51,9 +58,14 @@ func (msg MsgReplaceValidator) ValidateBasic() sdk.Error {
 		return sdk.ErrInvalidAddress(msg.Sender.String())
 	}
 
+	if !helpers.IsEthereumAddress(msg.EthAddress) {
+		return types.ErrWrongEthereumAddress(msg.EthAddress)
+	}
+
 	return nil
 }
 
+// Get bytes to sign from message
 func (msg MsgReplaceValidator) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
 
@@ -64,6 +76,7 @@ func (msg MsgReplaceValidator) GetSignBytes() []byte {
 	return sdk.MustSortJSON(b)
 }
 
+// Get signers addresses
 func (msg MsgReplaceValidator) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Sender}
 }
