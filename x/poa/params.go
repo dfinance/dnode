@@ -22,3 +22,8 @@ func (keeper Keeper) GetMinValidators(ctx sdk.Context) (res uint16) {
 	keeper.paramStore.Get(ctx, types.KeyMinValidators, &res)
 	return
 }
+
+// set the params
+func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
+	k.paramStore.SetParamSet(ctx, &params)
+}

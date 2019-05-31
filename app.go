@@ -109,11 +109,11 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.feeCollectionKeeper))
 
 	// The app.Router is the main transaction router where each module registers its routes
-	// Register the bank and nameservice routes here
+	// Register the bank, currencies,  routes here
 	app.Router().
 		AddRoute("bank", bank.NewHandler(app.bankKeeper)).
 		AddRoute("currencies", currencies.NewHandler(app.currenciesKeeper)).
-		AddRoute(poaTypes.ModuleName, poa.NewHandler(app.validatorsKeeper))
+		AddRoute("poa", poa.NewHandler(app.validatorsKeeper))
 
 	// The app.QueryRouter is the main query router where each module registers its routes
 	app.QueryRouter().
@@ -163,6 +163,8 @@ func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 
 	auth.InitGenesis(ctx, app.accountKeeper, app.feeCollectionKeeper, genesisState.AuthData)
 	bank.InitGenesis(ctx, app.bankKeeper, genesisState.BankData)
+
+	app.validatorsKeeper.SetParams(ctx, poaTypes.DefaultParams())
 
 	return abci.ResponseInitChain{}
 }
