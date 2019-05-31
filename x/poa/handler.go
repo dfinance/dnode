@@ -37,7 +37,7 @@ func handleMsgAddValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgAddValida
 	amount        := keeper.GetValidatorAmount(ctx)
 
 	if amount + 1 > maxValidators {
-		return types.ErrMaxValidatorsReached(maxValidators)
+		return types.ErrMaxValidatorsReached(maxValidators).Result()
 	}
 
 	keeper.AddValidator(ctx, msg.Address, msg.EthAddress)

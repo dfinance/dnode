@@ -100,9 +100,9 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 
 	// Initializing validators module
 	app.validatorsKeeper = poa.NewKeeper(
-		app.bankKeeper,
 		app.keyValidators,
 		app.cdc,
+		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
 	// The AnteHandler handles signature verification and transaction pre-processing
