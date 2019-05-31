@@ -18,13 +18,15 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"wings-blockchain/x/currencies"
+	"wings-blockchain/x/poa"
+	poaTypes "wings-blockchain/x/poa/types"
 )
 
 const (
 	appName = "wb"
 )
 
-type nameServiceApp struct {
+type WbServiceApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
@@ -35,16 +37,18 @@ type nameServiceApp struct {
 	keyFeeCollection *sdk.KVStoreKey
 	keyParams        *sdk.KVStoreKey
 	tkeyParams       *sdk.TransientStoreKey
+	keyValidators    *sdk.KVStoreKey
 
 	accountKeeper       auth.AccountKeeper
 	bankKeeper          bank.Keeper
 	feeCollectionKeeper auth.FeeCollectionKeeper
 	paramsKeeper        params.Keeper
 	currenciesKeeper    currencies.Keeper
+	validatorsKeeper    poa.Keeper
 }
 
-// NewNameServiceApp is a constructor function for nameServiceApp
-func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
+// NewWbServiceApp is a constructor function for wings blockchain
+func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -53,7 +57,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc))
 
 	// Here you initialize your application with the store keys it requires
-	var app = &nameServiceApp{
+	var app = &WbServiceApp{
 		BaseApp: bApp,
 		cdc:     cdc,
 
@@ -63,6 +67,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		keyFeeCollection: sdk.NewKVStoreKey("fee_collection"),
 		keyParams:        sdk.NewKVStoreKey("params"),
 		tkeyParams:       sdk.NewTransientStoreKey("transient_params"),
+		keyValidators:	  sdk.NewKVStoreKey("poa"),
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
@@ -93,6 +98,13 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		app.cdc,
 	)
 
+	// Initializing validators module
+	app.validatorsKeeper = poa.NewKeeper(
+		app.bankKeeper,
+		app.keyValidators,
+		app.cdc,
+	)
+
 	// The AnteHandler handles signature verification and transaction pre-processing
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.feeCollectionKeeper))
 
@@ -100,7 +112,8 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 	// Register the bank and nameservice routes here
 	app.Router().
 		AddRoute("bank", bank.NewHandler(app.bankKeeper)).
-		AddRoute("currencies", currencies.NewHandler(app.currenciesKeeper))
+		AddRoute("currencies", currencies.NewHandler(app.currenciesKeeper)).
+		AddRoute(poaTypes.ModuleName, poa.NewHandler(app.validatorsKeeper))
 
 	// The app.QueryRouter is the main query router where each module registers its routes
 	app.QueryRouter().
@@ -116,6 +129,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		app.keyFeeCollection,
 		app.keyParams,
 		app.tkeyParams,
+		app.keyValidators,
 	)
 
 	err := app.LoadLatestVersion(app.keyMain)
@@ -133,7 +147,7 @@ type GenesisState struct {
 	Accounts []*auth.BaseAccount `json:"accounts"`
 }
 
-func (app *nameServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	stateJSON := req.AppStateBytes
 
 	genesisState := new(GenesisState)
@@ -154,7 +168,7 @@ func (app *nameServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChai
 }
 
 // ExportAppStateAndValidators does the things
-func (app *nameServiceApp) ExportAppStateAndValidators() (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
+func (app *WbServiceApp) ExportAppStateAndValidators() (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
 	ctx := app.NewContext(true, abci.Header{})
 	accounts := []*auth.BaseAccount{}
 
@@ -190,6 +204,7 @@ func MakeCodec() *codec.Codec {
 	auth.RegisterCodec(cdc)
 	bank.RegisterCodec(cdc)
 	currencies.RegisterCodec(cdc)
+	poa.RegisterCodec(cdc)
 	staking.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
