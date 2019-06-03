@@ -13,4 +13,4 @@ type MsMsg interface {
 
 // Handler defines a function that handles a proposal after it has passed the
 // governance process.
-type Handler func(ctx sdk.Context, call Call) sdk.Error
+type Handler func(ctx sdk.Context, msg MsMsg) sdk.Error
