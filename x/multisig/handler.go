@@ -10,6 +10,7 @@ import (
 	"wings-blockchain/x/multisig/types"
 )
 
+// Handle messages for multisig module
 func NewHandler(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.Handler {
 	return func (ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
@@ -26,6 +27,7 @@ func NewHandler(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.Handler {
 	}
 }
 
+// Handle MsgSubmitCall
 func handleMsgSubmitCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa.Keeper, msg msgs.MsgSubmitCall) sdk.Result {
 	if !poaKeeper.HasValidator(ctx, msg.Sender) {
 		return types.ErrNotValidator(msg.Sender.String()).Result()
@@ -40,6 +42,7 @@ func handleMsgSubmitCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa.
 	return sdk.Result{}
 }
 
+// Handle MsgConfirmCall
 func handleMsgConfirmCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa.Keeper, msg msgs.MsgConfirmCall) sdk.Result {
 	if !poaKeeper.HasValidator(ctx, msg.Sender) {
 		return types.ErrNotValidator(msg.Sender.String()).Result()
