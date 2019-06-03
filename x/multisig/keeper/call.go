@@ -18,6 +18,7 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg) sdk.Error {
 	return nil
 }
 
+// Get call by id
 func (keeper Keeper) GetCall(ctx sdk.Context, id uint64) (sdk.Error, types.Call) {
 	if !keeper.HasCall(ctx, id) {
 		return types.ErrWrongCallId(id), types.Call{}
