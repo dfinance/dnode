@@ -34,7 +34,6 @@ func (keeper Keeper) GetConfirmations(ctx sdk.Context, id uint64) (uint64, sdk.E
 	return uint64(len(votes)), nil
 }
 
-
 // Check if message confirmed by address
 func (keeper Keeper) HasVote(ctx sdk.Context, id uint64, address sdk.AccAddress) (bool, sdk.Error) {
 	store := ctx.KVStore(keeper.storeKey)
@@ -127,4 +126,6 @@ func (keeper Keeper) revokeVote(ctx sdk.Context, id uint64, address sdk.AccAddre
 
 	votes = append(votes[:index], votes[index+1:]...)
 	store.Set(types.GetKeyVotesById(id), keeper.cdc.MustMarshalBinaryBare(votes))
+
+	return nil
 }
