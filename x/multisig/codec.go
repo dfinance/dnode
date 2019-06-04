@@ -9,5 +9,7 @@ import (
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(msgs.MsgSubmitCall{}, "multisig/submit-call",nil)
 	cdc.RegisterConcrete(msgs.MsgConfirmCall{}, "multisig/confirm-call",nil)
+	cdc.RegisterConcrete(msgs.MsgRevokeConfirm{}, "multisig/revoke-confirm", nil)
+
 	cdc.RegisterInterface((*types.MsMsg)(nil), nil)
 }

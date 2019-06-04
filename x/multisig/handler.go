@@ -20,6 +20,9 @@ func NewHandler(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.Handler {
 		case msgs.MsgConfirmCall:
 			return handleMsgConfirmCall(ctx, keeper, poaKeeper, msg)
 
+		case msgs.MsgRevokeConfirm:
+			return handleMsgRevokeConfirm(ctx, keeper, msg)
+
 		default:
 			errMsg := fmt.Sprintf("Unrecognized nameservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -59,6 +62,23 @@ func handleMsgConfirmCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa
 	}
 
 	err = keeper.Confirm(ctx, msg.MsgId, msg.Sender)
+
+	if err != nil {
+		return err.Result()
+	}
+
+	return sdk.Result{}
+}
+
+// Handle MsgRevokeConfirm
+func handleMsgRevokeConfirm(ctx sdk.Context, keeper msKeeper.Keeper, msg msgs.MsgRevokeConfirm) sdk.Result {
+	if has, err := keeper.HasVote(ctx, msg.MsgId, msg.Sender); err != nil {
+		return err.Result()
+	} else if !has {
+		return types.ErrCallNotApproved(msg.MsgId, msg.Sender.String()).Result()
+	}
+
+	err := keeper.RevokeConfirmation(ctx, msg.MsgId, msg.Sender)
 
 	if err != nil {
 		return err.Result()

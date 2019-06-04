@@ -38,6 +38,7 @@ func (mc ModuleClient) GetTxCmd() *cobra.Command {
 	currenciesTxCmd.AddCommand(client.PostCommands(
 		cli.PostAddValidatorCall(mc.cdc),
 		cli.PostConfirmCall(mc.cdc),
+		cli.PostRevokeConfirm(mc.cdc),
 	)...)
 
 	return currenciesTxCmd

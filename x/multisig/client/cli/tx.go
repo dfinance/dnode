@@ -77,3 +77,31 @@ func PostConfirmCall(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 }
+
+func PostRevokeConfirm(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "revoke-confirm [callId]",
+		Short: "revoke confirmation from call by id",
+		Args:  cobra.ExactArgs(1),
+		RunE:  func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			if err := cliCtx.EnsureAccountExists(); err != nil {
+				return err
+			}
+
+			callId, err := strconv.ParseUint(args[0], 10, 8)
+
+			if err  != nil {
+				return err
+			}
+
+			msg := msMsg.NewMsgRevokeConfirm(callId, cliCtx.GetFromAddress())
+
+			cliCtx.PrintResponse = true
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
+		},
+	}
+}
