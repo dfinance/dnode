@@ -112,7 +112,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 
 	// Initializing multisig router
 	msRouter := msKeeper.NewRouter()
-	msRouter.AddRoute("poa", poa.NewHandler(app.validatorsKeeper))
+	msRouter.AddRoute("poa", poa.NewMsHandler(app.validatorsKeeper))
 
 	// Initializing ms module
 	app.msKeeper = msKeeper.NewKeeper(

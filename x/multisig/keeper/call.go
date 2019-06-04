@@ -14,17 +14,16 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, sender sdk.Acc
 	cacheCtx, _ := ctx.CacheContext()
 	handler := keeper.router.GetRoute(msg.Route())
 
-	result := handler(cacheCtx, msg)
+	err := handler(cacheCtx, msg)
 
-	// todo: need to implement multisig handler, so don't get result
-	if !result.IsOK() {
-		return types.ErrCantExecuteCall()
+	if err != nil {
+		return err
 	}
 
 	call := types.NewCall(msg)
 	id 	 := keeper.saveNewCall(ctx, call)
 
-	err := keeper.Confirm(ctx, id, sender)
+	err = keeper.Confirm(ctx, id, sender)
 
 	if err != nil {
 		return err
@@ -56,6 +55,8 @@ func (keeper Keeper) saveNewCall(ctx sdk.Context, call types.Call) uint64 {
 
 	store.Set(types.GetCallByIdKey(nextId), keeper.cdc.MustMarshalBinaryBare(call))
 	store.Set(types.LastCallId, keeper.cdc.MustMarshalBinaryLengthPrefixed(nextId))
+
+	return nextId
 }
 
 // Save message by id

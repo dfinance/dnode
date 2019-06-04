@@ -9,6 +9,7 @@ type MsMsg interface {
 	Route() 		string
 	Type() 		    string
 	ValidateBasic() sdk.Error
-	GetSignBytes()  []byte
-	GetSigners()	[]sdk.AccAddress
 }
+
+// Message handle for multisignature calls
+type MsHandler func(ctx sdk.Context, msg MsMsg) sdk.Error
