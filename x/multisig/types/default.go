@@ -1,7 +1,7 @@
 package types
 
 import (
-	"encoding/binary"
+	"fmt"
 )
 
 // Default constants
@@ -14,23 +14,22 @@ const (
 
 // Storage keys
 var (
-	LastCallId   = []byte("lastCallId")
-	CallByIdKey  = []byte("callByIdKey")
-	VotesByIdKey = []byte("votesByIdKey")
+	LastCallId   	    = "lastCallId"
+	LastExCallId    	= "lastExCallId"
+	ExecutedCallByIdKey = "executedCall"
 )
 
 // Get a key to store call by id
 func GetCallByIdKey(id uint64) []byte {
-	bs := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bs, id)
+	return []byte(fmt.Sprintf("call:%d", id))
+}
 
-	return append(CallByIdKey, bs...)
+// Get a key to store executed call
+func GetExCallByIdKey(id uint64) []byte {
+	return []byte(fmt.Sprintf("ex_call:%d", id))
 }
 
 // Get a key to store votes for call by id
 func GetKeyVotesById(id uint64) []byte {
-	bs := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bs, id)
-
-	return append(VotesByIdKey, bs...)
+	return []byte(fmt.Sprintf("votes:%d", id))
 }
