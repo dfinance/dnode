@@ -33,7 +33,7 @@ func handleMsgSubmitCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa.
 		return types.ErrNotValidator(msg.Sender.String()).Result()
 	}
 
-	err := keeper.SubmitCall(ctx, msg.Msg)
+	err := keeper.SubmitCall(ctx, msg.Msg, msg.Sender)
 
 	if err != nil {
 		return err.Result()
@@ -50,11 +50,11 @@ func handleMsgConfirmCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa
 
 	has, err := keeper.HasVote(ctx, msg.MsgId, msg.Sender)
 
-	if err != nil {
-		return err.Result()
-	}
-
 	if has {
+		if err != nil {
+			return err.Result()
+		}
+
 		return types.ErrCallAlreadyApproved(msg.MsgId, msg.Sender.String()).Result()
 	}
 

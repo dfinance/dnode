@@ -24,7 +24,7 @@ func GetCallByIdKey(id uint64) []byte {
 	bs := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bs, id)
 
-	return append(MsgByIdKey, bs...)
+	return append(CallByIdKey, bs...)
 }
 
 // Get a key to store votes for call by id

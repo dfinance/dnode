@@ -21,13 +21,15 @@ import (
 	bank "github.com/cosmos/cosmos-sdk/x/bank/client/rest"
 	app "wings-blockchain"
 	ccClient "wings-blockchain/x/currencies/client"
-	poaClient "wings-blockchain/x/poa/client"
+	//poaClient "wings-blockchain/x/poa/client"
+	client2 "wings-blockchain/x/multisig/client"
 )
 
 const (
 	storeAcc = "acc"
 	storeCC  = "currencies"
-	storePoa = "poa"
+	//storePoa = "poa"
+	storeMC	 = "multisig"
 )
 
 var defaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
@@ -46,7 +48,8 @@ func main() {
 
 	mc := []sdk.ModuleClients{
 		ccClient.NewModuleClient(storeCC, cdc),
-		poaClient.NewModuleClient(storePoa, cdc),
+		//poaClient.NewModuleClient(storePoa, cdc),
+		client2.NewModuleClient(storeMC, cdc),
 	}
 
 	rootCmd := &cobra.Command{

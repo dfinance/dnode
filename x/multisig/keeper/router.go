@@ -1,10 +1,10 @@
-package multisig
+package keeper
 
 
 import (
 	"fmt"
 	"regexp"
-	"wings-blockchain/x/multisig/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var (
@@ -17,20 +17,20 @@ var (
 //
 // TODO: Use generic router (ref #3976).
 type Router interface {
-	AddRoute(r string, h types.Handler) (rtr Router)
+	AddRoute(r string, h sdk.Handler) (rtr Router)
 	HasRoute(r string) bool
-	GetRoute(path string) (h types.Handler)
+	GetRoute(path string) (h sdk.Handler)
 	Seal()
 }
 
 type router struct {
-	routes map[string]types.Handler
+	routes map[string]sdk.Handler
 	sealed bool
 }
 
 func NewRouter() Router {
 	return &router{
-		routes: make(map[string]types.Handler),
+		routes: make(map[string]sdk.Handler),
 	}
 }
 
@@ -45,7 +45,7 @@ func (rtr *router) Seal() {
 
 // AddRoute adds a governance handler for a given path. It returns the Router
 // so AddRoute calls can be linked. It will panic if the router is sealed.
-func (rtr *router) AddRoute(path string, h types.Handler) Router {
+func (rtr *router) AddRoute(path string, h sdk.Handler) Router {
 	if rtr.sealed {
 		panic("router sealed; cannot add route handler")
 	}
@@ -67,7 +67,7 @@ func (rtr *router) HasRoute(path string) bool {
 }
 
 // GetRoute returns a Handler for a given path.
-func (rtr *router) GetRoute(path string) types.Handler {
+func (rtr *router) GetRoute(path string) sdk.Handler {
 	if !rtr.HasRoute(path) {
 		panic(fmt.Sprintf("route \"%s\" does not exist", path))
 	}

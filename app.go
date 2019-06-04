@@ -20,6 +20,8 @@ import (
 	"wings-blockchain/x/currencies"
 	"wings-blockchain/x/poa"
 	poaTypes "wings-blockchain/x/poa/types"
+	msKeeper "wings-blockchain/x/multisig/keeper"
+	"wings-blockchain/x/multisig"
 )
 
 const (
@@ -38,6 +40,7 @@ type WbServiceApp struct {
 	keyParams        *sdk.KVStoreKey
 	tkeyParams       *sdk.TransientStoreKey
 	keyValidators    *sdk.KVStoreKey
+	keyMS			 *sdk.KVStoreKey
 
 	accountKeeper       auth.AccountKeeper
 	bankKeeper          bank.Keeper
@@ -45,6 +48,7 @@ type WbServiceApp struct {
 	paramsKeeper        params.Keeper
 	currenciesKeeper    currencies.Keeper
 	validatorsKeeper    poa.Keeper
+	msKeeper			msKeeper.Keeper
 }
 
 // NewWbServiceApp is a constructor function for wings blockchain
@@ -68,6 +72,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		keyParams:        sdk.NewKVStoreKey("params"),
 		tkeyParams:       sdk.NewTransientStoreKey("transient_params"),
 		keyValidators:	  sdk.NewKVStoreKey("poa"),
+		keyMS:            sdk.NewKVStoreKey("multisig"),
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
@@ -105,6 +110,17 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
+	// Initializing multisig router
+	msRouter := msKeeper.NewRouter()
+	msRouter.AddRoute("poa", poa.NewHandler(app.validatorsKeeper))
+
+	// Initializing ms module
+	app.msKeeper = msKeeper.NewKeeper(
+		app.keyMS,
+		app.cdc,
+		msRouter,
+	)
+
 	// The AnteHandler handles signature verification and transaction pre-processing
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.feeCollectionKeeper))
 
@@ -113,7 +129,8 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	app.Router().
 		AddRoute("bank", bank.NewHandler(app.bankKeeper)).
 		AddRoute("currencies", currencies.NewHandler(app.currenciesKeeper)).
-		AddRoute("poa", poa.NewHandler(app.validatorsKeeper))
+		AddRoute("multisig", multisig.NewHandler(app.msKeeper, app.validatorsKeeper))
+		//AddRoute("poa", poa.NewHandler(app.validatorsKeeper))
 
 	// The app.QueryRouter is the main query router where each module registers its routes
 	app.QueryRouter().
@@ -130,6 +147,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		app.keyParams,
 		app.tkeyParams,
 		app.keyValidators,
+		app.keyMS,
 	)
 
 	err := app.LoadLatestVersion(app.keyMain)
@@ -216,5 +234,6 @@ func MakeCodec() *codec.Codec {
 	staking.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
+	multisig.RegisterCodec(cdc)
 	return cdc
 }

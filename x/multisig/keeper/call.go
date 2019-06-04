@@ -6,7 +6,7 @@ import (
 )
 
 // Submit call to execute by confirmations from validators
-func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg) sdk.Error {
+func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, sender sdk.AccAddress) sdk.Error {
 	if !keeper.router.HasRoute(msg.Route()) {
 		return types.ErrRouteDoesntExist(msg.Route())
 	}
@@ -14,6 +14,12 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg) sdk.Error {
 	nextId := keeper.getNextCallId(ctx)
 	call   := types.NewCall(msg)
 	keeper.saveCallById(ctx, nextId, call)
+
+	err := keeper.Confirm(ctx, nextId, sender)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
