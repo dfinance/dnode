@@ -11,11 +11,20 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, sender sdk.Acc
 		return types.ErrRouteDoesntExist(msg.Route())
 	}
 
-	nextId := keeper.getNextCallId(ctx)
-	call   := types.NewCall(msg)
-	keeper.saveCallById(ctx, nextId, call)
+	cacheCtx, _ := ctx.CacheContext()
+	handler := keeper.router.GetRoute(msg.Route())
 
-	err := keeper.Confirm(ctx, nextId, sender)
+	result := handler(cacheCtx, msg)
+
+	// todo: need to implement multisig handler, so don't get result
+	if !result.IsOK() {
+		return types.ErrCantExecuteCall()
+	}
+
+	call := types.NewCall(msg)
+	id 	 := keeper.saveNewCall(ctx, call)
+
+	err := keeper.Confirm(ctx, id, sender)
 
 	if err != nil {
 		return err
@@ -38,6 +47,15 @@ func (keeper Keeper) HasCall(ctx sdk.Context, id uint64) bool {
 	store := ctx.KVStore(keeper.storeKey)
 
 	return store.Has(types.GetCallByIdKey(id))
+}
+
+// Save new call
+func (keeper Keeper) saveNewCall(ctx sdk.Context, call types.Call) uint64 {
+	store  := ctx.KVStore(keeper.storeKey)
+	nextId := keeper.getNextCallId(ctx)
+
+	store.Set(types.GetCallByIdKey(nextId), keeper.cdc.MustMarshalBinaryBare(call))
+	store.Set(types.LastCallId, keeper.cdc.MustMarshalBinaryLengthPrefixed(nextId))
 }
 
 // Save message by id

@@ -16,6 +16,8 @@ const (
 	CodeErrNoVotes		   = 301
 
 	CodeNotValidator       = 401
+
+	CodeCantExecuteCall	   = 501
 )
 
 // When msg route doesnt exist
@@ -28,6 +30,10 @@ func ErrWrongCallId(id uint64) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeErrWrongCallId, "call %d not found", id)
 }
 
+// When cant execute call
+func ErrCantExecuteCall() sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeCantExecuteCall, "can't execute call")
+}
 
 // When no votes found for call
 func ErrNoVotes(id uint64) sdk.Error {
