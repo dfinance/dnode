@@ -24,11 +24,9 @@ func PostAddValidatorCall(cdc *codec.Codec) *cobra.Command {
 			if err := cliCtx.EnsureAccountExists(); err != nil {
 				return err
 			}
-
-
+			
 			ethAddress := args[1]
 			validatorAddress, err := sdk.AccAddressFromBech32(args[0])
-
 
 			if err  != nil {
 				return err
