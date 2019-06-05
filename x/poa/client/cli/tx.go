@@ -38,33 +38,6 @@ func PostAddValidator(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func PostRemoveValidator(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "remove-validator [address]",
-		Short: "remove poa validator",
-		Args:  cobra.ExactArgs(1),
-		RunE:  func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			if err := cliCtx.EnsureAccountExists(); err != nil {
-				return err
-			}
-
-			validatorAddress, err := sdk.AccAddressFromBech32(args[0])
-
-			if err != nil {
-				return err
-			}
-
-			msg := msgs.NewMsgRemoveValidator(validatorAddress, cliCtx.GetFromAddress())
-			cliCtx.PrintResponse = true
-
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
-		},
-	}
-}
-
 func PostReplaceValidator(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "replace-validator [oldValidator] [newValidator] [ethAddress]",
