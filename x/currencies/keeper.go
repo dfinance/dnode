@@ -2,7 +2,7 @@ package currencies
 
 import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	cdcCodec "github.com/cosmos/cosmos-sdk/codec"
 )
 
@@ -10,11 +10,11 @@ import (
 type Keeper struct {
 	coinKeeper bank.Keeper
 	cdc 	   *cdcCodec.Codec
-	storeKey   types.StoreKey
+	storeKey   sdk.StoreKey
 }
 
 // Create new currency keeper
-func NewKeeper(coinKeeper bank.Keeper, storeKey types.StoreKey, cdc *cdcCodec.Codec) Keeper {
+func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *cdcCodec.Codec) Keeper {
 	return Keeper{
 		coinKeeper: coinKeeper,
 		storeKey:   storeKey,
@@ -23,28 +23,24 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey types.StoreKey, cdc *cdcCodec.Co
 }
 
 // Destroy currency
-func (keeper Keeper) DestroyCurrency(ctx types.Context, symbol string, amount int64, sender types.AccAddress) types.Error {
+func (keeper Keeper) DestroyCurrency(ctx sdk.Context, symbol string, amount int64, sender sdk.AccAddress) sdk.Error {
 	store := ctx.KVStore(keeper.storeKey)
 
 	if !keeper.doesCurrencyExists(store, symbol) {
-		return types.ErrInsufficientCoins("no known coins to destroy")
+		return sdk.ErrInsufficientCoins("no known coins to destroy")
 	}
 
 	keeper.reduceSupply(store, symbol, amount)
 
-	newCoin := types.NewInt64Coin(symbol, amount)
+	newCoin := sdk.NewInt64Coin(symbol, amount)
 
-	_, _, err := keeper.coinKeeper.SubtractCoins(ctx, sender, types.Coins{newCoin})
-
-	if err != nil {
-		keeper.increaseSupply(store, symbol, amount)
-	}
+	_, _, err := keeper.coinKeeper.SubtractCoins(ctx, sender, sdk.Coins{newCoin})
 
 	return err
 }
 
 // Issue currency
-func (keeper Keeper) IssueCurrency(ctx types.Context, symbol string, amount int64, decimals int8, creator types.AccAddress) types.Error {
+func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount int64, decimals int8, creator sdk.AccAddress) sdk.Error {
 	store := ctx.KVStore(keeper.storeKey)
 
 	var isNew bool
@@ -56,28 +52,20 @@ func (keeper Keeper) IssueCurrency(ctx types.Context, symbol string, amount int6
 		keeper.increaseSupply(store, symbol, amount)
 	}
 
-	newCoin := types.NewInt64Coin(symbol, amount)
+	newCoin := sdk.NewInt64Coin(symbol, amount)
 
-	_, _, err := keeper.coinKeeper.AddCoins(ctx, creator, types.Coins{newCoin})
-
-	if err != nil {
-		if isNew {
-			keeper.removeCurrency(store, symbol)
-		} else {
-			keeper.reduceSupply(store, symbol, amount)
-		}
-	}
+	_, _, err := keeper.coinKeeper.AddCoins(ctx, creator, sdk.Coins{newCoin})
 
 	return err
 }
 
 // Checking does currency exists by symbol
-func (keeper Keeper) doesCurrencyExists(store types.KVStore, symbol string) bool {
+func (keeper Keeper) doesCurrencyExists(store sdk.KVStore, symbol string) bool {
 	return store.Has([]byte(symbol))
 }
 
 // Increase currency supply by symbol
-func (keeper Keeper) increaseSupply(store types.KVStore, symbol string, amount int64) {
+func (keeper Keeper) increaseSupply(store sdk.KVStore, symbol string, amount int64) {
 	currency := keeper.getCurrency(store, symbol)
 
 	currency.Supply += amount
@@ -86,7 +74,7 @@ func (keeper Keeper) increaseSupply(store types.KVStore, symbol string, amount i
 }
 
 // Reduce currency supply by symbol
-func (keeper Keeper) reduceSupply(store types.KVStore, symbol string, amount int64) {
+func (keeper Keeper) reduceSupply(store sdk.KVStore, symbol string, amount int64) {
 	currency := keeper.getCurrency(store, symbol)
 
 	currency.Supply -= amount
@@ -95,12 +83,12 @@ func (keeper Keeper) reduceSupply(store types.KVStore, symbol string, amount int
 }
 
 // Store currency in storage
-func (keeper Keeper) storeCurrency(store types.KVStore, currency Currency) {
+func (keeper Keeper) storeCurrency(store sdk.KVStore, currency Currency) {
 	store.Set([]byte(currency.Symbol), keeper.cdc.MustMarshalBinaryBare(currency))
 }
 
 // Get currency from storage
-func (keeper Keeper) getCurrency(store types.KVStore, symbol string) Currency {
+func (keeper Keeper) getCurrency(store sdk.KVStore, symbol string) Currency {
 	bz := store.Get([]byte(symbol))
 
 	var currency Currency
@@ -110,6 +98,6 @@ func (keeper Keeper) getCurrency(store types.KVStore, symbol string) Currency {
 }
 
 // Remove currency
-func (keeper Keeper) removeCurrency(store types.KVStore, symbol string) {
+func (keeper Keeper) removeCurrency(store sdk.KVStore, symbol string) {
 	store.Delete([]byte(symbol))
 }

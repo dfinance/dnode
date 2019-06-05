@@ -1,19 +1,20 @@
 package msgs
 
 import (
-	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
+	"wings-blockchain/x/currencies/types"
 )
 
 // Message for destory currency
 type MsgDestroyCurrency struct {
 	Symbol 	 string
 	Amount   int64
-	Sender   types.AccAddress
+	Sender   sdk.AccAddress
 }
 
 // Create new message to destory currency
-func NewMsgDestroyCurrency(symbol string, amount int64, sender types.AccAddress) MsgDestroyCurrency {
+func NewMsgDestroyCurrency(symbol string, amount int64, sender sdk.AccAddress) MsgDestroyCurrency {
 	return MsgDestroyCurrency{
 		Symbol: symbol,
 		Amount: amount,
@@ -23,7 +24,7 @@ func NewMsgDestroyCurrency(symbol string, amount int64, sender types.AccAddress)
 
 // Base route for currencies package
 func (msg MsgDestroyCurrency) Route() string {
-	return "currencies"
+	return types.DefaultRoute
 }
 
 // Indeed type to destory currency
@@ -32,17 +33,17 @@ func (msg MsgDestroyCurrency) Type() string {
 }
 
 // Validate basic in case of destory message
-func (msg MsgDestroyCurrency) ValidateBasic() types.Error {
+func (msg MsgDestroyCurrency) ValidateBasic() sdk.Error {
 	if msg.Sender.Empty() {
-		return types.ErrInvalidAddress(msg.Sender.String())
+		return sdk.ErrInvalidAddress(msg.Sender.String())
 	}
 
 	if len(msg.Symbol) == 0 {
-		return types.ErrUnknownRequest("Symbol should be not empty")
+		return types.ErrWrongSymbol(msg.Symbol)
 	}
 
 	if msg.Amount == 0 {
-		return types.ErrUnknownRequest("amount can't be less/equal 0")
+		return types.ErrWrongAmount(msg.Amount)
 	}
 
 	return nil
@@ -56,10 +57,10 @@ func (msg MsgDestroyCurrency) GetSignBytes() []byte {
 		panic(err)
 	}
 
-	return types.MustSortJSON(b)
+	return sdk.MustSortJSON(b)
 }
 
 // Get signers for message
-func (msg MsgDestroyCurrency) GetSigners() []types.AccAddress {
-	return []types.AccAddress{msg.Sender}
+func (msg MsgDestroyCurrency) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Sender}
 }

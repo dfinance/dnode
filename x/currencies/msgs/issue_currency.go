@@ -1,8 +1,9 @@
 package msgs
 
 import (
-	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
+	types "wings-blockchain/x/currencies/types"
 )
 
 // Msg struct for issue new currencies
@@ -10,11 +11,11 @@ type MsgIssueCurrency struct {
 	Symbol   string
 	Amount   int64
 	Decimals int8
-	Creator  types.AccAddress
+	Creator  sdk.AccAddress
 }
 
 // Create new issue currency message
-func NewMsgIssueCurrency(symbol string, supply int64, amount int8, creator types.AccAddress) MsgIssueCurrency {
+func NewMsgIssueCurrency(symbol string, supply int64, amount int8, creator sdk.AccAddress) MsgIssueCurrency {
 	return MsgIssueCurrency{
 		Symbol:   symbol,
 		Amount:   supply,
@@ -34,18 +35,17 @@ func (msg MsgIssueCurrency) Type() string {
 }
 
 // Basic validation, without state
-func (msg MsgIssueCurrency) ValidateBasic() types.Error {
+func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 	if msg.Creator.Empty() {
-		return types.ErrInvalidAddress(msg.Creator.String())
+		return sdk.ErrInvalidAddress(msg.Creator.String())
 	}
 
 	if len(msg.Symbol) == 0 {
-		return types.ErrUnknownRequest("Symbol should be not empty")
+		return types.ErrWrongSymbol(msg.Symbol)
 	}
 
 	if msg.Decimals < 0 || msg.Decimals > 8 || msg.Amount <= 0 {
-		return types.ErrUnknownRequest("Decimals or amount can't be less/equal 0, " +
-			"and decimals should be less then 8")
+		return types.ErrWrongDecimals(msg.Decimals)
 	}
 
 	return nil
@@ -58,10 +58,10 @@ func (msg MsgIssueCurrency) GetSignBytes() []byte {
 		panic(err)
 	}
 
-	return types.MustSortJSON(b)
+	return sdk.MustSortJSON(b)
 }
 
 // Check who should sign message
-func (msg MsgIssueCurrency) GetSigners() []types.AccAddress {
-	return []types.AccAddress{msg.Creator}
+func (msg MsgIssueCurrency) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Creator}
 }

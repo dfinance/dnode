@@ -1,14 +1,14 @@
 package currencies
 
 import (
-	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"fmt"
 	"wings-blockchain/x/currencies/msgs"
 )
 
 // Handler for currencies messages, provess issue/destory messages
-func NewHandler(keeper Keeper) types.Handler {
-	return func (ctx types.Context, msg types.Msg) types.Result {
+func NewHandler(keeper Keeper) sdk.Handler {
+	return func (ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
 		case msgs.MsgIssueCurrency:
 			return handleMsgIssueCurrency(ctx, keeper, msg)
@@ -18,30 +18,30 @@ func NewHandler(keeper Keeper) types.Handler {
 
 		default:
 			errMsg := fmt.Sprintf("Unrecognized nameservice Msg type: %v", msg.Type())
-			return types.ErrUnknownRequest(errMsg).Result()
+			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
 }
 
 // Handle issue message
-func handleMsgIssueCurrency(ctx types.Context, keeper Keeper, msg msgs.MsgIssueCurrency) types.Result {
+func handleMsgIssueCurrency(ctx sdk.Context, keeper Keeper, msg msgs.MsgIssueCurrency) sdk.Result {
 	err := keeper.IssueCurrency(ctx, msg.Symbol, msg.Amount, msg.Decimals, msg.Creator)
 
 	if err != nil {
 		return err.Result()
 	}
 
-	return types.Result{}
+	return sdk.Result{}
 }
 
-// Handle destory message
-func handleMsgDestroy(ctx types.Context, keeper Keeper, msg msgs.MsgDestroyCurrency) types.Result {
+// Handle destroy message
+func handleMsgDestroy(ctx sdk.Context, keeper Keeper, msg msgs.MsgDestroyCurrency) sdk.Result {
 	err := keeper.DestroyCurrency(ctx, msg.Symbol, msg.Amount, msg.Sender)
 
 	if err != nil {
 		return err.Result()
 	}
 
-	return types.Result{}
+	return sdk.Result{}
 }
 
