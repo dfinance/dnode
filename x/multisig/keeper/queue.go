@@ -20,7 +20,7 @@ func (keeper Keeper) removeCallFromQueue(ctx sdk.Context, callId uint64, height 
 }
 
 // Getting queue iterator from block height to end block height
-func (keeper Keeper) GetQueueIteratorFromEnd(ctx sdk.Context, startHeight, endHeight int64) sdk.Iterator {
+func (keeper Keeper) GetQueueIteratorStartEnd(ctx sdk.Context, startHeight, endHeight int64) sdk.Iterator {
 	store := ctx.KVStore(keeper.storeKey)
 
 	return store.Iterator(types.GetPrefixQueue(startHeight), sdk.PrefixEndBytes(types.GetPrefixQueue(endHeight)))

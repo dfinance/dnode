@@ -23,7 +23,7 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, sender sdk.Acc
 	call := types.NewCall(msg, ctx.BlockHeight())
 	id 	 := keeper.saveNewCall(ctx, call)
 
-	keeper.addCallToQueue(ctx, id, call.GetHeight() + types.IntervalToExecute)
+	keeper.addCallToQueue(ctx, id, call.GetHeight())
 
 	err = keeper.Confirm(ctx, id, sender)
 

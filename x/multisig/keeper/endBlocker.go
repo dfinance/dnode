@@ -18,7 +18,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 	}
 
 	// Iterate active calls
-	activeIterator := keeper.GetQueueIteratorFromEnd(ctx, start, ctx.BlockHeight())
+	activeIterator := keeper.GetQueueIteratorStartEnd(ctx, start, ctx.BlockHeight())
 	defer activeIterator.Close()
 
 	resTags = resTags.AppendTag("start-active-calls-ex", fmt.Sprintf("%d", start))
@@ -27,7 +27,6 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 
 		var callId uint64
 		keeper.cdc.MustUnmarshalBinaryLengthPrefixed(bs, &callId)
-
 
 		confirmations, err := keeper.GetConfirmations(ctx, callId)
 
@@ -48,7 +47,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 			cacheCtx, writeCache := ctx.CacheContext()
 			err := handler(cacheCtx, call.Msg)
 
-			if err == nil {
+			if err != nil {
 				// call execution failed, write it to status
 				call.Failed = true
 				call.Error = err.Error()

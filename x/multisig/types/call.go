@@ -26,6 +26,7 @@ func NewCall(msg MsMsg, height int64) Call {
 		Approved: false,
 		Executed: false,
 		Rejected: false,
+		Failed:   false,
 		Msg: 	  msg,
 		height:   height,
 	}
