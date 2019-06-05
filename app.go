@@ -113,6 +113,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	// Initializing multisig router
 	msRouter := msKeeper.NewRouter()
 	msRouter.AddRoute("poa", poa.NewMsHandler(app.validatorsKeeper))
+	msRouter.AddRoute("currencies", currencies.NewMsHandler(app.currenciesKeeper))
 
 	// Initializing ms module
 	app.msKeeper = msKeeper.NewKeeper(
@@ -128,9 +129,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	// Register the bank, currencies,  routes here
 	app.Router().
 		AddRoute("bank", bank.NewHandler(app.bankKeeper)).
-		AddRoute("currencies", currencies.NewHandler(app.currenciesKeeper)).
 		AddRoute("multisig", multisig.NewHandler(app.msKeeper, app.validatorsKeeper))
-		//AddRoute("poa", poa.NewHandler(app.validatorsKeeper))
 
 	// The app.QueryRouter is the main query router where each module registers its routes
 	app.QueryRouter().
