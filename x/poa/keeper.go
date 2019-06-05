@@ -86,6 +86,11 @@ func (keeper Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
 	return amount
 }
 
+// Get amount of confirmations to do action
+func (keeper Keeper) GetEnoughConfirmations(ctx sdk.Context) uint16 {
+	return keeper.GetValidatorAmount(ctx) / 2 + 1
+}
+
 // Increase validators amount by 1
 func (keeper Keeper) increaseValidatorsAmount(ctx sdk.Context) uint16 {
 	amount := keeper.GetValidatorAmount(ctx)

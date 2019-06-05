@@ -5,7 +5,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-
 // Confirm call
 func (keeper Keeper) Confirm(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
 	err := keeper.storeVote(ctx, id, address)
@@ -68,8 +67,12 @@ func (keeper Keeper) storeVote(ctx sdk.Context, id uint64, address sdk.AccAddres
 
 	call := keeper.getCallById(ctx, id)
 
-	if call.Executed {
-		return types.ErrAlreadyExecuted(id)
+	if call.Approved {
+		return types.ErrAlreadyConfirmed(id)
+	}
+
+	if call.Rejected {
+		return types.ErrAlreadyRejected(id)
 	}
 
 	if has, _ := keeper.HasVote(ctx, id, address); has {
@@ -103,8 +106,12 @@ func (keeper Keeper) revokeVote(ctx sdk.Context, id uint64, address sdk.AccAddre
 
 	call := keeper.getCallById(ctx, id)
 
-	if call.Executed {
-		return types.ErrAlreadyExecuted(id)
+	if call.Approved {
+		return types.ErrAlreadyConfirmed(id)
+	}
+
+	if call.Rejected {
+		return types.ErrAlreadyRejected(id)
 	}
 
 	if has, _ := keeper.HasVote(ctx, id, address); !has {

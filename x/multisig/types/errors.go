@@ -9,15 +9,14 @@ const (
 	CodeRouteDoesntExist   = 101
 	CodeErrWrongCallId     = 102
 
-	CodeErrAlreadyApproved = 201
-	CodeErrAlreadyExecuted = 202
-	CodeErrNotApproved     = 203
+	CodeErrAlreadyApproved   = 201
+	CodeErrAlreadyConfirmed  = 202
+	CodeErrAlreadyRerejected = 203
+	CodeErrNotApproved       = 204
 
 	CodeErrNoVotes		   = 301
 
 	CodeNotValidator       = 401
-
-	CodeCantExecuteCall	   = 501
 )
 
 // When msg route doesnt exist
@@ -28,11 +27,6 @@ func ErrRouteDoesntExist(route string) sdk.Error {
 // When call with provided id doesnt exist
 func ErrWrongCallId(id uint64) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeErrWrongCallId, "call %d not found", id)
-}
-
-// When cant execute call
-func ErrCantExecuteCall() sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeCantExecuteCall, "can't execute call")
 }
 
 // When no votes found for call
@@ -51,10 +45,16 @@ func ErrCallNotApproved(id uint64, address string) sdk.Error {
 }
 
 // When call already executed
-func ErrAlreadyExecuted(id uint64) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrAlreadyExecuted, "call %d already executed", id)
+func ErrAlreadyConfirmed(id uint64) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeErrAlreadyConfirmed, "call %d already confirmed", id)
 }
 
+// When tx from not validator
 func ErrNotValidator(validator string) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeNotValidator, "%s is not a validator", validator)
+}
+
+// When call already rejected
+func ErrAlreadyRejected(id uint64) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeErrAlreadyRerejected, "%d already rejected", id)
 }

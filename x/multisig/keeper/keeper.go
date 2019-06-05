@@ -3,6 +3,7 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 // Multisig keeper
@@ -23,4 +24,9 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, router Router) Keeper {
 	keeper.router.Seal()
 
 	return keeper
+}
+
+// Get logger
+func (keeper Keeper) getLogger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", "x/multisig")
 }

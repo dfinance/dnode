@@ -136,6 +136,9 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	app.QueryRouter().
 		AddRoute("acc", auth.NewQuerier(app.accountKeeper))
 
+	// Init end blockers
+	app.SetEndBlocker(InitEndBlockers(app.msKeeper, app.validatorsKeeper))
+
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.initChainer)
 
@@ -156,6 +159,16 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	}
 
 	return app
+}
+
+func InitEndBlockers(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.EndBlocker {
+	return func(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+		tags := msKeeper.EndBlocker(ctx, keeper, poaKeeper)
+
+		return abci.ResponseEndBlock{
+			Tags: tags,
+		}
+	}
 }
 
 // GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
