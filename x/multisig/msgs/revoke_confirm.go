@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// Message to revoke confirmation on call
 type MsgRevokeConfirm struct {
 	MsgId  uint64
 	Sender sdk.AccAddress

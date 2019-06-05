@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// Message to confirm call
 type MsgConfirmCall struct {
 	MsgId  uint64
 	Sender sdk.AccAddress

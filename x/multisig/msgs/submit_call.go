@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 )
 
+// Message for submit call
 type MsgSubmitCall struct {
 	Msg   types.MsMsg
 	Sender sdk.AccAddress
