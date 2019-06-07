@@ -5,9 +5,9 @@
 
 **THIS IS VERY EARLY WORK IN PROGRESS, NOT FOR TESTNET/PRODUCTION USAGE**
 
-Wings Blockchain peg zone implementation based on [Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
+Wings Blockchain Peg Zone implementation based on [Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
 
-This is work in progress, but still it already support next features:
+This is work in progress, yet it supports the following features:
 
 * **Proof Of Authority** (PoA) validators mechanism
 * **N/2+1** confirmations model
@@ -19,9 +19,9 @@ This is work in progress, but still it already support next features:
 
 Motivation is allowing to moving tokens/currencies between different blockchains and Wings blockchain.
 
-Additional information could be found in other, that presents part of Wings peg zones.
+Additional information could be found in other repositories, that presents part of Wings Peg Zones.
 
-Other repositories related to peg zones could be found:
+Other repositories related to Peg Zones could be found:
 
 * [Ethereum Peg Zone](https://github.com/WingsDao/eth-peg-zone)
 
@@ -53,7 +53,7 @@ So after this command both `wbd` and `wbcli` will be available from console.
 
 # Usage
 
-First of all we need to create genesis configuration.
+First of all we need to create genesis configuration:
 
     wbd init --chain-id wings-testnet
 
@@ -67,10 +67,9 @@ Then let's create 4 accounts, one to store coins, the rest for PoA validators:
 Copy addresses and private keys from output, we will need them in the future.
 
 As you see we create one account calling `bank` where we will be store all generated **WINGS** coins for start,
-and then 3 accounts to make them PoA validators, we indeed 3 because by default it's minimum amount of PoA validators
-to has.
+and then 3 accounts to make them PoA validators, we need at least 3 validators because by default it's a minimum amount of PoA validators to have.
 
-Now let's add genesis account and initiate genesis poa validators:
+Now let's add genesis account and initiate genesis PoA validators:
 
     wbd add-genesis-account [bank-address] 10000,wings
 
