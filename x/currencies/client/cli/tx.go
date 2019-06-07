@@ -55,7 +55,7 @@ func PostIssueCurrency(cdc *codec.Codec) *cobra.Command {
 func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use: 	"destroy-currency [symbol] [amount]",
-		Short:  "destory issued currency",
+		Short:  "destroy issued currency",
 		Args: 	cobra.ExactArgs(2),
 		RunE:   func(cmd *cobra.Command, args []string) error {
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)

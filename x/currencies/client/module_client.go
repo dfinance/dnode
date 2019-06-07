@@ -37,7 +37,7 @@ func (mc ModuleClient) GetTxCmd() *cobra.Command {
 
 	currenciesTxCmd.AddCommand(client.PostCommands(
 		cli.PostMsIssueCurrency(mc.cdc),
-		cli.PostMsDestroyCurrency(mc.cdc),
+		cli.PostDestroyCurrency(mc.cdc),
 	)...)
 
 	return currenciesTxCmd

@@ -15,9 +15,6 @@ func NewMsHandler(keeper Keeper) msTypes.MsHandler {
 		case msgs.MsgIssueCurrency:
 			return handleMsMsgIssueCurrency(ctx, keeper, msg)
 
-		case msgs.MsgDestroyCurrency:
-			return handleMsMsgDestroy(ctx, keeper, msg)
-
 		default:
 			errMsg := fmt.Sprintf("Unrecognized nameservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg)
@@ -30,10 +27,3 @@ func handleMsMsgIssueCurrency(ctx sdk.Context, keeper Keeper, msg msgs.MsgIssueC
 	err := keeper.IssueCurrency(ctx, msg.Symbol, msg.Amount, msg.Decimals, msg.Creator)
 	return err
 }
-
-// Handle destroy message
-func handleMsMsgDestroy(ctx sdk.Context, keeper Keeper, msg msgs.MsgDestroyCurrency) sdk.Error {
-	err := keeper.DestroyCurrency(ctx, msg.Symbol, msg.Amount, msg.Sender)
-	return err
-}
-
