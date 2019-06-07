@@ -72,11 +72,11 @@ to has.
 
 Now let's add genesis account and initiate genesis poa validators:
 
-    wbd add-genesis-account <bank-address> 10000,wings
+    wbd add-genesis-account [bank-address] 10000,wings
 
-    wbd add-poa-validator <validator-1-address>
-    wbd add-poa-validator <validator-2-address>
-    wbd add-poa-validator <validator-3-address>
+    wbd add-poa-validator [validator-1-address]
+    wbd add-poa-validator [validator-2-address]
+    wbd add-poa-validator [validator-3-address]
 
 Replace expressions in brackets with correct addresses, configure chain by Cosmos SDK documentation:
 
@@ -89,42 +89,58 @@ Now we are ready to launch testnet:
 
     wbd start
 
-## Add/remove/replace validator by multisig
+Deposit validators accounts by sending them **WINGS**:
+
+    wbd tx send [validator-n] 10wings --from bank
+
+## Add/remove/replace validator by multisignature
 
 Before we start managing validators by PoA, let's remember that minimum amount of validators is 3, maximum is 11.
 
 To add new validator use next command:
 
-    wbcli tx validators ms-add-validator [validator_address] [eth_address] --validator-1
+    wbcli tx validators ms-add-validator [validator-address] [eth-address] --validator-1
 
 Where:
 
-* [validator_address] - cosmos bench32 validator address
-* [eth_address]       - validator ethereum address
+* **[validator-address]** - cosmos bench32 validator address
+* **[eth-address]**       - validator ethereum address
 
 To remove:
 
-    wbcli tx validators ms-remove-validator [validator_address] --from validator1
+    wbcli tx validators ms-remove-validator [validator-address] --from validator1
 
 To replace:
 
-    wbcli tx validators ms-replace-validator [old_address] [new_address] [eth_address] --from validator-1
+    wbcli tx validators ms-replace-validator [old-address] [new-address] [eth-address] --from validator-1
 
 ## Confirm multisignature call
 
 To confirm multisignature call you need to extract call id from transaction execution output and confirm this call
 by other validators:
 
-    wbcli tx multisig confirm-call [call_id]
+    wbcli tx multisig confirm-call [call-id]
 
 Once call submited under multisignature, there is `86400` blocks interval to confirm it by other validators, if call
 not confirmed by that time, it will be marked as rejected.
 
 To revoke confirmation from call:
 
-    wbcli tx multisig revoke-confirm [call_id]
+    wbcli tx multisig revoke-confirm [call-id]
 
 Once call reaches **N/2+1** amount of confirmations, message inside call will be executed.
+
+## Issuing new currency by multisig
+
+To issue new currency:
+
+    wbcli tx currencies ms-issue-currency [symbol] [amount] [decimals]  --from validators1
+
+## Destroy currency
+
+To destroy currency from any account call:
+
+    wbcli tx currencies destroy-currency [symbol] [amount] --from account
 
 # Docs
 
