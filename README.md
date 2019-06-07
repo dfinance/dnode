@@ -9,13 +9,13 @@ Wings Blockchain peg zone implementation based on [Cosmos SDK](https://github.co
 
 This is work in progress, but still it already support next features:
 
-* Proof Of Authority (PoA) Validators mechanism
+* **Proof Of Authority** (PoA) validators mechanism
 * **N/2+1** confirmations model
-* Multisignature based on PoA validators
+* **Multisignature** based on PoA validators
 * Managing of PoA validators state by PoA consensus
 * Execution of messages (transactions) based on PoA consensus
 * Issuing/destroying new coins based on PoA consensus
-* 86400 blocks interval to confirm call execution under multisig
+* **86400** blocks interval to confirm call execution under multisig
 
 Motivation is allowing to moving tokens/currencies between different blockchains and Wings blockchain.
 
