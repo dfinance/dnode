@@ -15,6 +15,7 @@ This is work in progress, but still it already support next features:
 * Managing of PoA validators state by PoA consensus
 * Execution of messages (transactions) based on PoA consensus
 * Issuing/destroying new coins based on PoA consensus
+* 86400 blocks interval to confirm call execution under multisig
 
 Motivation is allowing to moving tokens/currencies between different blockchains and Wings blockchain.
 
@@ -116,6 +117,9 @@ by other validators:
 
     wbcli tx multisig confirm-call [call_id]
 
+Once call submited under multisignature, there is `86400` blocks interval to confirm it by other validators, if call
+not confirmed by that time, it will be marked as rejected.
+
 To revoke confirmation from call:
 
     wbcli tx multisig revoke-confirm [call_id]
@@ -138,6 +142,7 @@ planned things to:
 
 * More Tests Coverage
 * Refactoring
+* Generate docs
 * PoS government implementation instead of PoA
 
 This project has the [following contributors](https://github.com/WingsDao/griffin-consensus-poc/graphs/contributors).
