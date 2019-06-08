@@ -21,6 +21,7 @@ import (
 	"wings-blockchain/x/poa"
 	poaTypes "wings-blockchain/x/poa/types"
 	msKeeper "wings-blockchain/x/multisig/keeper"
+	msQuerier "wings-blockchain/x/multisig/queries"
 	"wings-blockchain/x/multisig"
 )
 
@@ -133,7 +134,8 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 
 	// The app.QueryRouter is the main query router where each module registers its routes
 	app.QueryRouter().
-		AddRoute("acc", auth.NewQuerier(app.accountKeeper))
+		AddRoute("acc", auth.NewQuerier(app.accountKeeper)).
+		AddRoute("multisig", msQuerier.NewQuerier(app.msKeeper))
 
 	// Init end blockers
 	app.SetEndBlocker(InitEndBlockers(app.msKeeper, app.validatorsKeeper))

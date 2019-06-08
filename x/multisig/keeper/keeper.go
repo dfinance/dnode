@@ -30,3 +30,8 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, router Router) Keeper {
 func (keeper Keeper) getLogger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/multisig")
 }
+
+// Get keeper's codec
+func (keeper Keeper) GetCDC() *codec.Codec {
+	return keeper.cdc
+}

@@ -50,6 +50,12 @@ func (keeper Keeper) HasCall(ctx sdk.Context, id uint64) bool {
 	return store.Has(types.GetCallByIdKey(id))
 }
 
+// Get last call id
+func (keeper Keeper) GetLastId(ctx sdk.Context) uint64  {
+	id := keeper.getNextCallId(ctx) - 1
+	return id
+}
+
 // Save new call
 func (keeper Keeper) saveNewCall(ctx sdk.Context, call types.Call) uint64 {
 	store  := ctx.KVStore(keeper.storeKey)

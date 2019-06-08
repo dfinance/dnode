@@ -22,7 +22,7 @@ import (
 	app "wings-blockchain"
 	ccClient "wings-blockchain/x/currencies/client"
 	poaClient "wings-blockchain/x/poa/client"
-	client2 "wings-blockchain/x/multisig/client"
+	msClient "wings-blockchain/x/multisig/client"
 )
 
 const (
@@ -49,7 +49,7 @@ func main() {
 	mc := []sdk.ModuleClients{
 		ccClient.NewModuleClient(storeCC, cdc),
 		poaClient.NewModuleClient(storePoa, cdc),
-		client2.NewModuleClient(storeMC, cdc),
+		msClient.NewModuleClient(storeMC, cdc),
 	}
 
 	rootCmd := &cobra.Command{

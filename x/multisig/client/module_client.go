@@ -20,25 +20,29 @@ func NewModuleClient(storeKey string, cdc *amino.Codec) ModuleClient {
 
 // Returns get commands for this module
 func (mc ModuleClient) GetQueryCmd() *cobra.Command {
-	currenciesQueryCmd := &cobra.Command{
+	multisigQueryCmd := &cobra.Command{
 		Use:   "multisig",
 		Short: "Multisig commands for the validators module",
 	}
 
-	return currenciesQueryCmd
+	multisigQueryCmd.AddCommand(client.GetCommands(
+		cli.GetLastId("multisig", mc.cdc),
+	)...)
+
+	return multisigQueryCmd
 }
 
 // GetTxCmd returns the transaction commands for this module
 func (mc ModuleClient) GetTxCmd() *cobra.Command {
-	currenciesTxCmd := &cobra.Command{
+	multisigTxCmd := &cobra.Command{
 		Use:   "multisig",
 		Short: "Multisig transactions subcommands",
 	}
 
-	currenciesTxCmd.AddCommand(client.PostCommands(
+	multisigTxCmd.AddCommand(client.PostCommands(
 		cli.PostConfirmCall(mc.cdc),
 		cli.PostRevokeConfirm(mc.cdc),
 	)...)
 
-	return currenciesTxCmd
+	return multisigTxCmd
 }
