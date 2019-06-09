@@ -20,26 +20,32 @@ func NewModuleClient(storeKey string, cdc *amino.Codec) ModuleClient {
 
 // Returns get commands for this module
 func (mc ModuleClient) GetQueryCmd() *cobra.Command {
-	currenciesQueryCmd := &cobra.Command{
-		Use:   "validators",
-		Short: "Querying commands for the validators module",
+	poaQueryCmd := &cobra.Command{
+		Use:   "poa",
+		Short: "PoA commands for the validators module",
 	}
 
-	return currenciesQueryCmd
+	poaQueryCmd.AddCommand(client.GetCommands(
+		cli.GetValidator("poa", mc.cdc),
+		cli.GetValidators("poa", mc.cdc),
+		cli.GetMinMax("poa", mc.cdc),
+	)...)
+
+	return poaQueryCmd
 }
 
 // GetTxCmd returns the transaction commands for this module
 func (mc ModuleClient) GetTxCmd() *cobra.Command {
-	currenciesTxCmd := &cobra.Command{
-		Use:   "validators",
-		Short: "Validators transactions subcommands",
+	poaTxCmd := &cobra.Command{
+		Use:   "poa",
+		Short: "PoA transactions subcommands",
 	}
 
-	currenciesTxCmd.AddCommand(client.PostCommands(
+	poaTxCmd.AddCommand(client.PostCommands(
 		cli.PostMsAddValidator(mc.cdc),
 		cli.PostMsRemoveValidator(mc.cdc),
 		cli.PostMsReplaceValidator(mc.cdc),
 	)...)
 
-	return currenciesTxCmd
+	return poaTxCmd
 }

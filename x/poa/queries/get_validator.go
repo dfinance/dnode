@@ -7,7 +7,7 @@ import (
 
 // Get validator response
 type QueryGetValidatorRes struct {
-	validator poaTypes.Validator
+	validator poaTypes.Validator `json:"validator"`
 }
 
 func (q QueryGetValidatorRes) String() string {
