@@ -5,6 +5,7 @@ import (
 	poaTypes "wings-blockchain/x/poa/types"
 )
 
+// Get validators response
 type QueryValidatorsRes struct {
 	Validators    poaTypes.Validators `json:"validators"`
 	Amount     	  int			   	  `json:"amount"`

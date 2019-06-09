@@ -13,6 +13,7 @@ const (
 	QueryGetValidator  = "validator"
 )
 
+// Querier for PoA module
 func NewQuerier(keeper poa.Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
 		switch path[0] {
@@ -31,6 +32,7 @@ func NewQuerier(keeper poa.Keeper) sdk.Querier {
 	}
 }
 
+// Query handler for get validators list
 func queryGetValidators(keeper poa.Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	validatorsRes := QueryValidatorsRes{}
 
@@ -47,6 +49,7 @@ func queryGetValidators(keeper poa.Keeper, ctx sdk.Context) ([]byte, sdk.Error) 
 	return bz, nil
 }
 
+// Query handler for get min/max validators amount values
 func queryGetMinMax(keeper poa.Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	minMaxRes := QueryMinMaxRes{}
 
@@ -62,6 +65,7 @@ func queryGetMinMax(keeper poa.Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	return bz, nil
 }
 
+// Query handler for get validator by address
 func queryGetValidator(keeper poa.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
 	getValidatorRes := QueryGetValidatorRes{}
 

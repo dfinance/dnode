@@ -2,6 +2,7 @@ package queries
 
 import "fmt"
 
+// Get min/max response
 type QueryMinMaxRes struct {
 	Min int `json:"min"`
 	Max int `json:"max"`

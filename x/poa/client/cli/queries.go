@@ -8,10 +8,11 @@ import (
 	"fmt"
 )
 
+// Get validators list from CLI
 func GetValidators(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use: 	"validators",
-		Short:  "get validators list",
+		Short:  "get validators list, their amount and required confirmations",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
@@ -31,10 +32,11 @@ func GetValidators(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// Get min/max values for validators amount
 func GetMinMax(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use: 	"minmax",
-		Short:  "get min/max values for validators",
+		Short:  "get min/max values for validators amount",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
@@ -54,7 +56,7 @@ func GetMinMax(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-
+// Get validator
 func GetValidator(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use: 	"validator [address]",

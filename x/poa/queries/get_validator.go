@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Get validator response
 type QueryGetValidatorRes struct {
 	validator poaTypes.Validator
 }
