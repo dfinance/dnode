@@ -31,6 +31,11 @@ func (keeper Keeper) AddValidator(ctx sdk.Context, address sdk.AccAddress, ethAd
 	keeper.increaseValidatorsAmount(ctx)
 
 	store.Set(address, keeper.cdc.MustMarshalBinaryBare(validator))
+	keeper.addValidatorToList(ctx, validator)
+}
+
+func (keeper Keeper) GetValidators(ctx sdk.Context) types.Validators  {
+	return keeper.getValidatorsList(ctx)
 }
 
 // Check if validator exists in list or not
@@ -46,6 +51,7 @@ func (keeper Keeper) RemoveValidator(ctx sdk.Context, address sdk.AccAddress) {
 
 	store.Delete(address)
 	keeper.reduceValidatorsAmount(ctx)
+	keeper.removeValidatorFromList(ctx, address)
 }
 
 // Replace validator with another one
@@ -89,6 +95,65 @@ func (keeper Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
 // Get amount of confirmations to do action
 func (keeper Keeper) GetEnoughConfirmations(ctx sdk.Context) uint16 {
 	return keeper.GetValidatorAmount(ctx) / 2 + 1
+}
+
+// Get codec
+func (keeper Keeper) GetCDC() *codec.Codec {
+	return keeper.cdc
+}
+
+// Add validator to validators list
+func (keeper Keeper) addValidatorToList(ctx sdk.Context, validator types.Validator) {
+	validators := keeper.getValidatorsList(ctx)
+	validators = append(validators, validator)
+	keeper.storeValidatorsList(ctx, validators)
+}
+
+func (keeper Keeper) removeValidatorFromList(ctx sdk.Context, address sdk.AccAddress) {
+	validators := keeper.getValidatorsList(ctx)
+
+	index := -1
+
+	for i, validator := range validators {
+		if validator.Address.Equals(address) {
+			index = i
+			break
+		}
+	}
+
+	if index >= 0 {
+		if len(validators) > 0 {
+			validators = append(validators[:index], validators[index+1:]...)
+			keeper.storeValidatorsList(ctx, validators)
+		}  else {
+			store := ctx.KVStore(keeper.storeKey)
+			store.Delete(types.ValidatorsListKey)
+		}
+	}
+}
+
+func (keeper Keeper) getValidatorsList(ctx sdk.Context) types.Validators {
+	store := ctx.KVStore(keeper.storeKey)
+
+	if !store.Has(types.ValidatorsListKey) {
+		return types.Validators{}
+	}
+
+	var validators types.Validators
+	bs := store.Get(types.ValidatorsListKey)
+
+	err := keeper.cdc.UnmarshalBinaryBare(bs, &validators)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return validators
+}
+
+func (keeper Keeper) storeValidatorsList(ctx sdk.Context, validators types.Validators) {
+	store := ctx.KVStore(keeper.storeKey)
+	store.Set(types.ValidatorsListKey, keeper.cdc.MustMarshalBinaryBare(validators))
 }
 
 // Increase validators amount by 1

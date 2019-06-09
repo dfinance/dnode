@@ -12,4 +12,5 @@ const (
 
 var (
 	ValidatorsCountKey = []byte("validators_count")
+	ValidatorsListKey = []byte("validators")
 )

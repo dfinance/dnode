@@ -20,6 +20,7 @@ import (
 	"wings-blockchain/x/currencies"
 	"wings-blockchain/x/poa"
 	poaTypes "wings-blockchain/x/poa/types"
+	poaQuerier "wings-blockchain/x/poa/queries"
 	msKeeper "wings-blockchain/x/multisig/keeper"
 	msQuerier "wings-blockchain/x/multisig/queries"
 	"wings-blockchain/x/multisig"
@@ -40,7 +41,7 @@ type WbServiceApp struct {
 	keyFeeCollection *sdk.KVStoreKey
 	keyParams        *sdk.KVStoreKey
 	tkeyParams       *sdk.TransientStoreKey
-	keyValidators    *sdk.KVStoreKey
+	keyPoa           *sdk.KVStoreKey
 	keyMS			 *sdk.KVStoreKey
 
 	accountKeeper       auth.AccountKeeper
@@ -48,7 +49,7 @@ type WbServiceApp struct {
 	feeCollectionKeeper auth.FeeCollectionKeeper
 	paramsKeeper        params.Keeper
 	currenciesKeeper    currencies.Keeper
-	validatorsKeeper    poa.Keeper
+	poaKeeper		    poa.Keeper
 	msKeeper			msKeeper.Keeper
 }
 
@@ -72,7 +73,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		keyFeeCollection: sdk.NewKVStoreKey("fee_collection"),
 		keyParams:        sdk.NewKVStoreKey("params"),
 		tkeyParams:       sdk.NewTransientStoreKey("transient_params"),
-		keyValidators:	  sdk.NewKVStoreKey("poa"),
+		keyPoa:		      sdk.NewKVStoreKey("poa"),
 		keyMS:            sdk.NewKVStoreKey("multisig"),
 	}
 
@@ -105,15 +106,15 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	)
 
 	// Initializing validators module
-	app.validatorsKeeper = poa.NewKeeper(
-		app.keyValidators,
+	app.poaKeeper = poa.NewKeeper(
+		app.keyPoa,
 		app.cdc,
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
 	// Initializing multisig router
 	msRouter := msKeeper.NewRouter()
-	msRouter.AddRoute("poa", poa.NewMsHandler(app.validatorsKeeper))
+	msRouter.AddRoute("poa", poa.NewMsHandler(app.poaKeeper))
 	msRouter.AddRoute("currencies", currencies.NewMsHandler(app.currenciesKeeper))
 
 	// Initializing ms module
@@ -130,15 +131,16 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	// Register the bank, currencies,  routes here
 	app.Router().
 		AddRoute("bank", bank.NewHandler(app.bankKeeper)).
-		AddRoute("multisig", multisig.NewHandler(app.msKeeper, app.validatorsKeeper))
+		AddRoute("multisig", multisig.NewHandler(app.msKeeper, app.poaKeeper))
 
 	// The app.QueryRouter is the main query router where each module registers its routes
 	app.QueryRouter().
 		AddRoute("acc", auth.NewQuerier(app.accountKeeper)).
-		AddRoute("multisig", msQuerier.NewQuerier(app.msKeeper))
+		AddRoute("multisig", msQuerier.NewQuerier(app.msKeeper)).
+		AddRoute("poa", poaQuerier.NewQuerier(app.poaKeeper))
 
 	// Init end blockers
-	app.SetEndBlocker(InitEndBlockers(app.msKeeper, app.validatorsKeeper))
+	app.SetEndBlocker(InitEndBlockers(app.msKeeper, app.poaKeeper))
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.initChainer)
@@ -150,7 +152,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		app.keyFeeCollection,
 		app.keyParams,
 		app.tkeyParams,
-		app.keyValidators,
+		app.keyPoa,
 		app.keyMS,
 	)
 
@@ -180,6 +182,7 @@ type GenesisState struct {
 	PoAValidators []*poaTypes.Validator `json:"poa_validators"`
 }
 
+// Initializing genesis chainer
 func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	stateJSON := req.AppStateBytes
 
@@ -189,8 +192,8 @@ func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 		panic(err)
 	}
 
-	app.validatorsKeeper.SetParams(ctx, poaTypes.DefaultParams())
-	err = app.validatorsKeeper.InitGenesis(ctx, genesisState.PoAValidators)
+	app.poaKeeper.SetParams(ctx, poaTypes.DefaultParams())
+	err = app.poaKeeper.InitGenesis(ctx, genesisState.PoAValidators)
 
 	if err != nil {
 		panic(err)
