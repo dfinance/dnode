@@ -14,9 +14,9 @@ const (
 
 // Message for adding validator
 type MsgAddValidator struct {
-	Address		sdk.AccAddress
-	EthAddress 	string
-	Sender		sdk.AccAddress
+	Address		sdk.AccAddress	`json:"address"`
+	EthAddress 	string			`json:"eth_address"`
+	Sender		sdk.AccAddress	`json:"sender"`
 }
 
 // Create new 'add validator' message

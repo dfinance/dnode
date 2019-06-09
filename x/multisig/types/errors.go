@@ -6,8 +6,10 @@ import (
 
 // Error codes
 const (
-	CodeRouteDoesntExist   = 101
-	CodeErrWrongCallId     = 102
+	CodeErrRouteDoesntExist   = 101
+	CodeErrWrongCallId        = 102
+	CodeErrEmptyRoute         = 103
+	CodeErrEmptyType          = 104
 
 	CodeErrAlreadyApproved   = 201
 	CodeErrAlreadyConfirmed  = 202
@@ -17,11 +19,23 @@ const (
 	CodeErrNoVotes		   = 301
 
 	CodeNotValidator       = 401
+
+	CodeCantParseCallId	   = 501
 )
 
 // When msg route doesnt exist
 func ErrRouteDoesntExist(route string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeRouteDoesntExist, "route doesn't exists %s", route)
+	return sdk.NewError(DefaultCodespace, CodeErrRouteDoesntExist, "route doesn't exists %s", route)
+}
+
+// When msg route is empty (could be empty if we use MsMsg interface)
+func ErrEmptyRoute(id uint64) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeErrEmptyRoute, "msg route is empty for %d call", id)
+}
+
+// When msg route is empty (could be empty if we use MsMsg interface)
+func ErrEmptyType(id uint64) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeErrEmptyType, "msg type is empty for %d call", id)
 }
 
 // When call with provided id doesnt exist
@@ -57,4 +71,9 @@ func ErrNotValidator(validator string) sdk.Error {
 // When call already rejected
 func ErrAlreadyRejected(id uint64) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeErrAlreadyRerejected, "%d already rejected", id)
+}
+
+// When cant parse call id
+func ErrCantParseCallId(sid string) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeErrWrongCallId, "cant parse %s call id", sid)
 }

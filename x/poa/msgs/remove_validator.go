@@ -13,8 +13,8 @@ const (
 
 // Message for remove validator
 type MsgRemoveValidator struct {
-	Address sdk.AccAddress
-	Sender  sdk.AccAddress
+	Address sdk.AccAddress	`json:"address"`
+	Sender  sdk.AccAddress	`json:"sender"`
 }
 
 // Creating 'remove validator' message

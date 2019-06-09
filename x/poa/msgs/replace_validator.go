@@ -14,10 +14,10 @@ const (
 
 // Message for replace validator
 type MsgReplaceValidator struct {
-	OldValidator sdk.AccAddress
-	NewValidator sdk.AccAddress
-	EthAddress	 string
-	Sender 		 sdk.AccAddress
+	OldValidator sdk.AccAddress	`json:"old_address"`
+	NewValidator sdk.AccAddress	`json:"new_validator"`
+	EthAddress	 string			`json:"eth_address"`
+	Sender 		 sdk.AccAddress	`json:"sender"`
 }
 
 // Create new 'replace validator' message

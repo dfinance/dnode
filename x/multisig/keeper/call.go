@@ -20,10 +20,16 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, sender sdk.Acc
 		return err
 	}
 
-	call := types.NewCall(msg, ctx.BlockHeight())
+	nextId := keeper.getNextCallId(ctx)
+	call, err := types.NewCall(nextId, msg, ctx.BlockHeight(), sender)
+
+	if err != nil {
+		return err
+	}
+
 	id 	 := keeper.saveNewCall(ctx, call)
 
-	keeper.addCallToQueue(ctx, id, call.GetHeight())
+	keeper.addCallToQueue(ctx, id, call.Height)
 
 	err = keeper.Confirm(ctx, id, sender)
 
@@ -35,12 +41,12 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, sender sdk.Acc
 }
 
 // Get call by id
-func (keeper Keeper) GetCall(ctx sdk.Context, id uint64) (sdk.Error, types.Call) {
+func (keeper Keeper) GetCall(ctx sdk.Context, id uint64) (types.Call, sdk.Error) {
 	if !keeper.HasCall(ctx, id) {
-		return types.ErrWrongCallId(id), types.Call{}
+		return types.Call{}, types.ErrWrongCallId(id)
 	}
 
-	return nil, keeper.getCallById(ctx, id)
+	return keeper.getCallById(ctx, id), nil
 }
 
 // Check if call exists
@@ -52,8 +58,13 @@ func (keeper Keeper) HasCall(ctx sdk.Context, id uint64) bool {
 
 // Get last call id
 func (keeper Keeper) GetLastId(ctx sdk.Context) uint64  {
-	id := keeper.getNextCallId(ctx) - 1
-	return id
+	id := keeper.getNextCallId(ctx)
+
+	if id == 0 {
+		return id
+	}
+
+	return id-1
 }
 
 // Save new call

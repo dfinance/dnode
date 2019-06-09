@@ -73,7 +73,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 			keeper.saveCallById(ctx, callId, call)
 
 			// remove proposal from queue
-			keeper.removeCallFromQueue(ctx, callId, call.GetHeight())
+			keeper.removeCallFromQueue(ctx, callId, call.Height)
 		}
 	}
 
@@ -92,7 +92,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 			call.Rejected = true
 
 			keeper.saveCallById(ctx, callId, call)
-			keeper.removeCallFromQueue(ctx, callId, call.GetHeight())
+			keeper.removeCallFromQueue(ctx, callId, call.Height)
 
 			resTags = resTags.AppendTag("reject-call", fmt.Sprintf("%d", callId))
 
