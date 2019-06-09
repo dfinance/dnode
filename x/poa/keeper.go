@@ -109,6 +109,7 @@ func (keeper Keeper) addValidatorToList(ctx sdk.Context, validator types.Validat
 	keeper.storeValidatorsList(ctx, validators)
 }
 
+// Remove validator from validator list by address
 func (keeper Keeper) removeValidatorFromList(ctx sdk.Context, address sdk.AccAddress) {
 	validators := keeper.getValidatorsList(ctx)
 
@@ -132,6 +133,7 @@ func (keeper Keeper) removeValidatorFromList(ctx sdk.Context, address sdk.AccAdd
 	}
 }
 
+// Get validators list
 func (keeper Keeper) getValidatorsList(ctx sdk.Context) types.Validators {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -151,6 +153,7 @@ func (keeper Keeper) getValidatorsList(ctx sdk.Context) types.Validators {
 	return validators
 }
 
+// Store validators list
 func (keeper Keeper) storeValidatorsList(ctx sdk.Context, validators types.Validators) {
 	store := ctx.KVStore(keeper.storeKey)
 	store.Set(types.ValidatorsListKey, keeper.cdc.MustMarshalBinaryBare(validators))
