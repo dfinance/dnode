@@ -98,7 +98,7 @@ Before we start managing validators by PoA, let's remember that minimum amount o
 
 To add new validator use next command:
 
-    wbcli tx validators ms-add-validator [validator-address] [eth-address] --validator-1
+    wbcli tx poa ms-add-validator [validator-address] [eth-address] --validator-1
 
 Where:
 
@@ -107,11 +107,25 @@ Where:
 
 To remove:
 
-    wbcli tx validators ms-remove-validator [validator-address] --from validator1
+    wbcli tx poa ms-remove-validator [validator-address] --from validator1
 
 To replace:
 
-    wbcli tx validators ms-replace-validator [old-address] [new-address] [eth-address] --from validator-1
+    wbcli tx poa ms-replace-validator [old-address] [new-address] [eth-address] --from validator-1
+
+To get validators list (include their amount and required confirmations amount to execute call):
+
+    wbcli query poa validators
+
+To get minimum/maximum validators amount:
+
+    wbcli query poa minmax
+
+To get validator:
+
+    wbcli query poa validator [address]
+
+Where `[address]` is Bech32 Cosmos address.
 
 ## Confirm multisignature call
 
@@ -120,7 +134,7 @@ by other validators:
 
     wbcli tx multisig confirm-call [call-id]
 
-Once call submited under multisignature, there is `86400` blocks interval to confirm it by other validators, if call
+Once call submited under multisignature, there is **86400** blocks interval to confirm it by other validators, if call
 not confirmed by that time, it will be marked as rejected.
 
 To revoke confirmation from call:
@@ -129,17 +143,33 @@ To revoke confirmation from call:
 
 Once call reaches **N/2+1** amount of confirmations, message inside call will be executed.
 
+To get call information:
+
+    wbcli query multisig call [call-id]
+
+To get calls amount:
+
+    wbcli query multisig lastId
+
 ## Issuing new currency by multisig
 
 To issue new currency:
 
     wbcli tx currencies ms-issue-currency [symbol] [amount] [decimals]  --from validators1
 
-## Destroy currency
-
 To destroy currency from any account call:
 
     wbcli tx currencies destroy-currency [symbol] [amount] --from account
+
+To get issued currencies demons/symbols:
+
+    wbcli query currencies demons
+
+To get specific currency info:
+
+    wbcli query currency [symbol]
+
+Where `[symbol]` is currency symbol/denom.
 
 # Docs
 
