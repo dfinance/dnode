@@ -1,6 +1,9 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"fmt"
+)
 
 const (
 	ModuleName 	  				      	  = "currencies"
@@ -11,5 +14,12 @@ const (
 )
 
 var (
-	ValidatorsCountKey = []byte("validators_count")
+	DenomListKey = []byte("denoms")
 )
+
+// Key for storing currency
+func GetCurrencyKey(symbol string) []byte {
+	return []byte(fmt.Sprintf("currency:%s", symbol))
+}
+
+type Denoms []string

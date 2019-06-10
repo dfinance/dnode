@@ -21,6 +21,7 @@ import (
 	"wings-blockchain/x/poa"
 	poaTypes "wings-blockchain/x/poa/types"
 	poaQuerier "wings-blockchain/x/poa/queries"
+	ccQuerier "wings-blockchain/x/currencies/queries"
 	msKeeper "wings-blockchain/x/multisig/keeper"
 	msQuerier "wings-blockchain/x/multisig/queries"
 	"wings-blockchain/x/multisig"
@@ -137,7 +138,8 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	app.QueryRouter().
 		AddRoute("acc", auth.NewQuerier(app.accountKeeper)).
 		AddRoute("multisig", msQuerier.NewQuerier(app.msKeeper)).
-		AddRoute("poa", poaQuerier.NewQuerier(app.poaKeeper))
+		AddRoute("poa", poaQuerier.NewQuerier(app.poaKeeper)).
+		AddRoute("currencies", ccQuerier.NewQuerier(app.currenciesKeeper))
 
 	// Init end blockers
 	app.SetEndBlocker(InitEndBlockers(app.msKeeper, app.poaKeeper))

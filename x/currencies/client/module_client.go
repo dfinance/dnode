@@ -25,6 +25,12 @@ func (mc ModuleClient) GetQueryCmd() *cobra.Command {
 		Short: "Querying commands for the currencies module",
 	}
 
+	currenciesQueryCmd.AddCommand(
+		client.GetCommands(
+			cli.GetDenoms("currencies", mc.cdc),
+			cli.GetCurrency("currencies", mc.cdc),
+		)...)
+
 	return currenciesQueryCmd
 }
 
