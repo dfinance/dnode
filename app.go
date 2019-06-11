@@ -18,33 +18,44 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"wings-blockchain/x/currencies"
+	ccQuerier "wings-blockchain/x/currencies/queries"
+	"wings-blockchain/x/multisig"
+	msKeeper "wings-blockchain/x/multisig/keeper"
+	msQuerier "wings-blockchain/x/multisig/queries"
+	"wings-blockchain/x/poa"
+	poaQuerier "wings-blockchain/x/poa/queries"
+	poaTypes "wings-blockchain/x/poa/types"
 )
 
 const (
-	appName = "nscc"
+	appName = "wb"
 )
 
-type nameServiceApp struct {
+type WbServiceApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
 	keyMain          *sdk.KVStoreKey
 	keyAccount       *sdk.KVStoreKey
 	keyNS            *sdk.KVStoreKey
-	keyCC		     *sdk.KVStoreKey
+	keyCC            *sdk.KVStoreKey
 	keyFeeCollection *sdk.KVStoreKey
 	keyParams        *sdk.KVStoreKey
 	tkeyParams       *sdk.TransientStoreKey
+	keyPoa           *sdk.KVStoreKey
+	keyMS            *sdk.KVStoreKey
 
 	accountKeeper       auth.AccountKeeper
 	bankKeeper          bank.Keeper
 	feeCollectionKeeper auth.FeeCollectionKeeper
 	paramsKeeper        params.Keeper
 	currenciesKeeper    currencies.Keeper
+	poaKeeper           poa.Keeper
+	msKeeper            msKeeper.Keeper
 }
 
-// NewNameServiceApp is a constructor function for nameServiceApp
-func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
+// NewWbServiceApp is a constructor function for wings blockchain
+func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -53,16 +64,18 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc))
 
 	// Here you initialize your application with the store keys it requires
-	var app = &nameServiceApp{
+	var app = &WbServiceApp{
 		BaseApp: bApp,
 		cdc:     cdc,
 
 		keyMain:          sdk.NewKVStoreKey("main"),
 		keyAccount:       sdk.NewKVStoreKey("acc"),
-		keyCC:	  		  sdk.NewKVStoreKey("cc"),
+		keyCC:            sdk.NewKVStoreKey("cc"),
 		keyFeeCollection: sdk.NewKVStoreKey("fee_collection"),
 		keyParams:        sdk.NewKVStoreKey("params"),
 		tkeyParams:       sdk.NewTransientStoreKey("transient_params"),
+		keyPoa:           sdk.NewKVStoreKey("poa"),
+		keyMS:            sdk.NewKVStoreKey("multisig"),
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
@@ -93,18 +106,43 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		app.cdc,
 	)
 
+	// Initializing validators module
+	app.poaKeeper = poa.NewKeeper(
+		app.keyPoa,
+		app.cdc,
+		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
+	)
+
+	// Initializing multisig router
+	msRouter := msKeeper.NewRouter()
+	msRouter.AddRoute("poa", poa.NewMsHandler(app.poaKeeper))
+	msRouter.AddRoute("currencies", currencies.NewMsHandler(app.currenciesKeeper))
+
+	// Initializing ms module
+	app.msKeeper = msKeeper.NewKeeper(
+		app.keyMS,
+		app.cdc,
+		msRouter,
+	)
+
 	// The AnteHandler handles signature verification and transaction pre-processing
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.feeCollectionKeeper))
 
 	// The app.Router is the main transaction router where each module registers its routes
-	// Register the bank and nameservice routes here
+	// Register the bank, currencies,  routes here
 	app.Router().
 		AddRoute("bank", bank.NewHandler(app.bankKeeper)).
-		AddRoute("currencies", currencies.NewHandler(app.currenciesKeeper))
+		AddRoute("multisig", multisig.NewHandler(app.msKeeper, app.poaKeeper))
 
 	// The app.QueryRouter is the main query router where each module registers its routes
 	app.QueryRouter().
-		AddRoute("acc", auth.NewQuerier(app.accountKeeper))
+		AddRoute("acc", auth.NewQuerier(app.accountKeeper)).
+		AddRoute("multisig", msQuerier.NewQuerier(app.msKeeper)).
+		AddRoute("poa", poaQuerier.NewQuerier(app.poaKeeper)).
+		AddRoute("currencies", ccQuerier.NewQuerier(app.currenciesKeeper))
+
+	// Init end blockers
+	app.SetEndBlocker(InitEndBlockers(app.msKeeper, app.poaKeeper))
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.initChainer)
@@ -116,6 +154,8 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		app.keyFeeCollection,
 		app.keyParams,
 		app.tkeyParams,
+		app.keyPoa,
+		app.keyMS,
 	)
 
 	err := app.LoadLatestVersion(app.keyMain)
@@ -126,18 +166,37 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 	return app
 }
 
-// GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
-type GenesisState struct {
-	AuthData auth.GenesisState   `json:"auth"`
-	BankData bank.GenesisState   `json:"bank"`
-	Accounts []*auth.BaseAccount `json:"accounts"`
+func InitEndBlockers(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.EndBlocker {
+	return func(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+		tags := msKeeper.EndBlocker(ctx, keeper, poaKeeper)
+
+		return abci.ResponseEndBlock{
+			Tags: tags,
+		}
+	}
 }
 
-func (app *nameServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+// GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
+type GenesisState struct {
+	AuthData      auth.GenesisState     `json:"auth"`
+	BankData      bank.GenesisState     `json:"bank"`
+	Accounts      []*auth.BaseAccount   `json:"accounts"`
+	PoAValidators []*poaTypes.Validator `json:"poa_validators"`
+}
+
+// Initializing genesis chainer
+func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	stateJSON := req.AppStateBytes
 
 	genesisState := new(GenesisState)
 	err := app.cdc.UnmarshalJSON(stateJSON, genesisState)
+	if err != nil {
+		panic(err)
+	}
+
+	app.poaKeeper.SetParams(ctx, poaTypes.DefaultParams())
+	err = app.poaKeeper.InitGenesis(ctx, genesisState.PoAValidators)
+
 	if err != nil {
 		panic(err)
 	}
@@ -154,7 +213,7 @@ func (app *nameServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChai
 }
 
 // ExportAppStateAndValidators does the things
-func (app *nameServiceApp) ExportAppStateAndValidators() (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
+func (app *WbServiceApp) ExportAppStateAndValidators() (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
 	ctx := app.NewContext(true, abci.Header{})
 	accounts := []*auth.BaseAccount{}
 
@@ -190,8 +249,10 @@ func MakeCodec() *codec.Codec {
 	auth.RegisterCodec(cdc)
 	bank.RegisterCodec(cdc)
 	currencies.RegisterCodec(cdc)
+	poa.RegisterCodec(cdc)
 	staking.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
+	multisig.RegisterCodec(cdc)
 	return cdc
 }

@@ -3,11 +3,11 @@ package cli
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
-	"github.com/cosmos/cosmos-sdk/client/context"
-	context2 "github.com/cosmos/cosmos-sdk/x/auth/client/txbuilder"
+	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
+	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/client/txbuilder"
 	"github.com/cosmos/cosmos-sdk/client/utils"
 	"strconv"
-	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/x/currencies/msgs"
 )
 
@@ -18,8 +18,8 @@ func PostIssueCurrency(cdc *codec.Codec) *cobra.Command {
 		Short: "issue new currency",
 		Args:  cobra.ExactArgs(3),
 		RunE:  func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
-			txBldr := context2.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
 			if err := cliCtx.EnsureAccountExists(); err != nil {
 				return err
@@ -46,7 +46,7 @@ func PostIssueCurrency(cdc *codec.Codec) *cobra.Command {
 
 			cliCtx.PrintResponse = true
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []types.Msg{msg}, false)
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
 		},
 	}
 }
@@ -55,11 +55,11 @@ func PostIssueCurrency(cdc *codec.Codec) *cobra.Command {
 func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use: 	"destroy-currency [symbol] [amount]",
-		Short:  "destory issued currency",
+		Short:  "destroy issued currency",
 		Args: 	cobra.ExactArgs(2),
 		RunE:   func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
-			txBldr := context2.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
 			if err := cliCtx.EnsureAccountExists(); err != nil {
 				return err
@@ -80,7 +80,7 @@ func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 
 			cliCtx.PrintResponse = true
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []types.Msg{msg}, false)
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
 		},
 	}
 }
