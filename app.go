@@ -18,13 +18,13 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"wings-blockchain/x/currencies"
-	"wings-blockchain/x/poa"
-	poaTypes "wings-blockchain/x/poa/types"
-	poaQuerier "wings-blockchain/x/poa/queries"
 	ccQuerier "wings-blockchain/x/currencies/queries"
+	"wings-blockchain/x/multisig"
 	msKeeper "wings-blockchain/x/multisig/keeper"
 	msQuerier "wings-blockchain/x/multisig/queries"
-	"wings-blockchain/x/multisig"
+	"wings-blockchain/x/poa"
+	poaQuerier "wings-blockchain/x/poa/queries"
+	poaTypes "wings-blockchain/x/poa/types"
 )
 
 const (
@@ -38,20 +38,20 @@ type WbServiceApp struct {
 	keyMain          *sdk.KVStoreKey
 	keyAccount       *sdk.KVStoreKey
 	keyNS            *sdk.KVStoreKey
-	keyCC		     *sdk.KVStoreKey
+	keyCC            *sdk.KVStoreKey
 	keyFeeCollection *sdk.KVStoreKey
 	keyParams        *sdk.KVStoreKey
 	tkeyParams       *sdk.TransientStoreKey
 	keyPoa           *sdk.KVStoreKey
-	keyMS			 *sdk.KVStoreKey
+	keyMS            *sdk.KVStoreKey
 
 	accountKeeper       auth.AccountKeeper
 	bankKeeper          bank.Keeper
 	feeCollectionKeeper auth.FeeCollectionKeeper
 	paramsKeeper        params.Keeper
 	currenciesKeeper    currencies.Keeper
-	poaKeeper		    poa.Keeper
-	msKeeper			msKeeper.Keeper
+	poaKeeper           poa.Keeper
+	msKeeper            msKeeper.Keeper
 }
 
 // NewWbServiceApp is a constructor function for wings blockchain
@@ -70,11 +70,11 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 
 		keyMain:          sdk.NewKVStoreKey("main"),
 		keyAccount:       sdk.NewKVStoreKey("acc"),
-		keyCC:	  		  sdk.NewKVStoreKey("cc"),
+		keyCC:            sdk.NewKVStoreKey("cc"),
 		keyFeeCollection: sdk.NewKVStoreKey("fee_collection"),
 		keyParams:        sdk.NewKVStoreKey("params"),
 		tkeyParams:       sdk.NewTransientStoreKey("transient_params"),
-		keyPoa:		      sdk.NewKVStoreKey("poa"),
+		keyPoa:           sdk.NewKVStoreKey("poa"),
 		keyMS:            sdk.NewKVStoreKey("multisig"),
 	}
 
@@ -178,9 +178,9 @@ func InitEndBlockers(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.EndBlocke
 
 // GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
 type GenesisState struct {
-	AuthData auth.GenesisState   `json:"auth"`
-	BankData bank.GenesisState   `json:"bank"`
-	Accounts []*auth.BaseAccount `json:"accounts"`
+	AuthData      auth.GenesisState     `json:"auth"`
+	BankData      bank.GenesisState     `json:"bank"`
+	Accounts      []*auth.BaseAccount   `json:"accounts"`
 	PoAValidators []*poaTypes.Validator `json:"poa_validators"`
 }
 
