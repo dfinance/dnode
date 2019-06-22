@@ -31,7 +31,7 @@ Before we start you should have a correct 'GOPATH', 'GOROOT' environment variabl
 
 To install fetch this repository:
 
-    git clone git@github.com:WingsDao/blockchain-relay-layer.git
+    git clone git@github.com:WingsDao/wings-blockchain.git
 
 And let's build both daemon and cli:
 

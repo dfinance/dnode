@@ -1,159 +1,166 @@
 package main
 
 import (
-	"os"
-	"path"
+    "os"
+    "path"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/keys"
-	"github.com/cosmos/cosmos-sdk/client/lcd"
-	"github.com/cosmos/cosmos-sdk/client/rpc"
-	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/libs/cli"
+    "github.com/cosmos/cosmos-sdk/client"
+    "github.com/cosmos/cosmos-sdk/client/keys"
+    "github.com/cosmos/cosmos-sdk/client/lcd"
+    "github.com/cosmos/cosmos-sdk/client/rpc"
+    "github.com/cosmos/cosmos-sdk/client/tx"
+    "github.com/spf13/cobra"
+    "github.com/spf13/viper"
+    amino "github.com/tendermint/go-amino"
+    "github.com/tendermint/tendermint/libs/cli"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
-	auth "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
-	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
-	bank "github.com/cosmos/cosmos-sdk/x/bank/client/rest"
-	app "wings-blockchain"
-	ccClient "wings-blockchain/x/currencies/client"
-	poaClient "wings-blockchain/x/poa/client"
-	msClient "wings-blockchain/x/multisig/client"
+    sdk "github.com/cosmos/cosmos-sdk/types"
+    authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
+    auth "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
+    bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
+    bank "github.com/cosmos/cosmos-sdk/x/bank/client/rest"
+    app "wings-blockchain"
+    ccClient "wings-blockchain/x/currencies/client"
+    poaClient "wings-blockchain/x/poa/client"
+    msClient "wings-blockchain/x/multisig/client"
+
+    stakingRest "github.com/cosmos/cosmos-sdk/x/staking/client/rest"
+    staking "github.com/cosmos/cosmos-sdk/x/staking/client"
+    st "github.com/cosmos/cosmos-sdk/x/staking"
 )
 
 const (
-	storeAcc = "acc"
-	storeCC  = "currencies"
-	storePoa = "poa"
-	storeMC	 = "multisig"
+    storeAcc     = "acc"
+    storeStaking = "staking"
+    storeCC      = "currencies"
+    storeMC	     = "multisig"
+    storePoa     = "poa"
 )
 
 var defaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
 
 func main() {
-	cobra.EnableCommandSorting = false
+    cobra.EnableCommandSorting = false
 
-	cdc := app.MakeCodec()
+    cdc := app.MakeCodec()
 
-	// Read in the configuration file for the sdk
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(sdk.Bech32PrefixAccAddr, sdk.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(sdk.Bech32PrefixValAddr, sdk.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
-	config.Seal()
+    // Read in the configuration file for the sdk
+    config := sdk.GetConfig()
+    config.SetBech32PrefixForAccount(sdk.Bech32PrefixAccAddr, sdk.Bech32PrefixAccPub)
+    config.SetBech32PrefixForValidator(sdk.Bech32PrefixValAddr, sdk.Bech32PrefixValPub)
+    config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
+    config.Seal()
 
-	mc := []sdk.ModuleClients{
-		ccClient.NewModuleClient(storeCC, cdc),
-		poaClient.NewModuleClient(storePoa, cdc),
-		msClient.NewModuleClient(storeMC, cdc),
-	}
+    mc := []sdk.ModuleClients{
+        ccClient.NewModuleClient(storeCC, cdc),
+        staking.NewModuleClient(st.StoreKey, cdc),
+        poaClient.NewModuleClient(storePoa, cdc),
+        msClient.NewModuleClient(storeMC, cdc),
+    }
 
-	rootCmd := &cobra.Command{
-		Use:   "wbcli",
-		Short: "wings blockchain client",
-	}
+    rootCmd := &cobra.Command{
+        Use:   "wbcli",
+        Short: "wings blockchain client",
+    }
 
-	// Add --chain-id to persistent flags and mark it required
-	rootCmd.PersistentFlags().String(client.FlagChainID, "", "Chain ID of tendermint node")
-	rootCmd.PersistentPreRunE = func(_ *cobra.Command, _ []string) error {
-		return initConfig(rootCmd)
-	}
+    // Add --chain-id to persistent flags and mark it required
+    rootCmd.PersistentFlags().String(client.FlagChainID, "", "Chain ID of tendermint node")
+    rootCmd.PersistentPreRunE = func(_ *cobra.Command, _ []string) error {
+        return initConfig(rootCmd)
+    }
 
-	// Construct Root Command
-	rootCmd.AddCommand(
-		rpc.StatusCommand(),
-		client.ConfigCmd(defaultCLIHome),
-		queryCmd(cdc, mc),
-		txCmd(cdc, mc),
-		client.LineBreak,
-		lcd.ServeCommand(cdc, registerRoutes),
-		client.LineBreak,
-		keys.Commands(),
-		client.LineBreak,
-	)
+    // Construct Root Command
+    rootCmd.AddCommand(
+        rpc.StatusCommand(),
+        client.ConfigCmd(defaultCLIHome),
+        queryCmd(cdc, mc),
+        txCmd(cdc, mc),
+        client.LineBreak,
+        lcd.ServeCommand(cdc, registerRoutes),
+        client.LineBreak,
+        keys.Commands(),
+        client.LineBreak,
+    )
 
-	executor := cli.PrepareMainCmd(rootCmd, "WB", defaultCLIHome)
-	err := executor.Execute()
-	if err != nil {
-		panic(err)
-	}
+    executor := cli.PrepareMainCmd(rootCmd, "WB", defaultCLIHome)
+    err := executor.Execute()
+    if err != nil {
+        panic(err)
+    }
 }
 
 func registerRoutes(rs *lcd.RestServer) {
-	rs.CliCtx = rs.CliCtx.WithAccountDecoder(rs.Cdc)
-	rpc.RegisterRoutes(rs.CliCtx, rs.Mux)
-	tx.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
-	auth.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, storeAcc)
-	bank.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, rs.KeyBase)
+    rs.CliCtx = rs.CliCtx.WithAccountDecoder(rs.Cdc)
+    rpc.RegisterRoutes(rs.CliCtx, rs.Mux)
+    tx.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
+    auth.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, storeAcc)
+    bank.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, rs.KeyBase)
+    stakingRest.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, rs.KeyBase)
 }
 
 func queryCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
-	queryCmd := &cobra.Command{
-		Use:     "query",
-		Aliases: []string{"q"},
-		Short:   "Querying subcommands",
-	}
+    queryCmd := &cobra.Command{
+        Use:     "query",
+        Aliases: []string{"q"},
+        Short:   "Querying subcommands",
+    }
 
-	queryCmd.AddCommand(
-		rpc.ValidatorCommand(cdc),
-		rpc.BlockCommand(),
-		tx.SearchTxCmd(cdc),
-		tx.QueryTxCmd(cdc),
-		client.LineBreak,
-		authcmd.GetAccountCmd(storeAcc, cdc),
-	)
+    queryCmd.AddCommand(
+        rpc.ValidatorCommand(cdc),
+        rpc.BlockCommand(),
+        tx.SearchTxCmd(cdc),
+        tx.QueryTxCmd(cdc),
+        client.LineBreak,
+        authcmd.GetAccountCmd(storeAcc, cdc),
+    )
 
-	for _, m := range mc {
-		queryCmd.AddCommand(m.GetQueryCmd())
-	}
+    for _, m := range mc {
+        queryCmd.AddCommand(m.GetQueryCmd())
+    }
 
-	return queryCmd
+    return queryCmd
 }
 
 func txCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
-	txCmd := &cobra.Command{
-		Use:   "tx",
-		Short: "Transactions subcommands",
-	}
+    txCmd := &cobra.Command{
+        Use:   "tx",
+        Short: "Transactions subcommands",
+    }
 
-	txCmd.AddCommand(
-		bankcmd.SendTxCmd(cdc),
-		client.LineBreak,
-		authcmd.GetSignCommand(cdc),
-		tx.GetBroadcastCommand(cdc),
-		client.LineBreak,
-	)
+    txCmd.AddCommand(
+        bankcmd.SendTxCmd(cdc),
+        client.LineBreak,
+        authcmd.GetSignCommand(cdc),
+        tx.GetBroadcastCommand(cdc),
+        client.LineBreak,
+    )
 
-	for _, m := range mc {
-		txCmd.AddCommand(m.GetTxCmd())
-	}
+    for _, m := range mc {
+        txCmd.AddCommand(m.GetTxCmd())
+    }
 
-	return txCmd
+    return txCmd
 }
 
 func initConfig(cmd *cobra.Command) error {
-	home, err := cmd.PersistentFlags().GetString(cli.HomeFlag)
-	if err != nil {
-		return err
-	}
+    home, err := cmd.PersistentFlags().GetString(cli.HomeFlag)
+    if err != nil {
+        return err
+    }
 
-	cfgFile := path.Join(home, "config", "config.toml")
-	if _, err := os.Stat(cfgFile); err == nil {
-		viper.SetConfigFile(cfgFile)
+    cfgFile := path.Join(home, "config", "config.toml")
+    if _, err := os.Stat(cfgFile); err == nil {
+        viper.SetConfigFile(cfgFile)
 
-		if err := viper.ReadInConfig(); err != nil {
-			return err
-		}
-	}
-	if err := viper.BindPFlag(client.FlagChainID, cmd.PersistentFlags().Lookup(client.FlagChainID)); err != nil {
-		return err
-	}
-	if err := viper.BindPFlag(cli.EncodingFlag, cmd.PersistentFlags().Lookup(cli.EncodingFlag)); err != nil {
-		return err
-	}
-	return viper.BindPFlag(cli.OutputFlag, cmd.PersistentFlags().Lookup(cli.OutputFlag))
+        if err := viper.ReadInConfig(); err != nil {
+            return err
+        }
+    }
+    if err := viper.BindPFlag(client.FlagChainID, cmd.PersistentFlags().Lookup(client.FlagChainID)); err != nil {
+        return err
+    }
+    if err := viper.BindPFlag(cli.EncodingFlag, cmd.PersistentFlags().Lookup(cli.EncodingFlag)); err != nil {
+        return err
+    }
+    return viper.BindPFlag(cli.OutputFlag, cmd.PersistentFlags().Lookup(cli.OutputFlag))
 }
