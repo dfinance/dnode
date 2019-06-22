@@ -24,13 +24,18 @@ import (
     poaClient "wings-blockchain/x/poa/client"
     msClient "wings-blockchain/x/multisig/client"
 
+    "github.com/cosmos/cosmos-sdk/x/mint"
+    mintRest "github.com/cosmos/cosmos-sdk/x/mint/client/rest"
+    mintClient "github.com/cosmos/cosmos-sdk/x/mint/client"
+
+    "github.com/cosmos/cosmos-sdk/x/staking"
     stakingRest "github.com/cosmos/cosmos-sdk/x/staking/client/rest"
-    staking "github.com/cosmos/cosmos-sdk/x/staking/client"
-    st "github.com/cosmos/cosmos-sdk/x/staking"
+    stClient "github.com/cosmos/cosmos-sdk/x/staking/client"
 )
 
 const (
     storeAcc     = "acc"
+    storeMint    = "mint"
     storeStaking = "staking"
     storeCC      = "currencies"
     storeMC	     = "multisig"
@@ -53,7 +58,8 @@ func main() {
 
     mc := []sdk.ModuleClients{
         ccClient.NewModuleClient(storeCC, cdc),
-        staking.NewModuleClient(st.StoreKey, cdc),
+        mintClient.NewModuleClient(mint.StoreKey, cdc),
+        stClient.NewModuleClient(staking.StoreKey, cdc),
         poaClient.NewModuleClient(storePoa, cdc),
         msClient.NewModuleClient(storeMC, cdc),
     }
@@ -95,6 +101,7 @@ func registerRoutes(rs *lcd.RestServer) {
     tx.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
     auth.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, storeAcc)
     bank.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, rs.KeyBase)
+    mintRest.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
     stakingRest.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, rs.KeyBase)
 }
 

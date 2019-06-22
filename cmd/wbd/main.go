@@ -14,6 +14,8 @@ import (
     "github.com/cosmos/cosmos-sdk/server"
     "github.com/cosmos/cosmos-sdk/x/auth"
     "github.com/cosmos/cosmos-sdk/x/bank"
+    "github.com/cosmos/cosmos-sdk/x/mint"
+    "github.com/cosmos/cosmos-sdk/x/staking"
 
     "github.com/spf13/cobra"
     "github.com/spf13/viper"
@@ -29,7 +31,7 @@ import (
     cfg "github.com/tendermint/tendermint/config"
     dbm "github.com/tendermint/tendermint/libs/db"
     tmtypes "github.com/tendermint/tendermint/types"
-    staking "github.com/cosmos/cosmos-sdk/x/staking"
+
     "wings-blockchain/helpers"
     "wings-blockchain/x/poa/types"
 )
@@ -89,11 +91,13 @@ func PrintGenesisCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 
             // Add small correction to default genesis state for staking
             stakingGenesis := staking.DefaultGenesisState()
+            stakingGenesis.Params.BondDenom = app.AppDenom
             stakingGenesis.Params.MaxValidators = 31
 
             genesis := app.GenesisState{
                 AuthData:    auth.DefaultGenesisState(),
                 BankData:    bank.DefaultGenesisState(),
+                MintData:    mint.DefaultGenesisState(),
                 StakingData: stakingGenesis,
             }
 
@@ -137,11 +141,13 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 
             // Add small correction to default genesis state for staking
             stakingGenesis := staking.DefaultGenesisState()
+            stakingGenesis.Params.BondDenom = app.AppDenom
             stakingGenesis.Params.MaxValidators = 31
 
             genesis := app.GenesisState{
                 AuthData:    auth.DefaultGenesisState(),
                 BankData:    bank.DefaultGenesisState(),
+                MintData:    mint.DefaultGenesisState(),
                 StakingData: stakingGenesis,
             }
 

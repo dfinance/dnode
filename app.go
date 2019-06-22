@@ -8,6 +8,7 @@ import (
     "github.com/cosmos/cosmos-sdk/codec"
     "github.com/cosmos/cosmos-sdk/x/auth"
     "github.com/cosmos/cosmos-sdk/x/bank"
+    "github.com/cosmos/cosmos-sdk/x/mint"
     "github.com/cosmos/cosmos-sdk/x/params"
     "github.com/cosmos/cosmos-sdk/x/staking"
 
@@ -29,6 +30,7 @@ import (
 
 const (
     appName = "wb"
+    AppDenom = "wings"
 )
 
 type WbServiceApp struct {
@@ -40,6 +42,7 @@ type WbServiceApp struct {
     keyNS            *sdk.KVStoreKey
     keyCC            *sdk.KVStoreKey
     keyStaking       *sdk.KVStoreKey
+    keyMint          *sdk.KVStoreKey
     keyFeeCollection *sdk.KVStoreKey
     keyParams        *sdk.KVStoreKey
     tkeyParams       *sdk.TransientStoreKey
@@ -49,6 +52,7 @@ type WbServiceApp struct {
 
     accountKeeper       auth.AccountKeeper
     bankKeeper          bank.Keeper
+    mintKeeper          mint.Keeper
     stakingKeeper       staking.Keeper
     feeCollectionKeeper auth.FeeCollectionKeeper
     paramsKeeper        params.Keeper
@@ -74,7 +78,8 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
         keyMain:          sdk.NewKVStoreKey("main"),
         keyAccount:       sdk.NewKVStoreKey("acc"),
         keyCC:            sdk.NewKVStoreKey("cc"),
-        keyStaking:      sdk.NewKVStoreKey("staking"),
+        keyMint:          sdk.NewKVStoreKey("mint"),
+        keyStaking:       sdk.NewKVStoreKey("staking"),
         keyFeeCollection: sdk.NewKVStoreKey("fee_collection"),
         keyParams:        sdk.NewKVStoreKey("params"),
         tkeyParams:       sdk.NewTransientStoreKey("transient_params"),
@@ -108,6 +113,14 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
         app.bankKeeper,
         app.paramsKeeper.Subspace(staking.DefaultParamspace),
         staking.DefaultCodespace,
+    )
+
+    app.mintKeeper = mint.NewKeeper(
+        app.cdc,
+        app.keyMint,
+        app.paramsKeeper.Subspace(mint.DefaultParamspace),
+        &app.stakingKeeper,
+        app.feeCollectionKeeper,
     )
 
     // The FeeCollectionKeeper collects transaction fees and renders them to the fee distribution module
@@ -172,6 +185,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
         app.keyParams,
         app.tkeyParams,
         app.tkeyStaking,
+        app.keyMint,
         app.keyPoa,
         app.keyMS,
     )
@@ -198,6 +212,7 @@ func InitEndBlockers(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.EndBlocke
 type GenesisState struct {
     AuthData      auth.GenesisState     `json:"auth"`
     BankData      bank.GenesisState     `json:"bank"`
+    MintData      mint.GenesisState     `json:"mint"`
     StakingData   staking.GenesisState  `json:"staking"`
     Accounts      []*auth.BaseAccount   `json:"accounts"`
     PoAValidators []*poaTypes.Validator `json:"poa_validators"`
@@ -227,6 +242,7 @@ func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 
     auth.InitGenesis(ctx, app.accountKeeper, app.feeCollectionKeeper, genesisState.AuthData)
     bank.InitGenesis(ctx, app.bankKeeper, genesisState.BankData)
+    mint.InitGenesis(ctx, app.mintKeeper, genesisState.MintData)
     staking.InitGenesis(ctx, app.stakingKeeper, genesisState.StakingData)
 
     return abci.ResponseInitChain{}
@@ -252,11 +268,13 @@ func (app *WbServiceApp) ExportAppStateAndValidators() (appState json.RawMessage
     // Force max validators to 31
     stakingGenesis := staking.DefaultGenesisState()
     stakingGenesis.Params.MaxValidators = 31
+    stakingGenesis.Params.BondDenom = AppDenom
 
     genState := GenesisState{
         Accounts:    accounts,
         AuthData:    auth.DefaultGenesisState(),
         BankData:    bank.DefaultGenesisState(),
+        MintData:    mint.DefaultGenesisState(),
         StakingData: stakingGenesis,
     }
 
