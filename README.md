@@ -71,7 +71,7 @@ and then 3 accounts to make them PoA validators, we need at least 3 validators b
 
 Now let's add genesis account and initiate genesis PoA validators:
 
-    wbd add-genesis-account [bank-address] 10000,wings
+    wbd add-genesis-account [bank-address] 10000wings
 
     wbd add-poa-validator [validator-1-address]
     wbd add-poa-validator [validator-2-address]
