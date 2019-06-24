@@ -90,7 +90,7 @@ Now we are ready to launch testnet:
 
 Deposit validators accounts by sending them **WINGS**:
 
-    wbd tx send [validator-n] 10wings --from bank
+    wbcli tx send [validator-n] 10wings --from bank
 
 ## Add/remove/replace validator by multisignature
 
