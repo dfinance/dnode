@@ -73,11 +73,11 @@ Now let's add genesis account and initiate genesis PoA validators:
 
     wbd add-genesis-account [bank-address] 10000wings
 
-    wbd add-poa-validator [validator-1-address]
-    wbd add-poa-validator [validator-2-address]
-    wbd add-poa-validator [validator-3-address]
+    wbd add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
+    wbd add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
+    wbd add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
 
-Replace expressions in brackets with correct addresses, configure chain by Cosmos SDK documentation:
+Replace expressions in brackets with correct addresses, include Ethereum addresses, configure chain by Cosmos SDK documentation:
 
     wbcli config chain-id wings-testnet
     wbcli config output json

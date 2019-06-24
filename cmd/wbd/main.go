@@ -24,11 +24,11 @@ import (
 
 	gaiaInit "github.com/cosmos/cosmos-sdk/cmd/gaia/init"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	app "wings-blockchain"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
+	app "wings-blockchain"
 	"wings-blockchain/helpers"
 	"wings-blockchain/x/poa/types"
 )
@@ -54,7 +54,7 @@ func main() {
 
 	rootCmd.AddCommand(InitCmd(ctx, cdc))
 	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc))
-	rootCmd.AddCommand(AddPoAValidatorCmd(ctx, cdc))
+	rootCmd.AddCommand(AddGenesisPoAValidatorCmd(ctx, cdc))
 	server.AddCommands(ctx, cdc, rootCmd, newApp, appExporter())
 
 	// prepare and add flags
@@ -139,12 +139,12 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 }
 
 // Add PoA validator via cli
-func AddPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
+func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:	"add-poa-validator [address] [ethAddress]",
-		Short:  "Adds poa validator go genesis file",
-		Args:   cobra.ExactArgs(2),
-		RunE:	func(_ *cobra.Command, args []string) error {
+		Use:   "add-genesis-poa-validator [address] [ethAddress]",
+		Short: "Adds poa validator go genesis file",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(_ *cobra.Command, args []string) error {
 			valAddr, err := sdk.AccAddressFromBech32(args[0])
 
 			if err != nil {
