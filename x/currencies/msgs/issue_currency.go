@@ -13,18 +13,16 @@ type MsgIssueCurrency struct {
 	Amount    sdk.Int		  `json:"amount"`
 	Decimals  int8			  `json:"decimals"`
 	Recipient sdk.AccAddress `json:"recipient"`
-	Creator   sdk.AccAddress `json:"creator"`
 	IssueID   string         `json:"issueID"`
 }
 
 // Create new issue currency message
-func NewMsgIssueCurrency(symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, creator sdk.AccAddress, issueID string) MsgIssueCurrency {
+func NewMsgIssueCurrency(symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) MsgIssueCurrency {
 	return MsgIssueCurrency{
 		Symbol:    symbol,
 		Amount:    amount,
 		Decimals:  decimals,
 		Recipient: recipient,
-		Creator:   creator,
 		IssueID:   issueID,
 	}
 }
@@ -44,10 +42,6 @@ func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 	if msg.Recipient.Empty() {
 		return sdk.ErrInvalidAddress(msg.Recipient.String())
 	}
-
-	if msg.Creator.Empty() {
-	    return sdk.ErrInvalidAddress(msg.Creator.String())
-    }
 
 	if len(msg.Symbol) == 0 {
 		return types.ErrWrongSymbol(msg.Symbol)
@@ -83,5 +77,5 @@ func (msg MsgIssueCurrency) GetSignBytes() []byte {
 
 // Check who should sign message
 func (msg MsgIssueCurrency) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Creator}
+	return []sdk.AccAddress{}
 }

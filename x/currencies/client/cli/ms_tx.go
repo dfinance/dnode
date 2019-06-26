@@ -11,14 +11,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/x/currencies/msgs"
 	msMsg "wings-blockchain/x/multisig/msgs"
+	"fmt"
 )
 
 // Issue new currency command
 func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "ms-issue-currency [symbol] [amount] [decimals]",
+		Use:   "ms-issue-currency [symbol] [amount] [decimals] [issueID]",
 		Short: "issue new currency via multisignature",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		RunE:  func(cmd *cobra.Command, args []string) error {
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -27,10 +28,10 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			amount, err := strconv.ParseInt(args[1], 10, 64)
+			amount, isOk := sdk.NewIntFromString(args[1])
 
-			if err != nil {
-				return err
+			if !isOk {
+				return fmt.Errorf("Can't parse int %s", args[1])
 			}
 
 			decimals, err := strconv.ParseInt(args[2], 10, 8)
@@ -39,7 +40,7 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msgIssCurr := msgs.NewMsgIssueCurrency(args[0], amount, int8(decimals), cliCtx.GetFromAddress())
+			msgIssCurr := msgs.NewMsgIssueCurrency(args[0], amount, int8(decimals), cliCtx.GetFromAddress(), args[3])
 			msg := msMsg.NewMsgSubmitCall(msgIssCurr, cliCtx.GetFromAddress())
 
 			err = msg.ValidateBasic()

@@ -10,8 +10,6 @@ import (
 func NewHandler(keeper Keeper) sdk.Handler {
 	return func (ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
-		case msgs.MsgIssueCurrency:
-			return handleMsgIssueCurrency(ctx, keeper, msg)
 
 		case msgs.MsgDestroyCurrency:
 			return handleMsgDestroy(ctx, keeper, msg)
@@ -21,17 +19,6 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
-}
-
-// Handle issue message
-func handleMsgIssueCurrency(ctx sdk.Context, keeper Keeper, msg msgs.MsgIssueCurrency) sdk.Result {
-	err := keeper.IssueCurrency(ctx, msg.Symbol, msg.Amount, msg.Decimals, msg.Recipient, msg.IssueID)
-
-	if err != nil {
-		return err.Result()
-	}
-
-	return sdk.Result{}
 }
 
 // Handle destroy message
