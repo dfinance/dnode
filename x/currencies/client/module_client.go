@@ -27,7 +27,7 @@ func (mc ModuleClient) GetQueryCmd() *cobra.Command {
 
 	currenciesQueryCmd.AddCommand(
 		client.GetCommands(
-			cli.GetDenoms("currencies", mc.cdc),
+			cli.GetIssue("currencies", mc.cdc),
 			cli.GetCurrency("currencies", mc.cdc),
 		)...)
 

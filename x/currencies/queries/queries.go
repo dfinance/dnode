@@ -9,15 +9,15 @@ import (
 
 const (
 	QueryGetCurrency   = "currency"
-	QueryDenoms  	   = "denoms"
+	QueryIssue  	   = "issue"
 )
 
 // Querier for currencies module
 func NewQuerier(keeper currencies.Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
 		switch path[0] {
-		case QueryDenoms:
-			return queryGetDenoms(keeper, ctx)
+		case QueryIssue:
+			return queryGetIssue(keeper, ctx, path[1:])
 
 		case QueryGetCurrency:
 			return queryGetCurrency(keeper, ctx, path[1:])
@@ -46,12 +46,12 @@ func queryGetCurrency(keeper currencies.Keeper, ctx sdk.Context, params []string
 	return bz, nil
 }
 
-// Query handler to get denoms
-func queryGetDenoms(keeper currencies.Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
-	denomsRes := QueryDenomsRes{}
-	denomsRes.Denoms = keeper.GetDenoms(ctx)
+// Query handler to get currencies
+func queryGetIssue(keeper currencies.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
+	issueRes := QueryIssueRes{}
+	issueRes.Issue = keeper.GetIssue(ctx, params[0])
 
-	bz, err := codec.MarshalJSONIndent(keeper.GetCDC(), denomsRes)
+	bz, err := codec.MarshalJSONIndent(keeper.GetCDC(), issueRes)
 
 	if err != nil {
 		panic(err)

@@ -9,19 +9,19 @@ import (
 )
 
 // Get denoms list
-func GetDenoms(queryRoute string, cdc *codec.Codec) *cobra.Command {
+func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "denoms",
-		Short: "get denoms list",
+		Use:   "issue",
+		Short: "get issue by id",
 		RunE:  func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/denoms", queryRoute), nil)
+			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/issue", queryRoute), nil)
 			if err != nil {
 				return err
 			}
 
-			var out queries.QueryDenomsRes
+			var out queries.QueryIssueRes
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},

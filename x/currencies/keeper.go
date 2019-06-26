@@ -24,7 +24,7 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *cdcCodec.Code
 }
 
 // Destroy currency
-func (keeper Keeper) DestroyCurrency(ctx sdk.Context, symbol string, amount int64, sender sdk.AccAddress) sdk.Error {
+func (keeper Keeper) DestroyCurrency(ctx sdk.Context, symbol string, amount sdk.Int, sender sdk.AccAddress) sdk.Error {
 	store := ctx.KVStore(keeper.storeKey)
 
 	if !keeper.doesCurrencyExists(store, symbol) {
@@ -33,7 +33,7 @@ func (keeper Keeper) DestroyCurrency(ctx sdk.Context, symbol string, amount int6
 
 	keeper.reduceSupply(store, symbol, amount)
 
-	newCoin := sdk.NewInt64Coin(symbol, amount)
+	newCoin := sdk.NewCoin(symbol, amount)
 
 	_, _, err := keeper.coinKeeper.SubtractCoins(ctx, sender, sdk.Coins{newCoin})
 
@@ -41,38 +41,39 @@ func (keeper Keeper) DestroyCurrency(ctx sdk.Context, symbol string, amount int6
 }
 
 // Issue currency
-func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount int64, decimals int8, creator sdk.AccAddress) sdk.Error {
+func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) sdk.Error {
 	store := ctx.KVStore(keeper.storeKey)
+
+	if keeper.hasIssue(store, issueID) {
+	    return types.ErrExistsIssue(issueID)
+    }
 
 	var isNew bool
 
 	if isNew = keeper.doesCurrencyExists(store, symbol); !isNew {
-		currency := types.NewCurrency(symbol, amount, decimals, creator)
+		currency := types.NewCurrency(symbol, amount, decimals)
 		keeper.storeCurrency(store, currency)
-		keeper.storeDenom(ctx, currency.Symbol)
 	} else {
+	    currency := keeper.getCurrency(store, symbol)
+
+	    if currency.Decimals != decimals {
+	        return types.ErrIncorrectDecimals(currency.Decimals, decimals, symbol)
+        }
+
 		keeper.increaseSupply(store, symbol, amount)
 	}
 
-	newCoin := sdk.NewInt64Coin(symbol, amount)
+	issue := types.NewIssue(symbol, amount, recipient)
 
-	_, _, err := keeper.coinKeeper.AddCoins(ctx, creator, sdk.Coins{newCoin})
+	keeper.storeIssue(store, issueID, issue)
+
+	newCoin := sdk.NewCoin(symbol, amount)
+
+	_, _, err := keeper.coinKeeper.AddCoins(ctx, recipient, sdk.Coins{newCoin})
 
 	return err
 }
 
-// Get denoms
-func (keeper Keeper) GetDenoms(ctx sdk.Context) types.Denoms {
-	store := ctx.KVStore(keeper.storeKey)
-
-	var denoms types.Denoms
-
-	bs := store.Get(types.DenomListKey)
-
-	keeper.cdc.MustUnmarshalBinaryBare(bs, &denoms)
-
-	return denoms
-}
 
 // Get currency by denom/symbol
 func (keeper Keeper) GetCurrency(ctx sdk.Context, symbol string) types.Currency {
@@ -92,19 +93,19 @@ func (keeper Keeper) doesCurrencyExists(store sdk.KVStore, symbol string) bool {
 }
 
 // Increase currency supply by symbol
-func (keeper Keeper) increaseSupply(store sdk.KVStore, symbol string, amount int64) {
+func (keeper Keeper) increaseSupply(store sdk.KVStore, symbol string, amount sdk.Int) {
 	currency := keeper.getCurrency(store, symbol)
 
-	currency.Supply += amount
+	currency.Supply = currency.Supply.Add(amount)
 
 	keeper.storeCurrency(store, currency)
 }
 
 // Reduce currency supply by symbol
-func (keeper Keeper) reduceSupply(store sdk.KVStore, symbol string, amount int64) {
+func (keeper Keeper) reduceSupply(store sdk.KVStore, symbol string, amount sdk.Int) {
 	currency := keeper.getCurrency(store, symbol)
 
-	currency.Supply -= amount
+	currency.Supply = currency.Supply.Sub(amount)
 
 	keeper.storeCurrency(store, currency)
 }
@@ -124,36 +125,29 @@ func (keeper Keeper) getCurrency(store sdk.KVStore, symbol string) types.Currenc
 	return currency
 }
 
-// Store denom if not exists
-func (keeper Keeper) storeDenom(ctx sdk.Context, symbol string) {
-	store := ctx.KVStore(keeper.storeKey)
-
-	var denoms types.Denoms
-
-	if store.Has(types.DenomListKey) {
-		bs := store.Get(types.DenomListKey)
-
-		keeper.cdc.MustUnmarshalBinaryBare(bs, &denoms)
-
-		found := false
-		for _, denom := range denoms {
-			if denom == symbol {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			denoms = append(denoms, symbol)
-		}
-	} else {
-		denoms = types.Denoms{symbol}
-	}
-
-	store.Set(types.DenomListKey, keeper.cdc.MustMarshalBinaryBare(denoms))
-}
-
 // Get codec
 func (keeper Keeper) GetCDC() *cdcCodec.Codec {
 	return keeper.cdc
+}
+
+// Get currency issue by id
+func (keeper Keeper) GetIssue(ctx sdk.Context, issueID string) types.Issue {
+    store := ctx.KVStore(keeper.storeKey)
+
+    bz    := store.Get(types.GetIssuesKey(issueID))
+
+    var issue types.Issue
+    keeper.cdc.MustUnmarshalBinaryBare(bz, &issue)
+
+    return issue
+}
+
+// Store currency issue by id
+func (keeper Keeper) storeIssue(store sdk.KVStore, issueID string, issue types.Issue) {
+    store.Set(types.GetIssuesKey(issueID), keeper.cdc.MustMarshalBinaryBare(issue))
+}
+
+// Check if issue exists by id
+func (keeper Keeper) hasIssue(store sdk.KVStore, issueID string) bool {
+    return store.Has(types.GetIssuesKey(issueID))
 }

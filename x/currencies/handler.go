@@ -25,7 +25,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 
 // Handle issue message
 func handleMsgIssueCurrency(ctx sdk.Context, keeper Keeper, msg msgs.MsgIssueCurrency) sdk.Result {
-	err := keeper.IssueCurrency(ctx, msg.Symbol, msg.Amount, msg.Decimals, msg.Creator)
+	err := keeper.IssueCurrency(ctx, msg.Symbol, msg.Amount, msg.Decimals, msg.Recipient, msg.IssueID)
 
 	if err != nil {
 		return err.Result()
