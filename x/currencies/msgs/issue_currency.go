@@ -10,8 +10,8 @@ import (
 // IssueID could be txHash of transaction in another blockchain.
 type MsgIssueCurrency struct {
 	Symbol    string         `json:"symbol"`
-	Amount    sdk.Int		  `json:"amount"`
-	Decimals  int8			  `json:"decimals"`
+	Amount    sdk.Int		 `json:"amount"`
+	Decimals  int8			 `json:"decimals"`
 	Recipient sdk.AccAddress `json:"recipient"`
 	IssueID   string         `json:"issueID"`
 }

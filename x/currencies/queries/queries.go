@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	QueryGetCurrency   = "currency"
+	QueryGetCurrency   = "get"
 	QueryIssue  	   = "issue"
 )
 
@@ -32,7 +32,7 @@ func NewQuerier(keeper currencies.Keeper) sdk.Querier {
 func queryGetCurrency(keeper currencies.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
 	getCurRes := QueryCurrencyRes{}
 
-	symbol := params[1]
+	symbol := params[0]
 	cur := keeper.GetCurrency(ctx, symbol)
 
 	getCurRes.Currency = cur

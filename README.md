@@ -155,7 +155,15 @@ To get calls amount:
 
 To issue new currency:
 
-    wbcli tx currencies ms-issue-currency [symbol] [amount] [decimals]  --from validators1
+    wbcli tx currencies ms-issue-currency [symbol] [amount] [decimals] [recipient] [issueID]  --from validators1
+
+Where:
+
+* symbol - Currency symbol/denom to issue.
+* amount - Amount to issue.
+* decimals - Currency decimals, maximum is 8.
+* recipient - Cosmos address of account who's receiving coins.
+* issueID  - Any issue id, usually transaction id.
 
 To destroy currency from any account call:
 
@@ -163,13 +171,11 @@ To destroy currency from any account call:
 
 To get issued currencies demons/symbols:
 
-    wbcli query currencies demons
+    wbcli query currencies get [symbol]
 
-To get specific currency info:
+To get specific issue info:
 
-    wbcli query currency [symbol]
-
-Where `[symbol]` is currency symbol/denom.
+    wbcli query currencies issue [issueID]
 
 # Docs
 
