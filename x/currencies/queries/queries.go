@@ -5,11 +5,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"wings-blockchain/x/currencies/types"
 )
 
 const (
-	QueryGetCurrency   = "get"
-	QueryIssue  	   = "issue"
+	QueryGetCurrency = "get"
+	QueryIssue  	 = "issue"
 )
 
 // Querier for currencies module
@@ -33,7 +34,12 @@ func queryGetCurrency(keeper currencies.Keeper, ctx sdk.Context, params []string
 	getCurRes := QueryCurrencyRes{}
 
 	symbol := params[0]
+
 	cur := keeper.GetCurrency(ctx, symbol)
+
+	if cur.Symbol != symbol {
+		return []byte{}, types.ErrNotExistCurrency(symbol)
+	}
 
 	getCurRes.Currency = cur
 
@@ -48,8 +54,15 @@ func queryGetCurrency(keeper currencies.Keeper, ctx sdk.Context, params []string
 
 // Query handler to get currencies
 func queryGetIssue(keeper currencies.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
+    issueID  := params[0]
 	issueRes := QueryIssueRes{}
-	issueRes.Issue = keeper.GetIssue(ctx, params[0])
+	issue    := keeper.GetIssue(ctx, issueID)
+
+	if issue.Recipient.Empty() {
+	    return []byte{}, types.ErrWrongIssueID(issueID)
+    }
+
+	issueRes.Issue = issue
 
 	bz, err := codec.MarshalJSONIndent(keeper.GetCDC(), issueRes)
 

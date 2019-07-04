@@ -8,9 +8,10 @@ const (
 	CodeErrWrongSymbol   	 = 101
 	CodeErrWrongAmount   	 = 102
 	CodeErrWrongDecimals 	 = 103
-	CodeErrWrongExchangeId   = 104
+	CodeErrWrongIssueID      = 104
 	CodeErrIncorrectDecimals = 105
 	CodeErrExistsIssue       = 106
+	CodeErrNotExistCurrency  = 107
 )
 
 func ErrWrongSymbol(symbol string) sdk.Error {
@@ -27,8 +28,8 @@ func ErrWrongDecimals(decimals int8) sdk.Error {
 		"and should be less then 8", decimals)
 }
 
-func ErrWrongExchangeId(exchangeId string) sdk.Error {
-    return sdk.NewError(DefaultCodespace, CodeErrWrongExchangeId, "%s is wrong exchange id", exchangeId)
+func ErrWrongIssueID(issueID string) sdk.Error {
+    return sdk.NewError(DefaultCodespace, CodeErrWrongIssueID, "%s is wrong issue id", issueID)
 }
 
 func ErrIncorrectDecimals(d1, d2 int8, symbol string) sdk.Error {
@@ -38,4 +39,8 @@ func ErrIncorrectDecimals(d1, d2 int8, symbol string) sdk.Error {
 
 func ErrExistsIssue(issueID string) sdk.Error {
     return sdk.NewError(DefaultCodespace, CodeErrExistsIssue, "issue with %s id already exists", issueID)
+}
+
+func ErrNotExistCurrency(symbol string) sdk.Error {
+    return sdk.NewError(DefaultCodespace, CodeErrNotExistCurrency, "currency %s doesnt exist yet", symbol)
 }

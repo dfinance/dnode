@@ -21,6 +21,7 @@ import (
 	bank "github.com/cosmos/cosmos-sdk/x/bank/client/rest"
 	app "wings-blockchain"
 	ccClient "wings-blockchain/x/currencies/client"
+	ccRoutes "wings-blockchain/x/currencies/client/rest"
 	poaClient "wings-blockchain/x/poa/client"
 	msClient "wings-blockchain/x/multisig/client"
 )
@@ -89,6 +90,7 @@ func registerRoutes(rs *lcd.RestServer) {
 	tx.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
 	auth.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, storeAcc)
 	bank.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, rs.KeyBase)
+	ccRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
 }
 
 func queryCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
