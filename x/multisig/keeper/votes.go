@@ -17,12 +17,12 @@ func (keeper Keeper) RevokeConfirmation(ctx sdk.Context, id uint64, address sdk.
 	return err
 }
 
-// Get message confirmations
-func (keeper Keeper) GetConfirmations(ctx sdk.Context, id uint64) (uint64, sdk.Error) {
+// Get votes for specific call
+func (keeper Keeper) GetVotes(ctx sdk.Context, id uint64) (types.Votes, sdk.Error) {
 	store := ctx.KVStore(keeper.storeKey)
 
 	if !store.Has(types.GetKeyVotesById(id)) {
-		return 0, types.ErrWrongCallId(id)
+		return types.Votes{}, types.ErrWrongCallId(id)
 	}
 
 	var votes types.Votes
@@ -30,7 +30,13 @@ func (keeper Keeper) GetConfirmations(ctx sdk.Context, id uint64) (uint64, sdk.E
 
 	keeper.cdc.MustUnmarshalBinaryBare(bs, &votes)
 
-	return uint64(len(votes)), nil
+	return votes, nil
+}
+
+// Get message confirmations
+func (keeper Keeper) GetConfirmations(ctx sdk.Context, id uint64) (uint64, sdk.Error) {
+	votes, err := keeper.GetVotes(ctx, id)
+	return uint64(len(votes)), err
 }
 
 // Check if message confirmed by address
@@ -47,7 +53,7 @@ func (keeper Keeper) HasVote(ctx sdk.Context, id uint64, address sdk.AccAddress)
 	keeper.cdc.MustUnmarshalBinaryBare(bs, &votes)
 
 	for _, vote := range votes {
-		if vote.Address.Equals(address) {
+		if vote.Equals(address) {
 			return true, nil
 		}
 	}
@@ -80,7 +86,7 @@ func (keeper Keeper) storeVote(ctx sdk.Context, id uint64, address sdk.AccAddres
 	}
 
 	if !store.Has(types.GetKeyVotesById(id)) {
-		votes := types.Votes{types.Vote{address}}
+		votes := types.Votes{address}
 		store.Set(types.GetKeyVotesById(id), keeper.cdc.MustMarshalBinaryBare(votes))
 		return nil
 	}
@@ -89,7 +95,7 @@ func (keeper Keeper) storeVote(ctx sdk.Context, id uint64, address sdk.AccAddres
 	bs := store.Get(types.GetKeyVotesById(id))
 
 	keeper.cdc.MustUnmarshalBinaryBare(bs, &votes)
-	votes = append(votes, types.Vote{Address: address})
+	votes = append(votes, address)
 
 	store.Set(types.GetKeyVotesById(id), keeper.cdc.MustMarshalBinaryBare(votes))
 
@@ -129,7 +135,7 @@ func (keeper Keeper) revokeVote(ctx sdk.Context, id uint64, address sdk.AccAddre
 	} else {
 		index := -1
 		for i, vote := range votes {
-			if vote.Address.Equals(address) {
+			if vote.Equals(address) {
 				index = i
 				break
 			}

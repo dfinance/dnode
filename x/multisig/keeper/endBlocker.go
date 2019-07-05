@@ -82,6 +82,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 
 		// Remove not confirmed calls during intervals
 		rejectedIterator := keeper.GetQueueIteratorTill(ctx, start)
+		defer rejectedIterator.Close()
 		for ; rejectedIterator.Valid(); rejectedIterator.Next() {
 			bs := rejectedIterator.Value()
 
