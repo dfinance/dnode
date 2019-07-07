@@ -1,32 +1,29 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type Currency struct {
-	Symbol   string 		`json:"symbol"`
-	Supply   int64			`json:"supply"`
-	Decimals int8   		`json:"decimals"`
-	Creator  sdk.AccAddress `json:"creator"`
+	Symbol    string  `json:"symbol"`
+	Supply    sdk.Int `json:"supply"`
+	Decimals  int8    `json:"decimals"`
 }
 
 // New currency
-func NewCurrency(symbol string, supply int64, decimals int8, creator sdk.AccAddress) Currency {
+func NewCurrency(symbol string, supply sdk.Int, decimals int8) Currency {
 	return Currency{
 		Symbol:   symbol,
 		Supply:   supply,
 		Decimals: decimals,
-		Creator:  creator,
 	}
 }
 
 func (c Currency) String() string {
 	return fmt.Sprintf("Currency: \n" +
 		"\tSymbol:   %s\n" +
-		"\tSupply:   %d\n" +
-		"\tDecimals: %d\n" +
-		"\tCreator:  %s\n",
-			c.Symbol, c.Supply, c.Decimals, c.Creator.String())
+		"\tSupply:   %s\n" +
+		"\tDecimals: %d\n",
+			c.Symbol, c.Supply.String(), c.Decimals)
 }

@@ -8,13 +8,13 @@ import (
 
 // Message for destory currency
 type MsgDestroyCurrency struct {
-	Symbol 	 string
-	Amount   int64
-	Sender   sdk.AccAddress
+	Symbol 	 string			`json:"symbol"`
+	Amount   sdk.Int	 	`json:"amount"`
+	Sender   sdk.AccAddress `json:"sender"`
 }
 
 // Create new message to destory currency
-func NewMsgDestroyCurrency(symbol string, amount int64, sender sdk.AccAddress) MsgDestroyCurrency {
+func NewMsgDestroyCurrency(symbol string, amount sdk.Int, sender sdk.AccAddress) MsgDestroyCurrency {
 	return MsgDestroyCurrency{
 		Symbol: symbol,
 		Amount: amount,
@@ -42,9 +42,12 @@ func (msg MsgDestroyCurrency) ValidateBasic() sdk.Error {
 		return types.ErrWrongSymbol(msg.Symbol)
 	}
 
-	if msg.Amount == 0 {
-		return types.ErrWrongAmount(msg.Amount)
+	if msg.Amount.IsZero() {
+		return types.ErrWrongAmount(msg.Amount.String())
 	}
+
+	// check denom, etc
+	sdk.NewCoin(msg.Symbol, msg.Amount)
 
 	return nil
 }

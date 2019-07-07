@@ -10,11 +10,6 @@ const (
 
 	DefaultRoute 	  					  = ModuleName
 	DefaultCodespace  sdk.CodespaceType   = ModuleName
-	DefaultParamspace 					  = ModuleName
-)
-
-var (
-	DenomListKey = []byte("denoms")
 )
 
 // Key for storing currency
@@ -22,4 +17,7 @@ func GetCurrencyKey(symbol string) []byte {
 	return []byte(fmt.Sprintf("currency:%s", symbol))
 }
 
-type Denoms []string
+// Key for issues
+func GetIssuesKey(issueID string) []byte {
+	return []byte(fmt.Sprintf("issues:%s", issueID))
+}
