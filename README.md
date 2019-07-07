@@ -159,18 +159,14 @@ To issue new currency:
 
 Where:
 
-* `symbol`:
-&nbsp;&nbsp;&nbsp;&nbsp;Currency symbol/denom to issue.
-* `amount`:
-&nbsp;&nbsp;&nbsp;&nbsp;Amount to issue.
-* `decimals`:
-&nbsp;&nbsp;&nbsp;&nbsp;Currency decimals, maximum is 8.
-* `recipient`:
-&nbsp;&nbsp;&nbsp;&nbsp;Cosmos address of account who's receiving coins.
-* `issueID`:
-&nbsp;&nbsp;&nbsp;&nbsp;Any issue id, usually transaction id.
-* `uniqueID`:
-&nbsp;&nbsp;&nbsp;&nbsp;Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash).
+| parameter | desc                                                                                                                        |
+|-----------|-----------------------------------------------------------------------------------------------------------------------------|
+| **symbol**    | Currency symbol/denom to issue.                                                                                             |
+| **amount**    | Amount to issue.                                                                                                            |
+| **decimals**  | Currency decimals, maximum is 8.                                                                                            |
+| **recipient** | Cosmos address of account who's receiving coins.                                                                            |
+| **issueID**   | Any issue id, usually transaction id.                                                                                       |
+| **uniqueID**  | Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash). |
 
 To destroy currency from any account call:
 
