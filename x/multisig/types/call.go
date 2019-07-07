@@ -7,6 +7,9 @@ type Call struct {
 	// Creator
 	Creator sdk.AccAddress   `json:"creator"`
 
+	// ID
+	MsgID    uint64 		 `json:"msg_id"`
+
 	// Unique ID
 	UniqueID string  		 `json:"unique_id"`
 
@@ -50,6 +53,7 @@ func NewCall(id uint64, uniqueID string, msg MsMsg, height int64, creator sdk.Ac
 
 	return Call{
 		Creator:  creator,
+		MsgID:    id,
 		UniqueID: uniqueID,
 		Approved: false,
 		Executed: false,
