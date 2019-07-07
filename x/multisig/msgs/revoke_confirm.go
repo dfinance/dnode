@@ -8,8 +8,8 @@ import (
 
 // Message to revoke confirmation on call
 type MsgRevokeConfirm struct {
-	MsgId  uint64
-	Sender sdk.AccAddress
+	MsgId  uint64		  `json:"msg_id"`
+	Sender sdk.AccAddress `json:"sender"`
 }
 
 func NewMsgRevokeConfirm(msgId uint64, sender sdk.AccAddress) MsgRevokeConfirm {

@@ -8,8 +8,8 @@ import (
 
 // Message for submit call
 type MsgSubmitCall struct {
-	Msg   types.MsMsg
-	Sender sdk.AccAddress
+	Msg    types.MsMsg	  `json:"msg"`
+	Sender sdk.AccAddress `json:"sender"`
 }
 
 func NewMsgSubmitCall(msg types.MsMsg, sender sdk.AccAddress) MsgSubmitCall {
