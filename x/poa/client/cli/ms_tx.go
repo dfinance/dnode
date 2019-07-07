@@ -14,9 +14,9 @@ import (
 
 func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "ms-add-validator [address] [ethAddress]",
+		Use:   "ms-add-validator [address] [ethAddress] [uniqueID]",
 		Short: "adding new validator to validator list by multisig",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE:  func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -33,7 +33,7 @@ func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 			}
 
 			addVldrMsg := msgs.NewMsgAddValidator(validatorAddress, ethAddress, cliCtx.GetFromAddress())
-			msMsg := msMsg.NewMsgSubmitCall(addVldrMsg, cliCtx.GetFromAddress())
+			msMsg := msMsg.NewMsgSubmitCall(addVldrMsg, args[2], cliCtx.GetFromAddress())
 
 			err = msMsg.ValidateBasic()
 
@@ -50,9 +50,9 @@ func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 
 func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "ms-remove-validator [address]",
+		Use:   "ms-remove-validator [address] [uniqueID]",
 		Short: "remove poa validator by multisig",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE:  func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -68,7 +68,7 @@ func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msgRmvVal := msgs.NewMsgRemoveValidator(validatorAddress, cliCtx.GetFromAddress())
-			msMsg     := msMsg.NewMsgSubmitCall(msgRmvVal, cliCtx.GetFromAddress())
+			msMsg     := msMsg.NewMsgSubmitCall(msgRmvVal, args[1], cliCtx.GetFromAddress())
 
 			err = msMsg.ValidateBasic()
 
@@ -86,9 +86,9 @@ func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 
 func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "ms-replace-validator [oldValidator] [newValidator] [ethAddress]",
+		Use:   "ms-replace-validator [oldValidator] [newValidator] [ethAddress] [uniqueID]",
 		Short: "replace poa validator by multisignature",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		RunE:  func(cmd *cobra.Command,  args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -111,7 +111,7 @@ func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 			ethAddress := args[2]
 
 			msgReplVal := msgs.NewMsgReplaceValidator(oldValidator, newValidator, ethAddress, cliCtx.GetFromAddress())
-			msMsg 	   := msMsg.NewMsgSubmitCall(msgReplVal, cliCtx.GetFromAddress())
+			msMsg 	   := msMsg.NewMsgSubmitCall(msgReplVal, args[3], cliCtx.GetFromAddress())
 
 			err = msMsg.ValidateBasic()
 

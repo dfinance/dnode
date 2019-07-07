@@ -8,13 +8,15 @@ import (
 
 // Message for submit call
 type MsgSubmitCall struct {
-	Msg    types.MsMsg	  `json:"msg"`
-	Sender sdk.AccAddress `json:"sender"`
+	Msg      types.MsMsg	`json:"msg"`
+	UniqueID string 		`json:"uniqueID"`
+	Sender   sdk.AccAddress `json:"sender"`
 }
 
-func NewMsgSubmitCall(msg types.MsMsg, sender sdk.AccAddress) MsgSubmitCall {
+func NewMsgSubmitCall(msg types.MsMsg, uniqueID string, sender sdk.AccAddress) MsgSubmitCall {
 	return MsgSubmitCall{
 		Msg: msg,
+		UniqueID: uniqueID,
 		Sender: sender,
 	}
 }

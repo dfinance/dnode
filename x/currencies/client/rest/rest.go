@@ -22,6 +22,7 @@ type msIssueCurrencyReq struct {
     Decimals  string       `json:"decimals"`
     Recipient string       `json:"recipient"`
     IssueID   string       `json:"issueID"`
+    UniqueID  string       `json:"uniqueID"`
 }
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
@@ -115,7 +116,7 @@ func issueCurrency(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc
             req.IssueID,
         )
 
-        call := msMsgs.NewMsgSubmitCall(msg, validator)
+        call := msMsgs.NewMsgSubmitCall(msg, req.UniqueID, validator)
 
         err = call.ValidateBasic()
 

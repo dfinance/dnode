@@ -19,8 +19,8 @@ const (
 	CodeErrNoVotes		   = 301
 
 	CodeNotValidator       = 401
-
-	CodeCantParseCallId	   = 501
+	CodeNotUniqueID		   = 402
+	CodeNotFoundUniqueID   = 403
 )
 
 // When msg route doesnt exist
@@ -76,4 +76,13 @@ func ErrAlreadyRejected(id uint64) sdk.Error {
 // When cant parse call id
 func ErrCantParseCallId(sid string) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeErrWrongCallId, "cant parse %s call id", sid)
+}
+
+// Unique ID
+func ErrNotUniqueID(uniqueID string) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeNotUniqueID, "%s is not unique id, already exists", uniqueID)
+}
+
+func ErrNotFoundUniqueID(uniqueID string) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeNotFoundUniqueID, "%s is not found", uniqueID)
 }

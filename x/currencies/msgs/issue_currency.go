@@ -47,7 +47,7 @@ func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 		return types.ErrWrongSymbol(msg.Symbol)
 	}
 
-	if msg.Decimals < 0 || msg.Decimals > 8 {
+	if msg.Decimals < 0 {
 		return types.ErrWrongDecimals(msg.Decimals)
 	}
 

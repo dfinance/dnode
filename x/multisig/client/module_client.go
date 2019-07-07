@@ -29,6 +29,7 @@ func (mc ModuleClient) GetQueryCmd() *cobra.Command {
 		cli.GetLastId("multisig", mc.cdc),
 		cli.GetCall("multisig", mc.cdc),
 		cli.GetCalls("multisig", mc.cdc),
+		cli.GetCallByUniqueID("multisig", mc.cdc),
 	)...)
 
 	return multisigQueryCmd

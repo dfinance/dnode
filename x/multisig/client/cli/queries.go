@@ -69,3 +69,24 @@ func GetCall(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+//Get call by unique id
+func GetCallByUniqueID(queryRoute string, cdc *codec.Codec) *cobra.Command {
+    return &cobra.Command{
+        Use:   "unique [unique_id]",
+        Short: "get call by unique id",
+        Args:  cobra.ExactArgs(1),
+        RunE:  func(cmd *cobra.Command, args []string) error {
+            cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+            res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/unique/%s", queryRoute, args[0]), nil)
+            if err != nil {
+                return err
+            }
+
+            var out queries.QueryCallResp
+            cdc.MustUnmarshalJSON(res, &out)
+            return cliCtx.PrintOutput(out)
+        },
+    }
+}
+

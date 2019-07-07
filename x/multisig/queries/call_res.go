@@ -14,6 +14,7 @@ type QueryCallResp struct {
 func (q QueryCallResp) String() string {
 	return fmt.Sprintf("Call:\n" +
 		"\tCreator:   %s\n" +
+	    "\tUnique ID: %s\n" +
 		"\tApproved:  %t\n" +
 		"\tRejected:  %t\n" +
 		"\tError:     %s\n" +
@@ -21,9 +22,9 @@ func (q QueryCallResp) String() string {
 		"\tMsg Route: %s\n" +
 		"\tMsg Type:  %s\n" +
 		"\tVotes:     %v\n",
-		q.Call.Creator, q.Call.Approved,
-		q.Call.Rejected, q.Call.Error,
-		q.Call.Height, q.Call.MsgRoute, q.Call.MsgType, q.Votes)
+		q.Call.Creator,  q.Call.UniqueID, q.Call.Approved,
+		q.Call.Rejected, q.Call.Error,    q.Call.Height,
+	    q.Call.MsgRoute, q.Call.MsgType,  q.Votes)
 }
 
 type QueryCallsResp []QueryCallResp

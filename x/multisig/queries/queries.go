@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	QueryLastId   = "lastId"
-	QueryGetCall  = "call"
-	QueryGetCalls = "calls"
+	QueryLastId    = "lastId"
+	QueryGetCall   = "call"
+	QueryGetCalls  = "calls"
+	QueryGetUnique = "unique"
 )
 
 // Querier for multisig module
@@ -27,6 +28,9 @@ func NewQuerier(keeper keeper.Keeper) sdk.Querier {
 
 		case QueryGetCalls:
 			return queryGetCalls(keeper, ctx)
+
+        case QueryGetUnique:
+            return queryGetCallByUnique(keeper, ctx, path[1:])
 
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown query")
@@ -84,6 +88,28 @@ func queryGetCalls(keeper keeper.Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	return bz, nil
 }
 
+// Query handler to get call by id
+func queryGetCallByUnique(keeper keeper.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
+    id, err := keeper.GetCallIDByUnique(ctx, params[0])
+
+    if err != nil {
+        return nil, err
+    }
+
+    callResp, err2 := makeCallResp(keeper, ctx, id)
+
+    if err2 !=  nil {
+        return nil, err2
+    }
+
+    bz, err3 := codec.MarshalJSONIndent(keeper.GetCDC(), callResp)
+
+    if err3 != nil {
+        panic(err3)
+    }
+
+    return bz, nil
+}
 
 // Query handler to get call by id
 func queryGetCall(keeper keeper.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {

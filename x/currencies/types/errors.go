@@ -24,8 +24,7 @@ func ErrWrongAmount(amount string) sdk.Error {
 }
 
 func ErrWrongDecimals(decimals int8) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrWrongDecimals, "%d decimals can't be less/equal 0 " +
-		"and should be less then 8", decimals)
+	return sdk.NewError(DefaultCodespace, CodeErrWrongDecimals, "%d decimals can't be less/equal 0 ", decimals)
 }
 
 func ErrWrongIssueID(issueID string) sdk.Error {

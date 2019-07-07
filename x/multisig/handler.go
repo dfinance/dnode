@@ -36,7 +36,7 @@ func handleMsgSubmitCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa.
 		return types.ErrNotValidator(msg.Sender.String()).Result()
 	}
 
-	err := keeper.SubmitCall(ctx, msg.Msg, msg.Sender)
+	err := keeper.SubmitCall(ctx, msg.Msg, msg.UniqueID, msg.Sender)
 
 	if err != nil {
 		return err.Result()
