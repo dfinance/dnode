@@ -27,8 +27,8 @@ type msIssueCurrencyReq struct {
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
     r.HandleFunc(fmt.Sprintf("/%s/issue/{issueID}", types.ModuleName), getIssue(cdc, cliCtx)).Methods("GET")
-    r.HandleFunc(fmt.Sprintf("/%s/get/{symbol}", types.ModuleName), getCurrency(cdc, cliCtx)).Methods("GET")
-    r.HandleFunc(fmt.Sprintf("/%s/issue", types.ModuleName), issueCurrency(cdc, cliCtx)).Methods("POST")
+    r.HandleFunc(fmt.Sprintf("/%s/get/{symbol}", types.ModuleName),    getCurrency(cdc, cliCtx)).Methods("GET")
+    r.HandleFunc(fmt.Sprintf("/%s/issue", types.ModuleName),           issueCurrency(cdc, cliCtx)).Methods("POST")
 }
 
 func getIssue(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
