@@ -174,11 +174,12 @@ To destroy currency from any account call:
 
 To get issued currencies demons/symbols:
 
-    wbcli query currencies get [symbol]
+    wbcli query currencies currency [symbol]
 
 To get specific issue info:
 
     wbcli query currencies issue [issueID]
+
 
 # Rest API
 

@@ -14,9 +14,9 @@ import (
 // Destroy currency
 func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use: 	"destroy-currency [symbol] [amount]",
+		Use: 	"destroy-currency [chainID] [symbol] [amount]",
 		Short:  "destroy issued currency",
-		Args: 	cobra.ExactArgs(2),
+		Args: 	cobra.ExactArgs(3),
 		RunE:   func(cmd *cobra.Command, args []string) error {
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -25,13 +25,13 @@ func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			amount, isOk := sdk.NewIntFromString(args[1])
+			amount, isOk := sdk.NewIntFromString(args[2])
 
 			if !isOk {
-				return fmt.Errorf("Can't parse int %s", args[1])
+				return fmt.Errorf("Can't parse int %s", args[2])
 			}
 
-			msg := msgs.NewMsgDestroyCurrency(args[0], amount, cliCtx.GetFromAddress())
+			msg := msgs.NewMsgDestroyCurrency(args[0], args[1], amount, cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 
 			if err != nil {
