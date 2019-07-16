@@ -193,7 +193,6 @@ To get destroy by ID:
 
     wbcli query currencies destroy [destroyID]
 
-
 Where:
 
 * **[destroyID]** - destroy ID, usually just from 0 to N.
