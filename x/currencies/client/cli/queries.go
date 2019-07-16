@@ -74,13 +74,13 @@ func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // Get currency by denom/symbol
 func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "currency [chainID] [symbol]",
+		Use:   "currency [symbol]",
 		Short: "get currency by chainID and denom/symbol",
 		Args:  cobra.ExactArgs(1),
 		RunE:  func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/get/%s/%s", queryRoute, args[0], args[1]), nil)
+			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/get/%s", queryRoute, args[0]), nil)
 			if err != nil {
 				return err
 			}
