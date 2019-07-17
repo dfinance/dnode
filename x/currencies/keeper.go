@@ -137,7 +137,7 @@ func (keeper Keeper) reduceSupply(ctx sdk.Context, chainID, symbol string, amoun
 	currency.Supply = currency.Supply.Sub(amount)
 
 	newId   := keeper.getNewID(ctx)
-	destroy := types.NewDestroy(newId, chainID, symbol, amount, spender)
+	destroy := types.NewDestroy(newId, chainID, symbol, amount, spender, ctx.TxBytes())
 
 	keeper.storeDestroy(ctx, destroy)
 	keeper.storeCurrency(ctx, currency)
