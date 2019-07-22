@@ -30,9 +30,9 @@ func GetCallByIdKey(id uint64) []byte {
 	return []byte(fmt.Sprintf("call:%d", id))
 }
 
-// Get a key to store executed call
-func GetExCallByIdKey(id uint64) []byte {
-	return []byte(fmt.Sprintf("ex_call:%d", id))
+// Get a key to store unique id
+func GetUniqueID(uniqueID string) []byte {
+	return []byte(fmt.Sprintf("unique_id:%s", uniqueID))
 }
 
 // Get a key to store votes for call by id

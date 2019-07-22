@@ -47,7 +47,7 @@ func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 		return types.ErrWrongSymbol(msg.Symbol)
 	}
 
-	if msg.Decimals < 0 || msg.Decimals > 8 {
+	if msg.Decimals < 0 {
 		return types.ErrWrongDecimals(msg.Decimals)
 	}
 
@@ -56,7 +56,7 @@ func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
     }
 
 	if len(msg.IssueID) == 0 {
-	    return types.ErrWrongExchangeId(msg.IssueID)
+	    return types.ErrWrongIssueID(msg.IssueID)
     }
 
     // lets try to create coin and validate denom

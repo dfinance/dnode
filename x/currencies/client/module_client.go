@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	amino "github.com/tendermint/go-amino"
 	"wings-blockchain/x/currencies/client/cli"
+	"wings-blockchain/x/currencies/types"
 )
 
 // ModuleClient exports all client functionality from this module
@@ -21,7 +22,7 @@ func NewModuleClient(storeKey string, cdc *amino.Codec) ModuleClient {
 // Returns get commands for this module
 func (mc ModuleClient) GetQueryCmd() *cobra.Command {
 	currenciesQueryCmd := &cobra.Command{
-		Use:   "currencies",
+		Use:   types.ModuleName,
 		Short: "Querying commands for the currencies module",
 	}
 
@@ -37,7 +38,7 @@ func (mc ModuleClient) GetQueryCmd() *cobra.Command {
 // GetTxCmd returns the transaction commands for this module
 func (mc ModuleClient) GetTxCmd() *cobra.Command {
 	currenciesTxCmd := &cobra.Command{
-		Use:   "currencies",
+		Use:   types.ModuleName,
 		Short: "Currency transactions subcommands",
 	}
 

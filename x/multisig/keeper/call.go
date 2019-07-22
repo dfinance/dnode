@@ -6,7 +6,7 @@ import (
 )
 
 // Submit call to execute by confirmations from validators
-func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, sender sdk.AccAddress) sdk.Error {
+func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, uniqueID string, sender sdk.AccAddress) sdk.Error {
 	if !keeper.router.HasRoute(msg.Route()) {
 		return types.ErrRouteDoesntExist(msg.Route())
 	}
@@ -20,14 +20,18 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, sender sdk.Acc
 		return err
 	}
 
+	if keeper.HasCallByUniqueId(ctx, uniqueID) {
+	    return types.ErrNotUniqueID(uniqueID)
+    }
+
 	nextId := keeper.getNextCallId(ctx)
-	call, err := types.NewCall(nextId, msg, ctx.BlockHeight(), sender)
+	call, err := types.NewCall(nextId, uniqueID, msg, ctx.BlockHeight(), sender)
 
 	if err != nil {
-		return err
-	}
+        return err
+    }
 
-	id 	 := keeper.saveNewCall(ctx, call)
+	id := keeper.saveNewCall(ctx, call)
 
 	keeper.addCallToQueue(ctx, id, call.Height)
 
@@ -49,11 +53,34 @@ func (keeper Keeper) GetCall(ctx sdk.Context, id uint64) (types.Call, sdk.Error)
 	return keeper.getCallById(ctx, id), nil
 }
 
+// Get call by unique id
+func (keeper Keeper) GetCallIDByUnique(ctx sdk.Context, uniqueID string) (uint64, sdk.Error) {
+    store := ctx.KVStore(keeper.storeKey)
+
+    if !keeper.HasCallByUniqueId(ctx, uniqueID) {
+        return 0, types.ErrNotFoundUniqueID(uniqueID)
+    }
+
+    bz := store.Get(types.GetUniqueID(uniqueID))
+
+    var id uint64
+    keeper.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &id)
+
+    return id, nil
+}
+
 // Check if call exists
 func (keeper Keeper) HasCall(ctx sdk.Context, id uint64) bool {
 	store := ctx.KVStore(keeper.storeKey)
 
 	return store.Has(types.GetCallByIdKey(id))
+}
+
+// Check if has call by unique id
+func (keeper Keeper) HasCallByUniqueId(ctx sdk.Context, uniqueID string) bool {
+    store := ctx.KVStore(keeper.storeKey)
+
+    return store.Has(types.GetUniqueID(uniqueID))
 }
 
 // Get last call id
@@ -73,6 +100,7 @@ func (keeper Keeper) saveNewCall(ctx sdk.Context, call types.Call) uint64 {
 	nextId := keeper.getNextCallId(ctx)
 
 	store.Set(types.GetCallByIdKey(nextId), keeper.cdc.MustMarshalBinaryBare(call))
+	store.Set(types.GetUniqueID(call.UniqueID), keeper.cdc.MustMarshalBinaryLengthPrefixed(nextId))
 	store.Set(types.LastCallId, keeper.cdc.MustMarshalBinaryLengthPrefixed(nextId))
 
 	return nextId

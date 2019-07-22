@@ -7,6 +7,12 @@ type Call struct {
 	// Creator
 	Creator sdk.AccAddress   `json:"creator"`
 
+	// ID
+	MsgID    uint64 		 `json:"msg_id"`
+
+	// Unique ID
+	UniqueID string  		 `json:"unique_id"`
+
 	// When call approved to execute
 	Approved bool			 `json:"approved"`
 
@@ -32,7 +38,7 @@ type Call struct {
 }
 
 // Create new call instance
-func NewCall(id uint64, msg MsMsg, height int64, creator sdk.AccAddress) (Call, sdk.Error) {
+func NewCall(id uint64, uniqueID string, msg MsMsg, height int64, creator sdk.AccAddress) (Call, sdk.Error) {
 	msgRoute := msg.Route()
 
 	if msgRoute == "" {
@@ -47,6 +53,8 @@ func NewCall(id uint64, msg MsMsg, height int64, creator sdk.AccAddress) (Call, 
 
 	return Call{
 		Creator:  creator,
+		MsgID:    id,
+		UniqueID: uniqueID,
 		Approved: false,
 		Executed: false,
 		Rejected: false,

@@ -8,8 +8,8 @@ import (
 
 // Message to confirm call
 type MsgConfirmCall struct {
-	MsgId  uint64
-	Sender sdk.AccAddress
+	MsgId  uint64		  `json:"msg_id"`
+	Sender sdk.AccAddress `json:"sender"`
 }
 
 func NewMsgConfirmCall(msgId uint64, sender sdk.AccAddress) MsgConfirmCall {

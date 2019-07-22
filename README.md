@@ -155,15 +155,18 @@ To get calls amount:
 
 To issue new currency:
 
-    wbcli tx currencies ms-issue-currency [symbol] [amount] [decimals] [recipient] [issueID]  --from validators1
+    wbcli tx currencies ms-issue-currency [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]  --from validators1
 
 Where:
 
-* symbol - Currency symbol/denom to issue.
-* amount - Amount to issue.
-* decimals - Currency decimals, maximum is 8.
-* recipient - Cosmos address of account who's receiving coins.
-* issueID  - Any issue id, usually transaction id.
+| parameter | desc                                                                                                                        |
+|-----------|-----------------------------------------------------------------------------------------------------------------------------|
+| **symbol**    | Currency symbol/denom to issue.                                                                                             |
+| **amount**    | Amount to issue.                                                                                                            |
+| **decimals**  | Currency decimals, maximum is 8.                                                                                            |
+| **recipient** | Cosmos address of account who's receiving coins.                                                                            |
+| **issueID**   | Any issue id, usually transaction id.                                                                                       |
+| **uniqueID**  | Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex. |
 
 To destroy currency from any account call:
 
@@ -176,6 +179,25 @@ To get issued currencies demons/symbols:
 To get specific issue info:
 
     wbcli query currencies issue [issueID]
+
+# Rest API
+
+Launch REST API:
+
+    wbcli rest-server --chain-id wings-testnet --trust-node
+
+All REST API returns JSON.
+
+Multisig:
+
+* `/multisig/call/{id}`  - get call by id.
+* `/multisig/calls`      - get array of active calls (that waiting for confirmations)
+* `/multisig/unique/{unique}` - get call by unique id.
+
+Currencies:
+
+* `/currencies/issue/{issueID}` - Get issue operation by issue id.
+* `/currencies/get/{symbol}` - Get currency info by symbol.
 
 # Docs
 

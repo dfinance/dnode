@@ -10,8 +10,10 @@ import (
 )
 
 const (
-	QueryLastId   = "lastId"
-	QueryGetCall  = "call"
+	QueryLastId    = "lastId"
+	QueryGetCall   = "call"
+	QueryGetCalls  = "calls"
+	QueryGetUnique = "unique"
 )
 
 // Querier for multisig module
@@ -22,7 +24,13 @@ func NewQuerier(keeper keeper.Keeper) sdk.Querier {
 			return queryLastId(keeper, ctx)
 
 		case QueryGetCall:
-			return queryGetCalls(keeper, ctx, path[1:])
+			return queryGetCall(keeper, ctx, path[1:])
+
+		case QueryGetCalls:
+			return queryGetCalls(keeper, ctx)
+
+        case QueryGetUnique:
+            return queryGetCallByUnique(keeper, ctx, path[1:])
 
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown query")
@@ -45,7 +53,66 @@ func queryLastId(keeper keeper.Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 }
 
 // Query handler to get call by id
-func queryGetCalls(keeper keeper.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
+func queryGetCalls(keeper keeper.Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
+	calls := make(QueryCallsResp, 0)
+
+    start := ctx.BlockHeight() - types.IntervalToExecute
+
+    if start < 0 {
+        start = 0
+    }
+
+    activeIterator := keeper.GetQueueIteratorStartEnd(ctx, start, ctx.BlockHeight())
+    defer activeIterator.Close()
+
+    for ; activeIterator.Valid(); activeIterator.Next() {
+        bs := activeIterator.Value()
+
+        var callId uint64
+        keeper.GetCDC().MustUnmarshalBinaryLengthPrefixed(bs, &callId)
+        call, err := makeCallResp(keeper, ctx, callId)
+
+        if err != nil {
+            return []byte{}, err
+        }
+
+        calls = append(calls, call)
+    }
+
+	bz, err := codec.MarshalJSONIndent(keeper.GetCDC(), calls)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return bz, nil
+}
+
+// Query handler to get call by id
+func queryGetCallByUnique(keeper keeper.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
+    id, err := keeper.GetCallIDByUnique(ctx, params[0])
+
+    if err != nil {
+        return nil, err
+    }
+
+    callResp, err2 := makeCallResp(keeper, ctx, id)
+
+    if err2 !=  nil {
+        return nil, err2
+    }
+
+    bz, err3 := codec.MarshalJSONIndent(keeper.GetCDC(), callResp)
+
+    if err3 != nil {
+        panic(err3)
+    }
+
+    return bz, nil
+}
+
+// Query handler to get call by id
+func queryGetCall(keeper keeper.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
 	callIdParam := params[0]
 	callId, err := strconv.ParseUint(callIdParam, 10, 64)
 
@@ -79,6 +146,14 @@ func makeCallResp(keeper keeper.Keeper, ctx sdk.Context, callId uint64) (QueryCa
 	}
 
 	callRes.Call = call
+
+	votes, err := keeper.GetVotes(ctx, callId)
+
+	if err != nil {
+		return QueryCallResp{}, err
+	}
+
+	callRes.Votes = votes
 
 	return callRes, nil
 }
