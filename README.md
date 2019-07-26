@@ -103,7 +103,7 @@ To add new validator use next command:
 Where:
 
 * **[validator-address]** - cosmos bench32 validator address
-* **[eth-address]**       - validator ethereum address
+* **[eth-address]** - validator ethereum address
 
 To remove:
 
@@ -174,11 +174,28 @@ To destroy currency from any account call:
 
 To get issued currencies demons/symbols:
 
-    wbcli query currencies get [symbol]
+    wbcli query currencies currency [symbol]
 
 To get specific issue info:
 
     wbcli query currencies issue [issueID]
+
+To get destroys list:
+
+    wbcli query currencies destroys [page] [limit]
+
+Where:
+
+* **[page]** - page number
+* **[limit]** - limit of destroys per page
+
+To get destroy by ID:
+
+    wbcli query currencies destroy [destroyID]
+
+Where:
+
+* **[destroyID]** - destroy ID, usually just from 0 to N.
 
 # Rest API
 
@@ -197,7 +214,13 @@ Multisig:
 Currencies:
 
 * `/currencies/issue/{issueID}` - Get issue operation by issue id.
-* `/currencies/get/{symbol}` - Get currency info by symbol.
+* `/currencies/currency/{symbol}` - Get currency info by symbol.
+* `/currencies/destroy/{destroyID}` - Get destroy info by id.
+* `/currencies/destroys/{page}?limit={limit}` - Get destroys list, limit parameter is optional, equal 100 by default.
+
+PoA:
+
+* `/poa/validators` - PoA validators list.
 
 # Docs
 

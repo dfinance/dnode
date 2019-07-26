@@ -25,6 +25,7 @@ import (
 	poaClient "wings-blockchain/x/poa/client"
 	msClient "wings-blockchain/x/multisig/client"
 	msRoutes "wings-blockchain/x/multisig/client/rest"
+	poaRoutes "wings-blockchain/x/poa/client/rest"
 )
 
 const (
@@ -93,6 +94,7 @@ func registerRoutes(rs *lcd.RestServer) {
 	bank.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, rs.KeyBase)
 	ccRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
 	msRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
+	poaRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
 }
 
 func queryCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {

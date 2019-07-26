@@ -8,17 +8,19 @@ import (
 
 // Message for destory currency
 type MsgDestroyCurrency struct {
+    ChainID  string         `json:"chainID"`
 	Symbol 	 string			`json:"symbol"`
 	Amount   sdk.Int	 	`json:"amount"`
-	Sender   sdk.AccAddress `json:"sender"`
+	Spender  sdk.AccAddress `json:"spender"`
 }
 
 // Create new message to destory currency
-func NewMsgDestroyCurrency(symbol string, amount sdk.Int, sender sdk.AccAddress) MsgDestroyCurrency {
+func NewMsgDestroyCurrency(chainID string, symbol string, amount sdk.Int, spender sdk.AccAddress) MsgDestroyCurrency {
 	return MsgDestroyCurrency{
+	    ChainID: chainID,
 		Symbol: symbol,
 		Amount: amount,
-		Sender: sender,
+		Spender: spender,
 	}
 }
 
@@ -34,8 +36,8 @@ func (msg MsgDestroyCurrency) Type() string {
 
 // Validate basic in case of destory message
 func (msg MsgDestroyCurrency) ValidateBasic() sdk.Error {
-	if msg.Sender.Empty() {
-		return sdk.ErrInvalidAddress(msg.Sender.String())
+	if msg.Spender.Empty() {
+		return sdk.ErrInvalidAddress(msg.Spender.String())
 	}
 
 	if len(msg.Symbol) == 0 {
@@ -65,5 +67,5 @@ func (msg MsgDestroyCurrency) GetSignBytes() []byte {
 
 // Get signers for message
 func (msg MsgDestroyCurrency) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Sender}
+	return []sdk.AccAddress{msg.Spender}
 }

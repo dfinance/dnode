@@ -9,19 +9,27 @@ import (
 )
 
 const (
-	QueryGetCurrency = "get"
-	QueryIssue  	 = "issue"
+	QueryGetCurrency  = "currency"
+	QueryGetIssue  	  = "issue"
+	QueryGetDestroys  = "destroys"
+	QueryGetDestroy   = "destroy"
 )
 
 // Querier for currencies module
 func NewQuerier(keeper currencies.Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
 		switch path[0] {
-		case QueryIssue:
+		case QueryGetIssue:
 			return queryGetIssue(keeper, ctx, path[1:])
 
 		case QueryGetCurrency:
 			return queryGetCurrency(keeper, ctx, path[1:])
+
+        case QueryGetDestroys:
+            return queryGetDestroys(keeper, ctx, path[1:])
+
+        case QueryGetDestroy:
+            return queryGetDestroy(keeper, ctx, path[1:])
 
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown query")
@@ -32,8 +40,7 @@ func NewQuerier(keeper currencies.Keeper) sdk.Querier {
 // Query handler to get currency
 func queryGetCurrency(keeper currencies.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
 	getCurRes := QueryCurrencyRes{}
-
-	symbol := params[0]
+	symbol   := params[0]
 
 	cur := keeper.GetCurrency(ctx, symbol)
 
@@ -55,6 +62,7 @@ func queryGetCurrency(keeper currencies.Keeper, ctx sdk.Context, params []string
 // Query handler to get currencies
 func queryGetIssue(keeper currencies.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
     issueID  := params[0]
+
 	issueRes := QueryIssueRes{}
 	issue    := keeper.GetIssue(ctx, issueID)
 
@@ -71,4 +79,45 @@ func queryGetIssue(keeper currencies.Keeper, ctx sdk.Context, params []string) (
 	}
 
 	return bz, nil
+}
+
+// Get destroy from API
+func queryGetDestroy(keeper currencies.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
+    var destroyRes QueryDestroyRes
+
+    id, _   := sdk.NewIntFromString(params[0])
+
+    destroyRes.Destroy = keeper.GetDestroy(ctx, id)
+
+    bz, err := codec.MarshalJSONIndent(keeper.GetCDC(), destroyRes)
+
+    if err != nil {
+        panic(err)
+    }
+
+    return bz, nil
+}
+
+// Get destroys from API
+func queryGetDestroys(keeper currencies.Keeper, ctx sdk.Context, params []string) ([]byte, sdk.Error) {
+    destroys := make(QueryDestroysRes, 0)
+
+    page,  _  := sdk.NewIntFromString(params[0])
+    limit, _  := sdk.NewIntFromString(params[1])
+
+    start := page.SubRaw(1).Mul(limit)
+    end   := start.Add(limit)
+
+    for ; start.LT(end) && keeper.HasDestroy(ctx, start); start = start.AddRaw(1) {
+        destroy  := keeper.GetDestroy(ctx, start)
+        destroys = append(destroys, QueryDestroyRes{Destroy: destroy})
+    }
+
+    bz, err := codec.MarshalJSONIndent(keeper.GetCDC(), destroys)
+
+    if err != nil {
+        panic(err)
+    }
+
+    return bz, nil
 }

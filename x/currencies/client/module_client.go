@@ -28,8 +28,10 @@ func (mc ModuleClient) GetQueryCmd() *cobra.Command {
 
 	currenciesQueryCmd.AddCommand(
 		client.GetCommands(
-			cli.GetIssue("currencies", mc.cdc),
-			cli.GetCurrency("currencies", mc.cdc),
+			cli.GetIssue("currencies",      mc.cdc),
+			cli.GetCurrency("currencies",   mc.cdc),
+			cli.GetDestroy("currencies",    mc.cdc),
+			cli.GetDestroys("currencies",  mc.cdc),
 		)...)
 
 	return currenciesQueryCmd

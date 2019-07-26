@@ -14,7 +14,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) 
     r.HandleFunc(fmt.Sprintf("/%s/call/{id}", types.ModuleName), getCall(cdc, cliCtx)).Methods("GET")
     r.HandleFunc(fmt.Sprintf("/%s/calls", types.ModuleName), getCalls(cdc, cliCtx)).Methods("GET")
     r.HandleFunc(fmt.Sprintf("/%s/unique/{unique}", types.ModuleName), getCallByUnique(cdc, cliCtx)).Methods("GET")
-
 }
 
 func getCallByUnique(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {

@@ -24,5 +24,6 @@ func (issue Issue) String() string {
         "\tSymbol:    %s\n" +
         "\tAmount:    %s\n" +
         "\tRecipient: %s\n",
-            issue.Symbol, issue.Amount.String(), issue.Recipient.String())
+        issue.Symbol, issue.Amount.String(),
+        issue.Recipient.String())
 }
