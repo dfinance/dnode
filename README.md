@@ -170,7 +170,7 @@ Where:
 
 To destroy currency from any account call:
 
-    wbcli tx currencies destroy-currency [symbol] [amount] --from account
+    wbcli tx currencies destroy-currency [symbol] [amount] [recipient] --from account
 
 To get issued currencies demons/symbols:
 
