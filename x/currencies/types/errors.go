@@ -12,6 +12,7 @@ const (
 	CodeErrIncorrectDecimals = 105
 	CodeErrExistsIssue       = 106
 	CodeErrNotExistCurrency  = 107
+	CodeErrWrongRecipient    = 108
 )
 
 func ErrWrongSymbol(symbol string) sdk.Error {
@@ -42,4 +43,8 @@ func ErrExistsIssue(issueID string) sdk.Error {
 
 func ErrNotExistCurrency(symbol string) sdk.Error {
     return sdk.NewError(DefaultCodespace, CodeErrNotExistCurrency, "currency %s doesnt exist yet", symbol)
+}
+
+func ErrWrongRecipient() sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeErrWrongRecipient, "empty recipient is not allowed")
 }

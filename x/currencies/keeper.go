@@ -24,12 +24,12 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *cdcCodec.Code
 }
 
 // Destroy currency
-func (keeper Keeper) DestroyCurrency(ctx sdk.Context, chainID, symbol string, amount sdk.Int, spender sdk.AccAddress) sdk.Error {
+func (keeper Keeper) DestroyCurrency(ctx sdk.Context, chainID, symbol, recipient string, amount sdk.Int, spender sdk.AccAddress) sdk.Error {
 	if !keeper.doesCurrencyExists(ctx, symbol) {
 		return sdk.ErrInsufficientCoins("no known coins to destroy")
 	}
 
-	keeper.reduceSupply(ctx, chainID, symbol, amount, spender)
+	keeper.reduceSupply(ctx, chainID, symbol, recipient, amount, spender)
 
 	newCoin := sdk.NewCoin(symbol, amount)
 
@@ -132,12 +132,12 @@ func (keeper Keeper) increaseSupply(ctx sdk.Context, symbol string, amount sdk.I
 }
 
 // Reduce currency supply by symbol
-func (keeper Keeper) reduceSupply(ctx sdk.Context, chainID, symbol string, amount sdk.Int, spender sdk.AccAddress) {
+func (keeper Keeper) reduceSupply(ctx sdk.Context, chainID, symbol, recipient string, amount sdk.Int, spender sdk.AccAddress) {
 	currency := keeper.getCurrency(ctx, symbol)
 	currency.Supply = currency.Supply.Sub(amount)
 
 	newId   := keeper.getNewID(ctx)
-	destroy := types.NewDestroy(newId, chainID, symbol, amount, spender, ctx.TxBytes(), ctx.BlockHeader().Time.Unix())
+	destroy := types.NewDestroy(newId, chainID, symbol, amount, spender, recipient, ctx.TxBytes(), ctx.BlockHeader().Time.Unix())
 
 	keeper.storeDestroy(ctx, destroy)
 	keeper.storeCurrency(ctx, currency)
