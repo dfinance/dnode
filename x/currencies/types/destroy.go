@@ -8,28 +8,30 @@ import (
 )
 
 type Destroy struct {
-    ID        types.Int        `json:"id"`
-    ChainID   string           `json:"chainID"`
-    Symbol    string           `json:"symbol"`
-    Amount    types.Int        `json:"amount"`
-    Spender   types.AccAddress `json:"spender"`
-    Recipient string           `json:"recipient"`
-    Timestamp int64            `json:"timestamp"`
-    TxHash    string           `json:"tx_hash"`
+    ID         types.Int        `json:"id"`
+    CurrencyId types.Int        `json:"currencyId"`
+    ChainID    string           `json:"chainID"`
+    Symbol     string           `json:"symbol"`
+    Amount     types.Int        `json:"amount"`
+    Spender    types.AccAddress `json:"spender"`
+    Recipient  string           `json:"recipient"`
+    Timestamp  int64            `json:"timestamp"`
+    TxHash     string           `json:"tx_hash"`
 }
 
-func NewDestroy(id types.Int, chainID string, symbol string, amount types.Int, spender types.AccAddress, recipient string, txBytes []byte, timestamp int64) Destroy {
+func NewDestroy(id types.Int, currencyId types.Int, chainID string, symbol string, amount types.Int, spender types.AccAddress, recipient string, txBytes []byte, timestamp int64) Destroy {
     hash := sha256.Sum256(txBytes)
 
     return Destroy{
-        ID:        id,
-        ChainID:   chainID,
-        Symbol:    symbol,
-        Amount:    amount,
-        Spender:   spender,
-        Recipient: recipient,
-        Timestamp: timestamp,
-        TxHash:    hex.EncodeToString(hash[:]),
+        ID:         id,
+        CurrencyId: currencyId,
+        ChainID:    chainID,
+        Symbol:     symbol,
+        Amount:     amount,
+        Spender:    spender,
+        Recipient:  recipient,
+        Timestamp:  timestamp,
+        TxHash:     hex.EncodeToString(hash[:]),
     }
 }
 

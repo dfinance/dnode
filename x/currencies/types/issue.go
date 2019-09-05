@@ -6,24 +6,27 @@ import (
 )
 
 type Issue struct {
-    Symbol    string         `json:"symbol"`
-    Amount    sdk.Int        `json:"amount"`
-    Recipient sdk.AccAddress `json:"recipient"`
+    CurrencyId sdk.Int        `json:"currencyId"`
+    Symbol     string         `json:"symbol"`
+    Amount     sdk.Int        `json:"amount"`
+    Recipient  sdk.AccAddress `json:"recipient"`
 }
 
-func NewIssue(symbol string, amount sdk.Int, recipient sdk.AccAddress) Issue {
+func NewIssue(currencyId sdk.Int, symbol string, amount sdk.Int, recipient sdk.AccAddress) Issue {
     return Issue{
-        Symbol:    symbol,
-        Amount:    amount,
-        Recipient: recipient,
+        CurrencyId: currencyId,
+        Symbol:     symbol,
+        Amount:     amount,
+        Recipient:  recipient,
     }
 }
 
 func (issue Issue) String() string {
     return fmt.Sprintf("Issue: \n" +
-        "\tSymbol:    %s\n" +
-        "\tAmount:    %s\n" +
-        "\tRecipient: %s\n",
-        issue.Symbol, issue.Amount.String(),
-        issue.Recipient.String())
+        "\tCurrency Id: %s\n" +
+        "\tSymbol:      %s\n" +
+        "\tAmount:      %s\n" +
+        "\tRecipient:   %s\n",
+        issue.CurrencyId, issue.Symbol,
+        issue.Amount.String(), issue.Recipient.String())
 }

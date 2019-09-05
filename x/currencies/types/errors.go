@@ -13,6 +13,7 @@ const (
 	CodeErrExistsIssue       = 106
 	CodeErrNotExistCurrency  = 107
 	CodeErrWrongRecipient    = 108
+	CodeErrWrongCurrencyId   = 109
 )
 
 func ErrWrongSymbol(symbol string) sdk.Error {
@@ -47,4 +48,8 @@ func ErrNotExistCurrency(symbol string) sdk.Error {
 
 func ErrWrongRecipient() sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeErrWrongRecipient, "empty recipient is not allowed")
+}
+
+func ErrWrongCurrencyId(id, realId sdk.Int) sdk.Error {
+	return sdk.NewError(DefaultCodespace, CodeErrWrongCurrencyId, "currency id (%s) is wrong, actual one is %s", id.String(), realId.String())
 }

@@ -39,7 +39,7 @@ func (keeper Keeper) DestroyCurrency(ctx sdk.Context, chainID, symbol, recipient
 }
 
 // Issue currency
-func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) sdk.Error {
+func (keeper Keeper) IssueCurrency(ctx sdk.Context, currencyId sdk.Int, symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) sdk.Error {
 	if keeper.hasIssue(ctx, issueID) {
 	    return types.ErrExistsIssue(issueID)
     }
@@ -47,7 +47,7 @@ func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount sdk.In
 	var isNew bool
 
 	if isNew = keeper.doesCurrencyExists(ctx, symbol); !isNew {
-		currency := types.NewCurrency(symbol, amount, decimals)
+		currency := types.NewCurrency(currencyId, symbol, amount, decimals)
 		keeper.storeCurrency(ctx, currency)
 	} else {
 	    currency := keeper.getCurrency(ctx, symbol)
@@ -56,10 +56,14 @@ func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount sdk.In
 	        return types.ErrIncorrectDecimals(currency.Decimals, decimals, symbol)
         }
 
+        if !currency.CurrencyId.Equal(currencyId) {
+        	return types.ErrWrongCurrencyId(currencyId, currency.CurrencyId)
+		}
+
 		keeper.increaseSupply(ctx, symbol, amount)
 	}
 
-	issue := types.NewIssue(symbol, amount, recipient)
+	issue := types.NewIssue(currencyId, symbol, amount, recipient)
 
 	keeper.storeIssue(ctx, issueID, issue)
 
@@ -137,7 +141,7 @@ func (keeper Keeper) reduceSupply(ctx sdk.Context, chainID, symbol, recipient st
 	currency.Supply = currency.Supply.Sub(amount)
 
 	newId   := keeper.getNewID(ctx)
-	destroy := types.NewDestroy(newId, chainID, symbol, amount, spender, recipient, ctx.TxBytes(), ctx.BlockHeader().Time.Unix())
+	destroy := types.NewDestroy(newId, currency.CurrencyId, chainID, symbol, amount, spender, recipient, ctx.TxBytes(), ctx.BlockHeader().Time.Unix())
 
 	keeper.storeDestroy(ctx, destroy)
 	keeper.storeCurrency(ctx, currency)

@@ -9,21 +9,23 @@ import (
 // Msg struct for issue new currencies.
 // IssueID could be txHash of transaction in another blockchain.
 type MsgIssueCurrency struct {
-	Symbol    string         `json:"symbol"`
-	Amount    sdk.Int		 `json:"amount"`
-	Decimals  int8			 `json:"decimals"`
-	Recipient sdk.AccAddress `json:"recipient"`
-	IssueID   string         `json:"issueID"`
+	CurrencyId sdk.Int        `json:"currencyId"`
+	Symbol     string         `json:"symbol"`
+	Amount     sdk.Int		  `json:"amount"`
+	Decimals   int8			  `json:"decimals"`
+	Recipient  sdk.AccAddress `json:"recipient"`
+	IssueID    string         `json:"issueID"`
 }
 
 // Create new issue currency message
-func NewMsgIssueCurrency(symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) MsgIssueCurrency {
+func NewMsgIssueCurrency(currencyId sdk.Int, symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) MsgIssueCurrency {
 	return MsgIssueCurrency{
-		Symbol:    symbol,
-		Amount:    amount,
-		Decimals:  decimals,
-		Recipient: recipient,
-		IssueID:   issueID,
+		CurrencyId: currencyId,
+		Symbol:     symbol,
+		Amount:     amount,
+		Decimals:   decimals,
+		Recipient:  recipient,
+		IssueID:    issueID,
 	}
 }
 
