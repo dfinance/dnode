@@ -155,18 +155,19 @@ To get calls amount:
 
 To issue new currency:
 
-    wbcli tx currencies ms-issue-currency [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]  --from validators1
+    wbcli tx currencies ms-issue-currency [currencyId] [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]  --from validators1
 
 Where:
 
 | parameter | desc                                                                                                                        |
-|-----------|-----------------------------------------------------------------------------------------------------------------------------|
-| **symbol**    | Currency symbol/denom to issue.                                                                                             |
-| **amount**    | Amount to issue.                                                                                                            |
-| **decimals**  | Currency decimals, maximum is 8.                                                                                            |
-| **recipient** | Cosmos address of account who's receiving coins.                                                                            |
-| **issueID**   | Any issue id, usually transaction id.                                                                                       |
-| **uniqueID**  | Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex. |
+|----------------|-----------------------------------------------------------------------------------------------------------------------------|
+| **currencyId** | Currency ID.                                                                                                                |
+| **symbol**     | Currency symbol/denom to issue.                                                                                             |
+| **amount**     | Amount to issue.                                                                                                            |
+| **decimals**   | Currency decimals, maximum is 8.                                                                                            |
+| **recipient**  | Cosmos address of account who's receiving coins.                                                                            |
+| **issueID**    | Any issue id, usually transaction id.                                                                                       |
+| **uniqueID**   | Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex. |
 
 To destroy currency from any account call:
 
