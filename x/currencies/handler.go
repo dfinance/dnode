@@ -6,7 +6,7 @@ import (
 	"wings-blockchain/x/currencies/msgs"
 )
 
-// Handler for currencies messages, provess issue/destory messages
+// Handler for currencies messages, provess issue/destroy messages
 func NewHandler(keeper Keeper) sdk.Handler {
 	return func (ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
