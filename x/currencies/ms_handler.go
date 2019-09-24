@@ -8,7 +8,7 @@ import (
 	msTypes "wings-blockchain/x/multisig/types"
 )
 
-// Handler for currencies messages, provess issue/destory messages
+// Handler for currencies messages, provess issue/destroy messages
 func NewMsHandler(keeper Keeper) msTypes.MsHandler {
 	return func (ctx sdk.Context, msg msTypes.MsMsg) sdk.Error {
 		switch msg := msg.(type) {

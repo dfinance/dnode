@@ -6,7 +6,7 @@ import (
 	"wings-blockchain/x/currencies/types"
 )
 
-// Message for destory currency
+// Message for destroy currency
 type MsgDestroyCurrency struct {
     ChainID   string         `json:"chainID"`
 	Symbol 	  string		 `json:"symbol"`
@@ -15,7 +15,7 @@ type MsgDestroyCurrency struct {
 	Recipient string		 `json:"recipient"`
 }
 
-// Create new message to destory currency
+// Create new message to destroy currency
 func NewMsgDestroyCurrency(chainID, symbol string, amount sdk.Int, spender sdk.AccAddress, recipient string) MsgDestroyCurrency {
 	return MsgDestroyCurrency{
 	    ChainID: chainID,
@@ -31,12 +31,12 @@ func (msg MsgDestroyCurrency) Route() string {
 	return types.DefaultRoute
 }
 
-// Indeed type to destory currency
+// Indeed type to destroy currency
 func (msg MsgDestroyCurrency) Type() string {
-	return "destory_currency"
+	return "destroy_currency"
 }
 
-// Validate basic in case of destory message
+// Validate basic in case of destroy message
 func (msg MsgDestroyCurrency) ValidateBasic() sdk.Error {
 	if msg.Spender.Empty() {
 		return sdk.ErrInvalidAddress(msg.Spender.String())
