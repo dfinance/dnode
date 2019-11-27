@@ -1,15 +1,19 @@
 package keeper
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	types "wings-blockchain/x/multisig/types"
-	"wings-blockchain/x/poa"
 	"fmt"
+
+	"wings-blockchain/x/poa"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"wings-blockchain/x/multisig/types"
 )
 
-func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
-	logger  := keeper.getLogger(ctx)
-	resTags := sdk.NewTags()
+// ABCI Tags are now Events - see https://github.com/tendermint/tendermint/blob/60827f75623b92eff132dc0eff5b49d2025c591e/docs/spec/abci/abci.md#events
+func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Event {
+	logger := keeper.getLogger(ctx)
+	resEvents := sdk.NewEventManager()
 
 	start := ctx.BlockHeight() - types.IntervalToExecute
 
@@ -20,8 +24,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 	// Iterate active calls
 	activeIterator := keeper.GetQueueIteratorStartEnd(ctx, start, ctx.BlockHeight())
 	defer activeIterator.Close()
-
-	resTags = resTags.AppendTag("start-active-calls-ex", fmt.Sprintf("%d", start))
+	resEvents.EmitEvent(sdk.NewEvent("start-active-calls-ex", sdk.Attribute{Key: "height", Value: fmt.Sprintf("%d", start)}))
 	for ; activeIterator.Valid(); activeIterator.Next() {
 		bs := activeIterator.Value()
 
@@ -36,8 +39,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 
 		// check if call is confirmed enough
 		if uint16(confirmations) >= poaKeeper.GetEnoughConfirmations(ctx) {
-			resTags = resTags.AppendTag("execute-call", fmt.Sprintf("%d", callId))
-
+			resEvents.EmitEvent(sdk.NewEvent("execute-call", sdk.Attribute{Key: "callId", Value: fmt.Sprintf("%d", callId)}))
 			// call confirmed - execute
 			call := keeper.getCallById(ctx, callId)
 			call.Approved = true
@@ -52,7 +54,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 				call.Failed = true
 				call.Error = err.Error()
 
-				resTags = resTags.AppendTag("failed", fmt.Sprintf("%d", callId))
+				resEvents.EmitEvent(sdk.NewEvent("failed", sdk.Attribute{Key: "callId", Value: fmt.Sprintf("%d", callId)}))
 
 				logger.Info(
 					fmt.Sprintf("Failed execution of %d call, error: %s, marked as failed",
@@ -62,7 +64,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 				call.Executed = true
 				writeCache()
 
-				resTags = resTags.AppendTag("executed", fmt.Sprintf("%d", callId))
+				resEvents.EmitEvent(sdk.NewEvent("executed", sdk.Attribute{Key: "callId", Value: fmt.Sprintf("%d", callId)}))
 
 				logger.Info(
 					fmt.Sprintf("Call %d executed completed", callId),
@@ -78,7 +80,10 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 	}
 
 	if start > types.IntervalToExecute {
-		resTags = resTags.AppendTag("start-rejected-calls-rem", fmt.Sprintf("%d", start))
+		resEvents.EmitEvent(sdk.NewEvent("start-rejected-calls-rem", sdk.Attribute{
+			Key:   "callId",
+			Value: fmt.Sprintf("%d", start),
+		}))
 
 		// Remove not confirmed calls during intervals
 		rejectedIterator := keeper.GetQueueIteratorTill(ctx, start)
@@ -95,13 +100,12 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) sdk.Tags {
 			keeper.saveCallById(ctx, callId, call)
 			keeper.removeCallFromQueue(ctx, callId, call.Height)
 
-			resTags = resTags.AppendTag("reject-call", fmt.Sprintf("%d", callId))
-
+			resEvents.EmitEvent(sdk.NewEvent("reject-call", sdk.Attribute{Key: "callId", Value: fmt.Sprintf("%d", start)}))
 			logger.Info(
 				fmt.Sprintf("Removing %d call as not approved in time", callId),
 			)
 		}
 	}
 
-	return resTags
+	return resEvents.ABCIEvents()
 }

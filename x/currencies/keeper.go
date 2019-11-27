@@ -1,16 +1,16 @@
 package currencies
 
 import (
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	cdcCodec "github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"wings-blockchain/x/currencies/types"
 )
 
 // Currency keeper struct
 type Keeper struct {
 	coinKeeper bank.Keeper
-	cdc 	   *cdcCodec.Codec
+	cdc        *cdcCodec.Codec
 	storeKey   sdk.StoreKey
 }
 
@@ -33,7 +33,7 @@ func (keeper Keeper) DestroyCurrency(ctx sdk.Context, chainID, symbol, recipient
 
 	newCoin := sdk.NewCoin(symbol, amount)
 
-	_, _, err := keeper.coinKeeper.SubtractCoins(ctx, spender, sdk.Coins{newCoin})
+	_, err := keeper.coinKeeper.SubtractCoins(ctx, spender, sdk.Coins{newCoin})
 
 	return err
 }
@@ -41,8 +41,8 @@ func (keeper Keeper) DestroyCurrency(ctx sdk.Context, chainID, symbol, recipient
 // Issue currency
 func (keeper Keeper) IssueCurrency(ctx sdk.Context, currencyId sdk.Int, symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) sdk.Error {
 	if keeper.hasIssue(ctx, issueID) {
-	    return types.ErrExistsIssue(issueID)
-    }
+		return types.ErrExistsIssue(issueID)
+	}
 
 	var isNew bool
 
@@ -50,14 +50,14 @@ func (keeper Keeper) IssueCurrency(ctx sdk.Context, currencyId sdk.Int, symbol s
 		currency := types.NewCurrency(currencyId, symbol, amount, decimals)
 		keeper.storeCurrency(ctx, currency)
 	} else {
-	    currency := keeper.getCurrency(ctx, symbol)
+		currency := keeper.getCurrency(ctx, symbol)
 
-	    if currency.Decimals != decimals {
-	        return types.ErrIncorrectDecimals(currency.Decimals, decimals, symbol)
-        }
+		if currency.Decimals != decimals {
+			return types.ErrIncorrectDecimals(currency.Decimals, decimals, symbol)
+		}
 
-        if !currency.CurrencyId.Equal(currencyId) {
-        	return types.ErrWrongCurrencyId(currencyId, currency.CurrencyId)
+		if !currency.CurrencyId.Equal(currencyId) {
+			return types.ErrWrongCurrencyId(currencyId, currency.CurrencyId)
 		}
 
 		keeper.increaseSupply(ctx, symbol, amount)
@@ -69,11 +69,10 @@ func (keeper Keeper) IssueCurrency(ctx sdk.Context, currencyId sdk.Int, symbol s
 
 	newCoin := sdk.NewCoin(symbol, amount)
 
-	_, _, err := keeper.coinKeeper.AddCoins(ctx, recipient, sdk.Coins{newCoin})
+	_, err := keeper.coinKeeper.AddCoins(ctx, recipient, sdk.Coins{newCoin})
 
 	return err
 }
-
 
 // Get currency by denom/symbol
 func (keeper Keeper) GetCurrency(ctx sdk.Context, symbol string) types.Currency {
@@ -96,7 +95,7 @@ func (keeper Keeper) GetCDC() *cdcCodec.Codec {
 func (keeper Keeper) GetIssue(ctx sdk.Context, issueID string) types.Issue {
 	store := ctx.KVStore(keeper.storeKey)
 
-	bz    := store.Get(types.GetIssuesKey(issueID))
+	bz := store.Get(types.GetIssuesKey(issueID))
 
 	var issue types.Issue
 	keeper.cdc.MustUnmarshalBinaryBare(bz, &issue)
@@ -106,19 +105,19 @@ func (keeper Keeper) GetIssue(ctx sdk.Context, issueID string) types.Issue {
 
 // Has destroy
 func (keeper Keeper) HasDestroy(ctx sdk.Context, id sdk.Int) bool {
-    store := ctx.KVStore(keeper.storeKey)
+	store := ctx.KVStore(keeper.storeKey)
 
-    return store.Has(types.GetDestroyKey(id))
+	return store.Has(types.GetDestroyKey(id))
 }
 
 // Get destroy by id
 func (keeper Keeper) GetDestroy(ctx sdk.Context, id sdk.Int) types.Destroy {
-    store := ctx.KVStore(keeper.storeKey)
+	store := ctx.KVStore(keeper.storeKey)
 
-    var destroy types.Destroy
-    keeper.cdc.MustUnmarshalBinaryBare(store.Get(types.GetDestroyKey(id)), &destroy)
+	var destroy types.Destroy
+	keeper.cdc.MustUnmarshalBinaryBare(store.Get(types.GetDestroyKey(id)), &destroy)
 
-    return destroy
+	return destroy
 }
 
 // Checking does currency exists by symbol
@@ -140,7 +139,7 @@ func (keeper Keeper) reduceSupply(ctx sdk.Context, chainID, symbol, recipient st
 	currency := keeper.getCurrency(ctx, symbol)
 	currency.Supply = currency.Supply.Sub(amount)
 
-	newId   := keeper.getNewID(ctx)
+	newId := keeper.getNewID(ctx)
 	destroy := types.NewDestroy(newId, currency.CurrencyId, chainID, symbol, amount, spender, recipient, ctx.TxBytes(), ctx.BlockHeader().Time.Unix())
 
 	keeper.storeDestroy(ctx, destroy)
@@ -150,14 +149,14 @@ func (keeper Keeper) reduceSupply(ctx sdk.Context, chainID, symbol, recipient st
 
 // Store destroy
 func (keeper Keeper) storeDestroy(ctx sdk.Context, destroy types.Destroy) {
-    store := ctx.KVStore(keeper.storeKey)
-    store.Set(types.GetDestroyKey(destroy.ID), keeper.cdc.MustMarshalBinaryBare(destroy))
+	store := ctx.KVStore(keeper.storeKey)
+	store.Set(types.GetDestroyKey(destroy.ID), keeper.cdc.MustMarshalBinaryBare(destroy))
 }
 
 // Set last ID
 func (keeper Keeper) setLastID(ctx sdk.Context, lastId sdk.Int) {
-    store := ctx.KVStore(keeper.storeKey)
-    store.Set(types.GetLastIDKey(), keeper.cdc.MustMarshalBinaryBare(lastId))
+	store := ctx.KVStore(keeper.storeKey)
+	store.Set(types.GetLastIDKey(), keeper.cdc.MustMarshalBinaryBare(lastId))
 }
 
 // Get last id
@@ -170,14 +169,14 @@ func (keeper Keeper) getLastID(ctx sdk.Context) sdk.Int {
 
 // Get new id
 func (keeper Keeper) getNewID(ctx sdk.Context) sdk.Int {
-    store :=  ctx.KVStore(keeper.storeKey)
+	store := ctx.KVStore(keeper.storeKey)
 
-    if !store.Has(types.GetLastIDKey()) {
-        return sdk.NewInt(0)
-    }
+	if !store.Has(types.GetLastIDKey()) {
+		return sdk.NewInt(0)
+	}
 
 	lastId := keeper.getLastID(ctx)
-    return lastId.AddRaw(1)
+	return lastId.AddRaw(1)
 }
 
 // Store currency in storage

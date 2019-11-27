@@ -1,15 +1,17 @@
 package cli
 
-
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/spf13/cobra"
-	"github.com/cosmos/cosmos-sdk/client/context"
-	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/client/txbuilder"
-	"github.com/cosmos/cosmos-sdk/client/utils"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/poa/msgs"
+	"os"
+
 	msMsg "wings-blockchain/x/multisig/msgs"
+	"wings-blockchain/x/poa/msgs"
+
+	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/spf13/cobra"
 )
 
 func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
@@ -17,18 +19,19 @@ func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 		Use:   "ms-add-validator [address] [ethAddress] [uniqueID]",
 		Short: "adding new validator to validator list by multisig",
 		Args:  cobra.ExactArgs(3),
-		RunE:  func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
-			if err := cliCtx.EnsureAccountExists(); err != nil {
+			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return err
 			}
 
 			ethAddress := args[1]
 			validatorAddress, err := sdk.AccAddressFromBech32(args[0])
 
-			if err  != nil {
+			if err != nil {
 				return err
 			}
 
@@ -41,9 +44,9 @@ func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			cliCtx.PrintResponse = true
+			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msMsg}, false)
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msMsg})
 		},
 	}
 }
@@ -53,11 +56,12 @@ func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 		Use:   "ms-remove-validator [address] [uniqueID]",
 		Short: "remove poa validator by multisig",
 		Args:  cobra.ExactArgs(2),
-		RunE:  func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
-			if err := cliCtx.EnsureAccountExists(); err != nil {
+			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return err
 			}
 
@@ -68,7 +72,7 @@ func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msgRmvVal := msgs.NewMsgRemoveValidator(validatorAddress, cliCtx.GetFromAddress())
-			msMsg     := msMsg.NewMsgSubmitCall(msgRmvVal, args[1], cliCtx.GetFromAddress())
+			msMsg := msMsg.NewMsgSubmitCall(msgRmvVal, args[1], cliCtx.GetFromAddress())
 
 			err = msMsg.ValidateBasic()
 
@@ -76,24 +80,24 @@ func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			cliCtx.PrintResponse = true
+			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msMsg}, false)
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msMsg})
 		},
 	}
 }
-
 
 func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ms-replace-validator [oldValidator] [newValidator] [ethAddress] [uniqueID]",
 		Short: "replace poa validator by multisignature",
 		Args:  cobra.ExactArgs(4),
-		RunE:  func(cmd *cobra.Command,  args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
-			if err := cliCtx.EnsureAccountExists(); err != nil {
+			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return err
 			}
 
@@ -111,7 +115,7 @@ func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 			ethAddress := args[2]
 
 			msgReplVal := msgs.NewMsgReplaceValidator(oldValidator, newValidator, ethAddress, cliCtx.GetFromAddress())
-			msMsg 	   := msMsg.NewMsgSubmitCall(msgReplVal, args[3], cliCtx.GetFromAddress())
+			msMsg := msMsg.NewMsgSubmitCall(msgReplVal, args[3], cliCtx.GetFromAddress())
 
 			err = msMsg.ValidateBasic()
 
@@ -119,10 +123,9 @@ func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			cliCtx.PrintResponse = true
+			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msMsg}, false)
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msMsg})
 		},
 	}
 }
-

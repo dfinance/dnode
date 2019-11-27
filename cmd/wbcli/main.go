@@ -8,10 +8,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
-	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,9 +21,9 @@ import (
 	app "wings-blockchain"
 	ccClient "wings-blockchain/x/currencies/client"
 	ccRoutes "wings-blockchain/x/currencies/client/rest"
-	poaClient "wings-blockchain/x/poa/client"
 	msClient "wings-blockchain/x/multisig/client"
 	msRoutes "wings-blockchain/x/multisig/client/rest"
+	poaClient "wings-blockchain/x/poa/client"
 	poaRoutes "wings-blockchain/x/poa/client/rest"
 )
 
@@ -32,10 +31,15 @@ const (
 	storeAcc = "acc"
 	storeCC  = "currencies"
 	storePoa = "poa"
-	storeMC	 = "multisig"
+	storeMC  = "multisig"
 )
 
 var defaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
+
+type ModuleClient interface {
+	GetQueryCmd() *cobra.Command
+	GetTxCmd() *cobra.Command
+}
 
 func main() {
 	cobra.EnableCommandSorting = false
@@ -49,7 +53,7 @@ func main() {
 	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
 	config.Seal()
 
-	mc := []sdk.ModuleClients{
+	mc := []ModuleClient{
 		ccClient.NewModuleClient(storeCC, cdc),
 		poaClient.NewModuleClient(storePoa, cdc),
 		msClient.NewModuleClient(storeMC, cdc),
@@ -86,18 +90,24 @@ func main() {
 	}
 }
 
+// 0.36.0 Breaking Changes
+// [\#4588](https://github.com/cosmos/cosmos-sdk/issues/4588) Context does not depend on x/auth anymore.
+// client/context is stripped out of the following features:
+//- GetAccountDecoder()
+//- CLIContext.WithAccountDecoder()
+//- CLIContext.WithAccountStore()
+//x/auth.AccountDecoder is unnecessary and consequently removed.
 func registerRoutes(rs *lcd.RestServer) {
-	rs.CliCtx = rs.CliCtx.WithAccountDecoder(rs.Cdc)
-	rpc.RegisterRoutes(rs.CliCtx, rs.Mux)
-	tx.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
-	auth.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, storeAcc)
-	bank.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, rs.KeyBase)
-	ccRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
-	msRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
-	poaRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
+	rpc.RegisterRPCRoutes(rs.CliCtx, rs.Mux)
+	auth.RegisterTxRoutes(rs.CliCtx, rs.Mux)
+	auth.RegisterRoutes(rs.CliCtx, rs.Mux, storeAcc)
+	bank.RegisterRoutes(rs.CliCtx, rs.Mux)
+	ccRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.CliCtx.Codec)
+	msRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.CliCtx.Codec)
+	poaRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.CliCtx.Codec)
 }
 
-func queryCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
+func queryCmd(cdc *amino.Codec, mc []ModuleClient) *cobra.Command {
 	queryCmd := &cobra.Command{
 		Use:     "query",
 		Aliases: []string{"q"},
@@ -107,10 +117,10 @@ func queryCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
 	queryCmd.AddCommand(
 		rpc.ValidatorCommand(cdc),
 		rpc.BlockCommand(),
-		tx.SearchTxCmd(cdc),
-		tx.QueryTxCmd(cdc),
+		authcmd.QueryTxsByEventsCmd(cdc),
+		authcmd.QueryTxCmd(cdc),
 		client.LineBreak,
-		authcmd.GetAccountCmd(storeAcc, cdc),
+		authcmd.GetAccountCmd(cdc),
 	)
 
 	for _, m := range mc {
@@ -120,7 +130,7 @@ func queryCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
 	return queryCmd
 }
 
-func txCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
+func txCmd(cdc *amino.Codec, mc []ModuleClient) *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:   "tx",
 		Short: "Transactions subcommands",
@@ -130,7 +140,7 @@ func txCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
 		bankcmd.SendTxCmd(cdc),
 		client.LineBreak,
 		authcmd.GetSignCommand(cdc),
-		tx.GetBroadcastCommand(cdc),
+		authcmd.GetBroadcastCommand(cdc),
 		client.LineBreak,
 	)
 

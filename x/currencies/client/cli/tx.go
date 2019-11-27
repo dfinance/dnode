@@ -1,27 +1,31 @@
 package cli
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/spf13/cobra"
-	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
-	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/client/txbuilder"
-	"github.com/cosmos/cosmos-sdk/client/utils"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/currencies/msgs"
 	"fmt"
+	"os"
+
+	"wings-blockchain/x/currencies/msgs"
+
+	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/spf13/cobra"
 )
 
 // Destroy currency
 func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use: 	"destroy-currency [chainID] [symbol] [amount] [recipient]",
-		Short:  "destroy issued currency",
-		Args: 	cobra.ExactArgs(4),
-		RunE:   func(cmd *cobra.Command, args []string) error {
-			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+		Use:   "destroy-currency [chainID] [symbol] [amount] [recipient]",
+		Short: "destroy issued currency",
+		Args:  cobra.ExactArgs(4),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
-			if err := cliCtx.EnsureAccountExists(); err != nil {
+			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return err
 			}
 
@@ -38,9 +42,9 @@ func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			cliCtx.PrintResponse = true
+			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 }

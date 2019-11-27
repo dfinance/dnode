@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"wings-blockchain/x/currencies/queries"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/spf13/cobra"
+	"wings-blockchain/x/currencies/queries"
 )
 
 func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
@@ -16,7 +16,7 @@ func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/destroys/%s/%s", queryRoute, args[0], args[1]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/destroys/%s/%s", queryRoute, args[0], args[1]), nil)
 
 			if err != nil {
 				return err
@@ -37,7 +37,7 @@ func GetDestroy(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/destroy/%s", queryRoute, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/destroy/%s", queryRoute, args[0]), nil)
 
 			if err != nil {
 				return err
@@ -55,11 +55,11 @@ func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "issue [issueID]",
 		Short: "get issue by id",
-		Args: cobra.ExactArgs(1),
-		RunE:  func(cmd *cobra.Command, args []string) error {
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/issue/%s", queryRoute, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/issue/%s", queryRoute, args[0]), nil)
 			if err != nil {
 				return err
 			}
@@ -77,10 +77,10 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		Use:   "currency [symbol]",
 		Short: "get currency by chainID and denom/symbol",
 		Args:  cobra.ExactArgs(1),
-		RunE:  func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/get/%s", queryRoute, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/get/%s", queryRoute, args[0]), nil)
 			if err != nil {
 				return err
 			}
@@ -91,4 +91,3 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		},
 	}
 }
-

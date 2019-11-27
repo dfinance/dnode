@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -22,12 +23,12 @@ import (
 	"github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/libs/log"
 
-	gaiaInit "github.com/cosmos/cosmos-sdk/cmd/gaia/init"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
 	app "wings-blockchain"
 	"wings-blockchain/helpers"
 	"wings-blockchain/x/poa/types"
@@ -93,7 +94,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 				chainID = fmt.Sprintf("test-chain-%v", common.RandStr(6))
 			}
 
-			_, pk, err := gaiaInit.InitializeNodeValidatorFiles(config)
+			_, pk, err := genutil.InitializeNodeValidatorFiles(config)
 			if err != nil {
 				return err
 			}
@@ -120,7 +121,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			if err = gaiaInit.ExportGenesisFile(genFile, chainID, []tmtypes.GenesisValidator{validator}, appState); err != nil {
+			if err = genutil.ExportGenesisFileWithTime(genFile, chainID, []tmtypes.GenesisValidator{validator}, appState, time.Now()); err != nil {
 				return err
 			}
 
@@ -196,7 +197,7 @@ func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Com
 				return err
 			}
 
-			return gaiaInit.ExportGenesisFile(genFile, genDoc.ChainID, genDoc.Validators, appStateJSON)
+			return genutil.ExportGenesisFileWithTime(genFile, genDoc.ChainID, genDoc.Validators, appStateJSON, time.Now())
 		},
 	}
 }
@@ -256,7 +257,7 @@ $ nsd add-genesis-account cosmos1tse7r2fadvlrrgau3pa0ss7cqh55wrv6y9alwh 1000STAK
 				return err
 			}
 
-			return gaiaInit.ExportGenesisFile(genFile, genDoc.ChainID, genDoc.Validators, appStateJSON)
+			return genutil.ExportGenesisFileWithTime(genFile, genDoc.ChainID, genDoc.Validators, appStateJSON, time.Now())
 		},
 	}
 	return cmd

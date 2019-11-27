@@ -2,21 +2,21 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 
-	"github.com/tendermint/tendermint/libs/log"
-
+	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-
-	bam "github.com/cosmos/cosmos-sdk/baseapp"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
-	dbm "github.com/tendermint/tendermint/libs/db"
+	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
+
 	"wings-blockchain/x/currencies"
 	ccQuerier "wings-blockchain/x/currencies/queries"
 	"wings-blockchain/x/multisig"
@@ -35,23 +35,22 @@ type WbServiceApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
-	keyMain          *sdk.KVStoreKey
-	keyAccount       *sdk.KVStoreKey
-	keyNS            *sdk.KVStoreKey
-	keyCC            *sdk.KVStoreKey
-	keyFeeCollection *sdk.KVStoreKey
-	keyParams        *sdk.KVStoreKey
-	tkeyParams       *sdk.TransientStoreKey
-	keyPoa           *sdk.KVStoreKey
-	keyMS            *sdk.KVStoreKey
+	keyMain    *sdk.KVStoreKey
+	keyAccount *sdk.KVStoreKey
+	keyCC      *sdk.KVStoreKey
+	keySupply  *sdk.KVStoreKey
+	keyParams  *sdk.KVStoreKey
+	tkeyParams *sdk.TransientStoreKey
+	keyPoa     *sdk.KVStoreKey
+	keyMS      *sdk.KVStoreKey
 
-	accountKeeper       auth.AccountKeeper
-	bankKeeper          bank.Keeper
-	feeCollectionKeeper auth.FeeCollectionKeeper
-	paramsKeeper        params.Keeper
-	currenciesKeeper    currencies.Keeper
-	poaKeeper           poa.Keeper
-	msKeeper            msKeeper.Keeper
+	accountKeeper    auth.AccountKeeper
+	bankKeeper       bank.Keeper
+	supplyKeeper     supply.Keeper
+	paramsKeeper     params.Keeper
+	currenciesKeeper currencies.Keeper
+	poaKeeper        poa.Keeper
+	msKeeper         msKeeper.Keeper
 }
 
 // NewWbServiceApp is a constructor function for wings blockchain
@@ -68,18 +67,18 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		BaseApp: bApp,
 		cdc:     cdc,
 
-		keyMain:          sdk.NewKVStoreKey("main"),
-		keyAccount:       sdk.NewKVStoreKey("acc"),
-		keyCC:            sdk.NewKVStoreKey("cc"),
-		keyFeeCollection: sdk.NewKVStoreKey("fee_collection"),
-		keyParams:        sdk.NewKVStoreKey("params"),
-		tkeyParams:       sdk.NewTransientStoreKey("transient_params"),
-		keyPoa:           sdk.NewKVStoreKey("poa"),
-		keyMS:            sdk.NewKVStoreKey("multisig"),
+		keyMain:    sdk.NewKVStoreKey("main"),
+		keyAccount: sdk.NewKVStoreKey("acc"),
+		keyCC:      sdk.NewKVStoreKey("cc"),
+		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
+		keyParams:  sdk.NewKVStoreKey("params"),
+		tkeyParams: sdk.NewTransientStoreKey("transient_params"),
+		keyPoa:     sdk.NewKVStoreKey("poa"),
+		keyMS:      sdk.NewKVStoreKey("multisig"),
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
-	app.paramsKeeper = params.NewKeeper(app.cdc, app.keyParams, app.tkeyParams)
+	app.paramsKeeper = params.NewKeeper(app.cdc, app.keyParams, app.tkeyParams, params.DefaultCodespace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -94,10 +93,10 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		app.accountKeeper,
 		app.paramsKeeper.Subspace(bank.DefaultParamspace),
 		bank.DefaultCodespace,
+		nil,
 	)
 
-	// The FeeCollectionKeeper collects transaction fees and renders them to the fee distribution module
-	app.feeCollectionKeeper = auth.NewFeeCollectionKeeper(cdc, app.keyFeeCollection)
+	app.supplyKeeper = supply.NewKeeper(cdc, app.keySupply, app.accountKeeper, app.bankKeeper, nil)
 
 	// Initializing currencies module
 	app.currenciesKeeper = currencies.NewKeeper(
@@ -126,7 +125,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	)
 
 	// The AnteHandler handles signature verification and transaction pre-processing
-	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.feeCollectionKeeper))
+	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.supplyKeeper, auth.DefaultSigVerificationGasConsumer))
 
 	// The app.Router is the main transaction router where each module registers its routes
 	// Register the bank, currencies,  routes here
@@ -152,7 +151,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		app.keyMain,
 		app.keyAccount,
 		app.keyCC,
-		app.keyFeeCollection,
+		app.keySupply,
 		app.keyParams,
 		app.tkeyParams,
 		app.keyPoa,
@@ -170,9 +169,8 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 func InitEndBlockers(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.EndBlocker {
 	return func(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 		tags := msKeeper.EndBlocker(ctx, keeper, poaKeeper)
-
 		return abci.ResponseEndBlock{
-			Tags: tags,
+			Events: tags,
 		}
 	}
 }
@@ -207,7 +205,7 @@ func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 		app.accountKeeper.SetAccount(ctx, acc)
 	}
 
-	auth.InitGenesis(ctx, app.accountKeeper, app.feeCollectionKeeper, genesisState.AuthData)
+	auth.InitGenesis(ctx, app.accountKeeper, genesisState.AuthData)
 	bank.InitGenesis(ctx, app.bankKeeper, genesisState.BankData)
 
 	return abci.ResponseInitChain{}
