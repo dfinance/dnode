@@ -1,31 +1,29 @@
 package msgs
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/x/currencies/types"
 )
 
 // Msg struct for issue new currencies.
 // IssueID could be txHash of transaction in another blockchain.
 type MsgIssueCurrency struct {
-	CurrencyId sdk.Int        `json:"currencyId"`
-	Symbol     string         `json:"symbol"`
-	Amount     sdk.Int		  `json:"amount"`
-	Decimals   int8			  `json:"decimals"`
-	Recipient  sdk.AccAddress `json:"recipient"`
-	IssueID    string         `json:"issueID"`
+	Symbol    string         `json:"symbol"`
+	Amount    sdk.Int        `json:"amount"`
+	Decimals  int8           `json:"decimals"`
+	Recipient sdk.AccAddress `json:"recipient"`
+	IssueID   string         `json:"issueID"`
 }
 
 // Create new issue currency message
-func NewMsgIssueCurrency(currencyId sdk.Int, symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) MsgIssueCurrency {
+func NewMsgIssueCurrency(symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) MsgIssueCurrency {
 	return MsgIssueCurrency{
-		CurrencyId: currencyId,
-		Symbol:     symbol,
-		Amount:     amount,
-		Decimals:   decimals,
-		Recipient:  recipient,
-		IssueID:    issueID,
+		Symbol:    symbol,
+		Amount:    amount,
+		Decimals:  decimals,
+		Recipient: recipient,
+		IssueID:   issueID,
 	}
 }
 
@@ -54,15 +52,15 @@ func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 	}
 
 	if msg.Amount.IsZero() {
-	    return types.ErrWrongAmount(msg.Amount.String())
-    }
+		return types.ErrWrongAmount(msg.Amount.String())
+	}
 
 	if len(msg.IssueID) == 0 {
-	    return types.ErrWrongIssueID(msg.IssueID)
-    }
+		return types.ErrWrongIssueID(msg.IssueID)
+	}
 
-    // lets try to create coin and validate denom
-    sdk.NewCoin(msg.Symbol, msg.Amount)
+	// lets try to create coin and validate denom
+	sdk.NewCoin(msg.Symbol, msg.Amount)
 
 	return nil
 }
