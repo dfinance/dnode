@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"io"
 	"io/ioutil"
 	"os"
@@ -263,7 +264,20 @@ $ nsd add-genesis-account cosmos1tse7r2fadvlrrgau3pa0ss7cqh55wrv6y9alwh 1000STAK
 	return cmd
 }
 
-// SimpleAppGenTx returns a simple GenTx command that makes the node a valdiator from the start
+// Generate genesis validator with ed25519 keys
+func genValidator() (sdk.AccAddress, string, error) {
+	// generate a private key, with recovery phrase
+	info, secret, err := client.NewInMemoryKeyBase().CreateMnemonic(
+		"name", keys.English, "pass", keys.Ed25519)
+	if err != nil {
+		return sdk.AccAddress([]byte{}), "", err
+	}
+
+	addr := info.GetPubKey().Address()
+	return sdk.AccAddress(addr), secret, nil
+}
+
+// SimpleAppGenTx returns a simple GenTx command that makes the node a validator from the start
 func SimpleAppGenTx(cdc *codec.Codec, pk crypto.PubKey) (
 	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
 

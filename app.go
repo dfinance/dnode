@@ -208,7 +208,7 @@ func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain)
 	auth.InitGenesis(ctx, app.accountKeeper, genesisState.AuthData)
 	bank.InitGenesis(ctx, app.bankKeeper, genesisState.BankData)
 
-	return abci.ResponseInitChain{}
+	return abci.ResponseInitChain{Validators: req.Validators}
 }
 
 // ExportAppStateAndValidators does the things
