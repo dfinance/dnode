@@ -53,9 +53,14 @@ type WbServiceApp struct {
 	msKeeper         msKeeper.Keeper
 }
 
+var (
+	maccPerms map[string][]string = map[string][]string{
+		auth.FeeCollectorName: nil,
+	}
+)
+
 // NewWbServiceApp is a constructor function for wings blockchain
 func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
-
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
 
@@ -93,10 +98,10 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		app.accountKeeper,
 		app.paramsKeeper.Subspace(bank.DefaultParamspace),
 		bank.DefaultCodespace,
-		nil,
+		app.ModuleAccountAddrs(),
 	)
 
-	app.supplyKeeper = supply.NewKeeper(cdc, app.keySupply, app.accountKeeper, app.bankKeeper, nil)
+	app.supplyKeeper = supply.NewKeeper(cdc, app.keySupply, app.accountKeeper, app.bankKeeper, maccPerms)
 
 	// Initializing currencies module
 	app.currenciesKeeper = currencies.NewKeeper(
@@ -164,6 +169,16 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 	}
 
 	return app
+}
+
+// ModuleAccountAddrs returns all the app's module account addresses.
+func (app *WbServiceApp) ModuleAccountAddrs() map[string]bool {
+	modAccAddrs := make(map[string]bool)
+	for acc := range maccPerms {
+		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
+	}
+
+	return modAccAddrs
 }
 
 func InitEndBlockers(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.EndBlocker {
