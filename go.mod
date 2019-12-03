@@ -3,16 +3,31 @@ module wings-blockchain
 go 1.12
 
 require (
+	github.com/btcsuite/btcd v0.20.1-beta // indirect
+	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/cosmos/cosmos-sdk v0.37.4
+	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
+	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/gorilla/mux v1.7.3
-	github.com/mattn/go-isatty v0.0.7 // indirect
+	github.com/mattn/go-isatty v0.0.10 // indirect
+	github.com/pelletier/go-toml v1.6.0 // indirect
+	github.com/prometheus/client_golang v1.2.1 // indirect
+	github.com/prometheus/client_model v0.0.0-20191202183732-d1d2010b5bee // indirect
+	github.com/prometheus/procfs v0.0.8 // indirect
+	github.com/rakyll/statik v0.1.6 // indirect
+	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v0.0.5
-	github.com/spf13/viper v1.4.0
-	github.com/tendermint/go-amino v0.15.0
-	github.com/tendermint/tendermint v0.32.7
+	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/viper v1.5.0
+	github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15 // indirect
+	github.com/tendermint/go-amino v0.15.1
+	github.com/tendermint/tendermint v0.32.8
 	github.com/tendermint/tm-db v0.2.0
-	golang.org/x/sys v0.0.0-20190329044733-9eb1bfa1ce65 // indirect
-	google.golang.org/appengine v1.4.0 // indirect
-	google.golang.org/genproto v0.0.0-20190327125643-d831d65fe17d // indirect
+	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e // indirect
+	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933 // indirect
+	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9 // indirect
+	golang.org/x/text v0.3.2 // indirect
+	google.golang.org/genproto v0.0.0-20191203145615-049a07e0debe // indirect
+	gopkg.in/yaml.v2 v2.2.7 // indirect
 )
