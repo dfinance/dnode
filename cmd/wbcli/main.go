@@ -1,8 +1,10 @@
 package main
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"os"
 	"path"
+	wbConfig "wings-blockchain/cmd/config"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -13,7 +15,6 @@ import (
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
@@ -32,15 +33,6 @@ const (
 	storeCC  = "currencies"
 	storePoa = "poa"
 	storeMC  = "multisig"
-
-	// Address prefixes
-	MainPrefix           = "wallets"
-	Bech32PrefixAccAddr  = MainPrefix
-	Bech32PrefixAccPub   = MainPrefix + sdk.PrefixPublic
-	Bech32PrefixValAddr  = MainPrefix + sdk.PrefixValidator + sdk.PrefixOperator
-	Bech32PrefixValPub   = MainPrefix + sdk.PrefixValidator + sdk.PrefixOperator + sdk.PrefixPublic
-	Bech32PrefixConsAddr = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus
-	Bech32PrefixConsPub  = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic
 )
 
 var defaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
@@ -51,19 +43,13 @@ type ModuleClient interface {
 }
 
 func main() {
+	config := sdk.GetConfig()
+	wbConfig.InitBechPrefixes(config)
+	config.Seal()
+
 	cobra.EnableCommandSorting = false
 
 	cdc := app.MakeCodec()
-
-	// Read in the configuration file for the sdk
-	config := sdk.GetConfig()
-
-	// Set prefixes for address
-	config.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(Bech32PrefixConsAddr, Bech32PrefixConsPub)
-
-	config.Seal()
 
 	mc := []ModuleClient{
 		ccClient.NewModuleClient(storeCC, cdc),

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	wbConfig "wings-blockchain/cmd/config"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -43,6 +44,10 @@ const (
 )
 
 func main() {
+	config := sdk.GetConfig()
+	wbConfig.InitBechPrefixes(config)
+	config.Seal()
+
 	cobra.EnableCommandSorting = false
 
 	cdc := app.MakeCodec()
