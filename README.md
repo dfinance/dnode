@@ -102,7 +102,7 @@ To add new validator use next command:
 
 Where:
 
-* **[validator-address]** - cosmos bench32 validator address
+* **[validator-address]** - WB bench32 validator address
 * **[eth-address]** - validator ethereum address
 
 To remove:
@@ -125,7 +125,7 @@ To get validator:
 
     wbcli query poa validator [address]
 
-Where `[address]` is Bech32 Cosmos address.
+Where `[address]` is Bech32 WB address.
 
 ## Confirm multisignature call
 
@@ -165,7 +165,7 @@ Where:
 | **symbol**     | Currency symbol/denom to issue.                                                                                             |
 | **amount**     | Amount to issue.                                                                                                            |
 | **decimals**   | Currency decimals, maximum is 8.                                                                                            |
-| **recipient**  | Cosmos address of account who's receiving coins.                                                                            |
+| **recipient**  | WB address of account who's receiving coins.                                                                            |
 | **issueID**    | Any issue id, usually transaction id.                                                                                       |
 | **uniqueID**   | Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex. |
 

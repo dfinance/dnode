@@ -1,8 +1,10 @@
 package main
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"os"
 	"path"
+	wbConfig "wings-blockchain/cmd/config"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -13,7 +15,6 @@ import (
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
@@ -42,16 +43,13 @@ type ModuleClient interface {
 }
 
 func main() {
+	config := sdk.GetConfig()
+	wbConfig.InitBechPrefixes(config)
+	config.Seal()
+
 	cobra.EnableCommandSorting = false
 
 	cdc := app.MakeCodec()
-
-	// Read in the configuration file for the sdk
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(sdk.Bech32PrefixAccAddr, sdk.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(sdk.Bech32PrefixValAddr, sdk.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
-	config.Seal()
 
 	mc := []ModuleClient{
 		ccClient.NewModuleClient(storeCC, cdc),
