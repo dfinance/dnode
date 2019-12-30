@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
-	"wings-blockchain/x/poa/queries"
+	"wings-blockchain/x/poa/types"
 )
 
 // Get validators list from CLI
@@ -24,7 +25,7 @@ func GetValidators(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var out queries.QueryValidatorsRes
+			var out types.ValidatorsConfirmations
 			cdc.MustUnmarshalJSON(res, &out)
 
 			return cliCtx.PrintOutput(out)
@@ -48,7 +49,7 @@ func GetMinMax(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var out queries.QueryMinMaxRes
+			var out types.Params
 			cdc.MustUnmarshalJSON(res, &out)
 
 			return cliCtx.PrintOutput(out)
@@ -56,7 +57,6 @@ func GetMinMax(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// Get validator
 func GetValidator(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "validator [address]",
@@ -64,15 +64,28 @@ func GetValidator(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(
-				fmt.Sprintf("custom/%s/validators/%s", queryRoute, args[0]),
-				nil)
-
+			address, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
 				return err
 			}
 
-			var out queries.QueryGetValidatorRes
+			query := types.QueryValidator{
+				Address: address,
+			}
+
+			bz, err := cliCtx.Codec.MarshalJSON(query)
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(
+				fmt.Sprintf("custom/%s/validators", queryRoute),
+				bz)
+			if err != nil {
+				return err
+			}
+
+			var out types.Validator
 			cdc.MustUnmarshalJSON(res, &out)
 
 			return cliCtx.PrintOutput(out)

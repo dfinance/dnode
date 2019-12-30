@@ -1,8 +1,8 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/x/params"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/params"
 )
 
 const (
@@ -16,25 +16,25 @@ var (
 )
 
 type Params struct {
-	MaxValidators  uint16 `json:"max_validators"`
-	MinValidators  uint16 `json:"min_validators"`
+	MaxValidators uint16 `json:"max_validators"`
+	MinValidators uint16 `json:"min_validators"`
 }
 
-func NewParams(maxValidators uint16, minValidators uint16) Params {
+func NewParams(maxValidators, minValidators uint16) Params {
 	return Params{
 		MaxValidators: maxValidators,
 		MinValidators: minValidators,
 	}
 }
 
-func (p* Params) ParamSetPairs() params.ParamSetPairs {
+func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		{KeyMaxValidators, &p.MaxValidators},
 		{KeyMinValidators, &p.MinValidators},
 	}
 }
 
-func (p* Params) Equal(p2 Params) bool {
+func (p *Params) Equal(p2 Params) bool {
 	return p.MinValidators == p2.MinValidators &&
 		p.MaxValidators == p2.MaxValidators
 }
@@ -42,6 +42,10 @@ func (p* Params) Equal(p2 Params) bool {
 func (p Params) Validate() error {
 	if p.MinValidators < DefaultMinValidators {
 		return fmt.Errorf("minimum amount of validators should be not less %d", DefaultMinValidators)
+	}
+
+	if p.MaxValidators > DefaultMaxValidators {
+		return fmt.Errorf("maximum amount of validators should be not great then %d", DefaultMaxValidators)
 	}
 
 	return nil

@@ -1,8 +1,8 @@
 package msgs
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/x/poa/types"
 )
 
@@ -13,8 +13,8 @@ const (
 
 // Message for remove validator
 type MsgRemoveValidator struct {
-	Address sdk.AccAddress	`json:"address"`
-	Sender  sdk.AccAddress	`json:"sender"`
+	Address sdk.AccAddress `json:"address"`
+	Sender  sdk.AccAddress `json:"sender"`
 }
 
 // Creating 'remove validator' message
@@ -27,7 +27,7 @@ func NewMsgRemoveValidator(address sdk.AccAddress, sender sdk.AccAddress) MsgRem
 
 // Message route
 func (msg MsgRemoveValidator) Route() string {
-	return types.DefaultRoute
+	return types.RouterKey
 }
 
 // Message type

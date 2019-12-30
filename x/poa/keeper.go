@@ -1,84 +1,84 @@
 package poa
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"wings-blockchain/x/poa/types"
 )
 
 // PoA keeper implementation
 type Keeper struct {
-	storeKey 	sdk.StoreKey
-	cdc 	 	*codec.Codec
-	paramStore  params.Subspace
+	storeKey   sdk.StoreKey
+	cdc        *codec.Codec
+	paramStore params.Subspace
 }
 
 // Creating new keeper with parameters store
 func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, paramStore params.Subspace) Keeper {
 	return Keeper{
-		storeKey:  storeKey,
-		cdc:  cdc,
+		storeKey:   storeKey,
+		cdc:        cdc,
 		paramStore: paramStore.WithKeyTable(NewKeyTable()),
 	}
 }
 
 // Add new validator to list of PoA validators
-func (keeper Keeper) AddValidator(ctx sdk.Context, address sdk.AccAddress, ethAddress string) {
-	store := ctx.KVStore(keeper.storeKey)
+func (poaKeeper Keeper) AddValidator(ctx sdk.Context, address sdk.AccAddress, ethAddress string) {
+	store := ctx.KVStore(poaKeeper.storeKey)
 
 	validator := types.NewValidator(address, ethAddress)
-	keeper.increaseValidatorsAmount(ctx)
+	poaKeeper.increaseValidatorsAmount(ctx)
 
-	store.Set(address, keeper.cdc.MustMarshalBinaryBare(validator))
-	keeper.addValidatorToList(ctx, validator)
+	store.Set(address, poaKeeper.cdc.MustMarshalBinaryBare(validator))
+	poaKeeper.addValidatorToList(ctx, validator)
 }
 
-func (keeper Keeper) GetValidators(ctx sdk.Context) types.Validators  {
-	return keeper.getValidatorsList(ctx)
+func (poaKeeper Keeper) GetValidators(ctx sdk.Context) types.Validators {
+	return poaKeeper.getValidatorsList(ctx)
 }
 
 // Check if validator exists in list or not
-func (keeper Keeper) HasValidator(ctx sdk.Context, address sdk.AccAddress) bool {
-	store := ctx.KVStore(keeper.storeKey)
+func (poaKeeper Keeper) HasValidator(ctx sdk.Context, address sdk.AccAddress) bool {
+	store := ctx.KVStore(poaKeeper.storeKey)
 
 	return store.Has(address)
 }
 
 // Remove validator that exists in validators list
-func (keeper Keeper) RemoveValidator(ctx sdk.Context, address sdk.AccAddress) {
-	store := ctx.KVStore(keeper.storeKey)
+func (poaKeeper Keeper) RemoveValidator(ctx sdk.Context, address sdk.AccAddress) {
+	store := ctx.KVStore(poaKeeper.storeKey)
 
 	store.Delete(address)
-	keeper.reduceValidatorsAmount(ctx)
-	keeper.removeValidatorFromList(ctx, address)
+	poaKeeper.reduceValidatorsAmount(ctx)
+	poaKeeper.removeValidatorFromList(ctx, address)
 }
 
 // Replace validator with another one
-func (keeper Keeper) ReplaceValidator(ctx sdk.Context, oldAddress sdk.AccAddress, newAddress sdk.AccAddress, ethAddress string)  {
-	store := ctx.KVStore(keeper.storeKey)
+func (poaKeeper Keeper) ReplaceValidator(ctx sdk.Context, oldAddress sdk.AccAddress, newAddress sdk.AccAddress, ethAddress string) {
+	store := ctx.KVStore(poaKeeper.storeKey)
 
 	store.Delete(oldAddress)
 
 	validator := types.NewValidator(newAddress, ethAddress)
-	store.Set(newAddress, keeper.cdc.MustMarshalBinaryBare(validator))
+	store.Set(newAddress, poaKeeper.cdc.MustMarshalBinaryBare(validator))
 }
 
 // Getting validator from storage
-func (keeper Keeper) GetValidator(ctx sdk.Context, address sdk.AccAddress) types.Validator {
-	store := ctx.KVStore(keeper.storeKey)
+func (poaKeeper Keeper) GetValidator(ctx sdk.Context, address sdk.AccAddress) types.Validator {
+	store := ctx.KVStore(poaKeeper.storeKey)
 
 	b := store.Get(address)
 
 	var validator types.Validator
-	keeper.cdc.MustUnmarshalBinaryBare(b, &validator)
+	poaKeeper.cdc.MustUnmarshalBinaryBare(b, &validator)
 
 	return validator
 }
 
 // Get total amount of validators
-func (keeper Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
-	store := ctx.KVStore(keeper.storeKey)
+func (poaKeeper Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
+	store := ctx.KVStore(poaKeeper.storeKey)
 
 	if !store.Has(types.ValidatorsCountKey) {
 		return 0
@@ -87,31 +87,31 @@ func (keeper Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
 	b := store.Get(types.ValidatorsCountKey)
 	var amount uint16
 
-	keeper.cdc.MustUnmarshalBinaryLengthPrefixed(b, &amount)
+	poaKeeper.cdc.MustUnmarshalBinaryLengthPrefixed(b, &amount)
 
 	return amount
 }
 
 // Get amount of confirmations to do action
-func (keeper Keeper) GetEnoughConfirmations(ctx sdk.Context) uint16 {
-	return keeper.GetValidatorAmount(ctx) / 2 + 1
+func (poaKeeper Keeper) GetEnoughConfirmations(ctx sdk.Context) uint16 {
+	return poaKeeper.GetValidatorAmount(ctx)/2 + 1
 }
 
 // Get codec
-func (keeper Keeper) GetCDC() *codec.Codec {
-	return keeper.cdc
+func (poaKeeper Keeper) GetCDC() *codec.Codec {
+	return poaKeeper.cdc
 }
 
 // Add validator to validators list
-func (keeper Keeper) addValidatorToList(ctx sdk.Context, validator types.Validator) {
-	validators := keeper.getValidatorsList(ctx)
+func (poaKeeper Keeper) addValidatorToList(ctx sdk.Context, validator types.Validator) {
+	validators := poaKeeper.getValidatorsList(ctx)
 	validators = append(validators, validator)
-	keeper.storeValidatorsList(ctx, validators)
+	poaKeeper.storeValidatorsList(ctx, validators)
 }
 
 // Remove validator from validator list by address
-func (keeper Keeper) removeValidatorFromList(ctx sdk.Context, address sdk.AccAddress) {
-	validators := keeper.getValidatorsList(ctx)
+func (poaKeeper Keeper) removeValidatorFromList(ctx sdk.Context, address sdk.AccAddress) {
+	validators := poaKeeper.getValidatorsList(ctx)
 
 	index := -1
 
@@ -125,17 +125,17 @@ func (keeper Keeper) removeValidatorFromList(ctx sdk.Context, address sdk.AccAdd
 	if index >= 0 {
 		if len(validators) > 0 {
 			validators = append(validators[:index], validators[index+1:]...)
-			keeper.storeValidatorsList(ctx, validators)
-		}  else {
-			store := ctx.KVStore(keeper.storeKey)
+			poaKeeper.storeValidatorsList(ctx, validators)
+		} else {
+			store := ctx.KVStore(poaKeeper.storeKey)
 			store.Delete(types.ValidatorsListKey)
 		}
 	}
 }
 
 // Get validators list
-func (keeper Keeper) getValidatorsList(ctx sdk.Context) types.Validators {
-	store := ctx.KVStore(keeper.storeKey)
+func (poaKeeper Keeper) getValidatorsList(ctx sdk.Context) types.Validators {
+	store := ctx.KVStore(poaKeeper.storeKey)
 
 	if !store.Has(types.ValidatorsListKey) {
 		return types.Validators{}
@@ -144,7 +144,7 @@ func (keeper Keeper) getValidatorsList(ctx sdk.Context) types.Validators {
 	var validators types.Validators
 	bs := store.Get(types.ValidatorsListKey)
 
-	err := keeper.cdc.UnmarshalBinaryBare(bs, &validators)
+	err := poaKeeper.cdc.UnmarshalBinaryBare(bs, &validators)
 
 	if err != nil {
 		panic(err)
@@ -154,34 +154,34 @@ func (keeper Keeper) getValidatorsList(ctx sdk.Context) types.Validators {
 }
 
 // Store validators list
-func (keeper Keeper) storeValidatorsList(ctx sdk.Context, validators types.Validators) {
-	store := ctx.KVStore(keeper.storeKey)
-	store.Set(types.ValidatorsListKey, keeper.cdc.MustMarshalBinaryBare(validators))
+func (poaKeeper Keeper) storeValidatorsList(ctx sdk.Context, validators types.Validators) {
+	store := ctx.KVStore(poaKeeper.storeKey)
+	store.Set(types.ValidatorsListKey, poaKeeper.cdc.MustMarshalBinaryBare(validators))
 }
 
 // Increase validators amount by 1
-func (keeper Keeper) increaseValidatorsAmount(ctx sdk.Context) uint16 {
-	amount := keeper.GetValidatorAmount(ctx)
+func (poaKeeper Keeper) increaseValidatorsAmount(ctx sdk.Context) uint16 {
+	amount := poaKeeper.GetValidatorAmount(ctx)
 
 	amount += 1
-	keeper.setValidatorsAmount(ctx, amount)
+	poaKeeper.setValidatorsAmount(ctx, amount)
 
 	return amount
 }
 
 // Reduce validators amount by 1
-func (keeper Keeper) reduceValidatorsAmount(ctx sdk.Context) uint16 {
-	amount := keeper.GetValidatorAmount(ctx)
+func (poaKeeper Keeper) reduceValidatorsAmount(ctx sdk.Context) uint16 {
+	amount := poaKeeper.GetValidatorAmount(ctx)
 
 	amount -= 1
 
-	keeper.setValidatorsAmount(ctx, amount)
+	poaKeeper.setValidatorsAmount(ctx, amount)
 	return amount
 }
 
 // Set new validators amount
-func (keeper Keeper) setValidatorsAmount(ctx sdk.Context, newAmount uint16) {
-	store := ctx.KVStore(keeper.storeKey)
+func (poaKeeper Keeper) setValidatorsAmount(ctx sdk.Context, newAmount uint16) {
+	store := ctx.KVStore(poaKeeper.storeKey)
 
-	store.Set(types.ValidatorsCountKey, keeper.cdc.MustMarshalBinaryLengthPrefixed(newAmount))
+	store.Set(types.ValidatorsCountKey, poaKeeper.cdc.MustMarshalBinaryLengthPrefixed(newAmount))
 }

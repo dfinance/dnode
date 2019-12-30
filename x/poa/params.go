@@ -1,9 +1,9 @@
 package poa
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"wings-blockchain/x/poa/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // New Paramstore for PoA module
@@ -12,18 +12,26 @@ func NewKeyTable() params.KeyTable {
 }
 
 // Get max validators amount
-func (keeper Keeper) GetMaxValidators(ctx sdk.Context) (res uint16) {
-	keeper.paramStore.Get(ctx, types.KeyMaxValidators, &res)
+func (poaKeeper Keeper) GetMaxValidators(ctx sdk.Context) (res uint16) {
+	poaKeeper.paramStore.Get(ctx, types.KeyMaxValidators, &res)
 	return
 }
 
 // Get minimum validators amount
-func (keeper Keeper) GetMinValidators(ctx sdk.Context) (res uint16) {
-	keeper.paramStore.Get(ctx, types.KeyMinValidators, &res)
+func (poaKeeper Keeper) GetMinValidators(ctx sdk.Context) (res uint16) {
+	poaKeeper.paramStore.Get(ctx, types.KeyMinValidators, &res)
 	return
 }
 
+// Get params
+func (poaKeeper Keeper) GetParams(ctx sdk.Context) types.Params {
+	min := poaKeeper.GetMinValidators(ctx)
+	max := poaKeeper.GetMaxValidators(ctx)
+
+	return types.NewParams(min, max)
+}
+
 // set the params
-func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
-	k.paramStore.SetParamSet(ctx, &params)
+func (poaKeeper Keeper) SetParams(ctx sdk.Context, params types.Params) {
+	poaKeeper.paramStore.SetParamSet(ctx, &params)
 }
