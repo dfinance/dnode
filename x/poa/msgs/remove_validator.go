@@ -1,3 +1,4 @@
+// Message to remove validator described.
 package msgs
 
 import (

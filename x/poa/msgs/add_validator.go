@@ -1,3 +1,4 @@
+// Message to add validator described.
 package msgs
 
 import (

@@ -1,3 +1,4 @@
+// Aliases to use them outside pocket without import of specific package.
 package poa
 
 import "wings-blockchain/x/poa/types"

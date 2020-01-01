@@ -1,3 +1,5 @@
+//
+//
 package poa
 
 import (
@@ -9,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
+	msTypes "wings-blockchain/x/multisig/types"
 	"wings-blockchain/x/poa/client"
 	"wings-blockchain/x/poa/client/rest"
 	"wings-blockchain/x/poa/types"
@@ -94,6 +97,8 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 func (AppModule) Route() string { return types.RouterKey }
 
 func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.poaKeeper) }
+
+func (app AppModule) NewMsHandler() msTypes.MsHandler { return NewMsHandler(app.poaKeeper) }
 
 func (AppModule) QuerierRoute() string { return types.RouterKey }
 

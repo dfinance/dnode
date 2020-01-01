@@ -12,9 +12,9 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(msgs.MsgReplaceValidator{}, msgs.MsgReplaceValidatorType, nil)
 }
 
-// module wide codec
 var ModuleCdc *codec.Codec
 
+// Initialize codec before everything else.
 func init() {
 	ModuleCdc = codec.New()
 	RegisterCodec(ModuleCdc)

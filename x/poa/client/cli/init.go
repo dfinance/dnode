@@ -1,3 +1,4 @@
+// Initialize commands for cli (add genesis validator).
 package cli
 
 import (
@@ -13,7 +14,7 @@ import (
 	"wings-blockchain/x/poa/types"
 )
 
-// Add PoA validator via CLI
+// Add PoA genesis validator via CLI to genesis.json.
 func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "add-genesis-poa-validator [address] [ethAddress]",

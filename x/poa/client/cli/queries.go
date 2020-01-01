@@ -9,7 +9,7 @@ import (
 	"wings-blockchain/x/poa/types"
 )
 
-// Get validators list from CLI
+// Get validators list from CLI.
 func GetValidators(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "validators",
@@ -33,7 +33,7 @@ func GetValidators(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// Get min/max values for validators amount
+// Get min/max values for validators amount.
 func GetMinMax(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "minmax",
@@ -57,6 +57,7 @@ func GetMinMax(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// Get a validator by address.
 func GetValidator(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "validator [address]",

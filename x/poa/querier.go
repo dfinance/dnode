@@ -1,3 +1,4 @@
+// Querier for PoA module.
 package poa
 
 import (
@@ -8,12 +9,14 @@ import (
 	"wings-blockchain/x/poa/types"
 )
 
+// Supported queries.
 const (
 	QueryGetValidators = "validators"
 	QueryGetMinMax     = "minmax"
 	QueryGetValidator  = "validator"
 )
 
+// Creating new Querier.
 func NewQuerier(poaKeeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
 		switch path[0] {
@@ -32,7 +35,7 @@ func NewQuerier(poaKeeper Keeper) sdk.Querier {
 	}
 }
 
-// Query handler for get validators list
+// Query handler for get validators list.
 func queryGetValidators(poaKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	validators := types.ValidatorsConfirmations{
 		Validators:    poaKeeper.GetValidators(ctx),
@@ -48,7 +51,7 @@ func queryGetValidators(poaKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	return bz, nil
 }
 
-// Query handler for get min/max validators amount values
+// Query handler for get min/max validators amount values.
 func queryGetMinMax(poaKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	bz, err := codec.MarshalJSONIndent(ModuleCdc, poaKeeper.GetParams(ctx))
 
@@ -59,7 +62,7 @@ func queryGetMinMax(poaKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	return bz, nil
 }
 
-// Query handler for get validator by address
+// Query handler for get validator by address.
 func queryGetValidator(poaKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, sdk.Error) {
 	var params types.QueryValidator
 

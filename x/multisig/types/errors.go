@@ -6,22 +6,28 @@ import (
 
 // Error codes
 const (
-	CodeErrRouteDoesntExist   = 101
-	CodeErrWrongCallId        = 102
-	CodeErrEmptyRoute         = 103
-	CodeErrEmptyType          = 104
+	CodeErrRouteDoesntExist = 101
+	CodeErrWrongCallId      = 102
+	CodeErrEmptyRoute       = 103
+	CodeErrEmptyType        = 104
+	CodeErrOnlyMs           = 105
 
 	CodeErrAlreadyApproved   = 201
 	CodeErrAlreadyConfirmed  = 202
 	CodeErrAlreadyRerejected = 203
 	CodeErrNotApproved       = 204
 
-	CodeErrNoVotes		   = 301
+	CodeErrNoVotes = 301
 
-	CodeNotValidator       = 401
-	CodeNotUniqueID		   = 402
-	CodeNotFoundUniqueID   = 403
+	CodeNotValidator     = 401
+	CodeNotUniqueID      = 402
+	CodeNotFoundUniqueID = 403
 )
+
+// Only multisig calls supported for module
+func ErrOnlyMultisig(codeSpase sdk.CodespaceType, moduleName string) sdk.Error {
+	return sdk.NewError(codeSpase, CodeErrOnlyMs, "module %s doesnt support only multisig calls, see mshandler...", moduleName)
+}
 
 // When msg route doesnt exist
 func ErrRouteDoesntExist(route string) sdk.Error {

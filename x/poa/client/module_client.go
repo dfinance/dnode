@@ -7,7 +7,7 @@ import (
 	"wings-blockchain/x/poa/client/cli"
 )
 
-// Returns get commands for this module
+// Return query commands for PoA module.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	poaQueryCmd := &cobra.Command{
 		Use:   "poa",
@@ -23,7 +23,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	return poaQueryCmd
 }
 
-// GetTxCmd returns the transaction commands for this module
+// Returns transactions commands for this module.
 func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	poaTxCmd := &cobra.Command{
 		Use:   "poa",

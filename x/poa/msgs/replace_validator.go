@@ -1,3 +1,4 @@
+// Message to replace validator described.
 package msgs
 
 import (
