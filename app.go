@@ -259,6 +259,7 @@ func (app *WbServiceApp) ModuleAccountAddrs() map[string]bool {
 	return modAccAddrs
 }
 
+// Initialize chain function (initializing genesis data).
 func (app *WbServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 
@@ -270,17 +271,22 @@ func (app *WbServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain)
 	return app.mm.InitGenesis(ctx, genesisState)
 }
 
+// Initialize begin blocker function.
 func (app *WbServiceApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
+
+// Initialize end blocker function.
 func (app *WbServiceApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
 
+// Load app with specific height.
 func (app *WbServiceApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }
 
+// Exports genesis and validators.
 func (app *WbServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
 ) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
 
