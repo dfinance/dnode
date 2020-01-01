@@ -1,6 +1,4 @@
-//
 // Configuration for WBD and WBCli.
-//
 package config
 
 import sdk "github.com/cosmos/cosmos-sdk/types"

@@ -22,18 +22,7 @@ import (
 	app "wings-blockchain"
 )
 
-const (
-	storeAcc = "acc"
-	storeCC  = "currencies"
-	storePoa = "poa"
-	storeMC  = "multisig"
-)
-
-type ModuleClient interface {
-	GetQueryCmd() *cobra.Command
-	GetTxCmd() *cobra.Command
-}
-
+// Entry function for WB CLI.
 func main() {
 	config := sdk.GetConfig()
 	wbConfig.InitBechPrefixes(config)
@@ -75,12 +64,14 @@ func main() {
 	}
 }
 
+// Registering routes for REST api.
 func registerRoutes(rs *lcd.RestServer) {
 	client.RegisterRoutes(rs.CliCtx, rs.Mux)
 	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 }
 
+// Add query subcommands to CLI.
 func queryCmd(cdc *amino.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
 		Use:     "query",
@@ -103,6 +94,7 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 	return queryCmd
 }
 
+// Add transactions subcommands to CLI.
 func txCmd(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:   "tx",
@@ -125,6 +117,7 @@ func txCmd(cdc *amino.Codec) *cobra.Command {
 	return txCmd
 }
 
+// Initialize CLI config.
 func initConfig(cmd *cobra.Command) error {
 	home, err := cmd.PersistentFlags().GetString(cli.HomeFlag)
 	if err != nil {

@@ -23,6 +23,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 )
 
+// WBD (Daemon) entry function.
 func main() {
 	config := sdk.GetConfig()
 	wbConfig.InitBechPrefixes(config)
@@ -64,10 +65,12 @@ func main() {
 	}
 }
 
+// Creating new WB app.
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
 	return app.NewWbServiceApp(logger, db)
 }
 
+// Exports genesis data and validators.
 func exportAppStateAndTMValidators(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
