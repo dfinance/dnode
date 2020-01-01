@@ -35,10 +35,10 @@ const (
 type GenesisState map[string]json.RawMessage
 
 var (
-	// default home directories for the application CLI
+	// default home directories for the application CLI.
 	DefaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
 
-	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
+	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored.
 	DefaultNodeHome = os.ExpandEnv("$HOME/.wbd")
 
 	ModuleBasics = module.NewBasicManager(
@@ -81,16 +81,16 @@ type WbServiceApp struct {
 	mm *module.Manager
 }
 
-// MakeCodec generates the necessary codecs for Amino
+// MakeCodec generates the necessary codecs for Amino.
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
-	ModuleBasics.RegisterCodec(cdc) // register all module codecs
+	ModuleBasics.RegisterCodec(cdc) // register all module codecs.
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 	return cdc
 }
 
-// NewWbServiceApp is a constructor function for wings blockchain
+// NewWbServiceApp is a constructor function for wings blockchain.
 func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *WbServiceApp {
 	cdc := MakeCodec()
 
@@ -120,10 +120,10 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		tkeys:   tkeys,
 	}
 
-	// The ParamsKeeper handles parameter storage for the application
+	// The ParamsKeeper handles parameter storage for the application.
 	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
 
-	// The AccountKeeper handles address -> account lookups
+	// The AccountKeeper handles address -> account lookups.
 	app.accountKeeper = auth.NewAccountKeeper(
 		app.cdc,
 		keys[auth.StoreKey],
@@ -131,7 +131,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		auth.ProtoBaseAccount,
 	)
 
-	// The BankKeeper allows you perform sdk.Coins interactions
+	// The BankKeeper allows you perform sdk.Coins interactions.
 	app.bankKeeper = bank.NewBaseKeeper(
 		app.accountKeeper,
 		app.paramsKeeper.Subspace(bank.DefaultParamspace),
@@ -139,10 +139,10 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		app.ModuleAccountAddrs(),
 	)
 
-	// The SupplyKeeper collects transaction fees and renders them to the fee distribution module
+	// The SupplyKeeper collects transaction fees and renders them to the fee distribution module.
 	app.supplyKeeper = supply.NewKeeper(cdc, keys[supply.StoreKey], app.accountKeeper, app.bankKeeper, maccPerms)
 
-	// Initializing staking keeper
+	// Initializing staking keeper.
 	stakingKeeper := staking.NewKeeper(
 		cdc,
 		keys[staking.StoreKey],
@@ -159,7 +159,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		app.cdc,
 	)*/
 
-	// Initializing distribution keeper
+	// Initializing distribution keeper.
 	app.distrKeeper = distribution.NewKeeper(
 		cdc,
 		keys[distribution.StoreKey],
@@ -171,7 +171,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		app.ModuleAccountAddrs(),
 	)
 
-	// Initialize slashing keeper
+	// Initialize slashing keeper.
 	app.slashingKeeper = slashing.NewKeeper(
 		cdc,
 		keys[slashing.StoreKey],
@@ -180,7 +180,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		slashing.DefaultCodespace,
 	)
 
-	// Initialize staking keeper
+	// Initialize staking keeper.
 	app.stakingKeeper = *stakingKeeper.SetHooks(
 		staking.NewMultiStakingHooks(
 			app.distrKeeper.Hooks(),
@@ -188,7 +188,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		),
 	)
 
-	// Initializing validators module
+	// Initializing validators module.
 	app.poaKeeper = poa.NewKeeper(
 		keys[poa.StoreKey],
 		app.cdc,
@@ -290,7 +290,7 @@ func (app *WbServiceApp) LoadHeight(height int64) error {
 func (app *WbServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
 ) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
 
-	// as if they could withdraw from the start of the next block
+	// as if they could withdraw from the start of the next block.
 	ctx := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
 
 	genState := app.mm.ExportGenesis(ctx)
