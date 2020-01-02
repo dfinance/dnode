@@ -1,3 +1,4 @@
+// Implements destroy type for currencies module.
 package types
 
 import (
@@ -47,4 +48,15 @@ func (destroy Destroy) String() string {
 		destroy.Symbol, destroy.Amount,
 		destroy.Spender, destroy.Recipient,
 		destroy.TxHash, destroy.Timestamp)
+}
+
+type Destroys []Destroy
+
+func (destroys Destroys) String() string {
+	var s string
+	for _, i := range destroys {
+		s += i.String()
+	}
+
+	return s
 }

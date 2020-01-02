@@ -1,3 +1,4 @@
+// Transaction commands for currencies CLI implementation.
 package cli
 
 import (
@@ -14,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Destroy currency
+// Destroy currency.
 func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "destroy-currency [chainID] [symbol] [amount] [recipient]",

@@ -1,13 +1,16 @@
+// Querier commands currency module implementation for CLI.
 package cli
 
 import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
-	"wings-blockchain/x/currencies/queries"
+	"wings-blockchain/x/currencies/types"
 )
 
+// Get destroys by page & limit.
 func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "destroys [page] [limit]",
@@ -16,19 +19,39 @@ func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/destroys/%s/%s", queryRoute, args[0], args[1]), nil)
+			page, isOk := sdk.NewIntFromString(args[0])
+			if !isOk {
+				return fmt.Errorf("%s is not a number, cant parse int", args[0])
+			}
 
+			limit, isOk := sdk.NewIntFromString(args[1])
+			if !isOk {
+				return fmt.Errorf("%s is not a number, cant parse int", args[1])
+			}
+
+			req := types.DestroysReq{
+				Page:  page,
+				Limit: limit,
+			}
+
+			bz, err := cliCtx.Codec.MarshalJSON(req)
 			if err != nil {
 				return err
 			}
 
-			var out queries.QueryDestroysRes
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/destroys", queryRoute), bz)
+			if err != nil {
+				return err
+			}
+
+			var out types.Destroys
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
 	}
 }
 
+// Get destroy by destroy id.
 func GetDestroy(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "destroy [destroyID]",
@@ -37,20 +60,33 @@ func GetDestroy(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/destroy/%s", queryRoute, args[0]), nil)
+			destroyId, isOk := sdk.NewIntFromString(args[0])
+			if !isOk {
+				return fmt.Errorf("%s is not a number, cant parse int", args[0])
+			}
 
+			req := types.DestroyReq{
+				DestroyId: destroyId,
+			}
+
+			bz, err := cliCtx.Codec.MarshalJSON(req)
 			if err != nil {
 				return err
 			}
 
-			var out queries.QueryDestroyRes
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/destroy", queryRoute), bz)
+			if err != nil {
+				return err
+			}
+
+			var out types.Destroy
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
 	}
 }
 
-// Get denoms list
+// Get issue by issue id.
 func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "issue [issueID]",
@@ -59,19 +95,26 @@ func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/issue/%s", queryRoute, args[0]), nil)
+			req := types.IssueReq{IssueID: args[0]}
+
+			bz, err := cliCtx.Codec.MarshalJSON(req)
 			if err != nil {
 				return err
 			}
 
-			var out queries.QueryIssueRes
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/issue", queryRoute), bz)
+			if err != nil {
+				return err
+			}
+
+			var out types.Issue
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
 	}
 }
 
-// Get currency by denom/symbol
+// Get currency by denom/symbol.
 func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "currency [symbol]",
@@ -80,12 +123,12 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/get/%s", queryRoute, args[0]), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/get", queryRoute), nil)
 			if err != nil {
 				return err
 			}
 
-			var out queries.QueryCurrencyRes
+			var out types.Currency
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},

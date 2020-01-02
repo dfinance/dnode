@@ -1,42 +1,43 @@
+// Destroy currency message implementation.
 package msgs
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/x/currencies/types"
 )
 
 // Message for destroy currency
 type MsgDestroyCurrency struct {
-    ChainID   string         `json:"chainID"`
-	Symbol 	  string		 `json:"symbol"`
-	Amount    sdk.Int	 	 `json:"amount"`
+	ChainID   string         `json:"chainID"`
+	Symbol    string         `json:"symbol"`
+	Amount    sdk.Int        `json:"amount"`
 	Spender   sdk.AccAddress `json:"spender"`
-	Recipient string		 `json:"recipient"`
+	Recipient string         `json:"recipient"`
 }
 
-// Create new message to destroy currency
+// Create new message to destroy currency.
 func NewMsgDestroyCurrency(chainID, symbol string, amount sdk.Int, spender sdk.AccAddress, recipient string) MsgDestroyCurrency {
 	return MsgDestroyCurrency{
-	    ChainID: chainID,
-		Symbol:  symbol,
-		Amount:  amount,
-		Spender: spender,
+		ChainID:   chainID,
+		Symbol:    symbol,
+		Amount:    amount,
+		Spender:   spender,
 		Recipient: recipient,
 	}
 }
 
-// Base route for currencies package
+// Base route for currencies package.
 func (msg MsgDestroyCurrency) Route() string {
-	return types.DefaultRoute
+	return types.RouterKey
 }
 
-// Indeed type to destroy currency
+// Indeed type to destroy currency.
 func (msg MsgDestroyCurrency) Type() string {
 	return "destroy_currency"
 }
 
-// Validate basic in case of destroy message
+// Validate basic in case of destroy message.
 func (msg MsgDestroyCurrency) ValidateBasic() sdk.Error {
 	if msg.Spender.Empty() {
 		return sdk.ErrInvalidAddress(msg.Spender.String())
@@ -54,13 +55,13 @@ func (msg MsgDestroyCurrency) ValidateBasic() sdk.Error {
 		return types.ErrWrongAmount(msg.Amount.String())
 	}
 
-	// check denom, etc
+	// check denom, etc.
 	sdk.NewCoin(msg.Symbol, msg.Amount)
 
 	return nil
 }
 
-// Get message bytes to sign
+// Get message bytes to sign.
 func (msg MsgDestroyCurrency) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
 
@@ -71,7 +72,7 @@ func (msg MsgDestroyCurrency) GetSignBytes() []byte {
 	return sdk.MustSortJSON(b)
 }
 
-// Get signers for message
+// Get signers for message.
 func (msg MsgDestroyCurrency) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Spender}
 }

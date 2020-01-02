@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"os"
+	"wings-blockchain/x/currencies"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -52,6 +53,7 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		poa.AppModuleBasic{},
+		currencies.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
@@ -77,6 +79,7 @@ type WbServiceApp struct {
 	distrKeeper    distribution.Keeper
 	slashingKeeper slashing.Keeper
 	poaKeeper      poa.Keeper
+	ccKeeper       currencies.Keeper
 
 	mm *module.Manager
 }
@@ -106,6 +109,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		distribution.StoreKey,
 		slashing.StoreKey,
 		poa.StoreKey,
+		currencies.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -152,12 +156,12 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		staking.DefaultCodespace,
 	)
 
-	// Initializing currencies module
-	/*app.currenciesKeeper = currencies.NewKeeper(
+	// Initialize currency keeper.
+	app.ccKeeper = currencies.NewKeeper(
 		app.bankKeeper,
-		app.keyCC,
-		app.cdc,
-	)*/
+		keys[currencies.StoreKey],
+		cdc,
+	)
 
 	// Initializing distribution keeper.
 	app.distrKeeper = distribution.NewKeeper(
@@ -205,6 +209,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		distribution.NewAppModule(app.distrKeeper, app.supplyKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
 		poa.NewAppModule(app.poaKeeper),
+		currencies.NewAppModule(app.ccKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
@@ -222,6 +227,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		slashing.ModuleName,
 		supply.ModuleName,
 		poa.ModuleName,
+		currencies.ModuleName,
 		genutil.ModuleName,
 	)
 

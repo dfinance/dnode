@@ -1,3 +1,4 @@
+// Issue currency message implementation.
 package msgs
 
 import (
@@ -16,7 +17,7 @@ type MsgIssueCurrency struct {
 	IssueID   string         `json:"issueID"`
 }
 
-// Create new issue currency message
+// Create new issue currency message.
 func NewMsgIssueCurrency(symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) MsgIssueCurrency {
 	return MsgIssueCurrency{
 		Symbol:    symbol,
@@ -27,17 +28,17 @@ func NewMsgIssueCurrency(symbol string, amount sdk.Int, decimals int8, recipient
 	}
 }
 
-// Common router for currencies package
+// Common router for currencies package.
 func (msg MsgIssueCurrency) Route() string {
 	return "currencies"
 }
 
-// Command for issue new currencies
+// Command for issue new currencies.
 func (msg MsgIssueCurrency) Type() string {
 	return "issue_currency"
 }
 
-// Basic validation, without state
+// Basic validation, without state.
 func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 	if msg.Recipient.Empty() {
 		return sdk.ErrInvalidAddress(msg.Recipient.String())
@@ -65,7 +66,7 @@ func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 	return nil
 }
 
-// Getting bytes for signature
+// Getting bytes for signature.
 func (msg MsgIssueCurrency) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
 	if err != nil {
@@ -75,7 +76,7 @@ func (msg MsgIssueCurrency) GetSignBytes() []byte {
 	return sdk.MustSortJSON(b)
 }
 
-// Check who should sign message
+// Check who should sign message.
 func (msg MsgIssueCurrency) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{}
 }

@@ -1,3 +1,4 @@
+// Implements multisignature message handler for currency module.
 package currencies
 
 import (
@@ -7,7 +8,7 @@ import (
 	msTypes "wings-blockchain/x/multisig/types"
 )
 
-// Handler for currencies messages, provess issue/destroy messages
+// Handler for currencies messages, proves issue/destroy messages.
 func NewMsHandler(keeper Keeper) msTypes.MsHandler {
 	return func(ctx sdk.Context, msg msTypes.MsMsg) sdk.Error {
 		switch msg := msg.(type) {
@@ -21,7 +22,7 @@ func NewMsHandler(keeper Keeper) msTypes.MsHandler {
 	}
 }
 
-// Handle issue message
+// Handle issue message.
 func handleMsMsgIssueCurrency(ctx sdk.Context, keeper Keeper, msg msgs.MsgIssueCurrency) sdk.Error {
 	err := keeper.IssueCurrency(ctx, msg.Symbol, msg.Amount, msg.Decimals, msg.Recipient, msg.IssueID)
 	return err

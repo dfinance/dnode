@@ -1,4 +1,3 @@
-//
 package rest
 
 import (
@@ -10,7 +9,7 @@ import (
 	"wings-blockchain/x/poa/types"
 )
 
-// Registering routes for REST api.
+// Registering routes for REST API.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/validators", types.ModuleName), getValidators(cliCtx)).Methods("GET")
 }

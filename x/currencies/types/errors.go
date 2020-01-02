@@ -1,3 +1,4 @@
+// Implements errors codes and functions for currencies module.
 package types
 
 import (
