@@ -11,7 +11,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"os"
+	"wings-blockchain/x/core"
 	"wings-blockchain/x/currencies"
+	"wings-blockchain/x/multisig"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -54,6 +56,7 @@ var (
 		supply.AppModuleBasic{},
 		poa.AppModuleBasic{},
 		currencies.AppModuleBasic{},
+		multisig.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
@@ -66,7 +69,8 @@ var (
 
 type WbServiceApp struct {
 	*bam.BaseApp
-	cdc *codec.Codec
+	cdc      *codec.Codec
+	msRouter core.Router
 
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
@@ -80,8 +84,9 @@ type WbServiceApp struct {
 	slashingKeeper slashing.Keeper
 	poaKeeper      poa.Keeper
 	ccKeeper       currencies.Keeper
+	msKeeper       multisig.Keeper
 
-	mm *module.Manager
+	mm *core.MsManager
 }
 
 // MakeCodec generates the necessary codecs for Amino.
@@ -110,6 +115,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		slashing.StoreKey,
 		poa.StoreKey,
 		currencies.StoreKey,
+		multisig.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -199,7 +205,16 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
-	app.mm = module.NewManager(
+	// Initializing multisignature router
+	app.msRouter = core.NewRouter()
+
+	app.msKeeper = multisig.NewKeeper(
+		keys[multisig.StoreKey],
+		app.cdc,
+		app.msRouter,
+	)
+
+	app.mm = core.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.accountKeeper),
@@ -208,12 +223,13 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
 		distribution.NewAppModule(app.distrKeeper, app.supplyKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
-		poa.NewAppModule(app.poaKeeper),
-		currencies.NewAppModule(app.ccKeeper),
+		poa.NewAppMsModule(app.poaKeeper),
+		currencies.NewAppMsModule(app.ccKeeper),
+		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -228,10 +244,13 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		supply.ModuleName,
 		poa.ModuleName,
 		currencies.ModuleName,
+		multisig.ModuleName,
 		genutil.ModuleName,
 	)
 
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
+	app.mm.RegisterMsRoutes(app.msRouter)
+
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)

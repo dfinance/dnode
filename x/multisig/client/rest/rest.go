@@ -3,20 +3,19 @@ package rest
 import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 	"net/http"
 	"wings-blockchain/x/multisig/types"
 )
 
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
-	r.HandleFunc(fmt.Sprintf("/%s/call/{id}", types.ModuleName), getCall(cdc, cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/calls", types.ModuleName), getCalls(cdc, cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/unique/{unique}", types.ModuleName), getCallByUnique(cdc, cliCtx)).Methods("GET")
+func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
+	r.HandleFunc(fmt.Sprintf("/%s/call/{id}", types.ModuleName), getCall(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/calls", types.ModuleName), getCalls(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/unique/{unique}", types.ModuleName), getCallByUnique(cliCtx)).Methods("GET")
 }
 
-func getCallByUnique(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+func getCallByUnique(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		id := vars["unique"]
@@ -32,7 +31,7 @@ func getCallByUnique(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFu
 	}
 }
 
-func getCall(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+func getCall(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		id := vars["id"]
@@ -48,7 +47,7 @@ func getCall(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func getCalls(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+func getCalls(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		mode := vars["mode"]

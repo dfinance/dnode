@@ -2,7 +2,6 @@ package multisig
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	msKeeper "wings-blockchain/x/multisig/keeper"
 	poa "wings-blockchain/x/poa"
 
 	"fmt"
@@ -11,8 +10,8 @@ import (
 )
 
 // Handle messages for multisig module
-func NewHandler(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.Handler {
-	return func (ctx sdk.Context, msg sdk.Msg) sdk.Result {
+func NewHandler(keeper Keeper, poaKeeper poa.Keeper) sdk.Handler {
+	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
 		case msgs.MsgSubmitCall:
 			return handleMsgSubmitCall(ctx, keeper, poaKeeper, msg)
@@ -31,7 +30,7 @@ func NewHandler(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.Handler {
 }
 
 // Handle MsgSubmitCall
-func handleMsgSubmitCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa.Keeper, msg msgs.MsgSubmitCall) sdk.Result {
+func handleMsgSubmitCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, msg msgs.MsgSubmitCall) sdk.Result {
 	if !poaKeeper.HasValidator(ctx, msg.Sender) {
 		return types.ErrNotValidator(msg.Sender.String()).Result()
 	}
@@ -46,7 +45,7 @@ func handleMsgSubmitCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa.
 }
 
 // Handle MsgConfirmCall
-func handleMsgConfirmCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa.Keeper, msg msgs.MsgConfirmCall) sdk.Result {
+func handleMsgConfirmCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, msg msgs.MsgConfirmCall) sdk.Result {
 	if !poaKeeper.HasValidator(ctx, msg.Sender) {
 		return types.ErrNotValidator(msg.Sender.String()).Result()
 	}
@@ -71,7 +70,7 @@ func handleMsgConfirmCall(ctx sdk.Context, keeper msKeeper.Keeper, poaKeeper poa
 }
 
 // Handle MsgRevokeConfirm
-func handleMsgRevokeConfirm(ctx sdk.Context, keeper msKeeper.Keeper, msg msgs.MsgRevokeConfirm) sdk.Result {
+func handleMsgRevokeConfirm(ctx sdk.Context, keeper Keeper, msg msgs.MsgRevokeConfirm) sdk.Result {
 	if has, err := keeper.HasVote(ctx, msg.MsgId, msg.Sender); err != nil {
 		return err.Result()
 	} else if !has {

@@ -1,8 +1,8 @@
-package keeper
+package multisig
 
 import (
-	"wings-blockchain/x/multisig/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/multisig/types"
 )
 
 // Confirm call
@@ -144,7 +144,6 @@ func (keeper Keeper) revokeVote(ctx sdk.Context, id uint64, address sdk.AccAddre
 		votes = append(votes[:index], votes[index+1:]...)
 		store.Set(types.GetKeyVotesById(id), keeper.cdc.MustMarshalBinaryBare(votes))
 	}
-
 
 	return nil
 }

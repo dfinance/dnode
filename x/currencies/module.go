@@ -9,14 +9,14 @@ import (
 	"github.com/spf13/cobra"
 	codec "github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"wings-blockchain/x/core"
 	"wings-blockchain/x/currencies/client"
 	"wings-blockchain/x/currencies/client/rest"
 	types "wings-blockchain/x/currencies/types"
-	msTypes "wings-blockchain/x/multisig/types"
 )
 
 var (
-	_ module.AppModule      = AppModule{}
+	_ core.AppMsModule      = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
@@ -64,10 +64,10 @@ type AppModule struct {
 }
 
 // Create new PoA module.
-func NewAppModule(ccKeeper Keeper) AppModule {
+func NewAppMsModule(ccKeeper Keeper) core.AppMsModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		ccKeeper:       Keeper{},
+		ccKeeper:       ccKeeper,
 	}
 }
 
@@ -76,7 +76,7 @@ func (AppModule) Name() string {
 	return types.ModuleName
 }
 
-// Register dependencies of mo0dule.
+// Register module invariants.
 func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Base route of module (for handler).
@@ -86,7 +86,7 @@ func (AppModule) Route() string { return types.Router }
 func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.ccKeeper) }
 
 // Create new multisignature handler.
-func (app AppModule) NewMsHandler() msTypes.MsHandler { return NewMsHandler(app.ccKeeper) }
+func (app AppModule) NewMsHandler() core.MsHandler { return NewMsHandler(app.ccKeeper) }
 
 // Get route for querier.
 func (AppModule) QuerierRoute() string { return types.RouterKey }

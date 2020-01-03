@@ -1,20 +1,21 @@
-package keeper
+package multisig
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
+	"wings-blockchain/x/core"
 )
 
 // Multisig keeper
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
-	router   Router
+	router   core.Router
 }
 
 // Creating new multisig keeper
-func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, router Router) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, router core.Router) Keeper {
 	keeper := Keeper{
 		storeKey: storeKey,
 		cdc:      cdc,

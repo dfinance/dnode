@@ -4,14 +4,14 @@ package poa
 import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ms "wings-blockchain/x/multisig/types"
+	"wings-blockchain/x/core"
 	"wings-blockchain/x/poa/msgs"
 	"wings-blockchain/x/poa/types"
 )
 
 // New multisignature message handler for PoA module.
-func NewMsHandler(keeper Keeper) ms.MsHandler {
-	return func(ctx sdk.Context, msg ms.MsMsg) sdk.Error {
+func NewMsHandler(keeper Keeper) core.MsHandler {
+	return func(ctx sdk.Context, msg core.MsMsg) sdk.Error {
 		switch msg := msg.(type) {
 		case msgs.MsgAddValidator:
 			return handleMsMsgAddValidator(ctx, keeper, msg)

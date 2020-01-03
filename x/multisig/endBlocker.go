@@ -1,8 +1,7 @@
-package keeper
+package multisig
 
 import (
 	"fmt"
-
 	"wings-blockchain/x/poa"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"

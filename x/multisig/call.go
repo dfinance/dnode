@@ -1,12 +1,13 @@
-package keeper
+package multisig
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/core"
 	"wings-blockchain/x/multisig/types"
 )
 
 // Submit call to execute by confirmations from validators
-func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, uniqueID string, sender sdk.AccAddress) sdk.Error {
+func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string, sender sdk.AccAddress) sdk.Error {
 	if !keeper.router.HasRoute(msg.Route()) {
 		return types.ErrRouteDoesntExist(msg.Route())
 	}
@@ -21,15 +22,15 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg types.MsMsg, uniqueID strin
 	}
 
 	if keeper.HasCallByUniqueId(ctx, uniqueID) {
-	    return types.ErrNotUniqueID(uniqueID)
-    }
+		return types.ErrNotUniqueID(uniqueID)
+	}
 
 	nextId := keeper.getNextCallId(ctx)
 	call, err := types.NewCall(nextId, uniqueID, msg, ctx.BlockHeight(), sender)
 
 	if err != nil {
-        return err
-    }
+		return err
+	}
 
 	id := keeper.saveNewCall(ctx, call)
 
@@ -55,18 +56,18 @@ func (keeper Keeper) GetCall(ctx sdk.Context, id uint64) (types.Call, sdk.Error)
 
 // Get call by unique id
 func (keeper Keeper) GetCallIDByUnique(ctx sdk.Context, uniqueID string) (uint64, sdk.Error) {
-    store := ctx.KVStore(keeper.storeKey)
+	store := ctx.KVStore(keeper.storeKey)
 
-    if !keeper.HasCallByUniqueId(ctx, uniqueID) {
-        return 0, types.ErrNotFoundUniqueID(uniqueID)
-    }
+	if !keeper.HasCallByUniqueId(ctx, uniqueID) {
+		return 0, types.ErrNotFoundUniqueID(uniqueID)
+	}
 
-    bz := store.Get(types.GetUniqueID(uniqueID))
+	bz := store.Get(types.GetUniqueID(uniqueID))
 
-    var id uint64
-    keeper.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &id)
+	var id uint64
+	keeper.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &id)
 
-    return id, nil
+	return id, nil
 }
 
 // Check if call exists
@@ -78,25 +79,25 @@ func (keeper Keeper) HasCall(ctx sdk.Context, id uint64) bool {
 
 // Check if has call by unique id
 func (keeper Keeper) HasCallByUniqueId(ctx sdk.Context, uniqueID string) bool {
-    store := ctx.KVStore(keeper.storeKey)
+	store := ctx.KVStore(keeper.storeKey)
 
-    return store.Has(types.GetUniqueID(uniqueID))
+	return store.Has(types.GetUniqueID(uniqueID))
 }
 
 // Get last call id
-func (keeper Keeper) GetLastId(ctx sdk.Context) uint64  {
+func (keeper Keeper) GetLastId(ctx sdk.Context) uint64 {
 	id := keeper.getNextCallId(ctx)
 
 	if id == 0 {
 		return id
 	}
 
-	return id-1
+	return id - 1
 }
 
 // Save new call
 func (keeper Keeper) saveNewCall(ctx sdk.Context, call types.Call) uint64 {
-	store  := ctx.KVStore(keeper.storeKey)
+	store := ctx.KVStore(keeper.storeKey)
 	nextId := keeper.getNextCallId(ctx)
 
 	store.Set(types.GetCallByIdKey(nextId), keeper.cdc.MustMarshalBinaryBare(call))
@@ -145,5 +146,3 @@ func (keeper Keeper) getNextCallId(ctx sdk.Context) uint64 {
 
 	return id
 }
-
-

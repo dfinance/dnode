@@ -4,13 +4,13 @@ package currencies
 import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/core"
 	"wings-blockchain/x/currencies/msgs"
-	msTypes "wings-blockchain/x/multisig/types"
 )
 
 // Handler for currencies messages, proves issue/destroy messages.
-func NewMsHandler(keeper Keeper) msTypes.MsHandler {
-	return func(ctx sdk.Context, msg msTypes.MsMsg) sdk.Error {
+func NewMsHandler(keeper Keeper) core.MsHandler {
+	return func(ctx sdk.Context, msg core.MsMsg) sdk.Error {
 		switch msg := msg.(type) {
 		case msgs.MsgIssueCurrency:
 			return handleMsMsgIssueCurrency(ctx, keeper, msg)

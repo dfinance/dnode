@@ -1,23 +1,22 @@
-// Implements PoA module.
-package poa
+package multisig
 
 import (
 	"encoding/json"
 	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
+	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/poa/client"
-	"wings-blockchain/x/poa/client/rest"
-	"wings-blockchain/x/poa/types"
+	"wings-blockchain/x/multisig/client"
+	"wings-blockchain/x/multisig/client/rest"
+	"wings-blockchain/x/multisig/types"
+	"wings-blockchain/x/poa"
 )
 
 var (
-	_ core.AppMsModule      = AppModule{}
+	_ module.AppModule      = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
@@ -29,42 +28,18 @@ func (AppModuleBasic) Name() string {
 }
 
 // Registering codecs.
-func (module AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
+func (module AppModuleBasic) RegisterCodec(cdc *amino.Codec) {
 	RegisterCodec(cdc)
 }
 
 // Validate exists genesis.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	var genesisState types.GenesisState
-	err := ModuleCdc.UnmarshalJSON(bz, &genesisState)
-	if err != nil {
-		return err
-	}
-
-	params := genesisState.Parameters
-	if err = params.Validate(); err != nil {
-		return err
-	}
-
-	length := len(genesisState.PoAValidators)
-
-	if length < int(params.MinValidators) {
-		return types.ErrNotEnoungValidators(uint16(length), params.MinValidators)
-	}
-
-	if length > int(params.MaxValidators) {
-		return types.ErrMaxValidatorsReached(params.MaxValidators)
-	}
-
 	return nil
 }
 
 // Generate default genesis.
 func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return ModuleCdc.MustMarshalJSON(types.GenesisState{
-		Parameters:    types.DefaultParams(),
-		PoAValidators: types.Validators{},
-	})
+	return json.RawMessage{}
 }
 
 // Register REST routes.
@@ -73,25 +48,26 @@ func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) 
 }
 
 // Get transaction commands for CLI.
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
+func (AppModuleBasic) GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	return client.GetTxCmd(cdc)
 }
 
 // Get query commands for CLI.
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+func (AppModuleBasic) GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	return client.GetQueryCmd(cdc)
 }
 
-// PoA module.
 type AppModule struct {
 	AppModuleBasic
-	poaKeeper Keeper
+	msKeeper  Keeper
+	poaKeeper poa.Keeper
 }
 
 // Create new PoA module.
-func NewAppMsModule(poaKeeper Keeper) core.AppMsModule {
+func NewAppModule(msKeeper Keeper, poaKeeper poa.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
+		msKeeper:       msKeeper,
 		poaKeeper:      poaKeeper,
 	}
 }
@@ -108,40 +84,32 @@ func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 func (AppModule) Route() string { return types.RouterKey }
 
 // Create new handler.
-func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.poaKeeper) }
-
-// Create new multisignature handler.
-func (app AppModule) NewMsHandler() core.MsHandler { return NewMsHandler(app.poaKeeper) }
+func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.msKeeper, app.poaKeeper) }
 
 // Get route for querier.
 func (AppModule) QuerierRoute() string { return types.RouterKey }
 
 // Get new querier for PoA module.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(app.poaKeeper)
+	return NewQuerier(app.msKeeper)
 }
 
 // Process begin block (abci).
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {
+}
 
 // Process end block (abci).
-func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+	EndBlocker(ctx, app.msKeeper, app.poaKeeper)
 	return []abci.ValidatorUpdate{}
 }
 
 // Initialize genesis.
 func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	var genesisState types.GenesisState
-
-	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-
-	app.poaKeeper.InitGenesis(ctx, genesisState)
-
 	return []abci.ValidatorUpdate{}
 }
 
 // Export genesis.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	genesisState := app.poaKeeper.ExportGenesis(ctx)
-	return ModuleCdc.MustMarshalJSON(genesisState)
+	return json.RawMessage{}
 }
