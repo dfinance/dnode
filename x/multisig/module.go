@@ -1,3 +1,4 @@
+// Multisig AppModule and AppModuleBasic implementation.
 package multisig
 
 import (

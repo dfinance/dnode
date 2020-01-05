@@ -1,3 +1,4 @@
+// Implements message type to confirm call.
 package msgs
 
 import (
@@ -6,12 +7,13 @@ import (
 	"wings-blockchain/x/multisig/types"
 )
 
-// Message to confirm call
+// Message type.
 type MsgConfirmCall struct {
 	MsgId  uint64         `json:"msg_id"`
 	Sender sdk.AccAddress `json:"sender"`
 }
 
+// New instance of message.
 func NewMsgConfirmCall(msgId uint64, sender sdk.AccAddress) MsgConfirmCall {
 	return MsgConfirmCall{
 		MsgId:  msgId,

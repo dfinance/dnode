@@ -1,3 +1,4 @@
+// Keeper implementation.
 package multisig
 
 import (
@@ -7,14 +8,14 @@ import (
 	"wings-blockchain/x/core"
 )
 
-// Multisig keeper
+// Multisignature keeper.
 type Keeper struct {
 	storeKey sdk.StoreKey
 	cdc      *codec.Codec
 	router   core.Router
 }
 
-// Creating new multisig keeper
+// Creating new multisignature keeper implementation.
 func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, router core.Router) Keeper {
 	keeper := Keeper{
 		storeKey: storeKey,
@@ -22,17 +23,10 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, router core.Router) Keep
 		router:   router,
 	}
 
-	keeper.router.Seal()
-
 	return keeper
 }
 
-// Get logger
+// Get logger for keeper.
 func (keeper Keeper) getLogger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/multisig")
-}
-
-// Get keeper's codec
-func (keeper Keeper) GetCDC() *codec.Codec {
-	return keeper.cdc
 }

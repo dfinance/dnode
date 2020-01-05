@@ -1,3 +1,4 @@
+// End blocker implementation.
 package multisig
 
 import (
@@ -9,7 +10,7 @@ import (
 	"wings-blockchain/x/multisig/types"
 )
 
-// ABCI Tags are now Events - see https://github.com/tendermint/tendermint/blob/60827f75623b92eff132dc0eff5b49d2025c591e/docs/spec/abci/abci.md#events
+// Implements end blocker to process active calls and their confirmations.
 func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Event {
 	logger := keeper.getLogger(ctx)
 	resEvents := sdk.NewEventManager()

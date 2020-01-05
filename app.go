@@ -205,15 +205,17 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
-	// Initializing multisignature router
+	// Initializing multisignature router.
 	app.msRouter = core.NewRouter()
 
+	// Initializing multisignature router.
 	app.msKeeper = multisig.NewKeeper(
 		keys[multisig.StoreKey],
 		app.cdc,
 		app.msRouter,
 	)
 
+	// Initializing multisignature manager.
 	app.mm = core.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),

@@ -1,3 +1,4 @@
+// Vote types (addresses slice).
 package types
 
 import "github.com/cosmos/cosmos-sdk/types"

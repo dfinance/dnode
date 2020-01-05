@@ -1,3 +1,4 @@
+// Multisignature message handler implementation.
 package multisig
 
 import (
@@ -9,7 +10,7 @@ import (
 	"wings-blockchain/x/multisig/types"
 )
 
-// Handle messages for multisig module
+// Handle messages for multisig module.
 func NewHandler(keeper Keeper, poaKeeper poa.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
@@ -29,7 +30,7 @@ func NewHandler(keeper Keeper, poaKeeper poa.Keeper) sdk.Handler {
 	}
 }
 
-// Handle MsgSubmitCall
+// Handle message (MsgSubmitCall) to submit new call.
 func handleMsgSubmitCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, msg msgs.MsgSubmitCall) sdk.Result {
 	if !poaKeeper.HasValidator(ctx, msg.Sender) {
 		return types.ErrNotValidator(msg.Sender.String()).Result()
@@ -44,7 +45,7 @@ func handleMsgSubmitCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, m
 	return sdk.Result{}
 }
 
-// Handle MsgConfirmCall
+// Handle message (MsgConfirmCall) to confirm call.
 func handleMsgConfirmCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, msg msgs.MsgConfirmCall) sdk.Result {
 	if !poaKeeper.HasValidator(ctx, msg.Sender) {
 		return types.ErrNotValidator(msg.Sender.String()).Result()
@@ -69,7 +70,7 @@ func handleMsgConfirmCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, 
 	return sdk.Result{}
 }
 
-// Handle MsgRevokeConfirm
+// Handle message (MsgRevokeConfirm) to revoke call confirmation.
 func handleMsgRevokeConfirm(ctx sdk.Context, keeper Keeper, msg msgs.MsgRevokeConfirm) sdk.Result {
 	if has, err := keeper.HasVote(ctx, msg.MsgId, msg.Sender); err != nil {
 		return err.Result()

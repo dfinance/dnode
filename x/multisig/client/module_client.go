@@ -1,3 +1,4 @@
+// Returns queries and txs for multisig CLI.
 package client
 
 import (

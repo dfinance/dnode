@@ -1,14 +1,17 @@
+// MsManager implements Manager functional, but also allows to manage multisignature modules.
 package core
 
 import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 )
 
+// Multisignature modules manager.
 type MsManager struct {
 	*module.Manager
 	MsModules map[string]AppMsModule
 }
 
+// New multisignature module manager.
 func NewMsManager(modules ...interface{}) *MsManager {
 	moduleMap := make(map[string]module.AppModule)
 	msModulesMap := make(map[string]AppMsModule)
@@ -39,6 +42,7 @@ func NewMsManager(modules ...interface{}) *MsManager {
 	}, msModulesMap}
 }
 
+// Registering multisignature routes.
 func (m *MsManager) RegisterMsRoutes(router Router) {
 	for _, module := range m.MsModules {
 		switch module.(type) {
@@ -48,4 +52,6 @@ func (m *MsManager) RegisterMsRoutes(router Router) {
 			}
 		}
 	}
+
+	router.Seal()
 }

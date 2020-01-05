@@ -1,3 +1,4 @@
+// Registering amino types for multisignature usage.
 package multisig
 
 import (

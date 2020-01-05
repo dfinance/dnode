@@ -1,3 +1,4 @@
+// Implements new message type to revoke confirmation from call.
 package msgs
 
 import (
@@ -6,12 +7,13 @@ import (
 	"wings-blockchain/x/multisig/types"
 )
 
-// Message to revoke confirmation on call
+// Message to revoke confirmation from call.
 type MsgRevokeConfirm struct {
 	MsgId  uint64         `json:"msg_id"`
 	Sender sdk.AccAddress `json:"sender"`
 }
 
+// Create new message instance to revoke confirmation.
 func NewMsgRevokeConfirm(msgId uint64, sender sdk.AccAddress) MsgRevokeConfirm {
 	return MsgRevokeConfirm{
 		MsgId:  msgId,

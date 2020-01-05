@@ -1,3 +1,4 @@
+// Implements CLI queries multisig modules.
 package cli
 
 import (
@@ -9,6 +10,7 @@ import (
 	"wings-blockchain/x/multisig/types"
 )
 
+// Get calls from CLI.
 func GetCalls(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "calls",
@@ -29,7 +31,7 @@ func GetCalls(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// Get amount of calls.
+// Get amount of calls from CLI.
 func GetLastId(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "lastId",
@@ -49,7 +51,7 @@ func GetLastId(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// Get call by id.
+// Get call by id from CLI.
 func GetCall(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "call [id]",
@@ -81,7 +83,7 @@ func GetCall(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-//Get call by unique id
+//Get call by unique id from CLI.
 func GetCallByUniqueID(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "unique [unique_id]",

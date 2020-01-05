@@ -1,3 +1,4 @@
+// Multisignature router implementation.
 package core
 
 import (

@@ -4,10 +4,12 @@ import (
 	"fmt"
 )
 
+// Request to get call by unique id.
 type UniqueReq struct {
 	UniqueId string `json:"unique_id"`
 }
 
+// Request to get call by call id.
 type CallReq struct {
 	CallId uint64 `json:"call_id"`
 }
@@ -22,13 +24,13 @@ func (q LastIdRes) String() string {
 	return fmt.Sprintf("Last id: %d", q.LastId)
 }
 
-// Get call query response.
+// Type to get a call as response with votes.
 type CallResp struct {
 	Call  Call  `json:"call"`
 	Votes Votes `json:"votes"`
 }
 
-// CallResp to string.
+// Call response to string.
 func (c CallResp) String() string {
 	var votes string
 
@@ -43,8 +45,10 @@ func (c CallResp) String() string {
 	return fmt.Sprintf("%sVotes: %s\n", c.Call.String(), votes)
 }
 
+// Slice of call responses (in case of multiplay calls to response).
 type CallsResp []CallResp
 
+// Call responses to string.
 func (calls CallsResp) String() string {
 	var strCalls string
 

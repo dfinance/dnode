@@ -1,3 +1,4 @@
+// Create new message type.
 package msgs
 
 import (
@@ -14,6 +15,7 @@ type MsgSubmitCall struct {
 	Sender   sdk.AccAddress `json:"sender"`
 }
 
+// Create new instance of message to submit call.
 func NewMsgSubmitCall(msg core.MsMsg, uniqueID string, sender sdk.AccAddress) MsgSubmitCall {
 	return MsgSubmitCall{
 		Msg:      msg,

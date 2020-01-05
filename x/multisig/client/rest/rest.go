@@ -1,3 +1,4 @@
+// Implements REST API for multisig modules.
 package rest
 
 import (
@@ -9,12 +10,14 @@ import (
 	"wings-blockchain/x/multisig/types"
 )
 
+// Registering routes in the REST API.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/call/{id}", types.ModuleName), getCall(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/calls", types.ModuleName), getCalls(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/unique/{unique}", types.ModuleName), getCallByUnique(cliCtx)).Methods("GET")
 }
 
+// Getting call by unique id from REST API.
 func getCallByUnique(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -31,6 +34,7 @@ func getCallByUnique(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// Get call by id from REST API.
 func getCall(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -47,6 +51,7 @@ func getCall(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// Get list of calls from REST API.
 func getCalls(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)

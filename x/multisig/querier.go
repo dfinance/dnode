@@ -1,3 +1,4 @@
+// Querier for multisig module.
 package multisig
 
 import (
@@ -38,6 +39,7 @@ func NewQuerier(msKeeper Keeper) sdk.Querier {
 	}
 }
 
+// Process request to get last id.
 func queryGetLastId(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	resp := types.LastIdRes{LastId: msKeeper.GetLastId(ctx)}
 
@@ -49,6 +51,7 @@ func queryGetLastId(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	return bz, nil
 }
 
+// Process request to get calls.
 func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	calls := make(types.CallsResp, 0)
 
@@ -93,6 +96,7 @@ func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	return bz, nil
 }
 
+// Process request to get call.
 func queryGetCall(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, sdk.Error) {
 	var params types.CallReq
 
@@ -123,6 +127,7 @@ func queryGetCall(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]by
 	return bz, nil
 }
 
+// Process query to get call by unique id.
 func queryGetUnique(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, sdk.Error) {
 	var params types.UniqueReq
 	if err := ModuleCdc.UnmarshalJSON(req.Data, &params); err != nil {

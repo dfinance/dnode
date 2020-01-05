@@ -1,3 +1,4 @@
+// Keeper implements operations with call.
 package multisig
 
 import (
@@ -6,7 +7,7 @@ import (
 	"wings-blockchain/x/multisig/types"
 )
 
-// Submit call to execute by confirmations from validators
+// Submit call to execute by confirmations from validators.
 func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string, sender sdk.AccAddress) sdk.Error {
 	if !keeper.router.HasRoute(msg.Route()) {
 		return types.ErrRouteDoesntExist(msg.Route())
@@ -45,7 +46,7 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string
 	return nil
 }
 
-// Get call by id
+// Get call by id.
 func (keeper Keeper) GetCall(ctx sdk.Context, id uint64) (types.Call, sdk.Error) {
 	if !keeper.HasCall(ctx, id) {
 		return types.Call{}, types.ErrWrongCallId(id)
@@ -54,7 +55,7 @@ func (keeper Keeper) GetCall(ctx sdk.Context, id uint64) (types.Call, sdk.Error)
 	return keeper.getCallById(ctx, id), nil
 }
 
-// Get call by unique id
+// Get call by unique id.
 func (keeper Keeper) GetCallIDByUnique(ctx sdk.Context, uniqueID string) (uint64, sdk.Error) {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -70,21 +71,21 @@ func (keeper Keeper) GetCallIDByUnique(ctx sdk.Context, uniqueID string) (uint64
 	return id, nil
 }
 
-// Check if call exists
+// Check if call exists.
 func (keeper Keeper) HasCall(ctx sdk.Context, id uint64) bool {
 	store := ctx.KVStore(keeper.storeKey)
 
 	return store.Has(types.GetCallByIdKey(id))
 }
 
-// Check if has call by unique id
+// Check if has call by unique id.
 func (keeper Keeper) HasCallByUniqueId(ctx sdk.Context, uniqueID string) bool {
 	store := ctx.KVStore(keeper.storeKey)
 
 	return store.Has(types.GetUniqueID(uniqueID))
 }
 
-// Get last call id
+// Get last call id.
 func (keeper Keeper) GetLastId(ctx sdk.Context) uint64 {
 	id := keeper.getNextCallId(ctx)
 
@@ -95,7 +96,7 @@ func (keeper Keeper) GetLastId(ctx sdk.Context) uint64 {
 	return id - 1
 }
 
-// Save new call
+// Save new call.
 func (keeper Keeper) saveNewCall(ctx sdk.Context, call types.Call) uint64 {
 	store := ctx.KVStore(keeper.storeKey)
 	nextId := keeper.getNextCallId(ctx)
@@ -107,14 +108,14 @@ func (keeper Keeper) saveNewCall(ctx sdk.Context, call types.Call) uint64 {
 	return nextId
 }
 
-// Save message by id
+// Save message by id.
 func (keeper Keeper) saveCallById(ctx sdk.Context, id uint64, call types.Call) {
 	store := ctx.KVStore(keeper.storeKey)
 
 	store.Set(types.GetCallByIdKey(id), keeper.cdc.MustMarshalBinaryBare(call))
 }
 
-// Get message by id
+// Get message by id.
 func (keeper Keeper) getCallById(ctx sdk.Context, id uint64) types.Call {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -125,7 +126,7 @@ func (keeper Keeper) getCallById(ctx sdk.Context, id uint64) types.Call {
 	return call
 }
 
-// Get next id to store message
+// Get next id to store message.
 func (keeper Keeper) getNextCallId(ctx sdk.Context) uint64 {
 	store := ctx.KVStore(keeper.storeKey)
 

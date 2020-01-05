@@ -1,3 +1,4 @@
+// Implements AppMsModule interface (inherits from AppModule) to manage also multisignature modules.
 package core
 
 import (

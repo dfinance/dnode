@@ -1,3 +1,4 @@
+// Aliases to use outside mostly package (app.go).
 package multisig
 
 import (

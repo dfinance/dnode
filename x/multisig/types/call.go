@@ -1,3 +1,4 @@
+// Create call message type.
 package types
 
 import (
@@ -6,7 +7,7 @@ import (
 	"wings-blockchain/x/core"
 )
 
-// Call that will be executed itself, contains msg instances, that executing via router and hadler
+// Call that will be executed itself, contains msg instances, that executing via router and handler.
 type Call struct {
 	// Creator
 	Creator sdk.AccAddress `json:"creator"`
@@ -41,7 +42,7 @@ type Call struct {
 	Height int64 `json:"height"`
 }
 
-// Create new call instance
+// Create new call instance.
 func NewCall(id uint64, uniqueID string, msg core.MsMsg, height int64, creator sdk.AccAddress) (Call, sdk.Error) {
 	msgRoute := msg.Route()
 
