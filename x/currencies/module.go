@@ -33,7 +33,7 @@ func (module AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 }
 
 // Validate exists genesis.
-func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
+func (AppModuleBasic) ValidateGenesis(json.RawMessage) error {
 	return nil
 }
 
