@@ -40,7 +40,7 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 
 // Generate default genesis.
 func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return json.RawMessage{}
+	return nil
 }
 
 // Register REST routes.
