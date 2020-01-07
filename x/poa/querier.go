@@ -42,7 +42,7 @@ func queryGetValidators(poaKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 		Confirmations: poaKeeper.GetEnoughConfirmations(ctx),
 	}
 
-	bz, err := codec.MarshalJSONIndent(ModuleCdc, validators)
+	bz, err := codec.MarshalJSONIndent(poaKeeper.cdc, validators)
 
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
@@ -53,7 +53,7 @@ func queryGetValidators(poaKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 
 // Query handler for get min/max validators amount values.
 func queryGetMinMax(poaKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
-	bz, err := codec.MarshalJSONIndent(ModuleCdc, poaKeeper.GetParams(ctx))
+	bz, err := codec.MarshalJSONIndent(poaKeeper.cdc, poaKeeper.GetParams(ctx))
 
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
@@ -72,7 +72,7 @@ func queryGetValidator(poaKeeper Keeper, ctx sdk.Context, req abci.RequestQuery)
 
 	validator := poaKeeper.GetValidator(ctx, params.Address)
 
-	bz, err := codec.MarshalJSONIndent(ModuleCdc, validator)
+	bz, err := codec.MarshalJSONIndent(poaKeeper.cdc, validator)
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
 	}

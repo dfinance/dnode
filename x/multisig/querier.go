@@ -43,7 +43,7 @@ func NewQuerier(msKeeper Keeper) sdk.Querier {
 func queryGetLastId(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	resp := types.LastIdRes{LastId: msKeeper.GetLastId(ctx)}
 
-	bz, err := codec.MarshalJSONIndent(ModuleCdc, resp)
+	bz, err := codec.MarshalJSONIndent(msKeeper.cdc, resp)
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
 	}
@@ -88,7 +88,7 @@ func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 		calls = append(calls, callResp)
 	}
 
-	bz, err := codec.MarshalJSONIndent(ModuleCdc, calls)
+	bz, err := codec.MarshalJSONIndent(msKeeper.cdc, calls)
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
 	}
@@ -119,7 +119,7 @@ func queryGetCall(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]by
 		Votes: votes,
 	}
 
-	bz, errMarshal := codec.MarshalJSONIndent(ModuleCdc, callResp)
+	bz, errMarshal := codec.MarshalJSONIndent(msKeeper.cdc, callResp)
 	if errMarshal != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", errMarshal.Error()))
 	}
@@ -154,7 +154,7 @@ func queryGetUnique(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]
 		Votes: votes,
 	}
 
-	bz, errMarshal := codec.MarshalJSONIndent(ModuleCdc, callResp)
+	bz, errMarshal := codec.MarshalJSONIndent(msKeeper.cdc, callResp)
 	if errMarshal != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", errMarshal.Error()))
 	}

@@ -56,7 +56,7 @@ func queryGetDestroys(ccKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) (
 		destroys = append(destroys, destroy)
 	}
 
-	bz, err := codec.MarshalJSONIndent(ModuleCdc, destroys)
+	bz, err := codec.MarshalJSONIndent(ccKeeper.cdc, destroys)
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
 	}
@@ -74,7 +74,7 @@ func queryGetDestroy(ccKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([
 
 	destroy := ccKeeper.GetDestroy(ctx, params.DestroyId)
 
-	bz, err := codec.MarshalJSONIndent(ModuleCdc, destroy)
+	bz, err := codec.MarshalJSONIndent(ccKeeper.cdc, destroy)
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
 	}
@@ -95,7 +95,7 @@ func queryGetIssue(ccKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]b
 		return nil, types.ErrWrongIssueID(params.IssueID)
 	}
 
-	bz, err := codec.MarshalJSONIndent(ModuleCdc, issue)
+	bz, err := codec.MarshalJSONIndent(ccKeeper.cdc, issue)
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
 	}
@@ -116,7 +116,7 @@ func queryGetCurrency(ccKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) (
 		return []byte{}, types.ErrNotExistCurrency(params.Symbol)
 	}
 
-	bz, err := codec.MarshalJSONIndent(ModuleCdc, currency)
+	bz, err := codec.MarshalJSONIndent(ccKeeper.cdc, currency)
 	if err != nil {
 		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
 	}
