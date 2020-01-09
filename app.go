@@ -2,7 +2,18 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/version"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	tmtypes "github.com/tendermint/tendermint/types"
+	"os"
+	"wings-blockchain/x/core"
+	"wings-blockchain/x/currencies"
+	"wings-blockchain/x/multisig"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -14,16 +25,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/libs/log"
-	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	"wings-blockchain/x/currencies"
-	ccQuerier "wings-blockchain/x/currencies/queries"
-	"wings-blockchain/x/multisig"
-	msKeeper "wings-blockchain/x/multisig/keeper"
-	msQuerier "wings-blockchain/x/multisig/queries"
 	"wings-blockchain/x/poa"
-	poaQuerier "wings-blockchain/x/poa/queries"
 	poaTypes "wings-blockchain/x/poa/types"
 )
 
@@ -31,69 +35,113 @@ const (
 	appName = "wb"
 )
 
-type WbServiceApp struct {
-	*bam.BaseApp
-	cdc *codec.Codec
-
-	keyMain    *sdk.KVStoreKey
-	keyAccount *sdk.KVStoreKey
-	keyCC      *sdk.KVStoreKey
-	keySupply  *sdk.KVStoreKey
-	keyParams  *sdk.KVStoreKey
-	tkeyParams *sdk.TransientStoreKey
-	keyPoa     *sdk.KVStoreKey
-	keyMS      *sdk.KVStoreKey
-
-	accountKeeper    auth.AccountKeeper
-	bankKeeper       bank.Keeper
-	supplyKeeper     supply.Keeper
-	paramsKeeper     params.Keeper
-	currenciesKeeper currencies.Keeper
-	poaKeeper        poa.Keeper
-	msKeeper         msKeeper.Keeper
-}
+type GenesisState map[string]json.RawMessage
 
 var (
-	maccPerms map[string][]string = map[string][]string{
-		auth.FeeCollectorName: nil,
+	// default home directories for the application CLI.
+	DefaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
+
+	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored.
+	DefaultNodeHome = os.ExpandEnv("$HOME/.wbd")
+
+	ModuleBasics = module.NewBasicManager(
+		genaccounts.AppModuleBasic{}, // genesis accounts management.
+		genutil.AppModuleBasic{},     // utils to generate genesis transaction, genesis file validation, etc.
+		auth.AppModuleBasic{},
+		bank.AppModuleBasic{},
+		staking.AppModuleBasic{},
+		distribution.AppModuleBasic{},
+		params.AppModuleBasic{},
+		slashing.AppModuleBasic{},
+		supply.AppModuleBasic{},
+		poa.AppModuleBasic{},
+		currencies.AppModuleBasic{},
+		multisig.AppModuleBasic{},
+	)
+
+	maccPerms = map[string][]string{
+		auth.FeeCollectorName:     nil,
+		distribution.ModuleName:   nil,
+		staking.BondedPoolName:    {supply.Burner, supply.Staking},
+		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 	}
 )
 
-// NewWbServiceApp is a constructor function for wings blockchain
-func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
-	// First define the top level codec that will be shared by the different modules
+type WbServiceApp struct {
+	*bam.BaseApp
+	cdc      *codec.Codec
+	msRouter core.Router
+
+	keys  map[string]*sdk.KVStoreKey
+	tkeys map[string]*sdk.TransientStoreKey
+
+	accountKeeper  auth.AccountKeeper
+	bankKeeper     bank.Keeper
+	supplyKeeper   supply.Keeper
+	paramsKeeper   params.Keeper
+	stakingKeeper  staking.Keeper
+	distrKeeper    distribution.Keeper
+	slashingKeeper slashing.Keeper
+	poaKeeper      poa.Keeper
+	ccKeeper       currencies.Keeper
+	msKeeper       multisig.Keeper
+
+	mm *core.MsManager
+}
+
+// MakeCodec generates the necessary codecs for Amino.
+func MakeCodec() *codec.Codec {
+	var cdc = codec.New()
+	ModuleBasics.RegisterCodec(cdc) // register all module codecs.
+	sdk.RegisterCodec(cdc)
+	codec.RegisterCrypto(cdc)
+	return cdc
+}
+
+// NewWbServiceApp is a constructor function for wings blockchain.
+func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *WbServiceApp {
 	cdc := MakeCodec()
 
-	// BaseApp handles interactions with Tendermint through the ABCI protocol
-	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc))
+	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
+	bApp.SetAppVersion(version.Version)
 
-	// Here you initialize your application with the store keys it requires
+	keys := sdk.NewKVStoreKeys(
+		bam.MainStoreKey,
+		auth.StoreKey,
+		supply.StoreKey,
+		params.StoreKey,
+		staking.StoreKey,
+		distribution.StoreKey,
+		slashing.StoreKey,
+		poa.StoreKey,
+		currencies.StoreKey,
+		multisig.StoreKey,
+	)
+
+	tkeys := sdk.NewTransientStoreKeys(
+		params.TStoreKey,
+		staking.TStoreKey,
+	)
+
 	var app = &WbServiceApp{
 		BaseApp: bApp,
 		cdc:     cdc,
-
-		keyMain:    sdk.NewKVStoreKey("main"),
-		keyAccount: sdk.NewKVStoreKey("acc"),
-		keyCC:      sdk.NewKVStoreKey("cc"),
-		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
-		keyParams:  sdk.NewKVStoreKey("params"),
-		tkeyParams: sdk.NewTransientStoreKey("transient_params"),
-		keyPoa:     sdk.NewKVStoreKey("poa"),
-		keyMS:      sdk.NewKVStoreKey("multisig"),
+		keys:    keys,
+		tkeys:   tkeys,
 	}
 
-	// The ParamsKeeper handles parameter storage for the application
-	app.paramsKeeper = params.NewKeeper(app.cdc, app.keyParams, app.tkeyParams, params.DefaultCodespace)
+	// The ParamsKeeper handles parameter storage for the application.
+	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
 
-	// The AccountKeeper handles address -> account lookups
+	// The AccountKeeper handles address -> account lookups.
 	app.accountKeeper = auth.NewAccountKeeper(
 		app.cdc,
-		app.keyAccount,
+		keys[auth.StoreKey],
 		app.paramsKeeper.Subspace(auth.DefaultParamspace),
 		auth.ProtoBaseAccount,
 	)
 
-	// The BankKeeper allows you perform sdk.Coins interactions
+	// The BankKeeper allows you perform sdk.Coins interactions.
 	app.bankKeeper = bank.NewBaseKeeper(
 		app.accountKeeper,
 		app.paramsKeeper.Subspace(bank.DefaultParamspace),
@@ -101,69 +149,126 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB) *WbServiceApp {
 		app.ModuleAccountAddrs(),
 	)
 
-	app.supplyKeeper = supply.NewKeeper(cdc, app.keySupply, app.accountKeeper, app.bankKeeper, maccPerms)
+	// The SupplyKeeper collects transaction fees and renders them to the fee distribution module.
+	app.supplyKeeper = supply.NewKeeper(cdc, keys[supply.StoreKey], app.accountKeeper, app.bankKeeper, maccPerms)
 
-	// Initializing currencies module
-	app.currenciesKeeper = currencies.NewKeeper(
-		app.bankKeeper,
-		app.keyCC,
-		app.cdc,
+	// Initializing staking keeper.
+	stakingKeeper := staking.NewKeeper(
+		cdc,
+		keys[staking.StoreKey],
+		tkeys[staking.TStoreKey],
+		app.supplyKeeper,
+		app.paramsKeeper.Subspace(staking.DefaultParamspace),
+		staking.DefaultCodespace,
 	)
 
-	// Initializing validators module
+	// Initialize currency keeper.
+	app.ccKeeper = currencies.NewKeeper(
+		app.bankKeeper,
+		keys[currencies.StoreKey],
+		cdc,
+	)
+
+	// Initializing distribution keeper.
+	app.distrKeeper = distribution.NewKeeper(
+		cdc,
+		keys[distribution.StoreKey],
+		app.paramsKeeper.Subspace(distribution.DefaultParamspace),
+		stakingKeeper,
+		app.supplyKeeper,
+		distribution.DefaultCodespace,
+		auth.FeeCollectorName,
+		app.ModuleAccountAddrs(),
+	)
+
+	// Initialize slashing keeper.
+	app.slashingKeeper = slashing.NewKeeper(
+		cdc,
+		keys[slashing.StoreKey],
+		stakingKeeper,
+		app.paramsKeeper.Subspace(slashing.DefaultParamspace),
+		slashing.DefaultCodespace,
+	)
+
+	// Initialize staking keeper.
+	app.stakingKeeper = *stakingKeeper.SetHooks(
+		staking.NewMultiStakingHooks(
+			app.distrKeeper.Hooks(),
+			app.slashingKeeper.Hooks(),
+		),
+	)
+
+	// Initializing validators module.
 	app.poaKeeper = poa.NewKeeper(
-		app.keyPoa,
+		keys[poa.StoreKey],
 		app.cdc,
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
-	// Initializing multisig router
-	msRouter := msKeeper.NewRouter()
-	msRouter.AddRoute("poa", poa.NewMsHandler(app.poaKeeper))
-	msRouter.AddRoute("currencies", currencies.NewMsHandler(app.currenciesKeeper))
+	// Initializing multisignature router.
+	app.msRouter = core.NewRouter()
 
-	// Initializing ms module
-	app.msKeeper = msKeeper.NewKeeper(
-		app.keyMS,
+	// Initializing multisignature router.
+	app.msKeeper = multisig.NewKeeper(
+		keys[multisig.StoreKey],
 		app.cdc,
-		msRouter,
+		app.msRouter,
 	)
 
-	// The AnteHandler handles signature verification and transaction pre-processing
-	app.SetAnteHandler(auth.NewAnteHandler(app.accountKeeper, app.supplyKeeper, auth.DefaultSigVerificationGasConsumer))
-
-	// The app.Router is the main transaction router where each module registers its routes
-	// Register the bank, currencies,  routes here
-	app.Router().
-		AddRoute("bank", bank.NewHandler(app.bankKeeper)).
-		AddRoute("multisig", multisig.NewHandler(app.msKeeper, app.poaKeeper)).
-		AddRoute("currencies", currencies.NewHandler(app.currenciesKeeper))
-
-	// The app.QueryRouter is the main query router where each module registers its routes
-	app.QueryRouter().
-		AddRoute("acc", auth.NewQuerier(app.accountKeeper)).
-		AddRoute("multisig", msQuerier.NewQuerier(app.msKeeper)).
-		AddRoute("poa", poaQuerier.NewQuerier(app.poaKeeper)).
-		AddRoute("currencies", ccQuerier.NewQuerier(app.currenciesKeeper))
-
-	// Init end blockers
-	app.SetEndBlocker(InitEndBlockers(app.msKeeper, app.poaKeeper))
-
-	// The initChainer handles translating the genesis.json file into initial state for the network
-	app.SetInitChainer(app.initChainer)
-
-	app.MountStores(
-		app.keyMain,
-		app.keyAccount,
-		app.keyCC,
-		app.keySupply,
-		app.keyParams,
-		app.tkeyParams,
-		app.keyPoa,
-		app.keyMS,
+	// Initializing multisignature manager.
+	app.mm = core.NewMsManager(
+		genaccounts.NewAppModule(app.accountKeeper),
+		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
+		auth.NewAppModule(app.accountKeeper),
+		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
+		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
+		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
+		distribution.NewAppModule(app.distrKeeper, app.supplyKeeper),
+		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
+		poa.NewAppMsModule(app.poaKeeper),
+		currencies.NewAppMsModule(app.ccKeeper),
+		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 	)
 
-	err := app.LoadLatestVersion(app.keyMain)
+	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName)
+
+	// Sets the order of Genesis - Order matters, genutil is to always come last
+	// NOTE: The genutils moodule must occur after staking so that pools are
+	// properly initialized with tokens from genesis accounts.
+	app.mm.SetOrderInitGenesis(
+		genaccounts.ModuleName,
+		distribution.ModuleName,
+		staking.ModuleName,
+		auth.ModuleName,
+		bank.ModuleName,
+		slashing.ModuleName,
+		supply.ModuleName,
+		poa.ModuleName,
+		currencies.ModuleName,
+		multisig.ModuleName,
+		genutil.ModuleName,
+	)
+
+	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
+	app.mm.RegisterMsRoutes(app.msRouter)
+
+	app.SetInitChainer(app.InitChainer)
+	app.SetBeginBlocker(app.BeginBlocker)
+	app.SetEndBlocker(app.EndBlocker)
+
+	app.SetAnteHandler(
+		auth.NewAnteHandler(
+			app.accountKeeper,
+			app.supplyKeeper,
+			auth.DefaultSigVerificationGasConsumer,
+		),
+	)
+
+	app.MountKVStores(keys)
+	app.MountTransientStores(tkeys)
+
+	err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
 	if err != nil {
 		cmn.Exit(err.Error())
 	}
@@ -181,92 +286,47 @@ func (app *WbServiceApp) ModuleAccountAddrs() map[string]bool {
 	return modAccAddrs
 }
 
-func InitEndBlockers(keeper msKeeper.Keeper, poaKeeper poa.Keeper) sdk.EndBlocker {
-	return func(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-		tags := msKeeper.EndBlocker(ctx, keeper, poaKeeper)
-		return abci.ResponseEndBlock{
-			Events: tags,
-		}
-	}
-}
+// Initialize chain function (initializing genesis data).
+func (app *WbServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+	var genesisState GenesisState
 
-// GenesisState represents chain state at the start of the chain. Any initial state (account balances) are stored here.
-type GenesisState struct {
-	AuthData      auth.GenesisState     `json:"auth"`
-	BankData      bank.GenesisState     `json:"bank"`
-	Accounts      []*auth.BaseAccount   `json:"accounts"`
-	PoAValidators []*poaTypes.Validator `json:"poa_validators"`
-}
-
-// Initializing genesis chainer
-func (app *WbServiceApp) initChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
-	stateJSON := req.AppStateBytes
-
-	genesisState := new(GenesisState)
-	err := app.cdc.UnmarshalJSON(stateJSON, genesisState)
+	err := app.cdc.UnmarshalJSON(req.AppStateBytes, &genesisState)
 	if err != nil {
 		panic(err)
 	}
 
-	app.poaKeeper.SetParams(ctx, poaTypes.DefaultParams())
-	err = app.poaKeeper.InitGenesis(ctx, genesisState.PoAValidators)
-
-	if err != nil {
-		panic(err)
-	}
-
-	for _, acc := range genesisState.Accounts {
-		acc.AccountNumber = app.accountKeeper.GetNextAccountNumber(ctx)
-		app.accountKeeper.SetAccount(ctx, acc)
-	}
-
-	auth.InitGenesis(ctx, app.accountKeeper, genesisState.AuthData)
-	bank.InitGenesis(ctx, app.bankKeeper, genesisState.BankData)
-
-	return abci.ResponseInitChain{Validators: req.Validators}
+	return app.mm.InitGenesis(ctx, genesisState)
 }
 
-// ExportAppStateAndValidators does the things
-func (app *WbServiceApp) ExportAppStateAndValidators() (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
-	ctx := app.NewContext(true, abci.Header{})
-	accounts := []*auth.BaseAccount{}
+// Initialize begin blocker function.
+func (app *WbServiceApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	return app.mm.BeginBlock(ctx, req)
+}
 
-	appendAccountsFn := func(acc auth.Account) bool {
-		account := &auth.BaseAccount{
-			Address: acc.GetAddress(),
-			Coins:   acc.GetCoins(),
-		}
+// Initialize end blocker function.
+func (app *WbServiceApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+	return app.mm.EndBlock(ctx, req)
+}
 
-		accounts = append(accounts, account)
-		return false
-	}
+// Load app with specific height.
+func (app *WbServiceApp) LoadHeight(height int64) error {
+	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
+}
 
-	app.accountKeeper.IterateAccounts(ctx, appendAccountsFn)
+// Exports genesis and validators.
+func (app *WbServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
+) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
 
-	genState := GenesisState{
-		Accounts: accounts,
-		AuthData: auth.DefaultGenesisState(),
-		BankData: bank.DefaultGenesisState(),
-	}
+	// as if they could withdraw from the start of the next block.
+	ctx := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
 
+	genState := app.mm.ExportGenesis(ctx)
 	appState, err = codec.MarshalJSONIndent(app.cdc, genState)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return appState, validators, err
-}
+	validators = staking.WriteValidators(ctx, app.stakingKeeper)
 
-// MakeCodec generates the necessary codecs for Amino
-func MakeCodec() *codec.Codec {
-	var cdc = codec.New()
-	auth.RegisterCodec(cdc)
-	bank.RegisterCodec(cdc)
-	currencies.RegisterCodec(cdc)
-	poa.RegisterCodec(cdc)
-	staking.RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-	multisig.RegisterCodec(cdc)
-	return cdc
+	return appState, validators, nil
 }

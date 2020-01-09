@@ -1,16 +1,17 @@
+// Multisignature handler for processing multisignature messages like: add, remove, replace validator.
 package poa
 
 import (
-	"wings-blockchain/x/poa/types"
-	"wings-blockchain/x/poa/msgs"
-	ms "wings-blockchain/x/multisig/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/core"
+	"wings-blockchain/x/poa/msgs"
+	"wings-blockchain/x/poa/types"
 )
 
-// New message handler for PoA module
-func NewMsHandler(keeper Keeper) ms.MsHandler {
-	return func (ctx sdk.Context, msg ms.MsMsg) sdk.Error {
+// New multisignature message handler for PoA module.
+func NewMsHandler(keeper Keeper) core.MsHandler {
+	return func(ctx sdk.Context, msg core.MsMsg) sdk.Error {
 		switch msg := msg.(type) {
 		case msgs.MsgAddValidator:
 			return handleMsMsgAddValidator(ctx, keeper, msg)
@@ -28,16 +29,16 @@ func NewMsHandler(keeper Keeper) ms.MsHandler {
 	}
 }
 
-// Handle MsgAddValidator for add new validator
+// Handle MsgAddValidator for add new validator.
 func handleMsMsgAddValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgAddValidator) sdk.Error {
 	if keeper.HasValidator(ctx, msg.Address) {
 		return types.ErrValidatorExists(msg.Address.String())
 	}
 
 	maxValidators := keeper.GetMaxValidators(ctx)
-	amount        := keeper.GetValidatorAmount(ctx)
+	amount := keeper.GetValidatorAmount(ctx)
 
-	if amount + 1 > maxValidators {
+	if amount+1 > maxValidators {
 		return types.ErrMaxValidatorsReached(maxValidators)
 	}
 
@@ -45,16 +46,16 @@ func handleMsMsgAddValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgAddVali
 	return nil
 }
 
-// Handle MsgRemoveValidator for remove validator
+// Handle MsgRemoveValidator for remove validator.
 func handleMsMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemoveValidator) sdk.Error {
 	if !keeper.HasValidator(ctx, msg.Address) {
 		return types.ErrValidatorDoesntExists(msg.Address.String())
 	}
 
 	minValidators := keeper.GetMinValidators(ctx)
-	amount		  := keeper.GetValidatorAmount(ctx)
+	amount := keeper.GetValidatorAmount(ctx)
 
-	if amount - 1 < minValidators {
+	if amount-1 < minValidators {
 		return types.ErrMinValidatorsReached(minValidators)
 	}
 
@@ -62,7 +63,7 @@ func handleMsMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemo
 	return nil
 }
 
-// Handle MsgReplaceValidator for replace validator
+// Handle MsgReplaceValidator for replace validator.
 func handleMsMsgReplaceValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgReplaceValidator) sdk.Error {
 	if !keeper.HasValidator(ctx, msg.OldValidator) {
 		return types.ErrValidatorDoesntExists(msg.OldValidator.String())

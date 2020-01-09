@@ -1,28 +1,31 @@
+// Create new message type.
 package msgs
 
 import (
-	types "wings-blockchain/x/multisig/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/core"
+	types "wings-blockchain/x/multisig/types"
 )
 
 // Message for submit call
 type MsgSubmitCall struct {
-	Msg      types.MsMsg	`json:"msg"`
-	UniqueID string 		`json:"uniqueID"`
+	Msg      core.MsMsg     `json:"msg"`
+	UniqueID string         `json:"uniqueID"`
 	Sender   sdk.AccAddress `json:"sender"`
 }
 
-func NewMsgSubmitCall(msg types.MsMsg, uniqueID string, sender sdk.AccAddress) MsgSubmitCall {
+// Create new instance of message to submit call.
+func NewMsgSubmitCall(msg core.MsMsg, uniqueID string, sender sdk.AccAddress) MsgSubmitCall {
 	return MsgSubmitCall{
-		Msg: msg,
+		Msg:      msg,
 		UniqueID: uniqueID,
-		Sender: sender,
+		Sender:   sender,
 	}
 }
 
 func (msg MsgSubmitCall) Route() string {
-	return types.DefaultRoute
+	return types.RouterKey
 }
 
 func (msg MsgSubmitCall) Type() string {

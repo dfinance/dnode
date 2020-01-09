@@ -1,3 +1,4 @@
+// Describing errors and codes.
 package types
 
 import (
@@ -5,14 +6,14 @@ import (
 )
 
 const (
-	CodeValidatorExists 		sdk.CodeType = 101
-	CodeValidatorDoesntExist 	sdk.CodeType = 102
-	CodeMaxValidatorsReached	sdk.CodeType = 103
-	CodeMinValidatorsReached 	sdk.CodeType = 104
+	CodeValidatorExists      sdk.CodeType = 101
+	CodeValidatorDoesntExist sdk.CodeType = 102
+	CodeMaxValidatorsReached sdk.CodeType = 103
+	CodeMinValidatorsReached sdk.CodeType = 104
 
-	CodeWrongEthereumAddress	sdk.CodeType = 201
+	CodeWrongEthereumAddress sdk.CodeType = 201
 
-	CodeNotEnoughValidators		sdk.CodeType = 301
+	CodeNotEnoughValidators sdk.CodeType = 301
 )
 
 // When validator already exists

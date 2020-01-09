@@ -1,14 +1,15 @@
+// Message handler for currencies module.
 package currencies
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/x/currencies/msgs"
 )
 
-// Handler for currencies messages, provess issue/destroy messages
+// Handler for currencies messages, provess issue/destroy messages.
 func NewHandler(keeper Keeper) sdk.Handler {
-	return func (ctx sdk.Context, msg sdk.Msg) sdk.Result {
+	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
 
 		case msgs.MsgDestroyCurrency:
@@ -21,7 +22,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
-// Handle destroy message
+// Handle destroy message.
 func handleMsgDestroy(ctx sdk.Context, keeper Keeper, msg msgs.MsgDestroyCurrency) sdk.Result {
 	err := keeper.DestroyCurrency(ctx, msg.ChainID, msg.Symbol, msg.Recipient, msg.Amount, msg.Spender)
 
@@ -31,4 +32,3 @@ func handleMsgDestroy(ctx sdk.Context, keeper Keeper, msg msgs.MsgDestroyCurrenc
 
 	return sdk.Result{}
 }
-

@@ -1,3 +1,4 @@
+// Currency type implementation.
 package types
 
 import (

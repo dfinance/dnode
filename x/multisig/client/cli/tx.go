@@ -1,3 +1,4 @@
+// Implements TX queries for modules.
 package cli
 
 import (
@@ -14,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Post confirmation for multisig call via CLI.
 func PostConfirmCall(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "confirm-call [callId]",
@@ -43,6 +45,7 @@ func PostConfirmCall(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// Post revoke confirmation for multisig call via CLI.
 func PostRevokeConfirm(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "revoke-confirm [callId]",

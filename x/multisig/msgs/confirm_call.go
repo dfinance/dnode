@@ -1,17 +1,19 @@
+// Implements message type to confirm call.
 package msgs
 
 import (
-	"wings-blockchain/x/multisig/types"
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/multisig/types"
 )
 
-// Message to confirm call
+// Message type.
 type MsgConfirmCall struct {
-	MsgId  uint64		  `json:"msg_id"`
+	MsgId  uint64         `json:"msg_id"`
 	Sender sdk.AccAddress `json:"sender"`
 }
 
+// New instance of message.
 func NewMsgConfirmCall(msgId uint64, sender sdk.AccAddress) MsgConfirmCall {
 	return MsgConfirmCall{
 		MsgId:  msgId,
@@ -20,7 +22,7 @@ func NewMsgConfirmCall(msgId uint64, sender sdk.AccAddress) MsgConfirmCall {
 }
 
 func (msg MsgConfirmCall) Route() string {
-	return types.DefaultRoute
+	return types.RouterKey
 }
 
 func (msg MsgConfirmCall) Type() string {

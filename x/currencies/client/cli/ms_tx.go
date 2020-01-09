@@ -1,3 +1,4 @@
+// Multisignature currency module commands for CLI.
 package cli
 
 import (
@@ -16,7 +17,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Issue new currency command
+// Issue new currency command.
 func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ms-issue-currency [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]",

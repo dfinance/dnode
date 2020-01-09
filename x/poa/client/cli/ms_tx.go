@@ -1,3 +1,4 @@
+// Operations with validators via multisignature calls by CLI.
 package cli
 
 import (
@@ -14,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Add new validator via multisignature.
 func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ms-add-validator [address] [ethAddress] [uniqueID]",
@@ -51,6 +53,7 @@ func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// Remove validator via multisignature.
 func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ms-remove-validator [address] [uniqueID]",
@@ -87,6 +90,7 @@ func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// Replace validator via multisignature.
 func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "ms-replace-validator [oldValidator] [newValidator] [ethAddress] [uniqueID]",

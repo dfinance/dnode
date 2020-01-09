@@ -7,7 +7,17 @@ import (
 
 // Registering amino types for PoA messages
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(msgs.MsgAddValidator{}, 	 msgs.MsgAddValidatorType,	  nil)
-	cdc.RegisterConcrete(msgs.MsgRemoveValidator{},  msgs.MsgRemoveValidatorType, nil)
-	cdc.RegisterConcrete(msgs.MsgReplaceValidator{}, msgs.MsgReplaceValidatorType,nil)
+	cdc.RegisterConcrete(msgs.MsgAddValidator{}, msgs.MsgAddValidatorType, nil)
+	cdc.RegisterConcrete(msgs.MsgRemoveValidator{}, msgs.MsgRemoveValidatorType, nil)
+	cdc.RegisterConcrete(msgs.MsgReplaceValidator{}, msgs.MsgReplaceValidatorType, nil)
+}
+
+var ModuleCdc *codec.Codec
+
+// Initialize codec before everything else.
+func init() {
+	ModuleCdc = codec.New()
+	RegisterCodec(ModuleCdc)
+	codec.RegisterCrypto(ModuleCdc)
+	ModuleCdc.Seal()
 }

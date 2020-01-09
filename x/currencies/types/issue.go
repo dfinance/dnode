@@ -1,3 +1,4 @@
+// Issue type implementation for currencies.
 package types
 
 import (

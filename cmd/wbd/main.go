@@ -1,48 +1,29 @@
 package main
 
 import (
+	app "wings-blockchain"
+
 	"encoding/json"
-	"fmt"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 	wbConfig "wings-blockchain/cmd/config"
+	poaCli "wings-blockchain/x/poa/client/cli"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/cli"
-	"github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/libs/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
+	genaccscli "github.com/cosmos/cosmos-sdk/x/genaccounts/client/cli"
+	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	abci "github.com/tendermint/tendermint/abci/types"
-	cfg "github.com/tendermint/tendermint/config"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	app "wings-blockchain"
-	"wings-blockchain/helpers"
-	"wings-blockchain/x/poa/types"
 )
 
-// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
-var DefaultNodeHome = os.ExpandEnv("$HOME/.wbd")
-
-const (
-	flagOverwrite = "overwrite"
-)
-
+// WBD (Daemon) entry function.
 func main() {
 	config := sdk.GetConfig()
 	wbConfig.InitBechPrefixes(config)
@@ -55,17 +36,28 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use:               "wbd",
-		Short:             "wings blockchain App Daemon (server)",
+		Short:             "Wings blockchain app daemon (server).",
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}
 
-	rootCmd.AddCommand(InitCmd(ctx, cdc))
-	rootCmd.AddCommand(AddGenesisAccountCmd(ctx, cdc))
-	rootCmd.AddCommand(AddGenesisPoAValidatorCmd(ctx, cdc))
-	server.AddCommands(ctx, cdc, rootCmd, newApp, appExporter())
+	rootCmd.AddCommand(
+		genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome),
+		genutilcli.CollectGenTxsCmd(ctx, cdc, genaccounts.AppModuleBasic{}, app.DefaultNodeHome),
+		genutilcli.GenTxCmd(
+			ctx, cdc, app.ModuleBasics, staking.AppModuleBasic{},
+			genaccounts.AppModuleBasic{}, app.DefaultNodeHome, app.DefaultCLIHome,
+		),
+		genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics),
+		// AddGenesisAccountCmd allows users to add accounts to the genesis file
+		genaccscli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		// Allows user to poa genesis validator
+		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
+	)
+
+	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 
 	// prepare and add flags
-	executor := cli.PrepareBaseCmd(rootCmd, "WNG", DefaultNodeHome)
+	executor := cli.PrepareBaseCmd(rootCmd, "WB", app.DefaultNodeHome)
 	err := executor.Execute()
 	if err != nil {
 		// handle with #870
@@ -73,244 +65,25 @@ func main() {
 	}
 }
 
+// Creating new WB app.
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
 	return app.NewWbServiceApp(logger, db)
 }
 
-func appExporter() server.AppExporter {
-	return func(logger log.Logger, db dbm.DB, _ io.Writer, _ int64, _ bool, _ []string) (
-		json.RawMessage, []tmtypes.GenesisValidator, error) {
-		dapp := app.NewWbServiceApp(logger, db)
-		return dapp.ExportAppStateAndValidators()
-	}
-}
+// Exports genesis data and validators.
+func exportAppStateAndTMValidators(
+	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
+) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
-// InitCmd initializes all files for tendermint and application
-func InitCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "init",
-		Short: "Initialize genesis config, priv-validator file, and p2p-node file",
-		Args:  cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			config := ctx.Config
-			config.SetRoot(viper.GetString(cli.HomeFlag))
-
-			chainID := viper.GetString(client.FlagChainID)
-			if chainID == "" {
-				chainID = fmt.Sprintf("test-chain-%v", common.RandStr(6))
-			}
-
-			_, pk, err := genutil.InitializeNodeValidatorFiles(config)
-			if err != nil {
-				return err
-			}
-
-			var appState json.RawMessage
-			genFile := config.GenesisFile()
-
-			if !viper.GetBool(flagOverwrite) && common.FileExists(genFile) {
-				return fmt.Errorf("genesis.json file already exists: %v", genFile)
-			}
-
-			genesis := app.GenesisState{
-				AuthData: auth.DefaultGenesisState(),
-				BankData: bank.DefaultGenesisState(),
-			}
-
-			appState, err = codec.MarshalJSONIndent(cdc, genesis)
-			if err != nil {
-				return err
-			}
-
-			_, _, validator, err := SimpleAppGenTx(cdc, pk)
-			if err != nil {
-				return err
-			}
-
-			if err = genutil.ExportGenesisFileWithTime(genFile, chainID, []tmtypes.GenesisValidator{validator}, appState, time.Now()); err != nil {
-				return err
-			}
-
-			cfg.WriteConfigFile(filepath.Join(config.RootDir, "config", "config.toml"), config)
-
-			fmt.Printf("Initialized wbd configuration and bootstrapping files in %s...\n", viper.GetString(cli.HomeFlag))
-			return nil
-		},
+	if height != -1 {
+		wbApp := app.NewWbServiceApp(logger, db)
+		err := wbApp.LoadHeight(height)
+		if err != nil {
+			return nil, nil, err
+		}
+		return wbApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	cmd.Flags().String(cli.HomeFlag, DefaultNodeHome, "node's home directory")
-	cmd.Flags().String(client.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	cmd.Flags().BoolP(flagOverwrite, "o", false, "overwrite the genesis.json file")
-
-	return cmd
-}
-
-// Add PoA validator via cli
-func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "add-genesis-poa-validator [address] [ethAddress]",
-		Short: "Adds poa validator go genesis file",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(_ *cobra.Command, args []string) error {
-			valAddr, err := sdk.AccAddressFromBech32(args[0])
-
-			if err != nil {
-				return err
-			}
-
-			ethAddress := args[1]
-
-			if !helpers.IsEthereumAddress(ethAddress) {
-				return fmt.Errorf("%s is not an ethereum address", ethAddress)
-			}
-
-			var genDoc tmtypes.GenesisDoc
-			config := ctx.Config
-			genFile := config.GenesisFile()
-
-			if !common.FileExists(genFile) {
-				return fmt.Errorf("%s does not exist, run `wb init` first", genFile)
-			}
-
-			genContents, err := ioutil.ReadFile(genFile)
-			if err != nil {
-				return err
-			}
-
-			if err = cdc.UnmarshalJSON(genContents, &genDoc); err != nil {
-				return err
-			}
-
-			var appState app.GenesisState
-			if err = cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
-				return err
-			}
-
-			for _, acc := range appState.PoAValidators {
-				if acc.Address.Equals(valAddr) {
-					return fmt.Errorf("the application state already contains account %s", valAddr.String())
-				}
-			}
-
-			validator := types.NewValidator(
-				valAddr,
-				ethAddress,
-			)
-
-			appState.PoAValidators = append(appState.PoAValidators, &validator)
-			appStateJSON, err := cdc.MarshalJSON(appState)
-			if err != nil {
-				return err
-			}
-
-			return genutil.ExportGenesisFileWithTime(genFile, genDoc.ChainID, genDoc.Validators, appStateJSON, time.Now())
-		},
-	}
-}
-
-// AddGenesisAccountCmd allows users to add accounts to the genesis file
-func AddGenesisAccountCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "add-genesis-account [address] [coins[,coins]]",
-		Short: "Adds an account to the genesis file",
-		Args:  cobra.ExactArgs(2),
-		Long: strings.TrimSpace(`
-Adds accounts to the genesis file so that you can start a chain with coins in the CLI:
-
-$ nsd add-genesis-account cosmos1tse7r2fadvlrrgau3pa0ss7cqh55wrv6y9alwh 1000STAKE,1000nametoken
-`),
-		RunE: func(_ *cobra.Command, args []string) error {
-			addr, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return err
-			}
-			coins, err := sdk.ParseCoins(args[1])
-			if err != nil {
-				return err
-			}
-			coins.Sort()
-
-			var genDoc tmtypes.GenesisDoc
-			config := ctx.Config
-			genFile := config.GenesisFile()
-			if !common.FileExists(genFile) {
-				return fmt.Errorf("%s does not exist, run `wb init` first", genFile)
-			}
-			genContents, err := ioutil.ReadFile(genFile)
-			if err != nil {
-			}
-
-			if err = cdc.UnmarshalJSON(genContents, &genDoc); err != nil {
-				return err
-			}
-
-			var appState app.GenesisState
-			if err = cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
-				return err
-			}
-
-			for _, stateAcc := range appState.Accounts {
-				if stateAcc.Address.Equals(addr) {
-					return fmt.Errorf("the application state already contains account %v", addr)
-				}
-			}
-
-			acc := auth.NewBaseAccountWithAddress(addr)
-			acc.Coins = coins
-			appState.Accounts = append(appState.Accounts, &acc)
-			appStateJSON, err := cdc.MarshalJSON(appState)
-			if err != nil {
-				return err
-			}
-
-			return genutil.ExportGenesisFileWithTime(genFile, genDoc.ChainID, genDoc.Validators, appStateJSON, time.Now())
-		},
-	}
-	return cmd
-}
-
-// Generate genesis validator with ed25519 keys
-func genValidator() (sdk.AccAddress, string, error) {
-	// generate a private key, with recovery phrase
-	info, secret, err := client.NewInMemoryKeyBase().CreateMnemonic(
-		"name", keys.English, "pass", keys.Ed25519)
-	if err != nil {
-		return sdk.AccAddress([]byte{}), "", err
-	}
-
-	addr := info.GetPubKey().Address()
-	return sdk.AccAddress(addr), secret, nil
-}
-
-// SimpleAppGenTx returns a simple GenTx command that makes the node a validator from the start
-func SimpleAppGenTx(cdc *codec.Codec, pk crypto.PubKey) (
-	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
-
-	addr, secret, err := server.GenerateCoinKey()
-	if err != nil {
-		return
-	}
-
-	bz, err := cdc.MarshalJSON(struct {
-		Addr sdk.AccAddress `json:"addr"`
-	}{addr})
-	if err != nil {
-		return
-	}
-
-	appGenTx = json.RawMessage(bz)
-
-	bz, err = cdc.MarshalJSON(map[string]string{"secret": secret})
-	if err != nil {
-		return
-	}
-
-	cliPrint = json.RawMessage(bz)
-
-	validator = tmtypes.GenesisValidator{
-		PubKey: pk,
-		Power:  10,
-	}
-
-	return
+	wbApp := app.NewWbServiceApp(logger, db)
+	return wbApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

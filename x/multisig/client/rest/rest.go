@@ -1,27 +1,37 @@
+// Implements REST API for multisig modules.
 package rest
 
 import (
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 	"wings-blockchain/x/multisig/types"
 )
 
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
-	r.HandleFunc(fmt.Sprintf("/%s/call/{id}", types.ModuleName), getCall(cdc, cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/calls", types.ModuleName), getCalls(cdc, cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/unique/{unique}", types.ModuleName), getCallByUnique(cdc, cliCtx)).Methods("GET")
+// Registering routes in the REST API.
+func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
+	r.HandleFunc(fmt.Sprintf("/%s/call/{id}", types.ModuleName), getCall(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/calls", types.ModuleName), getCalls(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/unique/{unique}", types.ModuleName), getCallByUnique(cliCtx)).Methods("GET")
 }
 
-func getCallByUnique(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+// Getting call by unique id from REST API.
+func getCallByUnique(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		id := vars["unique"]
+		req := types.UniqueReq{UniqueId: vars["unique"]}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/unique/%s", types.ModuleName, id), nil)
+		bz, err := cliCtx.Codec.MarshalJSON(req)
+
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/unique", types.ModuleName), bz)
 
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -32,12 +42,25 @@ func getCallByUnique(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFu
 	}
 }
 
-func getCall(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+// Get call by id from REST API.
+func getCall(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		id := vars["id"]
+		id, err := strconv.ParseUint(vars["id"], 10, 64)
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/call/%s", types.ModuleName, id), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+		}
+
+		req := types.CallReq{CallId: id}
+		bz, err := cliCtx.Codec.MarshalJSON(req)
+
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/call", types.ModuleName), bz)
 
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -48,12 +71,10 @@ func getCall(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-func getCalls(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+// Get list of calls from REST API.
+func getCalls(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		mode := vars["mode"]
-
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/calls/%s", types.ModuleName, mode), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/calls", types.ModuleName), nil)
 
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
