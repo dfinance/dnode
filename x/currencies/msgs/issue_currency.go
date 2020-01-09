@@ -30,7 +30,7 @@ func NewMsgIssueCurrency(symbol string, amount sdk.Int, decimals int8, recipient
 
 // Common router for currencies package.
 func (msg MsgIssueCurrency) Route() string {
-	return "currencies"
+	return types.RouterKey
 }
 
 // Command for issue new currencies.

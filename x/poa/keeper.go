@@ -2,10 +2,11 @@
 package poa
 
 import (
+	"wings-blockchain/x/poa/types"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	"wings-blockchain/x/poa/types"
 )
 
 // PoA keeper implementation.
@@ -120,7 +121,7 @@ func (poaKeeper Keeper) removeValidatorFromList(ctx sdk.Context, address sdk.Acc
 	}
 
 	if index >= 0 {
-		if len(validators) > 0 {
+		if len(validators) > 1 {
 			validators = append(validators[:index], validators[index+1:]...)
 			poaKeeper.storeValidatorsList(ctx, validators)
 		} else {
