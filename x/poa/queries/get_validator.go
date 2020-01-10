@@ -10,5 +10,5 @@ type QueryGetValidatorRes struct {
 }
 
 func (q QueryGetValidatorRes) String() string {
-	return q.validator.String()
+	return q.Validator.String()
 }
