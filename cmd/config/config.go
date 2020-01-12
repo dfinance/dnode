@@ -4,6 +4,7 @@ package config
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
 const (
+	MainDenom            = "wings"
 	MainPrefix           = "wallets"                                                                 // Main prefix for all addresses.
 	Bech32PrefixAccAddr  = MainPrefix                                                                // Bech32 prefix for account addresses.
 	Bech32PrefixAccPub   = MainPrefix + sdk.PrefixPublic                                             // Bech32 prefix for accounts pub keys.
