@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	Codespace sdk.CodespaceType = "Core"
+	Codespace sdk.CodespaceType = "core"
 
 	CodeFeeRequired   sdk.CodeType = 101 // When fee is zero
 	CodeWrongFeeDenom sdk.CodeType = 102 // When fee denom is wrong
