@@ -2,10 +2,9 @@
 package core
 
 import (
-	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"wings-blockchain/cmd/config"
 )
 
@@ -15,7 +14,7 @@ var (
 
 // Custom antehandler catches and prevents transactions without fees and fees not in "wings" currency
 // After execution of custom logic, call standard auth.AnteHandler.
-func NewAnteHandler(ak auth.AccountKeeper, supplyKeeper supply.Keeper, sigGasConsumer auth.SignatureVerificationGasConsumer) sdk.AnteHandler {
+func NewAnteHandler(ak auth.AccountKeeper, supplyKeeper types.SupplyKeeper, sigGasConsumer auth.SignatureVerificationGasConsumer) sdk.AnteHandler {
 	return func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, res sdk.Result, abort bool) {
 		stdTx, ok := tx.(auth.StdTx)
 
@@ -28,12 +27,12 @@ func NewAnteHandler(ak auth.AccountKeeper, supplyKeeper supply.Keeper, sigGasCon
 		if ctx.BlockHeight() > 0 {
 			if stdTx.Fee.Amount.IsZero() {
 				newCtx = auth.SetGasMeter(simulate, ctx, 0)
-				return newCtx, sdk.ErrInternal("tx must contains fees").Result(), true
+				return newCtx, ErrFeeRequired().Result(), true
 			}
 
-			if ctx.BlockHeight() != 0 && !stdTx.Fee.Amount.DenomsSubsetOf(DefaultFees) {
+			if !stdTx.Fee.Amount.DenomsSubsetOf(DefaultFees) {
 				newCtx = auth.SetGasMeter(simulate, ctx, 0)
-				return newCtx, sdk.ErrInternal(fmt.Sprintf("tx must contains fees only in %s denom", config.MainDenom)).Result(), true
+				return newCtx, ErrWrongFeeDenom(config.MainDenom).Result(), true
 			}
 		}
 
