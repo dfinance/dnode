@@ -1,45 +1,44 @@
+// Issue currency message implementation.
 package msgs
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/x/currencies/types"
 )
 
 // Msg struct for issue new currencies.
 // IssueID could be txHash of transaction in another blockchain.
 type MsgIssueCurrency struct {
-	CurrencyId sdk.Int        `json:"currencyId"`
-	Symbol     string         `json:"symbol"`
-	Amount     sdk.Int		  `json:"amount"`
-	Decimals   int8			  `json:"decimals"`
-	Recipient  sdk.AccAddress `json:"recipient"`
-	IssueID    string         `json:"issueID"`
+	Symbol    string         `json:"symbol"`
+	Amount    sdk.Int        `json:"amount"`
+	Decimals  int8           `json:"decimals"`
+	Recipient sdk.AccAddress `json:"recipient"`
+	IssueID   string         `json:"issueID"`
 }
 
-// Create new issue currency message
-func NewMsgIssueCurrency(currencyId sdk.Int, symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) MsgIssueCurrency {
+// Create new issue currency message.
+func NewMsgIssueCurrency(symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) MsgIssueCurrency {
 	return MsgIssueCurrency{
-		CurrencyId: currencyId,
-		Symbol:     symbol,
-		Amount:     amount,
-		Decimals:   decimals,
-		Recipient:  recipient,
-		IssueID:    issueID,
+		Symbol:    symbol,
+		Amount:    amount,
+		Decimals:  decimals,
+		Recipient: recipient,
+		IssueID:   issueID,
 	}
 }
 
-// Common router for currencies package
+// Common router for currencies package.
 func (msg MsgIssueCurrency) Route() string {
-	return "currencies"
+	return types.RouterKey
 }
 
-// Command for issue new currencies
+// Command for issue new currencies.
 func (msg MsgIssueCurrency) Type() string {
 	return "issue_currency"
 }
 
-// Basic validation, without state
+// Basic validation, without state.
 func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 	if msg.Recipient.Empty() {
 		return sdk.ErrInvalidAddress(msg.Recipient.String())
@@ -54,20 +53,20 @@ func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 	}
 
 	if msg.Amount.IsZero() {
-	    return types.ErrWrongAmount(msg.Amount.String())
-    }
+		return types.ErrWrongAmount(msg.Amount.String())
+	}
 
 	if len(msg.IssueID) == 0 {
-	    return types.ErrWrongIssueID(msg.IssueID)
-    }
+		return types.ErrWrongIssueID(msg.IssueID)
+	}
 
-    // lets try to create coin and validate denom
-    sdk.NewCoin(msg.Symbol, msg.Amount)
+	// lets try to create coin and validate denom
+	sdk.NewCoin(msg.Symbol, msg.Amount)
 
 	return nil
 }
 
-// Getting bytes for signature
+// Getting bytes for signature.
 func (msg MsgIssueCurrency) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
 	if err != nil {
@@ -77,7 +76,7 @@ func (msg MsgIssueCurrency) GetSignBytes() []byte {
 	return sdk.MustSortJSON(b)
 }
 
-// Check who should sign message
+// Check who should sign message.
 func (msg MsgIssueCurrency) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{}
 }

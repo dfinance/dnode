@@ -1,10 +1,9 @@
-package keeper
-
+// Multisignature router implementation.
+package core
 
 import (
 	"fmt"
 	"regexp"
-	"wings-blockchain/x/multisig/types"
 )
 
 var (
@@ -17,20 +16,20 @@ var (
 //
 // TODO: Use generic router (ref #3976).
 type Router interface {
-	AddRoute(r string, h types.MsHandler) (rtr Router)
+	AddRoute(r string, h MsHandler) (rtr Router)
 	HasRoute(r string) bool
-	GetRoute(path string) (h types.MsHandler)
+	GetRoute(path string) (h MsHandler)
 	Seal()
 }
 
 type router struct {
-	routes map[string]types.MsHandler
+	routes map[string]MsHandler
 	sealed bool
 }
 
 func NewRouter() Router {
 	return &router{
-		routes: make(map[string]types.MsHandler),
+		routes: make(map[string]MsHandler),
 	}
 }
 
@@ -45,7 +44,7 @@ func (rtr *router) Seal() {
 
 // AddRoute adds a governance handler for a given path. It returns the Router
 // so AddRoute calls can be linked. It will panic if the router is sealed.
-func (rtr *router) AddRoute(path string, h types.MsHandler) Router {
+func (rtr *router) AddRoute(path string, h MsHandler) Router {
 	if rtr.sealed {
 		panic("router sealed; cannot add route handler")
 	}
@@ -67,7 +66,7 @@ func (rtr *router) HasRoute(path string) bool {
 }
 
 // GetRoute returns a Handler for a given path.
-func (rtr *router) GetRoute(path string) types.MsHandler {
+func (rtr *router) GetRoute(path string) MsHandler {
 	if !rtr.HasRoute(path) {
 		panic(fmt.Sprintf("route \"%s\" does not exist", path))
 	}

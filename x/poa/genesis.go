@@ -1,20 +1,22 @@
+// Functions to work with genesis data of module.
 package poa
 
 import (
-	"wings-blockchain/x/poa/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/poa/types"
 )
 
-func (keeper Keeper) InitGenesis(ctx sdk.Context, validators []*types.Validator) sdk.Error {
-	minValidators := keeper.GetMinValidators(ctx)
-
-	if len(validators) < int(minValidators) {
-		return types.ErrNotEnoungValidators(uint16(len(validators)), minValidators)
+// Initialize genesis for this module.
+func (poaKeeper Keeper) InitGenesis(ctx sdk.Context, genesisState types.GenesisState) {
+	for _, val := range genesisState.PoAValidators {
+		poaKeeper.AddValidator(ctx, val.Address, val.EthAddress)
 	}
+}
 
-	for _, val := range validators {
-		keeper.AddValidator(ctx, val.Address, val.EthAddress)
+// Export genesis data for this module.
+func (poaKeeper Keeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
+	return types.GenesisState{
+		Parameters:    poaKeeper.GetParams(ctx),
+		PoAValidators: poaKeeper.GetValidators(ctx),
 	}
-
-	return nil
 }

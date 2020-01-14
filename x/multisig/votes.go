@@ -1,23 +1,24 @@
-package keeper
+// Keeper votes part (votes managment).
+package multisig
 
 import (
-	"wings-blockchain/x/multisig/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/multisig/types"
 )
 
-// Confirm call
+// Confirm call.
 func (keeper Keeper) Confirm(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
 	err := keeper.storeVote(ctx, id, address)
 	return err
 }
 
-// Revoke confirmation from call
+// Revoke confirmation from call.
 func (keeper Keeper) RevokeConfirmation(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
 	err := keeper.revokeVote(ctx, id, address)
 	return err
 }
 
-// Get votes for specific call
+// Get votes for specific call.
 func (keeper Keeper) GetVotes(ctx sdk.Context, id uint64) (types.Votes, sdk.Error) {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -33,13 +34,13 @@ func (keeper Keeper) GetVotes(ctx sdk.Context, id uint64) (types.Votes, sdk.Erro
 	return votes, nil
 }
 
-// Get message confirmations
+// Get message confirmations.
 func (keeper Keeper) GetConfirmations(ctx sdk.Context, id uint64) (uint64, sdk.Error) {
 	votes, err := keeper.GetVotes(ctx, id)
 	return uint64(len(votes)), err
 }
 
-// Check if message confirmed by address
+// Check if message confirmed by address.
 func (keeper Keeper) HasVote(ctx sdk.Context, id uint64, address sdk.AccAddress) (bool, sdk.Error) {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -61,7 +62,7 @@ func (keeper Keeper) HasVote(ctx sdk.Context, id uint64, address sdk.AccAddress)
 	return false, nil
 }
 
-// Store vote for message by address
+// Store vote for message by address.
 func (keeper Keeper) storeVote(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -102,7 +103,7 @@ func (keeper Keeper) storeVote(ctx sdk.Context, id uint64, address sdk.AccAddres
 	return nil
 }
 
-// Revoke confirmation from message by address
+// Revoke confirmation from message by address.
 func (keeper Keeper) revokeVote(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
 	store := ctx.KVStore(keeper.storeKey)
 
@@ -144,7 +145,6 @@ func (keeper Keeper) revokeVote(ctx sdk.Context, id uint64, address sdk.AccAddre
 		votes = append(votes[:index], votes[index+1:]...)
 		store.Set(types.GetKeyVotesById(id), keeper.cdc.MustMarshalBinaryBare(votes))
 	}
-
 
 	return nil
 }

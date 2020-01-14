@@ -1,3 +1,4 @@
+// Currency type implementation.
 package types
 
 import (
@@ -13,20 +14,18 @@ type Currency struct {
 }
 
 // New currency
-func NewCurrency(currencyId sdk.Int, symbol string, supply sdk.Int, decimals int8) Currency {
+func NewCurrency(symbol string, supply sdk.Int, decimals int8) Currency {
 	return Currency{
-		CurrencyId: currencyId,
-		Symbol:     symbol,
-		Supply:     supply,
-		Decimals:   decimals,
+		Symbol:   symbol,
+		Supply:   supply,
+		Decimals: decimals,
 	}
 }
 
 func (c Currency) String() string {
-	return fmt.Sprintf("Currency: \n" +
-		"\tCurrency id: %s\n" +
-		"\tSymbol:      %s\n" +
-		"\tSupply:      %s\n" +
+	return fmt.Sprintf("Currency: \n"+
+		"\tSymbol:      %s\n"+
+		"\tSupply:      %s\n"+
 		"\tDecimals:    %d\n",
-			c.CurrencyId.String(), c.Symbol, c.Supply.String(), c.Decimals)
+		c.Symbol, c.Supply.String(), c.Decimals)
 }

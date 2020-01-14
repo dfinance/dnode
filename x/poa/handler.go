@@ -1,15 +1,17 @@
 package poa
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/poa/msgs"
 	"fmt"
-	types "wings-blockchain/x/poa/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"wings-blockchain/x/poa/msgs"
+	"wings-blockchain/x/poa/types"
 )
 
 // New message handler for PoA module
 func NewHandler(keeper Keeper) sdk.Handler {
-	return func (ctx sdk.Context, msg sdk.Msg) sdk.Result {
+	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
 		case msgs.MsgAddValidator:
 			return handleMsgAddValidator(ctx, keeper, msg)
@@ -21,8 +23,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgRemoveValidator(ctx, keeper, msg)
 
 		default:
-			errMsg := fmt.Sprintf("Unrecognized nameservice Msg type: %v", msg.Type())
-			return sdk.ErrUnknownRequest(errMsg).Result()
+			return sdk.ErrUnknownRequest(fmt.Sprintf("Unrecognized nameservice Msg type: %v", msg.Type())).Result()
 		}
 	}
 }
@@ -34,13 +35,14 @@ func handleMsgAddValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgAddValida
 	}
 
 	maxValidators := keeper.GetMaxValidators(ctx)
-	amount        := keeper.GetValidatorAmount(ctx)
+	amount := keeper.GetValidatorAmount(ctx)
 
-	if amount + 1 > maxValidators {
+	if amount+1 > maxValidators {
 		return types.ErrMaxValidatorsReached(maxValidators).Result()
 	}
 
 	keeper.AddValidator(ctx, msg.Address, msg.EthAddress)
+
 	return sdk.Result{}
 }
 
@@ -51,13 +53,14 @@ func handleMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemove
 	}
 
 	minValidators := keeper.GetMinValidators(ctx)
-	amount		  := keeper.GetValidatorAmount(ctx)
+	amount := keeper.GetValidatorAmount(ctx)
 
-	if amount - 1 < minValidators {
+	if amount-1 < minValidators {
 		return types.ErrMinValidatorsReached(minValidators).Result()
 	}
 
 	keeper.RemoveValidator(ctx, msg.Address)
+
 	return sdk.Result{}
 }
 
@@ -72,5 +75,6 @@ func handleMsgReplaceValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRepla
 	}
 
 	keeper.ReplaceValidator(ctx, msg.OldValidator, msg.NewValidator, msg.EthAddress)
+
 	return sdk.Result{}
 }

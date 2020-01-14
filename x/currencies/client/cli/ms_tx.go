@@ -1,59 +1,57 @@
+// Multisignature currency module commands for CLI.
 package cli
 
-
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/spf13/cobra"
-	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
-	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/client/txbuilder"
-	"github.com/cosmos/cosmos-sdk/client/utils"
+	"fmt"
+	"os"
 	"strconv"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"wings-blockchain/x/currencies/msgs"
 	msMsg "wings-blockchain/x/multisig/msgs"
-	"fmt"
+
+	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/spf13/cobra"
 )
 
-// Issue new currency command
+// Issue new currency command.
 func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "ms-issue-currency [currencyId] [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]",
+		Use:   "ms-issue-currency [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]",
 		Short: "issue new currency via multisignature",
-		Args:  cobra.ExactArgs(7),
-		RunE:  func(cmd *cobra.Command, args []string) error {
-			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+		Args:  cobra.ExactArgs(6),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
-			if err := cliCtx.EnsureAccountExists(); err != nil {
+			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return err
 			}
 
-			amount, isOk := sdk.NewIntFromString(args[2])
+			amount, isOk := sdk.NewIntFromString(args[1])
 
 			if !isOk {
-				return fmt.Errorf("can't parse int %s as amount", args[2])
+				return fmt.Errorf("can't parse int %s as amount", args[1])
 			}
 
-			decimals, err := strconv.ParseInt(args[3], 10, 8)
+			decimals, err := strconv.ParseInt(args[2], 10, 8)
 
 			if err != nil {
 				return err
 			}
 
-			recipient, err := sdk.AccAddressFromBech32(args[4])
+			recipient, err := sdk.AccAddressFromBech32(args[3])
 
 			if err != nil {
-			    return err
-            }
-
-            currencyId, isOk := sdk.NewIntFromString(args[0])
-
-            if !isOk {
-            	return fmt.Errorf("can't parse int %s as currency id", args[0])
+				return err
 			}
 
-			msgIssCurr := msgs.NewMsgIssueCurrency(currencyId, args[1], amount, int8(decimals), recipient, args[5])
-			msg := msMsg.NewMsgSubmitCall(msgIssCurr, args[5], cliCtx.GetFromAddress())
+			msgIssCurr := msgs.NewMsgIssueCurrency(args[0], amount, int8(decimals), recipient, args[4])
+			msg := msMsg.NewMsgSubmitCall(msgIssCurr, args[4], cliCtx.GetFromAddress())
 
 			err = msg.ValidateBasic()
 
@@ -61,9 +59,9 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			cliCtx.PrintResponse = true
+			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg}, false)
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 }

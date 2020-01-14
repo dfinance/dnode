@@ -9,13 +9,14 @@ Wings Blockchain Peg Zone implementation based on [Cosmos SDK](https://github.co
 
 This is work in progress, yet it supports the following features:
 
-* **Proof Of Authority** (PoA) validators mechanism
-* **N/2+1** confirmations model
-* **Multisignature** based on PoA validators
-* Managing of validators state by PoA consensus
-* Execution of messages (transactions) based on PoA consensus
-* Issuing/destroying new coins based on PoA consensus
-* **86400** blocks interval to confirm call execution under multisig
+* **Proof Of Authority** (PoA) validators mechanism.
+* **N/2+1** confirmations model.
+* **Multisignature** based on PoA validators.
+* Managing of validators state by PoA consensus.
+* Execution of messages (transactions) based on PoA consensus.
+* Issuing/destroying new coins based on PoA consensus.
+* **86400** blocks interval to confirm call execution under multisig.
+* **Support PoS**: staking, delegation, slashing, supply, etc.
 
 Motivation is allowing to moving tokens/currencies between different blockchains and Wings blockchain.
 
@@ -53,12 +54,15 @@ So after this command both `wbd` and `wbcli` will be available from console.
 
 # Usage
 
-First of all we need to create genesis configuration:
+First of all we need to create genesis configuration and name of node:
 
-    wbd init --chain-id wings-testnet
+    wbd init <moniker> --chain-id wings-testnet
+
+Where `<moniker>` must be your node name.
 
 Then let's create 4 accounts, one to store coins, the rest for PoA validators:
 
+    wbcli keys add pos
     wbcli keys add bank
     wbcli keys add validator1
     wbcli keys add validator2
@@ -66,12 +70,15 @@ Then let's create 4 accounts, one to store coins, the rest for PoA validators:
 
 Copy addresses and private keys from output, we will need them in the future.
 
+First of all we create `pos` account, this account will be used later as `Proof of Stake` validator.
+
 As you see we create one account calling `bank` where we will be store all generated **WINGS** coins for start,
 and then 3 accounts to make them PoA validators, we need at least 3 validators because by default it's a minimum amount of PoA validators to have.
 
-Now let's add genesis account and initiate genesis PoA validators:
+Now let's add genesis account and initiate genesis PoA validators and PoS account:
 
-    wbd add-genesis-account [bank-address] 10000wings
+    wbd add-genesis-account [pos-address]  5000000000000wings
+    wbd add-genesis-account [bank-address] 90000000000000000000000000wings
 
     wbd add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
     wbd add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
@@ -84,13 +91,59 @@ Replace expressions in brackets with correct addresses, include Ethereum address
     wbcli config indent true
     wbcli config trust-node true
 
+Time to change denom in PoS configuration.
+So open `~/.wbd/config/genesis.json` and find this stake settings:
+
+```json
+"staking": {
+  "params": {
+    "unbonding_time": "1814400000000000",
+    "max_validators": 100,
+    "max_entries": 7,
+    "bond_denom": "stake"
+  },
+  "last_total_power": "0",
+  "last_validator_powers": null,
+  "validators": null,
+  "delegations": null,
+  "unbonding_delegations": null,
+  "redelegations": null,
+  "exported": false
+}
+```
+
+Change line:
+
+    "bond_denom": "stake"
+To:
+
+    "bond_denom": "wings"
+
+By changing this we determine "wings" as staking currency.
+
+Time to prepare `pos` account:
+
+    wbd gentx --name pos --amount 5000000000000wings
+
+After run this command you will see output like:
+
+    Genesis transaction written to "~/.wbd/config/gentx/gentx-<hash>.json"
+
+After you have generated a genesis transaction, you will have to input the genTx into the genesis file, so that WB chain is aware of the validators. To do so, run:
+
+    wbd collect-gentxs
+   
+To make sure that genesis file is correct:
+
+    wbd validate-genesis
+
 Now we are ready to launch testnet:
 
     wbd start
 
 Deposit validators accounts by sending them **WINGS**:
 
-    wbcli tx send [validator-n] 10wings --from bank
+    wbcli tx send [validator-n] 10000000000000000000wings --from bank
 
 ## Add/remove/replace validator by multisignature
 
@@ -102,7 +155,7 @@ To add new validator use next command:
 
 Where:
 
-* **[validator-address]** - cosmos bench32 validator address
+* **[validator-address]** - WB bench32 validator address
 * **[eth-address]** - validator ethereum address
 
 To remove:
@@ -125,7 +178,7 @@ To get validator:
 
     wbcli query poa validator [address]
 
-Where `[address]` is Bech32 Cosmos address.
+Where `[address]` is Bech32 WB address.
 
 ## Confirm multisignature call
 
@@ -165,7 +218,7 @@ Where:
 | **symbol**     | Currency symbol/denom to issue.                                                                                             |
 | **amount**     | Amount to issue.                                                                                                            |
 | **decimals**   | Currency decimals, maximum is 8.                                                                                            |
-| **recipient**  | Cosmos address of account who's receiving coins.                                                                            |
+| **recipient**  | WB address of account who's receiving coins.                                                                            |
 | **issueID**    | Any issue id, usually transaction id.                                                                                       |
 | **uniqueID**   | Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex. |
 

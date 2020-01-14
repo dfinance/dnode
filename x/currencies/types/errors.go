@@ -1,3 +1,4 @@
+// Implements errors codes and functions for currencies module.
 package types
 
 import (
@@ -5,15 +6,14 @@ import (
 )
 
 const (
-	CodeErrWrongSymbol   	 = 101
-	CodeErrWrongAmount   	 = 102
-	CodeErrWrongDecimals 	 = 103
+	CodeErrWrongSymbol       = 101
+	CodeErrWrongAmount       = 102
+	CodeErrWrongDecimals     = 103
 	CodeErrWrongIssueID      = 104
 	CodeErrIncorrectDecimals = 105
 	CodeErrExistsIssue       = 106
 	CodeErrNotExistCurrency  = 107
 	CodeErrWrongRecipient    = 108
-	CodeErrWrongCurrencyId   = 109
 )
 
 func ErrWrongSymbol(symbol string) sdk.Error {
@@ -21,7 +21,7 @@ func ErrWrongSymbol(symbol string) sdk.Error {
 }
 
 func ErrWrongAmount(amount string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrWrongAmount, "wrong amount %s, should be " +
+	return sdk.NewError(DefaultCodespace, CodeErrWrongAmount, "wrong amount %s, should be "+
 		"great then zero", amount)
 }
 
@@ -30,26 +30,22 @@ func ErrWrongDecimals(decimals int8) sdk.Error {
 }
 
 func ErrWrongIssueID(issueID string) sdk.Error {
-    return sdk.NewError(DefaultCodespace, CodeErrWrongIssueID, "%s is wrong issue id", issueID)
+	return sdk.NewError(DefaultCodespace, CodeErrWrongIssueID, "%s is wrong issue id", issueID)
 }
 
 func ErrIncorrectDecimals(d1, d2 int8, symbol string) sdk.Error {
-    return sdk.NewError(DefaultCodespace, CodeErrIncorrectDecimals, "currency %s must have %d " +
-        "decimals instead of %d decimals", symbol, d1, d2)
+	return sdk.NewError(DefaultCodespace, CodeErrIncorrectDecimals, "currency %s must have %d "+
+		"decimals instead of %d decimals", symbol, d1, d2)
 }
 
 func ErrExistsIssue(issueID string) sdk.Error {
-    return sdk.NewError(DefaultCodespace, CodeErrExistsIssue, "issue with %s id already exists", issueID)
+	return sdk.NewError(DefaultCodespace, CodeErrExistsIssue, "issue with %s id already exists", issueID)
 }
 
 func ErrNotExistCurrency(symbol string) sdk.Error {
-    return sdk.NewError(DefaultCodespace, CodeErrNotExistCurrency, "currency %s doesnt exist yet", symbol)
+	return sdk.NewError(DefaultCodespace, CodeErrNotExistCurrency, "currency %s doesnt exist yet", symbol)
 }
 
 func ErrWrongRecipient() sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeErrWrongRecipient, "empty recipient is not allowed")
-}
-
-func ErrWrongCurrencyId(id, realId sdk.Int) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrWrongCurrencyId, "currency id (%s) is wrong, actual one is %s", id.String(), realId.String())
 }

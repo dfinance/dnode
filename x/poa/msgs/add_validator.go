@@ -1,10 +1,11 @@
+// Message to add validator described.
 package msgs
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
-	"wings-blockchain/x/poa/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/helpers"
+	"wings-blockchain/x/poa/types"
 )
 
 // Type for codec
@@ -14,23 +15,23 @@ const (
 
 // Message for adding validator
 type MsgAddValidator struct {
-	Address		sdk.AccAddress	`json:"address"`
-	EthAddress 	string			`json:"eth_address"`
-	Sender		sdk.AccAddress	`json:"sender"`
+	Address    sdk.AccAddress `json:"address"`
+	EthAddress string         `json:"eth_address"`
+	Sender     sdk.AccAddress `json:"sender"`
 }
 
 // Create new 'add validator' message
 func NewMsgAddValidator(address sdk.AccAddress, ethAddress string, sender sdk.AccAddress) MsgAddValidator {
 	return MsgAddValidator{
-		Address: 	address,
+		Address:    address,
 		EthAddress: ethAddress,
-		Sender:		sender,
+		Sender:     sender,
 	}
 }
 
 // Message route
 func (msg MsgAddValidator) Route() string {
-	return types.DefaultRoute
+	return types.RouterKey
 }
 
 // Message type

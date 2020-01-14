@@ -1,26 +1,16 @@
+// Implements getters for query and transaction CLI commands.
 package client
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"wings-blockchain/x/currencies/client/cli"
 	"wings-blockchain/x/currencies/types"
 )
 
-// ModuleClient exports all client functionality from this module
-type ModuleClient struct {
-	storeKey string
-	cdc      *amino.Codec
-}
-
-// Creating new cli module
-func NewModuleClient(storeKey string, cdc *amino.Codec) ModuleClient {
-	return ModuleClient{storeKey, cdc}
-}
-
-// Returns get commands for this module
-func (mc ModuleClient) GetQueryCmd() *cobra.Command {
+// Returns get commands for this module.
+func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	currenciesQueryCmd := &cobra.Command{
 		Use:   types.ModuleName,
 		Short: "Querying commands for the currencies module",
@@ -28,25 +18,25 @@ func (mc ModuleClient) GetQueryCmd() *cobra.Command {
 
 	currenciesQueryCmd.AddCommand(
 		client.GetCommands(
-			cli.GetIssue("currencies",      mc.cdc),
-			cli.GetCurrency("currencies",   mc.cdc),
-			cli.GetDestroy("currencies",    mc.cdc),
-			cli.GetDestroys("currencies",  mc.cdc),
+			cli.GetIssue("currencies", cdc),
+			cli.GetCurrency("currencies", cdc),
+			cli.GetDestroy("currencies", cdc),
+			cli.GetDestroys("currencies", cdc),
 		)...)
 
 	return currenciesQueryCmd
 }
 
-// GetTxCmd returns the transaction commands for this module
-func (mc ModuleClient) GetTxCmd() *cobra.Command {
+// GetTxCmd returns the transaction commands for this module.
+func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	currenciesTxCmd := &cobra.Command{
 		Use:   types.ModuleName,
 		Short: "Currency transactions subcommands",
 	}
 
 	currenciesTxCmd.AddCommand(client.PostCommands(
-		cli.PostMsIssueCurrency(mc.cdc),
-		cli.PostDestroyCurrency(mc.cdc),
+		cli.PostMsIssueCurrency(cdc),
+		cli.PostDestroyCurrency(cdc),
 	)...)
 
 	return currenciesTxCmd

@@ -1,15 +1,14 @@
 package queries
 
 import (
-    "wings-blockchain/x/currencies/types"
-    "fmt"
+	"wings-blockchain/x/currencies/types"
 )
 
 // Get currency query response
 type QueryIssueRes struct {
-    Issue types.Issue `json:"issue"`
+	Issue types.Issue `json:"issue"`
 }
 
 func (q QueryIssueRes) String() string {
-    return fmt.Sprintf("%s", q.Issue.String())
+	return q.Issue.String()
 }

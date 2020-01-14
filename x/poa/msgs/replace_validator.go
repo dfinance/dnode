@@ -1,10 +1,11 @@
+// Message to replace validator described.
 package msgs
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"encoding/json"
-	"wings-blockchain/x/poa/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/helpers"
+	"wings-blockchain/x/poa/types"
 )
 
 // Type for codec
@@ -14,25 +15,25 @@ const (
 
 // Message for replace validator
 type MsgReplaceValidator struct {
-	OldValidator sdk.AccAddress	`json:"old_address"`
-	NewValidator sdk.AccAddress	`json:"new_validator"`
-	EthAddress	 string			`json:"eth_address"`
-	Sender 		 sdk.AccAddress	`json:"sender"`
+	OldValidator sdk.AccAddress `json:"old_address"`
+	NewValidator sdk.AccAddress `json:"new_validator"`
+	EthAddress   string         `json:"eth_address"`
+	Sender       sdk.AccAddress `json:"sender"`
 }
 
 // Create new 'replace validator' message
-func NewMsgReplaceValidator(oldValidator sdk.AccAddress, newValidator sdk.AccAddress, ethAddress string, sender sdk.AccAddress)  MsgReplaceValidator {
+func NewMsgReplaceValidator(oldValidator sdk.AccAddress, newValidator sdk.AccAddress, ethAddress string, sender sdk.AccAddress) MsgReplaceValidator {
 	return MsgReplaceValidator{
 		OldValidator: oldValidator,
 		NewValidator: newValidator,
 		EthAddress:   ethAddress,
-		Sender: 	  sender,
+		Sender:       sender,
 	}
 }
 
 // Message route
 func (msg MsgReplaceValidator) Route() string {
-	return types.DefaultRoute
+	return types.RouterKey
 }
 
 // Message type

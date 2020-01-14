@@ -1,63 +1,39 @@
 package main
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/version"
 	"os"
 	"path"
+	wbConfig "wings-blockchain/cmd/config"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
-	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
-	auth "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
+	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
-	bank "github.com/cosmos/cosmos-sdk/x/bank/client/rest"
 	app "wings-blockchain"
-	ccClient "wings-blockchain/x/currencies/client"
-	ccRoutes "wings-blockchain/x/currencies/client/rest"
-	poaClient "wings-blockchain/x/poa/client"
-	msClient "wings-blockchain/x/multisig/client"
-	msRoutes "wings-blockchain/x/multisig/client/rest"
-	poaRoutes "wings-blockchain/x/poa/client/rest"
 )
 
-const (
-	storeAcc = "acc"
-	storeCC  = "currencies"
-	storePoa = "poa"
-	storeMC	 = "multisig"
-)
-
-var defaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
-
+// Entry function for WB CLI.
 func main() {
-	cobra.EnableCommandSorting = false
-
-	cdc := app.MakeCodec()
-
-	// Read in the configuration file for the sdk
 	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(sdk.Bech32PrefixAccAddr, sdk.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(sdk.Bech32PrefixValAddr, sdk.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(sdk.Bech32PrefixConsAddr, sdk.Bech32PrefixConsPub)
+	wbConfig.InitBechPrefixes(config)
 	config.Seal()
 
-	mc := []sdk.ModuleClients{
-		ccClient.NewModuleClient(storeCC, cdc),
-		poaClient.NewModuleClient(storePoa, cdc),
-		msClient.NewModuleClient(storeMC, cdc),
-	}
+	cobra.EnableCommandSorting = false
+	cdc := app.MakeCodec()
 
 	rootCmd := &cobra.Command{
 		Use:   "wbcli",
-		Short: "wings blockchain client",
+		Short: "Wings blockchain client tool.",
 	}
 
 	// Add --chain-id to persistent flags and mark it required
@@ -69,35 +45,34 @@ func main() {
 	// Construct Root Command
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
-		client.ConfigCmd(defaultCLIHome),
-		queryCmd(cdc, mc),
-		txCmd(cdc, mc),
+		client.ConfigCmd(app.DefaultCLIHome),
+		queryCmd(cdc),
+		txCmd(cdc),
 		client.LineBreak,
 		lcd.ServeCommand(cdc, registerRoutes),
 		client.LineBreak,
 		keys.Commands(),
 		client.LineBreak,
+		version.Cmd,
+		client.NewCompletionCmd(rootCmd, true),
 	)
 
-	executor := cli.PrepareMainCmd(rootCmd, "WB", defaultCLIHome)
+	executor := cli.PrepareMainCmd(rootCmd, "WB", app.DefaultCLIHome)
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
 	}
 }
 
+// Registering routes for REST api.
 func registerRoutes(rs *lcd.RestServer) {
-	rs.CliCtx = rs.CliCtx.WithAccountDecoder(rs.Cdc)
-	rpc.RegisterRoutes(rs.CliCtx, rs.Mux)
-	tx.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
-	auth.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, storeAcc)
-	bank.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc, rs.KeyBase)
-	ccRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
-	msRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
-	poaRoutes.RegisterRoutes(rs.CliCtx, rs.Mux, rs.Cdc)
+	client.RegisterRoutes(rs.CliCtx, rs.Mux)
+	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
+	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 }
 
-func queryCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
+// Add query subcommands to CLI.
+func queryCmd(cdc *amino.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
 		Use:     "query",
 		Aliases: []string{"q"},
@@ -105,22 +80,22 @@ func queryCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
 	}
 
 	queryCmd.AddCommand(
+		authcmd.GetAccountCmd(cdc),
+		client.LineBreak,
 		rpc.ValidatorCommand(cdc),
 		rpc.BlockCommand(),
-		tx.SearchTxCmd(cdc),
-		tx.QueryTxCmd(cdc),
+		authcmd.QueryTxsByEventsCmd(cdc),
+		authcmd.QueryTxCmd(cdc),
 		client.LineBreak,
-		authcmd.GetAccountCmd(storeAcc, cdc),
 	)
 
-	for _, m := range mc {
-		queryCmd.AddCommand(m.GetQueryCmd())
-	}
+	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
 
 	return queryCmd
 }
 
-func txCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
+// Add transactions subcommands to CLI.
+func txCmd(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:   "tx",
 		Short: "Transactions subcommands",
@@ -130,17 +105,19 @@ func txCmd(cdc *amino.Codec, mc []sdk.ModuleClients) *cobra.Command {
 		bankcmd.SendTxCmd(cdc),
 		client.LineBreak,
 		authcmd.GetSignCommand(cdc),
-		tx.GetBroadcastCommand(cdc),
+		authcmd.GetMultiSignCommand(cdc),
+		client.LineBreak,
+		authcmd.GetBroadcastCommand(cdc),
+		authcmd.GetEncodeCommand(cdc),
 		client.LineBreak,
 	)
 
-	for _, m := range mc {
-		txCmd.AddCommand(m.GetTxCmd())
-	}
+	app.ModuleBasics.AddTxCommands(txCmd, cdc)
 
 	return txCmd
 }
 
+// Initialize CLI config.
 func initConfig(cmd *cobra.Command) error {
 	home, err := cmd.PersistentFlags().GetString(cli.HomeFlag)
 	if err != nil {

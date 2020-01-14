@@ -1,27 +1,27 @@
 package queries
 
 import (
-    "wings-blockchain/x/currencies/types"
-    "fmt"
+	"strings"
+
+	"wings-blockchain/x/currencies/types"
 )
 
 // Get currency query response
 type QueryDestroyRes struct {
-    Destroy types.Destroy `json:"destroy"`
+	Destroy types.Destroy `json:"destroy"`
 }
 
 func (q QueryDestroyRes) String() string {
-    return fmt.Sprintf("%s", q.Destroy.String())
+	return q.Destroy.String()
 }
 
 type QueryDestroysRes []QueryDestroyRes
 
 func (q QueryDestroysRes) String() string {
-    var s string
-    for _, i := range q {
-        s += i.String()
-    }
+	s := strings.Builder{}
+	for _, i := range q {
+		s.WriteString(i.String())
+	}
 
-    return s
+	return s.String()
 }
-
