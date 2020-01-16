@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/types"
 )
@@ -54,10 +55,10 @@ func (destroy Destroy) String() string {
 type Destroys []Destroy
 
 func (destroys Destroys) String() string {
-	var s string
+	var s strings.Builder
 	for _, i := range destroys {
-		s += i.String()
+		s.WriteString(i.String())
 	}
 
-	return s
+	return s.String()
 }
