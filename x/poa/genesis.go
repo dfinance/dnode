@@ -2,8 +2,9 @@
 package poa
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/x/poa/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Initialize genesis for this module.
@@ -11,6 +12,7 @@ func (poaKeeper Keeper) InitGenesis(ctx sdk.Context, genesisState types.GenesisS
 	for _, val := range genesisState.PoAValidators {
 		poaKeeper.AddValidator(ctx, val.Address, val.EthAddress)
 	}
+	poaKeeper.SetParams(ctx, genesisState.Parameters)
 }
 
 // Export genesis data for this module.

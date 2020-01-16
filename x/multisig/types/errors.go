@@ -27,7 +27,7 @@ const (
 
 // Only multisig calls supported for module.
 func ErrOnlyMultisig(codeSpase sdk.CodespaceType, moduleName string) sdk.Error {
-	return sdk.NewError(codeSpase, CodeErrOnlyMs, "module %s doesnt support only multisig calls, see mshandler...", moduleName)
+	return sdk.NewError(codeSpase, CodeErrOnlyMs, "module %s does support only multisig calls, see mshandler...", moduleName)
 }
 
 // When msg route doesnt exist.
