@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/go-amino"
@@ -9,6 +10,10 @@ import (
 	"time"
 	vm "wings-blockchain/x/core/protos"
 	"wings-blockchain/x/vm/internal/types"
+)
+
+var (
+	zeroBytes = make([]byte, 12)
 )
 
 /*
@@ -30,7 +35,7 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, paramStore params.Subspa
 
 func NewContract(sender sdk.AccAddress, maxGasAmount uint64, code types.Contract, contractType vm.ContractType, args []*vm.VMArgs) vm.VMContract {
 	return vm.VMContract{
-		Address:      sender,
+		Address:      append(sender, zeroBytes...),
 		MaxGasAmount: maxGasAmount,
 		GasUnitPrice: 1,
 		Code:         code,
@@ -61,14 +66,16 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract
 
 	defer conn.Close()
 	client := vm.NewVMServiceClient(conn)
-	connCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	connCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond*10)
 	defer cancel()
 
 	req := NewDeployReq(msg)
-	_, err = client.ExecuteContracts(connCtx, &req)
+	resp, err := client.ExecuteContracts(connCtx, &req)
 	if err != nil {
 		return types.ErrDuringVMExec(err.Error())
 	}
+
+	fmt.Printf("%s", resp.String())
 
 	return nil
 }
