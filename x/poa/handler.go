@@ -1,8 +1,8 @@
-// Handler to process messages, using in case when app doesn't need multisignature handler.
 package poa
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	msTypes "wings-blockchain/x/multisig/types"
 	"wings-blockchain/x/poa/types"
 )

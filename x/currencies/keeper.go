@@ -2,10 +2,11 @@
 package currencies
 
 import (
+	"wings-blockchain/x/currencies/types"
+
 	cdcCodec "github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"wings-blockchain/x/currencies/types"
 )
 
 // Currency keeper struct.
@@ -71,7 +72,7 @@ func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount sdk.In
 	return err
 }
 
-// Get currency by denom/symbol.
+// Deprecated: Get currency by denom/symbol.
 func (keeper Keeper) GetCurrency(ctx sdk.Context, symbol string) types.Currency {
 	store := ctx.KVStore(keeper.storeKey)
 
