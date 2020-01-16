@@ -24,7 +24,7 @@ func NewHandler(keeper Keeper, poaKeeper poa.Keeper) sdk.Handler {
 			return handleMsgRevokeConfirm(ctx, keeper, msg)
 
 		default:
-			errMsg := fmt.Sprintf("Unrecognized nameservice Msg type: %v", msg.Type())
+			errMsg := fmt.Sprintf("unrecognized multisig msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
