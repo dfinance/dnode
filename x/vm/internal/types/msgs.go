@@ -1,24 +1,30 @@
-package msgs
+package types
 
 import (
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/vm/internal/types"
 )
 
 var (
-	MsgDeployContractType = types.ModuleName + "/MsgDeployContract"
+	MsgDeployContractType = ModuleName + "/MsgDeployContract"
 
 	_ sdk.Msg = MsgDeployContract{}
 )
 
 type MsgDeployContract struct {
 	Signer   sdk.AccAddress `json:"signer"`
-	Contract types.Contract `json:"contract"`
+	Contract Contract       `json:"contract"`
+}
+
+func NewMsgDeployContract(signer sdk.AccAddress, contract Contract) MsgDeployContract {
+	return MsgDeployContract{
+		Signer:   signer,
+		Contract: contract,
+	}
 }
 
 func (MsgDeployContract) Route() string {
-	return types.RouteKey
+	return RouterKey
 }
 
 func (MsgDeployContract) Type() string {
@@ -31,7 +37,7 @@ func (msg MsgDeployContract) ValidateBasic() sdk.Error {
 	}
 
 	if len(msg.Contract) == 0 {
-		return types.ErrEmptyContract()
+		return ErrEmptyContract()
 	}
 
 	return nil
