@@ -137,7 +137,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	memo := "testmemotestmemo"
 
 	fee := auth.StdFee{
-		Amount: sdk.Coins{{Denom: "wings", Amount: sdk.NewInt(0)}},
+		Amount: sdk.Coins{{Denom: "wings", Amount: sdk.NewInt(1)}},
 		Gas:    200000,
 	}
 
