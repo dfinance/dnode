@@ -14,6 +14,7 @@ import (
 	"wings-blockchain/x/core"
 	"wings-blockchain/x/currencies"
 	"wings-blockchain/x/multisig"
+	"wings-blockchain/x/vm"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -57,6 +58,7 @@ var (
 		poa.AppModuleBasic{},
 		currencies.AppModuleBasic{},
 		multisig.AppModuleBasic{},
+		vm.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
@@ -85,6 +87,7 @@ type WbServiceApp struct {
 	poaKeeper      poa.Keeper
 	ccKeeper       currencies.Keeper
 	msKeeper       multisig.Keeper
+	vmKeeper       vm.Keeper
 
 	mm *core.MsManager
 }
@@ -116,6 +119,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		poa.StoreKey,
 		currencies.StoreKey,
 		multisig.StoreKey,
+		vm.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -215,6 +219,13 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		app.msRouter,
 	)
 
+	// Initializing vm keeper.
+	app.vmKeeper = vm.NewKeeper(
+		keys[vm.StoreKey],
+		app.cdc,
+		app.paramsKeeper.Subspace(vm.DefaultParamspace),
+	)
+
 	// Initializing multisignature manager.
 	app.mm = core.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
@@ -228,6 +239,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		poa.NewAppMsModule(app.poaKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
+		vm.NewAppModule(app.vmKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
@@ -247,6 +259,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		poa.ModuleName,
 		currencies.ModuleName,
 		multisig.ModuleName,
+		vm.ModuleName,
 		genutil.ModuleName,
 	)
 
