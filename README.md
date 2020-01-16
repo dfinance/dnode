@@ -79,6 +79,9 @@ Now let's add genesis account and initiate genesis PoA validators and PoS accoun
 
     wbd add-genesis-account [pos-address]  5000000000000wings
     wbd add-genesis-account [bank-address] 90000000000000000000000000wings
+    wbd add-genesis-account [validator-1-address]  5000000000000wings
+    wbd add-genesis-account [validator-2-address]  5000000000000wings
+    wbd add-genesis-account [validator-3-address]  5000000000000wings
 
     wbd add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
     wbd add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
@@ -140,10 +143,6 @@ To make sure that genesis file is correct:
 Now we are ready to launch testnet:
 
     wbd start
-
-Deposit validators accounts by sending them **WINGS**:
-
-    wbcli tx send [validator-n] 10000000000000000000wings --from bank
 
 ## Add/remove/replace validator by multisignature
 
