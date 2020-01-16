@@ -12,5 +12,10 @@ go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
 		GO111MODULE=on go mod verify
 protos:
-	mkdir -p  ${PROTO_OUT_DIR}
+	mkdir -p ${PROTO_OUT_DIR}
 	protoc -I ${PROTO_IN_DIR} --go_out=plugins=grpc:$(PROTO_OUT_DIR) $(PROTOBUF_FILES)
+
+## deps: Install missing dependencies. Runs `go get` internally. e.
+deps:
+	@echo "  >  Checking if there is any missing dependencies..."
+	go get -u github.com/golang/protobuf/protoc-gen-go
