@@ -10,7 +10,7 @@ const (
 )
 
 var (
-	KeyVMAddress = []byte("vm_address")
+	KeyVMAddress = []byte("vmaddress")
 )
 
 type Params struct {
