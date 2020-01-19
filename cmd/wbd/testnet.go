@@ -30,6 +30,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+
+	wbconfig "wings-blockchain/cmd/config"
 )
 
 var (
@@ -89,7 +91,7 @@ Example:
 	cmd.Flags().String(
 		client.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
 	cmd.Flags().String(
-		server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
+		server.FlagMinGasPrices, fmt.Sprintf("1%s", wbconfig.MainDenom),
 		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	return cmd
 }
@@ -119,7 +121,6 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 		genFiles    []string
 	)
 
-	//inBuf := bufio.NewReader(cmd.InOrStdin())
 	// generate private keys, node IDs, and initial transactions
 	for i := 0; i < numValidators; i++ {
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
@@ -158,7 +159,6 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 		memo := fmt.Sprintf("%s@%s:26656", nodeIDs[i], ip)
 		genFiles = append(genFiles, config.GenesisFile())
 
-		//kb, err := keys.NewKeyringFromDir(clientDir, inBuf)
 		kb, err := keys.NewKeyBaseFromDir(clientDir)
 		if err != nil {
 			return err
@@ -183,11 +183,9 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 			return err
 		}
 
-		accTokens := sdk.TokensFromConsensusPower(1000)
 		accStakingTokens := sdk.TokensFromConsensusPower(500)
 		coins := sdk.Coins{
-			sdk.NewCoin(fmt.Sprintf("%stoken", nodeDirName), accTokens),
-			sdk.NewCoin(sdk.DefaultBondDenom, accStakingTokens),
+			sdk.NewCoin(wbconfig.MainDenom, accStakingTokens),
 		}
 
 		genAccounts = append(genAccounts, genaccounts.NewGenesisAccount(auth.NewBaseAccount(addr, coins.Sort(), nil, 0, 0)))
@@ -196,13 +194,12 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 		msg := staking.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
-			sdk.NewCoin(sdk.DefaultBondDenom, valTokens),
+			sdk.NewCoin(wbconfig.MainDenom, valTokens),
 			staking.NewDescription(nodeDirName, "", "", ""),
 			staking.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
 			sdk.OneInt(),
 		)
 
-		//inBuf := bufio.NewReader(cmd.InOrStdin())
 		tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{}, []auth.StdSignature{}, memo)
 		txBldr := auth.NewTxBuilderFromCLI().WithChainID(chainID).WithMemo(memo).WithKeybase(kb)
 
@@ -257,10 +254,13 @@ func initGenFiles(
 	authDataBz := appGenState[auth.ModuleName]
 	var authGenState auth.GenesisState
 	cdc.MustUnmarshalJSON(authDataBz, &authGenState)
-	//authGenState.Accounts = genAccounts
-	//appGenState[auth.ModuleName] = cdc.MustMarshalJSON(authGenState)
-
 	appGenState[genaccounts.ModuleName] = cdc.MustMarshalJSON(genAccounts)
+
+	stakingDataBz := appGenState[staking.ModuleName]
+	var stakingGenState staking.GenesisState
+	cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
+	stakingGenState.Params.BondDenom = wbconfig.MainDenom
+	appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
 	appGenStateJSON, err := codec.MarshalJSONIndent(cdc, appGenState)
 	if err != nil {
