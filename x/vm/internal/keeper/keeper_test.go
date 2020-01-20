@@ -13,9 +13,6 @@ import (
 func TestStoreModule(t *testing.T) {
 	input := setupTestInput(t)
 
-	account := input.ak.NewAccountWithAddress(input.ctx, types.DecodeAddress(input.addressBytes))
-	t.Logf("%s\n", account.String())
-
 	ap := vm.VMAccessPath{
 		Address: input.addressBytes,
 		Path:    input.pathBytes,
