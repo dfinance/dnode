@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"github.com/cosmos/cosmos-sdk/client"
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
@@ -15,7 +16,7 @@ import (
 )
 
 type MVir struct {
-	Code types.Contract `json:"code"`
+	Code string `json:"code"`
 }
 
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
@@ -57,12 +58,17 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 			}
 
 			var mvir MVir
-			err = json.Unmarshal(jsonContent, &mvir)
+			if err := json.Unmarshal(jsonContent, &mvir); err != nil {
+				println("heere err!")
+				return err
+			}
+
+			code, err := hex.DecodeString(mvir.Code)
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgDeployContract(cliCtx.GetFromAddress(), mvir.Code)
+			msg := types.NewMsgDeployContract(cliCtx.GetFromAddress(), code)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

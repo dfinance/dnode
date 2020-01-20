@@ -20,9 +20,12 @@ func NewHandler(keeper Keeper) sdk.Handler {
 }
 
 func handleMsgDeploy(ctx sdk.Context, keeper Keeper, msg MsgDeployContract) sdk.Result {
-	if err := keeper.DeployContract(ctx, msg); err != nil {
+	events, err := keeper.DeployContract(ctx, msg)
+	if err != nil {
 		return err.Result()
 	}
 
-	return sdk.Result{}
+	return sdk.Result{
+		Events: events,
+	}
 }

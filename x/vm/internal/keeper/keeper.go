@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/go-amino"
@@ -46,13 +47,13 @@ func NewDeployReq(msg types.MsgDeployContract) vm.VMExecuteRequest {
 	}
 }
 
-func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract) sdk.Error {
+func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract) (sdk.Events, sdk.Error) {
 	vmAddress := keeper.GetVMAddress(ctx)
 
 	// TODO: secure connection.
 	conn, err := grpc.Dial(vmAddress, grpc.WithInsecure())
 	if err != nil {
-		return types.ErrCantConnectVM(err.Error())
+		return nil, types.ErrCantConnectVM(err.Error())
 	}
 
 	defer conn.Close()
@@ -65,8 +66,10 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract
 	req := NewDeployReq(msg)
 	resp, err := client.ExecuteContracts(connCtx, &req)
 	if err != nil {
-		return types.ErrDuringVMExec(err.Error())
+		return nil, types.ErrDuringVMExec(err.Error())
 	}
+
+	events := make(sdk.Events, 0)
 
 	for i, exec := range resp.Executions {
 		// TODO: check status and return error in case of errors. Also gas, writeOp, etc.
@@ -74,14 +77,22 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract
 			path := value.GetPath()
 
 			if !bytes.Equal(req.Contracts[i].Address, path.Address) {
-				return types.ErrWrongModuleAddress(req.Contracts[i].Address, path.Address)
+				return nil, types.ErrWrongModuleAddress(req.Contracts[i].Address, path.Address)
 			}
 
 			if err := keeper.storeModule(ctx, *path, value.Value); err != nil {
-				return err
+				return nil, err
 			}
+
+			event := sdk.NewEvent(
+				types.EventKeyDeploy,
+				sdk.NewAttribute("address", types.DecodeAddress(path.Address).String()),
+				sdk.NewAttribute("path", hex.EncodeToString(path.Path)),
+			)
+
+			events = append(events, event)
 		}
 	}
 
-	return nil
+	return events, nil
 }
