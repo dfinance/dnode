@@ -17,3 +17,10 @@ func (keeper Keeper) storeModule(ctx sdk.Context, accessPath vm.VMAccessPath, co
 	store.Set(moduleKey, code)
 	return nil
 }
+
+func (keeper Keeper) hasModule(ctx sdk.Context, accessPath vm.VMAccessPath) bool {
+	store := ctx.KVStore(keeper.storeKey)
+	moduleKey := types.MakePathKey(accessPath, types.VMModuleType)
+
+	return store.Has(moduleKey)
+}
