@@ -3,21 +3,12 @@ package main
 // DONTCOVER
 
 import (
-	//"bufio"
+	// "bufio"
 	"encoding/json"
 	"fmt"
 	"net"
 	"os"
 	"path/filepath"
-
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	tmconfig "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/crypto"
-	cmn "github.com/tendermint/tendermint/libs/common"
-	"github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -27,20 +18,31 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	tmconfig "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/crypto"
+	cmn "github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/types"
+	tmtime "github.com/tendermint/tendermint/types/time"
 
 	wbconfig "wings-blockchain/cmd/config"
 )
 
 var (
-	flagNodeDirPrefix     = "node-dir-prefix"
-	flagNumValidators     = "v"
-	flagOutputDir         = "output-dir"
-	flagNodeDaemonHome    = "node-daemon-home"
-	flagNodeCLIHome       = "node-cli-home"
-	flagStartingIPAddress = "starting-ip-address"
+	flagNodeDirPrefix          = "node-dir-prefix"
+	flagNumValidators          = "v"
+	flagOutputDir              = "output-dir"
+	flagNodeDaemonHome         = "node-daemon-home"
+	flagNodeCLIHome            = "node-cli-home"
+	flagStartingIPAddress      = "starting-ip-address"
+	flagComissionRate          = "comission-rate"
+	flagComissionMaxRate       = "comission-max-rate"
+	flagComissionMaxChangeRate = "comission-max-change-rate"
 )
 
 // get cmd to initialize all files for tendermint testnet and application
@@ -70,9 +72,22 @@ Example:
 			nodeCLIHome := viper.GetString(flagNodeCLIHome)
 			startingIPAddress := viper.GetString(flagStartingIPAddress)
 			numValidators := viper.GetInt(flagNumValidators)
+			comissionRate, err := sdk.NewDecFromStr(viper.GetString(flagComissionRate))
+			if err != nil {
+				return err
+			}
+			comissionMaxRate, err := sdk.NewDecFromStr(viper.GetString(flagComissionMaxRate))
+			if err != nil {
+				return err
+			}
+			comissionMaxChangeRate, err := sdk.NewDecFromStr(viper.GetString(flagComissionMaxChangeRate))
+			if err != nil {
+				return err
+			}
 
 			return InitTestnet(cmd, config, cdc, mbm, genAccIterator, outputDir, chainID,
-				minGasPrices, nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, numValidators)
+				minGasPrices, nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, numValidators,
+				comissionRate, comissionMaxRate, comissionMaxChangeRate)
 		},
 	}
 
@@ -93,6 +108,15 @@ Example:
 	cmd.Flags().String(
 		server.FlagMinGasPrices, fmt.Sprintf("1%s", wbconfig.MainDenom),
 		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
+	cmd.Flags().String(
+		flagComissionRate, "0.100000000000000000",
+		"Comission rate")
+	cmd.Flags().String(
+		flagComissionMaxRate, "0.200000000000000000",
+		"Comission rate")
+	cmd.Flags().String(
+		flagComissionMaxChangeRate, "0.010000000000000000",
+		"Comission max change rate")
 	return cmd
 }
 
@@ -102,7 +126,8 @@ const nodeDirPerm = 0755
 func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 	mbm module.BasicManager, genAccIterator genutiltypes.GenesisAccountsIterator,
 	outputDir, chainID, minGasPrices, nodeDirPrefix, nodeDaemonHome,
-	nodeCLIHome, startingIPAddress string, numValidators int) error {
+	nodeCLIHome, startingIPAddress string, numValidators int,
+	comissionRate, comissionMaxRate, comissionMaxChangeRate sdk.Dec) error {
 
 	if chainID == "" {
 		chainID = "chain-" + cmn.RandStr(6)
@@ -183,24 +208,24 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 			return err
 		}
 
-		accStakingTokens := sdk.TokensFromConsensusPower(500)
+		accStakingTokens := sdk.TokensFromConsensusPower(500000000000)
 		coins := sdk.Coins{
 			sdk.NewCoin(wbconfig.MainDenom, accStakingTokens),
 		}
 
 		genAccounts = append(genAccounts, genaccounts.NewGenesisAccount(auth.NewBaseAccount(addr, coins.Sort(), nil, 0, 0)))
 
-		valTokens := sdk.TokensFromConsensusPower(100)
+		valTokens := sdk.TokensFromConsensusPower(500000)
 		msg := staking.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
 			sdk.NewCoin(wbconfig.MainDenom, valTokens),
 			staking.NewDescription(nodeDirName, "", "", ""),
-			staking.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
+			staking.NewCommissionRates(comissionRate, comissionMaxRate, comissionMaxChangeRate),
 			sdk.OneInt(),
 		)
 
-		tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{}, []auth.StdSignature{}, memo)
+		tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{Gas: 200000}, []auth.StdSignature{}, memo)
 		txBldr := auth.NewTxBuilderFromCLI().WithChainID(chainID).WithMemo(memo).WithKeybase(kb)
 
 		signedTx, err := txBldr.SignStdTx(nodeDirName, client.DefaultKeyPass, tx, false)
