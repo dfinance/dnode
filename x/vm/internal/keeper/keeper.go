@@ -9,8 +9,8 @@ import (
 	"github.com/tendermint/go-amino"
 	"google.golang.org/grpc"
 	"time"
-	vm "wings-blockchain/x/core/protos"
 	"wings-blockchain/x/vm/internal/types"
+	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 type Keeper struct {
@@ -27,26 +27,6 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, paramStore params.Subspa
 	}
 }
 
-func NewContract(sender sdk.AccAddress, maxGasAmount uint64, code types.Contract, contractType vm.ContractType, args []*vm.VMArgs) vm.VMContract {
-	return vm.VMContract{
-		Address:      types.EncodeAddress(sender),
-		MaxGasAmount: maxGasAmount,
-		GasUnitPrice: 1,
-		Code:         code,
-		ContractType: contractType,
-		Args:         args,
-	}
-}
-
-func NewDeployReq(msg types.MsgDeployContract) vm.VMExecuteRequest {
-	contract := NewContract(msg.Signer, 100000000, msg.Contract, 0, []*vm.VMArgs{})
-
-	return vm.VMExecuteRequest{
-		Contracts: []*vm.VMContract{&contract},
-		Options:   0,
-	}
-}
-
 func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract) (sdk.Events, sdk.Error) {
 	vmAddress := keeper.GetVMAddress(ctx)
 
@@ -57,14 +37,18 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract
 	}
 
 	defer conn.Close()
-	client := vm.NewVMServiceClient(conn)
+	client := vm_grpc.NewVMServiceClient(conn)
 
 	timeout := time.Millisecond * keeper.GetVMTimeout(ctx)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	req := NewDeployReq(msg)
-	resp, err := client.ExecuteContracts(connCtx, &req)
+	req, sdkErr := NewDeployRequest(ctx, msg)
+	if err != nil {
+		return nil, sdkErr
+	}
+
+	resp, err := client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		return nil, types.ErrDuringVMExec(err.Error())
 	}

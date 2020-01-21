@@ -2,11 +2,11 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	vm "wings-blockchain/x/core/protos"
 	"wings-blockchain/x/vm/internal/types"
+	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
-func (keeper Keeper) storeModule(ctx sdk.Context, accessPath vm.VMAccessPath, code types.Contract) sdk.Error {
+func (keeper Keeper) storeModule(ctx sdk.Context, accessPath vm_grpc.VMAccessPath, code types.Contract) sdk.Error {
 	store := ctx.KVStore(keeper.storeKey)
 	moduleKey := types.MakePathKey(accessPath, types.VMModuleType)
 
@@ -18,7 +18,7 @@ func (keeper Keeper) storeModule(ctx sdk.Context, accessPath vm.VMAccessPath, co
 	return nil
 }
 
-func (keeper Keeper) hasModule(ctx sdk.Context, accessPath vm.VMAccessPath) bool {
+func (keeper Keeper) hasModule(ctx sdk.Context, accessPath vm_grpc.VMAccessPath) bool {
 	store := ctx.KVStore(keeper.storeKey)
 	moduleKey := types.MakePathKey(accessPath, types.VMModuleType)
 

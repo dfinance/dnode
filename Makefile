@@ -1,7 +1,7 @@
 include Makefile.ledger
 
 PROTO_IN_DIR=./vm-proto/protos/
-PROTO_OUT_DIR=./x/core/protos/
+PROTO_OUT_DIR=./x/vm/internal/types/vm_grpc/
 PROTOBUF_FILES=./vm-proto/protos/vm.proto
 
 all: protos install

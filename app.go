@@ -90,6 +90,9 @@ type WbServiceApp struct {
 	vmKeeper       vm.Keeper
 
 	mm *core.MsManager
+
+	// vm connections
+
 }
 
 // MakeCodec generates the necessary codecs for Amino.

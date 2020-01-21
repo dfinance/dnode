@@ -4,8 +4,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"testing"
-	vm "wings-blockchain/x/core/protos"
 	"wings-blockchain/x/vm/internal/types"
+	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 //TODO: we should move connection to vm into app, and keep connection once wb started, so then later we can test things with vm in tests.
@@ -13,7 +13,7 @@ import (
 func TestStoreModule(t *testing.T) {
 	input := setupTestInput(t)
 
-	ap := vm.VMAccessPath{
+	ap := vm_grpc.VMAccessPath{
 		Address: input.addressBytes,
 		Path:    input.pathBytes,
 	}

@@ -13,6 +13,7 @@ const (
 
 	CodeErrWrongModuleAddress = 301
 	CodeErrModuleExists       = 302
+	CodeErrWrongAddressLength = 303
 )
 
 func ErrEmptyContract() sdk.Error {
@@ -33,4 +34,8 @@ func ErrWrongModuleAddress(expected, real sdk.AccAddress) sdk.Error {
 
 func ErrModuleExists(address sdk.AccAddress, path []byte) sdk.Error {
 	return sdk.NewError(Codespace, CodeErrModuleExists, "module %s already exists for account %s", hex.EncodeToString(path), address)
+}
+
+func ErrWrongAddressLength(address sdk.AccAddress) sdk.Error {
+	return sdk.NewError(Codespace, CodeErrWrongAddressLength, "address %s passed to vm has wrong length, it has length %d, but expected %d", address.String(), len(address), VmAddressLength)
 }

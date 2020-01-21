@@ -3,7 +3,7 @@ package types
 import (
 	"bytes"
 	"github.com/cosmos/cosmos-sdk/types"
-	vm "wings-blockchain/x/core/protos"
+	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (
@@ -14,6 +14,9 @@ const (
 
 	Codespace         types.CodespaceType = ModuleName
 	DefaultParamspace                     = ModuleName
+
+	VmAddressLength = 32
+	VmGasPrice      = 1
 )
 
 type Contract []byte
@@ -28,7 +31,7 @@ var (
 	zeroBytes = make([]byte, 12)
 )
 
-func MakePathKey(path vm.VMAccessPath, resourceType []byte) []byte {
+func MakePathKey(path vm_grpc.VMAccessPath, resourceType []byte) []byte {
 	return bytes.Join(
 		[][]byte{
 			path.Address,
