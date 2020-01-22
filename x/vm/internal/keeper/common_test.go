@@ -7,10 +7,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 	"testing"
+	"time"
+	vmConfig "wings-blockchain/cmd/config"
 	"wings-blockchain/x/vm/internal/types"
 )
 
@@ -75,7 +81,24 @@ func setupTestInput(t *testing.T) testInput {
 		input.pk.Subspace(auth.DefaultParamspace),
 		auth.ProtoBaseAccount,
 	)
-	input.vk = NewKeeper(input.keyVM, input.cdc, input.pk.Subspace(types.DefaultParamspace))
+
+	config, err := vmConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var kpParams = keepalive.ClientParameters{
+		Time:                time.Millisecond, // send pings every 10 seconds if there is no activity
+		Timeout:             time.Millisecond, // wait 1 second for ping ack before considering the connection dead
+		PermitWithoutStream: true,             // send pings even without active streams
+	}
+
+	clientConn, err := grpc.Dial(config.Address, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithKeepaliveParams(kpParams), grpc.FailOnNonTempDialError(true))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, config)
 
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "wings-testnet-vm-keeper-test"}, false, log.NewNopLogger())
 

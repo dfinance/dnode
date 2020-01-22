@@ -16,6 +16,14 @@ const (
 	CodeErrWrongAddressLength = 303
 )
 
+type ErrVMCrashed struct {
+	err error
+}
+
+func NewErrVMCrashed(err error) ErrVMCrashed {
+	return ErrVMCrashed{err: err}
+}
+
 func ErrEmptyContract() sdk.Error {
 	return sdk.NewError(Codespace, CodeEmptyContractCode, "contract code is empty, please fill field with compiled contract bytes")
 }

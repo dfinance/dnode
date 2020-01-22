@@ -19,7 +19,7 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
-	app "wings-blockchain"
+	"wings-blockchain/app"
 )
 
 // Entry function for WB CLI.

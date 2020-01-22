@@ -20,9 +20,6 @@ const (
 )
 
 type Contract []byte
-type GenesisState struct {
-	Parameters Params `json:"parameters"`
-}
 
 var (
 	VMModuleType = []byte("module")

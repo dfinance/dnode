@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
@@ -10,7 +11,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 	"os"
+	"time"
+	"wings-blockchain/cmd/config"
 	"wings-blockchain/x/core"
 	"wings-blockchain/x/currencies"
 	"wings-blockchain/x/multisig"
@@ -70,7 +75,8 @@ var (
 )
 
 type WbServiceApp struct {
-	*bam.BaseApp
+	*BaseApp
+
 	cdc      *codec.Codec
 	msRouter core.Router
 
@@ -91,8 +97,27 @@ type WbServiceApp struct {
 
 	mm *core.MsManager
 
-	// vm connections
+	// vm connection
+	vmConn *grpc.ClientConn
+}
 
+// Initialize connection to VM.
+// TODO: to reach deterministic we should stop application in case vm go offline.
+func (app *WbServiceApp) InitializeVMConnection(addr string) {
+	var err error
+
+	var kpParams = keepalive.ClientParameters{
+		Time:                time.Millisecond, // send pings every 10 seconds if there is no activity
+		Timeout:             time.Millisecond, // wait 1 second for ping ack before considering the connection dead
+		PermitWithoutStream: true,             // send pings even without active streams
+	}
+
+	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
+	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithKeepaliveParams(kpParams), grpc.FailOnNonTempDialError(true))
+	if err != nil {
+		panic(err)
+	}
+	app.Logger().Info(fmt.Sprintf("successful connected to vm, connection status is %d", app.vmConn.GetState()))
 }
 
 // MakeCodec generates the necessary codecs for Amino.
@@ -105,10 +130,10 @@ func MakeCodec() *codec.Codec {
 }
 
 // NewWbServiceApp is a constructor function for wings blockchain.
-func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *WbServiceApp {
+func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, baseAppOptions ...func(*BaseApp)) *WbServiceApp {
 	cdc := MakeCodec()
 
-	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
+	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(
@@ -136,6 +161,9 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		keys:    keys,
 		tkeys:   tkeys,
 	}
+
+	// initialize connection
+	app.InitializeVMConnection(config.Address)
 
 	// The ParamsKeeper handles parameter storage for the application.
 	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
@@ -226,7 +254,8 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 	app.vmKeeper = vm.NewKeeper(
 		keys[vm.StoreKey],
 		app.cdc,
-		app.paramsKeeper.Subspace(vm.DefaultParamspace),
+		app.vmConn,
+		config,
 	)
 
 	// Initializing multisignature manager.

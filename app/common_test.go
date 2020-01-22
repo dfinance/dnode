@@ -2,20 +2,22 @@ package app
 
 import (
 	"bytes"
-	"os"
-	"sort"
-	"testing"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
+	"os"
+	"sort"
+	"testing"
+	vmConfig "wings-blockchain/cmd/config"
 
 	poaTypes "wings-blockchain/x/poa/types"
 )
@@ -94,7 +96,12 @@ func CreateGenAccounts(numAccs int, genCoins sdk.Coins) (genAccs []*auth.BaseAcc
 }
 
 func newTestWbApp() *WbServiceApp {
-	return NewWbServiceApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app"), dbm.NewMemDB())
+	config, err := vmConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
+	if err != nil {
+		panic(err)
+	}
+
+	return NewWbServiceApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app"), dbm.NewMemDB(), config)
 }
 
 func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.Context, error) {
@@ -137,7 +144,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	memo := "testmemotestmemo"
 
 	fee := auth.StdFee{
-		Amount: sdk.Coins{{Denom: "wings", Amount: sdk.NewInt(0)}},
+		Amount: sdk.Coins{{Denom: "wings", Amount: sdk.NewInt(1)}},
 		Gas:    200000,
 	}
 

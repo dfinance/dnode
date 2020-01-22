@@ -36,9 +36,7 @@ func (AppModuleBasic) ValidateGenesis(json.RawMessage) error {
 
 // Generate default genesis.
 func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return types.ModuleCdc.MustMarshalJSON(types.GenesisState{
-		Parameters: types.DefaultParams(),
-	})
+	return nil
 }
 
 // Register REST routes.
@@ -100,19 +98,10 @@ func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.Validato
 
 // Initialize genesis.
 func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	var genesisState types.GenesisState
-
-	types.ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-	app.vmKeeper.SetParams(ctx, genesisState.Parameters)
-
 	return []abci.ValidatorUpdate{}
 }
 
 // Export genesis.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	genesisState := types.GenesisState{
-		Parameters: app.vmKeeper.GetParams(ctx),
-	}
-
-	return types.ModuleCdc.MustMarshalJSON(genesisState)
+	return json.RawMessage{}
 }
