@@ -96,6 +96,7 @@ func CreateGenAccounts(numAccs int, genCoins sdk.Coins) (genAccs []*auth.BaseAcc
 }
 
 func newTestWbApp() *WbServiceApp {
+	//TODO: should not take config from file using cli flags.
 	config, err := vmConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
 	if err != nil {
 		panic(err)
