@@ -25,4 +25,7 @@ vm_address = "{{ .Address }}"
 
 # VM deploy request timeout in milliseconds
 vm_deploy_timeout = {{ .DeployTimeout }}
+
+# VM data server listen address
+vm_data_listen = "{{ .DataListen }}"
 `

@@ -20,22 +20,26 @@ const (
 	Bech32PrefixConsAddr = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus                    // Bech32 prefix for consensus addresses.
 	Bech32PrefixConsPub  = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic // Bech32 prefix for consensus pub keys.
 
-	VMConfigFile            = "vm.toml"
-	ConfigDir               = "config"
-	DefaultVMAddress        = "127.0.0.1:50051"
-	DefaultVMRequestTimeout = 100
+	VMConfigFile            = "vm.toml"         // Default file to store config.
+	ConfigDir               = "config"          // Default directory to store all configurations.
+	DefaultVMAddress        = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
+	DefaultDataListen       = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
+	DefaultVMRequestTimeout = 100               // Default timeout for deploy module request.
 )
 
-// Virtual machine connection config
+// Virtual machine connection config (see config/vm.toml).
 type VMConfig struct {
 	Address       string `mapstructure:"vm_address"`
 	DeployTimeout uint64 `mapstructure:"vm_deploy_timeout"`
+	DataListen    string `mapstructure:"vm_data_listen"`
 }
 
+// Default VM configuration.
 func DefaultVMConfig() *VMConfig {
 	return &VMConfig{
 		Address:       DefaultVMAddress,
 		DeployTimeout: DefaultVMRequestTimeout,
+		DataListen:    DefaultDataListen,
 	}
 }
 
@@ -46,6 +50,7 @@ func InitBechPrefixes(config *sdk.Config) {
 	config.SetBech32PrefixForConsensusNode(Bech32PrefixConsAddr, Bech32PrefixConsPub)
 }
 
+// Write VM config file in configuration directory.
 func WriteVMConfig(rootDir string, vmConfig *VMConfig) {
 	configFilePath := filepath.Join(rootDir, VMConfigFile)
 
@@ -58,6 +63,7 @@ func WriteVMConfig(rootDir string, vmConfig *VMConfig) {
 	cmn.MustWriteFile(configFilePath, buffer.Bytes(), 0644)
 }
 
+// Read VM config file from configuration directory.
 func ReadVMConfig(rootDir string) (*VMConfig, error) {
 	configFilePath := filepath.Join(rootDir, ConfigDir, VMConfigFile)
 
