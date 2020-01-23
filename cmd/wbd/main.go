@@ -101,6 +101,7 @@ func exportAppStateAndTMValidators(
 	return wbApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }
 
+// Init cmd together with VM configruation.
 func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 	defaultNodeHome string) *cobra.Command { // nolint: golint
 	cmd := genutilcli.InitCmd(ctx, cdc, mbm, defaultNodeHome)

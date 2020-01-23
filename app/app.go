@@ -13,6 +13,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
+	"net"
 	"os"
 	"time"
 	"wings-blockchain/cmd/config"
@@ -98,11 +99,11 @@ type WbServiceApp struct {
 	mm *core.MsManager
 
 	// vm connection
-	vmConn *grpc.ClientConn
+	vmConn     *grpc.ClientConn
+	vmListener net.Listener
 }
 
-// Initialize connection to VM.
-// TODO: to reach deterministic we should stop application in case vm go offline.
+// Initialize connection to VM server.
 func (app *WbServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
@@ -118,6 +119,18 @@ func (app *WbServiceApp) InitializeVMConnection(addr string) {
 		panic(err)
 	}
 	app.Logger().Info(fmt.Sprintf("successful connected to vm, connection status is %d", app.vmConn.GetState()))
+}
+
+// Initialize listener to listen for connections from VM for data server.
+func (app *WbServiceApp) InitializeVMDataServer(addr string) {
+	var err error
+
+	app.Logger().Info("up data server listen server %s", addr)
+	app.vmListener, err = net.Listen("tcp", addr)
+	if err != nil {
+		panic(err)
+	}
+	app.Logger().Info("data server is up")
 }
 
 // MakeCodec generates the necessary codecs for Amino.
@@ -162,7 +175,8 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		tkeys:   tkeys,
 	}
 
-	// initialize connection
+	// initialize connections
+	app.InitializeVMDataServer(config.DataListen)
 	app.InitializeVMConnection(config.Address)
 
 	// The ParamsKeeper handles parameter storage for the application.
