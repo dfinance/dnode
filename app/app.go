@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	appName = "wb" // application name
+	appName = "wb" // application name.
 )
 
 type GenesisState map[string]json.RawMessage
