@@ -126,7 +126,7 @@ func (app *WbServiceApp) InitializeVMConnection(addr string) {
 func (app *WbServiceApp) InitializeVMDataServer(addr string) {
 	var err error
 
-	app.Logger().Info("up data server listen server %s", addr)
+	app.Logger().Info(fmt.Sprintf("up data server listen server %s", addr))
 	app.vmListener, err = net.Listen("tcp", addr)
 	if err != nil {
 		panic(err)
@@ -266,12 +266,17 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	// Initializing vm keeper.
-	app.vmKeeper = vm.NewKeeper(
+	var err error
+	app.vmKeeper, err = vm.NewKeeper(
 		keys[vm.StoreKey],
 		app.cdc,
 		app.vmConn,
+		app.vmListener,
 		config,
 	)
+	if err != nil {
+		cmn.Exit(err.Error())
+	}
 
 	// Initializing multisignature manager.
 	app.mm = core.NewMsManager(
@@ -328,7 +333,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.MountKVStores(keys)
 	app.MountTransientStores(tkeys)
 
-	err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
+	err = app.LoadLatestVersion(app.keys[bam.MainStoreKey])
 	if err != nil {
 		cmn.Exit(err.Error())
 	}

@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/go-amino"
 	"google.golang.org/grpc"
+	"net"
 	"time"
 	"wings-blockchain/cmd/config"
 	"wings-blockchain/x/vm/internal/types"
@@ -14,19 +15,25 @@ import (
 )
 
 type Keeper struct {
-	cdc      *amino.Codec
-	storeKey sdk.StoreKey
-	client   vm_grpc.VMServiceClient
-	config   *config.VMConfig
+	cdc      *amino.Codec            // Amino codec.
+	storeKey sdk.StoreKey            // Store key.
+	client   vm_grpc.VMServiceClient // VM service client.
+	listener net.Listener            // VM data server listener.
+	config   *config.VMConfig        // VM config.
 }
 
-func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, config *config.VMConfig) Keeper {
-	return Keeper{
+// initialize server
+func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, listener net.Listener, config *config.VMConfig) (keeper Keeper, err error) {
+	keeper = Keeper{
 		cdc:      cdc,
 		storeKey: storeKey,
 		client:   vm_grpc.NewVMServiceClient(conn),
+		listener: listener,
 		config:   config,
 	}
+
+	err = StartServer(keeper)
+	return
 }
 
 func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract) (sdk.Events, sdk.Error) {
