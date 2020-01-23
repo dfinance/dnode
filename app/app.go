@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	appName = "wb"
+	appName = "wb" // application name
 )
 
 type GenesisState map[string]json.RawMessage
@@ -75,6 +75,7 @@ var (
 	}
 )
 
+// WB Service App implements WB mains logic.
 type WbServiceApp struct {
 	*BaseApp
 
