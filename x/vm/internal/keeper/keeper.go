@@ -22,7 +22,7 @@ type Keeper struct {
 	config   *config.VMConfig        // VM config.
 }
 
-// initialize server
+// Initialize VM keeper (include grpc client to VM and grpc server for data store).
 func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, listener net.Listener, config *config.VMConfig) (keeper Keeper, err error) {
 	keeper = Keeper{
 		cdc:      cdc,
@@ -36,6 +36,12 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 	return
 }
 
+// Execute script.
+func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgScriptContract) (sdk.Events, sdk.Error) {
+	return sdk.Events{}, nil
+}
+
+// Deploy contract.
 func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract) (sdk.Events, sdk.Error) {
 	timeout := time.Millisecond * time.Duration(keeper.config.DeployTimeout)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)

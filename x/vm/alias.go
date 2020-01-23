@@ -15,6 +15,7 @@ const (
 type (
 	Keeper            = keeper.Keeper
 	MsgDeployContract = types.MsgDeployContract
+	MsgScriptContract = types.MsgScriptContract
 	ErrVMCrashed      = types.ErrVMCrashed
 )
 

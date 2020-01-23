@@ -8,6 +8,9 @@ import (
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
+// check type.
+var _ vm_grpc.DSServiceServer = &VMServer{}
+
 // Server to catch VM data client requests.
 type VMServer struct {
 	vm_grpc.UnimplementedDSServiceServer

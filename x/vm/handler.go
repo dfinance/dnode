@@ -12,10 +12,24 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		case MsgDeployContract:
 			return handleMsgDeploy(ctx, keeper, msg)
 
+		case MsgScriptContract:
+			return handleMsgScript(ctx, keeper, msg)
+
 		default:
 			errMsg := fmt.Sprintf("unrecognized vm msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
+	}
+}
+
+func handleMsgScript(ctx sdk.Context, keeper Keeper, msg MsgScriptContract) sdk.Result {
+	events, err := keeper.ExecuteScript(ctx, msg)
+	if err != nil {
+		return err.Result()
+	}
+
+	return sdk.Result{
+		Events: events,
 	}
 }
 
