@@ -113,7 +113,7 @@ func (app *WbServiceApp) InitializeVMConnection(addr string) {
 	}
 
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithKeepaliveParams(kpParams), grpc.FailOnNonTempDialError(true))
+	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithKeepaliveParams(kpParams))
 	if err != nil {
 		panic(err)
 	}
