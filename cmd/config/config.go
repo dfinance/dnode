@@ -52,7 +52,7 @@ func InitBechPrefixes(config *sdk.Config) {
 
 // Write VM config file in configuration directory.
 func WriteVMConfig(rootDir string, vmConfig *VMConfig) {
-	configFilePath := filepath.Join(rootDir, VMConfigFile)
+	configFilePath := filepath.Join(rootDir, ConfigDir, VMConfigFile)
 
 	var buffer bytes.Buffer
 
