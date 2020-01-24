@@ -23,7 +23,7 @@ type Keeper struct {
 }
 
 // Initialize VM keeper (include grpc client to VM and grpc server for data store).
-func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, listener net.Listener, config *config.VMConfig) (keeper Keeper, err error) {
+func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, listener net.Listener, config *config.VMConfig) (keeper Keeper) {
 	keeper = Keeper{
 		cdc:      cdc,
 		storeKey: storeKey,
@@ -32,7 +32,8 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 		config:   config,
 	}
 
-	err = StartServer(keeper)
+	go StartServer(keeper)
+
 	return
 }
 

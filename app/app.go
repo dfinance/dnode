@@ -267,16 +267,13 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	// Initializing vm keeper.
 	var err error
-	app.vmKeeper, err = vm.NewKeeper(
+	app.vmKeeper = vm.NewKeeper(
 		keys[vm.StoreKey],
 		app.cdc,
 		app.vmConn,
 		app.vmListener,
 		config,
 	)
-	if err != nil {
-		cmn.Exit(err.Error())
-	}
 
 	// Initializing multisignature manager.
 	app.mm = core.NewMsManager(

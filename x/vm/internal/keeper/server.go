@@ -26,15 +26,13 @@ func (*VMServer) MultiGetRaw(ctx context.Context, req *vm_grpc.DSAccessPaths) (*
 	return nil, status.Errorf(codes.Unimplemented, "method MultiGetRaw not implemented")
 }
 
-func StartServer(keeper Keeper) error {
+func StartServer(keeper Keeper) {
 	server := grpc.NewServer()
 	vm_grpc.RegisterDSServiceServer(server, &VMServer{
 		keeper: keeper,
 	})
 
 	if err := server.Serve(keeper.listener); err != nil {
-		return err
+		panic(err) // should not happen during running application, after start
 	}
-
-	return nil
 }
