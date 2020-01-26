@@ -20,12 +20,15 @@ const defaultConfigTemplate = `# This is a TOML config file to configurate conne
 
 ##### main base config options #####
 
-# VM network address to connect
+# VM network address to connect.
 vm_address = "{{ .Address }}"
 
-# VM deploy request timeout in milliseconds
-vm_deploy_timeout = {{ .DeployTimeout }}
-
-# VM data server listen address
+# VM data server listen address.
 vm_data_listen = "{{ .DataListen }}"
+
+# VM deploy request timeout in milliseconds.
+vm_deploy_timeout = {{ .TimeoutDeploy }}
+
+# VM execute contract request timeout in milliseconds.
+vm_execute_timeout = {{ .TimeoutExecute }}
 `

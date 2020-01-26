@@ -24,22 +24,25 @@ const (
 	ConfigDir               = "config"          // Default directory to store all configurations.
 	DefaultVMAddress        = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
 	DefaultDataListen       = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
-	DefaultVMRequestTimeout = 100               // Default timeout for deploy module request.
+	DefaultVMTimeoutDeploy  = 100               // Default timeout for deploy module request.
+	DefaultVMTimeoutExecute = 100               // Default timeout for execute request.
 )
 
 // Virtual machine connection config (see config/vm.toml).
 type VMConfig struct {
-	Address       string `mapstructure:"vm_address"`
-	DeployTimeout uint64 `mapstructure:"vm_deploy_timeout"`
-	DataListen    string `mapstructure:"vm_data_listen"`
+	Address        string `mapstructure:"vm_address"`
+	DataListen     string `mapstructure:"vm_data_listen"`
+	TimeoutDeploy  uint64 `mapstructure:"vm_timeout_deploy"`
+	TimeoutExecute uint64 `mapstructure:"vm_timeout_execute"`
 }
 
 // Default VM configuration.
 func DefaultVMConfig() *VMConfig {
 	return &VMConfig{
-		Address:       DefaultVMAddress,
-		DeployTimeout: DefaultVMRequestTimeout,
-		DataListen:    DefaultDataListen,
+		Address:        DefaultVMAddress,
+		DataListen:     DefaultDataListen,
+		TimeoutDeploy:  DefaultVMTimeoutDeploy,
+		TimeoutExecute: DefaultVMTimeoutExecute,
 	}
 }
 
