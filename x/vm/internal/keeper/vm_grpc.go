@@ -43,3 +43,18 @@ func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployContract) (*vm_grpc.VM
 		Options:   0,
 	}, nil
 }
+
+func NewExecuteRequest(ctx sdk.Context, msg types.MsgScriptContract) (*vm_grpc.VMExecuteRequest, sdk.Error) {
+	address := types.EncodeAddress(msg.Signer)
+	gas := GetFreeGas(ctx)
+
+	contract, err := NewContract(address, gas, msg.Contract, vm_grpc.ContractType_Script, []*vm_grpc.VMArgs{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &vm_grpc.VMExecuteRequest{
+		Contracts: []*vm_grpc.VMContract{contract},
+		Options:   0,
+	}, nil
+}

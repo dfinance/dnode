@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -19,10 +20,12 @@ type VMServer struct {
 }
 
 func (*VMServer) GetRaw(ctx context.Context, req *vm_grpc.DSAccessPath) (*vm_grpc.DSRawResponse, error) {
+	fmt.Println("get raw")
 	return nil, status.Errorf(codes.Unimplemented, "method GetRaw not implemented")
 }
 
 func (*VMServer) MultiGetRaw(ctx context.Context, req *vm_grpc.DSAccessPaths) (*vm_grpc.DSRawResponses, error) {
+	fmt.Println("multi get raw")
 	return nil, status.Errorf(codes.Unimplemented, "method MultiGetRaw not implemented")
 }
 

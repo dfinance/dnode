@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/go-amino"
 	"google.golang.org/grpc"
@@ -39,12 +40,28 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 
 // Execute script.
 func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgScriptContract) (sdk.Events, sdk.Error) {
+	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutExecute)
+	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	req, sdkErr := NewExecuteRequest(ctx, msg)
+	if sdkErr != nil {
+		return nil, sdkErr
+	}
+
+	resp, err := keeper.client.ExecuteContracts(connCtx, req)
+	if err != nil {
+		panic(types.NewErrVMCrashed(err))
+	}
+
+	fmt.Sprintf("resp %v", resp)
+
 	return sdk.Events{}, nil
 }
 
 // Deploy contract.
 func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployContract) (sdk.Events, sdk.Error) {
-	timeout := time.Millisecond * time.Duration(keeper.config.DeployTimeout)
+	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutDeploy)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

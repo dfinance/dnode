@@ -29,6 +29,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	txCmd.AddCommand(client.PostCommands(
 		DeployContract(cdc),
+		ExecuteScript(cdc),
 	)...)
 
 	return txCmd
