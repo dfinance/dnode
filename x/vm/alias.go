@@ -13,10 +13,10 @@ const (
 )
 
 type (
-	Keeper            = keeper.Keeper
-	MsgDeployContract = types.MsgDeployContract
-	MsgScriptContract = types.MsgScriptContract
-	ErrVMCrashed      = types.ErrVMCrashed
+	Keeper           = keeper.Keeper
+	MsgDeployModule  = types.MsgDeployModule
+	MsgExecuteScript = types.MsgExecuteScript
+	ErrVMCrashed     = types.ErrVMCrashed
 )
 
 var (

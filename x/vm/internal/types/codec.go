@@ -6,8 +6,8 @@ import (
 
 // Register concrete types on codec codec
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgDeployContract{}, ModuleName+"/MsgDeployContract", nil)
-	cdc.RegisterConcrete(MsgScriptContract{}, ModuleName+"/MsgScriptContract", nil)
+	cdc.RegisterConcrete(MsgDeployModule{}, ModuleName+"/MsgDeployModule", nil)
+	cdc.RegisterConcrete(MsgExecuteScript{}, ModuleName+"/MsgExecuteScript", nil)
 }
 
 // module codec

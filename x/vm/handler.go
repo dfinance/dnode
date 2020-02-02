@@ -9,10 +9,10 @@ import (
 func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
-		case MsgDeployContract:
+		case MsgDeployModule:
 			return handleMsgDeploy(ctx, keeper, msg)
 
-		case MsgScriptContract:
+		case MsgExecuteScript:
 			return handleMsgScript(ctx, keeper, msg)
 
 		default:
@@ -22,7 +22,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgScript(ctx sdk.Context, keeper Keeper, msg MsgScriptContract) sdk.Result {
+func handleMsgScript(ctx sdk.Context, keeper Keeper, msg MsgExecuteScript) sdk.Result {
 	events, err := keeper.ExecuteScript(ctx, msg)
 	if err != nil {
 		return err.Result()
@@ -33,7 +33,7 @@ func handleMsgScript(ctx sdk.Context, keeper Keeper, msg MsgScriptContract) sdk.
 	}
 }
 
-func handleMsgDeploy(ctx sdk.Context, keeper Keeper, msg MsgDeployContract) sdk.Result {
+func handleMsgDeploy(ctx sdk.Context, keeper Keeper, msg MsgDeployModule) sdk.Result {
 	events, err := keeper.DeployContract(ctx, msg)
 	if err != nil {
 		return err.Result()

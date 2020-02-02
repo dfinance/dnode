@@ -8,12 +8,12 @@ import (
 const (
 	CodeEmptyContractCode = 101
 
-	CodeCantConnectVM = 201
-	CodeErrDuringExec = 202
+	CodeErrDuringExec = 201
 
 	CodeErrWrongModuleAddress = 301
 	CodeErrModuleExists       = 302
 	CodeErrWrongAddressLength = 303
+	CodeErrWrongArgTypeTag    = 304
 )
 
 type ErrVMCrashed struct {
@@ -28,12 +28,8 @@ func ErrEmptyContract() sdk.Error {
 	return sdk.NewError(Codespace, CodeEmptyContractCode, "contract code is empty, please fill field with compiled contract bytes")
 }
 
-func ErrCantConnectVM(msg string) sdk.Error {
-	return sdk.NewError(Codespace, CodeCantConnectVM, "cant connect to vm instance: %s", msg)
-}
-
 func ErrDuringVMExec(msg string) sdk.Error {
-	return sdk.NewError(Codespace, CodeErrDuringExec, "cant execute contract: %s", msg)
+	return sdk.NewError(Codespace, CodeErrDuringExec, "can't execute contract: %s", msg)
 }
 
 func ErrWrongModuleAddress(expected, real sdk.AccAddress) sdk.Error {
@@ -46,4 +42,8 @@ func ErrModuleExists(address sdk.AccAddress, path []byte) sdk.Error {
 
 func ErrWrongAddressLength(address sdk.AccAddress) sdk.Error {
 	return sdk.NewError(Codespace, CodeErrWrongAddressLength, "address %s passed to vm has wrong length, it has length %d, but expected %d", address.String(), len(address), VmAddressLength)
+}
+
+func ErrWrongArgTypeTag(err error) sdk.Error {
+	return sdk.NewError(Codespace, CodeErrWrongArgTypeTag, "something wrong with argument type: %s", err.Error())
 }

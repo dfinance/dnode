@@ -3,50 +3,51 @@ package types
 import (
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 var (
-	MsgDeployContractType = ModuleName + "/MsgDeployContract"
-	MsgScriptContractType = ModuleName + "/MsgScriptContract"
+	MsgDeployModuleType  = ModuleName + "/MsgDeployModule"
+	MsgExecuteScriptType = ModuleName + "/MsgExecuteScript"
 
-	_ sdk.Msg = MsgDeployContract{}
-	_ sdk.Msg = MsgScriptContract{}
+	_ sdk.Msg = MsgDeployModule{}
+	_ sdk.Msg = MsgExecuteScript{}
 )
 
 // Message to deploy contract.
-type MsgDeployContract struct {
-	Signer   sdk.AccAddress `json:"signer"`
-	Contract Contract       `json:"contract"`
+type MsgDeployModule struct {
+	Signer sdk.AccAddress `json:"signer"`
+	Module Contract       `json:"module"`
 }
 
-func NewMsgDeployContract(signer sdk.AccAddress, contract Contract) MsgDeployContract {
-	return MsgDeployContract{
-		Signer:   signer,
-		Contract: contract,
+func NewMsgDeployModule(signer sdk.AccAddress, module Contract) MsgDeployModule {
+	return MsgDeployModule{
+		Signer: signer,
+		Module: module,
 	}
 }
 
-func (MsgDeployContract) Route() string {
+func (MsgDeployModule) Route() string {
 	return RouterKey
 }
 
-func (MsgDeployContract) Type() string {
+func (MsgDeployModule) Type() string {
 	return "deploy_contract"
 }
 
-func (msg MsgDeployContract) ValidateBasic() sdk.Error {
+func (msg MsgDeployModule) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress("deployer address is empty")
 	}
 
-	if len(msg.Contract) == 0 {
+	if len(msg.Module) == 0 {
 		return ErrEmptyContract()
 	}
 
 	return nil
 }
 
-func (msg MsgDeployContract) GetSignBytes() []byte {
+func (msg MsgDeployModule) GetSignBytes() []byte {
 	bc, err := json.Marshal(msg)
 	if err != nil {
 		panic(err)
@@ -55,44 +56,66 @@ func (msg MsgDeployContract) GetSignBytes() []byte {
 	return sdk.MustSortJSON(bc)
 }
 
-func (msg MsgDeployContract) GetSigners() []sdk.AccAddress {
+func (msg MsgDeployModule) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Signer}
 }
 
-// Message for contract script (execution).
-type MsgScriptContract struct {
-	Signer   sdk.AccAddress `json:"signer"`
-	Contract Contract       `json:"contract"`
+// Arguments to execute script.
+type ScriptArg struct {
+	Value string            `json:"value"`
+	Type  vm_grpc.VMTypeTag `json:"type"`
 }
 
-func NewMsgScriptContract(signer sdk.AccAddress, contract Contract) MsgScriptContract {
-	return MsgScriptContract{
-		Signer:   signer,
-		Contract: contract,
+// New ScriptArg from arguments.
+func NewScriptArg(value string, typeTag vm_grpc.VMTypeTag) ScriptArg {
+	return ScriptArg{
+		Value: value,
+		Type:  typeTag,
 	}
 }
 
-func (MsgScriptContract) Route() string {
+// Message for contract script (execution).
+type MsgExecuteScript struct {
+	Signer sdk.AccAddress `json:"signer"`
+	Script Contract       `json:"script"`
+	Args   []ScriptArg    `json:"args"`
+}
+
+func NewMsgExecuteScript(signer sdk.AccAddress, script Contract, args []ScriptArg) MsgExecuteScript {
+	return MsgExecuteScript{
+		Signer: signer,
+		Script: script,
+		Args:   args,
+	}
+}
+
+func (MsgExecuteScript) Route() string {
 	return RouterKey
 }
 
-func (MsgScriptContract) Type() string {
+func (MsgExecuteScript) Type() string {
 	return "script_contract"
 }
 
-func (msg MsgScriptContract) ValidateBasic() sdk.Error {
+func (msg MsgExecuteScript) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress("deployer address is empty")
 	}
 
-	if len(msg.Contract) == 0 {
+	if len(msg.Script) == 0 {
 		return ErrEmptyContract()
+	}
+
+	for _, val := range msg.Args {
+		if _, err := VMTypeToString(val.Type); err != nil {
+			return ErrWrongArgTypeTag(err)
+		}
 	}
 
 	return nil
 }
 
-func (msg MsgScriptContract) GetSignBytes() []byte {
+func (msg MsgExecuteScript) GetSignBytes() []byte {
 	bc, err := json.Marshal(msg)
 	if err != nil {
 		panic(err)
@@ -101,6 +124,6 @@ func (msg MsgScriptContract) GetSignBytes() []byte {
 	return sdk.MustSortJSON(bc)
 }
 
-func (msg MsgScriptContract) GetSigners() []sdk.AccAddress {
+func (msg MsgExecuteScript) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Signer}
 }

@@ -29,11 +29,11 @@ func NewContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, contractTy
 	}, nil
 }
 
-func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployContract) (*vm_grpc.VMExecuteRequest, sdk.Error) {
+func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMExecuteRequest, sdk.Error) {
 	address := types.EncodeAddress(msg.Signer)
 	gas := GetFreeGas(ctx)
 
-	contract, err := NewContract(address, gas, msg.Contract, vm_grpc.ContractType_Module, []*vm_grpc.VMArgs{})
+	contract, err := NewContract(address, gas, msg.Module, vm_grpc.ContractType_Module, []*vm_grpc.VMArgs{})
 	if err != nil {
 		return nil, err
 	}
@@ -44,11 +44,20 @@ func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployContract) (*vm_grpc.VM
 	}, nil
 }
 
-func NewExecuteRequest(ctx sdk.Context, msg types.MsgScriptContract) (*vm_grpc.VMExecuteRequest, sdk.Error) {
+func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteRequest, sdk.Error) {
 	address := types.EncodeAddress(msg.Signer)
 	gas := GetFreeGas(ctx)
 
-	contract, err := NewContract(address, gas, msg.Contract, vm_grpc.ContractType_Script, []*vm_grpc.VMArgs{})
+	args := make([]*vm_grpc.VMArgs, len(msg.Args))
+
+	for i, arg := range msg.Args {
+		args[i] = &vm_grpc.VMArgs{
+			Type:  arg.Type,
+			Value: arg.Value,
+		}
+	}
+
+	contract, err := NewContract(address, gas, msg.Script, vm_grpc.ContractType_Script, args)
 	if err != nil {
 		return nil, err
 	}
