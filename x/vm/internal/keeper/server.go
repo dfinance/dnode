@@ -5,6 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc"
 	"net"
+	"wings-blockchain/x/vm/internal/types"
 	"wings-blockchain/x/vm/internal/types/ds_grpc"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
@@ -34,7 +35,7 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 	}
 
 	if !server.keeper.hasValue(*server.ctx, path) {
-		// return missed value error
+		return nil, types.ErrDSMissedValue(*path)
 	}
 
 	blob := server.keeper.getValue(*server.ctx, path)
@@ -55,7 +56,7 @@ func (server DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths
 		}
 
 		if !server.keeper.hasValue(*server.ctx, path) {
-			// return missed value error
+			return nil, types.ErrDSMissedValue(*path)
 		}
 
 		blob := server.keeper.getValue(*server.ctx, path)

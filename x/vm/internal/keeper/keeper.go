@@ -40,7 +40,7 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 
 // Execute script.
 func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) (sdk.Events, sdk.Error) {
-	timeout := time.Minute * time.Duration(keeper.config.TimeoutExecute)
+	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutExecute)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

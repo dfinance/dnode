@@ -16,6 +16,8 @@ const (
 	CodeErrWrongAddressLength     = 303
 	CodeErrWrongArgTypeTag        = 304
 	CodeErrWrongExecutionResponse = 305
+
+	CodeErrDSMissedValue = 401
 )
 
 type ErrVMCrashed struct {
@@ -52,4 +54,8 @@ func ErrWrongAddressLength(address sdk.AccAddress) sdk.Error {
 
 func ErrWrongArgTypeTag(err error) sdk.Error {
 	return sdk.NewError(Codespace, CodeErrWrongArgTypeTag, "something wrong with argument type: %s", err.Error())
+}
+
+func ErrDSMissedValue(accessPath vm_grpc.VMAccessPath) sdk.Error {
+	return sdk.NewError(Codespace, CodeErrDSMissedValue, "value is missed in storage: %s", MakePathKey(accessPath))
 }
