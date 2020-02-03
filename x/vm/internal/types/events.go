@@ -42,6 +42,7 @@ func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
 		string(event.Key),
 		sdk.NewAttribute("sequence_number", strconv.FormatUint(event.SequenceNumber, 10)),
 		sdk.NewAttribute("type", VMTypeToStringPanic(event.Type.Tag)),
+		// TODO: parse event data?
 		sdk.NewAttribute("event_data", hex.EncodeToString(event.EventData)),
 	)
 }
