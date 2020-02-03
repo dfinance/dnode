@@ -32,7 +32,7 @@ func (MsgDeployModule) Route() string {
 }
 
 func (MsgDeployModule) Type() string {
-	return "deploy_contract"
+	return "deploy_module"
 }
 
 func (msg MsgDeployModule) ValidateBasic() sdk.Error {
@@ -94,7 +94,7 @@ func (MsgExecuteScript) Route() string {
 }
 
 func (MsgExecuteScript) Type() string {
-	return "script_contract"
+	return "execute_script"
 }
 
 func (msg MsgExecuteScript) ValidateBasic() sdk.Error {
