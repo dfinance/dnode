@@ -47,6 +47,9 @@ func (keeper Keeper) delValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 
 // Process result of VM module/script execution.
 func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteResponse) sdk.Events {
+	// consume gas, if execution took too much gas - panic and mark transaction as out of gas
+	ctx.GasMeter().ConsumeGas(exec.GasUsed, "vm script/module execution")
+
 	if exec.Status == vm_grpc.ContractStatus_Discard {
 		events := make(sdk.Events, 1)
 		// write event that status is discard and out.
