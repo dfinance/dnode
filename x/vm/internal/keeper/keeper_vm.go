@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	// Because of Keep/Discard
+	// Because of Keep/Discard.
 	ReservedEvents = 1
 )
 
@@ -47,9 +47,10 @@ func (keeper Keeper) delValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 
 // Process result of VM module/script execution.
 func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteResponse) sdk.Events {
-	// consume gas, if execution took too much gas - panic and mark transaction as out of gas
+	// consume gas, if execution took too much gas - panic and mark transaction as out of gas.
 	ctx.GasMeter().ConsumeGas(exec.GasUsed, "vm script/module execution")
 
+	// process status
 	if exec.Status == vm_grpc.ContractStatus_Discard {
 		events := make(sdk.Events, 1)
 		// write event that status is discard and out.
@@ -59,10 +60,10 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 		events := make(sdk.Events, len(exec.Events)+ReservedEvents)
 		events[0] = types.NewEventKeep()
 
-		// processing WriteSet
+		// processing write set.
 		keeper.processWriteSet(ctx, exec.WriteSet)
 
-		// processing events
+		// processing events.
 		for i, vmEvent := range exec.Events {
 			events[i+ReservedEvents] = types.NewEventFromVM(vmEvent)
 		}
@@ -74,12 +75,12 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 // Process write set of module/script execution.
 func (keeper Keeper) processWriteSet(ctx sdk.Context, writeSet []*vm_grpc.VMValue) {
 	for _, value := range writeSet {
-		// check type and solve what to do
+		// check type and solve what to do.
 		if value.Type == vm_grpc.VmWriteOp_Deletion {
-			// deleting key
+			// deleting key.
 			keeper.delValue(ctx, value.Path)
 		} else if value.Type == vm_grpc.VmWriteOp_Value {
-			// write to storage
+			// write to storage.
 			keeper.setValue(ctx, value.Path, value.Value)
 		} else {
 			// must not happens at all
