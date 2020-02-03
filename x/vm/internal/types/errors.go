@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/hex"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (
@@ -10,10 +11,11 @@ const (
 
 	CodeErrDuringExec = 201
 
-	CodeErrWrongModuleAddress = 301
-	CodeErrModuleExists       = 302
-	CodeErrWrongAddressLength = 303
-	CodeErrWrongArgTypeTag    = 304
+	CodeErrWrongModuleAddress     = 301
+	CodeErrModuleExists           = 302
+	CodeErrWrongAddressLength     = 303
+	CodeErrWrongArgTypeTag        = 304
+	CodeErrWrongExecutionResponse = 305
 )
 
 type ErrVMCrashed struct {
@@ -26,6 +28,10 @@ func NewErrVMCrashed(err error) ErrVMCrashed {
 
 func ErrEmptyContract() sdk.Error {
 	return sdk.NewError(Codespace, CodeEmptyContractCode, "contract code is empty, please fill field with compiled contract bytes")
+}
+
+func ErrWrongExecutionResponse(resp vm_grpc.VMExecuteResponses) sdk.Error {
+	return sdk.NewError(Codespace, CodeErrWrongExecutionResponse, "wrong execution response from vm: %v", resp)
 }
 
 func ErrDuringVMExec(msg string) sdk.Error {

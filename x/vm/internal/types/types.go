@@ -24,17 +24,17 @@ const (
 type Contract []byte
 
 var (
-	VMModuleType = []byte("module")
 	KeyDelimiter = []byte(":")
+	VMKey        = []byte("vm")
 
 	zeroBytes = make([]byte, 12)
 )
 
-func MakePathKey(path vm_grpc.VMAccessPath, resourceType []byte) []byte {
+func MakePathKey(path vm_grpc.VMAccessPath) []byte {
 	return bytes.Join(
 		[][]byte{
+			VMKey,
 			path.Address,
-			resourceType,
 			path.Path,
 		},
 		KeyDelimiter,
@@ -62,5 +62,13 @@ func VMTypeToString(tag vm_grpc.VMTypeTag) (string, error) {
 		return "", fmt.Errorf("can't find string representation of type %d, check correctness of type value", tag)
 	} else {
 		return val, nil
+	}
+}
+
+func VMTypeToStringPanic(tag vm_grpc.VMTypeTag) string {
+	if val, ok := vm_grpc.VMTypeTag_name[int32(tag)]; !ok {
+		panic(fmt.Errorf("can't find string representation of type %d, check correctness of type value", tag))
+	} else {
+		return val
 	}
 }

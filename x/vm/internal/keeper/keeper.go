@@ -1,9 +1,7 @@
 package keeper
 
 import (
-	"bytes"
 	"context"
-	"encoding/hex"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/go-amino"
 	"google.golang.org/grpc"
@@ -20,6 +18,7 @@ type Keeper struct {
 	client   vm_grpc.VMServiceClient // VM service client.
 	listener net.Listener            // VM data server listener.
 	config   *config.VMConfig        // VM config.
+	dsServer *DSServer               // Data-source server.
 }
 
 // Initialize VM keeper (include grpc client to VM and grpc server for data store).
@@ -32,28 +31,40 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 		config:   config,
 	}
 
-	go StartServer(keeper)
+	keeper.dsServer = NewDSServer(&keeper)
+
+	go StartServer(keeper.listener, keeper.dsServer)
 
 	return
 }
 
 // Execute script.
 func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) (sdk.Events, sdk.Error) {
-	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutExecute)
+	timeout := time.Minute * time.Duration(keeper.config.TimeoutExecute)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+
+	keeper.dsServer.SetContext(&ctx)
 
 	req, sdkErr := NewExecuteRequest(ctx, msg)
 	if sdkErr != nil {
 		return nil, sdkErr
 	}
 
-	_, err := keeper.client.ExecuteContracts(connCtx, req)
+	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		panic(types.NewErrVMCrashed(err))
 	}
 
-	return sdk.Events{}, nil
+	if len(resp.Executions) != 1 {
+		// error because execution amount during such transaction could be only one.
+		return nil, types.ErrWrongExecutionResponse(*resp)
+	}
+
+	exec := resp.Executions[0]
+	events := keeper.processExecution(ctx, exec)
+
+	return events, nil
 }
 
 // Deploy contract.
@@ -67,35 +78,20 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 		return nil, sdkErr
 	}
 
+	keeper.dsServer.SetContext(&ctx)
+
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		panic(types.NewErrVMCrashed(err))
 	}
 
-	events := make(sdk.Events, 0)
-
-	for i, exec := range resp.Executions {
-		// TODO: check status and return error in case of errors. Also gas, writeOp, etc.
-		for _, value := range exec.WriteSet {
-			path := value.GetPath()
-
-			if !bytes.Equal(req.Contracts[i].Address, path.Address) {
-				return nil, types.ErrWrongModuleAddress(req.Contracts[i].Address, path.Address)
-			}
-
-			if err := keeper.storeModule(ctx, *path, value.Value); err != nil {
-				return nil, err
-			}
-
-			event := sdk.NewEvent(
-				types.EventKeyDeploy,
-				sdk.NewAttribute("address", types.DecodeAddress(path.Address).String()),
-				sdk.NewAttribute("path", hex.EncodeToString(path.Path)),
-			)
-
-			events = append(events, event)
-		}
+	if len(resp.Executions) != 1 {
+		// error because execution amount during such transaction could be only one.
+		return nil, types.ErrWrongExecutionResponse(*resp)
 	}
+
+	exec := resp.Executions[0]
+	events := keeper.processExecution(ctx, exec)
 
 	return events, nil
 }

@@ -105,15 +105,9 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 				}
 			}
 
-			/*
-				 * If i uncomment this, everything fine, but otherwise no.
-				 * Because when i sign message from cli, it serialize JSON with empty array as [].
-				 * But when message broadcasted, it serialized into nil.
-				 * So signature is broken.
-				if len(scriptArgs) == 0 {
-					scriptArgs = nil
-				}
-			*/
+			if len(scriptArgs) == 0 {
+				scriptArgs = nil
+			}
 
 			msg := types.NewMsgExecuteScript(cliCtx.GetFromAddress(), code, scriptArgs)
 			if err := msg.ValidateBasic(); err != nil {
