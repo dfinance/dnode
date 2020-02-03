@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/hex"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"strconv"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
@@ -23,8 +24,8 @@ func NewEventDiscard(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
 	attributes := make([]sdk.Attribute, 0)
 
 	if errorStatus != nil {
-		attributes = append(attributes, sdk.NewAttribute("major_status", string(errorStatus.MajorStatus)))
-		attributes = append(attributes, sdk.NewAttribute("sub_status", string(errorStatus.SubStatus)))
+		attributes = append(attributes, sdk.NewAttribute("major_status", strconv.FormatUint(errorStatus.MajorStatus, 10)))
+		attributes = append(attributes, sdk.NewAttribute("sub_status", strconv.FormatUint(errorStatus.SubStatus, 10)))
 		attributes = append(attributes, sdk.NewAttribute("message", errorStatus.Message))
 	}
 
@@ -39,7 +40,7 @@ func NewEventDiscard(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
 func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
 	return sdk.NewEvent(
 		string(event.Key),
-		sdk.NewAttribute("sequence_number", string(event.SequenceNumber)),
+		sdk.NewAttribute("sequence_number", strconv.FormatUint(event.SequenceNumber, 10)),
 		sdk.NewAttribute("type", VMTypeToStringPanic(event.Type.Tag)),
 		sdk.NewAttribute("event_data", hex.EncodeToString(event.EventData)),
 	)

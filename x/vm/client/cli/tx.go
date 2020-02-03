@@ -64,7 +64,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "execute-script [mvFile] [arg1:type1,arg2:type2,...]",
 		Short: "execute Move script",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))

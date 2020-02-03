@@ -44,12 +44,12 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	keeper.dsServer.SetContext(&ctx)
-
 	req, sdkErr := NewExecuteRequest(ctx, msg)
 	if sdkErr != nil {
 		return nil, sdkErr
 	}
+
+	keeper.dsServer.SetContext(&ctx)
 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
