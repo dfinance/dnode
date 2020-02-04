@@ -7,6 +7,8 @@ import (
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
+// TODO: change listener logic to don't close it here?
+
 // Check storage set value functional.
 func TestSetValue(t *testing.T) {
 	input := setupTestInput()
