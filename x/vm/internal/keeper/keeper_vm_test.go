@@ -7,12 +7,11 @@ import (
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
-var (
-	input = setupTestInput()
-)
-
 // Check storage set value functional.
 func TestSetValue(t *testing.T) {
+	input := setupTestInput()
+	defer input.vk.listener.Close()
+
 	ap := &vm_grpc.VMAccessPath{
 		Address: input.addressBytes,
 		Path:    input.pathBytes,
@@ -29,6 +28,9 @@ func TestSetValue(t *testing.T) {
 
 // Check get value from storage functional.
 func TestGetValue(t *testing.T) {
+	input := setupTestInput()
+	defer input.vk.listener.Close()
+
 	ap := randomPath()
 	input.vk.setValue(input.ctx, ap, input.valueBytes)
 
@@ -44,7 +46,11 @@ func TestGetValue(t *testing.T) {
 
 // Check has value functional.
 func TestHasValue(t *testing.T) {
+	input := setupTestInput()
+	defer input.vk.listener.Close()
+
 	ap := randomPath()
+
 	input.vk.setValue(input.ctx, ap, input.valueBytes)
 
 	isExists := input.vk.hasValue(input.ctx, ap)
@@ -57,6 +63,9 @@ func TestHasValue(t *testing.T) {
 
 // Check deletion of key in storage.
 func TestDelValue(t *testing.T) {
+	input := setupTestInput()
+	defer input.vk.listener.Close()
+
 	var emptyBytes []byte
 
 	ap := randomPath()

@@ -1,12 +1,10 @@
 package keeper
 
-import (
-	"testing"
-)
+import "testing"
 
 //TODO: we should move connection to vm into app, and keep connection once wb started, so then later we can test things with vm in tests.
 // Test store module functional
-func TestStoreModule(t *testing.T) {
+func _TestStoreModule(t *testing.T) {
 	/*input := setupTestInput(t)
 
 	ap := vm_grpc.VMAccessPath{

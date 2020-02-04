@@ -72,11 +72,15 @@ func NewDSServer(keeper *Keeper) *DSServer {
 	}
 }
 
-func StartServer(listener net.Listener, dsServer *DSServer) {
+func StartServer(listener net.Listener, dsServer *DSServer) *grpc.Server {
 	server := grpc.NewServer()
 	ds_grpc.RegisterDSServiceServer(server, dsServer)
 
-	if err := server.Serve(listener); err != nil {
-		panic(err) // should not happen during running application, after start
-	}
+	go func() {
+		if err := server.Serve(listener); err != nil {
+			panic(err) // should not happen during running application, after start
+		}
+	}()
+
+	return server
 }

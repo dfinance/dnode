@@ -46,6 +46,8 @@ type testInput struct {
 	codeBytes    []byte
 	addressBytes []byte
 	valueBytes   []byte
+
+	rawServer grpc.Server
 }
 
 func randomPath() *vm_grpc.VMAccessPath {
@@ -121,8 +123,15 @@ func setupTestInput() testInput {
 		panic(err)
 	}
 
-	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
+	input.vk = Keeper{
+		cdc:      input.cdc,
+		storeKey: input.keyVM,
+		client:   vm_grpc.NewVMServiceClient(clientConn),
+		listener: listener,
+		config:   config,
+	}
 
+	input.vk.dsServer = NewDSServer(&input.vk)
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "wings-testnet-vm-keeper-test"}, false, log.NewNopLogger())
 
 	input.addressBytes, err = hex.DecodeString(accountHex)
