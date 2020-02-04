@@ -109,9 +109,9 @@ func (app *WbServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
 	var kpParams = keepalive.ClientParameters{
-		Time:                time.Millisecond, // send pings every 10 seconds if there is no activity
-		Timeout:             time.Millisecond, // wait 1 second for ping ack before considering the connection dead
-		PermitWithoutStream: true,             // send pings even without active streams
+		Time:                time.Second, // send pings every 10 seconds if there is no activity
+		Timeout:             time.Second, // wait 1 second for ping ack before considering the connection dead
+		PermitWithoutStream: true,        // send pings even without active streams
 	}
 
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))

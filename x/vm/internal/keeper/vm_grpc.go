@@ -7,10 +7,6 @@ import (
 )
 
 func GetFreeGas(ctx sdk.Context) sdk.Gas {
-	if ctx.GasMeter().Limit() <= ctx.GasMeter().GasConsumed() {
-		return 0
-	}
-
 	return ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumed()
 }
 

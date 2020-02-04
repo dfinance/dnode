@@ -32,7 +32,6 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 	}
 
 	keeper.dsServer = NewDSServer(&keeper)
-
 	go StartServer(keeper.listener, keeper.dsServer)
 
 	return
