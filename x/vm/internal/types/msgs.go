@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	MsgDeployModuleType  = ModuleName + "/MsgDeployModule"
-	MsgExecuteScriptType = ModuleName + "/MsgExecuteScript"
+	MsgDeployModuleType  = "deploy_module"
+	MsgExecuteScriptType = "execute_script"
 
 	_ sdk.Msg = MsgDeployModule{}
 	_ sdk.Msg = MsgExecuteScript{}
@@ -32,7 +32,7 @@ func (MsgDeployModule) Route() string {
 }
 
 func (MsgDeployModule) Type() string {
-	return "deploy_module"
+	return MsgDeployModuleType
 }
 
 func (msg MsgDeployModule) ValidateBasic() sdk.Error {
@@ -94,7 +94,7 @@ func (MsgExecuteScript) Route() string {
 }
 
 func (MsgExecuteScript) Type() string {
-	return "execute_script"
+	return MsgExecuteScriptType
 }
 
 func (msg MsgExecuteScript) ValidateBasic() sdk.Error {

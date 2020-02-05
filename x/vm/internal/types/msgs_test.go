@@ -1,10 +1,12 @@
 package types
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 func getMsgSignBytes(t *testing.T, msg sdk.Msg) []byte {
@@ -16,21 +18,23 @@ func getMsgSignBytes(t *testing.T, msg sdk.Msg) []byte {
 	return sdk.MustSortJSON(bc)
 }
 
-func TestMsgDeployContract(t *testing.T) {
+// Test MsgDeployModule.
+func TestMsgDeployModule(t *testing.T) {
 	t.Parallel()
 
 	acc := sdk.AccAddress([]byte("addr1"))
 	code := make(Contract, 128)
-	msg := NewMsgDeployContract(acc, code)
+	msg := NewMsgDeployModule(acc, code)
 
 	require.Equal(t, msg.Signer, acc)
-	require.Equal(t, msg.Contract, code)
+	require.Equal(t, msg.Module, code)
 	require.NoError(t, msg.ValidateBasic())
 	require.Equal(t, RouterKey, msg.Route())
+	require.Equal(t, MsgDeployModuleType, msg.Type())
 	require.Equal(t, msg.GetSigners(), []sdk.AccAddress{acc})
 	require.Equal(t, getMsgSignBytes(t, msg), msg.GetSignBytes())
 
-	msg = NewMsgDeployContract([]byte{}, code)
+	msg = NewMsgDeployModule([]byte{}, code)
 	require.Empty(t, msg.Signer)
 
 	err := msg.ValidateBasic()
@@ -38,11 +42,67 @@ func TestMsgDeployContract(t *testing.T) {
 	require.Equal(t, err.Code(), sdk.CodeInvalidAddress)
 	require.Equal(t, err.Codespace(), sdk.CodespaceRoot)
 
-	msg = NewMsgDeployContract(acc, Contract{})
-	require.Empty(t, msg.Contract)
+	msg = NewMsgDeployModule(acc, Contract{})
+	require.Empty(t, msg.Module)
 
 	err = msg.ValidateBasic()
 	require.Error(t, err)
 	require.Equal(t, err.Code(), sdk.CodeType(CodeEmptyContractCode))
 	require.Equal(t, err.Codespace(), Codespace)
+}
+
+// Test MsgExecuteScript.
+func TestMsgExecuteScript(t *testing.T) {
+	t.Parallel()
+
+	acc := sdk.AccAddress([]byte("addr1"))
+	code := make(Contract, 128)
+
+	args := make([]ScriptArg, 3)
+	args[0] = NewScriptArg("10", vm_grpc.VMTypeTag_U64)
+	args[1] = NewScriptArg("0x00", vm_grpc.VMTypeTag_ByteArray)
+	args[2] = NewScriptArg("0x"+hex.EncodeToString(EncodeAddress(acc)), vm_grpc.VMTypeTag_Address)
+
+	msg := NewMsgExecuteScript(acc, code, args)
+	require.Equal(t, msg.Signer, acc)
+	require.Equal(t, msg.Script, code)
+	require.NoError(t, msg.ValidateBasic())
+	require.Equal(t, RouterKey, msg.Route())
+	require.Equal(t, MsgExecuteScriptType, msg.Type())
+	require.Equal(t, msg.GetSigners(), []sdk.AccAddress{acc})
+	require.Equal(t, getMsgSignBytes(t, msg), msg.GetSignBytes())
+
+	require.EqualValues(t, msg.Args, args)
+
+	// message without signer
+	msg = NewMsgExecuteScript([]byte{}, code, nil)
+	require.Empty(t, msg.Signer)
+	require.Nil(t, msg.Args)
+
+	err := msg.ValidateBasic()
+	require.Error(t, err)
+	require.Equal(t, err.Code(), sdk.CodeInvalidAddress)
+	require.Equal(t, err.Codespace(), sdk.CodespaceRoot)
+
+	// message without args should be fine
+	msg = NewMsgExecuteScript(acc, code, nil)
+	require.NoError(t, msg.ValidateBasic())
+
+	// script without code
+	msg = NewMsgExecuteScript(acc, []byte{}, nil)
+	err = msg.ValidateBasic()
+	require.Error(t, err)
+	require.Equal(t, err.Code(), sdk.CodeType(CodeEmptyContractCode))
+	require.Equal(t, err.Codespace(), Codespace)
+}
+
+// Test new argument
+func TestNewScriptArg(t *testing.T) {
+	t.Parallel()
+
+	value := "100"
+	tagType := vm_grpc.VMTypeTag_U64
+	arg := NewScriptArg(value, tagType)
+	require.Equal(t, tagType, arg.Type)
+	require.Equal(t, value, arg.Value)
 }

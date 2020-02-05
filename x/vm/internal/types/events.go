@@ -1,3 +1,4 @@
+// Events types.
 package types
 
 import (
@@ -8,14 +9,23 @@ import (
 )
 
 const (
-	EventKeyDiscard = "discard"
-	EventKeyKeep    = "keep"
+	// Event types.
+	EventTypeDiscard = "discard"
+	EventTypeKeep    = "keep"
+
+	// Attributes keys
+	AttrKeyMajorStatus    = "major_status"
+	AttrKeySubStatus      = "sub_status"
+	AttrKeyMessage        = "message"
+	AttrKeySequenceNumber = "sequence_number"
+	AttrKeyType           = "type"
+	AttrKeyData           = "data"
 )
 
 // New event with keep status.
 func NewEventKeep() sdk.Event {
 	return sdk.NewEvent(
-		EventKeyKeep,
+		EventTypeKeep,
 	)
 }
 
@@ -24,13 +34,13 @@ func NewEventDiscard(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
 	attributes := make([]sdk.Attribute, 0)
 
 	if errorStatus != nil {
-		attributes = append(attributes, sdk.NewAttribute("major_status", strconv.FormatUint(errorStatus.MajorStatus, 10)))
-		attributes = append(attributes, sdk.NewAttribute("sub_status", strconv.FormatUint(errorStatus.SubStatus, 10)))
-		attributes = append(attributes, sdk.NewAttribute("message", errorStatus.Message))
+		attributes = append(attributes, sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10)))
+		attributes = append(attributes, sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10)))
+		attributes = append(attributes, sdk.NewAttribute(AttrKeyMessage, errorStatus.Message))
 	}
 
 	return sdk.NewEvent(
-		EventKeyDiscard,
+		EventTypeDiscard,
 		attributes...,
 	)
 }
@@ -40,9 +50,9 @@ func NewEventDiscard(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
 func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
 	return sdk.NewEvent(
 		string(event.Key),
-		sdk.NewAttribute("sequence_number", strconv.FormatUint(event.SequenceNumber, 10)),
-		sdk.NewAttribute("type", VMTypeToStringPanic(event.Type.Tag)),
+		sdk.NewAttribute(AttrKeySequenceNumber, strconv.FormatUint(event.SequenceNumber, 10)),
+		sdk.NewAttribute(AttrKeyType, VMTypeToStringPanic(event.Type.Tag)),
 		// TODO: parse event data?
-		sdk.NewAttribute("event_data", hex.EncodeToString(event.EventData)),
+		sdk.NewAttribute(AttrKeyData, "0x"+hex.EncodeToString(event.EventData)),
 	)
 }

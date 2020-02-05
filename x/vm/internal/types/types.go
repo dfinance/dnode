@@ -1,3 +1,4 @@
+// Basic constants and function to work with types.
 package types
 
 import (
@@ -43,10 +44,6 @@ func MakePathKey(path vm_grpc.VMAccessPath) []byte {
 
 func EncodeAddress(address types.AccAddress) []byte {
 	return append(address, zeroBytes...)
-}
-
-func DecodeAddress(address []byte) types.AccAddress {
-	return address[:types.AddrLen]
 }
 
 func GetVMTypeByString(typeTag string) (vm_grpc.VMTypeTag, error) {
