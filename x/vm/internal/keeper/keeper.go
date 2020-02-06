@@ -49,14 +49,15 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 		return nil, sdkErr
 	}
 
-	dumbGasMeter := core.NewDumbGasMeter()
-	dumbGasCtx := ctx.WithGasMeter(dumbGasMeter)
+	dumbGasCtx := ctx.WithGasMeter(core.NewDumbGasMeter())
 	keeper.dsServer.SetContext(&dumbGasCtx)
 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		panic(types.NewErrVMCrashed(err))
 	}
+
+	keeper.dsServer.SetContext(nil)
 
 	if len(resp.Executions) != 1 {
 		// error because execution amount during such transaction could be only one.
@@ -80,14 +81,15 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 		return nil, sdkErr
 	}
 
-	dumbGasMeter := core.NewDumbGasMeter()
-	dumbGasCtx := ctx.WithGasMeter(dumbGasMeter)
+	dumbGasCtx := ctx.WithGasMeter(core.NewDumbGasMeter())
 	keeper.dsServer.SetContext(&dumbGasCtx)
 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		panic(types.NewErrVMCrashed(err))
 	}
+
+	keeper.dsServer.SetContext(nil)
 
 	if len(resp.Executions) != 1 {
 		// error because execution amount during such transaction could be only one.
