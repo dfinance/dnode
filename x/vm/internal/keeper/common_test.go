@@ -153,3 +153,7 @@ func setupTestInput() testInput {
 
 	return input
 }
+
+func LaunchVMMock() {
+
+}

@@ -1,3 +1,4 @@
+// VM GRPC related functional.
 package keeper
 
 import (
@@ -6,10 +7,12 @@ import (
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
+// Get free gas from execution context.
 func GetFreeGas(ctx sdk.Context) sdk.Gas {
 	return ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumed()
 }
 
+// Create new contract in grpc format for VM request.
 func NewContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, contractType vm_grpc.ContractType, args []*vm_grpc.VMArgs) (*vm_grpc.VMContract, sdk.Error) {
 	if len(address) != types.VmAddressLength {
 		return nil, types.ErrWrongAddressLength(address)
@@ -25,6 +28,7 @@ func NewContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, contractTy
 	}, nil
 }
 
+// Create deploy request for VM grpc server.
 func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMExecuteRequest, sdk.Error) {
 	address := types.EncodeAddress(msg.Signer)
 	gas := GetFreeGas(ctx)
@@ -40,6 +44,7 @@ func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMEx
 	}, nil
 }
 
+// Create execute script request for VM grpc server.
 func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteRequest, sdk.Error) {
 	address := types.EncodeAddress(msg.Signer)
 	gas := GetFreeGas(ctx)

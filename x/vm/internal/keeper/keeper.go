@@ -66,7 +66,7 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 	return events, nil
 }
 
-// Deploy contract.
+// Deploy module.
 func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) (sdk.Events, sdk.Error) {
 	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutDeploy)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)

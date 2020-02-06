@@ -1,3 +1,4 @@
+// Implementation of Data Source (DS) server.
 package keeper
 
 import (
@@ -10,7 +11,7 @@ import (
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
-// check type.
+// Check type.
 var _ ds_grpc.DSServiceServer = &DSServer{}
 
 // Server to catch VM data client requests.
@@ -28,6 +29,7 @@ func (server *DSServer) SetContext(ctx *sdk.Context) {
 	server.ctx = ctx
 }
 
+// Data source processing request to return value from storage.
 func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds_grpc.DSRawResponse, error) {
 	path := &vm_grpc.VMAccessPath{
 		Address: req.Address,
@@ -44,6 +46,7 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 	}, nil
 }
 
+// Data source processing request to return multiplay values form storage.
 func (server DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths) (*ds_grpc.DSRawResponses, error) {
 	resps := &ds_grpc.DSRawResponses{
 		Blobs: make([][]byte, 0),
@@ -66,12 +69,14 @@ func (server DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths
 	return resps, nil
 }
 
+// Creating new DS server.
 func NewDSServer(keeper *Keeper) *DSServer {
 	return &DSServer{
 		keeper: keeper,
 	}
 }
 
+// Start DS server in go routine.
 func StartServer(listener net.Listener, dsServer *DSServer) *grpc.Server {
 	server := grpc.NewServer()
 	ds_grpc.RegisterDSServiceServer(server, dsServer)

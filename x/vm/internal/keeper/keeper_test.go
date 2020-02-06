@@ -2,6 +2,16 @@ package keeper
 
 import "testing"
 
+// Deploy script with mocked VM.
+func TestKeeper_DeployContractMock(t *testing.T) {
+
+}
+
+// Deploy script execute with mocked VM.
+func TestKeeper_ExecuteScriptMock(t *testing.T) {
+
+}
+
 //TODO: we should move connection to vm into app, and keep connection once wb started, so then later we can test things with vm in tests.
 // Test store module functional
 func _TestStoreModule(t *testing.T) {
