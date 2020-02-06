@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	// Because of Keep/Discard
+	// Because of Keep/Discard.
 	ReservedEvents = 1
 )
 
