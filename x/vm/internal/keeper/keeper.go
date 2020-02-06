@@ -8,6 +8,7 @@ import (
 	"net"
 	"time"
 	"wings-blockchain/cmd/config"
+	"wings-blockchain/x/core"
 	"wings-blockchain/x/vm/internal/types"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
@@ -48,7 +49,9 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 		return nil, sdkErr
 	}
 
-	keeper.dsServer.SetContext(&ctx)
+	dumbGasMeter := core.NewDumbGasMeter()
+	dumbGasCtx := ctx.WithGasMeter(dumbGasMeter)
+	keeper.dsServer.SetContext(&dumbGasCtx)
 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
@@ -77,7 +80,9 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 		return nil, sdkErr
 	}
 
-	keeper.dsServer.SetContext(&ctx)
+	dumbGasMeter := core.NewDumbGasMeter()
+	dumbGasCtx := ctx.WithGasMeter(dumbGasMeter)
+	keeper.dsServer.SetContext(&dumbGasCtx)
 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
