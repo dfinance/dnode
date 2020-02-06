@@ -1,36 +1,57 @@
 package keeper
 
-import "testing"
+import (
+	"encoding/hex"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+	"testing"
+	"wings-blockchain/x/vm/internal/types"
+)
+
+// TODO: different mock servers for different responses?
 
 // Deploy script with mocked VM.
 func TestKeeper_DeployContractMock(t *testing.T) {
+	input := setupTestInput()
+	defer closeInput(input)
 
+	acc := sdk.AccAddress(randomValue(20))
+
+	codeBytes, err := hex.DecodeString(moveCode)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	msg := types.NewMsgDeployModule(acc, codeBytes)
+
+	events, err := input.vk.DeployContract(input.ctx, msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	require.Len(t, events, 1)
+	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
 }
 
 // Deploy script execute with mocked VM.
 func TestKeeper_ExecuteScriptMock(t *testing.T) {
+	input := setupTestInput()
+	defer closeInput(input)
 
-}
+	acc := sdk.AccAddress(randomValue(20))
 
-//TODO: we should move connection to vm into app, and keep connection once wb started, so then later we can test things with vm in tests.
-// Test store module functional
-func _TestStoreModule(t *testing.T) {
-	/*input := setupTestInput(t)
+	codeBytes, err := hex.DecodeString(moveCode)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	ap := vm_grpc.VMAccessPath{
-		Address: input.addressBytes,
-		Path:    input.pathBytes,
-	}*/
+	msg := types.NewMsgExecuteScript(acc, codeBytes, nil)
 
-	/*
-		// check if store methods works
-		require.NoError(t, input.vk.storeModule(input.ctx, ap, input.codeBytes))
-		require.True(t, input.vk.hasModule(input.ctx, ap))
+	events, err := input.vk.ExecuteScript(input.ctx, msg)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		// check double storing same module
-		err := input.vk.storeModule(input.ctx, ap, input.codeBytes)
-		require.Error(t, err)
-		require.Equal(t, err.Codespace(), types.Codespace)
-		require.Equal(t, err.Code(), sdk.CodeType(types.CodeErrModuleExists))
-	*/
+	require.Len(t, events, 2)
+	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
 }

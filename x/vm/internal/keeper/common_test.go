@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"encoding/hex"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -27,6 +28,10 @@ const (
 	value      = "68656c6c6f2c20776f726c6421"
 )
 
+type VMServer struct {
+	vm_grpc.UnimplementedVMServiceServer
+}
+
 type testInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
@@ -47,7 +52,9 @@ type testInput struct {
 	addressBytes []byte
 	valueBytes   []byte
 
-	rawServer grpc.Server
+	rawServer   *grpc.Server
+	rawVMServer *grpc.Server
+	vmServer    *VMServer
 }
 
 func randomPath() *vm_grpc.VMAccessPath {
@@ -66,6 +73,17 @@ func randomValue(len int) []byte {
 	}
 
 	return rndBytes
+}
+
+func closeInput(input testInput) {
+	input.vk.listener.Close()
+	if input.rawServer != nil {
+		input.rawServer.Stop()
+	}
+
+	if input.rawVMServer != nil {
+		input.rawVMServer.Stop()
+	}
 }
 
 func setupTestInput() testInput {
@@ -95,6 +113,8 @@ func setupTestInput() testInput {
 	if err != nil {
 		panic(err)
 	}
+
+	input.vmServer, input.rawVMServer = LaunchVMMock()
 
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams, params.DefaultCodespace)
 	input.ak = auth.NewAccountKeeper(
@@ -154,6 +174,83 @@ func setupTestInput() testInput {
 	return input
 }
 
-func LaunchVMMock() {
+func (server VMServer) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExecuteRequest) (*vm_grpc.VMExecuteResponses, error) {
+	// execute module
+	resps := &vm_grpc.VMExecuteResponses{
+		Executions: make([]*vm_grpc.VMExecuteResponse, len(req.Contracts)),
+	}
 
+	for i, contract := range req.Contracts {
+		if contract.ContractType == vm_grpc.ContractType_Module {
+			// process module
+			values := make([]*vm_grpc.VMValue, 1)
+			values[0] = &vm_grpc.VMValue{
+				Type:  vm_grpc.VmWriteOp_Value,
+				Value: randomValue(512),
+				Path:  randomPath(),
+			}
+
+			resps.Executions[i] = &vm_grpc.VMExecuteResponse{
+				WriteSet: values,
+				Events:   nil,
+				GasUsed:  10000,
+				Status:   vm_grpc.ContractStatus_Keep,
+			}
+		} else if contract.ContractType == vm_grpc.ContractType_Script {
+			// process script
+			values := make([]*vm_grpc.VMValue, 2)
+			values[0] = &vm_grpc.VMValue{
+				Type:  vm_grpc.VmWriteOp_Value,
+				Value: randomValue(8),
+				Path:  randomPath(),
+			}
+			values[1] = &vm_grpc.VMValue{
+				Type:  vm_grpc.VmWriteOp_Value,
+				Value: randomValue(32),
+				Path:  randomPath(),
+			}
+
+			events := make([]*vm_grpc.VMEvent, 1)
+			events[0] = &vm_grpc.VMEvent{
+				Key:            []byte("test event"),
+				SequenceNumber: 0,
+				Type: &vm_grpc.VMType{
+					Tag: vm_grpc.VMTypeTag_ByteArray,
+				},
+				EventData: randomValue(32),
+			}
+
+			resps.Executions[i] = &vm_grpc.VMExecuteResponse{
+				WriteSet: values,
+				Events:   events,
+				GasUsed:  10000,
+				Status:   vm_grpc.ContractStatus_Keep,
+			}
+		} else {
+			panic("wrong contract type")
+		}
+	}
+
+	return resps, nil
+}
+
+func LaunchVMMock() (*VMServer, *grpc.Server) {
+	config := vmConfig.DefaultVMConfig()
+
+	dsListener, err := net.Listen("tcp", config.Address)
+	if err != nil {
+		panic(err)
+	}
+
+	vmServer := VMServer{}
+	server := grpc.NewServer()
+	vm_grpc.RegisterVMServiceServer(server, vmServer)
+
+	go func() {
+		if err := server.Serve(dsListener); err != nil {
+			panic(err)
+		}
+	}()
+
+	return &vmServer, server
 }

@@ -12,7 +12,7 @@ import (
 )
 
 // Check type.
-var _ ds_grpc.DSServiceServer = &DSServer{}
+var _ ds_grpc.DSServiceServer = DSServer{}
 
 // Server to catch VM data client requests.
 type DSServer struct {

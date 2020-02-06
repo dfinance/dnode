@@ -15,7 +15,7 @@ import (
 // Check storage set value functional.
 func TestSetValue(t *testing.T) {
 	input := setupTestInput()
-	defer input.vk.listener.Close()
+	defer closeInput(input)
 
 	ap := &vm_grpc.VMAccessPath{
 		Address: input.addressBytes,
@@ -34,7 +34,7 @@ func TestSetValue(t *testing.T) {
 // Check get value from storage functional.
 func TestGetValue(t *testing.T) {
 	input := setupTestInput()
-	defer input.vk.listener.Close()
+	defer closeInput(input)
 
 	ap := randomPath()
 	input.vk.setValue(input.ctx, ap, input.valueBytes)
@@ -52,7 +52,7 @@ func TestGetValue(t *testing.T) {
 // Check has value functional.
 func TestHasValue(t *testing.T) {
 	input := setupTestInput()
-	defer input.vk.listener.Close()
+	defer closeInput(input)
 
 	ap := randomPath()
 
@@ -69,7 +69,7 @@ func TestHasValue(t *testing.T) {
 // Check deletion of key in storage.
 func TestDelValue(t *testing.T) {
 	input := setupTestInput()
-	defer input.vk.listener.Close()
+	defer closeInput(input)
 
 	var emptyBytes []byte
 
@@ -95,7 +95,7 @@ func TestDelValue(t *testing.T) {
 func TestProcessExecution(t *testing.T) {
 	// ignoring gas for now.
 	input := setupTestInput()
-	defer input.vk.listener.Close()
+	defer closeInput(input)
 
 	resp := &vm_grpc.VMExecuteResponse{
 		Status: vm_grpc.ContractStatus_Discard,
@@ -222,7 +222,7 @@ func TestProcessExecution(t *testing.T) {
 // Check returned write set procession.
 func TestProcessWriteSet(t *testing.T) {
 	input := setupTestInput()
-	defer input.vk.listener.Close()
+	defer closeInput(input)
 
 	writeSet := make([]*vm_grpc.VMValue, 2)
 	writeSet[0] = &vm_grpc.VMValue{

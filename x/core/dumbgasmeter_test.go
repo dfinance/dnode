@@ -16,4 +16,6 @@ func TestNewDumbGasMeter(t *testing.T) {
 
 	gasMeter.ConsumeGas(100, "test")
 	require.Zero(t, gasMeter.GasConsumed())
+	require.False(t, gasMeter.IsPastLimit())
+	require.False(t, gasMeter.IsOutOfGas())
 }

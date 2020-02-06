@@ -25,7 +25,7 @@ func getClient(t *testing.T) ds_grpc.DSServiceClient {
 // Test set context for server.
 func TestDSServer_SetContext(t *testing.T) {
 	input := setupTestInput()
-	defer input.vk.listener.Close()
+	defer closeInput(input)
 
 	require.Nil(t, input.vk.dsServer.ctx)
 
@@ -36,6 +36,8 @@ func TestDSServer_SetContext(t *testing.T) {
 // Test get raw data from server.
 func TestDSServer_GetRaw(t *testing.T) {
 	input := setupTestInput()
+	defer closeInput(input)
+
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)
 	defer rawServer.Stop()
 
@@ -64,6 +66,8 @@ func TestDSServer_GetRaw(t *testing.T) {
 // Test get multiraw data from server.
 func TestDSServer_MultiGetRaw(t *testing.T) {
 	input := setupTestInput()
+	defer closeInput(input)
+
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)
 	defer rawServer.Stop()
 
