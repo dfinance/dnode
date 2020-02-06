@@ -1,3 +1,4 @@
+// VM keeper processing messages from handler.
 package keeper
 
 import (
@@ -13,6 +14,7 @@ import (
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
+// VM keeper.
 type Keeper struct {
 	cdc      *amino.Codec            // Amino codec.
 	storeKey sdk.StoreKey            // Store key.
