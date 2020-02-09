@@ -34,7 +34,7 @@ const (
 	DefaultMockVMTimeoutExecute = 100               // Default timeout for execute request.
 
 	FlagVMMockAddress = "vm.mock.address"
-	FlagDSMockListen  = "vm.mock.ds"
+	FlagDSMockListen  = "ds.mock.listen"
 
 	FlagVMAddress = "vm.address"
 	FlagDSListen  = "ds.listen"
