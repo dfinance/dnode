@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/hex"
+	"flag"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,6 +32,12 @@ const (
 	DefaultMockDataListen       = "127.0.0.1:60052" // Default data server address to listen for connections from VM.
 	DefaultMockVMTimeoutDeploy  = 100               // Default timeout for deploy module request.
 	DefaultMockVMTimeoutExecute = 100               // Default timeout for execute request.
+
+	FlagVMMockAddress = "vm.mock.address"
+	FlagDSMockListen  = "vm.mock.ds"
+
+	FlagVMAddress = "vm.address"
+	FlagDSListen  = "ds.listen"
 )
 
 type VMServer struct {
@@ -62,13 +69,47 @@ type testInput struct {
 	vmServer    *VMServer
 }
 
+var (
+	vmMockAddress  *string
+	dataListenMock *string
+
+	vmAddress *string
+	dsListen  *string
+)
+
+func init() {
+	if flag.Lookup(FlagVMAddress) == nil {
+		vmAddress = flag.String(FlagVMAddress, vmConfig.DefaultVMAddress, "Move VM address to connect during unit tests")
+	}
+
+	if flag.Lookup(FlagDSListen) == nil {
+		dsListen = flag.String(FlagDSListen, vmConfig.DefaultDataListen, "address to listen of Data Server (DS) during unit tests")
+	}
+
+	if flag.Lookup(FlagVMMockAddress) == nil {
+		vmMockAddress = flag.String(FlagVMMockAddress, DefaultMockVMAddress, "mocked address of virtual machine server client/server")
+	}
+
+	if flag.Lookup(FlagDSMockListen) == nil {
+		dataListenMock = flag.String(FlagDSMockListen, DefaultMockDataListen, "address of mocked data server to launch/connect")
+	}
+}
+
 func MockVMConfig() *vmConfig.VMConfig {
 	return &vmConfig.VMConfig{
-		Address:        DefaultMockVMAddress,
-		DataListen:     DefaultMockDataListen,
+		Address:        *vmMockAddress,
+		DataListen:     *dataListenMock,
 		TimeoutDeploy:  DefaultMockVMTimeoutDeploy,
 		TimeoutExecute: DefaultMockVMTimeoutExecute,
 	}
+}
+
+func VMConfigWithFlags() *vmConfig.VMConfig {
+	config := vmConfig.DefaultVMConfig()
+	config.Address = *vmAddress
+	config.DataListen = *dsListen
+
+	return config
 }
 
 func randomPath() *vm_grpc.VMAccessPath {
@@ -143,7 +184,7 @@ func setupTestInput(launchMock bool) testInput {
 	if launchMock {
 		config = MockVMConfig()
 	} else {
-		config = vmConfig.DefaultVMConfig()
+		config = VMConfigWithFlags()
 	}
 
 	var kpParams = keepalive.ClientParameters{
