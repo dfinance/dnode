@@ -5,14 +5,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"testing"
-	"wings-blockchain/cmd/config"
 	"wings-blockchain/x/vm/internal/types/ds_grpc"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 // Initialize connection to DS server.
 func getClient(t *testing.T) ds_grpc.DSServiceClient {
-	config := config.DefaultVMConfig()
+	config := MockVMConfig()
 
 	dsConn, err := grpc.Dial(config.DataListen, grpc.WithInsecure())
 	if err != nil {
@@ -24,7 +23,7 @@ func getClient(t *testing.T) ds_grpc.DSServiceClient {
 
 // Test set context for server.
 func TestDSServer_SetContext(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	require.Nil(t, input.vk.dsServer.ctx)
@@ -35,7 +34,7 @@ func TestDSServer_SetContext(t *testing.T) {
 
 // Test get raw data from server.
 func TestDSServer_GetRaw(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)
@@ -65,7 +64,7 @@ func TestDSServer_GetRaw(t *testing.T) {
 
 // Test get multiraw data from server.
 func TestDSServer_MultiGetRaw(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)

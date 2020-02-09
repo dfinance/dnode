@@ -12,7 +12,7 @@ import (
 
 // Deploy script with mocked VM.
 func TestKeeper_DeployContractMock(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	acc := sdk.AccAddress(randomValue(20))
@@ -35,7 +35,7 @@ func TestKeeper_DeployContractMock(t *testing.T) {
 
 // Deploy script execute with mocked VM.
 func TestKeeper_ExecuteScriptMock(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	acc := sdk.AccAddress(randomValue(20))

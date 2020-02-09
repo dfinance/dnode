@@ -14,7 +14,7 @@ import (
 
 // Check storage set value functional.
 func TestSetValue(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	ap := &vm_grpc.VMAccessPath{
@@ -33,7 +33,7 @@ func TestSetValue(t *testing.T) {
 
 // Check get value from storage functional.
 func TestGetValue(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	ap := randomPath()
@@ -51,7 +51,7 @@ func TestGetValue(t *testing.T) {
 
 // Check has value functional.
 func TestHasValue(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	ap := randomPath()
@@ -68,7 +68,7 @@ func TestHasValue(t *testing.T) {
 
 // Check deletion of key in storage.
 func TestDelValue(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	var emptyBytes []byte
@@ -94,7 +94,7 @@ func TestDelValue(t *testing.T) {
 // Check process execution (response from VM) functional.
 func TestProcessExecution(t *testing.T) {
 	// ignoring gas for now.
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	resp := &vm_grpc.VMExecuteResponse{
@@ -221,7 +221,7 @@ func TestProcessExecution(t *testing.T) {
 
 // Check returned write set procession.
 func TestProcessWriteSet(t *testing.T) {
-	input := setupTestInput()
+	input := setupTestInput(true)
 	defer closeInput(input)
 
 	writeSet := make([]*vm_grpc.VMValue, 2)

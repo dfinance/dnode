@@ -100,7 +100,7 @@ func closeInput(input testInput) {
 	}
 }
 
-func setupTestInput() testInput {
+func setupTestInput(launchMock bool) testInput {
 	input := testInput{
 		cdc:        codec.New(),
 		keyMain:    sdk.NewKVStoreKey("main"),
@@ -138,7 +138,13 @@ func setupTestInput() testInput {
 		auth.ProtoBaseAccount,
 	)
 
-	config := vmConfig.DefaultVMConfig()
+	var config *vmConfig.VMConfig
+
+	if launchMock {
+		config = MockVMConfig()
+	} else {
+		config = vmConfig.DefaultVMConfig()
+	}
 
 	var kpParams = keepalive.ClientParameters{
 		Time:                time.Second,
@@ -249,7 +255,7 @@ func (server VMServer) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExec
 }
 
 func LaunchVMMock() (*VMServer, *grpc.Server) {
-	config := vmConfig.DefaultVMConfig()
+	config := MockVMConfig()
 
 	dsListener, err := net.Listen("tcp", config.Address)
 	if err != nil {
