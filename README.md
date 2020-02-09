@@ -345,7 +345,8 @@ And (status discard, when execution/deploy failed):
 Currently compilation not available from WB, only by using libra directly.
 Possible way is to clone repo and compile module/script so:
 
-    git@github.com:WingsDao/libra.git
+    git clone git@github.com:WingsDao/libra.git
+    cd libra
     cargo run --bin compiler -- script.mvir 
     cargo run --bin compiler -- -m module.mvir
 
