@@ -141,7 +141,7 @@ To make sure that genesis file is correct:
 
     wbd validate-genesis
 
-If you want to change VM settings, look at VM section.
+If you want to change VM settings, look at [VM section](#configuration).
 
 Now we are ready to launch testnet:
 
@@ -341,6 +341,15 @@ And (status discard, when execution/deploy failed):
 ```
 
 ### Compilation
+
+Currently compilation not available from WB, only by using libra directly.
+Possible way is to clone repo and compile module/script so:
+
+    git@github.com:WingsDao/libra.git
+    cargo run --bin compiler -- script.mvir 
+    cargo run --bin compiler -- -m module.mvir
+
+In neat future WB will support compilation via CLI.
 
 ### Configuration
 
