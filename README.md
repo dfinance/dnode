@@ -394,7 +394,7 @@ During standard launch of tests:
 VM will use default configuration for integration tests (with connection to VM),
 and with unit tests (using Mock servers), standard configuration looks so:
 
-```
+```go
 // Mocks
 DefaultMockVMAddress        = "127.0.0.1:60051" // Default virtual machine address to connect from Cosmos SDK.
 DefaultMockDataListen       = "127.0.0.1:60052" // Default data server address to listen for connections from VM.
