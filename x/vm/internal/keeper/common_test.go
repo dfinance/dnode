@@ -13,10 +13,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 	"math/rand"
 	"net"
-	"time"
 	vmConfig "wings-blockchain/cmd/config"
 	"wings-blockchain/x/vm/internal/types"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
@@ -169,7 +167,9 @@ func setupTestInput(launchMock bool) testInput {
 		panic(err)
 	}
 
-	input.vmServer, input.rawVMServer = LaunchVMMock()
+	if launchMock {
+		input.vmServer, input.rawVMServer = LaunchVMMock()
+	}
 
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams, params.DefaultCodespace)
 	input.ak = auth.NewAccountKeeper(
@@ -187,19 +187,13 @@ func setupTestInput(launchMock bool) testInput {
 		config = VMConfigWithFlags()
 	}
 
-	var kpParams = keepalive.ClientParameters{
-		Time:                time.Second,
-		Timeout:             time.Second,
-		PermitWithoutStream: true,
-	}
-
-	// no blocking, so we can launch part of tests even without vm
-	clientConn, err := grpc.Dial(config.Address, grpc.WithInsecure(), grpc.WithKeepaliveParams(kpParams))
+	listener, err := net.Listen("tcp", config.DataListen)
 	if err != nil {
 		panic(err)
 	}
 
-	listener, err := net.Listen("tcp", config.DataListen)
+	// no blocking, so we can launch part of tests even without vm
+	clientConn, err := grpc.Dial(config.Address, grpc.WithInsecure())
 	if err != nil {
 		panic(err)
 	}
