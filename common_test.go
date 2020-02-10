@@ -17,6 +17,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"wings-blockchain/x/oracle"
 	poaTypes "wings-blockchain/x/poa/types"
 )
 
@@ -107,17 +108,21 @@ func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.
 		acc := genaccounts.NewGenesisAccount(_acc)
 		accounts[idx] = acc
 	}
-	genesisState["accounts"] = codec.MustMarshalJSONIndent(app.cdc, accounts)
+	genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, accounts)
 
 	validators := make(poaTypes.Validators, len(accs))
 	for idx, _acc := range accs {
 		validators[idx] = poaTypes.Validator{Address: _acc.Address, EthAddress: "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615"}
 	}
-
-	genesisState["poa"] = codec.MustMarshalJSONIndent(app.cdc, poaTypes.GenesisState{
+	genesisState[poaTypes.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, poaTypes.GenesisState{
 		Parameters:    poaTypes.DefaultParams(),
 		PoAValidators: validators,
 	})
+
+	var oracles oracle.GenesisState
+	require.NoError(t, app.cdc.UnmarshalJSON(genesisState[oracle.ModuleName], &oracles))
+	oracles.Params.Nominees = []string{accs[0].Address.String()}
+	genesisState[oracle.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, oracles)
 
 	stateBytes := codec.MustMarshalJSONIndent(app.cdc, genesisState)
 	// Initialize the chain

@@ -1,10 +1,13 @@
 package main
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/version"
 	"os"
 	"path"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/version"
+	amino "github.com/tendermint/go-amino"
+
 	wbConfig "wings-blockchain/cmd/config"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -13,13 +16,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
+
 	app "wings-blockchain"
+	"wings-blockchain/x/oracle"
+	oraclerest "wings-blockchain/x/oracle/client/rest"
 )
 
 // Entry function for WB CLI.
@@ -68,6 +73,7 @@ func main() {
 func registerRoutes(rs *lcd.RestServer) {
 	client.RegisterRoutes(rs.CliCtx, rs.Mux)
 	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
+	oraclerest.RegisterRoutes(rs.CliCtx, rs.Mux, oracle.StoreKey)
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 }
 

@@ -2,6 +2,12 @@ package app
 
 import (
 	"encoding/json"
+	"os"
+	"wings-blockchain/x/core"
+	"wings-blockchain/x/currencies"
+	"wings-blockchain/x/multisig"
+	"wings-blockchain/x/oracle"
+
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
@@ -10,10 +16,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"os"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/currencies"
-	"wings-blockchain/x/multisig"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -57,6 +59,7 @@ var (
 		poa.AppModuleBasic{},
 		currencies.AppModuleBasic{},
 		multisig.AppModuleBasic{},
+		oracle.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{

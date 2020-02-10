@@ -143,7 +143,7 @@ func (keeper Keeper) getNextCallId(ctx sdk.Context) uint64 {
 		panic(err)
 	}
 
-	id += 1
+	id++
 
 	return id
 }

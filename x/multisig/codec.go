@@ -3,6 +3,7 @@ package multisig
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
+
 	"wings-blockchain/x/core"
 	"wings-blockchain/x/multisig/msgs"
 )

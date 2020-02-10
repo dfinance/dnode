@@ -263,6 +263,30 @@ func Test_POAValidatorsReplace(t *testing.T) {
 	require.Equal(t, len(genValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
 }
 
+func Test_OracleAdd(t *testing.T) {
+	t.Parallel()
+
+	// app := newTestWbApp()
+	// genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	// require.NoError(t, err)
+	// genAccs, addrs, _, privKeys := CreateGenAccounts(7, genCoins)
+	// _, err = setGenesis(t, app, genAccs)
+	// require.NoError(t, err)
+	//
+	// newOracleAcc, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
+	// msg := oracle.MsgAddOracle{
+	// 	Oracle:  newOracleAcc,
+	// 	Nominee: addrs[0],
+	// 	Denom:   "wb2test",
+	// }
+	// tx := genTx([]sdk.Msg{msg}, []uint64{genAccs[0].GetAccountNumber()}, []uint64{genAccs[0].GetSequence()}, privKeys[0])
+	// app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
+	// CheckDeliverTx(t, app, tx)
+	// app.EndBlock(abci.RequestEndBlock{})
+	// app.Commit()
+
+}
+
 func issueCurrencyCheck(t *testing.T, app *WbServiceApp, msgID string, msg msgs.MsgIssueCurrency, recipient sdk.AccAddress,
 	genAccs []*auth.BaseAccount, addrs []sdk.AccAddress, privKeys []crypto.PrivKey) {
 
