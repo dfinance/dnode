@@ -1,3 +1,5 @@
+// +build integ
+
 package keeper
 
 import (
@@ -37,5 +39,4 @@ func TestKeeper_DeployContract(t *testing.T) {
 
 // Test execute script with real VM.
 func TestKeeper_ExecuteScript(t *testing.T) {
-
 }

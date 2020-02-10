@@ -16,28 +16,45 @@ import (
 
 // VM keeper.
 type Keeper struct {
-	cdc      *amino.Codec            // Amino codec.
-	storeKey sdk.StoreKey            // Store key.
-	client   vm_grpc.VMServiceClient // VM service client.
-	listener net.Listener            // VM data server listener.
-	config   *config.VMConfig        // VM config.
-	dsServer *DSServer               // Data-source server.
+	cdc      *amino.Codec // Amino codec.
+	storeKey sdk.StoreKey // Store key.
+
+	client    vm_grpc.VMServiceClient // VM service client.
+	listener  net.Listener            // VM data server listener.
+	rawClient *grpc.ClientConn        // GRPC connection to VM.
+
+	config *config.VMConfig // VM config.
+
+	dsServer    *DSServer    // Data-source server.
+	rawDSServer *grpc.Server // GRPC raw server.
 }
 
 // Initialize VM keeper (include grpc client to VM and grpc server for data store).
 func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, listener net.Listener, config *config.VMConfig) (keeper Keeper) {
 	keeper = Keeper{
-		cdc:      cdc,
-		storeKey: storeKey,
-		client:   vm_grpc.NewVMServiceClient(conn),
-		listener: listener,
-		config:   config,
+		cdc:       cdc,
+		storeKey:  storeKey,
+		rawClient: conn,
+		client:    vm_grpc.NewVMServiceClient(conn),
+		listener:  listener,
+		config:    config,
 	}
 
 	keeper.dsServer = NewDSServer(&keeper)
-	StartServer(keeper.listener, keeper.dsServer)
+	keeper.rawDSServer = StartServer(keeper.listener, keeper.dsServer)
 
 	return
+}
+
+// Stop DS server and close connection to VM.
+func (keeper Keeper) CloseConnections() {
+	if keeper.rawDSServer != nil {
+		keeper.rawDSServer.Stop()
+	}
+
+	if keeper.rawClient != nil {
+		keeper.rawClient.Close()
+	}
 }
 
 // Execute script.

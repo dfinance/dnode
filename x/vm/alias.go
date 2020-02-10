@@ -3,6 +3,7 @@ package vm
 import (
 	"wings-blockchain/x/vm/internal/keeper"
 	"wings-blockchain/x/vm/internal/types"
+	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (
@@ -17,8 +18,12 @@ type (
 	MsgDeployModule  = types.MsgDeployModule
 	MsgExecuteScript = types.MsgExecuteScript
 	ErrVMCrashed     = types.ErrVMCrashed
+
+	VMServer                     = vm_grpc.VMServiceServer
+	UnimplementedVMServiceServer = vm_grpc.UnimplementedVMServiceServer
 )
 
 var (
-	NewKeeper = keeper.NewKeeper
+	NewKeeper               = keeper.NewKeeper
+	RegisterVMServiceServer = vm_grpc.RegisterVMServiceServer
 )

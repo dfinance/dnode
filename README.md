@@ -425,6 +425,9 @@ To launch tests **ONLY** related to VM:
 To launch tests run: 
 
     GO111MODULE=on go test ./...
+    
+    And with integration tests:
+    GO111MODULE=on go test ./... --tags integ
 
 # Contributors
 

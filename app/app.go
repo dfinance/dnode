@@ -122,6 +122,11 @@ func (app *WbServiceApp) InitializeVMConnection(addr string) {
 	app.Logger().Info(fmt.Sprintf("successful connected to vm, connection status is %d", app.vmConn.GetState()))
 }
 
+// Close VM connection and DS server stops.
+func (app WbServiceApp) CloseConnections() {
+	app.vmKeeper.CloseConnections()
+}
+
 // Initialize listener to listen for connections from VM for data server.
 func (app *WbServiceApp) InitializeVMDataServer(addr string) {
 	var err error

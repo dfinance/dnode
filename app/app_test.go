@@ -49,10 +49,11 @@ var (
 )
 
 func Test_IssueCurrency(t *testing.T) {
-	t.Parallel()
-
 	// preparing test environment
-	app := newTestWbApp()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
+
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	// Create a bunch (ie 10) of pre-funded accounts to use for tests
@@ -71,10 +72,10 @@ func Test_IssueCurrency(t *testing.T) {
 }
 
 func Test_IssueCurrencyTwice(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	// preparing test environment
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	// Create a bunch (ie 10) of pre-funded accounts to use for tests
@@ -98,9 +99,10 @@ func Test_IssueCurrencyTwice(t *testing.T) {
 }
 
 func Test_DestroyCurrency(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 
@@ -124,9 +126,10 @@ func Test_DestroyCurrency(t *testing.T) {
 }
 
 func Test_Queryes(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genAccs, addrs, _, privKeys := CreateGenAccounts(10, genCoins)
@@ -165,9 +168,10 @@ func Test_Queryes(t *testing.T) {
 }
 
 func Test_POAHandlerIsMultisigOnly(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genValidators, _, _, privKeys := CreateGenAccounts(7, genCoins)
@@ -181,9 +185,10 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 }
 
 func Test_POAValidatorsAdd(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genValidators, _, _, privKeys := CreateGenAccounts(7, genCoins)
@@ -208,9 +213,10 @@ Loop:
 }
 
 func Test_POAValidatorsRemove(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genValidators, _, _, privKeys := CreateGenAccounts(7, genCoins)
@@ -239,9 +245,10 @@ Loop:
 }
 
 func Test_POAValidatorsReplace(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genValidators, _, _, privKeys := CreateGenAccounts(7, genCoins)
