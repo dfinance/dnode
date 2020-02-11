@@ -8,11 +8,6 @@ import (
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
-const (
-	// Because of Keep/Discard.
-	ReservedEvents = 1
-)
-
 // Set value in storage by access path.
 func (keeper Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 	store := ctx.KVStore(keeper.storeKey)
@@ -52,20 +47,20 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 
 	// process status
 	if exec.Status == vm_grpc.ContractStatus_Discard {
-		events := make(sdk.Events, 1)
-		// write event that status is discard and out.
-		events[0] = types.NewEventDiscard(exec.StatusStruct)
-		return events
+		return sdk.Events{types.NewEventDiscard(exec.StatusStruct)}
 	} else {
-		events := make(sdk.Events, len(exec.Events)+ReservedEvents)
-		events[0] = types.NewEventKeep()
+		events := make(sdk.Events, 0)
+		events = append(events, types.NewEventKeep())
+
+		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
+			events = append(events, types.NewEventError(exec.StatusStruct))
+		}
 
 		// processing write set.
 		keeper.processWriteSet(ctx, exec.WriteSet)
 
-		// processing events.
-		for i, vmEvent := range exec.Events {
-			events[i+ReservedEvents] = types.NewEventFromVM(vmEvent)
+		for _, vmEvent := range exec.Events {
+			events = append(events, types.NewEventFromVM(vmEvent))
 		}
 
 		return events

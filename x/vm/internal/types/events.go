@@ -12,6 +12,7 @@ const (
 	// Event types.
 	EventTypeDiscard = "discard"
 	EventTypeKeep    = "keep"
+	EventTypeError   = "error"
 
 	// Attributes keys
 	AttrKeyMajorStatus    = "major_status"
@@ -29,10 +30,9 @@ func NewEventKeep() sdk.Event {
 	)
 }
 
-// New event with discard status.
-func NewEventDiscard(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
+// Creating discard/errors statuses.
+func newEventErrorStatus(topic string, errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
 	attributes := make([]sdk.Attribute, 0)
-
 	if errorStatus != nil {
 		attributes = append(attributes, sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10)))
 		attributes = append(attributes, sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10)))
@@ -40,16 +40,26 @@ func NewEventDiscard(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
 	}
 
 	return sdk.NewEvent(
-		EventTypeDiscard,
+		topic,
 		attributes...,
 	)
+}
+
+// New event with error status.
+func NewEventError(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
+	return newEventErrorStatus(EventTypeError, errorStatus)
+}
+
+// New event with discard status.
+func NewEventDiscard(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
+	return newEventErrorStatus(EventTypeDiscard, errorStatus)
 }
 
 // Parse VM event to standard SDK event.
 // In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
 func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
 	return sdk.NewEvent(
-		string(event.Key),
+		"0x"+hex.EncodeToString(event.Key),
 		sdk.NewAttribute(AttrKeySequenceNumber, strconv.FormatUint(event.SequenceNumber, 10)),
 		sdk.NewAttribute(AttrKeyType, VMTypeToStringPanic(event.Type.Tag)),
 		// TODO: parse event data?

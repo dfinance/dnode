@@ -15,6 +15,9 @@ const (
 
 	// Errors related to DS (Data Source).
 	CodeErrDSMissedValue = 401
+
+	// VM related status codes
+	VMCodeExecuted = 4001
 )
 
 // Special type for VM crashes, so we can detect later, that it's VM crash error and break consensus.

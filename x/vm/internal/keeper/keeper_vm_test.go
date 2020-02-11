@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+	"reflect"
 	"testing"
 	"wings-blockchain/x/vm/internal/types"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
@@ -193,7 +194,7 @@ func TestProcessExecution(t *testing.T) {
 	require.Len(t, events, len(wbEvents)+1)
 
 	for i, event := range events[1:] {
-		require.EqualValues(t, wbEvents[i].Type, event.Type)
+		require.Equal(t, wbEvents[i].Type, event.Type)
 
 		for j, attr := range event.Attributes {
 			require.EqualValues(t, wbEvents[i].Attributes[j].Key, attr.Key)
@@ -266,4 +267,60 @@ func TestProcessWriteSet(t *testing.T) {
 		value := input.vk.getValue(input.ctx, del.Path)
 		require.Nil(t, value)
 	}
+}
+
+// Status keep (4001) still doesn't contains error.
+func TestExecStatusKeeperNotAnError(t *testing.T) {
+	input := setupTestInput(true)
+	defer closeInput(input)
+
+	errorStatus := vm_grpc.VMErrorStatus{
+		MajorStatus: types.VMCodeExecuted,
+		SubStatus:   0,
+		Message:     "",
+	}
+
+	resp := &vm_grpc.VMExecuteResponse{
+		WriteSet:     nil,
+		Events:       nil,
+		Status:       vm_grpc.ContractStatus_Keep,
+		StatusStruct: &errorStatus,
+	}
+
+	events := input.vk.processExecution(input.ctx, resp)
+
+	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
+
+	for _, event := range events {
+		require.NotEqual(t, types.EventTypeError, event.Type)
+	}
+}
+
+// When status still keep but returns error (and it could exists).
+func TestExecKeepAndError(t *testing.T) {
+	input := setupTestInput(true)
+	defer closeInput(input)
+
+	errorStatus := vm_grpc.VMErrorStatus{
+		MajorStatus: 16,
+		SubStatus:   0,
+		Message:     "aborted error!11111!1!!!",
+	}
+
+	resp := &vm_grpc.VMExecuteResponse{
+		WriteSet:     nil,
+		Events:       nil,
+		Status:       vm_grpc.ContractStatus_Keep,
+		StatusStruct: &errorStatus,
+	}
+
+	events := input.vk.processExecution(input.ctx, resp)
+
+	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
+
+	errEvent := events[1]
+	require.Equal(t, types.EventTypeError, errEvent.Type)
+
+	shouldBeErr := types.NewEventError(&errorStatus)
+	require.True(t, reflect.DeepEqual(shouldBeErr, errEvent))
 }
