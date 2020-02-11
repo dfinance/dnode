@@ -3,7 +3,9 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 	"net"
 	"wings-blockchain/x/vm/internal/types"
@@ -18,6 +20,7 @@ var _ ds_grpc.DSServiceServer = DSServer{}
 type DSServer struct {
 	ds_grpc.UnimplementedDSServiceServer
 
+	logger log.Logger
 	keeper *Keeper
 	ctx    *sdk.Context // should be careful with it, but for now we store default context
 }
@@ -37,8 +40,11 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 	}
 
 	if !server.keeper.hasValue(*server.ctx, path) {
+		server.logger.Error(fmt.Sprintf("Can't find path: %s", types.PathToHex(*path)))
 		return nil, types.ErrDSMissedValue(*path)
 	}
+
+	server.logger.Info(fmt.Sprintf("Get path: %s", types.PathToHex(*path)))
 
 	blob := server.keeper.getValue(*server.ctx, path)
 	return &ds_grpc.DSRawResponse{
@@ -70,9 +76,10 @@ func (server DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths
 }
 
 // Creating new DS server.
-func NewDSServer(keeper *Keeper) *DSServer {
+func NewDSServer(keeper *Keeper, logger log.Logger) *DSServer {
 	return &DSServer{
 		keeper: keeper,
+		logger: logger,
 	}
 }
 

@@ -3,6 +3,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/types"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
@@ -40,6 +41,10 @@ func MakePathKey(path vm_grpc.VMAccessPath) []byte {
 		},
 		KeyDelimiter,
 	)
+}
+
+func PathToHex(path vm_grpc.VMAccessPath) string {
+	return hex.EncodeToString(MakePathKey(path))
 }
 
 func EncodeAddress(address types.AccAddress) []byte {
