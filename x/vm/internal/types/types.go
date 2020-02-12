@@ -23,8 +23,7 @@ const (
 	VmUnknowTagType = -1
 )
 
-type Contract []byte
-
+// VM related variables.
 var (
 	KeyDelimiter = []byte(":")
 	VMKey        = []byte("vm")
@@ -32,6 +31,10 @@ var (
 	zeroBytes = make([]byte, 12)
 )
 
+// Type of Move contract (bytes).
+type Contract []byte
+
+// Make path for storage from VMAccessPath.
 func MakePathKey(path vm_grpc.VMAccessPath) []byte {
 	return bytes.Join(
 		[][]byte{
@@ -43,14 +46,20 @@ func MakePathKey(path vm_grpc.VMAccessPath) []byte {
 	)
 }
 
+// Convert VMAccessPath to hex string
 func PathToHex(path vm_grpc.VMAccessPath) string {
-	return hex.EncodeToString(MakePathKey(path))
+	return fmt.Sprintf("Access path: \n"+
+		"\tAddress: %s\n"+
+		"\tPath:    %s\n"+
+		"\tKey:     %s\n", hex.EncodeToString(path.Address), hex.EncodeToString(path.Path), hex.EncodeToString(MakePathKey(path)))
 }
 
+// Encode bech32 based address to Move one.
 func EncodeAddress(address types.AccAddress) []byte {
 	return append(address, zeroBytes...)
 }
 
+// Get TypeTag by string TypeTag representation.
 func GetVMTypeByString(typeTag string) (vm_grpc.VMTypeTag, error) {
 	if val, ok := vm_grpc.VMTypeTag_value[typeTag]; !ok {
 		return VmUnknowTagType, fmt.Errorf("can't find tag type %s, check correctness of type value", typeTag)
@@ -59,6 +68,7 @@ func GetVMTypeByString(typeTag string) (vm_grpc.VMTypeTag, error) {
 	}
 }
 
+// Convert TypeTag to string representation.
 func VMTypeToString(tag vm_grpc.VMTypeTag) (string, error) {
 	if val, ok := vm_grpc.VMTypeTag_name[int32(tag)]; !ok {
 		return "", fmt.Errorf("can't find string representation of type %d, check correctness of type value", tag)
@@ -67,6 +77,7 @@ func VMTypeToString(tag vm_grpc.VMTypeTag) (string, error) {
 	}
 }
 
+// Convert TypeTag to string representation with panic.
 func VMTypeToStringPanic(tag vm_grpc.VMTypeTag) string {
 	if val, ok := vm_grpc.VMTypeTag_name[int32(tag)]; !ok {
 		panic(fmt.Errorf("can't find string representation of type %d, check correctness of type value", tag))

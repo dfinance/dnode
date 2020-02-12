@@ -7,6 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"net"
 	"wings-blockchain/x/vm/internal/types"
 	"wings-blockchain/x/vm/internal/types/ds_grpc"
@@ -25,6 +27,14 @@ type DSServer struct {
 	ctx    *sdk.Context // should be careful with it, but for now we store default context
 }
 
+// Error when no data found.
+func ErrNoData(path *ds_grpc.DSAccessPath) *ds_grpc.DSRawResponse {
+	return &ds_grpc.DSRawResponse{
+		ErrorCode:    ds_grpc.DSRawResponse_NO_DATA,
+		ErrorMessage: []byte(fmt.Sprintf("data not found for access path: %s", path.String())),
+	}
+}
+
 // As we expect before call that VM server can ask for data, we should call SetContext before every request to
 // VM.
 // Later we should check before every request that context is setup and normal.
@@ -41,7 +51,7 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 
 	if !server.keeper.hasValue(*server.ctx, path) {
 		server.logger.Error(fmt.Sprintf("Can't find path: %s", types.PathToHex(*path)))
-		return nil, types.ErrDSMissedValue(*path)
+		return ErrNoData(req), nil
 	}
 
 	server.logger.Info(fmt.Sprintf("Get path: %s", types.PathToHex(*path)))
@@ -54,7 +64,7 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 
 // Data source processing request to return multiplay values form storage.
 func (server DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths) (*ds_grpc.DSRawResponses, error) {
-	resps := &ds_grpc.DSRawResponses{
+	/*resps := &ds_grpc.DSRawResponses{
 		Blobs: make([][]byte, 0),
 	}
 
@@ -72,7 +82,8 @@ func (server DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths
 		resps.Blobs = append(resps.Blobs, blob)
 	}
 
-	return resps, nil
+	return resps, nil*/
+	return nil, status.Errorf(codes.Unimplemented, "MultiGetRaw unimplemented")
 }
 
 // Creating new DS server.
