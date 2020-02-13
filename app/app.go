@@ -278,7 +278,6 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.vmConn,
 		app.vmListener,
 		config,
-		app.Logger(),
 	)
 
 	// Initializing multisignature manager.

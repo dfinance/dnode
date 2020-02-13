@@ -22,7 +22,6 @@ var _ ds_grpc.DSServiceServer = DSServer{}
 type DSServer struct {
 	ds_grpc.UnimplementedDSServiceServer
 
-	logger log.Logger
 	keeper *Keeper
 	ctx    *sdk.Context // should be careful with it, but for now we store default context
 }
@@ -33,6 +32,11 @@ func ErrNoData(path *ds_grpc.DSAccessPath) *ds_grpc.DSRawResponse {
 		ErrorCode:    ds_grpc.DSRawResponse_NO_DATA,
 		ErrorMessage: []byte(fmt.Sprintf("data not found for access path: %s", path.String())),
 	}
+}
+
+// Server logger.
+func (server *DSServer) Logger() log.Logger {
+	return server.ctx.Logger().With("module", "vm")
 }
 
 // As we expect before call that VM server can ask for data, we should call SetContext before every request to
@@ -50,11 +54,11 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 	}
 
 	if !server.keeper.hasValue(*server.ctx, path) {
-		server.logger.Error(fmt.Sprintf("Can't find path: %s", types.PathToHex(*path)))
+		server.Logger().Error(fmt.Sprintf("Can't find path: %s", types.PathToHex(*path)))
 		return ErrNoData(req), nil
 	}
 
-	server.logger.Info(fmt.Sprintf("Get path: %s", types.PathToHex(*path)))
+	server.Logger().Info(fmt.Sprintf("Get path: %s", types.PathToHex(*path)))
 
 	blob := server.keeper.getValue(*server.ctx, path)
 	return &ds_grpc.DSRawResponse{
@@ -87,10 +91,9 @@ func (server DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths
 }
 
 // Creating new DS server.
-func NewDSServer(keeper *Keeper, logger log.Logger) *DSServer {
+func NewDSServer(keeper *Keeper) *DSServer {
 	return &DSServer{
 		keeper: keeper,
-		logger: logger,
 	}
 }
 

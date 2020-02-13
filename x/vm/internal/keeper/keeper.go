@@ -6,7 +6,6 @@ import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 	"net"
 	"time"
@@ -32,7 +31,7 @@ type Keeper struct {
 }
 
 // Initialize VM keeper (include grpc client to VM and grpc server for data store).
-func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, listener net.Listener, config *config.VMConfig, logger log.Logger) (keeper Keeper) {
+func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, listener net.Listener, config *config.VMConfig) (keeper Keeper) {
 	keeper = Keeper{
 		cdc:       cdc,
 		storeKey:  storeKey,
@@ -42,7 +41,7 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 		config:    config,
 	}
 
-	keeper.dsServer = NewDSServer(&keeper, logger.With("module", "ds-server"))
+	keeper.dsServer = NewDSServer(&keeper)
 	keeper.rawDSServer = StartServer(keeper.listener, keeper.dsServer)
 
 	return
