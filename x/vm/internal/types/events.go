@@ -62,7 +62,7 @@ func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
 		"0x"+hex.EncodeToString(event.Key),
 		sdk.NewAttribute(AttrKeySequenceNumber, strconv.FormatUint(event.SequenceNumber, 10)),
 		sdk.NewAttribute(AttrKeyType, VMTypeToStringPanic(event.Type.Tag)),
-		// TODO: parse event data?
+		// we will not parse event data, as it doesn't make sense
 		sdk.NewAttribute(AttrKeyData, "0x"+hex.EncodeToString(event.EventData)),
 	)
 }
