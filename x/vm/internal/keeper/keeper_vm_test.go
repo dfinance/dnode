@@ -107,7 +107,9 @@ func TestProcessExecution(t *testing.T) {
 		},
 	}
 
-	events := input.vk.processExecution(input.ctx, resp)
+	input.vk.processExecution(input.ctx, resp)
+
+	events := input.ctx.EventManager().Events()
 	event := types.NewEventDiscard(resp.StatusStruct)
 
 	require.Len(t, events, 1)
@@ -119,7 +121,10 @@ func TestProcessExecution(t *testing.T) {
 		Status: vm_grpc.ContractStatus_Discard,
 	}
 
-	events = input.vk.processExecution(input.ctx, resp)
+	ctx := input.ctx.WithEventManager(sdk.NewEventManager())
+	input.vk.processExecution(ctx, resp)
+
+	events = ctx.EventManager().Events()
 	event = types.NewEventDiscard(nil)
 
 	require.Len(t, events, 1)
@@ -132,7 +137,10 @@ func TestProcessExecution(t *testing.T) {
 		Status: vm_grpc.ContractStatus_Keep,
 	}
 
-	events = input.vk.processExecution(input.ctx, resp)
+	ctx = input.ctx.WithEventManager(sdk.NewEventManager())
+	input.vk.processExecution(ctx, resp)
+
+	events = ctx.EventManager().Events()
 	event = types.NewEventKeep()
 
 	require.Len(t, events, 1)
@@ -183,7 +191,9 @@ func TestProcessExecution(t *testing.T) {
 		Status:   vm_grpc.ContractStatus_Keep,
 	}
 
-	events = input.vk.processExecution(input.ctx, resp)
+	ctx = input.ctx.WithEventManager(sdk.NewEventManager())
+	input.vk.processExecution(ctx, resp)
+	events = ctx.EventManager().Events()
 
 	// check that everything fine with write set
 	for _, write := range writeSet {
@@ -213,7 +223,10 @@ func TestProcessExecution(t *testing.T) {
 		Status:   vm_grpc.ContractStatus_Keep,
 	}
 
-	events = input.vk.processExecution(input.ctx, resp)
+	ctx = input.ctx.WithEventManager(sdk.NewEventManager())
+	input.vk.processExecution(ctx, resp)
+	events = ctx.EventManager().Events()
+
 	require.Len(t, events, 1)
 
 	require.False(t, input.vk.hasValue(input.ctx, writeSet[1].Path))
@@ -287,7 +300,8 @@ func TestExecStatusKeeperNotAnError(t *testing.T) {
 		StatusStruct: &errorStatus,
 	}
 
-	events := input.vk.processExecution(input.ctx, resp)
+	input.vk.processExecution(input.ctx, resp)
+	events := input.ctx.EventManager().Events()
 
 	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
 
@@ -314,7 +328,8 @@ func TestExecKeepAndError(t *testing.T) {
 		StatusStruct: &errorStatus,
 	}
 
-	events := input.vk.processExecution(input.ctx, resp)
+	input.vk.processExecution(input.ctx, resp)
+	events := input.ctx.EventManager().Events()
 
 	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
 

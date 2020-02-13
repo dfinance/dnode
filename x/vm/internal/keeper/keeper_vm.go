@@ -41,29 +41,26 @@ func (keeper Keeper) delValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 }
 
 // Process result of VM module/script execution.
-func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteResponse) sdk.Events {
+func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteResponse) {
 	// consume gas, if execution took too much gas - panic and mark transaction as out of gas.
 	ctx.GasMeter().ConsumeGas(exec.GasUsed, "vm script/module execution")
 
 	// process status
 	if exec.Status == vm_grpc.ContractStatus_Discard {
-		return sdk.Events{types.NewEventDiscard(exec.StatusStruct)}
+		ctx.EventManager().EmitEvent(types.NewEventDiscard(exec.StatusStruct))
 	} else {
-		events := make(sdk.Events, 0)
-		events = append(events, types.NewEventKeep())
+		ctx.EventManager().EmitEvent(types.NewEventKeep())
 
 		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
-			events = append(events, types.NewEventError(exec.StatusStruct))
+			ctx.EventManager().EmitEvent(types.NewEventError(exec.StatusStruct))
 		}
 
 		// processing write set.
 		keeper.processWriteSet(ctx, exec.WriteSet)
 
 		for _, vmEvent := range exec.Events {
-			events = append(events, types.NewEventFromVM(vmEvent))
+			ctx.EventManager().EmitEvent(types.NewEventFromVM(vmEvent))
 		}
-
-		return events
 	}
 }
 

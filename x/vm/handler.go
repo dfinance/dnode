@@ -23,23 +23,23 @@ func NewHandler(keeper Keeper) sdk.Handler {
 }
 
 func handleMsgScript(ctx sdk.Context, keeper Keeper, msg MsgExecuteScript) sdk.Result {
-	events, err := keeper.ExecuteScript(ctx, msg)
+	err := keeper.ExecuteScript(ctx, msg)
 	if err != nil {
 		return err.Result()
 	}
 
 	return sdk.Result{
-		Events: events,
+		Events: ctx.EventManager().Events(),
 	}
 }
 
 func handleMsgDeploy(ctx sdk.Context, keeper Keeper, msg MsgDeployModule) sdk.Result {
-	events, err := keeper.DeployContract(ctx, msg)
+	err := keeper.DeployContract(ctx, msg)
 	if err != nil {
 		return err.Result()
 	}
 
 	return sdk.Result{
-		Events: events,
+		Events: ctx.EventManager().Events(),
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
 	"net"
 	"time"
@@ -47,6 +48,11 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 	return
 }
 
+// VM keeper logger.
+func (Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", "vm")
+}
+
 // Stop DS server and close connection to VM.
 func (keeper Keeper) CloseConnections() {
 	if keeper.rawDSServer != nil {
@@ -59,14 +65,14 @@ func (keeper Keeper) CloseConnections() {
 }
 
 // Execute script.
-func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) (sdk.Events, sdk.Error) {
+func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) sdk.Error {
 	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutExecute)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	req, sdkErr := NewExecuteRequest(ctx, msg)
 	if sdkErr != nil {
-		return nil, sdkErr
+		return sdkErr
 	}
 
 	dumbGasCtx := ctx.WithGasMeter(core.NewDumbGasMeter())
@@ -74,7 +80,7 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
-		fmt.Printf("error is: %s\n", err.Error())
+		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(types.NewErrVMCrashed(err))
 	}
 
@@ -82,24 +88,24 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 
 	if len(resp.Executions) != 1 {
 		// error because execution amount during such transaction could be only one.
-		return nil, types.ErrWrongExecutionResponse(*resp)
+		return types.ErrWrongExecutionResponse(*resp)
 	}
 
 	exec := resp.Executions[0]
-	events := keeper.processExecution(ctx, exec)
+	keeper.processExecution(ctx, exec)
 
-	return events, nil
+	return nil
 }
 
 // Deploy module.
-func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) (sdk.Events, sdk.Error) {
+func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) sdk.Error {
 	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutDeploy)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	req, sdkErr := NewDeployRequest(ctx, msg)
 	if sdkErr != nil {
-		return nil, sdkErr
+		return sdkErr
 	}
 
 	dumbGasCtx := ctx.WithGasMeter(core.NewDumbGasMeter())
@@ -107,6 +113,7 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
+		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(types.NewErrVMCrashed(err))
 	}
 
@@ -114,11 +121,11 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 
 	if len(resp.Executions) != 1 {
 		// error because execution amount during such transaction could be only one.
-		return nil, types.ErrWrongExecutionResponse(*resp)
+		return types.ErrWrongExecutionResponse(*resp)
 	}
 
 	exec := resp.Executions[0]
-	events := keeper.processExecution(ctx, exec)
+	keeper.processExecution(ctx, exec)
 
-	return events, nil
+	return nil
 }

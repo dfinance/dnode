@@ -24,10 +24,12 @@ func TestKeeper_DeployContractMock(t *testing.T) {
 
 	msg := types.NewMsgDeployModule(acc, codeBytes)
 
-	events, err := input.vk.DeployContract(input.ctx, msg)
+	err = input.vk.DeployContract(input.ctx, msg)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	events := input.ctx.EventManager().Events()
 
 	require.Len(t, events, 1)
 	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
@@ -47,10 +49,12 @@ func TestKeeper_ExecuteScriptMock(t *testing.T) {
 
 	msg := types.NewMsgExecuteScript(acc, codeBytes, nil)
 
-	events, err := input.vk.ExecuteScript(input.ctx, msg)
+	err = input.vk.ExecuteScript(input.ctx, msg)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	events := input.ctx.EventManager().Events()
 
 	require.Len(t, events, 2)
 	require.EqualValues(t, types.EventTypeKeep, events[0].Type)

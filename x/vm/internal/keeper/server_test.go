@@ -96,11 +96,10 @@ func TestDSServer_MultiGetRaw(t *testing.T) {
 
 	connCtx := context.Background()
 	resp, err := client.MultiGetRaw(connCtx, req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, resp)
+	require.Error(t, err)
 
-	for i, val := range resp.Blobs {
+	/*for i, val := range resp.Blobs {
 		require.EqualValues(t, values[i], val)
-	}
+	}*/
 }
