@@ -23,7 +23,7 @@ type DSServer struct {
 	ds_grpc.UnimplementedDSServiceServer
 
 	keeper *Keeper
-	ctx    *sdk.Context // should be careful with it, but for now we store default context
+	ctx    sdk.Context // should be careful with it, but for now we store default context
 }
 
 // Error when no data found.
@@ -39,10 +39,8 @@ func (server *DSServer) Logger() log.Logger {
 	return server.ctx.Logger().With("module", "vm")
 }
 
-// As we expect before call that VM server can ask for data, we should call SetContext before every request to
-// VM.
-// Later we should check before every request that context is setup and normal.
-func (server *DSServer) SetContext(ctx *sdk.Context) {
+// Set server context.
+func (server *DSServer) SetContext(ctx sdk.Context) {
 	server.ctx = ctx
 }
 
@@ -53,14 +51,14 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 		Path:    req.Path,
 	}
 
-	if !server.keeper.hasValue(*server.ctx, path) {
+	if !server.keeper.hasValue(server.ctx, path) {
 		server.Logger().Error(fmt.Sprintf("Can't find path: %s", types.PathToHex(*path)))
 		return ErrNoData(req), nil
 	}
 
 	server.Logger().Info(fmt.Sprintf("Get path: %s", types.PathToHex(*path)))
 
-	blob := server.keeper.getValue(*server.ctx, path)
+	blob := server.keeper.getValue(server.ctx, path)
 	return &ds_grpc.DSRawResponse{
 		Blob: blob,
 	}, nil

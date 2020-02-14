@@ -12,10 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 	"net"
 	"os"
-	"time"
 	"wings-blockchain/cmd/config"
 	"wings-blockchain/x/core"
 	"wings-blockchain/x/currencies"
@@ -108,14 +106,8 @@ type WbServiceApp struct {
 func (app *WbServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
-	var kpParams = keepalive.ClientParameters{
-		Time:                time.Second, // send pings every 10 seconds if there is no activity
-		Timeout:             time.Second, // wait 1 second for ping ack before considering the connection dead
-		PermitWithoutStream: true,        // send pings even without active streams
-	}
-
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithKeepaliveParams(kpParams))
+	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		panic(err)
 	}
@@ -339,6 +331,11 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	if err != nil {
 		cmn.Exit(err.Error())
 	}
+
+	// Temporary solution, but seems works.
+	// Set context for reading data from DS store.
+	// TODO: find another way for storage to read data.
+	app.vmKeeper.SetDSContext(app.GetDSContext())
 
 	return app
 }

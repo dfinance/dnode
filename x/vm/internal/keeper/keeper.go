@@ -11,7 +11,6 @@ import (
 	"net"
 	"time"
 	"wings-blockchain/cmd/config"
-	"wings-blockchain/x/core"
 	"wings-blockchain/x/vm/internal/types"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
@@ -48,6 +47,11 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 	return
 }
 
+// Set DS (data-source) server context.
+func (keeper Keeper) SetDSContext(ctx sdk.Context) {
+	keeper.dsServer.SetContext(ctx)
+}
+
 // VM keeper logger.
 func (Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "vm")
@@ -75,16 +79,11 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 		return sdkErr
 	}
 
-	dumbGasCtx := ctx.WithGasMeter(core.NewDumbGasMeter())
-	keeper.dsServer.SetContext(&dumbGasCtx)
-
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(types.NewErrVMCrashed(err))
 	}
-
-	keeper.dsServer.SetContext(nil)
 
 	if len(resp.Executions) != 1 {
 		// error because execution amount during such transaction could be only one.
@@ -108,16 +107,11 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 		return sdkErr
 	}
 
-	dumbGasCtx := ctx.WithGasMeter(core.NewDumbGasMeter())
-	keeper.dsServer.SetContext(&dumbGasCtx)
-
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(types.NewErrVMCrashed(err))
 	}
-
-	keeper.dsServer.SetContext(nil)
 
 	if len(resp.Executions) != 1 {
 		// error because execution amount during such transaction could be only one.
