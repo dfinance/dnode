@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client"
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
@@ -20,21 +19,6 @@ import (
 // MVFile struct contains code from file in hex.
 type MVFile struct {
 	Code string `json:"code"`
-}
-
-// Return TX commands for CLI.
-func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	txCmd := &cobra.Command{
-		Use:   types.ModuleName,
-		Short: "VM transactions commands",
-	}
-
-	txCmd.AddCommand(client.PostCommands(
-		DeployContract(cdc),
-		ExecuteScript(cdc),
-	)...)
-
-	return txCmd
 }
 
 // Read MVir file contains code in hex.
