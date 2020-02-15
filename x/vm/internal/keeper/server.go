@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"net"
+	"sync"
 	"wings-blockchain/x/vm/internal/types"
 	"wings-blockchain/x/vm/internal/types/ds_grpc"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
@@ -22,8 +23,12 @@ var _ ds_grpc.DSServiceServer = DSServer{}
 type DSServer struct {
 	ds_grpc.UnimplementedDSServiceServer
 
+	isStarted bool // check if server already listen
+
 	keeper *Keeper
 	ctx    sdk.Context // should be careful with it, but for now we store default context
+
+	mux sync.Mutex
 }
 
 // Error when no data found.
@@ -41,7 +46,13 @@ func (server *DSServer) Logger() log.Logger {
 
 // Set server context.
 func (server *DSServer) SetContext(ctx sdk.Context) {
+	server.mux.Lock()
 	server.ctx = ctx
+	server.mux.Unlock()
+}
+
+func (server DSServer) IsStarted() bool {
+	return server.isStarted
 }
 
 // Data source processing request to return value from storage.
@@ -101,6 +112,7 @@ func StartServer(listener net.Listener, dsServer *DSServer) *grpc.Server {
 	ds_grpc.RegisterDSServiceServer(server, dsServer)
 
 	go func() {
+		dsServer.isStarted = true
 		if err := server.Serve(listener); err != nil {
 			panic(err) // should not happen during running application, after start
 		}

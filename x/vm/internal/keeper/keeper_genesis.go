@@ -38,4 +38,7 @@ func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 
 		keeper.setValue(ctx, accessPath, bzValue)
 	}
+
+	store := ctx.KVStore(keeper.storeKey)
+	store.Set(types.KeyGenesisInitialized, []byte{1})
 }

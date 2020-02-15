@@ -295,6 +295,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// NOTE: The genutils moodule must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
+		vm.ModuleName,
 		genaccounts.ModuleName,
 		distribution.ModuleName,
 		staking.ModuleName,
@@ -305,7 +306,6 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		poa.ModuleName,
 		currencies.ModuleName,
 		multisig.ModuleName,
-		vm.ModuleName,
 		genutil.ModuleName,
 	)
 
@@ -335,7 +335,9 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// Temporary solution, but seems works.
 	// Set context for reading data from DS store.
 	// TODO: find another way for storage to read data.
-	app.vmKeeper.SetDSContext(app.GetDSContext())
+	dsContext := app.GetDSContext()
+	app.vmKeeper.SetDSContext(dsContext)
+	app.vmKeeper.StartDSServer(dsContext)
 
 	return app
 }
@@ -359,7 +361,11 @@ func (app *WbServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain)
 		panic(err)
 	}
 
-	return app.mm.InitGenesis(ctx, genesisState)
+	resp := app.mm.InitGenesis(ctx, genesisState)
+	app.vmKeeper.SetDSContext(ctx)
+	app.vmKeeper.StartDSServer(ctx)
+
+	return resp
 }
 
 // Initialize begin blocker function.

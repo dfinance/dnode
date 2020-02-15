@@ -42,30 +42,13 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 	}
 
 	keeper.dsServer = NewDSServer(&keeper)
-	keeper.rawDSServer = StartServer(keeper.listener, keeper.dsServer)
 
 	return
-}
-
-// Set DS (data-source) server context.
-func (keeper Keeper) SetDSContext(ctx sdk.Context) {
-	keeper.dsServer.SetContext(ctx)
 }
 
 // VM keeper logger.
 func (Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "vm")
-}
-
-// Stop DS server and close connection to VM.
-func (keeper Keeper) CloseConnections() {
-	if keeper.rawDSServer != nil {
-		keeper.rawDSServer.Stop()
-	}
-
-	if keeper.rawClient != nil {
-		keeper.rawClient.Close()
-	}
 }
 
 // Execute script.
