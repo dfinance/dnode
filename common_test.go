@@ -17,7 +17,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"wings-blockchain/x/oracle"
 	poaTypes "wings-blockchain/x/poa/types"
 )
 
@@ -119,10 +118,18 @@ func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.
 		PoAValidators: validators,
 	})
 
-	var oracles oracle.GenesisState
-	require.NoError(t, app.cdc.UnmarshalJSON(genesisState[oracle.ModuleName], &oracles))
-	oracles.Params.Nominees = []string{accs[0].Address.String()}
-	genesisState[oracle.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, oracles)
+	// var oracles oracle.GenesisState
+	// require.NoError(t, app.cdc.UnmarshalJSON(genesisState[oracle.ModuleName], &oracles))
+	// oracles.Params.Assets = oracle.Assets{{
+	// 	AssetCode:  "wb2wb",
+	// 	BaseAsset:  "wb",
+	// 	QuoteAsset: "wb",
+	// 	Oracles:    oracle.Oracles{},
+	// 	Active:     true,
+	// }}
+	// oracles.Params.Nominees = []string{accs[0].Address.String()}
+	// app.oracleKeeper.SetParams(ctx, oracles.Params)
+	// genesisState[oracle.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, oracles)
 
 	stateBytes := codec.MustMarshalJSONIndent(app.cdc, genesisState)
 	// Initialize the chain
@@ -198,6 +205,10 @@ func GetContext(app *WbServiceApp, isCheckTx bool) sdk.Context {
 	return app.NewContext(isCheckTx, abci.Header{Height: app.LastBlockHeight() + 1})
 }
 
-func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
+func GetAccountCheckTx(app *WbServiceApp, address sdk.AccAddress) auth.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), address)
+}
+
+func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
+	return app.accountKeeper.GetAccount(app.NewContext(false, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }

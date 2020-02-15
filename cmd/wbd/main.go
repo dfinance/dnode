@@ -19,6 +19,7 @@ import (
 
 	app "wings-blockchain"
 	wbConfig "wings-blockchain/cmd/config"
+	oraclecli "wings-blockchain/x/oracle/client/cli"
 	poaCli "wings-blockchain/x/poa/client/cli"
 )
 
@@ -51,6 +52,7 @@ func main() {
 		genaccscli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		// Allows user to poa genesis validator
 		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
+		oraclecli.AddOracleNomeneesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 

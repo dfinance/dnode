@@ -175,7 +175,7 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 	require.NoError(t, err)
 	validatorsToAdd, _, _, _ := CreateGenAccounts(1, genCoins)
 	addValidatorMsg := msgspoa.NewMsgAddValidator(validatorsToAdd[0].Address, ethAddresses[0], genValidators[0].Address)
-	acc := GetAccount(app, genValidators[0].Address)
+	acc := GetAccountCheckTx(app, genValidators[0].Address)
 	tx := genTx([]sdk.Msg{addValidatorMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
 	CheckDeliverErrorTx(t, app, tx)
 }
@@ -263,37 +263,13 @@ func Test_POAValidatorsReplace(t *testing.T) {
 	require.Equal(t, len(genValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
 }
 
-func Test_OracleAdd(t *testing.T) {
-	t.Parallel()
-
-	// app := newTestWbApp()
-	// genCoins, err := sdk.ParseCoins("1000000000000000wings")
-	// require.NoError(t, err)
-	// genAccs, addrs, _, privKeys := CreateGenAccounts(7, genCoins)
-	// _, err = setGenesis(t, app, genAccs)
-	// require.NoError(t, err)
-	//
-	// newOracleAcc, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
-	// msg := oracle.MsgAddOracle{
-	// 	Oracle:  newOracleAcc,
-	// 	Nominee: addrs[0],
-	// 	Denom:   "wb2test",
-	// }
-	// tx := genTx([]sdk.Msg{msg}, []uint64{genAccs[0].GetAccountNumber()}, []uint64{genAccs[0].GetSequence()}, privKeys[0])
-	// app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
-	// CheckDeliverTx(t, app, tx)
-	// app.EndBlock(abci.RequestEndBlock{})
-	// app.Commit()
-
-}
-
 func issueCurrencyCheck(t *testing.T, app *WbServiceApp, msgID string, msg msgs.MsgIssueCurrency, recipient sdk.AccAddress,
 	genAccs []*auth.BaseAccount, addrs []sdk.AccAddress, privKeys []crypto.PrivKey) {
 
 	// Submit message
 	submitMsg := msmsg.NewMsgSubmitCall(msg, msgID, recipient)
 	{
-		acc := GetAccount(app, genAccs[0].Address)
+		acc := GetAccountCheckTx(app, genAccs[0].Address)
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
 		CheckDeliverTx(t, app, tx)
 	}
@@ -306,7 +282,7 @@ func issueCurrencyCheck(t *testing.T, app *WbServiceApp, msgID string, msg msgs.
 	for i := 1; i < len(genAccs)/2; i++ {
 		{
 			confirmMsg.Sender = addrs[i]
-			acc := GetAccount(app, genAccs[i].Address)
+			acc := GetAccountCheckTx(app, genAccs[i].Address)
 			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[i])
 			CheckDeliverTx(t, app, tx)
 		}
@@ -316,7 +292,7 @@ func issueCurrencyCheck(t *testing.T, app *WbServiceApp, msgID string, msg msgs.
 
 	confirmMsg.Sender = addrs[len(addrs)-1]
 	{
-		acc := GetAccount(app, genAccs[len(addrs)-1].Address)
+		acc := GetAccountCheckTx(app, genAccs[len(addrs)-1].Address)
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[len(addrs)-1])
 		CheckDeliverTx(t, app, tx)
 	}
@@ -325,7 +301,7 @@ func issueCurrencyCheck(t *testing.T, app *WbServiceApp, msgID string, msg msgs.
 }
 
 func destroyCurrency(t *testing.T, app *WbServiceApp, msg msgs.MsgDestroyCurrency, genAccs []*auth.BaseAccount, privKeys []crypto.PrivKey) {
-	acc := GetAccount(app, genAccs[0].Address)
+	acc := GetAccountCheckTx(app, genAccs[0].Address)
 	tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
 	CheckDeliverTx(t, app, tx)
 }
@@ -354,7 +330,7 @@ func checkReplaceValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.Bas
 	// Submit message
 	oldValidator := oldValidators[len(oldValidators)-1].Address
 	replaceValidatorMsg := msgspoa.NewMsgReplaceValidator(oldValidator, newValidator.Address, ethAddresses[0], sender)
-	acc := GetAccount(app, sender)
+	acc := GetAccountCheckTx(app, sender)
 	msgID := fmt.Sprintf("replaceValidator:%s", newValidator.Address)
 	submitMsg := msmsg.NewMsgSubmitCall(replaceValidatorMsg, msgID, sender)
 	tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKey)
@@ -366,7 +342,7 @@ func checkReplaceValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.Bas
 	confirmMsg := msmsg.MsgConfirmCall{MsgId: calls[0].Call.MsgID}
 	validatorsAmount := app.poaKeeper.GetValidatorAmount(GetContext(app, true))
 	for j, vv := range genAccs[1 : validatorsAmount/2+1] {
-		acc := GetAccount(app, vv.Address)
+		acc := GetAccountCheckTx(app, vv.Address)
 		confirmMsg.Sender = vv.Address
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, oldPrivKeys[j+1])
 		CheckDeliverTx(t, app, tx)
@@ -379,7 +355,7 @@ func checkRemoveValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.Base
 	for _, v := range rmValidators {
 		// Submit message
 		removeValidatorMsg := msgspoa.NewMsgRemoveValidator(v.Address, sender)
-		acc := GetAccount(app, sender)
+		acc := GetAccountCheckTx(app, sender)
 		msgID := fmt.Sprintf("removeValidator:%s", v.Address)
 		submitMsg := msmsg.NewMsgSubmitCall(removeValidatorMsg, msgID, sender)
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
@@ -391,7 +367,7 @@ func checkRemoveValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.Base
 		confirmMsg := msmsg.MsgConfirmCall{MsgId: calls[0].Call.MsgID}
 		validatorsAmount := app.poaKeeper.GetValidatorAmount(GetContext(app, true))
 		for idx, vv := range genAccs[1 : validatorsAmount/2+1] {
-			acc := GetAccount(app, vv.Address)
+			acc := GetAccountCheckTx(app, vv.Address)
 			confirmMsg.Sender = vv.Address
 			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[idx+1])
 			CheckDeliverTx(t, app, tx)
@@ -404,7 +380,7 @@ func checkAddValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAcc
 	for _, v := range newValidators {
 		// Submit message
 		addValidatorMsg := msgspoa.NewMsgAddValidator(v.Address, ethAddresses[0], sender)
-		acc := GetAccount(app, sender)
+		acc := GetAccountCheckTx(app, sender)
 		msgID := fmt.Sprintf("addValidator:%s", v.Address)
 		submitMsg := msmsg.NewMsgSubmitCall(addValidatorMsg, msgID, sender)
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
@@ -416,7 +392,7 @@ func checkAddValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAcc
 		confirmMsg := msmsg.MsgConfirmCall{MsgId: calls[0].Call.MsgID}
 		validatorsAmount := app.poaKeeper.GetValidatorAmount(GetContext(app, true))
 		for idx, vv := range genAccs[1 : validatorsAmount/2+1] {
-			acc := GetAccount(app, vv.Address)
+			acc := GetAccountCheckTx(app, vv.Address)
 			confirmMsg.Sender = vv.Address
 			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[idx+1])
 			CheckDeliverTx(t, app, tx)

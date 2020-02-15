@@ -24,6 +24,7 @@ import (
 
 	app "wings-blockchain"
 	"wings-blockchain/x/oracle"
+	oraclecli "wings-blockchain/x/oracle/client/cli"
 	oraclerest "wings-blockchain/x/oracle/client/rest"
 )
 
@@ -57,6 +58,8 @@ func main() {
 		lcd.ServeCommand(cdc, registerRoutes),
 		client.LineBreak,
 		keys.Commands(),
+		client.LineBreak,
+		oraclecli.GetTxCmd(cdc),
 		client.LineBreak,
 		version.Cmd,
 		client.NewCompletionCmd(rootCmd, true),

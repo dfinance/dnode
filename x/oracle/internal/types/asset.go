@@ -44,7 +44,7 @@ func (a Asset) ValidateBasic() sdk.Error {
 		return sdk.ErrInternal(fmt.Sprintf("invalid TokenRecord: QuoteAsset: %s. Error: Missing QuoteAsset", a.QuoteAsset))
 	}
 	if len(a.Oracles) == 0 {
-		return sdk.ErrInternal(fmt.Sprintf("invalid TokenRecord: QuoteAsset: %s. Error: Missing QuoteAsset", a.QuoteAsset))
+		return sdk.ErrInternal("invalid TokenRecord: Error: Missing Oracles")
 	}
 	return nil
 }

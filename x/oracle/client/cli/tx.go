@@ -52,7 +52,7 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			expiryInt, ok := sdk.NewIntFromString(args[2])
+			expiryInt, ok := sdk.NewIntFromString(args[3])
 			if !ok {
 				fmt.Printf("invalid expiry - %s \n", args[2])
 				return nil
@@ -93,7 +93,7 @@ func getCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-oracles [nominee_key] [denom] [oracle_addresses]",
-		Example: "wbcli oracle add-oracle nominee wallets10ff6y8gm2re6awfwz5dvesar8jq02tx7vcvuxn,wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k,",
+		Example: "wbcli oracle set-oracles nominee denom wallets10ff6y8gm2re6awfwz5dvesar8jq02tx7vcvuxn,wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k,",
 		Short:   "Sets a list of oracles for a denom",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -115,7 +115,7 @@ func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "add-asset [nominee_key] [denom] [quote_asset] [oracles]",
-		Example: "wbcli add-asset nominee wb quote_asset wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Example: "wbcli oracle add-asset nominee wb quote_asset wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new asset",
 		Args:    cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {

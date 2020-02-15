@@ -88,6 +88,7 @@ type WbServiceApp struct {
 	poaKeeper      poa.Keeper
 	ccKeeper       currencies.Keeper
 	msKeeper       multisig.Keeper
+	oracleKeeper   oracle.Keeper
 
 	mm *core.MsManager
 }
@@ -119,6 +120,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		poa.StoreKey,
 		currencies.StoreKey,
 		multisig.StoreKey,
+		oracle.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -208,6 +210,14 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
+	// Initializing oracle module
+	app.oracleKeeper = oracle.NewKeeper(
+		keys[oracle.StoreKey],
+		app.cdc,
+		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
+		oracle.DefaultCodespace,
+	)
+
 	// Initializing multisignature router.
 	app.msRouter = core.NewRouter()
 
@@ -231,10 +241,11 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		poa.NewAppMsModule(app.poaKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
+		oracle.NewAppModule(app.oracleKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, oracle.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -251,6 +262,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		currencies.ModuleName,
 		multisig.ModuleName,
 		genutil.ModuleName,
+		oracle.ModuleName,
 	)
 
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())

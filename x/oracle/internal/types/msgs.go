@@ -226,14 +226,12 @@ func (msg MsgSetAsset) ValidateBasic() sdk.Error {
 	return nil
 }
 
-// MsgAddAsset struct representing a new nominee based oracle
 type MsgAddAsset struct {
 	Nominee sdk.AccAddress `json:"nominee" yaml:"nominee"`
 	Denom   string         `json:"denom" yaml:"denom"`
 	Asset   Asset          `json:"asset" yaml:"asset"`
 }
 
-// NewMsgAddAsset creates a new add oracle message
 func NewMsgAddAsset(
 	nominee sdk.AccAddress,
 	denom string,

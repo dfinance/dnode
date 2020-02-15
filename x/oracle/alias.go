@@ -21,6 +21,9 @@ type (
 	SortDecs           = types.SortDecs
 	Keeper             = keeper.Keeper
 	MsgAddOracle       = types.MsgAddOracle
+	MsgSetOracles      = types.MsgSetOracles
+	MsgAddAsset        = types.MsgAddAsset
+	MsgSetAsset        = types.MsgSetAsset
 )
 
 const (
@@ -35,6 +38,7 @@ const (
 var (
 	ModuleCdc     = types.ModuleCdc
 	NewKeeper     = keeper.NewKeeper
+	NewAsset      = types.NewAsset
 	RegisterCodec = types.RegisterCodec
 	// functions aliases
 	ErrEmptyInput       = types.ErrEmptyInput

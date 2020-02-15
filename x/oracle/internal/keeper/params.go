@@ -43,7 +43,7 @@ func (k Keeper) GetOracles(ctx sdk.Context, assetCode string) (types.Oracles, er
 	return types.Oracles{}, fmt.Errorf("asset %s not found", assetCode)
 }
 
-// AddOracle returns the oracle in the oracle store
+// AddOracle adds the oracle to the oracle store
 func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode string, address sdk.AccAddress) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("not a valid nominee %s", nominee)
@@ -77,6 +77,7 @@ func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode string, ad
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("not a valid nominee %s", nominee)
 	}
+
 	assets := k.GetAssetParams(ctx)
 	updateAssets := assets[:0]
 	found := false
@@ -96,7 +97,6 @@ func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode string, ad
 	return fmt.Errorf("asset %s not found", assetCode)
 }
 
-// AddOracle returns the oracle in the oracle store
 func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode string, asset types.Asset) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("not a valid nominee %s", nominee)
