@@ -51,6 +51,7 @@ func (server *DSServer) SetContext(ctx sdk.Context) {
 	server.mux.Unlock()
 }
 
+// Check if server is already in listen mode.
 func (server DSServer) IsStarted() bool {
 	return server.isStarted
 }
