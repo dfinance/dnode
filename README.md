@@ -76,7 +76,11 @@ First of all we create `pos` account, this account will be used later as `Proof 
 As you see we create one account calling `bank` where we will be store all generated **WINGS** coins for start,
 and then 3 accounts to make them PoA validators, we need at least 3 validators because by default it's a minimum amount of PoA validators to have.
 
-Now let's add genesis account and initiate genesis PoA validators and PoS account:
+Now let's add genesis account and initiate genesis PoA validators and PoS account.
+
+Also to have VM correct work, needs to deploy standard lib write operations.
+
+It should be done before next commands, so see tutorial how to initialize genesis for VM.
 
     wbd add-genesis-account [pos-address]  5000000000000wings
     wbd add-genesis-account [bank-address] 90000000000000000000000000wings
@@ -340,7 +344,27 @@ And (status discard, when execution/deploy failed):
 }
 ```
 
+### Genesis compilation
+
+First of all, to get WB correctly work, needs to compile standard WB smart modules libs,
+and put result into genesis block. Result is WriteSet operations, that write compiled modules 
+into storage.
+
+So, first of all, go to VM folder, and run:
+
+    cargo run --bin stdlib-builder stdlib/mvir mvir
+
+Copy and paste output json to new created file.
+
+After this, go into WB folder and run:
+
+    wbd query read-genesis-write-set [path to created file contains write set json]
+
+Now everything should be fine.
+
 ### Compilation
+
+Fetch virtual machine repo and initialize 
 
 Currently compilation not available from WB, only by using libra directly.
 Possible way is to clone repo and compile module/script so:
