@@ -118,19 +118,6 @@ func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.
 		PoAValidators: validators,
 	})
 
-	// var oracles oracle.GenesisState
-	// require.NoError(t, app.cdc.UnmarshalJSON(genesisState[oracle.ModuleName], &oracles))
-	// oracles.Params.Assets = oracle.Assets{{
-	// 	AssetCode:  "wb2wb",
-	// 	BaseAsset:  "wb",
-	// 	QuoteAsset: "wb",
-	// 	Oracles:    oracle.Oracles{},
-	// 	Active:     true,
-	// }}
-	// oracles.Params.Nominees = []string{accs[0].Address.String()}
-	// app.oracleKeeper.SetParams(ctx, oracles.Params)
-	// genesisState[oracle.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, oracles)
-
 	stateBytes := codec.MustMarshalJSONIndent(app.cdc, genesisState)
 	// Initialize the chain
 	app.InitChain(

@@ -290,9 +290,6 @@ func initGenFiles(
 	appGenState := mbm.DefaultGenesis()
 
 	// set the accounts in the genesis state
-	// authDataBz := appGenState[auth.ModuleName]
-	// var authGenState auth.GenesisState
-	// cdc.MustUnmarshalJSON(authDataBz, &authGenState)
 	appGenState[genaccounts.ModuleName] = cdc.MustMarshalJSON(genAccounts)
 
 	stakingDataBz := appGenState[staking.ModuleName]

@@ -139,7 +139,7 @@ func Test_SetOracles(t *testing.T) {
 		ctx := GetContext(app, false)
 		require.NoError(t, err)
 		msg := oracle.MsgSetOracles{
-			Oracles: oracle.Oracles{{newOracleAcc2}},
+			Oracles: oracle.Oracles{{Address: newOracleAcc2}},
 			Nominee: addrs[0],
 			Denom:   "wb2wb",
 		}
@@ -207,7 +207,7 @@ func Test_AddAsset(t *testing.T) {
 		msg := oracle.MsgAddAsset{
 			Nominee: addrs[0],
 			Denom:   "wb2test",
-			Asset:   oracle.NewAsset("wb2test", "wb", "test", oracle.Oracles{{newOracleAcc1}}, true),
+			Asset:   oracle.NewAsset("wb2test", "wb", "test", oracle.Oracles{{Address: newOracleAcc1}}, true),
 		}
 		acc := GetAccountCheckTx(app, genAccs[0].Address)
 		tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
@@ -275,7 +275,7 @@ func Test_SetAsset(t *testing.T) {
 		msg := oracle.MsgAddAsset{
 			Nominee: addrs[0],
 			Denom:   "wb2test",
-			Asset:   oracle.NewAsset("wb2test", "wb", "test", oracle.Oracles{{newOracleAcc1}}, true),
+			Asset:   oracle.NewAsset("wb2test", "wb", "test", oracle.Oracles{{Address: newOracleAcc1}}, true),
 		}
 		acc := GetAccountCheckTx(app, genAccs[0].Address)
 		tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
@@ -297,7 +297,7 @@ func Test_SetAsset(t *testing.T) {
 		msg := oracle.MsgSetAsset{
 			Nominee: addrs[0],
 			Denom:   "wb2test",
-			Asset:   oracle.NewAsset("wb2test1", "wb", "test1", oracle.Oracles{{newOracleAcc1}}, true),
+			Asset:   oracle.NewAsset("wb2test1", "wb", "test1", oracle.Oracles{{Address: newOracleAcc1}}, true),
 		}
 		acc := GetAccountCheckTx(app, genAccs[0].Address)
 		tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
