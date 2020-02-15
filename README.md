@@ -80,7 +80,7 @@ Now let's add genesis account and initiate genesis PoA validators and PoS accoun
 
 Also to have VM correct work, needs to deploy standard lib write operations.
 
-It should be done before next commands, so see tutorial how to initialize genesis for VM.
+It should be done before next commands, so see tutorial **[how to initialize genesis for VM](#genesis-compilation)**.
 
     wbd add-genesis-account [pos-address]  5000000000000wings
     wbd add-genesis-account [bank-address] 90000000000000000000000000wings
