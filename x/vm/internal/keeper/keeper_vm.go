@@ -16,6 +16,11 @@ func (keeper Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath,
 	store.Set(key, value)
 }
 
+// Public get value by path.
+func (keeper Keeper) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
+	return keeper.getValue(ctx, accessPath)
+}
+
 // Get value from storage by access path.
 func (keeper Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	store := ctx.KVStore(keeper.storeKey)

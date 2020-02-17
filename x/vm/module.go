@@ -50,7 +50,7 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 // Get query commands for CLI.
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return nil
+	return cli.GetQueriesCmd(cdc)
 }
 
 // VM module.
@@ -86,7 +86,7 @@ func (AppModule) QuerierRoute() string { return types.RouterKey }
 
 // Get new querier for VM module.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return NewQuerier(app.vmKeeper)
 }
 
 // Process begin block (abci).
