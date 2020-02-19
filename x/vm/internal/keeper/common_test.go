@@ -4,6 +4,12 @@ import (
 	"context"
 	"encoding/hex"
 	"flag"
+	"math/rand"
+	"net"
+	vmConfig "wings-blockchain/cmd/config"
+	"wings-blockchain/x/vm/internal/types"
+	"wings-blockchain/x/vm/internal/types/vm_grpc"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,11 +20,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
-	"math/rand"
-	"net"
-	vmConfig "wings-blockchain/cmd/config"
-	"wings-blockchain/x/vm/internal/types"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (
@@ -134,21 +135,21 @@ func randomValue(len int) []byte {
 }
 
 func closeInput(input testInput) {
-	go func() {
-		if input.rawServer != nil {
-			input.rawServer.GracefulStop()
-		}
-
-		if input.rawVMServer != nil {
-			input.rawVMServer.GracefulStop()
-		}
-
-		input.vk.listener.Close()
-
-		if input.dsListener != nil {
-			input.dsListener.Close()
-		}
-	}()
+	// go func() {
+	// 	if input.rawServer != nil {
+	// 		input.rawServer.GracefulStop()
+	// 	}
+	//
+	// 	if input.rawVMServer != nil {
+	// 		input.rawVMServer.GracefulStop()
+	// 	}
+	//
+	// 	input.vk.listener.Close()
+	//
+	// 	if input.dsListener != nil {
+	// 		input.dsListener.Close()
+	// 	}
+	// }()
 }
 
 func setupTestInput(launchMock bool) testInput {
