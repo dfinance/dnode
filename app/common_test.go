@@ -2,10 +2,7 @@ package app
 
 import (
 	"bytes"
-	"os"
-	"sort"
-	"testing"
-
+	"flag"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -16,6 +13,13 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
+	"google.golang.org/grpc"
+	"net"
+	"os"
+	"sort"
+	"testing"
+	vmConfig "wings-blockchain/cmd/config"
+	"wings-blockchain/x/vm"
 
 	poaTypes "wings-blockchain/x/poa/types"
 )
@@ -93,8 +97,59 @@ func CreateGenAccounts(numAccs int, genCoins sdk.Coins) (genAccs []*auth.BaseAcc
 	return
 }
 
-func newTestWbApp() *WbServiceApp {
-	return NewWbServiceApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app"), dbm.NewMemDB())
+const (
+	DefaultMockVMAddress  = "127.0.0.1:60051" // Default virtual machine address to connect from Cosmos SDK.
+	DefaultMockDataListen = "127.0.0.1:60052" // Default data server address to listen for connections from VM.
+
+	FlagVMMockAddress = "vm.mock.address"
+	FlagDSMockListen  = "ds.mock.listen"
+)
+
+var (
+	vmMockAddress  *string
+	dataListenMock *string
+)
+
+func MockVMConfig() *vmConfig.VMConfig {
+	return &vmConfig.VMConfig{
+		Address:    *vmMockAddress,
+		DataListen: *dataListenMock,
+	}
+}
+
+func init() {
+	if flag.Lookup(FlagVMMockAddress) == nil {
+		vmMockAddress = flag.String(FlagVMMockAddress, DefaultMockVMAddress, "mocked address of virtual machine server client/server")
+	}
+
+	if flag.Lookup(FlagDSMockListen) == nil {
+		dataListenMock = flag.String(FlagDSMockListen, DefaultMockDataListen, "address of mocked data server to launch/connect")
+	}
+}
+
+type VMServer struct {
+	vm.UnimplementedVMServiceServer
+}
+
+func newTestWbApp() (*WbServiceApp, *grpc.Server) {
+	config := MockVMConfig()
+
+	vmListener, err := net.Listen("tcp", config.Address)
+	if err != nil {
+		panic(err)
+	}
+	vmServer := VMServer{}
+	server := grpc.NewServer()
+
+	vm.RegisterVMServiceServer(server, &vmServer)
+
+	go func() {
+		if err := server.Serve(vmListener); err != nil {
+			panic(err)
+		}
+	}()
+
+	return NewWbServiceApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app"), dbm.NewMemDB(), config), server
 }
 
 func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.Context, error) {

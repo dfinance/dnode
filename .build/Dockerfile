@@ -3,8 +3,9 @@ WORKDIR /opt/app
 RUN apk update && \
     apk upgrade && \
     apk add --no-cache \
-        make git gcc g++ linux-headers libgcc libstdc++ bash moreutils
+        make git gcc g++ linux-headers libgcc libstdc++ bash moreutils protobuf
 COPY . .
+RUN make deps
 RUN make install
 
 FROM alpine:latest

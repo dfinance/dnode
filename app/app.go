@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
@@ -10,10 +11,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
+	"net"
 	"os"
+	"time"
+	"wings-blockchain/cmd/config"
 	"wings-blockchain/x/core"
 	"wings-blockchain/x/currencies"
 	"wings-blockchain/x/multisig"
+	"wings-blockchain/x/vm"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -32,7 +39,7 @@ import (
 )
 
 const (
-	appName = "wb"
+	appName = "wb" // application name.
 )
 
 type GenesisState map[string]json.RawMessage
@@ -57,6 +64,7 @@ var (
 		poa.AppModuleBasic{},
 		currencies.AppModuleBasic{},
 		multisig.AppModuleBasic{},
+		vm.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
@@ -67,8 +75,10 @@ var (
 	}
 )
 
+// WB Service App implements WB mains logic.
 type WbServiceApp struct {
-	*bam.BaseApp
+	*BaseApp
+
 	cdc      *codec.Codec
 	msRouter core.Router
 
@@ -85,8 +95,48 @@ type WbServiceApp struct {
 	poaKeeper      poa.Keeper
 	ccKeeper       currencies.Keeper
 	msKeeper       multisig.Keeper
+	vmKeeper       vm.Keeper
 
 	mm *core.MsManager
+
+	// vm connection
+	vmConn     *grpc.ClientConn
+	vmListener net.Listener
+}
+
+// Initialize connection to VM server.
+func (app *WbServiceApp) InitializeVMConnection(addr string) {
+	var err error
+
+	var kpParams = keepalive.ClientParameters{
+		Time:                time.Second, // send pings every 10 seconds if there is no activity
+		Timeout:             time.Second, // wait 1 second for ping ack before considering the connection dead
+		PermitWithoutStream: true,        // send pings even without active streams
+	}
+
+	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
+	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithKeepaliveParams(kpParams))
+	if err != nil {
+		panic(err)
+	}
+	app.Logger().Info(fmt.Sprintf("successful connected to vm, connection status is %d", app.vmConn.GetState()))
+}
+
+// Close VM connection and DS server stops.
+func (app WbServiceApp) CloseConnections() {
+	app.vmKeeper.CloseConnections()
+}
+
+// Initialize listener to listen for connections from VM for data server.
+func (app *WbServiceApp) InitializeVMDataServer(addr string) {
+	var err error
+
+	app.Logger().Info(fmt.Sprintf("up data server listen server %s", addr))
+	app.vmListener, err = net.Listen("tcp", addr)
+	if err != nil {
+		panic(err)
+	}
+	app.Logger().Info("data server is up")
 }
 
 // MakeCodec generates the necessary codecs for Amino.
@@ -99,10 +149,10 @@ func MakeCodec() *codec.Codec {
 }
 
 // NewWbServiceApp is a constructor function for wings blockchain.
-func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *WbServiceApp {
+func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, baseAppOptions ...func(*BaseApp)) *WbServiceApp {
 	cdc := MakeCodec()
 
-	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
+	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(
@@ -116,6 +166,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		poa.StoreKey,
 		currencies.StoreKey,
 		multisig.StoreKey,
+		vm.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -129,6 +180,10 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		keys:    keys,
 		tkeys:   tkeys,
 	}
+
+	// initialize connections
+	app.InitializeVMDataServer(config.DataListen)
+	app.InitializeVMConnection(config.Address)
 
 	// The ParamsKeeper handles parameter storage for the application.
 	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
@@ -215,6 +270,16 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		app.msRouter,
 	)
 
+	// Initializing vm keeper.
+	var err error
+	app.vmKeeper = vm.NewKeeper(
+		keys[vm.StoreKey],
+		app.cdc,
+		app.vmConn,
+		app.vmListener,
+		config,
+	)
+
 	// Initializing multisignature manager.
 	app.mm = core.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
@@ -228,6 +293,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		poa.NewAppMsModule(app.poaKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
+		vm.NewAppModule(app.vmKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
@@ -247,6 +313,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 		poa.ModuleName,
 		currencies.ModuleName,
 		multisig.ModuleName,
+		vm.ModuleName,
 		genutil.ModuleName,
 	)
 
@@ -268,7 +335,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 	app.MountKVStores(keys)
 	app.MountTransientStores(tkeys)
 
-	err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
+	err = app.LoadLatestVersion(app.keys[bam.MainStoreKey])
 	if err != nil {
 		cmn.Exit(err.Error())
 	}
