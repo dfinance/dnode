@@ -13,9 +13,10 @@ import (
 )
 
 func Test_AddOracle(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genAccs, addrs, _, privKeys := CreateGenAccounts(7, genCoins)
@@ -88,9 +89,10 @@ func Test_AddOracle(t *testing.T) {
 }
 
 func Test_SetOracles(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genAccs, addrs, _, privKeys := CreateGenAccounts(7, genCoins)
@@ -158,9 +160,10 @@ func Test_SetOracles(t *testing.T) {
 }
 
 func Test_AddAsset(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genAccs, addrs, _, privKeys := CreateGenAccounts(7, genCoins)
@@ -226,9 +229,10 @@ func Test_AddAsset(t *testing.T) {
 }
 
 func Test_SetAsset(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genAccs, addrs, _, privKeys := CreateGenAccounts(7, genCoins)
@@ -316,9 +320,10 @@ func Test_SetAsset(t *testing.T) {
 }
 
 func Test_SetPostPrice(t *testing.T) {
-	t.Parallel()
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
 
-	app := newTestWbApp()
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
 	require.NoError(t, err)
 	genAccs, addrs, _, privKeys := CreateGenAccounts(7, genCoins)

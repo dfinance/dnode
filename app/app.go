@@ -3,6 +3,16 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"net"
+	"os"
+	"time"
+
+	"wings-blockchain/cmd/config"
+	"wings-blockchain/x/core"
+	"wings-blockchain/x/currencies"
+	"wings-blockchain/x/multisig"
+	"wings-blockchain/x/vm"
+
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
@@ -13,14 +23,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
-	"net"
-	"os"
-	"time"
-	"wings-blockchain/cmd/config"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/currencies"
-	"wings-blockchain/x/multisig"
-	"wings-blockchain/x/vm"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -34,6 +36,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"wings-blockchain/x/oracle"
 	"wings-blockchain/x/poa"
 	poaTypes "wings-blockchain/x/poa/types"
 )
