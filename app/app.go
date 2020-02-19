@@ -329,8 +329,8 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		currencies.ModuleName,
 		multisig.ModuleName,
 		vm.ModuleName,
-		genutil.ModuleName,
 		oracle.ModuleName,
+		genutil.ModuleName,
 	)
 
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
