@@ -20,9 +20,7 @@ import (
 
 	"github.com/WingsDao/wings-blockchain/app"
 	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	"github.com/WingsDao/wings-blockchain/x/oracle"
 	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
-	oraclerest "github.com/WingsDao/wings-blockchain/x/oracle/client/rest"
 )
 
 // Entry function for WB CLI.
@@ -73,7 +71,6 @@ func main() {
 func registerRoutes(rs *lcd.RestServer) {
 	client.RegisterRoutes(rs.CliCtx, rs.Mux)
 	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
-	oraclerest.RegisterRoutes(rs.CliCtx, rs.Mux, oracle.StoreKey)
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 }
 
