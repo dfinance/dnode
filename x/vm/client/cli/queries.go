@@ -86,7 +86,7 @@ func compile(config *vmConfig.VMConfig, sourceFile *vm_grpc.MvIrSourceFile) ([]b
 	// if contains errors
 	if len(resp.Errors) > 0 {
 		for _, err := range resp.Errors {
-			fmt.Printf("Error from compiler: %s\n", string(err))
+			fmt.Printf("Error from compiler: %s\n", err)
 		}
 		fmt.Println("Compilation failed because of errors from compiler.")
 		return nil, false
@@ -166,9 +166,9 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // Compile Mvir script.
 func CompileScript(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "compile_script [mvirFile]",
+		Use:   "compile-script [mvirFile] [account]",
 		Short: "compile script using source code from mvir file",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := vmConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
 			if err != nil {
@@ -183,14 +183,26 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
+			// parse address
+			/*prefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
+			address, err := sdk.AccAddressFromBech32(args[1])
+			if err != nil {
+				return err
+			}
+
+			realAddress := make([]byte, 0)
+			realAddress = append(realAddress, []byte(prefix)...)
+			realAddress = append(realAddress, make([]byte, 5)...)
+			realAddress = append(realAddress, address...)
+
+			fmt.Printf("Address length is %d %s\n", len(realAddress), hex.EncodeToString(realAddress))*/
+
 			// Mvir file
 			sourceFile := &vm_grpc.MvIrSourceFile{
 				Text:    string(mvirContent),
-				Address: nil,
+				Address: []byte(args[1]),
 				Type:    vm_grpc.ContractType_Script,
 			}
-
-			fmt.Printf("source code: %s", string(mvirContent))
 
 			// compile mvir file
 			bytecode, isOk := compile(config, sourceFile)
@@ -214,7 +226,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 // Compile Mvir module.
 func CompileModule(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "compile_module [mvirFile] [account]",
+		Use:   "compile-module [mvirFile] [account]",
 		Short: "compile module connected to account, using source code from mvir file",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
