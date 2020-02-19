@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
 
-	"wings-blockchain/x/oracle/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 )
 
 const (

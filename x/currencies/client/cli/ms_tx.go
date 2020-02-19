@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"wings-blockchain/x/currencies/msgs"
-	msMsg "wings-blockchain/x/multisig/msgs"
+	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
+	msMsg "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
 
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"

@@ -3,8 +3,10 @@ package msgs
 
 import (
 	"encoding/json"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/currencies/types"
+
+	"github.com/WingsDao/wings-blockchain/x/currencies/types"
 )
 
 // Message for destroy currency

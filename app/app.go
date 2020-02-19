@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
-	"wings-blockchain/cmd/config"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/currencies"
-	"wings-blockchain/x/multisig"
-	"wings-blockchain/x/vm"
+	"github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/WingsDao/wings-blockchain/x/core"
+	"github.com/WingsDao/wings-blockchain/x/currencies"
+	"github.com/WingsDao/wings-blockchain/x/multisig"
+	"github.com/WingsDao/wings-blockchain/x/vm"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -36,9 +36,9 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"wings-blockchain/x/oracle"
-	"wings-blockchain/x/poa"
-	poaTypes "wings-blockchain/x/poa/types"
+	"github.com/WingsDao/wings-blockchain/x/oracle"
+	"github.com/WingsDao/wings-blockchain/x/poa"
+	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 )
 
 const (

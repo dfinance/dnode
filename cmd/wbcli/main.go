@@ -4,29 +4,25 @@ import (
 	"os"
 	"path"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/version"
-	amino "github.com/tendermint/go-amino"
-
-	wbConfig "wings-blockchain/cmd/config"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/libs/cli"
-
-	"wings-blockchain/app"
-
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/version"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/libs/cli"
 
-	"wings-blockchain/x/oracle"
-	oraclecli "wings-blockchain/x/oracle/client/cli"
-	oraclerest "wings-blockchain/x/oracle/client/rest"
+	"github.com/WingsDao/wings-blockchain/app"
+	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/WingsDao/wings-blockchain/x/oracle"
+	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
+	oraclerest "github.com/WingsDao/wings-blockchain/x/oracle/client/rest"
 )
 
 // Entry function for WB CLI.

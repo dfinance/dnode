@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	msMsg "wings-blockchain/x/multisig/msgs"
+	msMsg "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"

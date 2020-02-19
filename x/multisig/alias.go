@@ -2,7 +2,7 @@
 package multisig
 
 import (
-	"wings-blockchain/x/multisig/types"
+	"github.com/WingsDao/wings-blockchain/x/multisig/types"
 )
 
 const (

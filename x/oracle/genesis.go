@@ -1,7 +1,7 @@
 package oracle
 
 import (
-	"wings-blockchain/x/oracle/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )

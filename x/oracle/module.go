@@ -4,20 +4,19 @@ import (
 	"encoding/json"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"wings-blockchain/x/oracle/client/cli"
-	cmd "wings-blockchain/x/oracle/client/cli"
-	"wings-blockchain/x/oracle/internal/keeper"
-	"wings-blockchain/x/oracle/internal/types"
-
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"wings-blockchain/x/oracle/client/rest"
+	"github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
+	cmd "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
+	"github.com/WingsDao/wings-blockchain/x/oracle/client/rest"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/keeper"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 )
 
 var (

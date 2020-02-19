@@ -3,9 +3,11 @@ package currencies
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/currencies/msgs"
+
+	"github.com/WingsDao/wings-blockchain/x/core"
+	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
 )
 
 // Handler for currencies messages, proves issue/destroy messages.

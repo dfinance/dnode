@@ -1,7 +1,7 @@
 package queries
 
 import (
-	poaTypes "wings-blockchain/x/poa/types"
+	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 )
 
 // Get validator response

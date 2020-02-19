@@ -3,8 +3,10 @@ package types
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/core"
+
+	"github.com/WingsDao/wings-blockchain/x/core"
 )
 
 // Call that will be executed itself, contains msg instances, that executing via router and handler.

@@ -4,6 +4,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,10 +15,8 @@ import (
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 	codec "github.com/tendermint/go-amino"
-	"io/ioutil"
-	"os"
-	"strings"
-	"wings-blockchain/x/vm/internal/types"
+
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 )
 
 // MVFile struct contains code from file in hex.

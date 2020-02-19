@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
 
-	"wings-blockchain/x/oracle/internal/keeper"
-	"wings-blockchain/x/oracle/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/keeper"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 )
 
 type testHelper struct {

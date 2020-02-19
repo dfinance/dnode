@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"wings-blockchain/x/oracle/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 )
 
 // Keeper struct for oracle module

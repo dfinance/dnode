@@ -3,7 +3,7 @@ package oracle
 import (
 	"fmt"
 
-	"wings-blockchain/x/oracle/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"

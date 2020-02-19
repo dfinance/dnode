@@ -1,7 +1,7 @@
 // Aliases to use them outside pocket without import of specific package.
 package currencies
 
-import "wings-blockchain/x/currencies/types"
+import "github.com/WingsDao/wings-blockchain/x/currencies/types"
 
 const (
 	ModuleName       = types.ModuleName

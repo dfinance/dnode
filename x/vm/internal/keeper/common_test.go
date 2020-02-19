@@ -6,9 +6,6 @@ import (
 	"flag"
 	"math/rand"
 	"net"
-	vmConfig "wings-blockchain/cmd/config"
-	"wings-blockchain/x/vm/internal/types"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -20,6 +17,10 @@ import (
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
+
+	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (
@@ -48,7 +49,7 @@ type testInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
 
-	k  Keeper
+	// k  Keeper
 	ak auth.AccountKeeper
 	pk params.Keeper
 	vk Keeper
@@ -64,7 +65,7 @@ type testInput struct {
 	addressBytes []byte
 	valueBytes   []byte
 
-	rawServer   *grpc.Server
+	// rawServer   *grpc.Server
 	rawVMServer *grpc.Server
 	vmServer    *VMServer
 
@@ -256,6 +257,9 @@ func setupTestInput(launchMock bool) testInput {
 	}
 
 	input.valueBytes, err = hex.DecodeString(value)
+	if err != nil {
+		panic(err)
+	}
 
 	return input
 }

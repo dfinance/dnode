@@ -3,12 +3,12 @@ package keeper
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
-	"wings-blockchain/x/vm/internal/types"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 // TODO: change listener logic to don't close it here?

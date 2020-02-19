@@ -2,6 +2,7 @@ package vm
 
 import (
 	"encoding/json"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -9,8 +10,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"wings-blockchain/x/vm/client/cli"
-	types "wings-blockchain/x/vm/internal/types"
+
+	"github.com/WingsDao/wings-blockchain/x/vm/client/cli"
+	types "github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 )
 
 var (

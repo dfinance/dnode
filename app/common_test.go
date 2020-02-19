@@ -3,6 +3,11 @@ package app
 import (
 	"bytes"
 	"flag"
+	"net"
+	"os"
+	"sort"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -14,14 +19,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
-	"net"
-	"os"
-	"sort"
-	"testing"
-	vmConfig "wings-blockchain/cmd/config"
-	"wings-blockchain/x/vm"
 
-	poaTypes "wings-blockchain/x/poa/types"
+	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/WingsDao/wings-blockchain/x/vm"
 )
 
 // Type that combines an Address with the privKey and pubKey to that address

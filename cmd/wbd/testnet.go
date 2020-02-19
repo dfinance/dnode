@@ -30,8 +30,8 @@ import (
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
-	wbconfig "wings-blockchain/cmd/config"
-	"wings-blockchain/x/oracle"
+	wbconfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/WingsDao/wings-blockchain/x/oracle"
 )
 
 var (

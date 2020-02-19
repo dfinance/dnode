@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"wings-blockchain/x/oracle"
-	"wings-blockchain/x/oracle/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/oracle"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/mock"

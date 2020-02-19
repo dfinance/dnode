@@ -5,7 +5,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"wings-blockchain/cmd/config"
+
+	"github.com/WingsDao/wings-blockchain/cmd/config"
 )
 
 var (

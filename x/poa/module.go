@@ -3,6 +3,7 @@ package poa
 
 import (
 	"encoding/json"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,10 +11,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/poa/client"
-	"wings-blockchain/x/poa/client/rest"
-	"wings-blockchain/x/poa/types"
+
+	"github.com/WingsDao/wings-blockchain/x/core"
+	"github.com/WingsDao/wings-blockchain/x/poa/client"
+	"github.com/WingsDao/wings-blockchain/x/poa/client/rest"
+	"github.com/WingsDao/wings-blockchain/x/poa/types"
 )
 
 var (

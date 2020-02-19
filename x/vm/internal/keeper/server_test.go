@@ -2,12 +2,14 @@ package keeper
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
-	"testing"
-	"wings-blockchain/x/vm/internal/types/ds_grpc"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
+
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/ds_grpc"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 // Initialize connection to DS server.

@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
-	"wings-blockchain/x/oracle/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 )
 
 const (

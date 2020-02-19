@@ -3,17 +3,19 @@ package multisig
 
 import (
 	"encoding/json"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
-	"github.com/tendermint/go-amino"
+	amino "github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"wings-blockchain/x/multisig/client"
-	"wings-blockchain/x/multisig/client/rest"
-	"wings-blockchain/x/multisig/types"
-	"wings-blockchain/x/poa"
+
+	"github.com/WingsDao/wings-blockchain/x/multisig/client"
+	"github.com/WingsDao/wings-blockchain/x/multisig/client/rest"
+	"github.com/WingsDao/wings-blockchain/x/multisig/types"
+	"github.com/WingsDao/wings-blockchain/x/poa"
 )
 
 var (

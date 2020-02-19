@@ -3,9 +3,11 @@ package types
 
 import (
 	"encoding/hex"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"strconv"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (

@@ -1,30 +1,29 @@
 package main
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/spf13/viper"
-	"wings-blockchain/app"
-
 	"encoding/json"
 	"io"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	genaccscli "github.com/cosmos/cosmos-sdk/x/genaccounts/client/cli"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	wbConfig "wings-blockchain/cmd/config"
-	oraclecli "wings-blockchain/x/oracle/client/cli"
-	poaCli "wings-blockchain/x/poa/client/cli"
+	"github.com/WingsDao/wings-blockchain/app"
+	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
+	poaCli "github.com/WingsDao/wings-blockchain/x/poa/client/cli"
 )
 
 // WBD (Daemon) entry function.

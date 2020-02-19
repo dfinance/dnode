@@ -10,12 +10,12 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 
-	"wings-blockchain/x/currencies"
-	"wings-blockchain/x/currencies/msgs"
-	"wings-blockchain/x/currencies/types"
-	msmsg "wings-blockchain/x/multisig/msgs"
-	mstypes "wings-blockchain/x/multisig/types"
-	msgspoa "wings-blockchain/x/poa/msgs"
+	"github.com/WingsDao/wings-blockchain/x/currencies"
+	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
+	"github.com/WingsDao/wings-blockchain/x/currencies/types"
+	msmsg "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
+	mstypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
+	msgspoa "github.com/WingsDao/wings-blockchain/x/poa/msgs"
 )
 
 const (
