@@ -69,7 +69,7 @@ func readMvirFile(filePath string) ([]byte, error) {
 func compile(config *vmConfig.VMConfig, sourceFile *vm_grpc.MvIrSourceFile) ([]byte, bool) {
 	conn, err := createVMConn(config)
 	if err != nil {
-		fmt.Errorf("Compilation failed because of error during connection to VM: %s\n", err.Error())
+		fmt.Printf("Compilation failed because of error during connection to VM: %s\n", err.Error())
 		return nil, false
 	}
 	defer conn.Close()
@@ -79,14 +79,14 @@ func compile(config *vmConfig.VMConfig, sourceFile *vm_grpc.MvIrSourceFile) ([]b
 
 	resp, err := client.Compile(connCtx, sourceFile)
 	if err != nil {
-		fmt.Errorf("Compilation failed because of error during compilation and connection to VM: %s\n", err.Error())
+		fmt.Printf("Compilation failed because of error during compilation and connection to VM: %s\n", err.Error())
 		return nil, false
 	}
 
 	// if contains errors
 	if len(resp.Errors) > 0 {
 		for _, err := range resp.Errors {
-			fmt.Errorf("Error from compiler: %s\n", string(err))
+			fmt.Printf("Error from compiler: %s\n", string(err))
 		}
 		fmt.Println("Compilation failed because of errors from compiler.")
 		return nil, false
@@ -185,9 +185,12 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 
 			// Mvir file
 			sourceFile := &vm_grpc.MvIrSourceFile{
-				Text:    mvirContent,
+				Text:    string(mvirContent),
 				Address: nil,
+				Type:    vm_grpc.ContractType_Script,
 			}
+
+			fmt.Printf("source code: %s", string(mvirContent))
 
 			// compile mvir file
 			bytecode, isOk := compile(config, sourceFile)
@@ -230,8 +233,9 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 
 			// Mvir file
 			sourceFile := &vm_grpc.MvIrSourceFile{
-				Text:    mvirContent,
+				Text:    string(mvirContent),
 				Address: []byte(args[1]),
+				Type:    vm_grpc.ContractType_Module,
 			}
 
 			// compile mvir file

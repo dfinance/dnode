@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"wings-blockchain/x/vm/client"
+	"wings-blockchain/x/vm/client/cli"
 	types "wings-blockchain/x/vm/internal/types"
 )
 
