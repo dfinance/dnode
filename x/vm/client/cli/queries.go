@@ -9,17 +9,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/libs/cli"
 	"google.golang.org/grpc"
 	"io/ioutil"
 	"os"
-	vmConfig "wings-blockchain/cmd/config"
 	"wings-blockchain/x/vm/internal/types"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (
-	FlagOutput = "to-file"
+	FlagOutput       = "to-file"
+	FlagCompilerAddr = "compiler"
 )
 
 // Get query commands for VM module.
@@ -35,6 +34,7 @@ func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
 	)
 
 	for _, cmd := range compileCommands {
+		cmd.Flags().String(FlagCompilerAddr, "127.0.0.1:50053", "--compiler 127.0.0.1:50053")
 		cmd.Flags().String(FlagOutput, "", "--to-file ./compiled.mv")
 	}
 
@@ -51,8 +51,8 @@ func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 // Create connection to virtual machine.
-func createVMConn(config *vmConfig.VMConfig) (*grpc.ClientConn, error) {
-	return grpc.Dial(config.Address, grpc.WithInsecure())
+func createVMConn() (*grpc.ClientConn, error) {
+	return grpc.Dial(viper.GetString(FlagCompilerAddr), grpc.WithInsecure())
 }
 
 // Read mvir file by file path.
@@ -66,8 +66,8 @@ func readMvirFile(filePath string) ([]byte, error) {
 	return ioutil.ReadAll(file)
 }
 
-func compile(config *vmConfig.VMConfig, sourceFile *vm_grpc.MvIrSourceFile) ([]byte, bool) {
-	conn, err := createVMConn(config)
+func compile(sourceFile *vm_grpc.MvIrSourceFile) ([]byte, bool) {
+	conn, err := createVMConn()
 	if err != nil {
 		fmt.Printf("Compilation failed because of error during connection to VM: %s\n", err.Error())
 		return nil, false
@@ -170,12 +170,6 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 		Short: "compile script using source code from mvir file",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := vmConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
-			if err != nil {
-				fmt.Println("Error during reading config.")
-				return err
-			}
-
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
@@ -205,7 +199,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// compile mvir file
-			bytecode, isOk := compile(config, sourceFile)
+			bytecode, isOk := compile(sourceFile)
 			if !isOk {
 				return nil
 			}
@@ -230,12 +224,6 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 		Short: "compile module connected to account, using source code from mvir file",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := vmConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
-			if err != nil {
-				fmt.Println("Error during reading config.")
-				return err
-			}
-
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
@@ -251,7 +239,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// compile mvir file
-			bytecode, isOk := compile(config, sourceFile)
+			bytecode, isOk := compile(sourceFile)
 			if !isOk {
 				return nil
 			}
