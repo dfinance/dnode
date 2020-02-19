@@ -12,10 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 	"net"
 	"os"
-	"time"
 	"wings-blockchain/cmd/config"
 	"wings-blockchain/x/core"
 	"wings-blockchain/x/currencies"
@@ -108,14 +106,8 @@ type WbServiceApp struct {
 func (app *WbServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
-	var kpParams = keepalive.ClientParameters{
-		Time:                time.Second, // send pings every 10 seconds if there is no activity
-		Timeout:             time.Second, // wait 1 second for ping ack before considering the connection dead
-		PermitWithoutStream: true,        // send pings even without active streams
-	}
-
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithKeepaliveParams(kpParams))
+	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		panic(err)
 	}
@@ -303,6 +295,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// NOTE: The genutils moodule must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
+		vm.ModuleName,
 		genaccounts.ModuleName,
 		distribution.ModuleName,
 		staking.ModuleName,
@@ -313,7 +306,6 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		poa.ModuleName,
 		currencies.ModuleName,
 		multisig.ModuleName,
-		vm.ModuleName,
 		genutil.ModuleName,
 	)
 
@@ -340,6 +332,13 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		cmn.Exit(err.Error())
 	}
 
+	// Temporary solution, but seems works.
+	// Set context for reading data from DS store.
+	// TODO: find another way for storage to read data.
+	dsContext := app.GetDSContext()
+	app.vmKeeper.SetDSContext(dsContext)
+	app.vmKeeper.StartDSServer(dsContext)
+
 	return app
 }
 
@@ -362,7 +361,11 @@ func (app *WbServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain)
 		panic(err)
 	}
 
-	return app.mm.InitGenesis(ctx, genesisState)
+	resp := app.mm.InitGenesis(ctx, genesisState)
+	app.vmKeeper.SetDSContext(ctx)
+	app.vmKeeper.StartDSServer(ctx)
+
+	return resp
 }
 
 // Initialize begin blocker function.

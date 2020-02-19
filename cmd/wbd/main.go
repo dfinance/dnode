@@ -5,6 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/spf13/viper"
 	"wings-blockchain/app"
+	vmCli "wings-blockchain/x/vm/client/cli"
 
 	"encoding/json"
 	"io"
@@ -55,6 +56,7 @@ func main() {
 		genaccscli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		// Allows user to poa genesis validator
 		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
+		vmCli.GenesisWSFromFile(ctx, cdc),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 

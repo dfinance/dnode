@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"syscall"
+	"wings-blockchain/x/core"
 	"wings-blockchain/x/vm"
 
 	"errors"
@@ -315,6 +316,15 @@ func (app *BaseApp) setDeliverState(header abci.Header) {
 		ms:  ms,
 		ctx: sdk.NewContext(ms, header, false, app.logger),
 	}
+}
+
+// Get context for data store (read only).
+func (app *BaseApp) GetDSContext() sdk.Context {
+	ms := app.cms.CacheMultiStore()
+
+	return sdk.NewContext(
+		ms, abci.Header{}, true, app.logger,
+	).WithGasMeter(core.NewDumbGasMeter())
 }
 
 // setConsensusParams memoizes the consensus params.

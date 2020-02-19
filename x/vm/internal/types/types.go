@@ -25,8 +25,9 @@ const (
 
 // VM related variables.
 var (
-	KeyDelimiter = []byte(":")
-	VMKey        = []byte("vm")
+	KeyGenesisInitialized = []byte("gen_init")
+	KeyDelimiter          = []byte(":")
+	VMKey                 = []byte("vm")
 
 	zeroBytes = make([]byte, 12)
 )
