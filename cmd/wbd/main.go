@@ -1,6 +1,11 @@
 package main
 
 import (
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/spf13/viper"
+	"wings-blockchain/app"
+
 	"encoding/json"
 	"io"
 
@@ -17,7 +22,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	app "wings-blockchain"
 	wbConfig "wings-blockchain/cmd/config"
 	oraclecli "wings-blockchain/x/oracle/client/cli"
 	poaCli "wings-blockchain/x/poa/client/cli"
@@ -41,7 +45,7 @@ func main() {
 	}
 
 	rootCmd.AddCommand(
-		genutilcli.InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome),
+		InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome),
 		genutilcli.CollectGenTxsCmd(ctx, cdc, genaccounts.AppModuleBasic{}, app.DefaultNodeHome),
 		genutilcli.GenTxCmd(
 			ctx, cdc, app.ModuleBasics, staking.AppModuleBasic{},
@@ -69,16 +73,26 @@ func main() {
 
 // Creating new WB app.
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
-	return app.NewWbServiceApp(logger, db)
+	// read VM config
+	config, err := wbConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
+	if err != nil {
+		panic(err)
+	}
+
+	return app.NewWbServiceApp(logger, db, config)
 }
 
 // Exports genesis data and validators.
 func exportAppStateAndTMValidators(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
+	config, err := wbConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
+	if err != nil {
+		panic(err)
+	}
 
 	if height != -1 {
-		wbApp := app.NewWbServiceApp(logger, db)
+		wbApp := app.NewWbServiceApp(logger, db, config)
 		err := wbApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -86,6 +100,18 @@ func exportAppStateAndTMValidators(
 		return wbApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	wbApp := app.NewWbServiceApp(logger, db)
+	wbApp := app.NewWbServiceApp(logger, db, config)
 	return wbApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+}
+
+// Init cmd together with VM configruation.
+func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
+	defaultNodeHome string) *cobra.Command { // nolint: golint
+	cmd := genutilcli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
+
+	cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {
+		wbConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
+	}
+
+	return cmd
 }

@@ -21,6 +21,7 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
+	"wings-blockchain/app"
 
 	app "wings-blockchain"
 	"wings-blockchain/x/oracle"

@@ -16,9 +16,7 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string
 	cacheCtx, _ := ctx.CacheContext()
 	handler := keeper.router.GetRoute(msg.Route())
 
-	err := handler(cacheCtx, msg)
-
-	if err != nil {
+	if err := handler(cacheCtx, msg); err != nil {
 		return err
 	}
 
@@ -28,7 +26,6 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string
 
 	nextId := keeper.getNextCallId(ctx)
 	call, err := types.NewCall(nextId, uniqueID, msg, ctx.BlockHeight(), sender)
-
 	if err != nil {
 		return err
 	}
@@ -37,9 +34,7 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string
 
 	keeper.addCallToQueue(ctx, id, call.Height)
 
-	err = keeper.Confirm(ctx, id, sender)
-
-	if err != nil {
+	if err := keeper.Confirm(ctx, id, sender); err != nil {
 		return err
 	}
 

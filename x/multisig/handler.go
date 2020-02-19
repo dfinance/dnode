@@ -24,7 +24,7 @@ func NewHandler(keeper Keeper, poaKeeper poa.Keeper) sdk.Handler {
 			return handleMsgRevokeConfirm(ctx, keeper, msg)
 
 		default:
-			errMsg := fmt.Sprintf("Unrecognized nameservice Msg type: %v", msg.Type())
+			errMsg := fmt.Sprintf("unrecognized multisig msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
@@ -36,9 +36,7 @@ func handleMsgSubmitCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, m
 		return types.ErrNotValidator(msg.Sender.String()).Result()
 	}
 
-	err := keeper.SubmitCall(ctx, msg.Msg, msg.UniqueID, msg.Sender)
-
-	if err != nil {
+	if err := keeper.SubmitCall(ctx, msg.Msg, msg.UniqueID, msg.Sender); err != nil {
 		return err.Result()
 	}
 
@@ -61,9 +59,7 @@ func handleMsgConfirmCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, 
 		return types.ErrCallAlreadyApproved(msg.MsgId, msg.Sender.String()).Result()
 	}
 
-	err = keeper.Confirm(ctx, msg.MsgId, msg.Sender)
-
-	if err != nil {
+	if err := keeper.Confirm(ctx, msg.MsgId, msg.Sender); err != nil {
 		return err.Result()
 	}
 
@@ -78,9 +74,7 @@ func handleMsgRevokeConfirm(ctx sdk.Context, keeper Keeper, msg msgs.MsgRevokeCo
 		return types.ErrCallNotApproved(msg.MsgId, msg.Sender.String()).Result()
 	}
 
-	err := keeper.RevokeConfirmation(ctx, msg.MsgId, msg.Sender)
-
-	if err != nil {
+	if err := keeper.RevokeConfirmation(ctx, msg.MsgId, msg.Sender); err != nil {
 		return err.Result()
 	}
 

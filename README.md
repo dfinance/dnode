@@ -5,7 +5,7 @@
 
 **THIS IS VERY EARLY WORK IN PROGRESS, NOT FOR TESTNET/PRODUCTION USAGE**
 
-Wings Blockchain Peg Zone implementation based on [Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
+Wings Blockchain (WB) is based on [Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
 
 This is work in progress, yet it supports the following features:
 
@@ -17,14 +17,15 @@ This is work in progress, yet it supports the following features:
 * Issuing/destroying new coins based on PoA consensus.
 * **86400** blocks interval to confirm call execution under multisig.
 * **Support PoS**: staking, delegation, slashing, supply, etc.
+* **Supports Smart Contracts**: Move Virtual Machine developed by Libra (Facebook).
 
-Motivation is allowing to moving tokens/currencies between different blockchains and Wings blockchain.
+Motivation is allowing to implement DeFi products without headache.
 
-Additional information could be found in other repositories, that presents part of Wings Peg Zones.
+Additional information could be found in other repositories, that presents part of WB.
 
-Other repositories related to Peg Zones could be found:
+WB (Wings Blockchain) is technical name and will be changed in future.
 
-* [Ethereum Peg Zone](https://github.com/WingsDao/eth-peg-zone)
+Other repositories related to Peg Zones could be found at [project page](https://github.com/WingsDao).
 
 # Installation
 
@@ -140,11 +141,17 @@ To make sure that genesis file is correct:
 
     wbd validate-genesis
 
+If you want to change VM settings, look at [VM section](#configuration).
+
 Now we are ready to launch testnet:
 
     wbd start
 
-## Add/remove/replace validator by multisignature
+# Docs
+
+## Peg Zone
+
+### Add/remove/replace validator by multisignature
 
 Before we start managing validators by PoA, let's remember that minimum amount of validators is 3, maximum is 11.
 
@@ -179,7 +186,7 @@ To get validator:
 
 Where `[address]` is Bech32 WB address.
 
-## Confirm multisignature call
+### Confirm multisignature call
 
 To confirm multisignature call you need to extract call id from transaction execution output and confirm this call
 by other validators:
@@ -203,7 +210,7 @@ To get calls amount:
 
     wbcli query multisig lastId
 
-## Issuing new currency by multisig
+### Issuing new currency by multisig
 
 To issue new currency:
 
@@ -250,7 +257,7 @@ Where:
 
 * **[destroyID]** - destroy ID, usually just from 0 to N.
 
-# Rest API
+### Rest API
 
 Launch REST API:
 
@@ -275,26 +282,158 @@ PoA:
 
 * `/poa/validators` - PoA validators list.
 
-# Docs
 
-In progress.
+## Fees
+
+Currently WB supports transactions only with non-zero fees in wings cryptocurrency, so it means each transaction
+must contains at least **1wings**.
+
+## VM
+
+WB blockchain currently supports smart-contracts via Move VM.
+
+Both two types of Move transaction supported, like: deploy module/execute script.
+
+To deploy module:
+
+    wbcli tx vm deploy-module [fileMV] --from <from> --fees <fees>
+    
+To execute script:
+
+    wbcli tx vm execute-script [fileMV] arg1:type1, arg2:type2, arg3:type3... --from <from> --fees <fees>
+    
+    # Or (as example with arguments):
+    wbcli tx vm execute-script [fileMV] true:Bool, 150:U64 --from <from> --fees <fees>
+    
+To get results of execution, gas spent, events, just query transaction:
+
+    wbcli query tx [transactionId]
+
+Output will contains all events, collected from script execution/module deploy, also events have status, like for successful execution
+(status keep):
+
+```json
+{
+  "type": "keep"
+}
+```
+
+And (status discard, when execution/deploy failed):
+
+```json
+{
+  "type": "discard",
+  "attributes": [
+    {
+      "key": "major_status",
+      "value": "0"
+    },
+    {
+      "key": "sub_status",
+      "value": "0"
+    },
+    {
+      "key": "message",
+      "value": "error message"
+    }
+  ]
+}
+```
+
+### Compilation
+
+Currently compilation not available from WB, only by using libra directly.
+Possible way is to clone repo and compile module/script so:
+
+    git clone git@github.com:WingsDao/libra.git
+    cd libra
+    cargo run --bin compiler -- script.mvir 
+    cargo run --bin compiler -- -m module.mvir
+
+In neat future WB will support compilation via CLI.
+
+### Configuration
+
+Default VM configuration file placed into `~/.wbd/config/vm.toml`, and will be 
+initialized after `init` command.
+
+As Move VM in case of WB connected using GRPC protocol (as alpha implementation,
+later it will be changed for stability), `vm.toml` contains such default parameters:
+
+```toml
+# This is a TOML config file to configurate connection to VM.
+# For more information, see https://github.com/toml-lang/toml
+
+##### main base config options #####
+
+# VM network address to connect.
+vm_address = "127.0.0.1:50051"
+
+# VM data server listen address.
+vm_data_listen = "127.0.0.1:50052"
+
+# VM deploy request timeout in milliseconds.
+vm_deploy_timeout = 100
+
+# VM execute contract request timeout in milliseconds.
+vm_execute_timeout = 100
+```
+
+Where:
+
+* `vm_address` - address of GRPC VM node contains Move VM, using to deploy/execute modules.
+* `vm_data_listen` - address to listen for GRPC Data Source server (part of WB), using to share data between WB and VM.
+
+The rest parameters are timeouts, don't recommend to change it.
+
+### Tests
+
+During standard launch of tests:
+
+    GO111MODULE=on go test ./...
+
+VM will use default configuration for integration tests (with connection to VM),
+and with unit tests (using Mock servers), standard configuration looks so:
+
+```go
+// Mocks
+DefaultMockVMAddress        = "127.0.0.1:60051" // Default virtual machine address to connect from Cosmos SDK.
+DefaultMockDataListen       = "127.0.0.1:60052" // Default data server address to listen for connections from VM.
+DefaultMockVMTimeoutDeploy  = 100               // Default timeout for deploy module request.
+DefaultMockVMTimeoutExecute = 100               // Default timeout for execute request.
+
+// Integrations
+DefaultVMAddress        = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
+DefaultDataListen       = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
+DefaultVMTimeoutDeploy  = 100               // Default timeout for deploy module request.
+DefaultVMTimeoutExecute = 100               // Default timeout for execute request.
+```
+
+To change these parameters during test launch, use next flags after test command:
+
+* `--vm.mock.address` - Address of mock VM node, change only in case of conflicts with ports.
+* `--ds.mock.listen` - Address to listen for data source server, change only in case of conflicts with ports.
+* `--vm.address` - Address of VM node to connect during tests.
+* `--ds.listen` - Address to listen for Data Source server during tests.
+
+To launch tests **ONLY** related to VM:
+
+     GO111MODULE=on go test wings-blockchain/x/vm/internal/keeper
 
 # Tests
 
-In progress.
+To launch tests run: 
+
+    GO111MODULE=on go test ./...
+    
+    And with integration tests:
+    GO111MODULE=on go test ./... --tags integ
 
 # Contributors
 
-Current project is under development and going to evolve together with other parts of Wings blockchain as
-**Relay Layer** and Wings blockchain itself, anyway we have
-planned things to:
-
-* More Tests Coverage
-* Refactoring
-* Generate docs
-* PoS government implementation instead of PoA
-
 This project has the [following contributors](https://github.com/WingsDao/griffin-consensus-poc/graphs/contributors).
+
+To help project you always can open [issue](https://github.com/WingsDao/wings-blockchain/pulls) or fork, do changes in your own fork and open [pull request](https://github.com/WingsDao/wings-blockchain/pulls).
 
 # License
 
