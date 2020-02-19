@@ -28,10 +28,12 @@ func TestKeeper_DeployContract(t *testing.T) {
 
 	msg := types.NewMsgDeployModule(acc, codeBytes)
 
-	events, err := input.vk.DeployContract(input.ctx, msg)
+	err = input.vk.DeployContract(input.ctx, msg)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	events = input.ctx.EventManager().Events()
 
 	require.Len(t, events, 1)
 	require.EqualValues(t, types.EventTypeKeep, events[0].Type)

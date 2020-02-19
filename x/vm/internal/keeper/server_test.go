@@ -4,16 +4,15 @@ import (
 	"context"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 	"testing"
 	"wings-blockchain/x/vm/internal/types/ds_grpc"
 	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 // Initialize connection to DS server.
-func getClient(t *testing.T) ds_grpc.DSServiceClient {
-	config := MockVMConfig()
-
-	dsConn, err := grpc.Dial(config.DataListen, grpc.WithInsecure())
+func getClient(t *testing.T, listener *bufconn.Listener) ds_grpc.DSServiceClient {
+	dsConn, err := grpc.DialContext(context.TODO(), "", grpc.WithContextDialer(GetBufDialer(listener)), grpc.WithInsecure())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +41,7 @@ func TestDSServer_GetRaw(t *testing.T) {
 
 	input.vk.dsServer.SetContext(&input.ctx)
 
-	client := getClient(t)
+	client := getClient(t, input.dsListener)
 
 	value := randomValue(32)
 	ap := randomPath()
@@ -72,7 +71,7 @@ func TestDSServer_MultiGetRaw(t *testing.T) {
 
 	input.vk.dsServer.SetContext(&input.ctx)
 
-	client := getClient(t)
+	client := getClient(t, input.dsListener)
 	argsCount := 3
 	req := &ds_grpc.DSAccessPaths{
 		Paths: make([]*ds_grpc.DSAccessPath, argsCount),

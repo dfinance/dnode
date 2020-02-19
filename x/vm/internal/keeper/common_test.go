@@ -13,6 +13,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 	"math/rand"
 	"net"
 	vmConfig "wings-blockchain/cmd/config"
@@ -65,6 +66,8 @@ type testInput struct {
 	rawServer   *grpc.Server
 	rawVMServer *grpc.Server
 	vmServer    *VMServer
+
+	dsListener *bufconn.Listener
 }
 
 var (
@@ -73,6 +76,8 @@ var (
 
 	vmAddress *string
 	dsListen  *string
+
+	bufferSize = 1024 * 1024
 )
 
 func init() {
@@ -129,14 +134,21 @@ func randomValue(len int) []byte {
 }
 
 func closeInput(input testInput) {
-	input.vk.listener.Close()
-	if input.rawServer != nil {
-		input.rawServer.Stop()
-	}
+	go func() {
+		if input.rawServer != nil {
+			input.rawServer.GracefulStop()
+		}
 
-	if input.rawVMServer != nil {
-		input.rawVMServer.Stop()
-	}
+		if input.rawVMServer != nil {
+			input.rawVMServer.GracefulStop()
+		}
+
+		input.vk.listener.Close()
+
+		if input.dsListener != nil {
+			input.dsListener.Close()
+		}
+	}()
 }
 
 func setupTestInput(launchMock bool) testInput {
@@ -167,8 +179,9 @@ func setupTestInput(launchMock bool) testInput {
 		panic(err)
 	}
 
+	var vmListener *bufconn.Listener
 	if launchMock {
-		input.vmServer, input.rawVMServer = LaunchVMMock()
+		input.vmServer, input.rawVMServer, vmListener = LaunchVMMock()
 	}
 
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams, params.DefaultCodespace)
@@ -187,15 +200,32 @@ func setupTestInput(launchMock bool) testInput {
 		config = VMConfigWithFlags()
 	}
 
-	listener, err := net.Listen("tcp", config.DataListen)
-	if err != nil {
-		panic(err)
+	// process if mock
+	var listener net.Listener
+	if launchMock {
+		input.dsListener = bufconn.Listen(bufferSize)
+		listener = input.dsListener
+	} else {
+		listener, err = net.Listen("tcp", config.DataListen)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// no blocking, so we can launch part of tests even without vm
-	clientConn, err := grpc.Dial(config.Address, grpc.WithInsecure())
-	if err != nil {
-		panic(err)
+	var clientConn *grpc.ClientConn
+
+	if launchMock {
+		ctx := context.TODO()
+		clientConn, err = grpc.DialContext(ctx, "", grpc.WithContextDialer(GetBufDialer(vmListener)), grpc.WithInsecure())
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		clientConn, err = grpc.Dial(config.Address, grpc.WithInsecure())
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	input.vk = Keeper{
@@ -289,23 +319,24 @@ func (server VMServer) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExec
 	return resps, nil
 }
 
-func LaunchVMMock() (*VMServer, *grpc.Server) {
-	config := MockVMConfig()
-
-	dsListener, err := net.Listen("tcp", config.Address)
-	if err != nil {
-		panic(err)
-	}
+func LaunchVMMock() (*VMServer, *grpc.Server, *bufconn.Listener) {
+	vmListener := bufconn.Listen(bufferSize)
 
 	vmServer := VMServer{}
 	server := grpc.NewServer()
 	vm_grpc.RegisterVMServiceServer(server, vmServer)
 
 	go func() {
-		if err := server.Serve(dsListener); err != nil {
+		if err := server.Serve(vmListener); err != nil {
 			panic(err)
 		}
 	}()
 
-	return &vmServer, server
+	return &vmServer, server, vmListener
+}
+
+func GetBufDialer(listener *bufconn.Listener) func(context.Context, string) (net.Conn, error) {
+	return func(ctx context.Context, url string) (net.Conn, error) {
+		return listener.Dial()
+	}
 }
