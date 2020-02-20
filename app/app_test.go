@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,6 +25,7 @@ const (
 	queryGetCurrencyPath = "/custom/currencies/" + currencies.QueryGetCurrency
 	queryGetDestroyPath  = "/custom/currencies/" + currencies.QueryGetDestroy
 	queryGetDestroysPath = "/custom/currencies/" + currencies.QueryGetDestroys
+	queryGetCallPath     = "/custom/multisig/call"
 	queryGetCallsPath    = "/custom/multisig/calls"
 )
 
@@ -475,6 +477,57 @@ func Test_MultisigVoting(t *testing.T) {
 		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
 		require.Equal(t, 1, len(calls))
 		require.Equal(t, 1, len(calls[0].Votes))
+	}
+}
+
+func Test_MultisigBlockHeight(t *testing.T) {
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
+
+	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
+	require.NoError(t, err)
+	_, err = setGenesis(t, app, genAccs)
+	require.NoError(t, err)
+
+	recipientAddr, recipientAcc, recipientPrivKey := genAddrs[0], genAccs[0], genPrivKeys[0]
+
+	// generate blocks to reach multisig call reject condition
+	msIntervalToExecute := app.msKeeper.GetIntervalToExecute(GetContext(app, true))
+	curSequence := recipientAcc.GetSequence()
+	blockCountToLimit := int(msIntervalToExecute*2 + 1)
+	for curIssueId := 0; curIssueId < blockCountToLimit; curIssueId++ {
+		// start block
+		app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
+		// generate submit message
+		issueId, msgId := fmt.Sprintf("issue%d", curIssueId), strconv.Itoa(curIssueId)
+		issueMsg := msgs.NewMsgIssueCurrency(currency1Symbol, sdk.NewInt(amount), 0, recipientAddr, issueId)
+		submitMsg := msmsg.NewMsgSubmitCall(issueMsg, msgId, recipientAddr)
+		// emit transaction
+		tx := genTx([]sdk.Msg{submitMsg}, []uint64{recipientAcc.GetAccountNumber()}, []uint64{curSequence}, recipientPrivKey)
+		curSequence++
+		res := app.Deliver(tx)
+		require.True(t, res.IsOK(), res.Log)
+		// commit block
+		app.EndBlock(abci.RequestEndBlock{})
+		app.Commit()
+	}
+
+	// check rejected calls (request one by one as they are not in queue)
+	for i := int64(0); i <= msIntervalToExecute; i++ {
+		call := mstypes.CallResp{}
+		CheckRunQuery(t, app, mstypes.CallReq{CallId: uint64(i)}, queryGetCallPath, &call)
+		require.True(t, call.Call.Rejected)
+	}
+
+	// check non-rejected calls (request all as they are in the queue)
+	{
+		calls := mstypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
+		for _, call := range calls {
+			require.False(t, call.Call.Rejected)
+		}
 	}
 }
 

@@ -36,13 +36,26 @@ func (module AppModuleBasic) RegisterCodec(cdc *amino.Codec) {
 }
 
 // Validate exists genesis.
-func (AppModuleBasic) ValidateGenesis(json.RawMessage) error {
+func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
+	var genesisState types.GenesisState
+	err := ModuleCdc.UnmarshalJSON(bz, &genesisState)
+	if err != nil {
+		return err
+	}
+
+	params := genesisState.Parameters
+	if err = params.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // Generate default genesis.
 func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return nil
+	return ModuleCdc.MustMarshalJSON(types.GenesisState{
+		Parameters: types.DefaultParams(),
+	})
 }
 
 // Register REST routes.
@@ -109,10 +122,17 @@ func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.Va
 
 // Initialize genesis.
 func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	var genesisState types.GenesisState
+
+	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
+
+	app.msKeeper.InitGenesis(ctx, genesisState)
+
 	return []abci.ValidatorUpdate{}
 }
 
 // Export genesis.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return json.RawMessage{}
+	genesisState := app.msKeeper.ExportGenesis(ctx)
+	return ModuleCdc.MustMarshalJSON(genesisState)
 }

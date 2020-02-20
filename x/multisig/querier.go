@@ -57,7 +57,7 @@ func queryGetLastId(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 	calls := make(types.CallsResp, 0)
 
-	start := ctx.BlockHeight() - types.IntervalToExecute
+	start := ctx.BlockHeight() - msKeeper.GetIntervalToExecute(ctx)
 
 	if start < 0 {
 		start = 0

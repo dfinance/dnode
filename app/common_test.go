@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 
 	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
 	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	"github.com/WingsDao/wings-blockchain/x/vm"
 )
@@ -173,6 +174,14 @@ func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.
 		Parameters:    poaTypes.DefaultParams(),
 		PoAValidators: validators,
 	})
+
+	genesisState[msTypes.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, msTypes.GenesisState{
+		Parameters: msTypes.Params{
+			IntervalToExecute: 50,
+		},
+	})
+
+	require.NoError(t, ModuleBasics.ValidateGenesis(genesisState))
 
 	stateBytes := codec.MustMarshalJSONIndent(app.cdc, genesisState)
 	// Initialize the chain
