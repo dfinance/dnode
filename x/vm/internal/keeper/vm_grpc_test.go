@@ -17,7 +17,6 @@ import (
 // Generate VM arguments.
 func getArgs() []*vm_grpc.VMArgs {
 	addr := sdk.AccAddress([]byte(randomValue(32)))
-	addrEncoded := types.EncodeAddress(addr)
 
 	args := make([]*vm_grpc.VMArgs, 8)
 
@@ -43,7 +42,7 @@ func getArgs() []*vm_grpc.VMArgs {
 
 	args[4] = &vm_grpc.VMArgs{
 		Type:  vm_grpc.VMTypeTag_Address,
-		Value: "0x" + hex.EncodeToString(addrEncoded),
+		Value: addr.String(),
 	}
 
 	args[5] = &vm_grpc.VMArgs{
@@ -166,6 +165,6 @@ func TestNewDeployRequest(t *testing.T) {
 	require.EqualValues(t, 0, req.Options)
 	require.EqualValues(t, gasLimit, req.Contracts[0].MaxGasAmount)
 	require.EqualValues(t, code, req.Contracts[0].Code)
-	require.EqualValues(t, types.EncodeAddress(addr), req.Contracts[0].Address)
+	require.EqualValues(t, addr.String(), req.Contracts[0].Address)
 	require.Equal(t, 1, len(req.Contracts))
 }

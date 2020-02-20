@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -124,17 +125,28 @@ func saveOutput(bytecode []byte, cdc *codec.Codec) error {
 // Get data from data source by access path.
 func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "get_data [address] [path]",
-		Short:   "get_data from data source storage by address and path",
-		Example: "get data 0000000000000000000000000000000000000000000000000000000000000000 0019b01c2cf3c2160a43e4dcad70e3e5d18151cc38de7a1d1067c6031bfa0ae4d9",
+		Use:     "get-data [address] [path]",
+		Short:   "get-data from data source storage by address and path, address could be bech32 or hex",
+		Example: "get-data wallets196udj7s8.../00000000... 0019b01c2cf3c2160a43e4dcad70e3e5d18151cc38de7a1d1067c6031bfa0ae4d9",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			// extract data
-			address, err := hex.DecodeString(args[0])
+			rawAddress := args[0]
+			var address sdk.AccAddress
+			address, err := hex.DecodeString(rawAddress)
 			if err != nil {
-				return err
+				address, err = sdk.AccAddressFromBech32(rawAddress)
+				if err != nil {
+					fmt.Printf("can't parse address: %s\n, check address format, it could be libra hex or bech32\n", rawAddress)
+					return nil
+				}
+
+				address, err = hex.DecodeString(types.Bech32ToLibra(address))
+				if err != nil {
+					return err
+				}
 			}
 
 			path, err := hex.DecodeString(args[1])
@@ -166,9 +178,10 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // Compile Mvir script.
 func CompileScript(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "compile-script [mvirFile] [account]",
-		Short: "compile script using source code from mvir file",
-		Args:  cobra.ExactArgs(2),
+		Use:     "compile-script [mvirFile] [account]",
+		Short:   "compile script using source code from mvir file",
+		Example: "compile-script script.mvir wallets196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file script.mv --compiler 127.0.0.1:50053",
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])
@@ -176,20 +189,6 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 				fmt.Println("Error during reading mvir file.")
 				return err
 			}
-
-			// parse address
-			/*prefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
-			address, err := sdk.AccAddressFromBech32(args[1])
-			if err != nil {
-				return err
-			}
-
-			realAddress := make([]byte, 0)
-			realAddress = append(realAddress, []byte(prefix)...)
-			realAddress = append(realAddress, make([]byte, 5)...)
-			realAddress = append(realAddress, address...)
-
-			fmt.Printf("Address length is %d %s\n", len(realAddress), hex.EncodeToString(realAddress))*/
 
 			// Mvir file
 			sourceFile := &vm_grpc.MvIrSourceFile{
@@ -220,9 +219,10 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 // Compile Mvir module.
 func CompileModule(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "compile-module [mvirFile] [account]",
-		Short: "compile module connected to account, using source code from mvir file",
-		Args:  cobra.ExactArgs(2),
+		Use:     "compile-module [mvirFile] [account]",
+		Short:   "compile module connected to account, using source code from mvir file",
+		Example: "compile-module module.mvir wallets196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file module.mv --compiler 127.0.0.1:50053",
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])

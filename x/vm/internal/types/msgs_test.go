@@ -1,7 +1,6 @@
 package types
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -61,7 +60,7 @@ func TestMsgExecuteScript(t *testing.T) {
 	args := make([]ScriptArg, 3)
 	args[0] = NewScriptArg("10", vm_grpc.VMTypeTag_U64)
 	args[1] = NewScriptArg("0x00", vm_grpc.VMTypeTag_ByteArray)
-	args[2] = NewScriptArg("0x"+hex.EncodeToString(EncodeAddress(acc)), vm_grpc.VMTypeTag_Address)
+	args[2] = NewScriptArg(acc.String(), vm_grpc.VMTypeTag_Address)
 
 	msg := NewMsgExecuteScript(acc, code, args)
 	require.Equal(t, msg.Signer, acc)
