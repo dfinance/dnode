@@ -277,12 +277,12 @@ func GetContext(app *WbServiceApp, isCheckTx bool) sdk.Context {
 	return app.NewContext(isCheckTx, abci.Header{Height: app.LastBlockHeight() + 1})
 }
 
-func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
+func GetAccountCheckTx(app *WbServiceApp, address sdk.AccAddress) auth.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
-func GetAccountCheckTx(app *WbServiceApp, address sdk.AccAddress) auth.Account {
-	return app.accountKeeper.GetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), address)
+func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
+	return app.accountKeeper.GetAccount(app.NewContext(false, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
 func CheckResultError(t *testing.T, expectedErr sdk.Error, receivedRes sdk.Result) {

@@ -139,18 +139,18 @@ func Test_DestroyCurrencyOverLimit(t *testing.T) {
 	_, err = setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
-	recipient := addrs[0]
-	issueMsg := msgs.NewMsgIssueCurrency(currency1Symbol, sdk.NewInt(amount), 0, recipient, issue1ID)
-	issueCurrencyCheck(t, app, "1", issueMsg, recipient, genAccs, addrs, privKeys)
+	recipientAddr, recepientPrivKey := addrs[0], privKeys[0]
+	issueMsg := msgs.NewMsgIssueCurrency(currency1Symbol, sdk.NewInt(amount), 0, recipientAddr, issue1ID)
+	issueCurrencyCheck(t, app, "1", issueMsg, recipientAddr, genAccs, addrs, privKeys)
 	// checking that the currency is issued
 	checkCurrencyExists(t, app, currency1Symbol, amount, 0)
 	// check issue is exists
-	checkIssueExists(t, app, issue1ID, recipient, amount)
+	checkIssueExists(t, app, issue1ID, recipientAddr, amount)
 
 	// reduce the currency over the limit
-	destroyMsg := msgs.NewMsgDestroyCurrency(chainID, currency1Symbol, sdk.NewInt(amount+1), addrs[0], addrs[0].String())
-	acc := GetAccount(app, genAccs[0].Address)
-	tx := genTx([]sdk.Msg{destroyMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
+	destroyMsg := msgs.NewMsgDestroyCurrency(chainID, currency1Symbol, sdk.NewInt(amount+1), recipientAddr, recipientAddr.String())
+	acc := GetAccountCheckTx(app, recipientAddr)
+	tx := genTx([]sdk.Msg{destroyMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, recepientPrivKey)
 	CheckDeliverSpecificErrorTx(t, app, tx, sdk.ErrInsufficientCoins(""))
 }
 
@@ -403,7 +403,7 @@ func Test_MultisigVoting(t *testing.T) {
 	// submit call
 	{
 		senderAddr, senderPrivKey := curValidators[0].Address, curPrivKeys[0]
-		senderAcc := GetAccount(app, senderAddr)
+		senderAcc := GetAccountCheckTx(app, senderAddr)
 		// create call
 		addValidatorMsg := msgspoa.NewMsgAddValidator(addValidator.Address, ethAddresses[0], senderAddr)
 		msgID := fmt.Sprintf("addValidator:%s", addValidator.Address)
@@ -422,7 +422,7 @@ func Test_MultisigVoting(t *testing.T) {
 	// add vote
 	{
 		senderAddr, senderPrivKey := curValidators[1].Address, curPrivKeys[1]
-		senderAcc := GetAccount(app, senderAddr)
+		senderAcc := GetAccountCheckTx(app, senderAddr)
 		// confirm call
 		confirmMsg := msmsg.MsgConfirmCall{MsgId: callMsgId, Sender: senderAddr}
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -437,7 +437,7 @@ func Test_MultisigVoting(t *testing.T) {
 	// revoke confirm (non-existing vote)
 	{
 		senderAddr, senderPrivKey := curValidators[2].Address, curPrivKeys[2]
-		senderAcc := GetAccount(app, senderAddr)
+		senderAcc := GetAccountCheckTx(app, senderAddr)
 		// revoke confirm
 		revokeMsg := msmsg.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAddr}
 		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -447,7 +447,7 @@ func Test_MultisigVoting(t *testing.T) {
 	// revoke confirm (existing vote)
 	{
 		senderAddr, senderPrivKey := curValidators[1].Address, curPrivKeys[1]
-		senderAcc := GetAccount(app, senderAddr)
+		senderAcc := GetAccountCheckTx(app, senderAddr)
 		// revoke confirm
 		revokeMsg := msmsg.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAddr}
 		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -462,7 +462,7 @@ func Test_MultisigVoting(t *testing.T) {
 	// revoke confirm (last vote)
 	{
 		senderAddr, senderPrivKey := curValidators[0].Address, curPrivKeys[0]
-		senderAcc := GetAccount(app, senderAddr)
+		senderAcc := GetAccountCheckTx(app, senderAddr)
 		// revoke confirm
 		revokeMsg := msmsg.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAddr}
 		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -491,11 +491,10 @@ func Test_MultisigBlockHeight(t *testing.T) {
 	_, err = setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
-	recipientAddr, recipientAcc, recipientPrivKey := genAddrs[0], genAccs[0], genPrivKeys[0]
+	recipientAddr, recipientPrivKey := genAddrs[0], genPrivKeys[0]
 
 	// generate blocks to reach multisig call reject condition
 	msIntervalToExecute := app.msKeeper.GetIntervalToExecute(GetContext(app, true))
-	curSequence := recipientAcc.GetSequence()
 	blockCountToLimit := int(msIntervalToExecute*2 + 1)
 	for curIssueId := 0; curIssueId < blockCountToLimit; curIssueId++ {
 		// start block
@@ -505,8 +504,8 @@ func Test_MultisigBlockHeight(t *testing.T) {
 		issueMsg := msgs.NewMsgIssueCurrency(currency1Symbol, sdk.NewInt(amount), 0, recipientAddr, issueId)
 		submitMsg := msmsg.NewMsgSubmitCall(issueMsg, msgId, recipientAddr)
 		// emit transaction
-		tx := genTx([]sdk.Msg{submitMsg}, []uint64{recipientAcc.GetAccountNumber()}, []uint64{curSequence}, recipientPrivKey)
-		curSequence++
+		recepientAcc := GetAccount(app, recipientAddr)
+		tx := genTx([]sdk.Msg{submitMsg}, []uint64{recepientAcc.GetAccountNumber()}, []uint64{recepientAcc.GetSequence()}, recipientPrivKey)
 		res := app.Deliver(tx)
 		require.True(t, res.IsOK(), res.Log)
 		// commit block
@@ -673,7 +672,7 @@ func addValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount,
 	for _, v := range newValidators {
 		// Submit message
 		addValidatorMsg := msgspoa.NewMsgAddValidator(v.Address, ethAddresses[0], sender)
-		acc := GetAccount(app, sender)
+		acc := GetAccountCheckTx(app, sender)
 		msgID := fmt.Sprintf("addValidator:%s", v.Address)
 		submitMsg := msmsg.NewMsgSubmitCall(addValidatorMsg, msgID, sender)
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
@@ -689,7 +688,7 @@ func addValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount,
 		confirmMsg := msmsg.MsgConfirmCall{MsgId: calls[0].Call.MsgID}
 		validatorsAmount := app.poaKeeper.GetValidatorAmount(GetContext(app, true))
 		for idx, vv := range genAccs[1 : validatorsAmount/2+1] {
-			acc := GetAccount(app, vv.Address)
+			acc := GetAccountCheckTx(app, vv.Address)
 			confirmMsg.Sender = vv.Address
 			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[idx+1])
 			if doChecks {
@@ -714,7 +713,7 @@ func replaceValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAcco
 		oldValidator = *oldValidatorOverwrite
 	}
 	replaceValidatorMsg := msgspoa.NewMsgReplaceValidator(oldValidator, newValidator.Address, ethAddresses[0], sender)
-	acc := GetAccount(app, sender)
+	acc := GetAccountCheckTx(app, sender)
 	msgID := fmt.Sprintf("replaceValidator:%s", newValidator.Address)
 	submitMsg := msmsg.NewMsgSubmitCall(replaceValidatorMsg, msgID, sender)
 	tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKey)
@@ -730,7 +729,7 @@ func replaceValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAcco
 	confirmMsg := msmsg.MsgConfirmCall{MsgId: calls[0].Call.MsgID}
 	validatorsAmount := app.poaKeeper.GetValidatorAmount(GetContext(app, true))
 	for j, vv := range genAccs[1 : validatorsAmount/2+1] {
-		acc := GetAccount(app, vv.Address)
+		acc := GetAccountCheckTx(app, vv.Address)
 		confirmMsg.Sender = vv.Address
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, oldPrivKeys[j+1])
 		CheckDeliverTx(t, app, tx)
@@ -749,7 +748,7 @@ func removeValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccou
 	for _, v := range rmValidators {
 		// Submit message
 		removeValidatorMsg := msgspoa.NewMsgRemoveValidator(v.Address, sender)
-		acc := GetAccount(app, sender)
+		acc := GetAccountCheckTx(app, sender)
 		msgID := fmt.Sprintf("removeValidator:%s", v.Address)
 		submitMsg := msmsg.NewMsgSubmitCall(removeValidatorMsg, msgID, sender)
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
@@ -765,7 +764,7 @@ func removeValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccou
 		confirmMsg := msmsg.MsgConfirmCall{MsgId: calls[0].Call.MsgID}
 		validatorsAmount := app.poaKeeper.GetValidatorAmount(GetContext(app, true))
 		for idx, vv := range genAccs[1 : validatorsAmount/2+1] {
-			acc := GetAccount(app, vv.Address)
+			acc := GetAccountCheckTx(app, vv.Address)
 			confirmMsg.Sender = vv.Address
 			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[idx+1])
 			if doChecks {
