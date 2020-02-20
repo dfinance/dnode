@@ -3,8 +3,10 @@ package msgs
 
 import (
 	"encoding/json"
+
+	"github.com/WingsDao/wings-blockchain/x/poa/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/poa/types"
 )
 
 // Type for codec

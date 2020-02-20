@@ -2,7 +2,8 @@ package poa
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
-	"wings-blockchain/x/poa/msgs"
+
+	"github.com/WingsDao/wings-blockchain/x/poa/msgs"
 )
 
 // Registering amino types for PoA messages

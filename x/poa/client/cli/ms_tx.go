@@ -4,8 +4,8 @@ package cli
 import (
 	"os"
 
-	msMsg "wings-blockchain/x/multisig/msgs"
-	"wings-blockchain/x/poa/msgs"
+	msMsg "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
+	"github.com/WingsDao/wings-blockchain/x/poa/msgs"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"

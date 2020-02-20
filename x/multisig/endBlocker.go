@@ -3,11 +3,12 @@ package multisig
 
 import (
 	"fmt"
-	"wings-blockchain/x/poa"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"wings-blockchain/x/multisig/types"
+
+	"github.com/WingsDao/wings-blockchain/x/multisig/types"
+	"github.com/WingsDao/wings-blockchain/x/poa"
 )
 
 // Implements end blocker to process active calls and their confirmations.

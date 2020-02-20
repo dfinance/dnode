@@ -3,6 +3,11 @@ package app
 import (
 	"bytes"
 	"flag"
+	"net"
+	"os"
+	"sort"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -14,14 +19,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
-	"net"
-	"os"
-	"sort"
-	"testing"
-	vmConfig "wings-blockchain/cmd/config"
-	"wings-blockchain/x/vm"
 
-	poaTypes "wings-blockchain/x/poa/types"
+	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/WingsDao/wings-blockchain/x/vm"
 )
 
 // Type that combines an Address with the privKey and pubKey to that address
@@ -162,14 +163,13 @@ func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.
 		acc := genaccounts.NewGenesisAccount(_acc)
 		accounts[idx] = acc
 	}
-	genesisState["accounts"] = codec.MustMarshalJSONIndent(app.cdc, accounts)
+	genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, accounts)
 
 	validators := make(poaTypes.Validators, len(accs))
 	for idx, _acc := range accs {
 		validators[idx] = poaTypes.Validator{Address: _acc.Address, EthAddress: "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615"}
 	}
-
-	genesisState["poa"] = codec.MustMarshalJSONIndent(app.cdc, poaTypes.GenesisState{
+	genesisState[poaTypes.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, poaTypes.GenesisState{
 		Parameters:    poaTypes.DefaultParams(),
 		PoAValidators: validators,
 	})
@@ -248,6 +248,10 @@ func GetContext(app *WbServiceApp, isCheckTx bool) sdk.Context {
 	return app.NewContext(isCheckTx, abci.Header{Height: app.LastBlockHeight() + 1})
 }
 
-func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
+func GetAccountCheckTx(app *WbServiceApp, address sdk.AccAddress) auth.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), address)
+}
+
+func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
+	return app.accountKeeper.GetAccount(app.NewContext(false, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }

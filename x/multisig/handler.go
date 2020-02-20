@@ -2,12 +2,13 @@
 package multisig
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	poa "wings-blockchain/x/poa"
-
 	"fmt"
-	"wings-blockchain/x/multisig/msgs"
-	"wings-blockchain/x/multisig/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/WingsDao/wings-blockchain/x/multisig/msgs"
+	"github.com/WingsDao/wings-blockchain/x/multisig/types"
+	poa "github.com/WingsDao/wings-blockchain/x/poa"
 )
 
 // Handle messages for multisig module.

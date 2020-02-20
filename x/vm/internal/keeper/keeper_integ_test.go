@@ -4,10 +4,10 @@ package keeper
 
 import (
 	"encoding/hex"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"wings-blockchain/x/vm/internal/types"
 )
 
 // Test deploy module with real VM.

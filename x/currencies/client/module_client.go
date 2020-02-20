@@ -5,8 +5,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
-	"wings-blockchain/x/currencies/client/cli"
-	"wings-blockchain/x/currencies/types"
+
+	"github.com/WingsDao/wings-blockchain/x/currencies/client/cli"
+	"github.com/WingsDao/wings-blockchain/x/currencies/types"
 )
 
 // Returns get commands for this module.
