@@ -211,6 +211,21 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	return auth.NewStdTx(msgs, fee, sigs, memo)
 }
 
+func DeliverTx(app *WbServiceApp, tx auth.StdTx) sdk.Result {
+	if res := app.Simulate(app.cdc.MustMarshalJSON(tx), tx); !res.IsOK() {
+		return res
+	}
+
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
+	if res := app.Deliver(tx); !res.IsOK() {
+		return res
+	}
+	app.EndBlock(abci.RequestEndBlock{})
+	app.Commit()
+
+	return sdk.Result{}
+}
+
 func CheckDeliverTx(t *testing.T, app *WbServiceApp, tx auth.StdTx) {
 	res := app.Simulate(app.cdc.MustMarshalJSON(tx), tx)
 	require.True(t, res.IsOK(), res.Log)
@@ -231,6 +246,11 @@ func CheckDeliverErrorTx(t *testing.T, app *WbServiceApp, tx auth.StdTx) {
 	app.Commit()
 }
 
+func CheckDeliverSpecificErrorTx(t *testing.T, app *WbServiceApp, tx auth.StdTx, err sdk.Error) {
+	res := DeliverTx(app, tx)
+	CheckResultError(t, err, res)
+}
+
 func CheckRunQuery(t *testing.T, app *WbServiceApp, requestData interface{}, path string, responseValue interface{}) (resp abci.ResponseQuery) {
 	resp = app.Query(abci.RequestQuery{
 		Data: codec.MustMarshalJSONIndent(app.cdc, requestData),
@@ -248,10 +268,15 @@ func GetContext(app *WbServiceApp, isCheckTx bool) sdk.Context {
 	return app.NewContext(isCheckTx, abci.Header{Height: app.LastBlockHeight() + 1})
 }
 
+func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
+	return app.accountKeeper.GetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), address)
+}
+
 func GetAccountCheckTx(app *WbServiceApp, address sdk.AccAddress) auth.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
-func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
-	return app.accountKeeper.GetAccount(app.NewContext(false, abci.Header{Height: app.LastBlockHeight() + 1}), address)
+func CheckResultError(t *testing.T, expectedErr sdk.Error, receivedRes sdk.Result) {
+	require.Equal(t, expectedErr.Codespace(), receivedRes.Codespace, "%q failed, res.Log: %s", "res.Codespace", receivedRes.Log)
+	require.Equal(t, expectedErr.Code(), receivedRes.Code, "%q failed, res.Log: %s", "res.Code", receivedRes.Log)
 }

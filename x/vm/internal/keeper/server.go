@@ -32,7 +32,7 @@ type DSServer struct {
 func ErrNoData(path *ds_grpc.DSAccessPath) *ds_grpc.DSRawResponse {
 	return &ds_grpc.DSRawResponse{
 		ErrorCode:    ds_grpc.DSRawResponse_NO_DATA,
-		ErrorMessage: []byte(fmt.Sprintf("data not found for access path: %s", path.String())),
+		ErrorMessage: fmt.Sprintf("data not found for access path: %s", path.String()),
 	}
 }
 

@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -121,8 +122,34 @@ func Test_DestroyCurrency(t *testing.T) {
 	destroyMsg := msgs.NewMsgDestroyCurrency(chainID, currency1Symbol, sdk.NewInt(amount), addrs[0], addrs[0].String())
 	destroyCurrency(t, app, destroyMsg, genAccs, privKeys)
 	checkCurrencyExists(t, app, currency1Symbol, 0, 0)
+}
 
-	//queryDestroy := QueryDe
+func Test_DestroyCurrencyOverLimit(t *testing.T) {
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
+
+	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	require.NoError(t, err)
+
+	// Create a bunch (ie 10) of pre-funded accounts to use for tests
+	genAccs, addrs, _, privKeys := CreateGenAccounts(10, genCoins)
+	_, err = setGenesis(t, app, genAccs)
+	require.NoError(t, err)
+
+	recipient := addrs[0]
+	issueMsg := msgs.NewMsgIssueCurrency(currency1Symbol, sdk.NewInt(amount), 0, recipient, issue1ID)
+	issueCurrencyCheck(t, app, "1", issueMsg, recipient, genAccs, addrs, privKeys)
+	// checking that the currency is issued
+	checkCurrencyExists(t, app, currency1Symbol, amount, 0)
+	// check issue is exists
+	checkIssueExists(t, app, issue1ID, recipient, amount)
+
+	// reduce the currency over the limit
+	destroyMsg := msgs.NewMsgDestroyCurrency(chainID, currency1Symbol, sdk.NewInt(amount+1), addrs[0], addrs[0].String())
+	acc := GetAccount(app, genAccs[0].Address)
+	tx := genTx([]sdk.Msg{destroyMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
+	CheckDeliverSpecificErrorTx(t, app, tx, sdk.ErrInsufficientCoins(""))
 }
 
 func Test_Queryes(t *testing.T) {
@@ -242,6 +269,18 @@ Loop:
 
 	checkRemoveValidators(t, app, genValidators, validatorsToRemove, privKeys)
 	require.Equal(t, len(genValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
+
+	// check requested (validatorsToRemove) validator were removed
+	existingValidators := append([]*auth.BaseAccount(nil), genValidators...)
+	for _, v := range app.poaKeeper.GetValidators(GetContext(app, true)) {
+		for ii, vv := range existingValidators {
+			if v.Address.Equals(vv.Address) {
+				existingValidators = append(existingValidators[:ii], existingValidators[ii+1:]...)
+				break
+			}
+		}
+	}
+	require.Equal(t, len(existingValidators), 0)
 }
 
 func Test_POAValidatorsReplace(t *testing.T) {
@@ -264,10 +303,179 @@ func Test_POAValidatorsReplace(t *testing.T) {
 	}
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
+
 	checkReplaceValidators(t, app, genValidators, validatorsToReplace[0], privKeys)
+	// check "new" validator was added ("old" replaced)
 	replaced := app.poaKeeper.GetValidator(GetContext(app, true), validatorsToReplace[0].Address)
 	require.Equal(t, validatorsToReplace[0].Address.String(), replaced.Address.String())
 	require.Equal(t, len(genValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
+	// check "old" validator doesn't exist
+	nonExisting := app.poaKeeper.GetValidator(GetContext(app, true), genValidators[len(genValidators)-1].Address)
+	require.True(t, nonExisting.Address.Empty())
+}
+
+func Test_POAValidatorsReplaceExisting(t *testing.T) {
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
+
+	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	require.NoError(t, err)
+
+	genValidators, _, _, genPrivKeys := CreateGenAccounts(8, genCoins)
+	curValidators, curPrivKeys := genValidators[:7], genPrivKeys[:7]
+	newValidators := genValidators[7:]
+	_, err = setGenesis(t, app, curValidators)
+	require.NoError(t, err)
+
+	// replace existing with existing validator
+	{
+		replaceValidator := curValidators[1]
+		res := replaceValidators(t, app, curValidators, nil, replaceValidator, curPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrValidatorExists(""), res)
+	}
+	// replace non-existing with existing validator
+	{
+		oldValidator, replaceValidator := newValidators[0], curValidators[1]
+		res := replaceValidators(t, app, curValidators, &oldValidator.Address, replaceValidator, curPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrValidatorDoesntExists(""), res)
+	}
+}
+
+func Test_POAValidatorsMinMaxRange(t *testing.T) {
+	t.Parallel()
+
+	defMinValidators, defMaxValidators := poaTypes.DefaultMinValidators, poaTypes.DefaultMaxValidators
+
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
+
+	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genValidators, _, _, genPrivKeys := CreateGenAccounts(int(defMaxValidators)+1, genCoins)
+	curValidators, curPrivKeys := genValidators[:defMaxValidators], genPrivKeys[:defMaxValidators]
+	require.NoError(t, err)
+	_, err = setGenesis(t, app, curValidators)
+	require.NoError(t, err)
+
+	require.Equal(t, defMinValidators, app.poaKeeper.GetMinValidators(GetContext(app, true)))
+	require.Equal(t, defMaxValidators, app.poaKeeper.GetMaxValidators(GetContext(app, true)))
+
+	// add (defMaxValidators + 1) validator
+	{
+		newValidator := genValidators[len(genValidators)-1]
+		res := addValidators(t, app, curValidators, []*auth.BaseAccount{newValidator}, curPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrMaxValidatorsReached(0), res)
+	}
+
+	// remove all validator till defMinValidators is reached
+	for len(curValidators) != int(defMinValidators) {
+		delValidator := genValidators[len(curValidators)-1]
+		removeValidators(t, app, curValidators, []*auth.BaseAccount{delValidator}, curPrivKeys, true)
+		curValidators, curPrivKeys = curValidators[:len(curValidators)-1], curPrivKeys[:len(curPrivKeys)-1]
+	}
+
+	// remove (defMinValidators - 1) validator
+	{
+		delValidator := genValidators[len(curValidators)-1]
+		res := removeValidators(t, app, curValidators, []*auth.BaseAccount{delValidator}, curPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrMinValidatorsReached(0), res)
+	}
+}
+
+func Test_MultisigVoting(t *testing.T) {
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
+
+	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genValidators, _, _, genPrivKeys := CreateGenAccounts(8, genCoins)
+	curValidators, curPrivKeys := genValidators[:7], genPrivKeys[:7]
+	require.NoError(t, err)
+	_, err = setGenesis(t, app, curValidators)
+	require.NoError(t, err)
+
+	addValidator := genValidators[len(genValidators)-1]
+	var callMsgId uint64
+
+	// submit call
+	{
+		senderAddr, senderPrivKey := curValidators[0].Address, curPrivKeys[0]
+		senderAcc := GetAccount(app, senderAddr)
+		// create call
+		addValidatorMsg := msgspoa.NewMsgAddValidator(addValidator.Address, ethAddresses[0], senderAddr)
+		msgID := fmt.Sprintf("addValidator:%s", addValidator.Address)
+		submitMsg := msmsg.NewMsgSubmitCall(addValidatorMsg, msgID, senderAddr)
+		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverTx(t, app, tx)
+		// check call added
+		calls := mstypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
+		require.Equal(t, 1, len(calls))
+		callMsgId = calls[0].Call.MsgID
+		// check vote added
+		require.Equal(t, senderAddr, calls[0].Votes[0])
+	}
+
+	// add vote
+	{
+		senderAddr, senderPrivKey := curValidators[1].Address, curPrivKeys[1]
+		senderAcc := GetAccount(app, senderAddr)
+		// confirm call
+		confirmMsg := msmsg.MsgConfirmCall{MsgId: callMsgId, Sender: senderAddr}
+		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverTx(t, app, tx)
+		// check vote added
+		calls := mstypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
+		require.Equal(t, 1, len(calls))
+		require.Equal(t, senderAddr, calls[0].Votes[1])
+	}
+
+	// revoke confirm (non-existing vote)
+	{
+		senderAddr, senderPrivKey := curValidators[2].Address, curPrivKeys[2]
+		senderAcc := GetAccount(app, senderAddr)
+		// revoke confirm
+		revokeMsg := msmsg.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAddr}
+		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverSpecificErrorTx(t, app, tx, mstypes.ErrCallNotApproved(0, ""))
+	}
+
+	// revoke confirm (existing vote)
+	{
+		senderAddr, senderPrivKey := curValidators[1].Address, curPrivKeys[1]
+		senderAcc := GetAccount(app, senderAddr)
+		// revoke confirm
+		revokeMsg := msmsg.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAddr}
+		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverTx(t, app, tx)
+		// check vote removed
+		calls := mstypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
+		require.Equal(t, 1, len(calls))
+		require.NotContains(t, calls[0].Votes, senderAddr)
+	}
+
+	// revoke confirm (last vote)
+	{
+		senderAddr, senderPrivKey := curValidators[0].Address, curPrivKeys[0]
+		senderAcc := GetAccount(app, senderAddr)
+		// revoke confirm
+		revokeMsg := msmsg.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAddr}
+		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		// TODO: revoking call's last vote doesn't remove the call (panic occurs), is that correct?
+		expectedErr := mstypes.ErrWrongCallId(callMsgId)
+		require.PanicsWithError(t, expectedErr.Error(), func() {
+			DeliverTx(app, tx)
+		})
+
+		// check call exists with one vote (last vote was not removed 'cause of the panic)
+		calls := mstypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
+		require.Equal(t, 1, len(calls))
+		require.Equal(t, 1, len(calls[0].Votes))
+	}
 }
 
 func issueCurrencyCheck(t *testing.T, app *WbServiceApp, msgID string, msg msgs.MsgIssueCurrency, recipient sdk.AccAddress,
@@ -405,4 +613,115 @@ func checkAddValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAcc
 			CheckDeliverTx(t, app, tx)
 		}
 	}
+}
+
+func addValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, newValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+	sender := genAccs[0].Address
+	for _, v := range newValidators {
+		// Submit message
+		addValidatorMsg := msgspoa.NewMsgAddValidator(v.Address, ethAddresses[0], sender)
+		acc := GetAccount(app, sender)
+		msgID := fmt.Sprintf("addValidator:%s", v.Address)
+		submitMsg := msmsg.NewMsgSubmitCall(addValidatorMsg, msgID, sender)
+		tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
+		if doChecks {
+			CheckDeliverTx(t, app, tx)
+		} else if res := DeliverTx(app, tx); !res.IsOK() {
+			return res
+		}
+
+		calls := mstypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
+		require.Equal(t, 1, len(calls[0].Votes))
+		confirmMsg := msmsg.MsgConfirmCall{MsgId: calls[0].Call.MsgID}
+		validatorsAmount := app.poaKeeper.GetValidatorAmount(GetContext(app, true))
+		for idx, vv := range genAccs[1 : validatorsAmount/2+1] {
+			acc := GetAccount(app, vv.Address)
+			confirmMsg.Sender = vv.Address
+			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[idx+1])
+			if doChecks {
+				CheckDeliverTx(t, app, tx)
+			} else if res := DeliverTx(app, tx); !res.IsOK() {
+				return res
+			}
+		}
+	}
+
+	return sdk.Result{}
+}
+
+func replaceValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, oldValidatorOverwrite *sdk.AccAddress, newValidator *auth.BaseAccount, oldPrivKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+	privKey := oldPrivKeys[0]
+	oldValidators := app.poaKeeper.GetValidators(GetContext(app, true))
+	sender := oldValidators[0].Address
+
+	// Submit message
+	oldValidator := oldValidators[len(oldValidators)-1].Address
+	if oldValidatorOverwrite != nil {
+		oldValidator = *oldValidatorOverwrite
+	}
+	replaceValidatorMsg := msgspoa.NewMsgReplaceValidator(oldValidator, newValidator.Address, ethAddresses[0], sender)
+	acc := GetAccount(app, sender)
+	msgID := fmt.Sprintf("replaceValidator:%s", newValidator.Address)
+	submitMsg := msmsg.NewMsgSubmitCall(replaceValidatorMsg, msgID, sender)
+	tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKey)
+	if doChecks {
+		CheckDeliverTx(t, app, tx)
+	} else if res := DeliverTx(app, tx); !res.IsOK() {
+		return res
+	}
+
+	calls := mstypes.CallsResp{}
+	CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
+	require.Equal(t, 1, len(calls[0].Votes))
+	confirmMsg := msmsg.MsgConfirmCall{MsgId: calls[0].Call.MsgID}
+	validatorsAmount := app.poaKeeper.GetValidatorAmount(GetContext(app, true))
+	for j, vv := range genAccs[1 : validatorsAmount/2+1] {
+		acc := GetAccount(app, vv.Address)
+		confirmMsg.Sender = vv.Address
+		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, oldPrivKeys[j+1])
+		CheckDeliverTx(t, app, tx)
+	}
+	if doChecks {
+		CheckDeliverTx(t, app, tx)
+	} else if res := DeliverTx(app, tx); !res.IsOK() {
+		return res
+	}
+
+	return sdk.Result{}
+}
+
+func removeValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, rmValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+	sender := genAccs[0].Address
+	for _, v := range rmValidators {
+		// Submit message
+		removeValidatorMsg := msgspoa.NewMsgRemoveValidator(v.Address, sender)
+		acc := GetAccount(app, sender)
+		msgID := fmt.Sprintf("removeValidator:%s", v.Address)
+		submitMsg := msmsg.NewMsgSubmitCall(removeValidatorMsg, msgID, sender)
+		tx := genTx([]sdk.Msg{submitMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
+		if doChecks {
+			CheckDeliverTx(t, app, tx)
+		} else if res := DeliverTx(app, tx); !res.IsOK() {
+			return res
+		}
+
+		calls := mstypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
+		require.Equal(t, 1, len(calls[0].Votes))
+		confirmMsg := msmsg.MsgConfirmCall{MsgId: calls[0].Call.MsgID}
+		validatorsAmount := app.poaKeeper.GetValidatorAmount(GetContext(app, true))
+		for idx, vv := range genAccs[1 : validatorsAmount/2+1] {
+			acc := GetAccount(app, vv.Address)
+			confirmMsg.Sender = vv.Address
+			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[idx+1])
+			if doChecks {
+				CheckDeliverTx(t, app, tx)
+			} else if res := DeliverTx(app, tx); !res.IsOK() {
+				return res
+			}
+		}
+	}
+
+	return sdk.Result{}
 }
