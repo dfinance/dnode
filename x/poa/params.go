@@ -30,7 +30,7 @@ func (poaKeeper Keeper) GetParams(ctx sdk.Context) types.Params {
 	min := poaKeeper.GetMinValidators(ctx)
 	max := poaKeeper.GetMaxValidators(ctx)
 
-	return types.NewParams(min, max)
+	return types.NewParams(max, min)
 }
 
 // Set the params.

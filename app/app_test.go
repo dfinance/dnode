@@ -224,6 +224,7 @@ func Test_POAValidatorsAdd(t *testing.T) {
 	_, err = setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
+	// add new validators
 	validatorsToAdd, _, _, _ := CreateGenAccounts(4, genCoins)
 	checkAddValidators(t, app, genValidators, validatorsToAdd, privKeys)
 	var added int
@@ -239,6 +240,10 @@ Loop:
 	}
 	require.Equal(t, added, len(validatorsToAdd))
 	require.Equal(t, len(validatorsToAdd)+len(genValidators), len(validators))
+
+	// add already existing validator
+	res := addValidators(t, app, genValidators, []*auth.BaseAccount{validatorsToAdd[0]}, privKeys, false)
+	CheckResultError(t, poaTypes.ErrValidatorExists(""), res)
 }
 
 func Test_POAValidatorsRemove(t *testing.T) {
@@ -283,6 +288,10 @@ Loop:
 		}
 	}
 	require.Equal(t, len(existingValidators), 0)
+
+	// remove non-existing validator
+	res := removeValidators(t, app, genValidators, []*auth.BaseAccount{validatorsToRemove[0]}, privKeys, false)
+	CheckResultError(t, poaTypes.ErrValidatorDoesntExists(""), res)
 }
 
 func Test_POAValidatorsReplace(t *testing.T) {

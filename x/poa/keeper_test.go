@@ -3,6 +3,7 @@ package poa
 import (
 	"testing"
 
+	poatypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -268,4 +269,30 @@ func TestKeeper_ReplaceValidator(t *testing.T) {
 	v := target.GetValidator(ctx, addr2)
 	require.Equal(t, addr2.String(), v.Address.String())
 	require.Equal(t, ethAddress2, v.EthAddress)
+}
+
+func TestKeeper_ExportGenesis(t *testing.T) {
+	t.Parallel()
+
+	input := setupTestInput(t)
+	ctx := input.ctx
+	target := input.target
+
+	addr, ethAddr := sdk.AccAddress([]byte("addr1")), ethAddress1
+
+	initGenesis := poatypes.GenesisState{
+		Parameters: poatypes.DefaultParams(),
+		PoAValidators: poatypes.Validators{
+			poatypes.Validator{
+				Address:    addr,
+				EthAddress: ethAddr,
+			},
+		},
+	}
+
+	target.InitGenesis(ctx, initGenesis)
+	exportGenesis := target.ExportGenesis(ctx)
+
+	require.True(t, initGenesis.Parameters.Equal(exportGenesis.Parameters))
+	require.ElementsMatch(t, initGenesis.PoAValidators, exportGenesis.PoAValidators)
 }
