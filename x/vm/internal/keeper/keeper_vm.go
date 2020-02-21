@@ -3,11 +3,9 @@ package keeper
 
 import (
 	"fmt"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Set value in storage by access path.
@@ -16,6 +14,11 @@ func (keeper Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath,
 	key := types.MakePathKey(*accessPath)
 
 	store.Set(key, value)
+}
+
+// Public get value by path.
+func (keeper Keeper) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
+	return keeper.getValue(ctx, accessPath)
 }
 
 // Get value from storage by access path.

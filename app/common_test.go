@@ -100,8 +100,8 @@ func CreateGenAccounts(numAccs int, genCoins sdk.Coins) (genAccs []*auth.BaseAcc
 }
 
 const (
-	DefaultMockVMAddress  = "127.0.0.1:60051" // Default virtual machine address to connect from Cosmos SDK.
-	DefaultMockDataListen = "127.0.0.1:60052" // Default data server address to listen for connections from VM.
+	DefaultMockVMAddress  = "127.0.0.1:0" // Default virtual machine address to connect from Cosmos SDK.
+	DefaultMockDataListen = "127.0.0.1:0" // Default data server address to listen for connections from VM.
 
 	FlagVMMockAddress = "vm.mock.address"
 	FlagDSMockListen  = "ds.mock.listen"

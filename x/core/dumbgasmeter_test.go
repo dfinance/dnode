@@ -1,9 +1,8 @@
 package core
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 // Tests for dumb gas meter.

@@ -2,24 +2,20 @@ package keeper
 
 import (
 	"encoding/hex"
-	"testing"
-
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+	"testing"
 )
 
 // Generate VM arguments.
 func getArgs() []*vm_grpc.VMArgs {
 	addr := sdk.AccAddress([]byte(randomValue(32)))
-	addrEncoded := types.EncodeAddress(addr)
-
 	args := make([]*vm_grpc.VMArgs, 8)
 
 	args[0] = &vm_grpc.VMArgs{
@@ -44,7 +40,7 @@ func getArgs() []*vm_grpc.VMArgs {
 
 	args[4] = &vm_grpc.VMArgs{
 		Type:  vm_grpc.VMTypeTag_Address,
-		Value: "0x" + hex.EncodeToString(addrEncoded),
+		Value: addr.String(),
 	}
 
 	args[5] = &vm_grpc.VMArgs{
@@ -129,12 +125,6 @@ func TestNewContract(t *testing.T) {
 	contractScript := getContract(addr, vm_grpc.ContractType_Script, code, maxGas, args, t)
 
 	require.Equal(t, vm_grpc.ContractType_Script, contractScript.ContractType)
-
-	// check error with wrong address
-	addr = []byte("hello")
-	_, err := NewContract(addr, maxGas, code, vm_grpc.ContractType_Module, args)
-	require.Error(t, err, "wrong error returned")
-	require.EqualValues(t, err, types.ErrWrongAddressLength(addr))
 }
 
 // Create new deploy request.
@@ -167,6 +157,6 @@ func TestNewDeployRequest(t *testing.T) {
 	require.EqualValues(t, 0, req.Options)
 	require.EqualValues(t, gasLimit, req.Contracts[0].MaxGasAmount)
 	require.EqualValues(t, code, req.Contracts[0].Code)
-	require.EqualValues(t, types.EncodeAddress(addr), req.Contracts[0].Address)
+	require.EqualValues(t, addr.String(), req.Contracts[0].Address)
 	require.Equal(t, 1, len(req.Contracts))
 }

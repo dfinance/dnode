@@ -13,32 +13,30 @@ import (
 	"github.com/WingsDao/wings-blockchain/x/multisig"
 	"github.com/WingsDao/wings-blockchain/x/vm"
 
-	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/cosmos/cosmos-sdk/x/distribution"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/cosmos/cosmos-sdk/x/slashing"
-	"github.com/cosmos/cosmos-sdk/x/supply"
-	tmtypes "github.com/tendermint/tendermint/types"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
-
-	bam "github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	abci "github.com/tendermint/tendermint/abci/types"
-	cmn "github.com/tendermint/tendermint/libs/common"
-	"github.com/tendermint/tendermint/libs/log"
-	dbm "github.com/tendermint/tm-db"
-
 	"github.com/WingsDao/wings-blockchain/x/oracle"
 	"github.com/WingsDao/wings-blockchain/x/poa"
 	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	bam "github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/version"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
+	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/cosmos/cosmos-sdk/x/supply"
+	abci "github.com/tendermint/tendermint/abci/types"
+	cmn "github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/libs/log"
+	tmtypes "github.com/tendermint/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
 const (
@@ -114,13 +112,13 @@ func (app *WbServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
 	var kpParams = keepalive.ClientParameters{
-		Time:                time.Second, // send pings every 10 seconds if there is no activity
+		Time:                time.Second, // send pings every 1 second if there is no activity
 		Timeout:             time.Second, // wait 1 second for ping ack before considering the connection dead
 		PermitWithoutStream: true,        // send pings even without active streams
 	}
 
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithKeepaliveParams(kpParams))
+	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithKeepaliveParams(kpParams))
 	if err != nil {
 		panic(err)
 	}
@@ -319,6 +317,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// NOTE: The genutils moodule must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
+		vm.ModuleName,
 		genaccounts.ModuleName,
 		distribution.ModuleName,
 		staking.ModuleName,
@@ -357,6 +356,13 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		cmn.Exit(err.Error())
 	}
 
+	// Temporary solution, but seems works.
+	// Set context for reading data from DS store.
+	// TODO: find another way for storage to read data.
+	dsContext := app.GetDSContext()
+	app.vmKeeper.SetDSContext(dsContext)
+	app.vmKeeper.StartDSServer(dsContext)
+
 	return app
 }
 
@@ -379,7 +385,11 @@ func (app *WbServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain)
 		panic(err)
 	}
 
-	return app.mm.InitGenesis(ctx, genesisState)
+	resp := app.mm.InitGenesis(ctx, genesisState)
+	app.vmKeeper.SetDSContext(ctx)
+	app.vmKeeper.StartDSServer(ctx)
+
+	return resp
 }
 
 // Initialize begin blocker function.
