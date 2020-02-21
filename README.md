@@ -364,17 +364,18 @@ Now everything should be fine.
 
 ### Compilation
 
-Fetch virtual machine repo and initialize 
+Launch compiler server, and WB.
 
-Currently compilation not available from WB, only by using libra directly.
-Possible way is to clone repo and compile module/script so:
+Then use commands to compile modules/scripts:
 
-    git clone git@github.com:WingsDao/libra.git
-    cd libra
-    cargo run --bin compiler -- script.mvir 
-    cargo run --bin compiler -- -m module.mvir
+    wbcli query vm compile-script [mvirFile] [address] --to-file <script.mv> --compiler 127.0.0.1:50053
+    wbcli query vm compile-module [mvirFile] [address] --to-file <module.mv> --compiler 127.0.0.1:50053    
 
-In neat future WB will support compilation via CLI.
+Where:
+ * `mvirFile` - file contains MVir code.
+ * `address` - address of account who will use compiled code.
+ * `--to-file` - allows to output result to file, otherwise it will be printed in console.
+ * `--compiler` - address of compiler, could be ignored, default is `127.0.0.1:50053`.
 
 ### Configuration
 
@@ -443,6 +444,16 @@ To change these parameters during test launch, use next flags after test command
 To launch tests **ONLY** related to VM:
 
      GO111MODULE=on go test wings-blockchain/x/vm/internal/keeper
+
+# Get storage data
+
+It possible to read storage data by path, e.g.:
+
+    wbcli query vm get-data [address] [path]
+
+Where:
+ * `address` - address of account contains data, could be bech32 or hex (libra).
+ * `path` - path of resource, hex.
 
 # Tests
 
