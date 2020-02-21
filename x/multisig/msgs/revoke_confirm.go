@@ -3,8 +3,10 @@ package msgs
 
 import (
 	"encoding/json"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/multisig/types"
+
+	"github.com/WingsDao/wings-blockchain/x/multisig/types"
 )
 
 // Message to revoke confirmation from call.

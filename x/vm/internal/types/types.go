@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	"github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (
@@ -21,7 +21,6 @@ const (
 	VmAddressLength = 32
 	VmGasPrice      = 1
 	VmUnknowTagType = -1
-
 	zeroBytes = 12
 )
 

@@ -2,13 +2,11 @@ package keeper
 
 import (
 	"encoding/hex"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"wings-blockchain/x/vm/internal/types"
 )
-
-// TODO: different mock servers for different responses?
 
 // Deploy script with mocked VM.
 func TestKeeper_DeployContractMock(t *testing.T) {

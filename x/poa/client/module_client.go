@@ -3,8 +3,9 @@ package client
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
-	"github.com/tendermint/go-amino"
-	"wings-blockchain/x/poa/client/cli"
+	amino "github.com/tendermint/go-amino"
+
+	"github.com/WingsDao/wings-blockchain/x/poa/client/cli"
 )
 
 // Return query commands for PoA module.

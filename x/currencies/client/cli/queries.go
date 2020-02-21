@@ -3,11 +3,13 @@ package cli
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
-	"wings-blockchain/x/currencies/types"
+
+	"github.com/WingsDao/wings-blockchain/x/currencies/types"
 )
 
 // Get destroys by page & limit.

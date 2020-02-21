@@ -2,6 +2,7 @@ package currencies
 
 import (
 	"encoding/json"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -9,10 +10,11 @@ import (
 	"github.com/spf13/cobra"
 	codec "github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/currencies/client"
-	"wings-blockchain/x/currencies/client/rest"
-	types "wings-blockchain/x/currencies/types"
+
+	"github.com/WingsDao/wings-blockchain/x/core"
+	"github.com/WingsDao/wings-blockchain/x/currencies/client"
+	"github.com/WingsDao/wings-blockchain/x/currencies/client/rest"
+	types "github.com/WingsDao/wings-blockchain/x/currencies/types"
 )
 
 var (

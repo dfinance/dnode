@@ -4,8 +4,9 @@ package client
 import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
-	"github.com/tendermint/go-amino"
-	cli "wings-blockchain/x/multisig/client/cli"
+	amino "github.com/tendermint/go-amino"
+
+	cli "github.com/WingsDao/wings-blockchain/x/multisig/client/cli"
 )
 
 // Returns get commands for this module.

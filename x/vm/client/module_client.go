@@ -2,11 +2,11 @@
 package client
 
 import (
+	"github.com/WingsDao/wings-blockchain/x/vm/client/cli"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
-	"wings-blockchain/x/vm/client/cli"
-	"wings-blockchain/x/vm/internal/types"
 )
 
 // Return TX commands for CLI.

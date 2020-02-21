@@ -3,10 +3,12 @@ package poa
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/poa/msgs"
-	"wings-blockchain/x/poa/types"
+
+	"github.com/WingsDao/wings-blockchain/x/core"
+	"github.com/WingsDao/wings-blockchain/x/poa/msgs"
+	"github.com/WingsDao/wings-blockchain/x/poa/types"
 )
 
 // New multisignature message handler for PoA module.

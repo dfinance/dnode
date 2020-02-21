@@ -3,12 +3,14 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
-	"net/http"
-	"wings-blockchain/x/currencies/types"
+
+	"github.com/WingsDao/wings-blockchain/x/currencies/types"
 )
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {

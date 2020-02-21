@@ -3,9 +3,11 @@ package msgs
 
 import (
 	"encoding/json"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/core"
-	types "wings-blockchain/x/multisig/types"
+
+	"github.com/WingsDao/wings-blockchain/x/core"
+	types "github.com/WingsDao/wings-blockchain/x/multisig/types"
 )
 
 // Message for submit call

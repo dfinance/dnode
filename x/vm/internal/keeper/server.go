@@ -4,6 +4,9 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/ds_grpc"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
@@ -11,9 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 	"net"
 	"sync"
-	"wings-blockchain/x/vm/internal/types"
-	"wings-blockchain/x/vm/internal/types/ds_grpc"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 // Check type.

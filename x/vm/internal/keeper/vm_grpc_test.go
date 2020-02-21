@@ -2,22 +2,20 @@ package keeper
 
 import (
 	"encoding/hex"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	"wings-blockchain/x/vm/internal/types"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
-
 	"testing"
 )
 
 // Generate VM arguments.
 func getArgs() []*vm_grpc.VMArgs {
 	addr := sdk.AccAddress([]byte(randomValue(32)))
-
 	args := make([]*vm_grpc.VMArgs, 8)
 
 	args[0] = &vm_grpc.VMArgs{
@@ -127,12 +125,6 @@ func TestNewContract(t *testing.T) {
 	contractScript := getContract(addr, vm_grpc.ContractType_Script, code, maxGas, args, t)
 
 	require.Equal(t, vm_grpc.ContractType_Script, contractScript.ContractType)
-
-	// check error with wrong address
-	addr = []byte("hello")
-	_, err := NewContract(addr, maxGas, code, vm_grpc.ContractType_Module, args)
-	require.Error(t, err, "wrong error returned")
-	require.EqualValues(t, err, types.ErrWrongAddressLength(addr))
 }
 
 // Create new deploy request.

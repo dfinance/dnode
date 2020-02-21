@@ -4,6 +4,8 @@ package core
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +17,6 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	log "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	"testing"
 )
 
 var (
@@ -29,6 +30,7 @@ type testInput struct {
 	sk  types.SupplyKeeper
 }
 
+// nolint:errcheck
 func setupTestInput() testInput {
 	db := dbm.NewMemDB()
 
@@ -75,6 +77,7 @@ func checkValidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, tx
 	require.True(t, result.IsOK())
 }
 
+// nolint:errcheck
 // test when no fees provided in transaction.
 func TestAnteHandlerWrongZeroFee(t *testing.T) {
 	input := setupTestInput()
@@ -98,6 +101,7 @@ func TestAnteHandlerWrongZeroFee(t *testing.T) {
 	checkInvalidTx(t, ah, input.ctx, tx, true, CodeFeeRequired)
 }
 
+// nolint:errcheck
 // test when wrong denom provided in transaction.
 func TestAnteHandlerWrongFeeDenom(t *testing.T) {
 	input := setupTestInput()
@@ -121,6 +125,7 @@ func TestAnteHandlerWrongFeeDenom(t *testing.T) {
 	checkInvalidTx(t, ah, input.ctx, tx, true, CodeWrongFeeDenom)
 }
 
+// nolint:errcheck
 // test for correct transaction with correct fees.
 func TestCorrectDenomFees(t *testing.T) {
 	input := setupTestInput()

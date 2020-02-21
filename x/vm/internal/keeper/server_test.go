@@ -2,18 +2,19 @@ package keeper
 
 import (
 	"context"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"testing"
-	"wings-blockchain/x/vm/internal/types/ds_grpc"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
+	"google.golang.org/grpc/test/bufconn"
+
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/ds_grpc"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 // Initialize connection to DS server.
-func getClient(t *testing.T) ds_grpc.DSServiceClient {
-	config := MockVMConfig()
-
-	dsConn, err := grpc.Dial(config.DataListen, grpc.WithInsecure())
+func getClient(t *testing.T, listener *bufconn.Listener) ds_grpc.DSServiceClient {
+	dsConn, err := grpc.DialContext(context.TODO(), "", grpc.WithContextDialer(GetBufDialer(listener)), grpc.WithInsecure())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,10 +27,8 @@ func TestDSServer_SetContext(t *testing.T) {
 	input := setupTestInput(true)
 	defer closeInput(input)
 
-	require.Nil(t, input.vk.dsServer.ctx)
-
-	input.vk.dsServer.SetContext(&input.ctx)
-	require.EqualValues(t, input.ctx, *input.vk.dsServer.ctx)
+	input.vk.dsServer.SetContext(input.ctx)
+	require.EqualValues(t, input.ctx, input.vk.dsServer.ctx)
 }
 
 // Test get raw data from server.
@@ -40,9 +39,9 @@ func TestDSServer_GetRaw(t *testing.T) {
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)
 	defer rawServer.Stop()
 
-	input.vk.dsServer.SetContext(&input.ctx)
+	input.vk.dsServer.SetContext(input.ctx)
 
-	client := getClient(t)
+	client := getClient(t, input.dsListener)
 
 	value := randomValue(32)
 	ap := randomPath()
@@ -70,9 +69,9 @@ func TestDSServer_MultiGetRaw(t *testing.T) {
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)
 	defer rawServer.Stop()
 
-	input.vk.dsServer.SetContext(&input.ctx)
+	input.vk.dsServer.SetContext(input.ctx)
 
-	client := getClient(t)
+	client := getClient(t, input.dsListener)
 	argsCount := 3
 	req := &ds_grpc.DSAccessPaths{
 		Paths: make([]*ds_grpc.DSAccessPath, argsCount),

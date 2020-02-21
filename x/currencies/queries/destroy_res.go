@@ -3,7 +3,7 @@ package queries
 import (
 	"strings"
 
-	"wings-blockchain/x/currencies/types"
+	"github.com/WingsDao/wings-blockchain/x/currencies/types"
 )
 
 // Get currency query response

@@ -1,9 +1,9 @@
 package vm
 
 import (
-	"wings-blockchain/x/vm/internal/keeper"
-	"wings-blockchain/x/vm/internal/types"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/keeper"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (

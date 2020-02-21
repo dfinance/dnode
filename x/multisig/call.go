@@ -3,8 +3,9 @@ package multisig
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/multisig/types"
+
+	"github.com/WingsDao/wings-blockchain/x/core"
+	"github.com/WingsDao/wings-blockchain/x/multisig/types"
 )
 
 // Submit call to execute by confirmations from validators.
@@ -138,7 +139,7 @@ func (keeper Keeper) getNextCallId(ctx sdk.Context) uint64 {
 		panic(err)
 	}
 
-	id += 1
+	id++
 
 	return id
 }
