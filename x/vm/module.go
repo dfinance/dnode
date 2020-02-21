@@ -67,7 +67,10 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 
 // Generate default genesis.
 func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return nil
+	// TODO: Not sure if that is the correct default genesis
+	state := types.GenesisState{}
+
+	return types.ModuleCdc.MustMarshalJSON(state)
 }
 
 // Register REST routes.
