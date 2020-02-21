@@ -1,9 +1,8 @@
 package main
 
 import (
-	"os"
-	"path"
-
+	"github.com/WingsDao/wings-blockchain/app"
+	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
@@ -15,11 +14,10 @@ import (
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
-
-	"github.com/WingsDao/wings-blockchain/app"
-	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	"os"
+	"path"
 	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
 )
 

@@ -1,8 +1,10 @@
+// VM module.
 package vm
 
 import (
+	"encoding/hex"
 	"encoding/json"
-
+	"fmt"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/WingsDao/wings-blockchain/x/vm/client"
 	"github.com/WingsDao/wings-blockchain/x/vm/client/cli"
 	types "github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 )
@@ -33,7 +36,32 @@ func (module AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 }
 
 // Validate exists genesis.
-func (AppModuleBasic) ValidateGenesis(json.RawMessage) error {
+func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
+	var state types.GenesisState
+	types.ModuleCdc.MustUnmarshalJSON(data, &state)
+
+	for _, genWriteOp := range state.WriteSet {
+		bzAddr, err := hex.DecodeString(genWriteOp.Address)
+		if err != nil {
+			return err
+		}
+
+		// address length
+		if len(bzAddr) != types.VmAddressLength {
+			return fmt.Errorf("incorrect address length %s, should be %d bytes length", genWriteOp.Address, types.VmAddressLength)
+		}
+
+		_, err = hex.DecodeString(genWriteOp.Path)
+		if err != nil {
+			return err
+		}
+
+		_, err = hex.DecodeString(genWriteOp.Value)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -47,12 +75,12 @@ func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) 
 
 // Get transaction commands for CLI.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+	return client.GetTxCmd(cdc)
 }
 
 // Get query commands for CLI.
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return nil
+	return cli.GetQueriesCmd(cdc)
 }
 
 // VM module.
@@ -88,7 +116,7 @@ func (AppModule) QuerierRoute() string { return types.RouterKey }
 
 // Get new querier for VM module.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return NewQuerier(app.vmKeeper)
 }
 
 // Process begin block (abci).
@@ -101,10 +129,13 @@ func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.Validato
 
 // Initialize genesis.
 func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	app.vmKeeper.InitGenesis(ctx, data)
 	return []abci.ValidatorUpdate{}
 }
 
 // Export genesis.
+// In my opinion we shouldn't export anything, as we can't predict what initially in write set, and how storage
+// resources could be changed during contracts executions.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	return json.RawMessage{}
 }

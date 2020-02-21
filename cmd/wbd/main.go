@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"io"
-
+	"github.com/WingsDao/wings-blockchain/app"
+	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
+	poaCli "github.com/WingsDao/wings-blockchain/x/poa/client/cli"
+	vmCli "github.com/WingsDao/wings-blockchain/x/vm/client/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,11 +22,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-
-	"github.com/WingsDao/wings-blockchain/app"
-	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
-	poaCli "github.com/WingsDao/wings-blockchain/x/poa/client/cli"
+	"io"
 )
 
 // WBD (Daemon) entry function.
@@ -55,6 +54,7 @@ func main() {
 		genaccscli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		// Allows user to poa genesis validator
 		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
+		vmCli.GenesisWSFromFile(ctx, cdc),
 		oraclecli.AddOracleNomeneesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)

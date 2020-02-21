@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"flag"
-	"math/rand"
-	"net"
-
+	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,10 +17,8 @@ import (
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
-
-	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+	"math/rand"
+	"net"
 )
 
 const (
@@ -49,7 +47,7 @@ type testInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
 
-	// k  Keeper
+	k  Keeper
 	ak auth.AccountKeeper
 	pk params.Keeper
 	vk Keeper
@@ -65,7 +63,7 @@ type testInput struct {
 	addressBytes []byte
 	valueBytes   []byte
 
-	// rawServer   *grpc.Server
+	//rawServer   *grpc.Server
 	rawVMServer *grpc.Server
 	vmServer    *VMServer
 
@@ -135,7 +133,7 @@ func randomValue(len int) []byte {
 	return rndBytes
 }
 
-func closeInput(input testInput) {
+func closeInput(_ testInput) {
 	// go func() {
 	// 	if input.rawServer != nil {
 	// 		input.rawServer.GracefulStop()

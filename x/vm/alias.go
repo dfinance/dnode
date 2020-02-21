@@ -21,6 +21,9 @@ type (
 
 	VMServer                     = vm_grpc.VMServiceServer
 	UnimplementedVMServiceServer = vm_grpc.UnimplementedVMServiceServer
+
+	QueryAccessPath = types.QueryAccessPath
+	QueryValueResp  = types.QueryValueResp
 )
 
 var (

@@ -27,10 +27,8 @@ func TestDSServer_SetContext(t *testing.T) {
 	input := setupTestInput(true)
 	defer closeInput(input)
 
-	require.Nil(t, input.vk.dsServer.ctx)
-
-	input.vk.dsServer.SetContext(&input.ctx)
-	require.EqualValues(t, input.ctx, *input.vk.dsServer.ctx)
+	input.vk.dsServer.SetContext(input.ctx)
+	require.EqualValues(t, input.ctx, input.vk.dsServer.ctx)
 }
 
 // Test get raw data from server.
@@ -41,7 +39,7 @@ func TestDSServer_GetRaw(t *testing.T) {
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)
 	defer rawServer.Stop()
 
-	input.vk.dsServer.SetContext(&input.ctx)
+	input.vk.dsServer.SetContext(input.ctx)
 
 	client := getClient(t, input.dsListener)
 
@@ -71,7 +69,7 @@ func TestDSServer_MultiGetRaw(t *testing.T) {
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)
 	defer rawServer.Stop()
 
-	input.vk.dsServer.SetContext(&input.ctx)
+	input.vk.dsServer.SetContext(input.ctx)
 
 	client := getClient(t, input.dsListener)
 	argsCount := 3

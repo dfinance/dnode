@@ -5,10 +5,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-
-	"github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+	"github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
@@ -23,18 +21,31 @@ const (
 	VmAddressLength = 32
 	VmGasPrice      = 1
 	VmUnknowTagType = -1
+	zeroBytes = 12
 )
 
 // VM related variables.
 var (
-	KeyDelimiter = []byte(":")
-	VMKey        = []byte("vm")
-
-	zeroBytes = make([]byte, 12)
+	KeyGenesisInitialized = []byte("gen_init")
+	KeyDelimiter          = []byte(":")
+	VMKey                 = []byte("vm")
 )
 
 // Type of Move contract (bytes).
 type Contract []byte
+
+// Convert bech32 to libra hex.
+func Bech32ToLibra(acc types.AccAddress) string {
+	prefix := types.GetConfig().GetBech32AccountAddrPrefix()
+	zeros := make([]byte, zeroBytes-len(prefix))
+
+	bytes := make([]byte, 0)
+	bytes = append(bytes, []byte(prefix)...)
+	bytes = append(bytes, zeros...)
+	bytes = append(bytes, acc...)
+
+	return hex.EncodeToString(bytes)
+}
 
 // Make path for storage from VMAccessPath.
 func MakePathKey(path vm_grpc.VMAccessPath) []byte {
@@ -54,11 +65,6 @@ func PathToHex(path vm_grpc.VMAccessPath) string {
 		"\tAddress: %s\n"+
 		"\tPath:    %s\n"+
 		"\tKey:     %s\n", hex.EncodeToString(path.Address), hex.EncodeToString(path.Path), hex.EncodeToString(MakePathKey(path)))
-}
-
-// Encode bech32 based address to Move one.
-func EncodeAddress(address types.AccAddress) []byte {
-	return append(address, zeroBytes...)
 }
 
 // Get TypeTag by string TypeTag representation.

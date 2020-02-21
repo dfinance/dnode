@@ -3,11 +3,9 @@ package app
 import (
 	"bytes"
 	"flag"
-	"net"
-	"os"
-	"sort"
-	"testing"
-
+	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/WingsDao/wings-blockchain/x/vm"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -19,10 +17,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
-
-	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
-	"github.com/WingsDao/wings-blockchain/x/vm"
+	"net"
+	"os"
+	"sort"
+	"testing"
 )
 
 // Type that combines an Address with the privKey and pubKey to that address
@@ -99,8 +97,8 @@ func CreateGenAccounts(numAccs int, genCoins sdk.Coins) (genAccs []*auth.BaseAcc
 }
 
 const (
-	DefaultMockVMAddress  = "127.0.0.1:60051" // Default virtual machine address to connect from Cosmos SDK.
-	DefaultMockDataListen = "127.0.0.1:60052" // Default data server address to listen for connections from VM.
+	DefaultMockVMAddress  = "127.0.0.1:0" // Default virtual machine address to connect from Cosmos SDK.
+	DefaultMockDataListen = "127.0.0.1:0" // Default data server address to listen for connections from VM.
 
 	FlagVMMockAddress = "vm.mock.address"
 	FlagDSMockListen  = "ds.mock.listen"

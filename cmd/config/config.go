@@ -3,12 +3,11 @@ package config
 
 import (
 	"bytes"
-	"os"
-	"path/filepath"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
 	cmn "github.com/tendermint/tendermint/libs/common"
+	"os"
+	"path/filepath"
 )
 
 const (
