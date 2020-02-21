@@ -400,16 +400,31 @@ func Test_MultisigVoting(t *testing.T) {
 	defer server.Stop()
 
 	genCoins, err := sdk.ParseCoins("1000000000000000wings")
-	genValidators, _, _, genPrivKeys := CreateGenAccounts(8, genCoins)
+	genValidators, _, _, genPrivKeys := CreateGenAccounts(9, genCoins)
 	curValidators, curPrivKeys := genValidators[:7], genPrivKeys[:7]
 	require.NoError(t, err)
 	_, err = setGenesis(t, app, curValidators)
 	require.NoError(t, err)
 
-	addValidator := genValidators[len(genValidators)-1]
+	nonExistingValidator, nonExistingValidatorPrivKey := genValidators[len(genValidators) - 1], genPrivKeys[len(genPrivKeys) - 1]
+	app.accountKeeper.SetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), nonExistingValidator)
+
+	addValidator := genValidators[len(genValidators)-2]
 	var callMsgId uint64
 
-	// submit call
+	// submit call from non-existing validator
+	{
+		senderAddr, senderPrivKey := nonExistingValidator.Address, nonExistingValidatorPrivKey
+		senderAcc := GetAccountCheckTx(app, senderAddr)
+		// create call
+		addValidatorMsg := msgspoa.NewMsgAddValidator(addValidator.Address, ethAddresses[0], senderAddr)
+		msgID := fmt.Sprintf("addValidator:%s", addValidator.Address)
+		submitMsg := msmsg.NewMsgSubmitCall(addValidatorMsg, msgID, senderAddr)
+		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverSpecificErrorTx(t, app, tx, mstypes.ErrNotValidator(""))
+	}
+
+	// submit call for existing validator
 	{
 		senderAddr, senderPrivKey := curValidators[0].Address, curPrivKeys[0]
 		senderAcc := GetAccountCheckTx(app, senderAddr)
@@ -441,6 +456,16 @@ func Test_MultisigVoting(t *testing.T) {
 		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
 		require.Equal(t, 1, len(calls))
 		require.Equal(t, senderAddr, calls[0].Votes[1])
+	}
+
+	// vote again (sender has already voted)
+	{
+		senderAddr, senderPrivKey := curValidators[1].Address, curPrivKeys[1]
+		senderAcc := GetAccountCheckTx(app, senderAddr)
+		// confirm call
+		confirmMsg := msmsg.MsgConfirmCall{MsgId: callMsgId, Sender: senderAddr}
+		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverSpecificErrorTx(t, app, tx, mstypes.ErrCallAlreadyApproved(0, ""))
 	}
 
 	// revoke confirm (non-existing vote)
@@ -505,11 +530,11 @@ func Test_MultisigBlockHeight(t *testing.T) {
 	// generate blocks to reach multisig call reject condition
 	msIntervalToExecute := app.msKeeper.GetIntervalToExecute(GetContext(app, true))
 	blockCountToLimit := int(msIntervalToExecute*2 + 1)
-	for curIssueId := 0; curIssueId < blockCountToLimit; curIssueId++ {
+	for curIssueIdx := 0; curIssueIdx < blockCountToLimit; curIssueIdx++ {
 		// start block
 		app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
 		// generate submit message
-		issueId, msgId := fmt.Sprintf("issue%d", curIssueId), strconv.Itoa(curIssueId)
+		issueId, msgId := fmt.Sprintf("issue%d", curIssueIdx), strconv.Itoa(curIssueIdx)
 		issueMsg := msgs.NewMsgIssueCurrency(currency1Symbol, sdk.NewInt(amount), 0, recipientAddr, issueId)
 		submitMsg := msmsg.NewMsgSubmitCall(issueMsg, msgId, recipientAddr)
 		// emit transaction
@@ -535,6 +560,40 @@ func Test_MultisigBlockHeight(t *testing.T) {
 		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
 		for _, call := range calls {
 			require.False(t, call.Call.Rejected)
+		}
+	}
+	// vote for rejected call
+	{
+		// prev recipient has already voted, pick a new one
+		recipientAddr, recipientPrivKey := genAddrs[1], genPrivKeys[1]
+		// pick a rejected callId
+		msgId := uint64(0)
+		// emit transaction
+		confirmMsg := msmsg.NewMsgConfirmCall(msgId, recipientAddr)
+		recepientAcc := GetAccountCheckTx(app, recipientAddr)
+		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{recepientAcc.GetAccountNumber()}, []uint64{recepientAcc.GetSequence()}, recipientPrivKey)
+		CheckDeliverSpecificErrorTx(t, app, tx, mstypes.ErrAlreadyRejected(0))
+	}
+	// vote for already confirmed call (vote ended)
+	{
+		// pick a non-rejected once voted callId
+		msgId := uint64(blockCountToLimit - 1)
+		// vote and approve call
+		for i := 1; i < len(genAccs)/2 + 1; i++ {
+			recipientAddr, recipientPrivKey := genAddrs[i], genPrivKeys[i]
+			confirmMsg := msmsg.NewMsgConfirmCall(msgId, recipientAddr)
+			recepientAcc := GetAccountCheckTx(app, recipientAddr)
+			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{recepientAcc.GetAccountNumber()}, []uint64{recepientAcc.GetSequence()}, recipientPrivKey)
+			CheckDeliverTx(t, app, tx)
+		}
+		// vote for confirmed call
+		{
+			i := len(genAddrs) - 1
+			recipientAddr, recipientPrivKey := genAddrs[i], genPrivKeys[i]
+			confirmMsg := msmsg.NewMsgConfirmCall(msgId, recipientAddr)
+			recepientAcc := GetAccountCheckTx(app, recipientAddr)
+			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{recepientAcc.GetAccountNumber()}, []uint64{recepientAcc.GetSequence()}, recipientPrivKey)
+			CheckDeliverSpecificErrorTx(t, app, tx, mstypes.ErrAlreadyConfirmed(0))
 		}
 	}
 }
