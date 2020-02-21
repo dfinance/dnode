@@ -1,4 +1,4 @@
-module wings-blockchain
+module github.com/WingsDao/wings-blockchain
 
 go 1.12
 

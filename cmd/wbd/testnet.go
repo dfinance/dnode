@@ -30,7 +30,8 @@ import (
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
-	wbconfig "wings-blockchain/cmd/config"
+	wbconfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/WingsDao/wings-blockchain/x/oracle"
 )
 
 var (
@@ -44,6 +45,20 @@ var (
 	flagComissionMaxRate       = "comission-max-rate"
 	flagComissionMaxChangeRate = "comission-max-change-rate"
 )
+
+type cliFlags struct {
+	outputDir              string
+	chainID                string
+	minGasPrices           string
+	nodeDirPrefix          string
+	nodeDaemonHome         string
+	nodeCLIHome            string
+	startingIPAddress      string
+	numValidators          int
+	comissionRate          sdk.Dec
+	comissionMaxRate       sdk.Dec
+	comissionMaxChangeRate sdk.Dec
+}
 
 // get cmd to initialize all files for tendermint testnet and application
 func testnetCmd(ctx *server.Context, cdc *codec.Codec,
@@ -64,30 +79,31 @@ Example:
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			config := ctx.Config
 
-			outputDir := viper.GetString(flagOutputDir)
-			chainID := viper.GetString(client.FlagChainID)
-			minGasPrices := viper.GetString(server.FlagMinGasPrices)
-			nodeDirPrefix := viper.GetString(flagNodeDirPrefix)
-			nodeDaemonHome := viper.GetString(flagNodeDaemonHome)
-			nodeCLIHome := viper.GetString(flagNodeCLIHome)
-			startingIPAddress := viper.GetString(flagStartingIPAddress)
-			numValidators := viper.GetInt(flagNumValidators)
-			comissionRate, err := sdk.NewDecFromStr(viper.GetString(flagComissionRate))
+			cf := cliFlags{
+				outputDir:         viper.GetString(flagOutputDir),
+				chainID:           viper.GetString(client.FlagChainID),
+				minGasPrices:      viper.GetString(server.FlagMinGasPrices),
+				nodeDirPrefix:     viper.GetString(flagNodeDirPrefix),
+				nodeDaemonHome:    viper.GetString(flagNodeDaemonHome),
+				nodeCLIHome:       viper.GetString(flagNodeCLIHome),
+				startingIPAddress: viper.GetString(flagStartingIPAddress),
+				numValidators:     viper.GetInt(flagNumValidators),
+			}
+			var err error
+			cf.comissionRate, err = sdk.NewDecFromStr(viper.GetString(flagComissionRate))
 			if err != nil {
 				return err
 			}
-			comissionMaxRate, err := sdk.NewDecFromStr(viper.GetString(flagComissionMaxRate))
+			cf.comissionMaxRate, err = sdk.NewDecFromStr(viper.GetString(flagComissionMaxRate))
 			if err != nil {
 				return err
 			}
-			comissionMaxChangeRate, err := sdk.NewDecFromStr(viper.GetString(flagComissionMaxChangeRate))
+			cf.comissionMaxChangeRate, err = sdk.NewDecFromStr(viper.GetString(flagComissionMaxChangeRate))
 			if err != nil {
 				return err
 			}
 
-			return InitTestnet(cmd, config, cdc, mbm, genAccIterator, outputDir, chainID,
-				minGasPrices, nodeDirPrefix, nodeDaemonHome, nodeCLIHome, startingIPAddress, numValidators,
-				comissionRate, comissionMaxRate, comissionMaxChangeRate)
+			return InitTestnet(cmd, config, cdc, mbm, genAccIterator, &cf)
 		},
 	}
 
@@ -125,59 +141,57 @@ const nodeDirPerm = 0755
 // Initialize the testnet
 func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 	mbm module.BasicManager, genAccIterator genutiltypes.GenesisAccountsIterator,
-	outputDir, chainID, minGasPrices, nodeDirPrefix, nodeDaemonHome,
-	nodeCLIHome, startingIPAddress string, numValidators int,
-	comissionRate, comissionMaxRate, comissionMaxChangeRate sdk.Dec) error {
+	cf *cliFlags) error {
 
-	if chainID == "" {
-		chainID = "chain-" + cmn.RandStr(6)
+	if cf.chainID == "" {
+		cf.chainID = "chain-" + cmn.RandStr(6)
 	}
 
-	monikers := make([]string, numValidators)
-	nodeIDs := make([]string, numValidators)
-	valPubKeys := make([]crypto.PubKey, numValidators)
+	monikers := make([]string, cf.numValidators)
+	nodeIDs := make([]string, cf.numValidators)
+	valPubKeys := make([]crypto.PubKey, cf.numValidators)
 
 	wbConfig := srvconfig.DefaultConfig()
-	wbConfig.MinGasPrices = minGasPrices
+	wbConfig.MinGasPrices = cf.minGasPrices
 
-	//nolint:prealloc
+	// nolint:prealloc
 	var (
 		genAccounts []genaccounts.GenesisAccount
 		genFiles    []string
 	)
 
 	// generate private keys, node IDs, and initial transactions
-	for i := 0; i < numValidators; i++ {
-		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
-		nodeDir := filepath.Join(outputDir, nodeDirName, nodeDaemonHome)
-		clientDir := filepath.Join(outputDir, nodeDirName, nodeCLIHome)
-		gentxsDir := filepath.Join(outputDir, "gentxs")
+	for i := 0; i < cf.numValidators; i++ {
+		nodeDirName := fmt.Sprintf("%s%d", cf.nodeDirPrefix, i)
+		nodeDir := filepath.Join(cf.outputDir, nodeDirName, cf.nodeDaemonHome)
+		clientDir := filepath.Join(cf.outputDir, nodeDirName, cf.nodeCLIHome)
+		gentxsDir := filepath.Join(cf.outputDir, "gentxs")
 
 		config.SetRoot(nodeDir)
 		config.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 
 		if err := os.MkdirAll(filepath.Join(nodeDir, "config"), nodeDirPerm); err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(cf.outputDir)
 			return err
 		}
 
 		if err := os.MkdirAll(clientDir, nodeDirPerm); err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(cf.outputDir)
 			return err
 		}
 
 		monikers = append(monikers, nodeDirName)
 		config.Moniker = nodeDirName
 
-		ip, err := getIP(i, startingIPAddress)
+		ip, err := getIP(i, cf.startingIPAddress)
 		if err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(cf.outputDir)
 			return err
 		}
 
 		nodeIDs[i], valPubKeys[i], err = genutil.InitializeNodeValidatorFiles(config)
 		if err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(cf.outputDir)
 			return err
 		}
 
@@ -192,7 +206,7 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 		keyPass := client.DefaultKeyPass
 		addr, secret, err := server.GenerateSaveCoinKey(clientDir, nodeDirName, keyPass, true)
 		if err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(cf.outputDir)
 			return err
 		}
 
@@ -221,28 +235,28 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 			valPubKeys[i],
 			sdk.NewCoin(wbconfig.MainDenom, valTokens),
 			staking.NewDescription(nodeDirName, "", "", ""),
-			staking.NewCommissionRates(comissionRate, comissionMaxRate, comissionMaxChangeRate),
+			staking.NewCommissionRates(cf.comissionRate, cf.comissionMaxRate, cf.comissionMaxChangeRate),
 			sdk.OneInt(),
 		)
 
 		tx := auth.NewStdTx([]sdk.Msg{msg}, auth.StdFee{Gas: 200000}, []auth.StdSignature{}, memo)
-		txBldr := auth.NewTxBuilderFromCLI().WithChainID(chainID).WithMemo(memo).WithKeybase(kb)
+		txBldr := auth.NewTxBuilderFromCLI().WithChainID(cf.chainID).WithMemo(memo).WithKeybase(kb)
 
 		signedTx, err := txBldr.SignStdTx(nodeDirName, client.DefaultKeyPass, tx, false)
 		if err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(cf.outputDir)
 			return err
 		}
 
 		txBytes, err := cdc.MarshalJSON(signedTx)
 		if err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(cf.outputDir)
 			return err
 		}
 
 		// gather gentxs folder
 		if err := writeFile(fmt.Sprintf("%v.json", nodeDirName), gentxsDir, txBytes); err != nil {
-			_ = os.RemoveAll(outputDir)
+			_ = os.RemoveAll(cf.outputDir)
 			return err
 		}
 
@@ -252,19 +266,19 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 		srvconfig.WriteConfigFile(wbConfigFilePath, wbConfig)
 	}
 
-	if err := initGenFiles(cdc, mbm, chainID, genAccounts, genFiles, numValidators); err != nil {
+	if err := initGenFiles(cdc, mbm, cf.chainID, genAccounts, genFiles, cf.numValidators); err != nil {
 		return err
 	}
 
 	err := collectGenFiles(
-		cdc, config, chainID, monikers, nodeIDs, valPubKeys, numValidators,
-		outputDir, nodeDirPrefix, nodeDaemonHome, genAccIterator,
+		cdc, config, cf.chainID, monikers, nodeIDs, valPubKeys, cf.numValidators,
+		cf.outputDir, cf.nodeDirPrefix, cf.nodeDaemonHome, genAccIterator,
 	)
 	if err != nil {
 		return err
 	}
 
-	cmd.PrintErrf("Successfully initialized %d node directories\n", numValidators)
+	cmd.PrintErrf("Successfully initialized %d node directories\n", cf.numValidators)
 	return nil
 }
 
@@ -276,9 +290,6 @@ func initGenFiles(
 	appGenState := mbm.DefaultGenesis()
 
 	// set the accounts in the genesis state
-	authDataBz := appGenState[auth.ModuleName]
-	var authGenState auth.GenesisState
-	cdc.MustUnmarshalJSON(authDataBz, &authGenState)
 	appGenState[genaccounts.ModuleName] = cdc.MustMarshalJSON(genAccounts)
 
 	stakingDataBz := appGenState[staking.ModuleName]
@@ -286,6 +297,16 @@ func initGenFiles(
 	cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
 	stakingGenState.Params.BondDenom = wbconfig.MainDenom
 	appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
+
+	oracleDataBz := appGenState[oracle.ModuleName]
+	var oracleGenState oracle.GenesisState
+	cdc.MustUnmarshalJSON(oracleDataBz, &oracleGenState)
+	nomenees := make([]string, len(genAccounts))
+	for i, acc := range genAccounts {
+		nomenees[i] = acc.Address.String()
+	}
+	oracleGenState.Params.Nominees = nomenees
+	appGenState[oracle.ModuleName] = cdc.MustMarshalJSON(oracleGenState)
 
 	appGenStateJSON, err := codec.MarshalJSONIndent(cdc, appGenState)
 	if err != nil {

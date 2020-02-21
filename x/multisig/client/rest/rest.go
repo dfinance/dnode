@@ -3,12 +3,14 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
-	"wings-blockchain/x/multisig/types"
+
+	"github.com/WingsDao/wings-blockchain/x/multisig/types"
 )
 
 // Registering routes in the REST API.

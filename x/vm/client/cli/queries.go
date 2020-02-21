@@ -4,6 +4,8 @@ import (
 	connContext "context"
 	"encoding/hex"
 	"fmt"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,8 +15,6 @@ import (
 	"google.golang.org/grpc"
 	"io/ioutil"
 	"os"
-	"wings-blockchain/x/vm/internal/types"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (

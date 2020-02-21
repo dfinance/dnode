@@ -3,7 +3,8 @@ package multisig
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/multisig/types"
+
+	"github.com/WingsDao/wings-blockchain/x/multisig/types"
 )
 
 // Confirm call.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"wings-blockchain/x/currencies/msgs"
+	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
 
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"

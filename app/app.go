@@ -3,37 +3,40 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/cosmos/cosmos-sdk/x/distribution"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/cosmos/cosmos-sdk/x/slashing"
-	"github.com/cosmos/cosmos-sdk/x/supply"
-	tmtypes "github.com/tendermint/tendermint/types"
-	"google.golang.org/grpc"
 	"net"
 	"os"
-	"wings-blockchain/cmd/config"
-	"wings-blockchain/x/core"
-	"wings-blockchain/x/currencies"
-	"wings-blockchain/x/multisig"
-	"wings-blockchain/x/vm"
+	"time"
 
+	"github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/WingsDao/wings-blockchain/x/core"
+	"github.com/WingsDao/wings-blockchain/x/currencies"
+	"github.com/WingsDao/wings-blockchain/x/multisig"
+	"github.com/WingsDao/wings-blockchain/x/vm"
+
+	"github.com/WingsDao/wings-blockchain/x/oracle"
+	"github.com/WingsDao/wings-blockchain/x/poa"
+	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/libs/log"
+	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-
-	"wings-blockchain/x/poa"
-	poaTypes "wings-blockchain/x/poa/types"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
 const (
@@ -62,6 +65,7 @@ var (
 		poa.AppModuleBasic{},
 		currencies.AppModuleBasic{},
 		multisig.AppModuleBasic{},
+		oracle.AppModuleBasic{},
 		vm.AppModuleBasic{},
 	)
 
@@ -94,6 +98,7 @@ type WbServiceApp struct {
 	ccKeeper       currencies.Keeper
 	msKeeper       multisig.Keeper
 	vmKeeper       vm.Keeper
+	oracleKeeper   oracle.Keeper
 
 	mm *core.MsManager
 
@@ -106,8 +111,14 @@ type WbServiceApp struct {
 func (app *WbServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
+	var kpParams = keepalive.ClientParameters{
+		Time:                time.Second, // send pings every 1 second if there is no activity
+		Timeout:             time.Second, // wait 1 second for ping ack before considering the connection dead
+		PermitWithoutStream: true,        // send pings even without active streams
+	}
+
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure())
+	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithKeepaliveParams(kpParams))
 	if err != nil {
 		panic(err)
 	}
@@ -159,6 +170,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		currencies.StoreKey,
 		multisig.StoreKey,
 		vm.StoreKey,
+		oracle.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -252,6 +264,14 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
+	// Initializing oracle module
+	app.oracleKeeper = oracle.NewKeeper(
+		keys[oracle.StoreKey],
+		app.cdc,
+		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
+		oracle.DefaultCodespace,
+	)
+
 	// Initializing multisignature router.
 	app.msRouter = core.NewRouter()
 
@@ -285,11 +305,12 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		poa.NewAppMsModule(app.poaKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
+		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, oracle.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -306,6 +327,8 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		poa.ModuleName,
 		currencies.ModuleName,
 		multisig.ModuleName,
+		vm.ModuleName,
+		oracle.ModuleName,
 		genutil.ModuleName,
 	)
 

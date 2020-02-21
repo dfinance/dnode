@@ -344,6 +344,9 @@ And (status discard, when execution/deploy failed):
 }
 ```
 
+Also, events could contains event type **error** with similar fields, like discard, that could happen
+together with even **keep**.
+
 ### Genesis compilation
 
 First of all, to get WB correctly work, needs to compile standard WB smart modules libs,
@@ -358,7 +361,7 @@ Copy and paste output json to new created file.
 
 After this, go into WB folder and run:
 
-    wbd query read-genesis-write-set [path to created file contains write set json]
+    wbd read-genesis-write-set [path to created file contains write set json]
 
 Now everything should be fine.
 

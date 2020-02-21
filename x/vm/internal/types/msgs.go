@@ -2,8 +2,8 @@ package types
 
 import (
 	"encoding/json"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 var (

@@ -3,6 +3,7 @@ package types
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/x/params"
 )
 
@@ -34,8 +35,8 @@ func NewParams(maxValidators, minValidators uint16) Params {
 
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
-		{KeyMaxValidators, &p.MaxValidators},
-		{KeyMinValidators, &p.MinValidators},
+		{Key: KeyMaxValidators, Value: &p.MaxValidators},
+		{Key: KeyMinValidators, Value: &p.MinValidators},
 	}
 }
 

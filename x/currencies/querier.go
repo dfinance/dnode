@@ -3,10 +3,12 @@ package currencies
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"wings-blockchain/x/currencies/types"
+
+	"github.com/WingsDao/wings-blockchain/x/currencies/types"
 )
 
 const (
