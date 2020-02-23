@@ -126,7 +126,9 @@ func TestApp_PostPrice(t *testing.T) {
 	time1, _ := time.Parse(layout, dateString)
 
 	// Create CSDT
-	msgs := []sdk.Msg{types.NewMsgPostPrice(testAddr, "uftm", sdk.MustNewDecFromStr("1.00"), time1)}
+	price, isOk := sdk.NewIntFromString("1")
+	require.True(t, isOk)
+	msgs := []sdk.Msg{types.NewMsgPostPrice(testAddr, "uftm", price, time1)}
 	SignCheckDeliver(t, mapp.Cdc, mapp.BaseApp, abci.Header{Height: mapp.LastBlockHeight() + 1}, msgs, []uint64{0}, []uint64{0}, true, true, testPrivKey)
 }
 

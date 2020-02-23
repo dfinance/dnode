@@ -7,6 +7,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+const (
+	PriceBytesLimit = 8
+)
+
 // implement fmt.Stringer
 func (a PendingPriceAsset) String() string {
 	return strings.TrimSpace(fmt.Sprintf(`AssetCode: %s`, a.AssetCode))

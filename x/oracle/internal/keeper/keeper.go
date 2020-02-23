@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"github.com/WingsDao/wings-blockchain/helpers"
+	"github.com/WingsDao/wings-blockchain/x/vm"
 	"sort"
 	"time"
 
@@ -21,6 +23,8 @@ type Keeper struct {
 	paramstore params.Subspace
 	// Reserved codespace
 	codespace sdk.CodespaceType
+	// Virtual machine keeper
+	vmKeeper vm.Keeper
 }
 
 // NewKeeper returns a new keeper for the oralce module. It handles:
@@ -31,12 +35,14 @@ func NewKeeper(
 	cdc *codec.Codec,
 	paramstore params.Subspace,
 	codespace sdk.CodespaceType,
+	vmKeeper vm.Keeper,
 ) Keeper {
 	return Keeper{
 		paramstore: paramstore.WithKeyTable(types.ParamKeyTable()),
 		storeKey:   storeKey,
 		cdc:        cdc,
 		codespace:  codespace,
+		vmKeeper:   vmKeeper,
 	}
 }
 
@@ -45,7 +51,7 @@ func (k Keeper) SetPrice(
 	ctx sdk.Context,
 	oracle sdk.AccAddress,
 	assetCode string,
-	price sdk.Dec,
+	price sdk.Int,
 	expiry time.Time) (types.PostedPrice, sdk.Error) {
 	// If the expiry is greater than or equal to the current blockheight, we consider the price valid
 	if expiry.After(ctx.BlockTime()) {
@@ -75,6 +81,7 @@ func (k Keeper) SetPrice(
 		store.Set(
 			[]byte(types.RawPriceFeedPrefix+assetCode), k.cdc.MustMarshalBinaryBare(prices),
 		)
+
 		return prices[index], nil
 	}
 	return types.PostedPrice{}, types.ErrExpired(k.codespace)
@@ -99,12 +106,12 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) sdk.Error {
 			}
 		}
 		l := len(notExpiredPrices)
-		var medianPrice sdk.Dec
+		var medianPrice sdk.Int
 		// TODO make threshold for acceptance (ie. require 51% of oracles to have posted valid prices
 		if l == 0 {
 			// Error if there are no valid prices in the raw oracle
 			//return types.ErrNoValidPrice(k.codespace)
-			medianPrice = sdk.NewDec(0)
+			medianPrice = sdk.NewInt(0)
 		} else if l == 1 {
 
 			// Return immediately if there's only one price
@@ -121,7 +128,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) sdk.Error {
 				price1 := notExpiredPrices[l/2-1].Price
 				price2 := notExpiredPrices[l/2].Price
 				sum := price1.Add(price2)
-				divsor, _ := sdk.NewDecFromStr("2")
+				divsor := sdk.NewInt(2)
 				medianPrice = sum.Quo(divsor)
 			} else {
 				// integer division, so we'll get an integer back, rounded down
@@ -143,6 +150,10 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) sdk.Error {
 			store.Set(
 				[]byte(types.CurrentPricePrefix+assetCode), k.cdc.MustMarshalBinaryBare(newPrice),
 			)
+
+			accessPath := k.vmKeeper.GetOracleAccessPath(newPrice.AssetCode)
+			// todo: convert price to u128 or whatever.
+			k.vmKeeper.SetValue(ctx, accessPath, helpers.BigToBytes(newPrice.Price, types.PriceBytesLimit))
 		}
 	}
 
