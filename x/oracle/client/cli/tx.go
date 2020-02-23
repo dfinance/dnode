@@ -114,15 +114,15 @@ func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 
 func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "add-asset [nominee_key] [denom] [quote_asset] [oracles]",
+		Use:     "add-asset [nominee_key] [denom] [base_asset] [quote_asset] [oracles]",
 		Example: "wbcli oracle add-asset nominee wb quote_asset wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new asset",
-		Args:    cobra.ExactArgs(4),
+		Args:    cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
-			oracles, err := types.ParseOracles(args[3])
+			oracles, err := types.ParseOracles(args[4])
 			if err != nil {
 				return err
 			}
@@ -133,12 +133,16 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 			if len(denom) == 0 {
 				return fmt.Errorf("invalid denom")
 			}
-			quoteAsset := args[2]
+			baseAsset := args[2]
+			if len(baseAsset) == 0 {
+				return fmt.Errorf("invalid base asset")
+			}
+			quoteAsset := args[3]
 			if len(quoteAsset) == 0 {
 				return fmt.Errorf("invalid quote asset")
 			}
 
-			token := types.NewAsset(denom, denom, quoteAsset, oracles, true)
+			token := types.NewAsset(denom, baseAsset, quoteAsset, oracles, true)
 			err = token.ValidateBasic()
 			if err != nil {
 				return err
