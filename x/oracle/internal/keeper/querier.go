@@ -65,12 +65,12 @@ func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 }
 
 func queryAssets(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) (res []byte, err sdk.Error) {
-	var assetList types.QueryAssetsResp
+	var assetList types.Assets
 	assets := keeper.GetAssetParams(ctx)
 	for _, asset := range assets {
-		assetList = append(assetList, asset.String())
+		assetList = append(assetList, asset)
 	}
-	bz, err2 := codec.MarshalJSONIndent(keeper.cdc, assetList)
+	bz, err2 := codec.MarshalJSONIndent(keeper.cdc, &assetList)
 	if err2 != nil {
 		panic("could not marshal result to JSON")
 	}
