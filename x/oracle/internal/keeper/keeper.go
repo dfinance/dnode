@@ -151,6 +151,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) sdk.Error {
 				[]byte(types.CurrentPricePrefix+assetCode), k.cdc.MustMarshalBinaryBare(newPrice),
 			)
 
+			// save price to vm storage
 			accessPath := k.vmKeeper.GetOracleAccessPath(newPrice.AssetCode)
 			k.vmKeeper.SetValue(ctx, accessPath, helpers.BigToBytes(newPrice.Price, types.PriceBytesLimit))
 		}
