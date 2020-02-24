@@ -13,7 +13,7 @@ import (
 
 func TestMsgSort(t *testing.T) {
 	from := sdk.AccAddress([]byte("someName"))
-	price, _ := sdk.NewDecFromStr("1")
+	price := sdk.NewInt(1)
 	expiry := time.Now()
 
 	msg := types.NewMsgPostPrice(from, "uftm", price, expiry)
@@ -34,10 +34,10 @@ func TestMsgPlaceBid_ValidateBasic(t *testing.T) {
 	// oracles := []Oracle{Oracle{
 	// 	OracleAddress: addr.String(),
 	// }}
-	price, _ := sdk.NewDecFromStr("0.3005")
+	price := sdk.NewInt(30050000)
 	expiry := time.Now().Add(time.Hour * 2)
 	//negativeExpiry := time.Now()
-	negativePrice, _ := sdk.NewDecFromStr("-3.05")
+	negativePrice, _ := sdk.NewIntFromString("-1")
 
 	tests := []struct {
 		name       string

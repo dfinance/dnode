@@ -24,7 +24,7 @@ type Keeper struct {
 	// Reserved codespace
 	codespace sdk.CodespaceType
 	// Virtual machine keeper
-	vmKeeper vm.Keeper
+	vmKeeper vm.VMStorage
 }
 
 // NewKeeper returns a new keeper for the oralce module. It handles:
@@ -35,7 +35,7 @@ func NewKeeper(
 	cdc *codec.Codec,
 	paramstore params.Subspace,
 	codespace sdk.CodespaceType,
-	vmKeeper vm.Keeper,
+	vmKeeper vm.VMStorage,
 ) Keeper {
 	return Keeper{
 		paramstore: paramstore.WithKeyTable(types.ParamKeyTable()),
