@@ -152,7 +152,6 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) sdk.Error {
 			)
 
 			accessPath := k.vmKeeper.GetOracleAccessPath(newPrice.AssetCode)
-			// todo: convert price to u128 or whatever.
 			k.vmKeeper.SetValue(ctx, accessPath, helpers.BigToBytes(newPrice.Price, types.PriceBytesLimit))
 		}
 	}
