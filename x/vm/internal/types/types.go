@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/crypto/sha3"
+	"unicode/utf8"
 )
 
 const (
@@ -21,7 +23,7 @@ const (
 	VmAddressLength = 32
 	VmGasPrice      = 1
 	VmUnknowTagType = -1
-	zeroBytes = 12
+	zeroBytes       = 12
 )
 
 // VM related variables.
@@ -92,4 +94,46 @@ func VMTypeToStringPanic(tag vm_grpc.VMTypeTag) string {
 	} else {
 		return val
 	}
+}
+
+// Convert asset code to libra path.
+func AssetCodeToPath(assetCode string) []byte {
+	asciiBytes := StringToAsciiBytes(assetCode)
+	for i, b := range asciiBytes {
+		if b >= 'A' && b <= 'Z' {
+			asciiBytes[i] = b | ((IsAsciiUpperCase(b)) << 5)
+		}
+	}
+
+	hasher := sha3.New256()
+	hasher.Write(asciiBytes)
+	hash := hasher.Sum(nil)
+
+	res := make([]byte, len(hash)+1)
+	res[0] = 255
+	for i, b := range hash {
+		res[i+1] = b
+	}
+
+	return res
+}
+
+// If ascii is upper case to u8.
+func IsAsciiUpperCase(b byte) uint8 {
+	if b >= 'A' && b <= 'Z' {
+		return 1
+	} else {
+		return 0
+	}
+}
+
+// Convert string to ascii bytes
+func StringToAsciiBytes(s string) []byte {
+	t := make([]byte, utf8.RuneCountInString(s))
+	i := 0
+	for _, r := range s {
+		t[i] = byte(r)
+		i++
+	}
+	return t
 }

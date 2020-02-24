@@ -366,7 +366,7 @@ func Test_SetPostPrice(t *testing.T) {
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
 	{
-		price, _ := sdk.NewDecFromStr("1")
+		price := sdk.NewInt(100000000)
 		msg := oracle.MsgPostPrice{
 			From:      addrs[1],
 			AssetCode: "wb2wb",
@@ -381,7 +381,7 @@ func Test_SetPostPrice(t *testing.T) {
 	}
 
 	{
-		price, _ := sdk.NewDecFromStr("2")
+		price := sdk.NewInt(200000000)
 		msg := oracle.MsgPostPrice{
 			From:      addrs[1],
 			AssetCode: "wb2wb",
@@ -396,7 +396,7 @@ func Test_SetPostPrice(t *testing.T) {
 	}
 
 	{
-		price, _ := sdk.NewDecFromStr("3")
+		price := sdk.NewInt(300000000)
 		msg := oracle.MsgPostPrice{
 			From:      addrs[1],
 			AssetCode: "wb2wb",
@@ -413,6 +413,6 @@ func Test_SetPostPrice(t *testing.T) {
 	app.Commit()
 
 	price := app.oracleKeeper.GetCurrentPrice(GetContext(app, true), "wb2wb")
-	require.True(t, price.Price.Equal(sdk.NewDec(3)))
+	require.True(t, price.Price.Equal(sdk.NewInt(300000000)))
 
 }

@@ -48,9 +48,10 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
-			price, err := sdk.NewDecFromStr(args[2])
-			if err != nil {
-				return err
+			rawPrice := args[2]
+			price, ok := sdk.NewIntFromString(rawPrice)
+			if !ok {
+				return fmt.Errorf("wrong value for price: %s", rawPrice)
 			}
 			expiryInt, ok := sdk.NewIntFromString(args[3])
 			if !ok {
@@ -59,7 +60,7 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 			}
 			expiry := tmtime.Canonical(time.Unix(expiryInt.Int64(), 0))
 			msg := types.NewMsgPostPrice(cliCtx.GetFromAddress(), args[1], price, expiry)
-			err = msg.ValidateBasic()
+			err := msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
