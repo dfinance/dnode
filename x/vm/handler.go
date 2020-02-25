@@ -2,7 +2,6 @@ package vm
 
 import (
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/core"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -11,7 +10,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		// settings actual context for ds.
 		// TODO: move it to base app and set before transaction execution maybe? or find way to have actual context always
-		keeper.SetDSContext(ctx.WithGasMeter(core.NewDumbGasMeter()))
+		keeper.SetDSContext(ctx)
 
 		switch msg := msg.(type) {
 		case MsgDeployModule:

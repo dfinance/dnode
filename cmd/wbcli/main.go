@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/WingsDao/wings-blockchain/app"
 	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
+	"github.com/WingsDao/wings-blockchain/x/vmauth"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
@@ -18,7 +20,6 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 	"os"
 	"path"
-	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
 )
 
 // Entry function for WB CLI.
@@ -81,7 +82,7 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 	}
 
 	queryCmd.AddCommand(
-		authcmd.GetAccountCmd(cdc),
+		vmauth.GetAccountCmd(cdc),
 		client.LineBreak,
 		rpc.ValidatorCommand(cdc),
 		rpc.BlockCommand(),

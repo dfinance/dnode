@@ -19,7 +19,7 @@ func (keeper *Keeper) StartDSServer(ctx sdk.Context) {
 
 // Set DS (data-source) server context.
 func (keeper Keeper) SetDSContext(ctx sdk.Context) {
-	keeper.dsServer.SetContext(ctx)
+	keeper.dsServer.SetContext(ctx.WithGasMeter(types.NewDumbGasMeter()))
 }
 
 // Stop DS server and close connection to VM.

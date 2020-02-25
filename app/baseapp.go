@@ -3,7 +3,6 @@ package app
 import (
 	"errors"
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/core"
 	"github.com/WingsDao/wings-blockchain/x/vm"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -320,7 +319,7 @@ func (app *BaseApp) GetDSContext() sdk.Context {
 
 	return sdk.NewContext(
 		ms, abci.Header{}, true, app.logger,
-	).WithGasMeter(core.NewDumbGasMeter())
+	)
 }
 
 // setConsensusParams memoizes the consensus params.
