@@ -130,6 +130,11 @@ func setupTestInput(t *testing.T) testInput {
 	return input
 }
 
+func checkError(t *testing.T, expectedErr, receivedErr sdk.Error) {
+	require.Equal(t, expectedErr.Codespace(), receivedErr.Codespace(), "Codespace")
+	require.Equal(t, expectedErr.Code(), receivedErr.Code(), "code")
+}
+
 // func TestKeeper_GetCDC(t *testing.T) {
 // 	t.Parallel()
 //
@@ -295,4 +300,60 @@ func TestKeeper_ExportGenesis(t *testing.T) {
 
 	require.True(t, initGenesis.Parameters.Equal(exportGenesis.Parameters))
 	require.ElementsMatch(t, initGenesis.PoAValidators, exportGenesis.PoAValidators)
+}
+
+func TestModule_ValidateGenesis(t *testing.T) {
+	t.Parallel()
+
+	input := setupTestInput(t)
+	app := NewAppMsModule(input.target)
+	sdkAddress, _ := sdk.AccAddressFromHex("0102030405060708090A0102030405060708090A")
+
+	genesis := poatypes.GenesisState{
+		Parameters:    poatypes.DefaultParams(),
+		PoAValidators: poatypes.Validators{},
+	}
+
+	// check minValidators error
+	if genesis.Parameters.MinValidators > 1 {
+		err := app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis))
+		checkError(t, poatypes.ErrNotEnoungValidators(0, 0), err.(sdk.Error))
+	}
+
+	// check OK
+	{
+		for i := uint16(0); i < genesis.Parameters.MaxValidators; i++ {
+			genesis.PoAValidators = append(genesis.PoAValidators, poatypes.Validator{
+				Address:    sdkAddress,
+				EthAddress: ethAddress1,
+			})
+		}
+		require.Nil(t, app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis)))
+	}
+
+	// check maxValidators error
+	{
+		genesis.PoAValidators = append(genesis.PoAValidators, poatypes.Validator{
+			Address:    sdkAddress,
+			EthAddress: ethAddress1,
+		})
+		err := app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis))
+		checkError(t, poatypes.ErrMaxValidatorsReached(0), err.(sdk.Error))
+	}
+
+	// check params validation
+	if poatypes.DefaultMinValidators > 1 {
+		genesis := poatypes.GenesisState{
+			Parameters:    poatypes.Params{
+				MaxValidators: poatypes.DefaultMinValidators - 1,
+				MinValidators: 0,
+			},
+			PoAValidators: poatypes.Validators{},
+		}
+		require.NotNil(t, app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis)))
+
+		genesis.Parameters.MinValidators = poatypes.DefaultMinValidators
+		genesis.Parameters.MaxValidators = poatypes.DefaultMaxValidators + 1
+		require.NotNil(t, app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis)))
+	}
 }

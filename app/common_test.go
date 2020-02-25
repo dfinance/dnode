@@ -273,6 +273,17 @@ func CheckRunQuery(t *testing.T, app *WbServiceApp, requestData interface{}, pat
 	return
 }
 
+func CheckRunQuerySpecificError(t *testing.T, app *WbServiceApp, requestData interface{}, path string, err sdk.Error) {
+	resp := app.Query(abci.RequestQuery{
+		Data: codec.MustMarshalJSONIndent(app.cdc, requestData),
+		Path: path,
+	})
+
+	require.True(t, resp.IsErr())
+	require.Equal(t, string(err.Codespace()), resp.Codespace, "%q failed, res.Log: %s", "res.Codespace", resp.Log)
+	require.Equal(t, uint32(err.Code()), resp.Code, "%q failed, res.Log: %s", "res.Code", resp.Log)
+}
+
 func GetContext(app *WbServiceApp, isCheckTx bool) sdk.Context {
 	return app.NewContext(isCheckTx, abci.Header{Height: app.LastBlockHeight() + 1})
 }

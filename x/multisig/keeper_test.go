@@ -3,6 +3,7 @@ package multisig
 import (
 	"github.com/WingsDao/wings-blockchain/x/core"
 	mstypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
+	"github.com/WingsDao/wings-blockchain/x/poa"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -39,6 +40,7 @@ type testInput struct {
 	keyMain    *sdk.KVStoreKey
 	keyAccount *sdk.KVStoreKey
 	keySupply  *sdk.KVStoreKey
+	keyPoa     *sdk.KVStoreKey
 	keyParams  *sdk.KVStoreKey
 	tkeyParams *sdk.TransientStoreKey
 	keyMs      *sdk.KVStoreKey
@@ -49,6 +51,7 @@ type testInput struct {
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
 	paramsKeeper  params.Keeper
+	poaKeeper     poa.Keeper
 
 	target Keeper
 }
@@ -84,6 +87,7 @@ func setupTestInput(t *testing.T) testInput {
 		keyMain:    sdk.NewKVStoreKey("main"),
 		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
 		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
+		keyPoa:     sdk.NewKVStoreKey(poa.StoreKey),
 		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
 		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 		keyMs:      sdk.NewKVStoreKey(StoreKey),
@@ -98,6 +102,7 @@ func setupTestInput(t *testing.T) testInput {
 	mstore.MountStoreWithDB(input.keyMain, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyPoa, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
 	mstore.MountStoreWithDB(input.keyMs, sdk.StoreTypeIAVL, db)
@@ -124,6 +129,8 @@ func setupTestInput(t *testing.T) testInput {
 
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, maccPerms)
 
+	input.poaKeeper = poa.NewKeeper(input.keyPoa, input.cdc, input.paramsKeeper.Subspace(poa.DefaultParamspace))
+
 	input.msRouter = core.NewRouter()
 	input.msRouter.AddRoute(msgRouteNoop, func(ctx sdk.Context, msg core.MsMsg) sdk.Error {
 		return nil
@@ -138,8 +145,8 @@ func setupTestInput(t *testing.T) testInput {
 }
 
 func checkError(t *testing.T, expectedErr, receivedErr sdk.Error) {
-	require.Equal(t, expectedErr.Codespace(), receivedErr.Codespace())
-	require.Equal(t, expectedErr.Code(), receivedErr.Code())
+	require.Equal(t, expectedErr.Codespace(), receivedErr.Codespace(), "Codespace")
+	require.Equal(t, expectedErr.Code(), receivedErr.Code(), "code")
 }
 
 func TestKeeper_ExportGenesis(t *testing.T) {
@@ -213,5 +220,25 @@ func TestKeeper_SubmitCallUniqueness(t *testing.T) {
 	{
 		err := target.SubmitCall(ctx, testMsg, uniqueCallId, addr)
 		checkError(t, mstypes.ErrNotUniqueID(""), err)
+	}
+}
+
+func TestModule_ValidateGenesis(t *testing.T) {
+	t.Parallel()
+
+	input := setupTestInput(t)
+	app := NewAppModule(input.target, input.poaKeeper)
+
+	genesis := mstypes.GenesisState{
+		Parameters: mstypes.DefaultParams(),
+	}
+
+	// check OK
+	require.Nil(t, app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis)))
+
+	// check minIntervalToExecute params error
+	if mstypes.MinIntervalToExecute > 0 {
+		genesis.Parameters.IntervalToExecute = mstypes.MinIntervalToExecute - 1
+		require.NotNil(t, app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis)))
 	}
 }

@@ -8,7 +8,7 @@ import (
 // Default parameters.
 const (
 	DefIntervalToExecute = 86400 // interval in blocks to execute proposal.
-	minIntervalToExecute = 10
+	MinIntervalToExecute = 10
 )
 
 // Keys to store parameters.
@@ -39,8 +39,8 @@ func (p *Params) Equal(p2 Params) bool {
 }
 
 func (p Params) Validate() error {
-	if p.IntervalToExecute < minIntervalToExecute {
-		return fmt.Errorf("interval to execute calls should be not less %d", minIntervalToExecute)
+	if p.IntervalToExecute < MinIntervalToExecute {
+		return fmt.Errorf("interval to execute calls should be not less %d", MinIntervalToExecute)
 	}
 
 	return nil

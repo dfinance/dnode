@@ -27,6 +27,11 @@ const (
 	queryGetDestroysPath = "/custom/currencies/" + currencies.QueryGetDestroys
 	queryGetCallPath     = "/custom/multisig/call"
 	queryGetCallsPath    = "/custom/multisig/calls"
+	queryGetCallLastId   = "/custom/multisig/lastId"
+	queryGetUniqueCall   = "/custom/multisig/unique"
+	queryGetValidators   = "/custom/poa/validators"
+	queryGetValidator    = "/custom/poa/validator"
+	queryGetMinMaxParams = "/custom/poa/minmax"
 )
 
 var (
@@ -72,6 +77,9 @@ func Test_IssueCurrency(t *testing.T) {
 	checkCurrencyExists(t, app, currency1Symbol, amount, 0)
 	// check issue is exists
 	checkIssueExists(t, app, issue1ID, recipient, amount)
+
+	// check non-existing currency
+	CheckRunQuerySpecificError(t, app, types.CurrencyReq{Symbol: currency2Symbol}, queryGetCurrencyPath, types.ErrNotExistCurrency(""))
 }
 
 func Test_IssueCurrencyTwice(t *testing.T) {
@@ -242,8 +250,29 @@ Loop:
 	require.Equal(t, len(validatorsToAdd)+len(genValidators), len(validators))
 
 	// add already existing validator
-	res := addValidators(t, app, genValidators, []*auth.BaseAccount{validatorsToAdd[0]}, privKeys, false)
-	CheckResultError(t, poaTypes.ErrValidatorExists(""), res)
+	{
+		res := addValidators(t, app, genValidators, []*auth.BaseAccount{validatorsToAdd[0]}, privKeys, false)
+		CheckResultError(t, poaTypes.ErrValidatorExists(""), res)
+	}
+
+	// getAllValidators query check
+	{
+		response := poaTypes.ValidatorsConfirmations{}
+		CheckRunQuery(t, app, nil, queryGetValidators, &response)
+		require.Equal(t, validators, response.Validators)
+		require.Equal(t, uint16(len(response.Validators)/2+1), response.Confirmations)
+	}
+
+	// getValidator query check
+	{
+		reqValidator := validators[0]
+		request := poaTypes.QueryValidator{Address: reqValidator.Address}
+		response := poaTypes.Validator{}
+		CheckRunQuery(t, app, request, queryGetValidator, &response)
+
+		require.Equal(t, reqValidator.Address, response.Address)
+		require.Equal(t, reqValidator.EthAddress, response.EthAddress)
+	}
 }
 
 func Test_POAValidatorsRemove(t *testing.T) {
@@ -372,6 +401,14 @@ func Test_POAValidatorsMinMaxRange(t *testing.T) {
 	require.Equal(t, defMinValidators, app.poaKeeper.GetMinValidators(GetContext(app, true)))
 	require.Equal(t, defMaxValidators, app.poaKeeper.GetMaxValidators(GetContext(app, true)))
 
+	// check minMax query
+	{
+		response := poaTypes.Params{}
+		CheckRunQuery(t, app, nil, queryGetMinMaxParams, &response)
+		require.Equal(t, defMinValidators, response.MinValidators)
+		require.Equal(t, defMaxValidators, response.MaxValidators)
+	}
+
 	// add (defMaxValidators + 1) validator
 	{
 		newValidator := genValidators[len(genValidators)-1]
@@ -406,11 +443,12 @@ func Test_MultisigVoting(t *testing.T) {
 	_, err = setGenesis(t, app, curValidators)
 	require.NoError(t, err)
 
-	nonExistingValidator, nonExistingValidatorPrivKey := genValidators[len(genValidators) - 1], genPrivKeys[len(genPrivKeys) - 1]
+	nonExistingValidator, nonExistingValidatorPrivKey := genValidators[len(genValidators)-1], genPrivKeys[len(genPrivKeys)-1]
 	app.accountKeeper.SetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), nonExistingValidator)
 
 	addValidator := genValidators[len(genValidators)-2]
 	var callMsgId uint64
+	var callUniqueId string
 
 	// submit call from non-existing validator
 	{
@@ -430,8 +468,8 @@ func Test_MultisigVoting(t *testing.T) {
 		senderAcc := GetAccountCheckTx(app, senderAddr)
 		// create call
 		addValidatorMsg := msgspoa.NewMsgAddValidator(addValidator.Address, ethAddresses[0], senderAddr)
-		msgID := fmt.Sprintf("addValidator:%s", addValidator.Address)
-		submitMsg := msmsg.NewMsgSubmitCall(addValidatorMsg, msgID, senderAddr)
+		callUniqueId = fmt.Sprintf("addValidator:%s", addValidator.Address)
+		submitMsg := msmsg.NewMsgSubmitCall(addValidatorMsg, callUniqueId, senderAddr)
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)
 		// check call added
@@ -456,6 +494,30 @@ func Test_MultisigVoting(t *testing.T) {
 		CheckRunQuery(t, app, nil, queryGetCallsPath, &calls)
 		require.Equal(t, 1, len(calls))
 		require.Equal(t, senderAddr, calls[0].Votes[1])
+	}
+
+	// check call lastId query
+	{
+		response := mstypes.LastIdRes{}
+		CheckRunQuery(t, app, nil, queryGetCallLastId, &response)
+		require.Equal(t, callMsgId, response.LastId)
+	}
+
+	// check call by uniqueId query (with votes)
+	{
+		request := mstypes.UniqueReq{UniqueId: callUniqueId}
+		response := mstypes.CallResp{}
+		CheckRunQuery(t, app, request, queryGetUniqueCall, &response)
+		require.Equal(t, callUniqueId, response.Call.UniqueID)
+		require.Equal(t, callMsgId, response.Call.MsgID)
+		require.Len(t, response.Votes, 2)
+		require.ElementsMatch(t, []sdk.AccAddress{curValidators[0].Address, curValidators[1].Address}, response.Votes)
+	}
+
+	// check call by non-existing uniqueId query
+	{
+		request := mstypes.UniqueReq{UniqueId: "non-existing-unique-id"}
+		CheckRunQuerySpecificError(t, app, request, queryGetUniqueCall, mstypes.ErrNotFoundUniqueID(""))
 	}
 
 	// vote again (sender has already voted)
@@ -579,7 +641,7 @@ func Test_MultisigBlockHeight(t *testing.T) {
 		// pick a non-rejected once voted callId
 		msgId := uint64(blockCountToLimit - 1)
 		// vote and approve call
-		for i := 1; i < len(genAccs)/2 + 1; i++ {
+		for i := 1; i < len(genAccs)/2+1; i++ {
 			recipientAddr, recipientPrivKey := genAddrs[i], genPrivKeys[i]
 			confirmMsg := msmsg.NewMsgConfirmCall(msgId, recipientAddr)
 			recepientAcc := GetAccountCheckTx(app, recipientAddr)
@@ -595,6 +657,26 @@ func Test_MultisigBlockHeight(t *testing.T) {
 			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{recepientAcc.GetAccountNumber()}, []uint64{recepientAcc.GetSequence()}, recipientPrivKey)
 			CheckDeliverSpecificErrorTx(t, app, tx, mstypes.ErrAlreadyConfirmed(0))
 		}
+	}
+	// revoke rejected call
+	{
+		// pick a rejected callId
+		msgId := uint64(0)
+		// emit transaction
+		revokeMsg := msmsg.MsgRevokeConfirm{MsgId: msgId, Sender: recipientAddr}
+		senderAcc := GetAccountCheckTx(app, recipientAddr)
+		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, recipientPrivKey)
+		CheckDeliverSpecificErrorTx(t, app, tx, mstypes.ErrAlreadyRejected(0))
+	}
+	// revoke approved call
+	{
+		// pick a rejected callId
+		msgId := uint64(blockCountToLimit - 1)
+		// emit transaction
+		revokeMsg := msmsg.MsgRevokeConfirm{MsgId: msgId, Sender: recipientAddr}
+		senderAcc := GetAccountCheckTx(app, recipientAddr)
+		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, recipientPrivKey)
+		CheckDeliverSpecificErrorTx(t, app, tx, mstypes.ErrAlreadyConfirmed(0))
 	}
 }
 
