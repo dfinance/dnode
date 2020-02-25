@@ -114,32 +114,32 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 	// Set price by oracle 1
 	_, err := helper.keeper.SetPrice(
 		ctx, helper.addrs[0], "tstusd",
-		sdk.MustNewDecFromStr("0.33"),
+		sdk.NewInt(33000000),
 		header.Time.Add(1*time.Hour))
 	require.NoError(t, err)
 	// Get raw prices
 	rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd")
 	require.Equal(t, len(rawPrices), 1)
-	require.Equal(t, rawPrices[0].Price.Equal(sdk.MustNewDecFromStr("0.33")), true)
+	require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(33000000)), true)
 	// Set price by oracle 2
 	_, err = helper.keeper.SetPrice(
 		ctx, helper.addrs[1], "tstusd",
-		sdk.MustNewDecFromStr("0.35"),
+		sdk.NewInt(35000000),
 		header.Time.Add(time.Hour*1))
 	require.NoError(t, err)
 
 	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd")
 	require.Equal(t, len(rawPrices), 2)
-	require.Equal(t, rawPrices[1].Price.Equal(sdk.MustNewDecFromStr("0.35")), true)
+	require.Equal(t, rawPrices[1].Price.Equal(sdk.NewInt(35000000)), true)
 
 	// Update Price by Oracle 1
 	_, err = helper.keeper.SetPrice(
 		ctx, helper.addrs[0], "tstusd",
-		sdk.MustNewDecFromStr("0.37"),
+		sdk.NewInt(37000000),
 		header.Time.Add(time.Hour*1))
 	require.NoError(t, err)
 	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd")
-	require.Equal(t, rawPrices[0].Price.Equal(sdk.MustNewDecFromStr("0.37")), true)
+	require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(37000000)), true)
 }
 
 // nolint:errcheck
@@ -159,31 +159,30 @@ func TestKeeper_GetSetCurrentPrice(t *testing.T) {
 	helper.keeper.SetParams(ctx, ap)
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[0], "tstusd",
-		sdk.MustNewDecFromStr("0.33"),
+		sdk.NewInt(33000000),
 		header.Time.Add(time.Hour*1))
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[1], "tstusd",
-		sdk.MustNewDecFromStr("0.35"),
+		sdk.NewInt(35000000),
 		header.Time.Add(time.Hour*1))
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[2], "tstusd",
-		sdk.MustNewDecFromStr("0.34"),
+		sdk.NewInt(34000000),
 		header.Time.Add(time.Hour*1))
 	// Set current price
 	err := helper.keeper.SetCurrentPrices(ctx)
 	require.NoError(t, err)
 	// Get Current price
 	price := helper.keeper.GetCurrentPrice(ctx, "tstusd")
-	require.Equal(t, price.Price.Equal(sdk.MustNewDecFromStr("0.34")), true)
+	require.Equal(t, price.Price.Equal(sdk.NewInt(34000000)), true)
 
 	// Even number of oracles
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[3], "tstusd",
-		sdk.MustNewDecFromStr("0.36"),
+		sdk.NewInt(36000000),
 		header.Time.Add(time.Hour*1))
 	err = helper.keeper.SetCurrentPrices(ctx)
 	require.NoError(t, err)
 	price = helper.keeper.GetCurrentPrice(ctx, "tstusd")
-	require.Equal(t, price.Price.Equal(sdk.MustNewDecFromStr("0.345")), true)
-
+	require.Equal(t, price.Price.Equal(sdk.NewInt(34500000)), true)
 }

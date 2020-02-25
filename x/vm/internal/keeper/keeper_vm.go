@@ -21,6 +21,20 @@ func (keeper Keeper) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 	return keeper.getValue(ctx, accessPath)
 }
 
+// Public set value.
+func (keeper Keeper) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
+	keeper.setValue(ctx, accessPath, value)
+}
+
+// Public get path for oracle price.
+func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath {
+	path := types.AssetCodeToPath(assetCode)
+	return &vm_grpc.VMAccessPath{
+		Address: make([]byte, types.VmAddressLength),
+		Path:    path,
+	}
+}
+
 // Get value from storage by access path.
 func (keeper Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	store := ctx.KVStore(keeper.storeKey)

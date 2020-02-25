@@ -1,6 +1,7 @@
 package oracle_test
 
 import (
+	"github.com/WingsDao/wings-blockchain/x/vm"
 	"testing"
 	"time"
 
@@ -20,6 +21,24 @@ import (
 )
 
 const chainID = ""
+
+type VMStorageImpl struct {
+}
+
+func NewVMStorage() VMStorageImpl {
+	return VMStorageImpl{}
+}
+
+func (storage VMStorageImpl) GetOracleAccessPath(_ string) *vm.VMAccessPath {
+	return &vm.VMAccessPath{}
+}
+
+func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm.VMAccessPath, value []byte) {
+}
+
+func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm.VMAccessPath) []byte {
+	return nil
+}
 
 // GenTx generates a signed mock transaction.
 func GenTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKey) auth.StdTx {
@@ -115,7 +134,7 @@ func TestApp_PostPrice(t *testing.T) {
 	keeper.SetParams(ctx, oracleParams)
 	_, _ = keeper.SetPrice(
 		ctx, addrs[0], "uftm",
-		sdk.MustNewDecFromStr("1.00"),
+		sdk.NewInt(100000000),
 		time.Now().Add(time.Hour*1))
 	_ = keeper.SetCurrentPrices(ctx)
 	mapp.EndBlock(abci.RequestEndBlock{})
@@ -126,7 +145,9 @@ func TestApp_PostPrice(t *testing.T) {
 	time1, _ := time.Parse(layout, dateString)
 
 	// Create CSDT
-	msgs := []sdk.Msg{types.NewMsgPostPrice(testAddr, "uftm", sdk.MustNewDecFromStr("1.00"), time1)}
+	price, isOk := sdk.NewIntFromString("1")
+	require.True(t, isOk)
+	msgs := []sdk.Msg{types.NewMsgPostPrice(testAddr, "uftm", price, time1)}
 	SignCheckDeliver(t, mapp.Cdc, mapp.BaseApp, abci.Header{Height: mapp.LastBlockHeight() + 1}, msgs, []uint64{0}, []uint64{0}, true, true, testPrivKey)
 }
 
@@ -144,7 +165,8 @@ func setUpMockAppWithoutGenesis() (*mock.App, oracle.Keeper) {
 	// Create keepers
 	keyOracle := sdk.NewKVStoreKey(oracle.StoreKey)
 
-	oracleKeeper := oracle.NewKeeper(keyOracle, mapp.Cdc, mapp.ParamsKeeper.Subspace(oracle.DefaultParamspace), oracle.DefaultCodespace)
+	// initialize vm keeper
+	oracleKeeper := oracle.NewKeeper(keyOracle, mapp.Cdc, mapp.ParamsKeeper.Subspace(oracle.DefaultParamspace), oracle.DefaultCodespace, NewVMStorage())
 
 	// Register routes
 	mapp.Router().AddRoute("oracle", oracle.NewHandler(oracleKeeper))

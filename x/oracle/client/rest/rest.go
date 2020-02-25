@@ -54,9 +54,9 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		price, err := sdk.NewDecFromStr(req.Price)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		price, isOk := sdk.NewIntFromString(req.Price)
+		if !isOk {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("something wrong with price value: %s", req.Price))
 			return
 		}
 

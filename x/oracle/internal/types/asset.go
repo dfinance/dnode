@@ -103,14 +103,14 @@ func (os Oracles) String() string {
 // CurrentPrice struct that contains the metadata of a current price for a particular asset in the oracle module.
 type CurrentPrice struct {
 	AssetCode string  `json:"asset_code" yaml:"asset_code"`
-	Price     sdk.Dec `json:"price" yaml:"price"`
+	Price     sdk.Int `json:"price" yaml:"price"`
 }
 
 // PostedPrice struct represented a price for an asset posted by a specific oracle
 type PostedPrice struct {
 	AssetCode     string         `json:"asset_code" yaml:"asset_code"`
 	OracleAddress sdk.AccAddress `json:"oracle_address" yaml:"oracle_address"`
-	Price         sdk.Dec        `json:"price" yaml:"price"`
+	Price         sdk.Int        `json:"price" yaml:"price"`
 	Expiry        time.Time      `json:"expiry" yaml:"expiry"`
 }
 

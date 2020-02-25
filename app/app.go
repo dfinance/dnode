@@ -264,14 +264,6 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
-	// Initializing oracle module
-	app.oracleKeeper = oracle.NewKeeper(
-		keys[oracle.StoreKey],
-		app.cdc,
-		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
-		oracle.DefaultCodespace,
-	)
-
 	// Initializing multisignature router.
 	app.msRouter = core.NewRouter()
 
@@ -291,6 +283,15 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.vmConn,
 		app.vmListener,
 		config,
+	)
+
+	// Initializing oracle module
+	app.oracleKeeper = oracle.NewKeeper(
+		keys[oracle.StoreKey],
+		app.cdc,
+		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
+		oracle.DefaultCodespace,
+		app.vmKeeper,
 	)
 
 	// Initializing multisignature manager.
@@ -362,6 +363,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	dsContext := app.GetDSContext()
 	app.vmKeeper.SetDSContext(dsContext)
 	app.vmKeeper.StartDSServer(dsContext)
+	time.Sleep(1 * time.Second) // need for DS to initialize stdlib, will be removed later.
 
 	return app
 }
@@ -388,6 +390,7 @@ func (app *WbServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain)
 	resp := app.mm.InitGenesis(ctx, genesisState)
 	app.vmKeeper.SetDSContext(ctx)
 	app.vmKeeper.StartDSServer(ctx)
+	time.Sleep(1 * time.Second) // need for DS to initialize stdlib, will be removed later.
 
 	return resp
 }

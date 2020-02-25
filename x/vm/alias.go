@@ -7,20 +7,21 @@ import (
 )
 
 const (
-	ModuleName        = types.ModuleName
-	RouterKey         = types.RouterKey
-	StoreKey          = types.StoreKey
-	DefaultParamspace = types.DefaultParamspace
+	ModuleName = types.ModuleName
+	StoreKey   = types.StoreKey
 )
 
 type (
 	Keeper           = keeper.Keeper
+	VMStorage        = keeper.VMStorage
 	MsgDeployModule  = types.MsgDeployModule
 	MsgExecuteScript = types.MsgExecuteScript
 	ErrVMCrashed     = types.ErrVMCrashed
 
 	VMServer                     = vm_grpc.VMServiceServer
 	UnimplementedVMServiceServer = vm_grpc.UnimplementedVMServiceServer
+
+	VMAccessPath = vm_grpc.VMAccessPath
 
 	QueryAccessPath = types.QueryAccessPath
 	QueryValueResp  = types.QueryValueResp

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,7 +17,7 @@ const (
 type MsgPostPrice struct {
 	From      sdk.AccAddress `json:"from" yaml:"from"`
 	AssetCode string         `json:"asset_code" yaml:"asset_code"`
-	Price     sdk.Dec        `json:"price" yaml:"price"`
+	Price     sdk.Int        `json:"price" yaml:"price"`
 	Expiry    time.Time      `json:"expiry" yaml:"expiry"`
 }
 
@@ -24,7 +25,7 @@ type MsgPostPrice struct {
 func NewMsgPostPrice(
 	from sdk.AccAddress,
 	assetCode string,
-	price sdk.Dec,
+	price sdk.Int,
 	expiry time.Time) MsgPostPrice {
 	return MsgPostPrice{
 		From:      from,
@@ -59,8 +60,11 @@ func (msg MsgPostPrice) ValidateBasic() sdk.Error {
 	if len(msg.AssetCode) == 0 {
 		return sdk.ErrInternal("invalid (empty) asset code")
 	}
-	if msg.Price.LT(sdk.ZeroDec()) {
+	if msg.Price.IsNegative() {
 		return sdk.ErrInternal("invalid (negative) price")
+	}
+	if msg.Price.BigInt().BitLen() > PriceBytesLimit*8 {
+		return sdk.ErrInternal(fmt.Sprintf("out of %d bytes limit for price", PriceBytesLimit))
 	}
 	// TODO check coin denoms
 	return nil
