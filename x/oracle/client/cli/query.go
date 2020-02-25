@@ -84,7 +84,7 @@ func GetCmdAssets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			var out types.QueryAssetsResp
+			var out types.Assets
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
