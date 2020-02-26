@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/the729/lcs"
 	"math/big"
+	"strconv"
 )
 
 const (
@@ -15,9 +16,25 @@ const (
 	resourceKey  = "016ee00e2d212d7676b19de9ce7a4b598a339ae2286ef6b378c0c348b3fd3221ed"
 )
 
+/*
+// coin struct
+struct Coin {
+	denom: bytearray,
+	value: u64,
+}
+
+resource T {
+	// all balances.
+	balances: Vector.T<Self.Coin>,
+}
+*/
+type WBCoin struct {
+	Denom []byte // coin denom
+	Value uint64 // coin value
+}
+
 type AccountResource struct {
-	Coins    []byte // coins converted into bytearray.
-	Sequence uint64 // account sequence.
+	Balances []WBCoin // coins
 }
 
 // Just convert little endian to big endian (because of Cosmos sdk usage of big endian).
@@ -62,14 +79,19 @@ func split(buf []byte, lim int) [][]byte {
 }
 
 // convert byte array to coins.
-func bytesToCoins(bytes []byte) sdk.Coins {
-	coins := make(sdk.Coins, 0)
-	bzs := split(bytes, amountLength+denomLength)
-	for _, bz := range bzs {
-		coins = append(coins, bytesToCoin(bz))
-	}
+func bytesToCoins(coins []WBCoin) sdk.Coins {
+	if coins == nil {
+		return nil
+	} else {
+		realCoins := make(sdk.Coins, 0)
+		for _, coin := range coins {
+			str := strconv.FormatUint(coin.Value, 10)
+			amount, _ := sdk.NewIntFromString(str)
+			realCoins = append(realCoins, sdk.NewCoin(string(coin.Denom), amount))
+		}
 
-	return coins
+		return realCoins
+	}
 }
 
 // Convert coin to  bytes
@@ -122,16 +144,19 @@ func GetResPath() []byte {
 
 // Convert acc to account resource.
 func AccResourceFromAccount(acc exported.Account) AccountResource {
-	var coins []byte
-	if acc.GetCoins() != nil {
-		coins = coinsToBytes(acc.GetCoins())
+	if acc.GetCoins() == nil {
+		return AccountResource{}
 	} else {
-		coins = make([]byte, 0)
-	}
+		accCoins := acc.GetCoins()
+		balances := make([]WBCoin, 0)
+		for _, coin := range accCoins {
+			balances = append(balances, WBCoin{
+				Denom: []byte(coin.Denom),
+				Value: coin.Amount.BigInt().Uint64(),
+			})
+		}
 
-	return AccountResource{
-		Coins:    coins,
-		Sequence: acc.GetSequence(),
+		return AccountResource{Balances: balances}
 	}
 }
 

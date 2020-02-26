@@ -50,10 +50,9 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 		// check if account exists in vm but not exists in our storage - if so, save account and return.
 		// check if account has differences - balances, something else, and if so - save account and return.
 		accRes := BytesToAccRes(bz)
-		realCoins := bytesToCoins(accRes.Coins)
-		if accRes.Sequence != account.GetSequence() || !realCoins.IsEqual(account.GetCoins()) { // also check coins
+		realCoins := bytesToCoins(accRes.Balances)
+		if !realCoins.IsEqual(account.GetCoins()) { // also check coins
 			account.SetCoins(realCoins)
-			account.SetSequence(accRes.Sequence)
 
 			keeper.SetAccount(ctx, account)
 		}
@@ -74,10 +73,9 @@ func (keeper VMAccountKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account
 		})
 
 		accRes := BytesToAccRes(bz)
-		realCoins := bytesToCoins(accRes.Coins)
-		if accRes.Sequence != accounts[i].GetSequence() || !realCoins.IsEqual(accounts[i].GetCoins()) { // also check coins
+		realCoins := bytesToCoins(accRes.Balances)
+		if !realCoins.IsEqual(accounts[i].GetCoins()) { // also check coins
 			accounts[i].SetCoins(realCoins)
-			accounts[i].SetSequence(accRes.Sequence)
 
 			keeper.SetAccount(ctx, accounts[i])
 		}
