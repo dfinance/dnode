@@ -3,6 +3,8 @@ package app
 import (
 	"bytes"
 	"flag"
+	"github.com/WingsDao/wings-blockchain/x/core"
+	msMsgs "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
 	"net"
 	"os"
 	"sort"
@@ -24,6 +26,28 @@ import (
 	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
 	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	"github.com/WingsDao/wings-blockchain/x/vm"
+)
+
+var (
+	chainID         = ""
+	currency1Symbol = "testcoin1"
+	currency2Symbol = "testcoin2"
+	currency3Symbol = "testcoin3"
+	issue1ID        = "issue1"
+	issue2ID        = "issue2"
+	issue3ID        = "issue3"
+	amount          = int64(100)
+	ethAddresses    = []string{
+		"0x82A978B3f5962A5b0957d9ee9eEf472EE55B42F1",
+		"0x7d577a597B2742b498Cb5Cf0C26cDCD726d39E6e",
+		"0xDCEceAF3fc5C0a63d195d69b1A90011B7B19650D",
+		"0x598443F1880Ef585B21f1d7585Bd0577402861E5",
+		"0x13cBB8D99C6C4e0f2728C7d72606e78A29C4E224",
+		"0x77dB2BEBBA79Db42a978F896968f4afCE746ea1F",
+		"0x24143873e0E0815fdCBcfFDbe09C979CbF9Ad013",
+		"0x10A1c1CB95c92EC31D3f22C66Eef1d9f3F258c6B",
+		"0xe0FC04FA2d34a66B779fd5CEe748268032a146c0",
+	}
 )
 
 // Type that combines an Address with the privKey and pubKey to that address
@@ -235,53 +259,49 @@ func DeliverTx(app *WbServiceApp, tx auth.StdTx) sdk.Result {
 	return sdk.Result{}
 }
 
+// DeliverTx and success check
 func CheckDeliverTx(t *testing.T, app *WbServiceApp, tx auth.StdTx) {
-	res := app.Simulate(app.cdc.MustMarshalJSON(tx), tx)
+	res := DeliverTx(app, tx)
 	require.True(t, res.IsOK(), res.Log)
-	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
-	res = app.Deliver(tx)
-	require.True(t, res.IsOK(), res.Log)
-	app.EndBlock(abci.RequestEndBlock{})
-	app.Commit()
 }
 
+// DeliverTx and fail check
 func CheckDeliverErrorTx(t *testing.T, app *WbServiceApp, tx auth.StdTx) {
-	res := app.Simulate(app.cdc.MustMarshalJSON(tx), tx)
-	require.True(t, !res.IsOK(), res.Log)
-	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
-	res = app.Deliver(tx)
-	require.True(t, !res.IsOK(), res.Log)
-	app.EndBlock(abci.RequestEndBlock{})
-	app.Commit()
+	res := DeliverTx(app, tx)
+	require.False(t, res.IsOK(), res.Log)
 }
 
+// DeliverTx and fail check with specific error
 func CheckDeliverSpecificErrorTx(t *testing.T, app *WbServiceApp, tx auth.StdTx, err sdk.Error) {
 	res := DeliverTx(app, tx)
 	CheckResultError(t, err, res)
 }
 
-func CheckRunQuery(t *testing.T, app *WbServiceApp, requestData interface{}, path string, responseValue interface{}) (resp abci.ResponseQuery) {
-	resp = app.Query(abci.RequestQuery{
-		Data: codec.MustMarshalJSONIndent(app.cdc, requestData),
-		Path: path,
-	})
-	require.True(t, resp.IsOK())
-	if responseValue != nil {
-		require.NoError(t, app.cdc.UnmarshalJSON(resp.Value, responseValue))
-	}
-
-	return
-}
-
-func CheckRunQuerySpecificError(t *testing.T, app *WbServiceApp, requestData interface{}, path string, err sdk.Error) {
+func RunQuery(t *testing.T, app *WbServiceApp, requestData interface{}, path string, responseValue interface{}) abci.ResponseQuery {
 	resp := app.Query(abci.RequestQuery{
 		Data: codec.MustMarshalJSONIndent(app.cdc, requestData),
 		Path: path,
 	})
 
+	if responseValue != nil && resp.IsOK() {
+		require.NoError(t, app.cdc.UnmarshalJSON(resp.Value, responseValue))
+	}
+
+	return resp
+}
+
+// RunQuery and success check
+func CheckRunQuery(t *testing.T, app *WbServiceApp, requestData interface{}, path string, responseValue interface{}) {
+	resp := RunQuery(t, app, requestData, path, responseValue)
+	require.True(t, resp.IsOK())
+}
+
+// RunQuery and fail check with specific error
+func CheckRunQuerySpecificError(t *testing.T, app *WbServiceApp, requestData interface{}, path string, err sdk.Error) {
+	resp := RunQuery(t, app, requestData, path, nil)
 	require.True(t, resp.IsErr())
-	require.Equal(t, string(err.Codespace()), resp.Codespace, "%q failed, res.Log: %s", "res.Codespace", resp.Log)
-	require.Equal(t, uint32(err.Code()), resp.Code, "%q failed, res.Log: %s", "res.Code", resp.Log)
+	require.Equal(t, string(err.Codespace()), resp.Codespace, "Codespace: %s", resp.Log)
+	require.Equal(t, uint32(err.Code()), resp.Code, "Code: %s", resp.Log)
 }
 
 func GetContext(app *WbServiceApp, isCheckTx bool) sdk.Context {
@@ -296,7 +316,82 @@ func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(false, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
+// Check if expected / received tx results are equal
 func CheckResultError(t *testing.T, expectedErr sdk.Error, receivedRes sdk.Result) {
-	require.Equal(t, expectedErr.Codespace(), receivedRes.Codespace, "%q failed, res.Log: %s", "res.Codespace", receivedRes.Log)
-	require.Equal(t, expectedErr.Code(), receivedRes.Code, "%q failed, res.Log: %s", "res.Code", receivedRes.Log)
+	require.Equal(t, expectedErr.Codespace(), receivedRes.Codespace, "Codespace: %s", receivedRes.Log)
+	require.Equal(t, expectedErr.Code(), receivedRes.Code, "Code: %s", receivedRes.Log)
+}
+
+func MSMsgSubmitAndVote(t *testing.T, app *WbServiceApp, msMsgID string, msMsg core.MsMsg, submitAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+	confirmCnt := int(app.poaKeeper.GetEnoughConfirmations(GetContext(app, true)))
+
+	// lazy input check
+	require.Equal(t, len(accs), len(privKeys), "invalid input: accs / privKeys len mismatch")
+	require.Less(t, submitAccIdx, uint(len(accs)), "invalid input: submitAccIdx >= len(accs)")
+	require.Less(t, submitAccIdx, uint(len(accs)), "invalid input: submitAccIdx >= len(accs)")
+	require.LessOrEqual(t, confirmCnt, len(accs), "invalid input: confirmations count > len(accs)")
+
+	callMsgID := uint64(0)
+	{
+		// submit message
+		senderAcc, senderPrivKey := GetAccountCheckTx(app, accs[submitAccIdx].Address), privKeys[submitAccIdx]
+		submitMsg := msMsgs.NewMsgSubmitCall(msMsg, msMsgID, senderAcc.GetAddress())
+		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		if doChecks {
+			CheckDeliverTx(t, app, tx)
+		} else if res := DeliverTx(app, tx); !res.IsOK() {
+			return res
+		}
+
+		// check vote added
+		calls := msTypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
+		require.Equal(t, 1, len(calls[0].Votes))
+
+		callMsgID = calls[0].Call.MsgID
+	}
+
+	// cut submit message sender from accounts
+	accsFixed, privKeysFixed := append([]*auth.BaseAccount(nil), accs...), append([]crypto.PrivKey(nil), privKeys...)
+	accsFixed = append(accsFixed[:submitAccIdx], accsFixed[submitAccIdx+1:]...)
+	privKeysFixed = append(privKeysFixed[:submitAccIdx], privKeysFixed[submitAccIdx+1:]...)
+
+	// voting (confirming)
+	for idx := 0; idx < confirmCnt-2; idx++ {
+		// confirm message
+		senderAcc, senderPrivKey := GetAccountCheckTx(app, accsFixed[idx].Address), privKeysFixed[idx]
+		confirmMsg := msMsgs.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
+		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		if doChecks {
+			CheckDeliverTx(t, app, tx)
+		} else if res := DeliverTx(app, tx); !res.IsOK() {
+			return res
+		}
+
+		// check vote added / call removed
+		calls := msTypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
+		require.Equal(t, idx+2, len(calls[0].Votes))
+	}
+
+	// voting (last confirm)
+	{
+		// confirm message
+		idx := len(accsFixed) - 1
+		senderAcc, senderPrivKey := GetAccountCheckTx(app, accsFixed[idx].Address), privKeysFixed[idx]
+		confirmMsg := msMsgs.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
+		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		if doChecks {
+			CheckDeliverTx(t, app, tx)
+		} else if res := DeliverTx(app, tx); !res.IsOK() {
+			return res
+		}
+
+		// check call removed
+		calls := msTypes.CallsResp{}
+		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
+		require.Equal(t, 0, len(calls))
+	}
+
+	return sdk.Result{}
 }
