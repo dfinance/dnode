@@ -290,11 +290,9 @@ func replaceValidator(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccou
 	res := MSMsgSubmitAndVote(t, app, msgID, replaceMsg, 0, genAccs, oldPrivKeys, doChecks)
 	if doChecks {
 		require.True(t, res.IsOK())
-	} else if !res.IsOK() {
-		return res
 	}
 
-	return sdk.Result{}
+	return res
 }
 
 func removeValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, rmValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {

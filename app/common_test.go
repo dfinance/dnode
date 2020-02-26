@@ -36,7 +36,7 @@ var (
 	issue1ID        = "issue1"
 	issue2ID        = "issue2"
 	issue3ID        = "issue3"
-	amount          = int64(100)
+	amount          = sdk.NewInt(100)
 	ethAddresses    = []string{
 		"0x82A978B3f5962A5b0957d9ee9eEf472EE55B42F1",
 		"0x7d577a597B2742b498Cb5Cf0C26cDCD726d39E6e",

@@ -198,7 +198,7 @@ func Test_MSBlockHeight(t *testing.T) {
 		app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
 		// generate submit message
 		issueId, msgId := fmt.Sprintf("issue%d", curIssueIdx), strconv.Itoa(curIssueIdx)
-		issueMsg := msgs.NewMsgIssueCurrency(currency1Symbol, sdk.NewInt(amount), 0, senderAddr, issueId)
+		issueMsg := msgs.NewMsgIssueCurrency(currency1Symbol, amount, 0, senderAddr, issueId)
 		submitMsg := msMsgs.NewMsgSubmitCall(issueMsg, msgId, senderAddr)
 		// emit transaction
 		senderAcc := GetAccount(app, senderAddr)
