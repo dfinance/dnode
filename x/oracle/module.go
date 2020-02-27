@@ -76,6 +76,7 @@ func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
 		cmd.GetCmdCurrentPrice(StoreKey, ModuleCdc),
 		cmd.GetCmdRawPrices(StoreKey, ModuleCdc),
 		cmd.GetCmdAssets(StoreKey, ModuleCdc),
+		cmd.GetCmdAssetCodeHex(),
 	)...)
 
 	return queryCmd

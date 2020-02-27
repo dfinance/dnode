@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -9,6 +10,21 @@ import (
 
 	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 )
+
+// Convert asset code in hex.
+func GetCmdAssetCodeHex() *cobra.Command {
+	return &cobra.Command{
+		Use:   "asset-code-hex [assetCode]",
+		Short: "get asset code in hex",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			assetCode := args[0]
+			res := hex.EncodeToString([]byte(assetCode))
+			fmt.Printf("Asset code in hex: %s\n", res)
+			return nil
+		},
+	}
+}
 
 // GetCmdCurrentPrice queries the current price of an asset
 func GetCmdCurrentPrice(queryRoute string, cdc *codec.Codec) *cobra.Command {
@@ -68,7 +84,7 @@ func GetCmdAssets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			var out types.QueryAssetsResp
+			var out types.Assets
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
