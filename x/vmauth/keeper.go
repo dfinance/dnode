@@ -40,20 +40,30 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) exported.Account {
 	account := keeper.AccountKeeper.GetAccount(ctx, addr)
 
-	if account != nil {
-		bz := keeper.vmKeeper.GetValue(ctx, &vm.VMAccessPath{
-			Address: AddrToPathAddr(addr),
-			Path:    GetResPath(),
-		})
+	// check if account maybe exists in vm storage.
+	bz := keeper.vmKeeper.GetValue(ctx, &vm.VMAccessPath{
+		Address: AddrToPathAddr(addr),
+		Path:    GetResPath(),
+	})
+
+	// if account exists, but only in vm.
+	if bz != nil {
+		accRes := BytesToAccRes(bz)
+		realCoins := bytesToCoins(accRes.Balances)
 
 		// load vm account from storage.
 		// check if account exists in vm but not exists in our storage - if so, save account and return.
 		// check if account has differences - balances, something else, and if so - save account and return.
-		accRes := BytesToAccRes(bz)
-		realCoins := bytesToCoins(accRes.Balances)
-		if !realCoins.IsEqual(account.GetCoins()) { // also check coins
-			account.SetCoins(realCoins)
+		if account != nil {
+			if !realCoins.IsEqual(account.GetCoins()) { // also check coins
+				account.SetCoins(realCoins)
 
+				keeper.SetAccount(ctx, account)
+			}
+		} else {
+			// if account is not exists - so create it.
+			account = keeper.NewAccountWithAddress(ctx, addr)
+			account.SetCoins(realCoins)
 			keeper.SetAccount(ctx, account)
 		}
 	}
@@ -62,25 +72,10 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 }
 
 // GetAllAccounts returns all accounts in the accountKeeper.
+// as it's not calling anywhere, as it seems, we can ignore vm storage for now.
+// todo: process all vm storage accounts and compare with standard accounts.
 func (keeper VMAccountKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account {
 	accounts := keeper.AccountKeeper.GetAllAccounts(ctx)
-
-	// get all accounts from vm storage, compare changes, save, if account exists only in vm storage - create and save.
-	for i := range accounts {
-		bz := keeper.vmKeeper.GetValue(ctx, &vm.VMAccessPath{
-			Address: AddrToPathAddr(accounts[i].GetAddress()),
-			Path:    GetResPath(),
-		})
-
-		accRes := BytesToAccRes(bz)
-		realCoins := bytesToCoins(accRes.Balances)
-		if !realCoins.IsEqual(accounts[i].GetCoins()) { // also check coins
-			accounts[i].SetCoins(realCoins)
-
-			keeper.SetAccount(ctx, accounts[i])
-		}
-	}
-
 	return accounts
 }
 
