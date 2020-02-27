@@ -41,6 +41,7 @@ func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
 
 	commands := client.GetCommands(
 		GetData("vm", cdc),
+		GetDenomHex(cdc),
 	)
 	commands = append(commands, compileCommands...)
 
@@ -171,6 +172,19 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			out := types.QueryValueResp{Value: hex.EncodeToString(res)}
 			return cliCtx.PrintOutput(out)
+		},
+	}
+}
+
+func GetDenomHex(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "denom-hex [denom]",
+		Short: "get denom in hex representation",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			hex := hex.EncodeToString([]byte(args[0]))
+			fmt.Printf("Denom in hex: %s\n", hex)
+			return nil
 		},
 	}
 }
