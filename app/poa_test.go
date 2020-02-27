@@ -82,6 +82,47 @@ func Test_POAQueries(t *testing.T) {
 	}
 }
 
+func Test_POAInvalidGenesis(t *testing.T) {
+	app, server := newTestWbApp()
+	defer app.CloseConnections()
+	defer server.Stop()
+
+	// check no validators genesis
+	{
+		expectedErr := poaTypes.ErrNotEnoungValidators(0, 0)
+		_, err := setGenesis(t, app, []*auth.BaseAccount{})
+		require.Error(t, err)
+		require.Equal(t, expectedErr.Code(), err.(sdk.Error).Code())
+		require.Equal(t, expectedErr.Codespace(), err.(sdk.Error).Codespace())
+	}
+
+	// check (minValidators - 1) genesis
+	{
+		genCoins, err := sdk.ParseCoins("1000000000000000wings")
+		require.NoError(t, err)
+		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMinValidators - 1), genCoins)
+
+		expectedErr := poaTypes.ErrNotEnoungValidators(0, 0)
+		_, err = setGenesis(t, app, accs)
+		require.Error(t, err)
+		require.Equal(t, expectedErr.Code(), err.(sdk.Error).Code())
+		require.Equal(t, expectedErr.Codespace(), err.(sdk.Error).Codespace())
+	}
+
+	// check (maxValidators + 1) genesis
+	{
+		genCoins, err := sdk.ParseCoins("1000000000000000wings")
+		require.NoError(t, err)
+		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMaxValidators + 1), genCoins)
+
+		expectedErr := poaTypes.ErrMaxValidatorsReached(0)
+		_, err = setGenesis(t, app, accs)
+		require.Error(t, err)
+		require.Equal(t, expectedErr.Code(), err.(sdk.Error).Code())
+		require.Equal(t, expectedErr.Codespace(), err.(sdk.Error).Codespace())
+	}
+}
+
 func Test_POAValidatorsAdd(t *testing.T) {
 	app, server := newTestWbApp()
 	defer app.CloseConnections()
@@ -95,7 +136,9 @@ func Test_POAValidatorsAdd(t *testing.T) {
 	_, err = setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
+
 	// add new validators
+	curConfirmCnt := app.poaKeeper.GetEnoughConfirmations(GetContext(app, true))
 	{
 		addValidators(t, app, genValidators, newValidators, genPrivKeys, true)
 
@@ -112,6 +155,21 @@ func Test_POAValidatorsAdd(t *testing.T) {
 		}
 		require.Equal(t, added, len(newValidators))
 		require.Equal(t, len(newValidators)+len(genValidators), len(validators))
+	}
+
+	// check hasValidator helper function
+	{
+		for _, v := range newValidators {
+			require.True(t, app.poaKeeper.HasValidator(GetContext(app, true), v.Address))
+		}
+	}
+
+	// check confirmation count increased
+	{
+		newConfirmCnt := app.poaKeeper.GetEnoughConfirmations(GetContext(app, true))
+		require.Greater(t, newConfirmCnt, curConfirmCnt)
+		curConfirmCnt = newConfirmCnt
+
 	}
 
 	// add already existing validator
@@ -137,8 +195,9 @@ func Test_POAValidatorsRemove(t *testing.T) {
 	// add validators to remove later
 	addValidators(t, app, genValidators, targetValidators, genPrivKeys, true)
 	require.Equal(t, len(genValidators)+len(targetValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
+	curConfirmCnt := app.poaKeeper.GetEnoughConfirmations(GetContext(app, true))
 
-	// remove validators
+	// check validators
 	{
 		removeValidators(t, app, genValidators, targetValidators, genPrivKeys, true)
 		require.Equal(t, len(genValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
@@ -154,6 +213,21 @@ func Test_POAValidatorsRemove(t *testing.T) {
 			}
 		}
 		require.Equal(t, len(existingValidators), 0)
+	}
+
+	// check hasValidator helper function
+	{
+		for _, v := range targetValidators {
+			require.False(t, app.poaKeeper.HasValidator(GetContext(app, true), v.Address))
+		}
+	}
+
+	// check confirmation count decreased
+	{
+		newConfirmCnt := app.poaKeeper.GetEnoughConfirmations(GetContext(app, true))
+		require.Less(t, newConfirmCnt, curConfirmCnt)
+		curConfirmCnt = newConfirmCnt
+
 	}
 
 	// remove non-existing validator

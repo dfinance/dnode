@@ -55,12 +55,16 @@ func Test_MSVoting(t *testing.T) {
 	require.NoError(t, err)
 
 	// create account for non-existing validator
-	app.accountKeeper.SetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), nonExistingValidator)
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
+	nonExistingValidator.AccountNumber = uint64(len(genValidators))
+	app.accountKeeper.SetAccount(GetContext(app, false), nonExistingValidator)
+	app.EndBlock(abci.RequestEndBlock{})
+	app.Commit()
 
 	var callMsgId uint64
 	var callUniqueId string
 
-	// submit call from non-existing validator
+	// submit call (from non-existing validator)
 	{
 		// create call
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, nonExistingValidator.Address), nonExistingValidatorPrivKey
@@ -71,7 +75,7 @@ func Test_MSVoting(t *testing.T) {
 		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrNotValidator(""))
 	}
 
-	// submit call from existing validator
+	// submit call (from existing validator)
 	{
 		// create call
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
@@ -130,6 +134,24 @@ func Test_MSVoting(t *testing.T) {
 		confirmMsg := msMsgs.MsgConfirmCall{MsgId: callMsgId, Sender: senderAcc.GetAddress()}
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrCallAlreadyApproved(0, ""))
+	}
+
+	// vote (from non-existing validator)
+	{
+		// confirm call
+		senderAcc, senderPrivKey := GetAccountCheckTx(app, nonExistingValidator.Address), nonExistingValidatorPrivKey
+		confirmMsg := msMsgs.MsgConfirmCall{MsgId: callMsgId, Sender: senderAcc.GetAddress()}
+		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrNotValidator(""))
+	}
+
+	// revoke confirm (from non-existing validator)
+	{
+		// revoke confirm
+		senderAcc, senderPrivKey := GetAccountCheckTx(app, nonExistingValidator.Address), nonExistingValidatorPrivKey
+		revokeMsg := msMsgs.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAcc.GetAddress()}
+		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverErrorTx(t, app, tx)
 	}
 
 	// revoke confirm (non-existing vote)

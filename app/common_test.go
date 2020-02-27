@@ -205,7 +205,9 @@ func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.
 		},
 	})
 
-	require.NoError(t, ModuleBasics.ValidateGenesis(genesisState))
+	if err := ModuleBasics.ValidateGenesis(genesisState); err != nil {
+		return ctx, err
+	}
 
 	stateBytes := codec.MustMarshalJSONIndent(app.cdc, genesisState)
 	// Initialize the chain
