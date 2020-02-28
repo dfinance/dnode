@@ -17,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	wbcnf "github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/utils"
 	"github.com/WingsDao/wings-blockchain/x/oracle"
 )
@@ -66,8 +67,8 @@ func NewClient(mnemonic string, chainID string, nodeAddress string, fees sdk.Coi
 	return &Client{keyBase: kb, keyInfo: ki, cl: cl, nodeAddress: nodeAddress, cdc: cdc, chainID: chainID, fees: fees, txBuilder: txBuilder}, err
 }
 
-func (c *Client) PostPrice(assetCode string, price string) error {
-	intPrice, err := utils.NewIntFromString(price, 8)
+func (c *Client) PostPrice(t exchange.Ticker) error {
+	intPrice, err := utils.NewIntFromString(t.Price, 8)
 	if err != nil {
 		return err
 	}
@@ -81,7 +82,7 @@ func (c *Client) PostPrice(assetCode string, price string) error {
 		WithAccountNumber(acc.AccountNumber).
 		WithSequence(acc.Sequence).
 		WithChainID(c.chainID).
-		BuildAndSign(accountName, passphrase, []sdk.Msg{oracle.NewMsgPostPrice(acc.Address, assetCode, intPrice, time.Now().Add(time.Hour))})
+		BuildAndSign(accountName, passphrase, []sdk.Msg{oracle.NewMsgPostPrice(acc.Address, t.Asset.Code, intPrice, time.Now().Add(time.Hour))})
 	if err != nil {
 		return err
 	}
@@ -110,6 +111,9 @@ func (c *Client) PostPrice(assetCode string, price string) error {
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 	logrus.Debug(string(body))
 
 	return nil

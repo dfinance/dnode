@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -12,12 +11,7 @@ import (
 
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/api"
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
-	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange/binance"
-)
-
-const (
-	mnemonic = "tiny clump grief head sleep eager follow castle twelve stock hamster spend trumpet clump license rude enough afraid faith poem steel sun misery differ"
-	chainID  = "wings-testnet"
+	_ "github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange/binance"
 )
 
 type Config struct {
@@ -28,10 +22,6 @@ type Config struct {
 	Fees       string
 	Logger     *logrus.Logger
 	Assets     map[string][]exchange.Asset
-}
-
-func NewConfig() *Config {
-	return &Config{Assets: make(map[string][]exchange.Asset)}
 }
 
 type OracleApp struct {
@@ -67,7 +57,7 @@ func NewOracleApp(c *Config) (*OracleApp, error) {
 func (a *OracleApp) Start() error {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	if err := a.listenBinance(); err != nil {
+	if err := a.lisrenUpdates(); err != nil {
 		return err
 	}
 	<-c
@@ -76,19 +66,17 @@ func (a *OracleApp) Start() error {
 	return nil
 }
 
-func (a *OracleApp) listenBinance() error {
-	logger := logrus.StandardLogger()
-	logger.SetOutput(os.Stdout)
-	b := binance.New(logger)
-
-	assets, ok := a.config.Assets["binance"]
-	if !ok {
-		return errors.New("binance: assets config not found")
-	}
-	for _, asset := range assets {
-		err := b.Subscribe(exchange.NewAsset(asset.Code, asset.Pair), a.tickersCh)
-		if err != nil {
-			return fmt.Errorf("binance: subscribe error: %s", err)
+func (a *OracleApp) lisrenUpdates() error {
+	for name, subscriber := range exchange.Exchanges() {
+		assets, ok := a.config.Assets[name]
+		if !ok {
+			return fmt.Errorf("%s: assets config not found", name)
+		}
+		for _, asset := range assets {
+			err := subscriber.Subscribe(exchange.NewAsset(asset.Code, asset.Pair), a.tickersCh)
+			if err != nil {
+				return fmt.Errorf("%s: subscribe error: %s", name, err)
+			}
 		}
 	}
 	go func() {
@@ -97,11 +85,11 @@ func (a *OracleApp) listenBinance() error {
 			if !ok {
 				return
 			}
-			err := a.cl.PostPrice(ticker.Asset.Code, ticker.Price)
+			err := a.cl.PostPrice(ticker)
 			if err != nil {
 				logrus.Errorf("error while post ticker [%s]: %s", ticker, err)
 			} else {
-				logrus.Infof("posted ticker [%s]", ticker)
+				logrus.Infof("posted price from [%s] for [%s]", ticker.Exchange, ticker)
 			}
 		}
 	}()

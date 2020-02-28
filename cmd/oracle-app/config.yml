@@ -4,3 +4,7 @@ exchanges:
         pair:
           base: ETH
           quote: USDT
+      - code: BTC_USDT
+        pair:
+          base: BTC
+          quote: USDT

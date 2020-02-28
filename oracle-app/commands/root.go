@@ -1,4 +1,4 @@
-package oracle_app
+package commands
 
 import (
 	"fmt"

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package oracle_app
+package commands
 
 import (
 	"os"
@@ -44,6 +44,8 @@ var startCmd = &cobra.Command{
 		}
 		logger.SetOutput(os.Stdout)
 		logger.SetLevel(level)
+
+		exchange.SetLogger(logger)
 
 		assets := make(map[string][]exchange.Asset)
 		err = viper.UnmarshalKey("exchanges", &assets)

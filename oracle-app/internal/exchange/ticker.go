@@ -38,14 +38,15 @@ func NewAsset(code string, pair Pair) Asset {
 type CurrencyPair = goex.CurrencyPair
 
 type Ticker struct {
-	Asset Asset
-	Price string
+	Asset    Asset
+	Price    string
+	Exchange string
 }
 
 func (t Ticker) String() string {
 	return fmt.Sprintf("Asset: %s Price: %s", t.Asset.Code, t.Price)
 }
 
-func NewTicker(asset Asset, price string) Ticker {
-	return Ticker{Asset: asset, Price: price}
+func NewTicker(asset Asset, price string, exchange string) Ticker {
+	return Ticker{Asset: asset, Price: price, Exchange: exchange}
 }

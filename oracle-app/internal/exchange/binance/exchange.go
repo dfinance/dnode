@@ -1,32 +1,37 @@
 package binance
 
 import (
+	"fmt"
 	"sync"
 
 	goex "github.com/nntaoli-project/GoEx"
 	ws "github.com/nntaoli-project/GoEx/binance"
-	"github.com/sirupsen/logrus"
 
 	. "github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
 )
 
-var _ Subscriber = (*Exchange)(nil)
+var _ Subscriber = (*exchange)(nil)
 
-type Exchange struct {
-	log  *logrus.Logger
+const exchangeName = "binance"
+
+func init() {
+	Register(exchangeName, New())
+}
+
+type exchange struct {
 	ws   *ws.BinanceWs
 	lp   *sync.Map // last price for assets
 	subs *sync.Map // subscriptions out channels
 }
 
-func New(l *logrus.Logger) *Exchange {
-	e := Exchange{ws: ws.NewBinanceWs(), lp: new(sync.Map), subs: new(sync.Map), log: l}
+func New() *exchange {
+	e := exchange{ws: ws.NewBinanceWs(), lp: new(sync.Map), subs: new(sync.Map)}
 	e.ws.SetCallbacks(e.tickerHandler, nil, nil, nil)
 
 	return &e
 }
 
-func (e *Exchange) Subscribe(a Asset, out chan Ticker) error {
+func (e *exchange) Subscribe(a Asset, out chan Ticker) error {
 	e.subs.Store(a.Pair.ID(), out)
 	return e.ws.SubscribeTicker(CurrencyPair{
 		CurrencyA: goex.Currency{Symbol: a.Pair.BaseAsset},
@@ -34,8 +39,7 @@ func (e *Exchange) Subscribe(a Asset, out chan Ticker) error {
 	})
 }
 
-func (e *Exchange) tickerHandler(t *goex.Ticker) {
-	e.log.Debug(t)
+func (e *exchange) tickerHandler(t *goex.Ticker) {
 	pair := NewPair(t.Pair.CurrencyA.Symbol, t.Pair.CurrencyB.Symbol)
 	out, found := e.subs.Load(pair.ID())
 	if !found {
@@ -48,7 +52,11 @@ func (e *Exchange) tickerHandler(t *goex.Ticker) {
 		e.lp.Store(t.Pair.String(), price)
 	}
 	select {
-	case out.(chan Ticker) <- NewTicker(NewAsset(pair.ID(), pair), price):
+	case out.(chan Ticker) <- NewTicker(NewAsset(fmt.Sprintf("%s_%s", pair.BaseAsset, pair.QuoteAsset), pair), price, exchangeName):
 	default:
 	}
 }
+
+// func (e *exchange) Name() string {
+// 	return exchangeName
+// }

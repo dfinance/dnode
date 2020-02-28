@@ -16,7 +16,7 @@ limitations under the License.
 package main
 
 import (
-	cmd "github.com/WingsDao/wings-blockchain/oracle-app"
+	cmd "github.com/WingsDao/wings-blockchain/oracle-app/commands"
 )
 
 func main() {
