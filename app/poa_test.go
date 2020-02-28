@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
-	msgsPoa "github.com/WingsDao/wings-blockchain/x/poa/msgs"
+	posMsgs "github.com/WingsDao/wings-blockchain/x/poa/msgs"
 	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -34,9 +34,31 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 	// check module supports only multisig calls (using MSRouter)
 	{
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
-		addMsg := msgsPoa.NewMsgAddValidator(newValidators[0].Address, ethAddresses[0], genValidators[0].Address)
+		addMsg := posMsgs.NewMsgAddValidator(newValidators[0].Address, ethAddresses[0], genValidators[0].Address)
 		tx := genTx([]sdk.Msg{addMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrOnlyMultisig(poaTypes.DefaultCodespace, poaTypes.ModuleName))
+	}
+}
+
+func Test_POARest(t *testing.T) {
+	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	require.NoError(t, err)
+	genValidators, _, _, _ := CreateGenAccounts(7, genCoins)
+
+	app, _, stopFunc := newTestWbAppWithRest(t, genValidators)
+	defer stopFunc()
+
+	// check getValidators endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/validators", poaTypes.ModuleName)
+		respMsg := poaTypes.ValidatorsConfirmations{}
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+
+		require.Equal(t, len(genValidators), len(respMsg.Validators))
+		for idx := range respMsg.Validators {
+			require.Equal(t, genValidators[idx].GetAddress(), respMsg.Validators[idx].Address)
+			require.Equal(t, "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615", respMsg.Validators[idx].EthAddress)
+		}
 	}
 }
 
@@ -100,7 +122,7 @@ func Test_POAInvalidGenesis(t *testing.T) {
 	{
 		genCoins, err := sdk.ParseCoins("1000000000000000wings")
 		require.NoError(t, err)
-		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMinValidators - 1), genCoins)
+		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMinValidators-1), genCoins)
 
 		expectedErr := poaTypes.ErrNotEnoungValidators(0, 0)
 		_, err = setGenesis(t, app, accs)
@@ -113,7 +135,7 @@ func Test_POAInvalidGenesis(t *testing.T) {
 	{
 		genCoins, err := sdk.ParseCoins("1000000000000000wings")
 		require.NoError(t, err)
-		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMaxValidators + 1), genCoins)
+		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMaxValidators+1), genCoins)
 
 		expectedErr := poaTypes.ErrMaxValidatorsReached(0)
 		_, err = setGenesis(t, app, accs)
@@ -135,7 +157,6 @@ func Test_POAValidatorsAdd(t *testing.T) {
 
 	_, err = setGenesis(t, app, genValidators)
 	require.NoError(t, err)
-
 
 	// add new validators
 	curConfirmCnt := app.poaKeeper.GetEnoughConfirmations(GetContext(app, true))
@@ -197,7 +218,7 @@ func Test_POAValidatorsRemove(t *testing.T) {
 	require.Equal(t, len(genValidators)+len(targetValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
 	curConfirmCnt := app.poaKeeper.GetEnoughConfirmations(GetContext(app, true))
 
-	// check validators
+	// remove validators
 	{
 		removeValidators(t, app, genValidators, targetValidators, genPrivKeys, true)
 		require.Equal(t, len(genValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
@@ -343,7 +364,7 @@ func Test_POAValidatorsMinMaxRange(t *testing.T) {
 
 func addValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, newValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
 	for _, v := range newValidators {
-		addMsg := msgsPoa.NewMsgAddValidator(v.Address, ethAddresses[0], genAccs[0].Address)
+		addMsg := posMsgs.NewMsgAddValidator(v.Address, ethAddresses[0], genAccs[0].Address)
 		msgID := fmt.Sprintf("addValidator:%s", v.Address)
 
 		res := MSMsgSubmitAndVote(t, app, msgID, addMsg, 0, genAccs, privKeys, doChecks)
@@ -358,7 +379,7 @@ func addValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount,
 }
 
 func replaceValidator(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, oldValidatorAddr, newValidatorAddr sdk.AccAddress, oldPrivKeys []crypto.PrivKey, doChecks bool) sdk.Result {
-	replaceMsg := msgsPoa.NewMsgReplaceValidator(oldValidatorAddr, newValidatorAddr, ethAddresses[0], genAccs[0].GetAddress())
+	replaceMsg := posMsgs.NewMsgReplaceValidator(oldValidatorAddr, newValidatorAddr, ethAddresses[0], genAccs[0].GetAddress())
 	msgID := fmt.Sprintf("replaceValidator:%s", newValidatorAddr)
 
 	res := MSMsgSubmitAndVote(t, app, msgID, replaceMsg, 0, genAccs, oldPrivKeys, doChecks)
@@ -371,7 +392,7 @@ func replaceValidator(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccou
 
 func removeValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, rmValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
 	for _, v := range rmValidators {
-		removeMsg := msgsPoa.NewMsgRemoveValidator(v.Address, genAccs[0].Address)
+		removeMsg := posMsgs.NewMsgRemoveValidator(v.Address, genAccs[0].Address)
 		msgID := fmt.Sprintf("removeValidator:%s", v.Address)
 
 		res := MSMsgSubmitAndVote(t, app, msgID, removeMsg, 0, genAccs, privKeys, doChecks)

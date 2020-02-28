@@ -3,29 +3,56 @@ package app
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"github.com/WingsDao/wings-blockchain/x/core"
 	msMsgs "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
-	"net"
-	"os"
-	"sort"
-	"testing"
-
+	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdkKeybase "github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkRest "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	tmFlags "github.com/tendermint/tendermint/libs/cli/flags"
 	"github.com/tendermint/tendermint/libs/log"
+	tmNode "github.com/tendermint/tendermint/node"
+	"github.com/tendermint/tendermint/p2p"
+	"github.com/tendermint/tendermint/privval"
+	"github.com/tendermint/tendermint/proxy"
+	rpcClient "github.com/tendermint/tendermint/rpc/client"
+	rpcserver "github.com/tendermint/tendermint/rpc/lib/server"
+	tmTypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"sort"
+	"testing"
+	"time"
 
 	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
+	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
 	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
-	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	"github.com/WingsDao/wings-blockchain/x/vm"
+
+	tmDb "github.com/tendermint/tm-db"
+	tmDbm "github.com/tendermint/tm-db"
 )
 
 var (
@@ -49,6 +76,77 @@ var (
 		"0xe0FC04FA2d34a66B779fd5CEe748268032a146c0",
 	}
 )
+
+// copy of SDK's lcd.RestServer, but stoppable (the original has no graceful shutdown) + embedded configuration
+// TODO: newer SDK version does have a better lcd.RestServer, remove this on SDK dependency change
+type StoppableRestServer struct {
+	Mux     *mux.Router
+	CliCtx  context.CLIContext
+	KeyBase sdkKeybase.Keybase
+
+	log      log.Logger
+	listener net.Listener
+}
+
+func NewStoppableRestServer(cdc *codec.Codec, customRpcClient rpcClient.Client) *StoppableRestServer {
+	r := mux.NewRouter()
+	cliCtx := context.NewCLIContext().WithCodec(cdc).WithTrustNode(true).WithClient(customRpcClient)
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "rest-server")
+
+	rs := &StoppableRestServer{
+		Mux:    r,
+		CliCtx: cliCtx,
+		log:    logger,
+	}
+
+	client.RegisterRoutes(rs.CliCtx, rs.Mux)
+	sdkAuthRest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
+	ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
+
+	return rs
+}
+
+func (rs *StoppableRestServer) Start(listenAddr string, maxOpen int, readTimeout, writeTimeout uint) (err error) {
+	server.TrapSignal(func() {
+		err := rs.listener.Close()
+		rs.log.Error("error closing listener", "err", err)
+	})
+
+	cfg := rpcserver.DefaultConfig()
+	cfg.MaxOpenConnections = maxOpen
+	cfg.ReadTimeout = time.Duration(readTimeout) * time.Second
+	cfg.WriteTimeout = time.Duration(writeTimeout) * time.Second
+
+	rs.listener, err = rpcserver.Listen(listenAddr, cfg)
+	if err != nil {
+		return
+	}
+	rs.log.Info("Starting application REST service...")
+
+	go func() {
+		if err := rpcserver.StartHTTPServer(rs.listener, rs.Mux, rs.log, cfg); err != nil {
+			rs.log.Info(fmt.Sprintf("Application REST service stopped: %v", err))
+		}
+	}()
+
+	return nil
+}
+
+func (rs *StoppableRestServer) Stop() {
+	rs.listener.Close()
+}
+
+// REST endpoint error object
+type RestError struct {
+	Error string `json:"error"`
+}
+
+// ABCI error object helper, used to unmarshal RestError.Error string
+type ABCIError struct {
+	Codespace sdk.CodespaceType `json:"codespace"`
+	Code      sdk.CodeType      `json:"code"`
+	Message   string            `json:"message"`
+}
 
 // Type that combines an Address with the privKey and pubKey to that address
 type AddrKeys struct {
@@ -178,39 +276,121 @@ func newTestWbApp() (*WbServiceApp, *grpc.Server) {
 	return NewWbServiceApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app"), dbm.NewMemDB(), config), server
 }
 
-func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.Context, error) {
+func getGenesis(app *WbServiceApp, chainID, monikerID string, accs []*auth.BaseAccount, privValidatorKey *ed25519.PrivKeyEd25519) ([]byte, error) {
+	// generate node validator account
+	var genTxAcc *auth.BaseAccount
+	var genTxPubKey crypto.PubKey
+	var genTxPrivKey secp256k1.PrivKeySecp256k1
+	{
+		accCoins, _ := sdk.ParseCoins("1000000000000000wings")
+
+		if privValidatorKey == nil {
+			k := ed25519.GenPrivKey()
+			privValidatorKey = &k
+		}
+
+		genTxPrivKey = secp256k1.GenPrivKey()
+		genTxPubKey = genTxPrivKey.PubKey()
+
+		accAddr := sdk.AccAddress(genTxPubKey.Address())
+		genTxAcc = &auth.BaseAccount{
+			AccountNumber: uint64(len(accs)),
+			Address:       accAddr,
+			Coins:         accCoins,
+			PubKey:        privValidatorKey.PubKey(),
+		}
+	}
+
+	// generate genesis state based on defaults
 	genesisState := ModuleBasics.DefaultGenesis()
+	{
+		accounts := make(genaccounts.GenesisAccounts, 0, len(accs)+1)
+		for _, acc := range accs {
+			accounts = append(accounts, genaccounts.NewGenesisAccount(acc))
+		}
+		accounts = append(accounts, genaccounts.NewGenesisAccount(genTxAcc))
 
-	ctx := app.NewContext(true, abci.Header{})
+		genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, accounts)
 
-	accounts := make(genaccounts.GenesisAccounts, len(accs))
-	for idx, _acc := range accs {
-		acc := genaccounts.NewGenesisAccount(_acc)
-		accounts[idx] = acc
+		validators := make(poaTypes.Validators, len(accs))
+		for idx, acc := range accs {
+			validators[idx] = poaTypes.Validator{Address: acc.Address, EthAddress: "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615"}
+		}
+		genesisState[poaTypes.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, poaTypes.GenesisState{
+			Parameters:    poaTypes.DefaultParams(),
+			PoAValidators: validators,
+		})
+
+		genesisState[msTypes.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, msTypes.GenesisState{
+			Parameters: msTypes.Params{
+				IntervalToExecute: 50,
+			},
+		})
+
+		stakingGenesis := staking.GenesisState{}
+		app.cdc.MustUnmarshalJSON(genesisState[staking.ModuleName], &stakingGenesis)
+		stakingGenesis.Params.BondDenom = wbConfig.MainDenom
+		genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, stakingGenesis)
 	}
-	genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, accounts)
 
-	validators := make(poaTypes.Validators, len(accs))
-	for idx, _acc := range accs {
-		validators[idx] = poaTypes.Validator{Address: _acc.Address, EthAddress: "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615"}
+	// generate node validator genTx and update genutil module genesis
+	{
+		commissionRate, _ := sdk.NewDecFromStr("0.100000000000000000")
+		commissionMaxRate, _ := sdk.NewDecFromStr("0.200000000000000000")
+		commissionChangeRate, _ := sdk.NewDecFromStr("0.010000000000000000")
+		tokenAmount := sdk.TokensFromConsensusPower(500000)
+
+		msg := staking.NewMsgCreateValidator(
+			genTxAcc.Address.Bytes(),
+			genTxAcc.PubKey,
+			sdk.NewCoin(wbConfig.MainDenom, tokenAmount),
+			staking.NewDescription(monikerID, "", "", ""),
+			staking.NewCommissionRates(commissionRate, commissionMaxRate, commissionChangeRate),
+			sdk.OneInt(),
+		)
+
+		txFee := auth.StdFee{
+			Amount: sdk.Coins{{Denom: "wings", Amount: sdk.NewInt(1)}},
+			Gas:    200000,
+		}
+		txMemo := "testmemo"
+
+		signature, err := genTxPrivKey.Sign(auth.StdSignBytes(chainID, 0, 0, txFee, []sdk.Msg{msg}, txMemo))
+		if err != nil {
+			return nil, err
+		}
+
+		stdSig := auth.StdSignature{
+			PubKey:    genTxPubKey,
+			Signature: signature,
+		}
+
+		tx := auth.NewStdTx([]sdk.Msg{msg}, txFee, []auth.StdSignature{stdSig}, txMemo)
+
+		genesisState[genutil.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, genutil.NewGenesisStateFromStdTx([]auth.StdTx{tx}))
 	}
-	genesisState[poaTypes.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, poaTypes.GenesisState{
-		Parameters:    poaTypes.DefaultParams(),
-		PoAValidators: validators,
-	})
-
-	genesisState[msTypes.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, msTypes.GenesisState{
-		Parameters: msTypes.Params{
-			IntervalToExecute: 50,
-		},
-	})
 
 	if err := ModuleBasics.ValidateGenesis(genesisState); err != nil {
+		return nil, err
+	}
+
+	stateBytes, err := codec.MarshalJSONIndent(app.cdc, genesisState)
+	if err != nil {
+		return nil, err
+	}
+
+	return stateBytes, nil
+}
+
+func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.Context, error) {
+	ctx := app.NewContext(true, abci.Header{})
+
+	stateBytes, err := getGenesis(app, "", "testMoniker", accs, nil)
+	if err != nil {
 		return ctx, err
 	}
 
-	stateBytes := codec.MustMarshalJSONIndent(app.cdc, genesisState)
-	// Initialize the chain
+	// initialize the chain
 	app.InitChain(
 		abci.RequestInitChain{
 			AppStateBytes: stateBytes,
@@ -219,6 +399,168 @@ func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.
 	app.Commit()
 
 	return ctx, nil
+}
+
+func newTestWbAppWithRest(t *testing.T, genValidators []*auth.BaseAccount) (app *WbServiceApp, chainId string, stopFunc func()) {
+	chainId = "wd-test"
+
+	var rootDir string
+	var node *tmNode.Node
+	var restServer *StoppableRestServer
+	var err error
+
+	stopFunc = func() {
+		if rootDir != "" {
+			os.RemoveAll(rootDir)
+		}
+		if node != nil {
+			node.Stop()
+		}
+		if restServer != nil {
+			restServer.Stop()
+		}
+	}
+
+	config := sdk.GetConfig()
+	wbConfig.InitBechPrefixes(config)
+	// config not sealed by intention: multiple test runs fail with assert on sealed
+
+	// tmp dir primary used for "cs.wal" file (consensus write ahead logs)
+	rootDir, err = ioutil.TempDir("/tmp", "wd-test-")
+	require.NoError(t, err, "TempDir")
+
+	// adjust default config
+	ctx := server.NewDefaultContext()
+	cfg := ctx.Config
+	cfg.SetRoot(rootDir)
+	cfg.Instrumentation.Prometheus = false
+	cfg.Moniker = "wd-test-moniker"
+	cfg.LogLevel = "main:error,state:error,*:error"
+
+	// lower default logger filter level
+	logger, err := tmFlags.ParseLogLevel(cfg.LogLevel, ctx.Logger, "error")
+	require.NoError(t, err, "logger filter")
+	ctx.Logger = logger
+
+	// init the app
+	db := tmDb.NewDB("appInMemDb", tmDb.MemDBBackend, "")
+	app = NewWbServiceApp(ctx.Logger, db, MockVMConfig())
+
+	privValidatorKey := ed25519.GenPrivKey()
+	privValidatorFile := &privval.FilePV{
+		Key: privval.FilePVKey{
+			Address: privValidatorKey.PubKey().Address(),
+			PubKey:  privValidatorKey.PubKey(),
+			PrivKey: privValidatorKey,
+		},
+		LastSignState: privval.FilePVLastSignState{
+			Step: 0,
+		},
+	}
+
+	// generate test app state (genesis)
+	appState, err := getGenesis(app, chainId, cfg.Moniker, genValidators, &privValidatorKey)
+	require.NoError(t, err, "getGenesis")
+
+	// tendermint node configuration
+	privNodeKey := ed25519.GenPrivKey()
+	nodeKey := &p2p.NodeKey{PrivKey: privNodeKey}
+
+	genesisDocProvider := func() (*tmTypes.GenesisDoc, error) {
+		genDoc := &tmTypes.GenesisDoc{ChainID: chainId, AppState: appState}
+		return genDoc, nil
+	}
+
+	dbProvider := func(*tmNode.DBContext) (tmDbm.DB, error) {
+		return tmDb.NewDB("nodeInMemDb", tmDb.MemDBBackend, ""), nil
+	}
+
+	// tendermint node start
+	node, err = tmNode.NewNode(
+		cfg,
+		privValidatorFile,
+		nodeKey,
+		proxy.NewLocalClientCreator(app),
+		genesisDocProvider,
+		dbProvider,
+		tmNode.DefaultMetricsProvider(cfg.Instrumentation),
+		ctx.Logger.With("module", "node"),
+	)
+	require.NoError(t, err, "node.NewNode")
+	require.NoError(t, node.Start(), "node.Start")
+
+	// commit genesis
+	app.Commit()
+
+	// start REST server
+	restServer = NewStoppableRestServer(app.cdc, rpcClient.NewLocal(node))
+	require.NoError(t, restServer.Start("tcp://localhost:1317", 10, 5, 5), "server start")
+
+	return
+}
+
+func RestRequest(t *testing.T, app *WbServiceApp, httpMethod, urlSubPath string, urlValues url.Values, requestValue interface{}, responseValue interface{}, doCheck bool) (retCode int, retErrBody []byte) {
+	u, _ := url.Parse("http://localhost:1317")
+	u.Path = path.Join(u.Path, urlSubPath)
+	if urlValues != nil {
+		u.RawQuery = urlValues.Encode()
+	}
+
+	_, err := url.Parse(u.String())
+	require.NoError(t, err, "ParseRequestURI: %s", u.String())
+
+	var reqBodyBytes []byte
+	if requestValue != nil {
+		var err error
+		reqBodyBytes, err = app.cdc.MarshalJSON(requestValue)
+		require.NoError(t, err, "requestValue")
+	}
+
+	req, err := http.NewRequest(httpMethod, u.String(), bytes.NewBuffer(reqBodyBytes))
+	require.NoError(t, err, "NewRequest")
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	defer resp.Body.Close()
+	require.NoError(t, err, "HTTP request")
+	require.NotNil(t, resp, "HTTP response")
+
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err, "HTTP response body read")
+
+	retCode = resp.StatusCode
+	if doCheck {
+		require.Equal(t, retCode, http.StatusOK, "HTTP code %q (%s): %s", resp.Status, u.String(), string(bodyBytes))
+	}
+
+	if retCode != http.StatusOK {
+		retErrBody = bodyBytes
+		app.cdc.UnmarshalJSON(bodyBytes, responseValue)
+
+		return
+	}
+
+	if responseValue != nil {
+		respMsg := sdkRest.ResponseWithHeight{}
+		require.NoError(t, app.cdc.UnmarshalJSON(bodyBytes, &respMsg), "ResponseWithHeight")
+		require.NoError(t, app.cdc.UnmarshalJSON(respMsg.Result, responseValue), "responseValue")
+	}
+
+	return
+}
+
+func CheckRestError(t *testing.T, app *WbServiceApp, expectedCode, receivedCode int, expectedErr sdk.Error, receivedBody []byte) {
+	require.Equal(t, expectedCode, receivedCode, "code")
+
+	if expectedErr != nil {
+		require.NotNil(t, receivedBody, "receivedBody")
+
+		restErr, abciErr := &RestError{}, &ABCIError{}
+		require.NoError(t, app.cdc.UnmarshalJSON(receivedBody, restErr), "unmarshal to RestError: %s", string(receivedBody))
+		require.NoError(t, app.cdc.UnmarshalJSON([]byte(restErr.Error), abciErr), "unmarshal to ABCIError: %s", string(receivedBody))
+		require.Equal(t, expectedErr.Codespace(), abciErr.Codespace, "Codespace: %s", string(receivedBody))
+		require.Equal(t, expectedErr.Code(), abciErr.Code, "Code: %s", string(receivedBody))
+	}
 }
 
 // GenTx generates a signed mock transaction.

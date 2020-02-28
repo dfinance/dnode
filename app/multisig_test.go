@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"net/http"
 	"strconv"
 	"testing"
 )
@@ -36,6 +37,122 @@ func Test_MSQueries(t *testing.T) {
 	{
 		request := msTypes.UniqueReq{UniqueId: "non-existing-unique-id"}
 		CheckRunQuerySpecificError(t, app, request, queryMsGetUniqueCall, msTypes.ErrNotFoundUniqueID(""))
+	}
+}
+
+func Test_MSRest(t *testing.T) {
+	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	require.NoError(t, err)
+	genValidators, _, _, genPrivKeys := CreateGenAccounts(9, genCoins)
+	targetValidators := genValidators[7:]
+
+	app, _, stopFunc := newTestWbAppWithRest(t, genValidators)
+	defer stopFunc()
+
+	senderIdx, senderAddr, senderPrivKey := 0, genValidators[0].Address, genPrivKeys[0]
+	calls := msTypes.CallsResp{}
+	msgIDs := make([]string, 0)
+
+	// submit remove validator call (1st one)
+	{
+		senderAcc := GetAccountCheckTx(app, genValidators[senderIdx].Address)
+		targetValidator := targetValidators[0]
+
+		removeMsg := poaMsgs.NewMsgRemoveValidator(targetValidator.Address, senderAcc.GetAddress())
+		msgID := fmt.Sprintf("removeValidator:%s", targetValidator.Address)
+		msgIDs = append(msgIDs, msgID)
+
+		submitMsg := msMsgs.NewMsgSubmitCall(removeMsg, msgID, senderAcc.GetAddress())
+		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverTx(t, app, tx)
+
+		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
+		require.Equal(t, 1, len(calls))
+		require.Equal(t, 1, len(calls[0].Votes))
+	}
+
+	// submit remove validator call (2nd one)
+	{
+		senderAcc := GetAccountCheckTx(app, genValidators[senderIdx].Address)
+		targetValidator := targetValidators[1]
+
+		removeMsg := poaMsgs.NewMsgRemoveValidator(targetValidator.Address, senderAcc.GetAddress())
+		msgID := fmt.Sprintf("removeValidator:%s", targetValidator)
+		msgIDs = append(msgIDs, msgID)
+
+		submitMsg := msMsgs.NewMsgSubmitCall(removeMsg, msgID, senderAcc.GetAddress())
+		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		CheckDeliverTx(t, app, tx)
+
+		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
+		require.Equal(t, 2, len(calls))
+		require.Equal(t, 1, len(calls[1].Votes))
+	}
+
+	// check getCalls endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/calls", msTypes.ModuleName)
+		respMsg := msTypes.CallsResp{}
+
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		require.Len(t, respMsg, 2)
+		for i, call := range respMsg {
+			require.Len(t, call.Votes, 1)
+			require.Equal(t, senderAddr, call.Votes[0])
+			require.Equal(t, uint64(i), call.Call.MsgID)
+			require.Equal(t, senderAddr, call.Call.Creator)
+			require.Equal(t, msgIDs[i], call.Call.UniqueID)
+		}
+	}
+
+	// check getCall endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/call/%d", msTypes.ModuleName, 0)
+		respMsg := msTypes.CallResp{}
+
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		require.Len(t, respMsg.Votes, 1)
+		require.Equal(t, senderAddr, respMsg.Votes[0])
+		require.Equal(t, uint64(0), respMsg.Call.MsgID)
+		require.Equal(t, senderAddr, respMsg.Call.Creator)
+		require.Equal(t, msgIDs[0], respMsg.Call.UniqueID)
+	}
+
+	// check getCall endpoint (invalid "id")
+	{
+		reqSubPath := fmt.Sprintf("%s/call/-1", msTypes.ModuleName)
+
+		respCode, _ := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
+		CheckRestError(t, app, http.StatusInternalServerError, respCode, nil, nil)
+	}
+
+	// check getCall endpoint (non-existing "id")
+	{
+		reqSubPath := fmt.Sprintf("%s/call/2", msTypes.ModuleName)
+
+		respCode, respBytes := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
+		CheckRestError(t, app, http.StatusInternalServerError, respCode, msTypes.ErrWrongCallId(0), respBytes)
+	}
+
+	// check getCallByUnique endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/unique/%s", msTypes.ModuleName, msgIDs[0])
+		respMsg := msTypes.CallResp{}
+
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		require.Len(t, respMsg.Votes, 1)
+		require.Equal(t, senderAddr, respMsg.Votes[0])
+		require.Equal(t, uint64(0), respMsg.Call.MsgID)
+		require.Equal(t, senderAddr, respMsg.Call.Creator)
+		require.Equal(t, msgIDs[0], respMsg.Call.UniqueID)
+	}
+
+	// check getCallByUnique endpoint (non-existing "unique")
+	{
+		reqSubPath := fmt.Sprintf("%s/unique/non-existing-UNIQUE", msTypes.ModuleName)
+
+		respCode, respBytes := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
+		CheckRestError(t, app, http.StatusInternalServerError, respCode, msTypes.ErrNotFoundUniqueID(""), respBytes)
 	}
 }
 
@@ -209,7 +326,6 @@ func Test_MSBlockHeight(t *testing.T) {
 
 	_, err = setGenesis(t, app, genAccs)
 	require.NoError(t, err)
-
 
 	// generate blocks to reach multisig call reject condition
 	senderAddr, senderPrivKey := genAddrs[0], genPrivKeys[0]

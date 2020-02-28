@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"github.com/WingsDao/wings-blockchain/x/currencies"
 	ccMsgs "github.com/WingsDao/wings-blockchain/x/currencies/msgs"
 	ccTypes "github.com/WingsDao/wings-blockchain/x/currencies/types"
@@ -9,6 +10,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
+	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -37,6 +40,154 @@ func Test_CurrencyHandlerIsMultisigOnly(t *testing.T) {
 		issueMsg := ccMsgs.NewMsgIssueCurrency(currency1Symbol, amount, 0, senderAcc.GetAddress(), issue1ID)
 		tx := genTx([]sdk.Msg{issueMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, sdk.ErrUnauthorized(""))
+	}
+}
+
+func Test_CurrencyRest(t *testing.T) {
+	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	require.NoError(t, err)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(7, genCoins)
+
+	app, chainId, stopFunc := newTestWbAppWithRest(t, genAccs)
+	defer stopFunc()
+
+	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
+	curAmount, curDecimals, denom := sdk.NewInt(100), int8(0), currency1Symbol
+	destroyAmounts := make([]sdk.Int, 0)
+
+	// issue currency
+	msgId, issueId := "1", "issue1"
+	issueCurrency(t, app, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
+	checkIssueExists(t, app, issueId, denom, curAmount, recipientAddr)
+	checkCurrencyExists(t, app, denom, curAmount, curDecimals)
+
+	// check getIssue endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/issue/%s", ccTypes.ModuleName, issueId)
+		respMsg := &ccTypes.Issue{}
+
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, respMsg, true)
+		require.Equal(t, denom, respMsg.Symbol)
+		require.True(t, respMsg.Amount.Equal(curAmount))
+		require.Equal(t, recipientAddr, respMsg.Recipient)
+	}
+
+	// check getIssue endpoint (invalid issueID)
+	{
+		reqSubPath := fmt.Sprintf("%s/issue/non_existing_ID", ccTypes.ModuleName)
+
+		respCode, respBytes := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
+		CheckRestError(t, app, http.StatusInternalServerError, respCode, ccTypes.ErrWrongIssueID(""), respBytes)
+	}
+
+	// check getCurrency endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/currency/%s", ccTypes.ModuleName, denom)
+		respMsg := &ccTypes.Currency{}
+
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, respMsg, true)
+		require.Equal(t, denom, respMsg.Symbol)
+		require.True(t, respMsg.Supply.Equal(curAmount))
+		require.Equal(t, curDecimals, respMsg.Decimals)
+	}
+
+	// check getCurrency endpoint (invalid symbol)
+	{
+		reqSubPath := fmt.Sprintf("%s/currency/non_existing_symbol", ccTypes.ModuleName)
+
+		respCode, respBytes := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
+		CheckRestError(t, app, http.StatusInternalServerError, respCode, ccTypes.ErrNotExistCurrency(""), respBytes)
+	}
+
+	// check getDestroys endpoint (no destroys)
+	{
+		reqSubPath := fmt.Sprintf("%s/destroys/1", ccTypes.ModuleName)
+		respMsg := ccTypes.Destroys{}
+
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		require.Len(t, respMsg, 0)
+	}
+
+	// destroy currency
+	newAmount := sdk.NewInt(50)
+	curAmount = curAmount.Sub(newAmount)
+	destroyCurrency(t, app, chainId, denom, newAmount, recipientAddr, recipientPrivKey, true)
+	checkCurrencyExists(t, app, denom, curAmount, 0)
+	destroyAmounts = append(destroyAmounts, newAmount)
+
+	// check getDestroy endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/destroy/%d", ccTypes.ModuleName, 0)
+		respMsg := &ccTypes.Destroy{}
+
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, respMsg, true)
+		require.Equal(t, int64(0), respMsg.ID.Int64())
+		require.Equal(t, chainId, respMsg.ChainID)
+		require.Equal(t, denom, respMsg.Symbol)
+		require.True(t, respMsg.Amount.Equal(newAmount))
+		require.Equal(t, recipientAddr, respMsg.Spender)
+		require.Equal(t, recipientAddr.String(), respMsg.Recipient)
+	}
+
+	// check getDestroy endpoint (invalid destroyID)
+	{
+		reqSubPath := fmt.Sprintf("%s/destroy/abc", ccTypes.ModuleName)
+
+		respCode, _ := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
+		CheckRestError(t, app, http.StatusInternalServerError, respCode, nil, nil)
+	}
+
+	// check getDestroy endpoint (non-existing destroyID)
+	{
+		reqSubPath := fmt.Sprintf("%s/destroy/1", ccTypes.ModuleName)
+		respMsg := &ccTypes.Destroy{}
+
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, respMsg, true)
+		require.Empty(t, respMsg.ChainID)
+		require.Empty(t, respMsg.Symbol)
+		require.True(t, respMsg.Amount.IsZero())
+	}
+
+	// destroy currency once more
+	newAmount = sdk.NewInt(25)
+	curAmount = curAmount.Sub(newAmount)
+	destroyCurrency(t, app, chainId, denom, newAmount, recipientAddr, recipientPrivKey, true)
+	checkCurrencyExists(t, app, denom, curAmount, 0)
+	destroyAmounts = append(destroyAmounts, newAmount)
+
+	// check getDestroys endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/destroys/1", ccTypes.ModuleName)
+		respMsg := ccTypes.Destroys{}
+
+		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		require.Len(t, respMsg, len(destroyAmounts))
+		for i, amount := range destroyAmounts {
+			destroy := respMsg[i]
+			require.Equal(t, int64(i), destroy.ID.Int64())
+			require.Equal(t, chainId, destroy.ChainID)
+			require.Equal(t, denom, destroy.Symbol)
+			require.True(t, destroy.Amount.Equal(amount))
+			require.Equal(t, recipientAddr, destroy.Spender)
+			require.Equal(t, recipientAddr.String(), destroy.Recipient)
+		}
+	}
+
+	// check getDestroys endpoint (invalid query values)
+	{
+		// invalid "page" value
+		reqSubPath := fmt.Sprintf("%s/destroys/abc", ccTypes.ModuleName)
+
+		respCode, _ := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
+		CheckRestError(t, app, http.StatusInternalServerError, respCode, nil, nil)
+
+		// invalid "limit" value
+		reqSubPath = fmt.Sprintf("%s/destroys/1", ccTypes.ModuleName)
+		reqValues := url.Values{}
+		reqValues.Set("limit", "abc")
+
+		respCode, _ = RestRequest(t, app, "GET", reqSubPath, reqValues, nil, nil, false)
+		CheckRestError(t, app, http.StatusInternalServerError, respCode, nil, nil)
 	}
 }
 
@@ -154,7 +305,7 @@ func Test_CurrencyIssue(t *testing.T) {
 	{
 		msgId, issueId := "3", "issue3"
 
-		res := issueCurrency(t, app, denom, sdk.OneInt(), curDecimals + 1, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		res := issueCurrency(t, app, denom, sdk.OneInt(), curDecimals+1, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
 		CheckResultError(t, ccTypes.ErrIncorrectDecimals(0, 0, ""), res)
 	}
 
@@ -292,7 +443,7 @@ func Test_CurrencyIssueDecimals(t *testing.T) {
 	{
 		msgId, issueId := "non-existing-msgID", "non-existing-issue"
 
-		newAmount, newDecimals := sdk.OneInt(), curDecimals + 1
+		newAmount, newDecimals := sdk.OneInt(), curDecimals+1
 
 		res := issueCurrency(t, app, denom, newAmount, newDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
 		CheckResultError(t, ccTypes.ErrIncorrectDecimals(0, 0, ""), res)

@@ -137,5 +137,5 @@ func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.V
 // In my opinion we shouldn't export anything, as we can't predict what initially in write set, and how storage
 // resources could be changed during contracts executions.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return json.RawMessage{}
+	return nil
 }
