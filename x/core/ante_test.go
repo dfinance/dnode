@@ -4,6 +4,8 @@ package core
 
 import (
 	"fmt"
+	"github.com/WingsDao/wings-blockchain/x/vm"
+	"github.com/WingsDao/wings-blockchain/x/vmauth"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -26,7 +28,7 @@ var (
 type testInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
-	ak  auth.AccountKeeper
+	ak  vmauth.VMAccountKeeper
 	sk  types.SupplyKeeper
 }
 
@@ -39,18 +41,22 @@ func setupTestInput() testInput {
 	codec.RegisterCrypto(cdc)
 
 	authCapKey := sdk.NewKVStoreKey("authCapKey")
+	vmCapKey := sdk.NewKVStoreKey("vmCapKey")
 	keyParams := sdk.NewKVStoreKey("subspace")
 	tkeyParams := sdk.NewTransientStoreKey("transient_subspace")
 
 	ms := store.NewCommitMultiStore(db)
 	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(vmCapKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
 	ms.LoadLatestVersion()
 
+	vmk := vm.NewKeeper(vmCapKey, cdc, nil, nil, nil)
+
 	ps := subspace.NewSubspace(cdc, keyParams, tkeyParams, types.DefaultParamspace)
-	ak := auth.NewAccountKeeper(cdc, authCapKey, ps, types.ProtoBaseAccount)
-	sk := auth.NewDummySupplyKeeper(ak)
+	ak := vmauth.NewVMAccountKeeper(cdc, authCapKey, ps, vmk, types.ProtoBaseAccount)
+	sk := auth.NewDummySupplyKeeper(*ak.AccountKeeper)
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain-id", Height: 1}, false, log.NewNopLogger())
 
