@@ -387,9 +387,22 @@ func Test_CurrencyIssueHugeAmount(t *testing.T) {
 
 	recipientIdx, recipientAddr := uint(0), genAccs[0].Address
 
-	// check huge amount currency issue
+	// check huge amount currency issue (max value for u128)
 	{
 		msgId, issueId, denom := "1", "issue1", currency1Symbol
+
+		hugeAmount, ok := sdk.NewIntFromString("100000000000000000000000000000000000000")
+		require.True(t, ok, "hugeAmount creation ()")
+
+		issueCurrency(t, app, denom, hugeAmount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
+		checkIssueExists(t, app, issueId, denom, hugeAmount, recipientAddr)
+		checkCurrencyExists(t, app, denom, hugeAmount, 0)
+		checkRecipientCoins(t, app, recipientAddr, denom, hugeAmount, 0)
+	}
+
+	// check huge amount currency issue (that worked before u128)
+	{
+		msgId, issueId, denom := "2", "issue2", currency2Symbol
 
 		hugeAmount, ok := sdk.NewIntFromString("1000000000000000000000000000000000000000000000")
 		require.True(t, ok, "hugeAmount creation ()")
@@ -397,7 +410,10 @@ func Test_CurrencyIssueHugeAmount(t *testing.T) {
 		issueCurrency(t, app, denom, hugeAmount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
 		checkIssueExists(t, app, issueId, denom, hugeAmount, recipientAddr)
 		checkCurrencyExists(t, app, denom, hugeAmount, 0)
-		checkRecipientCoins(t, app, recipientAddr, denom, hugeAmount, 0)
+
+		require.Panics(t, func(){
+			app.bankKeeper.GetCoins(GetContext(app, true), recipientAddr)
+		})
 	}
 }
 

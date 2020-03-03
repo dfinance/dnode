@@ -421,9 +421,7 @@ func newTestWbAppWithRest(t *testing.T, genValidators []*auth.BaseAccount) (app 
 		}
 	}
 
-	config := sdk.GetConfig()
-	wbConfig.InitBechPrefixes(config)
-	// config not sealed by intention: multiple test runs fail with assert on sealed
+	// sdk.GetConfig() setup and seal is omitted as oracle-app does it at the init() stage already
 
 	// tmp dir primary used for "cs.wal" file (consensus write ahead logs)
 	rootDir, err = ioutil.TempDir("/tmp", "wd-test-")
