@@ -26,6 +26,11 @@ func (keeper Keeper) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath,
 	keeper.setValue(ctx, accessPath, value)
 }
 
+// Delete value.
+func (keeper Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
+	keeper.delValue(ctx, accessPath)
+}
+
 // Public get path for oracle price.
 func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath {
 	path := types.AssetCodeToPath(assetCode)

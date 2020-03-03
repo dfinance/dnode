@@ -38,6 +38,9 @@ func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm.VMAccessPa
 	return nil
 }
 
+func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm.VMAccessPath) {
+}
+
 func getMockApp(t *testing.T, numGenAccs int, genState types.GenesisState, genAccs []authexported.Account) testHelper {
 	mApp := mock.NewApp()
 	types.RegisterCodec(mApp.Cdc)

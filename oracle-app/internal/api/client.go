@@ -14,7 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	rest2 "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	sdkutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-
 	wbcnf "github.com/WingsDao/wings-blockchain/cmd/config"
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/utils"
@@ -61,7 +60,7 @@ func NewClient(mnemonic string, account, index uint32, gas uint64, chainID strin
 	cl := &http.Client{
 		Timeout: time.Second * 10,
 	}
-
+  
 	txBuilder := auth.NewTxBuilder(sdkutils.GetTxEncoder(cdc), 0, 0, gas, 0, false, chainID, "", fees, nil).WithKeybase(kb)
 
 	return &Client{keyBase: kb, keyInfo: ki, cl: cl, nodeAddress: nodeAddress, cdc: cdc, chainID: chainID, fees: fees, txBuilder: txBuilder}, err
@@ -114,6 +113,7 @@ func (c *Client) PostPrice(t exchange.Ticker) error {
 	if err != nil {
 		return err
 	}
+  
 	exchange.Logger().Debug(string(body))
 
 	return nil

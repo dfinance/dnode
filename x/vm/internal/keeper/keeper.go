@@ -35,6 +35,7 @@ type VMStorage interface {
 	GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath
 	SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte)
 	GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte
+	DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 }
 
 // Check that VMStorage is compatible with keeper (later we can do it by events probably).
