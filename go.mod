@@ -12,12 +12,15 @@ require (
 	github.com/golang/protobuf v1.3.2
 	github.com/gorilla/mux v1.7.3
 	github.com/mattn/go-isatty v0.0.10 // indirect
+	github.com/mitchellh/go-homedir v1.1.0
+	github.com/nntaoli-project/GoEx v1.0.11
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/prometheus/client_golang v1.2.1 // indirect
 	github.com/prometheus/client_model v0.0.0-20191202183732-d1d2010b5bee // indirect
 	github.com/prometheus/procfs v0.0.8 // indirect
 	github.com/rakyll/statik v0.1.6 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -30,7 +33,6 @@ require (
 	github.com/the729/lcs v0.1.3
 	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e // indirect
 	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933 // indirect
-	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9 // indirect
 	google.golang.org/genproto v0.0.0-20191203145615-049a07e0debe // indirect
 	google.golang.org/grpc v1.27.0
 	gopkg.in/yaml.v2 v2.2.7 // indirect
