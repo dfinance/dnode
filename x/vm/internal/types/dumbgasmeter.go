@@ -1,5 +1,5 @@
 // DumbGasMeter - gas meter that doesn't count amount of gas during usage.
-package core
+package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"

@@ -1,8 +1,11 @@
 package helpers
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"math/big"
+)
 
-// Convert sdk.Int to bytes with little endian by required bit len
+// Convert sdk.Int to bytes with little endian (required by Libra).
 func BigToBytes(val sdk.Int, bytesLen int) []byte {
 	bytes := val.BigInt().Bytes()
 
@@ -18,4 +21,16 @@ func BigToBytes(val sdk.Int, bytesLen int) []byte {
 	}
 
 	return bytes
+}
+
+// Convert little endian bytes to big endian bytes and then to sdk.Int.
+func LeToBig(bytes []byte) sdk.Int {
+	for i := 0; i < len(bytes)/2; i++ {
+		bytes[len(bytes)-i-1], bytes[i] = bytes[i], bytes[len(bytes)-i-1]
+	}
+
+	bigValue := &big.Int{}
+	bigValue.SetBytes(bytes)
+
+	return sdk.NewIntFromBigInt(bigValue)
 }

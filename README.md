@@ -355,13 +355,11 @@ into storage.
 
 So, first of all, go to VM folder, and run:
 
-    cargo run --bin stdlib-builder stdlib/mvir mvir
-
-Copy and paste output json to new created file.
+    cargo run --bin stdlib-builder stdlib/mvir mvir -po ../genesis-ws.json
 
 After this, go into WB folder and run:
 
-    wbd read-genesis-write-set [path to created file contains write set json]
+    wbd read-genesis-write-set [path to created file genesis-ws.json]
 
 Now everything should be fine.
 

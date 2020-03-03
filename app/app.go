@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/WingsDao/wings-blockchain/x/vmauth"
 	"net"
 	"os"
 	"time"
@@ -87,7 +88,7 @@ type WbServiceApp struct {
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 
-	accountKeeper  auth.AccountKeeper
+	accountKeeper  vmauth.VMAccountKeeper
 	bankKeeper     bank.Keeper
 	supplyKeeper   supply.Keeper
 	paramsKeeper   params.Keeper
@@ -189,14 +190,25 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.InitializeVMDataServer(config.DataListen)
 	app.InitializeVMConnection(config.Address)
 
+	// Initializing vm keeper.
+	var err error
+	app.vmKeeper = vm.NewKeeper(
+		keys[vm.StoreKey],
+		cdc,
+		app.vmConn,
+		app.vmListener,
+		config,
+	)
+
 	// The ParamsKeeper handles parameter storage for the application.
 	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
 
 	// The AccountKeeper handles address -> account lookups.
-	app.accountKeeper = auth.NewAccountKeeper(
-		app.cdc,
+	app.accountKeeper = vmauth.NewVMAccountKeeper(
+		cdc,
 		keys[auth.StoreKey],
 		app.paramsKeeper.Subspace(auth.DefaultParamspace),
+		app.vmKeeper,
 		auth.ProtoBaseAccount,
 	)
 
@@ -260,7 +272,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// Initializing validators module.
 	app.poaKeeper = poa.NewKeeper(
 		keys[poa.StoreKey],
-		app.cdc,
+		cdc,
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
@@ -270,25 +282,15 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// Initializing multisignature router.
 	app.msKeeper = multisig.NewKeeper(
 		keys[multisig.StoreKey],
-		app.cdc,
+		cdc,
 		app.msRouter,
 		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
-	)
-
-	// Initializing vm keeper.
-	var err error
-	app.vmKeeper = vm.NewKeeper(
-		keys[vm.StoreKey],
-		app.cdc,
-		app.vmConn,
-		app.vmListener,
-		config,
 	)
 
 	// Initializing oracle module
 	app.oracleKeeper = oracle.NewKeeper(
 		keys[oracle.StoreKey],
-		app.cdc,
+		cdc,
 		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
 		oracle.DefaultCodespace,
 		app.vmKeeper,
@@ -298,7 +300,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.mm = core.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
-		auth.NewAppModule(app.accountKeeper),
+		vmauth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),

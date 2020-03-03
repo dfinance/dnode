@@ -1,0 +1,10 @@
+exchanges:
+  - binance:
+      - code: ETH_USDT
+        pair:
+          base: ETH
+          quote: USDT
+      - code: BTC_USDT
+        pair:
+          base: BTC
+          quote: USDT
