@@ -14,7 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	rest2 "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	sdkutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/sirupsen/logrus"
 
 	wbcnf "github.com/WingsDao/wings-blockchain/cmd/config"
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
@@ -114,7 +113,7 @@ func (c *Client) PostPrice(t exchange.Ticker) error {
 	if err != nil {
 		return err
 	}
-	logrus.Debug(string(body))
+	exchange.Logger().Debug(string(body))
 
 	return nil
 }
