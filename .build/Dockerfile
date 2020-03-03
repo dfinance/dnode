@@ -14,5 +14,9 @@ ARG CI_PIPELINE_ID
 ARG CI_COMMIT_REF_NAME
 ARG CI_COMMIT_SHA
 RUN echo "${CI_PIPELINE_ID}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}" > version
-COPY --from=build /go/bin/wbd /usr/local/bin/
-COPY --from=build /go/bin/wbcli /usr/local/bin/
+COPY --from=build /opt/app/cmd/oracle-app/config.yml ./
+COPY --from=build \
+            /go/bin/wbd \
+            /go/bin/wbcli \
+            /go/bin/oracle-app \
+            /usr/local/bin/
