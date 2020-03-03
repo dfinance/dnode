@@ -12,6 +12,7 @@ import (
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/api"
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
 	_ "github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange/binance"
+	_ "github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange/wings"
 )
 
 type Config struct {
