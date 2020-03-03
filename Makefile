@@ -10,6 +10,7 @@ all: protos install
 install: protos go.sum
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/wbd
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/wbcli
+		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/oracle-app
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
 		GO111MODULE=on go mod verify

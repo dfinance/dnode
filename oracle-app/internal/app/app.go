@@ -17,6 +17,8 @@ import (
 type Config struct {
 	ChainID    string
 	Mnemonic   string
+	Account    uint32
+	Index      uint32
 	APIAddress string
 	Gas        uint64
 	Fees       string
@@ -42,7 +44,7 @@ func NewOracleApp(c *Config) (*OracleApp, error) {
 		return nil, err
 	}
 
-	apiCl, err := api.NewClient(c.Mnemonic, c.ChainID, c.APIAddress, fees)
+	apiCl, err := api.NewClient(c.Mnemonic, c.Account, c.Index, c.Gas, c.ChainID, c.APIAddress, fees)
 	if err != nil {
 		return nil, err
 	}

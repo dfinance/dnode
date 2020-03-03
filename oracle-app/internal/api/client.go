@@ -14,8 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	rest2 "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	sdkutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/sirupsen/logrus"
-
 	wbcnf "github.com/WingsDao/wings-blockchain/cmd/config"
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
 	"github.com/WingsDao/wings-blockchain/oracle-app/internal/utils"
@@ -47,22 +45,23 @@ func init() {
 	config.Seal()
 }
 
-func NewClient(mnemonic string, chainID string, nodeAddress string, fees sdk.Coins) (*Client, error) {
+func NewClient(mnemonic string, account, index uint32, gas uint64, chainID string, nodeAddress string, fees sdk.Coins) (*Client, error) {
 	cdc := codec.New()
 	codec.RegisterCrypto(cdc)
 	sdk.RegisterCodec(cdc)
 	oracle.RegisterCodec(cdc)
 
 	kb := keys.NewInMemory()
-	ki, err := kb.CreateAccount(accountName, mnemonic, "", passphrase, 0, 0)
+	ki, err := kb.CreateAccount(accountName, mnemonic, "", passphrase, account, index)
+	fmt.Printf("Client address is %s\n", ki.GetAddress())
 	if err != nil {
 		return nil, err
 	}
 	cl := &http.Client{
 		Timeout: time.Second * 10,
 	}
-
-	txBuilder := auth.NewTxBuilder(sdkutils.GetTxEncoder(cdc), 0, 0, 50000, 0, false, chainID, "", fees, nil).WithKeybase(kb)
+  
+	txBuilder := auth.NewTxBuilder(sdkutils.GetTxEncoder(cdc), 0, 0, gas, 0, false, chainID, "", fees, nil).WithKeybase(kb)
 
 	return &Client{keyBase: kb, keyInfo: ki, cl: cl, nodeAddress: nodeAddress, cdc: cdc, chainID: chainID, fees: fees, txBuilder: txBuilder}, err
 }
@@ -114,7 +113,8 @@ func (c *Client) PostPrice(t exchange.Ticker) error {
 	if err != nil {
 		return err
 	}
-	logrus.Debug(string(body))
+  
+	exchange.Logger().Debug(string(body))
 
 	return nil
 }
