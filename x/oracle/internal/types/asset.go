@@ -34,9 +34,10 @@ func NewAsset(
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
 func (a Asset) ValidateBasic() sdk.Error {
-	if len(a.AssetCode) == 0 {
-		return sdk.ErrInternal(fmt.Sprintf("invalid asset: Value: %s. Error: Missing asset_code", a.AssetCode))
+	if err := assetCodeFilter(a.AssetCode); err != nil {
+		return sdk.ErrInternal(fmt.Sprintf("invalid assetCode: Value: %s. Error: %v", a.AssetCode, err))
 	}
+
 	if len(a.BaseAsset) == 0 {
 		return sdk.ErrInternal(fmt.Sprintf("invalid TokenRecord: BaseAsset: %s. Error: Missing BaseAsset", a.BaseAsset))
 	}
