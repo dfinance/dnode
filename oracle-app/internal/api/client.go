@@ -46,7 +46,7 @@ func init() {
 	config.Seal()
 }
 
-func NewClient(mnemonic string, account, index uint32, chainID string, nodeAddress string, fees sdk.Coins) (*Client, error) {
+func NewClient(mnemonic string, account, index uint32, gas uint64, chainID string, nodeAddress string, fees sdk.Coins) (*Client, error) {
 	cdc := codec.New()
 	codec.RegisterCrypto(cdc)
 	sdk.RegisterCodec(cdc)
@@ -62,7 +62,7 @@ func NewClient(mnemonic string, account, index uint32, chainID string, nodeAddre
 		Timeout: time.Second * 10,
 	}
 
-	txBuilder := auth.NewTxBuilder(sdkutils.GetTxEncoder(cdc), 0, 0, 50000, 0, false, chainID, "", fees, nil).WithKeybase(kb)
+	txBuilder := auth.NewTxBuilder(sdkutils.GetTxEncoder(cdc), 0, 0, gas, 0, false, chainID, "", fees, nil).WithKeybase(kb)
 
 	return &Client{keyBase: kb, keyInfo: ki, cl: cl, nodeAddress: nodeAddress, cdc: cdc, chainID: chainID, fees: fees, txBuilder: txBuilder}, err
 }

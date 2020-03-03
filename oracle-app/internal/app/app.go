@@ -45,7 +45,7 @@ func NewOracleApp(c *Config) (*OracleApp, error) {
 		return nil, err
 	}
 
-	apiCl, err := api.NewClient(c.Mnemonic, c.Account, c.Index, c.ChainID, c.APIAddress, fees)
+	apiCl, err := api.NewClient(c.Mnemonic, c.Account, c.Index, c.Gas, c.ChainID, c.APIAddress, fees)
 	if err != nil {
 		return nil, err
 	}
