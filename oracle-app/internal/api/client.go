@@ -54,6 +54,7 @@ func NewClient(mnemonic string, account, index uint32, chainID string, nodeAddre
 
 	kb := keys.NewInMemory()
 	ki, err := kb.CreateAccount(accountName, mnemonic, "", passphrase, account, index)
+	fmt.Printf("Client address is %s\n", ki.GetAddress())
 	if err != nil {
 		return nil, err
 	}
