@@ -123,8 +123,6 @@ func TestApp_PostPrice(t *testing.T) {
 	oracleParams.Assets = oracle.Assets{
 		oracle.Asset{
 			AssetCode:  "uftm",
-			BaseAsset:  "uftm",
-			QuoteAsset: "ucsdt",
 			Oracles: oracle.Oracles{
 				oracle.Oracle{
 					Address: addrs[0],

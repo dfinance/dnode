@@ -11,8 +11,6 @@ import (
 // Asset struct that represents an asset in the oracle
 type Asset struct {
 	AssetCode  string  `json:"asset_code" yaml:"asset_code"`
-	BaseAsset  string  `json:"base_asset" yaml:"base_asset"`
-	QuoteAsset string  `json:"quote_asset" yaml:"quote_asset"`
 	Oracles    Oracles `json:"oracles" yaml:"oracles"`
 	Active     bool    `json:"active" yaml:"active"`
 }
@@ -25,8 +23,6 @@ func NewAsset(
 ) Asset {
 	return Asset{
 		AssetCode:  assetCode,
-		BaseAsset:  baseAsset,
-		QuoteAsset: quoteAsset,
 		Oracles:    oracles,
 		Active:     active,
 	}
@@ -38,12 +34,6 @@ func (a Asset) ValidateBasic() sdk.Error {
 		return sdk.ErrInternal(fmt.Sprintf("invalid assetCode: Value: %s. Error: %v", a.AssetCode, err))
 	}
 
-	if len(a.BaseAsset) == 0 {
-		return sdk.ErrInternal(fmt.Sprintf("invalid TokenRecord: BaseAsset: %s. Error: Missing BaseAsset", a.BaseAsset))
-	}
-	if len(a.QuoteAsset) == 0 {
-		return sdk.ErrInternal(fmt.Sprintf("invalid TokenRecord: QuoteAsset: %s. Error: Missing QuoteAsset", a.QuoteAsset))
-	}
 	if len(a.Oracles) == 0 {
 		return sdk.ErrInternal("invalid TokenRecord: Error: Missing Oracles")
 	}
@@ -54,11 +44,9 @@ func (a Asset) ValidateBasic() sdk.Error {
 func (a Asset) String() string {
 	return fmt.Sprintf(`Asset:
 	Asset Code: %s
-	Base Asset: %s
-	Quote Asset: %s
 	Oracles: %s
 	Active: %t`,
-		a.AssetCode, a.BaseAsset, a.QuoteAsset, a.Oracles, a.Active)
+		a.AssetCode, a.Oracles, a.Active)
 }
 
 // Assets array type for oracle

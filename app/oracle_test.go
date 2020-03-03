@@ -32,7 +32,7 @@ func Test_AddOracle(t *testing.T) {
 		ctx := GetContext(app, false)
 		ap := oracle.Params{
 			Assets: oracle.Assets{
-				oracle.Asset{AssetCode: "wb2wb", BaseAsset: "wb", QuoteAsset: "wb", Oracles: oracle.Oracles{}, Active: true},
+				oracle.Asset{AssetCode: "wb2wb", Oracles: oracle.Oracles{}, Active: true},
 			},
 			Nominees: []string{addrs[0].String()},
 		}
@@ -108,7 +108,7 @@ func Test_SetOracles(t *testing.T) {
 		ctx := GetContext(app, false)
 		ap := oracle.Params{
 			Assets: oracle.Assets{
-				oracle.Asset{AssetCode: "wb2wb", BaseAsset: "wb", QuoteAsset: "wb", Oracles: oracle.Oracles{}, Active: true},
+				oracle.Asset{AssetCode: "wb2wb", Oracles: oracle.Oracles{}, Active: true},
 			},
 			Nominees: []string{addrs[0].String()},
 		}
@@ -175,7 +175,7 @@ func Test_AddAsset(t *testing.T) {
 		ctx := GetContext(app, false)
 		ap := oracle.Params{
 			Assets: oracle.Assets{
-				oracle.Asset{AssetCode: "wb2wb", BaseAsset: "wb", QuoteAsset: "wb", Oracles: oracle.Oracles{}, Active: true},
+				oracle.Asset{AssetCode: "wb2wb", Oracles: oracle.Oracles{}, Active: true},
 			},
 			Nominees: []string{addrs[0].String()},
 		}
@@ -244,7 +244,7 @@ func Test_SetAsset(t *testing.T) {
 		ctx := GetContext(app, false)
 		ap := oracle.Params{
 			Assets: oracle.Assets{
-				oracle.Asset{AssetCode: "wb2wb", BaseAsset: "wb", QuoteAsset: "wb", Oracles: oracle.Oracles{}, Active: true},
+				oracle.Asset{AssetCode: "wb2wb", Oracles: oracle.Oracles{}, Active: true},
 			},
 			Nominees: []string{addrs[0].String()},
 		}
@@ -335,7 +335,7 @@ func Test_SetPostPrice(t *testing.T) {
 		ctx := GetContext(app, false)
 		ap := oracle.Params{
 			Assets: oracle.Assets{
-				oracle.Asset{AssetCode: "wb2wb", BaseAsset: "wb", QuoteAsset: "wb", Oracles: oracle.Oracles{}, Active: true},
+				oracle.Asset{AssetCode: "wb2wb", Oracles: oracle.Oracles{}, Active: true},
 			},
 			Nominees: []string{addrs[0].String()},
 		}

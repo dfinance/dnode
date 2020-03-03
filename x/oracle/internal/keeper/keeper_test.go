@@ -23,7 +23,7 @@ func TestKeeper_SetGetAsset(t *testing.T) {
 
 	ap := types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd", Oracles: types.Oracles{}, Active: true},
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)
@@ -36,8 +36,8 @@ func TestKeeper_SetGetAsset(t *testing.T) {
 
 	ap = types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
-			types.Asset{AssetCode: "tst2usd", BaseAsset: "tst2", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tst2usd", Oracles: types.Oracles{}, Active: true},
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)
@@ -62,7 +62,7 @@ func TestKeeper_SetAddAsset(t *testing.T) {
 
 	ap := types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd", Oracles: types.Oracles{}, Active: true},
 		},
 		Nominees: []string{helper.addrs[0].String()},
 	}
@@ -73,14 +73,14 @@ func TestKeeper_SetAddAsset(t *testing.T) {
 
 	_, found := helper.keeper.GetAsset(ctx, "tstusd")
 	require.Equal(t, found, true)
-	err := helper.keeper.AddAsset(ctx, helper.addrs[0].String(), "tst2usd", types.Asset{AssetCode: "tst2usd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true})
+	err := helper.keeper.AddAsset(ctx, helper.addrs[0].String(), "tst2usd", types.Asset{AssetCode: "tst2usd", Oracles: types.Oracles{}, Active: true})
 	require.Nil(t, err)
 	assets = helper.keeper.GetAssetParams(ctx)
 	require.Equal(t, len(assets), 2)
 	require.Equal(t, assets[0].AssetCode, "tstusd")
 	require.Equal(t, assets[1].AssetCode, "tst2usd")
 
-	helper.keeper.AddAsset(ctx, helper.addrs[1].String(), "tst3usd", types.Asset{AssetCode: "tst3usd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true})
+	helper.keeper.AddAsset(ctx, helper.addrs[1].String(), "tst3usd", types.Asset{AssetCode: "tst3usd", Oracles: types.Oracles{}, Active: true})
 	assets = helper.keeper.GetAssetParams(ctx)
 	require.Equal(t, len(assets), 2)
 	require.Equal(t, assets[0].AssetCode, "tstusd")
@@ -107,7 +107,7 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 	ctx := helper.mApp.BaseApp.NewContext(false, header)
 	ap := types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd", Oracles: types.Oracles{}, Active: true},
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)
@@ -153,7 +153,7 @@ func TestKeeper_GetSetCurrentPrice(t *testing.T) {
 	ctx := helper.mApp.BaseApp.NewContext(false, header)
 	ap := types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd",Oracles: types.Oracles{}, Active: true},
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)
