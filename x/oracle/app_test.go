@@ -40,6 +40,9 @@ func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm.VMAccessPa
 	return nil
 }
 
+func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm.VMAccessPath) {
+}
+
 // GenTx generates a signed mock transaction.
 func GenTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKey) auth.StdTx {
 	// Make the transaction free
