@@ -1,13 +1,11 @@
 package keeper_test
 
 import (
-	"testing"
-	"time"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
+	"testing"
 
 	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 )
@@ -115,7 +113,7 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 	_, err := helper.keeper.SetPrice(
 		ctx, helper.addrs[0], "tstusd",
 		sdk.NewInt(33000000),
-		header.Time.Add(1*time.Hour))
+		header.Time)
 	require.NoError(t, err)
 	// Get raw prices
 	rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd")
@@ -125,7 +123,7 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 	_, err = helper.keeper.SetPrice(
 		ctx, helper.addrs[1], "tstusd",
 		sdk.NewInt(35000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	require.NoError(t, err)
 
 	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd")
@@ -136,7 +134,7 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 	_, err = helper.keeper.SetPrice(
 		ctx, helper.addrs[0], "tstusd",
 		sdk.NewInt(37000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	require.NoError(t, err)
 	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd")
 	require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(37000000)), true)
@@ -160,15 +158,15 @@ func TestKeeper_GetSetCurrentPrice(t *testing.T) {
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[0], "tstusd",
 		sdk.NewInt(33000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[1], "tstusd",
 		sdk.NewInt(35000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[2], "tstusd",
 		sdk.NewInt(34000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	// Set current price
 	err := helper.keeper.SetCurrentPrices(ctx)
 	require.NoError(t, err)
@@ -178,9 +176,21 @@ func TestKeeper_GetSetCurrentPrice(t *testing.T) {
 
 	// Even number of oracles
 	helper.keeper.SetPrice(
+		ctx, helper.addrs[0], "tstusd",
+		sdk.NewInt(33000000),
+		header.Time)
+	helper.keeper.SetPrice(
+		ctx, helper.addrs[1], "tstusd",
+		sdk.NewInt(35000000),
+		header.Time)
+	helper.keeper.SetPrice(
+		ctx, helper.addrs[2], "tstusd",
+		sdk.NewInt(34000000),
+		header.Time)
+	helper.keeper.SetPrice(
 		ctx, helper.addrs[3], "tstusd",
 		sdk.NewInt(36000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	err = helper.keeper.SetCurrentPrices(ctx)
 	require.NoError(t, err)
 	price = helper.keeper.GetCurrentPrice(ctx, "tstusd")

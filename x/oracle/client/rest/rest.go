@@ -20,10 +20,10 @@ const (
 )
 
 type postPriceReq struct {
-	BaseReq   rest.BaseReq `json:"base_req"`
-	AssetCode string       `json:"asset_code"`
-	Price     string       `json:"price"`
-	Expiry    string       `json:"expiry"`
+	BaseReq    rest.BaseReq `json:"base_req"`
+	AssetCode  string       `json:"asset_code"`
+	Price      string       `json:"price"`
+	ReceivedAt string       `json:"received_at"`
 }
 
 // RegisterRoutes - Central function to define routes that get registered by the main application
@@ -60,15 +60,15 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		expiryInt, ok := sdk.NewIntFromString(req.Expiry)
+		receivedAtInt, ok := sdk.NewIntFromString(req.ReceivedAt)
 		if !ok {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "invalid expiry")
 			return
 		}
-		expiry := tmtime.Canonical(time.Unix(expiryInt.Int64(), 0))
+		receivedAt := tmtime.Canonical(time.Unix(receivedAtInt.Int64(), 0))
 
 		// create the message
-		msg := types.NewMsgPostPrice(addr, req.AssetCode, price, expiry)
+		msg := types.NewMsgPostPrice(addr, req.AssetCode, price, receivedAt)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

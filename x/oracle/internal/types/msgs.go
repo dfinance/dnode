@@ -15,10 +15,10 @@ const (
 // MsgPostPrice struct representing a posted price message.
 // Used by oracles to input prices to the oracle
 type MsgPostPrice struct {
-	From      sdk.AccAddress `json:"from" yaml:"from"`
-	AssetCode string         `json:"asset_code" yaml:"asset_code"`
-	Price     sdk.Int        `json:"price" yaml:"price"`
-	Expiry    time.Time      `json:"expiry" yaml:"expiry"`
+	From       sdk.AccAddress `json:"from" yaml:"from"`
+	AssetCode  string         `json:"asset_code" yaml:"asset_code"`
+	Price      sdk.Int        `json:"price" yaml:"price"`
+	ReceivedAt time.Time      `json:"received_at" yaml:"received_at"`
 }
 
 // NewMsgPostPrice creates a new post price msg
@@ -26,12 +26,12 @@ func NewMsgPostPrice(
 	from sdk.AccAddress,
 	assetCode string,
 	price sdk.Int,
-	expiry time.Time) MsgPostPrice {
+	receivedAt time.Time) MsgPostPrice {
 	return MsgPostPrice{
-		From:      from,
-		AssetCode: assetCode,
-		Price:     price,
-		Expiry:    expiry,
+		From:       from,
+		AssetCode:  assetCode,
+		Price:      price,
+		ReceivedAt: receivedAt,
 	}
 }
 

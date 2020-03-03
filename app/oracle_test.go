@@ -210,7 +210,7 @@ func Test_AddAsset(t *testing.T) {
 		msg := oracle.MsgAddAsset{
 			Nominee: addrs[0],
 			Denom:   "wb2test",
-			Asset:   oracle.NewAsset("wb2test", "wb", "test", oracle.Oracles{{Address: newOracleAcc1}}, true),
+			Asset:   oracle.NewAsset("wb2test", oracle.Oracles{{Address: newOracleAcc1}}, true),
 		}
 		acc := GetAccountCheckTx(app, genAccs[0].Address)
 		tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
@@ -279,7 +279,7 @@ func Test_SetAsset(t *testing.T) {
 		msg := oracle.MsgAddAsset{
 			Nominee: addrs[0],
 			Denom:   "wb2test",
-			Asset:   oracle.NewAsset("wb2test", "wb", "test", oracle.Oracles{{Address: newOracleAcc1}}, true),
+			Asset:   oracle.NewAsset("wb2test", oracle.Oracles{{Address: newOracleAcc1}}, true),
 		}
 		acc := GetAccountCheckTx(app, genAccs[0].Address)
 		tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
@@ -301,7 +301,7 @@ func Test_SetAsset(t *testing.T) {
 		msg := oracle.MsgSetAsset{
 			Nominee: addrs[0],
 			Denom:   "wb2test",
-			Asset:   oracle.NewAsset("wb2test1", "wb", "test1", oracle.Oracles{{Address: newOracleAcc1}}, true),
+			Asset:   oracle.NewAsset("wb2test1", oracle.Oracles{{Address: newOracleAcc1}}, true),
 		}
 		acc := GetAccountCheckTx(app, genAccs[0].Address)
 		tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[0])
@@ -368,10 +368,10 @@ func Test_SetPostPrice(t *testing.T) {
 	{
 		price := sdk.NewInt(100000000)
 		msg := oracle.MsgPostPrice{
-			From:      addrs[1],
-			AssetCode: "wb2wb",
-			Price:     price,
-			Expiry:    time.Now(),
+			From:       addrs[1],
+			AssetCode:  "wb2wb",
+			Price:      price,
+			ReceivedAt: time.Now(),
 		}
 		acc := GetAccount(app, genAccs[1].Address)
 		tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[1])
@@ -383,10 +383,10 @@ func Test_SetPostPrice(t *testing.T) {
 	{
 		price := sdk.NewInt(200000000)
 		msg := oracle.MsgPostPrice{
-			From:      addrs[1],
-			AssetCode: "wb2wb",
-			Price:     price,
-			Expiry:    time.Now(),
+			From:       addrs[1],
+			AssetCode:  "wb2wb",
+			Price:      price,
+			ReceivedAt: time.Now(),
 		}
 		acc := GetAccount(app, genAccs[1].Address)
 		tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[1])
@@ -398,10 +398,10 @@ func Test_SetPostPrice(t *testing.T) {
 	{
 		price := sdk.NewInt(300000000)
 		msg := oracle.MsgPostPrice{
-			From:      addrs[1],
-			AssetCode: "wb2wb",
-			Price:     price,
-			Expiry:    time.Now(),
+			From:       addrs[1],
+			AssetCode:  "wb2wb",
+			Price:      price,
+			ReceivedAt: time.Now(),
 		}
 		acc := GetAccount(app, genAccs[1].Address)
 		tx := genTx([]sdk.Msg{msg}, []uint64{acc.GetAccountNumber()}, []uint64{acc.GetSequence()}, privKeys[1])
