@@ -55,6 +55,8 @@ var startCmd = &cobra.Command{
 		app, err := app.NewOracleApp(&app.Config{
 			ChainID:    flagChainID,
 			Mnemonic:   viper.GetString("MNEMONIC"),
+			Account:    viper.GetUint32("ACCOUNT"),
+			Index:      viper.GetUint32("INDEX"),
 			APIAddress: flagAPIAddress,
 			Gas:        flagGas,
 			Fees:       flagFees,

@@ -46,14 +46,14 @@ func init() {
 	config.Seal()
 }
 
-func NewClient(mnemonic string, chainID string, nodeAddress string, fees sdk.Coins) (*Client, error) {
+func NewClient(mnemonic string, account, index uint32, chainID string, nodeAddress string, fees sdk.Coins) (*Client, error) {
 	cdc := codec.New()
 	codec.RegisterCrypto(cdc)
 	sdk.RegisterCodec(cdc)
 	oracle.RegisterCodec(cdc)
 
 	kb := keys.NewInMemory()
-	ki, err := kb.CreateAccount(accountName, mnemonic, "", passphrase, 0, 0)
+	ki, err := kb.CreateAccount(accountName, mnemonic, "", passphrase, account, index)
 	if err != nil {
 		return nil, err
 	}
