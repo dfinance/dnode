@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"net"
+	"net/url"
 	"os"
 	"os/signal"
 
@@ -16,15 +16,15 @@ import (
 )
 
 type Config struct {
-	ChainID    string
-	Mnemonic   string
-	Account    uint32
-	Index      uint32
-	APIAddress string
-	Gas        uint64
-	Fees       string
-	Logger     *logrus.Logger
-	Assets     map[string][]exchange.Asset
+	ChainID  string
+	Mnemonic string
+	Account  uint32
+	Index    uint32
+	APIURL   string
+	Gas      uint64
+	Fees     string
+	Logger   *logrus.Logger
+	Assets   map[string][]exchange.Asset
 }
 
 type OracleApp struct {
@@ -40,12 +40,12 @@ func NewOracleApp(c *Config) (*OracleApp, error) {
 		return nil, err
 	}
 
-	_, _, err = net.SplitHostPort(c.APIAddress)
+	_, err = url.Parse(c.APIURL)
 	if err != nil {
 		return nil, err
 	}
 
-	apiCl, err := api.NewClient(c.Mnemonic, c.Account, c.Index, c.Gas, c.ChainID, c.APIAddress, fees)
+	apiCl, err := api.NewClient(c.Mnemonic, c.Account, c.Index, c.Gas, c.ChainID, c.APIURL, fees)
 	if err != nil {
 		return nil, err
 	}

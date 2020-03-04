@@ -27,9 +27,9 @@ const (
 )
 
 type Client struct {
-	nodeAddress string
-	chainID     string
-	fees        sdk.Coins
+	nodeURL string
+	chainID string
+	fees    sdk.Coins
 
 	keyBase keys.Keybase
 	keyInfo keys.Info
@@ -46,7 +46,7 @@ func init() {
 	config.Seal()
 }
 
-func NewClient(mnemonic string, account, index uint32, gas uint64, chainID string, nodeAddress string, fees sdk.Coins) (*Client, error) {
+func NewClient(mnemonic string, account, index uint32, gas uint64, chainID string, nodeURL string, fees sdk.Coins) (*Client, error) {
 	cdc := codec.New()
 	codec.RegisterCrypto(cdc)
 	sdk.RegisterCodec(cdc)
@@ -64,7 +64,7 @@ func NewClient(mnemonic string, account, index uint32, gas uint64, chainID strin
 
 	txBuilder := auth.NewTxBuilder(sdkutils.GetTxEncoder(cdc), 0, 0, gas, 0, false, chainID, "", fees, nil).WithKeybase(kb)
 
-	return &Client{keyBase: kb, keyInfo: ki, cl: cl, nodeAddress: nodeAddress, cdc: cdc, chainID: chainID, fees: fees, txBuilder: txBuilder}, err
+	return &Client{keyBase: kb, keyInfo: ki, cl: cl, nodeURL: nodeURL, cdc: cdc, chainID: chainID, fees: fees, txBuilder: txBuilder}, err
 }
 
 func (c *Client) PostPrice(t exchange.Ticker) error {
@@ -99,7 +99,7 @@ func (c *Client) PostPrice(t exchange.Ticker) error {
 		return err
 	}
 
-	url := fmt.Sprintf("http://%s/txs", c.nodeAddress)
+	url := fmt.Sprintf("%s/txs", c.nodeURL)
 	apiReq, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(bz))
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (c *Client) PostPrice(t exchange.Ticker) error {
 }
 
 func (c *Client) getAccount() (*auth.BaseAccount, error) {
-	url := fmt.Sprintf("http://%s/auth/accounts/%s", c.nodeAddress, c.keyInfo.GetAddress())
+	url := fmt.Sprintf("%s/auth/accounts/%s", c.nodeURL, c.keyInfo.GetAddress())
 	resp, err := c.cl.Get(url)
 	if err != nil {
 		return nil, err

@@ -53,15 +53,15 @@ var startCmd = &cobra.Command{
 			logger.Fatal(err)
 		}
 		app, err := app.NewOracleApp(&app.Config{
-			ChainID:    flagChainID,
-			Mnemonic:   viper.GetString("MNEMONIC"),
-			Account:    viper.GetUint32("ACCOUNT"),
-			Index:      viper.GetUint32("INDEX"),
-			APIAddress: flagAPIAddress,
-			Gas:        flagGas,
-			Fees:       flagFees,
-			Logger:     logger,
-			Assets:     assets,
+			ChainID:  flagChainID,
+			Mnemonic: viper.GetString("MNEMONIC"),
+			Account:  viper.GetUint32("ACCOUNT"),
+			Index:    viper.GetUint32("INDEX"),
+			APIURL:   flagAPIURL,
+			Gas:      flagGas,
+			Fees:     flagFees,
+			Logger:   logger,
+			Assets:   assets,
 		})
 		if err != nil {
 			logrus.Fatal(err)
