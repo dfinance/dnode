@@ -16,15 +16,17 @@ import (
 )
 
 type Config struct {
-	ChainID  string
-	Mnemonic string
-	Account  uint32
-	Index    uint32
-	APIURL   string
-	Gas      uint64
-	Fees     string
-	Logger   *logrus.Logger
-	Assets   map[string][]exchange.Asset
+	ChainID     string
+	Mnemonic    string
+	Account     uint32
+	Index       uint32
+	Passphrase  string
+	AccountName string
+	APIURL      string
+	Gas         uint64
+	Fees        string
+	Logger      *logrus.Logger
+	Assets      map[string][]exchange.Asset
 }
 
 type OracleApp struct {
@@ -45,7 +47,7 @@ func NewOracleApp(c *Config) (*OracleApp, error) {
 		return nil, err
 	}
 
-	apiCl, err := api.NewClient(c.Mnemonic, c.Account, c.Index, c.Gas, c.ChainID, c.APIURL, fees)
+	apiCl, err := api.NewClient(c.Mnemonic, c.Account, c.Index, c.Gas, c.ChainID, c.APIURL, c.Passphrase, c.AccountName, fees)
 	if err != nil {
 		return nil, err
 	}

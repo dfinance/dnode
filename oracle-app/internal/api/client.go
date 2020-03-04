@@ -21,15 +21,12 @@ import (
 	"github.com/WingsDao/wings-blockchain/x/oracle"
 )
 
-const (
-	accountName = "oracle"
-	passphrase  = "12345678"
-)
-
 type Client struct {
-	nodeURL string
-	chainID string
-	fees    sdk.Coins
+	nodeURL    string
+	chainID    string
+	accName    string
+	passPhrase string
+	fees       sdk.Coins
 
 	keyBase keys.Keybase
 	keyInfo keys.Info
@@ -46,14 +43,30 @@ func init() {
 	config.Seal()
 }
 
-func NewClient(mnemonic string, account, index uint32, gas uint64, chainID string, nodeURL string, fees sdk.Coins) (*Client, error) {
+func NewClient(mnemonic string, account, index uint32, gas uint64, chainID string, nodeURL string, passphrase string, accountName string, fees sdk.Coins) (*Client, error) {
 	cdc := codec.New()
 	codec.RegisterCrypto(cdc)
 	sdk.RegisterCodec(cdc)
 	oracle.RegisterCodec(cdc)
 
+	pass, accname := passphrase, accountName
+	var err error
+	if pass == "" {
+		pass, err = utils.GenerateRandomString(20)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if accname == "" {
+		accname, err = utils.GenerateRandomString(10)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	kb := keys.NewInMemory()
-	ki, err := kb.CreateAccount(accountName, mnemonic, "", passphrase, account, index)
+	ki, err := kb.CreateAccount(accname, mnemonic, "", pass, account, index)
 	fmt.Printf("Client address is %s\n", ki.GetAddress())
 	if err != nil {
 		return nil, err
@@ -64,7 +77,7 @@ func NewClient(mnemonic string, account, index uint32, gas uint64, chainID strin
 
 	txBuilder := auth.NewTxBuilder(sdkutils.GetTxEncoder(cdc), 0, 0, gas, 0, false, chainID, "", fees, nil).WithKeybase(kb)
 
-	return &Client{keyBase: kb, keyInfo: ki, cl: cl, nodeURL: nodeURL, cdc: cdc, chainID: chainID, fees: fees, txBuilder: txBuilder}, err
+	return &Client{keyBase: kb, keyInfo: ki, cl: cl, nodeURL: nodeURL, cdc: cdc, chainID: chainID, fees: fees, txBuilder: txBuilder, passPhrase: pass, accName: accname}, err
 }
 
 func (c *Client) PostPrice(t exchange.Ticker) error {
@@ -82,7 +95,7 @@ func (c *Client) PostPrice(t exchange.Ticker) error {
 		WithAccountNumber(acc.AccountNumber).
 		WithSequence(acc.Sequence).
 		WithChainID(c.chainID).
-		BuildAndSign(accountName, passphrase, []sdk.Msg{oracle.NewMsgPostPrice(acc.Address, t.Asset.Code, intPrice, time.Now().Add(time.Hour))})
+		BuildAndSign(c.accName, c.passPhrase, []sdk.Msg{oracle.NewMsgPostPrice(acc.Address, t.Asset.Code, intPrice, time.Now().Add(time.Hour))})
 	if err != nil {
 		return err
 	}
