@@ -21,7 +21,6 @@ func GetCalls(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/calls", queryRoute), nil)
-
 			if err != nil {
 				return err
 			}
@@ -64,7 +63,7 @@ func GetCall(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			callId, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: parsing uint: %v", "id", args[0], err)
 			}
 
 			callReq := types.CallReq{CallId: callId}

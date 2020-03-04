@@ -51,7 +51,7 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 			rawPrice := args[2]
 			price, ok := sdk.NewIntFromString(rawPrice)
 			if !ok {
-				return fmt.Errorf("wrong value for price: %s", rawPrice)
+				return fmt.Errorf("%s argument %q: wrong value for price", "price", args[2])
 			}
 			expiryInt, ok := sdk.NewIntFromString(args[3])
 			if !ok {
@@ -81,7 +81,7 @@ func getCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 
 			oracleAddr, err := sdk.AccAddressFromBech32(args[2])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %v", "oracle_address", args[2], err)
 			}
 
 			msg := types.NewMsgAddOracle(cliCtx.GetFromAddress(), args[1], oracleAddr)
@@ -103,7 +103,7 @@ func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 
 			oracles, err := types.ParseOracles(args[2])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %v", "oracle_addresses", args[2], err)
 			}
 
 			msg := types.NewMsgSetOracles(cliCtx.GetFromAddress(), args[1], oracles)
@@ -125,22 +125,25 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 
 			oracles, err := types.ParseOracles(args[4])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %v", "oracles", args[4], err)
 			}
 			if len(oracles) == 0 {
-				return fmt.Errorf("invalid oracles")
+				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[4])
 			}
+
 			denom := args[1]
 			if len(denom) == 0 {
-				return fmt.Errorf("invalid denom")
+				return fmt.Errorf("%s argument %q: empty", "denom", args[1])
 			}
+
 			baseAsset := args[2]
 			if len(baseAsset) == 0 {
-				return fmt.Errorf("invalid base asset")
+				return fmt.Errorf("%s argument %q: empty", "base_asset", args[2])
 			}
+
 			quoteAsset := args[3]
 			if len(quoteAsset) == 0 {
-				return fmt.Errorf("invalid quote asset")
+				return fmt.Errorf("%s argument %q: empty", "quote_asset", args[3])
 			}
 
 			token := types.NewAsset(denom, baseAsset, quoteAsset, oracles, true)
@@ -168,22 +171,25 @@ func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 
 			oracles, err := types.ParseOracles(args[3])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %v", "oracles", args[3], err)
 			}
 			if len(oracles) == 0 {
-				return fmt.Errorf("invalid oracles")
+				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[3])
 			}
+
 			denom := args[1]
 			if len(denom) == 0 {
-				return fmt.Errorf("invalid denom")
+				return fmt.Errorf("%s argument %q: empty", "denom", args[1])
 			}
+
 			baseAsset := args[2]
 			if len(baseAsset) == 0 {
-				return fmt.Errorf("invalid base asset")
+				return fmt.Errorf("%s argument %q: empty", "base_asset", args[2])
 			}
+
 			quoteAsset := args[3]
 			if len(quoteAsset) == 0 {
-				return fmt.Errorf("invalid quote asset")
+				return fmt.Errorf("%s argument %q: empty", "quote_asset", args[3])
 			}
 
 			token := types.NewAsset(denom, baseAsset, quoteAsset, oracles, true)

@@ -23,12 +23,12 @@ func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			page, isOk := sdk.NewIntFromString(args[0])
 			if !isOk {
-				return fmt.Errorf("%s is not a number, cant parse int", args[0])
+				return fmt.Errorf("%s argument %q is not a number, can't parse int", "page", args[0])
 			}
 
 			limit, isOk := sdk.NewIntFromString(args[1])
 			if !isOk {
-				return fmt.Errorf("%s is not a number, cant parse int", args[1])
+				return fmt.Errorf("%s argument %q is not a number, can't parse int", "limit", args[1])
 			}
 
 			req := types.DestroysReq{
@@ -64,7 +64,7 @@ func GetDestroy(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			destroyId, isOk := sdk.NewIntFromString(args[0])
 			if !isOk {
-				return fmt.Errorf("%s is not a number, cant parse int", args[0])
+				return fmt.Errorf("%s argument %q is not a number, can't parse int", "destroyID", args[0])
 			}
 
 			req := types.DestroyReq{

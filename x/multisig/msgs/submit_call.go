@@ -36,7 +36,6 @@ func (msg MsgSubmitCall) Type() string {
 
 func (msg MsgSubmitCall) ValidateBasic() sdk.Error {
 	err := msg.Msg.ValidateBasic()
-
 	if err != nil {
 		return err
 	}

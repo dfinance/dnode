@@ -23,7 +23,7 @@ func GetAccountCmd(cdc *codec.Codec) *cobra.Command {
 
 			key, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %v", "address", args[0], err)
 			}
 
 			bz, err := cdc.MarshalJSON(types.QueryAccountParams{
@@ -36,6 +36,7 @@ func GetAccountCmd(cdc *codec.Codec) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(
 				fmt.Sprintf("custom/acc/account"),
 				bz)
+
 			if err != nil {
 				return err
 			}

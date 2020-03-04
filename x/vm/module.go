@@ -48,7 +48,7 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 
 		// address length
 		if len(bzAddr) != types.VmAddressLength {
-			return fmt.Errorf("incorrect address length %s, should be %d bytes length", genWriteOp.Address, types.VmAddressLength)
+			return fmt.Errorf("incorrect address %q length, should be %d bytes length", genWriteOp.Address, types.VmAddressLength)
 		}
 
 		_, err = hex.DecodeString(genWriteOp.Path)

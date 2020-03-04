@@ -70,7 +70,7 @@ func (p Params) Validate() error {
 	// iterate over assets and verify them
 	for _, asset := range p.Assets {
 		if asset.AssetCode == "" {
-			return fmt.Errorf("invalid asset: %s. missing asset code", asset.String())
+			return fmt.Errorf("invalid asset %q: missing asset code", asset.String())
 		}
 	}
 	return nil

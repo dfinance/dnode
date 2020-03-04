@@ -40,17 +40,18 @@ func (k Keeper) GetOracles(ctx sdk.Context, assetCode string) (types.Oracles, er
 			return a.Oracles, nil
 		}
 	}
-	return types.Oracles{}, fmt.Errorf("asset %s not found", assetCode)
+	return types.Oracles{}, fmt.Errorf("asset %q not found", assetCode)
 }
 
 // AddOracle adds the oracle to the oracle store
 func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode string, address sdk.AccAddress) error {
 	if !k.IsNominee(ctx, nominee) {
-		return fmt.Errorf("not a valid nominee %s", nominee)
+		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
+
 	_, err := k.GetOracle(ctx, assetCode, address)
 	if err == nil {
-		return fmt.Errorf("oracle %s already exists for asset %s", address, assetCode)
+		return fmt.Errorf("oracle %q already exists for asset %q", address, assetCode)
 	}
 
 	assets := k.GetAssetParams(ctx)
@@ -70,12 +71,12 @@ func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode string, add
 		k.SetParams(ctx, params)
 		return nil
 	}
-	return fmt.Errorf("asset %s not found", assetCode)
+	return fmt.Errorf("asset %q not found", assetCode)
 }
 
 func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode string, addresses types.Oracles) error {
 	if !k.IsNominee(ctx, nominee) {
-		return fmt.Errorf("not a valid nominee %s", nominee)
+		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
 
 	assets := k.GetAssetParams(ctx)
@@ -94,13 +95,14 @@ func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode string, ad
 		k.SetParams(ctx, params)
 		return nil
 	}
-	return fmt.Errorf("asset %s not found", assetCode)
+	return fmt.Errorf("asset %q not found", assetCode)
 }
 
 func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode string, asset types.Asset) error {
 	if !k.IsNominee(ctx, nominee) {
-		return fmt.Errorf("not a valid nominee %s", nominee)
+		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
+
 	assets := k.GetAssetParams(ctx)
 	updateAssets := assets[:0]
 	found := false
@@ -117,17 +119,17 @@ func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode string, asse
 		k.SetParams(ctx, params)
 		return nil
 	}
-	return fmt.Errorf("asset %s not found", assetCode)
+	return fmt.Errorf("asset %q not found", assetCode)
 }
 
 // AddOracle returns the oracle in the oracle store
 func (k Keeper) AddAsset(ctx sdk.Context, nominee string, assetCode string, asset types.Asset) error {
 	if !k.IsNominee(ctx, nominee) {
-		return fmt.Errorf("not a valid nominee %s", nominee)
+		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
 	_, exists := k.GetAsset(ctx, assetCode)
 	if exists {
-		return fmt.Errorf("asset %s already exists", assetCode)
+		return fmt.Errorf("asset %q already exists", assetCode)
 	}
 	assets := k.GetAssetParams(ctx)
 	assets = append(assets, asset)
@@ -142,14 +144,14 @@ func (k Keeper) AddAsset(ctx sdk.Context, nominee string, assetCode string, asse
 func (k Keeper) GetOracle(ctx sdk.Context, assetCode string, address sdk.AccAddress) (types.Oracle, error) {
 	oracles, err := k.GetOracles(ctx, assetCode)
 	if err != nil {
-		return types.Oracle{}, fmt.Errorf("asset %s not found", assetCode)
+		return types.Oracle{}, fmt.Errorf("asset %q not found", assetCode)
 	}
 	for _, o := range oracles {
 		if address.Equals(o.Address) {
 			return o, nil
 		}
 	}
-	return types.Oracle{}, fmt.Errorf("oracle %s not found for asset %s", address, assetCode)
+	return types.Oracle{}, fmt.Errorf("oracle %q not found for asset %q", address, assetCode)
 }
 
 // GetAsset returns the asset if it is in the oracle system

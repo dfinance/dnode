@@ -166,6 +166,7 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(
 				fmt.Sprintf("custom/%s/value", queryRoute),
 				bz)
+
 			if err != nil {
 				return err
 			}
@@ -201,7 +202,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
 				fmt.Println("Error during reading mvir file.")
-				return err
+				return fmt.Errorf("%s argument %q: %v", "mvirFile", args[0], err)
 			}
 
 			// Mvir file
@@ -242,7 +243,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
 				fmt.Println("Error during reading mvir file.")
-				return err
+				return fmt.Errorf("%s argument %q: %v", "mvirFile", args[0], err)
 			}
 
 			// Mvir file

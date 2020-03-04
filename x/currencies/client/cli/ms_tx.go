@@ -29,32 +29,28 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return err
+				return fmt.Errorf("fromAddress: %v", err)
 			}
 
 			amount, isOk := sdk.NewIntFromString(args[1])
-
 			if !isOk {
-				return fmt.Errorf("can't parse int %s as amount", args[1])
+				return fmt.Errorf("%s argument %q is not a number, can't parse int", "amount", args[1])
 			}
 
 			decimals, err := strconv.ParseInt(args[2], 10, 8)
-
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q is not a number, can't parse int", "decimals", args[2])
 			}
 
 			recipient, err := sdk.AccAddressFromBech32(args[3])
-
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %v", "recipient", args[3], err)
 			}
 
 			msgIssCurr := msgs.NewMsgIssueCurrency(args[0], amount, int8(decimals), recipient, args[4])
 			msg := msMsg.NewMsgSubmitCall(msgIssCurr, args[4], cliCtx.GetFromAddress())
 
 			err = msg.ValidateBasic()
-
 			if err != nil {
 				return err
 			}

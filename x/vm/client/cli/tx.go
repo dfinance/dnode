@@ -71,12 +71,12 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return err
+				return fmt.Errorf("fromAddress: %v", err)
 			}
 
 			mvFile, err := GetMVFromFile(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %v", "mvFile", args[0], err)
 			}
 
 			code, err := hex.DecodeString(mvFile.Code)
@@ -92,12 +92,12 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 				parts := strings.Split(pArg, ":")
 
 				if len(parts) != 2 {
-					return fmt.Errorf("can't parse argument: %s, check correctness of value and type, also seperator format", pArg)
+					return fmt.Errorf("argType argument %q at index %d: check correctness of value and type, also seperator format", pArg, i)
 				}
 
 				typeTag, err := types.GetVMTypeByString(parts[1])
 				if err != nil {
-					return err
+					return fmt.Errorf("argType argument %q at index %d: converting type: %v", pArg, i, err)
 				}
 
 				if len(parts) > 0 {
@@ -132,12 +132,12 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return err
+				return fmt.Errorf("fromAddress: %v", err)
 			}
 
 			mvFile, err := GetMVFromFile(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %v", "mvFile", args[0], err)
 			}
 
 			code, err := hex.DecodeString(mvFile.Code)
