@@ -1,5 +1,7 @@
 package types
 
+import "fmt"
+
 const (
 	// ModuleKey is the name of the module
 	ModuleName = "oracle"
@@ -28,3 +30,8 @@ const (
 	// OraclePrefix store prefix for the oracle accounts
 	OraclePrefix = StoreKey + ":oracles"
 )
+
+// Get a key to store PostedPrices for specific assetCode and blockHeight
+func GetRawPricesKey(assetCode string, blockHeight int64) []byte {
+	return []byte(fmt.Sprintf("%s:%s:%d", RawPriceFeedPrefix, assetCode, blockHeight))
+}

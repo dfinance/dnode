@@ -15,7 +15,7 @@ import (
 
 const (
 	queryOracleGetCurrentPricePathFmt = "/custom/oracle/price/%s"
-	queryOracleGetRawPricesPathFmt    = "/custom/oracle/rawprices/%s"
+	queryOracleGetRawPricesPathFmt    = "/custom/oracle/rawprices/%s/%d"
 	queryOracleGetAssetsPath          = "/custom/oracle/assets"
 )
 
@@ -79,13 +79,6 @@ func Test_OracleQueries(t *testing.T) {
 
 	assetCode := assetCodePrefix + "0"
 
-	// getRawPrices query check (no inputs yet)
-	{
-		response := oracle.QueryRawPricesResp{}
-		CheckRunQuery(t, app, nil, fmt.Sprintf(queryOracleGetRawPricesPathFmt, assetCode), &response)
-		require.Len(t, response, 0)
-	}
-
 	// getCurrentPrice query check (no inputs yet)
 	{
 		response := oracle.CurrentPrice{}
@@ -146,15 +139,28 @@ func Test_OracleQueries(t *testing.T) {
 			require.True(t, res.IsOK())
 		}
 
-		// getRawPrices query check (before BlockEnd they should exist)
+		// getRawPrices query check (before BlockEnd they shouldn't exist)
 		{
 			response := oracle.QueryRawPricesResp{}
-			CheckRunQuery(t, app, nil, fmt.Sprintf(queryOracleGetRawPricesPathFmt, assetCode), &response)
+			CheckRunQuery(t, app, nil, fmt.Sprintf(queryOracleGetRawPricesPathFmt, assetCode, GetContext(app, true).BlockHeight()), &response)
 			require.Len(t, response, 0)
 		}
 
 		app.EndBlock(abci.RequestEndBlock{})
 		app.Commit()
+	}
+
+	// getRawPrices query check (after BlockEnd they should exist for the previous block)
+	{
+		response := oracle.QueryRawPricesResp{}
+		CheckRunQuery(t, app, nil, fmt.Sprintf(queryOracleGetRawPricesPathFmt, assetCode, GetContext(app, true).BlockHeight()-1), &response)
+		require.Len(t, response, 3)
+		for i, rawPrice := range response {
+			require.True(t, priceValues[i].Equal(rawPrice.Price))
+			require.True(t, priceTimestamps[i].Equal(rawPrice.ReceivedAt))
+			require.Equal(t, assetCode, rawPrice.AssetCode)
+			require.Equal(t, genAddrs[i], rawPrice.OracleAddress)
+		}
 	}
 
 	// getCurrentPrice query check (value should be calculated after BlockEnd)
@@ -609,16 +615,29 @@ func Test_OraclePostPrices(t *testing.T) {
 		app.Commit()
 
 		// check the last price is the current price
-		price := app.oracleKeeper.GetCurrentPrice(GetContext(app, true), assetCode)
-		require.True(t, price.Price.Equal(priceAmount2))
-		require.True(t, price.ReceivedAt.Equal(priceTimestamp2))
+		{
+			price := app.oracleKeeper.GetCurrentPrice(GetContext(app, true), assetCode)
+			require.True(t, price.Price.Equal(priceAmount2))
+			require.True(t, price.ReceivedAt.Equal(priceTimestamp2))
+		}
+
+		// check rawPrices
+		{
+			ctx := GetContext(app, true)
+			rawPrices := app.oracleKeeper.GetRawPrices(ctx, assetCode, ctx.BlockHeight()-1)
+			require.Len(t, rawPrices, 1)
+			require.True(t, priceAmount2.Equal(rawPrices[0].Price))
+			require.True(t, priceTimestamp2.Equal(rawPrices[0].ReceivedAt))
+			require.Equal(t, assetCode, rawPrices[0].AssetCode)
+			require.Equal(t, genAddrs[0], rawPrices[0].OracleAddress)
+		}
 	}
 
 	// check posting prices from different oracles
 	{
 		now := time.Now()
-		priceAmount1, priceAmount2, priceAmount3 := sdk.NewInt(200000000), sdk.NewInt(100000000), sdk.NewInt(300000000)
-		priceTimestamp1, priceTimestamp2, priceTimestamp3 := now.Add(1*time.Second), now.Add(2*time.Second), now.Add(3*time.Second)
+		priceValues := []sdk.Int{sdk.NewInt(200000000), sdk.NewInt(100000000), sdk.NewInt(300000000)}
+		priceTimestamps := []time.Time{now.Add(1 * time.Second), now.Add(2 * time.Second), now.Add(3 * time.Second)}
 
 		// post prices
 		app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
@@ -628,8 +647,8 @@ func Test_OraclePostPrices(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceAmount1,
-				ReceivedAt: priceTimestamp1,
+				Price:      priceValues[0],
+				ReceivedAt: priceTimestamps[0],
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -642,8 +661,8 @@ func Test_OraclePostPrices(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceAmount2,
-				ReceivedAt: priceTimestamp2,
+				Price:      priceValues[1],
+				ReceivedAt: priceTimestamps[1],
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -656,8 +675,8 @@ func Test_OraclePostPrices(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceAmount3,
-				ReceivedAt: priceTimestamp3,
+				Price:      priceValues[2],
+				ReceivedAt: priceTimestamps[2],
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -668,8 +687,30 @@ func Test_OraclePostPrices(t *testing.T) {
 		app.Commit()
 
 		// check the last price is the median price
-		price := app.oracleKeeper.GetCurrentPrice(GetContext(app, true), assetCode)
-		require.True(t, price.Price.Equal(priceAmount1))
-		require.True(t, price.ReceivedAt.Equal(priceTimestamp1))
+		{
+			price := app.oracleKeeper.GetCurrentPrice(GetContext(app, true), assetCode)
+			require.True(t, price.Price.Equal(priceValues[0]))
+			require.True(t, price.ReceivedAt.Equal(priceTimestamps[0]))
+		}
+
+		// check rawPrices
+		{
+			ctx := GetContext(app, true)
+			rawPrices := app.oracleKeeper.GetRawPrices(ctx, assetCode, ctx.BlockHeight()-1)
+			require.Len(t, rawPrices, 3)
+			for i, rawPrice := range rawPrices {
+				require.True(t, priceValues[i].Equal(rawPrice.Price))
+				require.True(t, priceTimestamps[i].Equal(rawPrice.ReceivedAt))
+				require.Equal(t, assetCode, rawPrice.AssetCode)
+				require.Equal(t, genAddrs[i], rawPrice.OracleAddress)
+			}
+		}
+
+		// check rawPrices from the previous block are still exist
+		{
+			ctx := GetContext(app, true)
+			rawPrices := app.oracleKeeper.GetRawPrices(ctx, assetCode, ctx.BlockHeight()-2)
+			require.Len(t, rawPrices, 1)
+		}
 	}
 }

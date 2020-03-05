@@ -81,7 +81,7 @@ func (k Keeper) SetPrice(
 
 	// find raw price for specified oracle
 	store := ctx.KVStore(k.storeKey)
-	prices := k.GetRawPrices(ctx, assetCode)
+	prices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
 	var index int
 	found := false
 	for i := range prices {
@@ -105,7 +105,7 @@ func (k Keeper) SetPrice(
 	}
 
 	store.Set(
-		[]byte(types.RawPriceFeedPrefix+assetCode), k.cdc.MustMarshalBinaryBare(prices),
+		types.GetRawPricesKey(assetCode, ctx.BlockHeight()), k.cdc.MustMarshalBinaryBare(prices),
 	)
 
 	return prices[index], nil
@@ -118,7 +118,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) sdk.Error {
 
 	for _, v := range assets {
 		assetCode := v.AssetCode
-		rawPrices := k.GetRawPrices(ctx, assetCode)
+		rawPrices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
 
 		l := len(rawPrices)
 		var medianPrice sdk.Int
@@ -179,11 +179,6 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) sdk.Error {
 		k.vmKeeper.SetValue(ctx, accessPath, helpers.BigToBytes(newPrice.Price, types.PriceBytesLimit))
 	}
 
-	// clean up old asset rawPrices, that func is called on EndBlock so those inputs are no longer needed
-	for _, v := range assets {
-		store.Delete([]byte(types.RawPriceFeedPrefix + v.AssetCode))
-	}
-
 	return nil
 }
 
@@ -197,10 +192,10 @@ func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode string) types.Current
 	return price
 }
 
-// GetRawPrices fetches the set of all prices posted by oracles for an asset
-func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode string) []types.PostedPrice {
+// GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight
+func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode string, blockHeight int64) []types.PostedPrice {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get([]byte(types.RawPriceFeedPrefix + assetCode))
+	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
 	var prices []types.PostedPrice
 	k.cdc.MustUnmarshalBinaryBare(bz, &prices)
 	return prices

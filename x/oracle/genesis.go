@@ -31,7 +31,7 @@ func ExportGenesis(ctx sdk.Context, keeper Keeper) types.GenesisState {
 
 	var postedPrices []PostedPrice
 	for _, asset := range keeper.GetAssetParams(ctx) {
-		pp := keeper.GetRawPrices(ctx, asset.AssetCode)
+		pp := keeper.GetRawPrices(ctx, asset.AssetCode, ctx.BlockHeight())
 		postedPrices = append(postedPrices, pp...)
 	}
 
