@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -44,6 +45,9 @@ func NewOracleApp(c *Config) (*OracleApp, error) {
 		return nil, err
 	}
 
+	if c.Mnemonic == "" {
+		return nil, errors.New("empty mnemonic")
+	}
 	apiCl, err := api.NewClient(c.Mnemonic, c.Account, c.Index, c.Gas, c.ChainID, c.APIURL, fees)
 	if err != nil {
 		return nil, err
