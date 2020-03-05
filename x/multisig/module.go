@@ -114,5 +114,5 @@ func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.V
 
 // Export genesis.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return json.RawMessage{}
+	return nil
 }
