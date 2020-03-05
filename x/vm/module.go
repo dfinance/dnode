@@ -51,13 +51,11 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 			return fmt.Errorf("incorrect address %q length, should be %d bytes length", genWriteOp.Address, types.VmAddressLength)
 		}
 
-		_, err = hex.DecodeString(genWriteOp.Path)
-		if err != nil {
+		if _, err := hex.DecodeString(genWriteOp.Path); err != nil {
 			return err
 		}
 
-		_, err = hex.DecodeString(genWriteOp.Value)
-		if err != nil {
+		if _, err := hex.DecodeString(genWriteOp.Value); err != nil {
 			return err
 		}
 	}

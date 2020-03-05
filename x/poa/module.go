@@ -38,13 +38,12 @@ func (module AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 // Validate exists genesis.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	var genesisState types.GenesisState
-	err := ModuleCdc.UnmarshalJSON(bz, &genesisState)
-	if err != nil {
+	if err := ModuleCdc.UnmarshalJSON(bz, &genesisState); err != nil {
 		return err
 	}
 
 	params := genesisState.Parameters
-	if err = params.Validate(); err != nil {
+	if err := params.Validate(); err != nil {
 		return err
 	}
 

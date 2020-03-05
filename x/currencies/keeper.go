@@ -116,6 +116,7 @@ func (keeper Keeper) GetDestroy(ctx sdk.Context, id sdk.Int) types.Destroy {
 // Checking does currency exists by symbol.
 func (keeper Keeper) doesCurrencyExists(ctx sdk.Context, symbol string) bool {
 	store := ctx.KVStore(keeper.storeKey)
+
 	return store.Has(types.GetCurrencyKey(symbol))
 }
 
@@ -157,6 +158,7 @@ func (keeper Keeper) getLastID(ctx sdk.Context) sdk.Int {
 	store := ctx.KVStore(keeper.storeKey)
 	var lastId sdk.Int
 	keeper.cdc.MustUnmarshalBinaryBare(store.Get(types.GetLastIDKey()), &lastId)
+
 	return lastId
 }
 
@@ -169,6 +171,7 @@ func (keeper Keeper) getNewID(ctx sdk.Context) sdk.Int {
 	}
 
 	lastId := keeper.getLastID(ctx)
+
 	return lastId.AddRaw(1)
 }
 
@@ -199,5 +202,6 @@ func (keeper Keeper) storeIssue(ctx sdk.Context, issueID string, issue types.Iss
 // Check if issue exists by id.
 func (keeper Keeper) hasIssue(ctx sdk.Context, issueID string) bool {
 	store := ctx.KVStore(keeper.storeKey)
+
 	return store.Has(types.GetIssuesKey(issueID))
 }

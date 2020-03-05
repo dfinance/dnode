@@ -69,8 +69,7 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		// create the message
 		msg := types.NewMsgPostPrice(addr, req.AssetCode, price, expiry)
-		err = msg.ValidateBasic()
-		if err != nil {
+		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -87,6 +86,7 @@ func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.Handl
 		if !ok {
 			return
 		}
+
 		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/rawprices/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
@@ -106,6 +106,7 @@ func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.Ha
 		if !ok {
 			return
 		}
+
 		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/price/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())

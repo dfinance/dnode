@@ -27,7 +27,7 @@ func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Com
 
 			valAddr, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "address", args[0], err)
+				return fmt.Errorf("%s argument %q: %w", "address", args[0], err)
 			}
 
 			ethAddress := args[1]
@@ -71,6 +71,7 @@ func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Com
 			}
 
 			genDoc.AppState = appStateJson
+
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		},
 	}

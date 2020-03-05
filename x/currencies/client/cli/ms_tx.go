@@ -29,7 +29,7 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %v", err)
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			amount, isOk := sdk.NewIntFromString(args[1])
@@ -44,14 +44,13 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 
 			recipient, err := sdk.AccAddressFromBech32(args[3])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "recipient", args[3], err)
+				return fmt.Errorf("%s argument %q: %w", "recipient", args[3], err)
 			}
 
 			msgIssCurr := msgs.NewMsgIssueCurrency(args[0], amount, int8(decimals), recipient, args[4])
 			msg := msMsg.NewMsgSubmitCall(msgIssCurr, args[4], cliCtx.GetFromAddress())
 
-			err = msg.ValidateBasic()
-			if err != nil {
+			if err = msg.ValidateBasic(); err != nil {
 				return err
 			}
 

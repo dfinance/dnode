@@ -27,7 +27,7 @@ func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %v", err)
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			amount, isOk := sdk.NewIntFromString(args[2])

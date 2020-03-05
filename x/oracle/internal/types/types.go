@@ -26,6 +26,7 @@ func ValidateAddress(address string) (sdk.AccAddress, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return oracle, nil
 }
 

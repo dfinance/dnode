@@ -22,6 +22,7 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 func (k Keeper) GetAssetParams(ctx sdk.Context) types.Assets {
 	var assets types.Assets
 	k.paramstore.Get(ctx, types.KeyAssets, &assets)
+
 	return assets
 }
 
@@ -29,6 +30,7 @@ func (k Keeper) GetAssetParams(ctx sdk.Context) types.Assets {
 func (k Keeper) GetNomineeParams(ctx sdk.Context) []string {
 	var nominees []string
 	k.paramstore.Get(ctx, types.KeyNominees, &nominees)
+
 	return nominees
 }
 
@@ -40,6 +42,7 @@ func (k Keeper) GetOracles(ctx sdk.Context, assetCode string) (types.Oracles, er
 			return a.Oracles, nil
 		}
 	}
+
 	return types.Oracles{}, fmt.Errorf("asset %q not found", assetCode)
 }
 
@@ -49,8 +52,7 @@ func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode string, add
 		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
 
-	_, err := k.GetOracle(ctx, assetCode, address)
-	if err == nil {
+	if _, err := k.GetOracle(ctx, assetCode, address); err == nil {
 		return fmt.Errorf("oracle %q already exists for asset %q", address, assetCode)
 	}
 
@@ -71,6 +73,7 @@ func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode string, add
 		k.SetParams(ctx, params)
 		return nil
 	}
+
 	return fmt.Errorf("asset %q not found", assetCode)
 }
 
@@ -95,6 +98,7 @@ func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode string, ad
 		k.SetParams(ctx, params)
 		return nil
 	}
+
 	return fmt.Errorf("asset %q not found", assetCode)
 }
 
@@ -119,6 +123,7 @@ func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode string, asse
 		k.SetParams(ctx, params)
 		return nil
 	}
+
 	return fmt.Errorf("asset %q not found", assetCode)
 }
 
@@ -127,16 +132,18 @@ func (k Keeper) AddAsset(ctx sdk.Context, nominee string, assetCode string, asse
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
-	_, exists := k.GetAsset(ctx, assetCode)
-	if exists {
+
+	if _, exists := k.GetAsset(ctx, assetCode); exists {
 		return fmt.Errorf("asset %q already exists", assetCode)
 	}
+
 	assets := k.GetAssetParams(ctx)
 	assets = append(assets, asset)
 
 	params := k.GetParams(ctx)
 	params.Assets = assets
 	k.SetParams(ctx, params)
+
 	return nil
 }
 

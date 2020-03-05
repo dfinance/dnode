@@ -46,6 +46,7 @@ func (a Asset) ValidateBasic() sdk.Error {
 	if len(a.Oracles) == 0 {
 		return sdk.ErrInternal("invalid TokenRecord: Error: Missing Oracles")
 	}
+
 	return nil
 }
 
@@ -69,6 +70,7 @@ func (as Assets) String() string {
 	for _, a := range as {
 		out += fmt.Sprintf("%s\n", a.String())
 	}
+
 	return strings.TrimSpace(out)
 }
 
@@ -97,6 +99,7 @@ func (os Oracles) String() string {
 	for _, o := range os {
 		out += fmt.Sprintf("%s\n", o.String())
 	}
+
 	return strings.TrimSpace(out)
 }
 

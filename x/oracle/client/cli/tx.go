@@ -60,10 +60,10 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 			}
 			expiry := tmtime.Canonical(time.Unix(expiryInt.Int64(), 0))
 			msg := types.NewMsgPostPrice(cliCtx.GetFromAddress(), args[1], price, expiry)
-			err := msg.ValidateBasic()
-			if err != nil {
+			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
+
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
@@ -81,7 +81,7 @@ func getCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 
 			oracleAddr, err := sdk.AccAddressFromBech32(args[2])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "oracle_address", args[2], err)
+				return fmt.Errorf("%s argument %q: %w", "oracle_address", args[2], err)
 			}
 
 			msg := types.NewMsgAddOracle(cliCtx.GetFromAddress(), args[1], oracleAddr)
@@ -103,7 +103,7 @@ func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 
 			oracles, err := types.ParseOracles(args[2])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "oracle_addresses", args[2], err)
+				return fmt.Errorf("%s argument %q: %w", "oracle_addresses", args[2], err)
 			}
 
 			msg := types.NewMsgSetOracles(cliCtx.GetFromAddress(), args[1], oracles)
@@ -125,7 +125,7 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 
 			oracles, err := types.ParseOracles(args[4])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "oracles", args[4], err)
+				return fmt.Errorf("%s argument %q: %w", "oracles", args[4], err)
 			}
 			if len(oracles) == 0 {
 				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[4])
@@ -147,8 +147,7 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 			}
 
 			token := types.NewAsset(denom, baseAsset, quoteAsset, oracles, true)
-			err = token.ValidateBasic()
-			if err != nil {
+			if err := token.ValidateBasic(); err != nil {
 				return err
 			}
 
@@ -193,8 +192,7 @@ func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 			}
 
 			token := types.NewAsset(denom, baseAsset, quoteAsset, oracles, true)
-			err = token.ValidateBasic()
-			if err != nil {
+			if err := token.ValidateBasic(); err != nil {
 				return err
 			}
 

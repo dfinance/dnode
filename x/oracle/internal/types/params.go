@@ -56,6 +56,7 @@ func (p Params) String() string {
 	for _, a := range p.Nominees {
 		out += a
 	}
+
 	return strings.TrimSpace(out)
 }
 
@@ -73,5 +74,6 @@ func (p Params) Validate() error {
 			return fmt.Errorf("invalid asset %q: missing asset code", asset.String())
 		}
 	}
+
 	return nil
 }

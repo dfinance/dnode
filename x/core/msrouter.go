@@ -48,7 +48,6 @@ func (rtr *router) AddRoute(path string, h MsHandler) Router {
 	if rtr.sealed {
 		panic("router sealed; cannot add route handler")
 	}
-
 	if !isAlphaNumeric(path) {
 		panic("route expressions can only contain alphanumeric characters")
 	}
@@ -57,6 +56,7 @@ func (rtr *router) AddRoute(path string, h MsHandler) Router {
 	}
 
 	rtr.routes[path] = h
+
 	return rtr
 }
 

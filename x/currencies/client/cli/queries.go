@@ -48,6 +48,7 @@ func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var out types.Destroys
 			cdc.MustUnmarshalJSON(res, &out)
+
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -83,6 +84,7 @@ func GetDestroy(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var out types.Destroy
 			cdc.MustUnmarshalJSON(res, &out)
+
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -111,6 +113,7 @@ func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var out types.Issue
 			cdc.MustUnmarshalJSON(res, &out)
+
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -132,6 +135,7 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var out types.Currency
 			cdc.MustUnmarshalJSON(res, &out)
+
 			return cliCtx.PrintOutput(out)
 		},
 	}

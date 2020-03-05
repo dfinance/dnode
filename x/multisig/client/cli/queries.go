@@ -27,6 +27,7 @@ func GetCalls(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var out types.CallsResp
 			cdc.MustUnmarshalJSON(res, &out)
+
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -47,6 +48,7 @@ func GetLastId(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var resp types.LastIdRes
 			cdc.MustUnmarshalJSON(res, &resp)
+
 			return cliCtx.PrintOutput(resp)
 		},
 	}
@@ -63,7 +65,7 @@ func GetCall(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			callId, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
-				return fmt.Errorf("%s argument %q: parsing uint: %v", "id", args[0], err)
+				return fmt.Errorf("%s argument %q: parsing uint: %w", "id", args[0], err)
 			}
 
 			callReq := types.CallReq{CallId: callId}
@@ -79,6 +81,7 @@ func GetCall(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var resp types.CallResp
 			cdc.MustUnmarshalJSON(res, &resp)
+
 			return cliCtx.PrintOutput(resp)
 		},
 	}
@@ -106,6 +109,7 @@ func GetCallByUniqueID(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			var resp types.CallResp
 			cdc.MustUnmarshalJSON(res, &resp)
+
 			return cliCtx.PrintOutput(resp)
 		},
 	}

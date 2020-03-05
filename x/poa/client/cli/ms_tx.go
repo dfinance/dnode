@@ -28,20 +28,19 @@ func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %v", err)
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			ethAddress := args[1]
 			validatorAddress, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "address", args[0], err)
+				return fmt.Errorf("%s argument %q: %w", "address", args[0], err)
 			}
 
 			addVldrMsg := msgs.NewMsgAddValidator(validatorAddress, ethAddress, cliCtx.GetFromAddress())
 			msMsg := msMsg.NewMsgSubmitCall(addVldrMsg, args[2], cliCtx.GetFromAddress())
 
-			err = msMsg.ValidateBasic()
-			if err != nil {
+			if err := msMsg.ValidateBasic(); err != nil {
 				return err
 			}
 
@@ -64,19 +63,18 @@ func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %v", err)
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			validatorAddress, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "address", args[0], err)
+				return fmt.Errorf("%s argument %q: %w", "address", args[0], err)
 			}
 
 			msgRmvVal := msgs.NewMsgRemoveValidator(validatorAddress, cliCtx.GetFromAddress())
 			msMsg := msMsg.NewMsgSubmitCall(msgRmvVal, args[1], cliCtx.GetFromAddress())
 
-			err = msMsg.ValidateBasic()
-			if err != nil {
+			if err := msMsg.ValidateBasic(); err != nil {
 				return err
 			}
 
@@ -99,17 +97,17 @@ func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %v", err)
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			oldValidator, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "oldValidator", args[0], err)
+				return fmt.Errorf("%s argument %q: %w", "oldValidator", args[0], err)
 			}
 
 			newValidator, err := sdk.AccAddressFromBech32(args[1])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "newValidator", args[1], err)
+				return fmt.Errorf("%s argument %q: %w", "newValidator", args[1], err)
 			}
 
 			ethAddress := args[2]
@@ -117,8 +115,7 @@ func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 			msgReplVal := msgs.NewMsgReplaceValidator(oldValidator, newValidator, ethAddress, cliCtx.GetFromAddress())
 			msMsg := msMsg.NewMsgSubmitCall(msgReplVal, args[3], cliCtx.GetFromAddress())
 
-			err = msMsg.ValidateBasic()
-			if err != nil {
+			if err := msMsg.ValidateBasic(); err != nil {
 				return err
 			}
 

@@ -34,7 +34,7 @@ func AddOracleNomeneesCmd(ctx *server.Context, cdc *codec.Codec,
 			for i, a := range addresses {
 				_, err := sdk.AccAddressFromBech32(a)
 				if err != nil {
-					return fmt.Errorf("%q address at index %d: %v", a, i, err)
+					return fmt.Errorf("%q address at index %d: %w", a, i, err)
 				}
 			}
 

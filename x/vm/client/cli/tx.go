@@ -71,12 +71,12 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %v", err)
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			mvFile, err := GetMVFromFile(args[0])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "mvFile", args[0], err)
+				return fmt.Errorf("%s argument %q: %w", "mvFile", args[0], err)
 			}
 
 			code, err := hex.DecodeString(mvFile.Code)
@@ -97,7 +97,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 
 				typeTag, err := types.GetVMTypeByString(parts[1])
 				if err != nil {
-					return fmt.Errorf("argType argument %q at index %d: converting type: %v", pArg, i, err)
+					return fmt.Errorf("argType argument %q at index %d: converting type: %w", pArg, i, err)
 				}
 
 				if len(parts) > 0 {
@@ -115,6 +115,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			}
 
 			cliCtx.WithOutput(os.Stdout)
+
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
@@ -132,12 +133,12 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %v", err)
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			mvFile, err := GetMVFromFile(args[0])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "mvFile", args[0], err)
+				return fmt.Errorf("%s argument %q: %w", "mvFile", args[0], err)
 			}
 
 			code, err := hex.DecodeString(mvFile.Code)
@@ -151,6 +152,7 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 			}
 
 			cliCtx.WithOutput(os.Stdout)
+
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
