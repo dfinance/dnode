@@ -31,9 +31,18 @@ Other repositories related to Peg Zones could be found at [project page](https:/
 
 Before we start you should have a correct 'GOPATH', 'GOROOT' environment variables.
 
+Required:
+
+    * golang 1.13.8 or later.
+    * protoc - can be installed by [instruction](https://www.grpc.io/docs/quickstart/go/).
+    
 To install fetch this repository:
 
-    git clone git@github.com:WingsDao/blockchain-relay-layer.git
+    git clone --recurse-submodules https://github.com/WingsDao/wings-blockchain
+
+Let's build proto files:
+
+    make protos
 
 And let's build both daemon and cli:
 
