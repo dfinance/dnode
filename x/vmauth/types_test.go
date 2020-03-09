@@ -1,0 +1,109 @@
+package vmauth
+
+import (
+	"encoding/hex"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/stretchr/testify/require"
+	"testing"
+)
+
+const (
+	accBytes1 = "010000000500000077696e677301000000000000000000000000000000"
+)
+
+func TestBalancesToCoins(t *testing.T) {
+	wbCoins := []WBCoin{
+		{
+			Denom: []byte("wings"),
+			Value: sdk.NewInt(1),
+		},
+		{
+			Denom: []byte("eth"),
+			Value: sdk.NewInt(1),
+		},
+	}
+
+	coins := balancesToCoins(wbCoins)
+	for i, coin := range coins {
+		require.EqualValues(t, coin.Denom, wbCoins[i].Denom)
+		require.EqualValues(t, coin.Amount, wbCoins[i].Value)
+	}
+
+	// check nil.
+	coins = balancesToCoins(nil)
+	require.Empty(t, coins)
+}
+
+func TestAddrToPathAddr(t *testing.T) {
+	addr := sdk.AccAddress("tmp")
+	libraAddr := AddrToPathAddr(addr)
+
+	config := sdk.GetConfig()
+	prefix := config.GetBech32AccountAddrPrefix()
+	zeros := make([]byte, 5)
+
+	bytes := make([]byte, 0)
+	bytes = append(bytes, []byte(prefix)...)
+	bytes = append(bytes, zeros...)
+	bytes = append(bytes, addr...)
+
+	require.EqualValues(t, bytes, libraAddr)
+}
+
+func TestBytesToAccRes(t *testing.T) {
+	acc := AccountResource{
+		Balances: []WBCoin{
+			{
+				Denom: []byte("wings"),
+				Value: sdk.NewInt(1),
+			},
+		},
+	}
+
+	bz := AccResToBytes(acc)
+
+	newAcc := BytesToAccRes(bz)
+
+	require.EqualValues(t, acc, newAcc)
+}
+
+func TestAccToBytes(t *testing.T) {
+	acc := AccountResource{
+		Balances: []WBCoin{
+			{
+				Denom: []byte("wings"),
+				Value: sdk.NewInt(1),
+			},
+		},
+	}
+
+	bz := AccResToBytes(acc)
+	res, err := hex.DecodeString(accBytes1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	require.EqualValues(t, res, bz)
+}
+
+func TestAccResourceFromAccount(t *testing.T) {
+	acc := auth.NewBaseAccountWithAddress(sdk.AccAddress("tmp"))
+	acc.SetCoins(sdk.Coins{sdk.NewCoin("wings", sdk.NewInt(1))})
+
+	accRes := AccResFromAccount(&acc)
+
+	for i, coin := range acc.Coins {
+		require.EqualValues(t, coin.Denom, accRes.Balances[i].Denom)
+		require.EqualValues(t, coin.Amount, accRes.Balances[i].Value)
+	}
+}
+
+func TestGetResPath(t *testing.T) {
+	res, err := hex.DecodeString(resourceKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	require.EqualValues(t, res, GetResPath())
+}

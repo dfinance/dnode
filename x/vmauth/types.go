@@ -7,21 +7,24 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 )
 
+// Resource key for WBCoins resource from VM stdlib.
 const (
 	resourceKey = "016ee00e2d212d7676b19de9ce7a4b598a339ae2286ef6b378c0c348b3fd3221ed"
 )
 
+// Describe WBCoin structure.
 type WBCoin struct {
 	Denom []byte  // coin denom
 	Value sdk.Int // coin value
 }
 
+// Balances of account in case of standard lib.
 type AccountResource struct {
 	Balances []WBCoin // coins
 }
 
-// convert byte array to coins.
-func bytesToCoins(coins []WBCoin) sdk.Coins {
+// Convert byte array to coins.
+func balancesToCoins(coins []WBCoin) sdk.Coins {
 	realCoins := make(sdk.Coins, len(coins))
 	for i, coin := range coins {
 		realCoins[i] = sdk.NewCoin(string(coin.Denom), coin.Value)
@@ -55,7 +58,7 @@ func GetResPath() []byte {
 }
 
 // Convert acc to account resource.
-func AccResourceFromAccount(acc exported.Account) AccountResource {
+func AccResFromAccount(acc exported.Account) AccountResource {
 	accCoins := acc.GetCoins()
 	balances := make([]WBCoin, len(accCoins))
 	for i, coin := range accCoins {
@@ -69,7 +72,7 @@ func AccResourceFromAccount(acc exported.Account) AccountResource {
 }
 
 // Convert account resource to bytes.
-func AccToBytes(acc AccountResource) []byte {
+func AccResToBytes(acc AccountResource) []byte {
 	bytes, err := helpers.Marshal(acc)
 	if err != nil {
 		panic(err)
