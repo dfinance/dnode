@@ -49,9 +49,12 @@ Both commands must execute fine, after it you can run both daemon and cli:
 
 To install both cli and daemon as binaries you can use Makefile:
 
-    make install
+    make install 
 
-So after this command both `wbd` and `wbcli` will be available from console.
+So after this command both `wbd` and `wbcli` will be available from console
+
+    wbd version --long
+    wbcli version --long
 
 # Usage
 
