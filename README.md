@@ -56,6 +56,12 @@ So after this command both `wbd` and `wbcli` will be available from console
     wbd version --long
     wbcli version --long
 
+If you want to install specific application (not everything), you always can do:
+
+    make protos install-wbd
+    make protos install-wbcli
+    make protos install-oracleapp
+
 # Usage
 
 First of all we need to create genesis configuration and name of node:
