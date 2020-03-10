@@ -116,7 +116,7 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 		header.Time)
 	require.NoError(t, err)
 	// Get raw prices
-	rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd")
+	rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
 	require.Equal(t, len(rawPrices), 1)
 	require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(33000000)), true)
 	// Set price by oracle 2
@@ -126,7 +126,7 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 		header.Time)
 	require.NoError(t, err)
 
-	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd")
+	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
 	require.Equal(t, len(rawPrices), 2)
 	require.Equal(t, rawPrices[1].Price.Equal(sdk.NewInt(35000000)), true)
 
@@ -136,7 +136,7 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 		sdk.NewInt(37000000),
 		header.Time)
 	require.NoError(t, err)
-	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd")
+	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
 	require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(37000000)), true)
 }
 
