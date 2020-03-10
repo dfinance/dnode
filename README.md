@@ -31,9 +31,18 @@ Other repositories related to Peg Zones could be found at [project page](https:/
 
 Before we start you should have a correct 'GOPATH', 'GOROOT' environment variables.
 
+Required:
+
+    * golang 1.13.8 or later.
+    * protoc - can be installed by [instruction](https://www.grpc.io/docs/quickstart/go/).
+    
 To install fetch this repository:
 
-    git clone git@github.com:WingsDao/blockchain-relay-layer.git
+    git clone --recurse-submodules https://github.com/WingsDao/wings-blockchain
+
+Let's build proto files:
+
+    make protos
 
 And let's build both daemon and cli:
 
@@ -49,9 +58,18 @@ Both commands must execute fine, after it you can run both daemon and cli:
 
 To install both cli and daemon as binaries you can use Makefile:
 
-    make install
+    make install 
 
-So after this command both `wbd` and `wbcli` will be available from console.
+So after this command both `wbd` and `wbcli` will be available from console
+
+    wbd version --long
+    wbcli version --long
+
+If you want to install specific application (not everything), you always can do:
+
+    make protos install-wbd
+    make protos install-wbcli
+    make protos install-oracleapp
 
 # Usage
 
