@@ -32,8 +32,8 @@ func (w wings) Subscribe(_ Asset, out chan Ticker) error {
 			randPrice := rand.Intn(basePriceMax-basePriceMin) + basePriceMin
 			priceWingsEth := fmt.Sprintf("%.8f", float64(randPrice)/1000)
 			priceEthWings := fmt.Sprintf("%.8f", float64(randPrice))
-			out <- NewTicker(NewAsset("wings_eth", Pair{}), priceWingsEth, "wings-test")
-			out <- NewTicker(NewAsset("eth_wings", Pair{}), priceEthWings, "wings-test")
+			out <- NewTicker(NewAsset("wings_eth", Pair{}), priceWingsEth, "wings-test", time.Now().UTC())
+			out <- NewTicker(NewAsset("eth_wings", Pair{}), priceEthWings, "wings-test", time.Now().UTC())
 		}
 	}()
 	return nil

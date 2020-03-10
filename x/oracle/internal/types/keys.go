@@ -33,5 +33,5 @@ const (
 
 // Get a key to store PostedPrices for specific assetCode and blockHeight
 func GetRawPricesKey(assetCode string, blockHeight int64) []byte {
-	return []byte(fmt.Sprintf("%s:%s:%d", RawPriceFeedPrefix, assetCode, blockHeight))
+	return []byte(fmt.Sprintf("%s%s:%d", RawPriceFeedPrefix, assetCode, blockHeight))
 }
