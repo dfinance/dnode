@@ -92,12 +92,15 @@ It should be done before next commands, so see tutorial **[how to initialize gen
     wbd add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
     wbd add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
 
-Replace expressions in brackets with correct addresses, include Ethereum addresses, configure chain by Cosmos SDK documentation:
+Replace expressions in brackets with correct addresses, include Ethereum addresses.
+
+Now configure cli:
 
     wbcli config chain-id wings-testnet
     wbcli config output json
     wbcli config indent true
     wbcli config trust-node true
+    wbcli config compiler 127.0.0.1:50053
 
 Time to change denom in PoS configuration.
 So open `~/.wbd/config/genesis.json` and find this stake settings:
