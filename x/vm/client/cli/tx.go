@@ -111,7 +111,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 					n, isOk := sdk.NewIntFromString(arg)
 
 					if !isOk {
-						return fmt.Errorf("%s is not a unsigned number, wrong argument type, must be: %s", arg, types.VMTypeToStringPanic(extractedArgs[i]))
+						return fmt.Errorf("%s is not a unsigned number (max is unsigned 256), wrong argument type, must be: %s", arg, types.VMTypeToStringPanic(extractedArgs[i]))
 					}
 
 					switch extractedArgs[i] {
