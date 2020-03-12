@@ -488,7 +488,7 @@ To launch tests run:
 
 # Contributors
 
-This project has the [following contributors](https://github.com/WingsDao/griffin-consensus-poc/graphs/contributors).
+This project has the [following contributors](https://github.com/WingsDao/wings-blockchain/graphs/contributors).
 
 To help project you always can open [issue](https://github.com/WingsDao/wings-blockchain/pulls) or fork, do changes in your own fork and open [pull request](https://github.com/WingsDao/wings-blockchain/pulls).
 
