@@ -115,35 +115,28 @@ func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 
 func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "add-asset [nominee_key] [denom] [base_asset] [quote_asset] [oracles]",
-		Example: "wbcli oracle add-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT ETH USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Use:     "add-asset [nominee_key] [denom] [oracles]",
+		Example: "wbcli oracle add-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new asset",
-		Args:    cobra.ExactArgs(5),
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
-			oracles, err := types.ParseOracles(args[4])
+			denom := args[1]
+			if len(denom) == 0 {
+				return fmt.Errorf("invalid denom")
+			}
+
+			oracles, err := types.ParseOracles(args[2])
 			if err != nil {
 				return err
 			}
 			if len(oracles) == 0 {
 				return fmt.Errorf("invalid oracles")
 			}
-			denom := args[1]
-			if len(denom) == 0 {
-				return fmt.Errorf("invalid denom")
-			}
-			baseAsset := args[2]
-			if len(baseAsset) == 0 {
-				return fmt.Errorf("invalid base asset")
-			}
-			quoteAsset := args[3]
-			if len(quoteAsset) == 0 {
-				return fmt.Errorf("invalid quote asset")
-			}
 
-			token := types.NewAsset(denom, baseAsset, quoteAsset, oracles, true)
+			token := types.NewAsset(denom, oracles, true)
 			err = token.ValidateBasic()
 			if err != nil {
 				return err
@@ -158,35 +151,28 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 
 func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "set-asset [nominee_key] [denom] [base_asset] [quote_asset] [oracles]",
-		Example: "wbcli oracle set-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT ETH USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Use:     "set-asset [nominee_key] [denom] [oracles]",
+		Example: "wbcli oracle set-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a set asset",
-		Args:    cobra.ExactArgs(5),
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
-			oracles, err := types.ParseOracles(args[3])
+			denom := args[1]
+			if len(denom) == 0 {
+				return fmt.Errorf("invalid denom")
+			}
+
+			oracles, err := types.ParseOracles(args[2])
 			if err != nil {
 				return err
 			}
 			if len(oracles) == 0 {
 				return fmt.Errorf("invalid oracles")
 			}
-			denom := args[1]
-			if len(denom) == 0 {
-				return fmt.Errorf("invalid denom")
-			}
-			baseAsset := args[2]
-			if len(baseAsset) == 0 {
-				return fmt.Errorf("invalid base asset")
-			}
-			quoteAsset := args[3]
-			if len(quoteAsset) == 0 {
-				return fmt.Errorf("invalid quote asset")
-			}
 
-			token := types.NewAsset(denom, baseAsset, quoteAsset, oracles, true)
+			token := types.NewAsset(denom, oracles, true)
 			err = token.ValidateBasic()
 			if err != nil {
 				return err

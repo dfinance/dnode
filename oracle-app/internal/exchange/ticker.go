@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"fmt"
+	"time"
 
 	goex "github.com/nntaoli-project/GoEx"
 )
@@ -38,15 +39,16 @@ func NewAsset(code string, pair Pair) Asset {
 type CurrencyPair = goex.CurrencyPair
 
 type Ticker struct {
-	Asset    Asset
-	Price    string
-	Exchange string
+	Asset      Asset
+	Price      string
+	Exchange   string
+	ReceivedAt time.Time
 }
 
 func (t Ticker) String() string {
-	return fmt.Sprintf("Asset: %s Price: %s", t.Asset.Code, t.Price)
+	return fmt.Sprintf("Asset: %s Price: %s ReceivedAt: %v", t.Asset.Code, t.Price, t.ReceivedAt)
 }
 
-func NewTicker(asset Asset, price string, exchange string) Ticker {
-	return Ticker{Asset: asset, Price: price, Exchange: exchange}
+func NewTicker(asset Asset, price, exchange string, receivedAt time.Time) Ticker {
+	return Ticker{Asset: asset, Price: price, Exchange: exchange, ReceivedAt: receivedAt}
 }

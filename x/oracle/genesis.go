@@ -14,7 +14,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data types.GenesisState) {
 
 	// Iterate through the posted prices and set them in the store
 	for _, pp := range data.PostedPrices {
-		_, err := keeper.SetPrice(ctx, pp.OracleAddress, pp.AssetCode, pp.Price, pp.Expiry)
+		_, err := keeper.SetPrice(ctx, pp.OracleAddress, pp.AssetCode, pp.Price, pp.ReceivedAt)
 		if err != nil {
 			panic(err)
 		}
@@ -31,7 +31,7 @@ func ExportGenesis(ctx sdk.Context, keeper Keeper) types.GenesisState {
 
 	var postedPrices []PostedPrice
 	for _, asset := range keeper.GetAssetParams(ctx) {
-		pp := keeper.GetRawPrices(ctx, asset.AssetCode)
+		pp := keeper.GetRawPrices(ctx, asset.AssetCode, ctx.BlockHeight())
 		postedPrices = append(postedPrices, pp...)
 	}
 
