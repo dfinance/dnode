@@ -1,7 +1,6 @@
 package cli
 
 import (
-	connContext "context"
 	"encoding/hex"
 	"fmt"
 	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
@@ -12,14 +11,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 	"io/ioutil"
 	"os"
-)
-
-const (
-	FlagOutput       = "to-file"
-	FlagCompilerAddr = "compiler"
 )
 
 // Get query commands for VM module.
@@ -35,7 +28,7 @@ func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
 	)
 
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(FlagCompilerAddr, "127.0.0.1:50053", "--compiler 127.0.0.1:50053")
+		cmd.Flags().String(FlagCompilerAddr, FlagCompilerDefault, FlagCompilerUsage)
 		cmd.Flags().String(FlagOutput, "", "--to-file ./compiled.mv")
 	}
 
@@ -52,11 +45,6 @@ func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
 	return queries
 }
 
-// Create connection to virtual machine.
-func createVMConn() (*grpc.ClientConn, error) {
-	return grpc.Dial(viper.GetString(FlagCompilerAddr), grpc.WithInsecure())
-}
-
 // Read mvir file by file path.
 func readMvirFile(filePath string) ([]byte, error) {
 	file, err := os.Open(filePath)
@@ -66,35 +54,6 @@ func readMvirFile(filePath string) ([]byte, error) {
 	defer file.Close()
 
 	return ioutil.ReadAll(file)
-}
-
-func compile(sourceFile *vm_grpc.MvIrSourceFile) ([]byte, bool) {
-	conn, err := createVMConn()
-	if err != nil {
-		fmt.Printf("Compilation failed because of error during connection to VM: %s\n", err.Error())
-		return nil, false
-	}
-	defer conn.Close()
-
-	client := vm_grpc.NewVMCompilerClient(conn)
-	connCtx := connContext.Background()
-
-	resp, err := client.Compile(connCtx, sourceFile)
-	if err != nil {
-		fmt.Printf("Compilation failed because of error during compilation and connection to VM: %s\n", err.Error())
-		return nil, false
-	}
-
-	// if contains errors
-	if len(resp.Errors) > 0 {
-		for _, err := range resp.Errors {
-			fmt.Printf("Error from compiler: %s\n", err)
-		}
-		fmt.Println("Compilation failed because of errors from compiler.")
-		return nil, false
-	}
-
-	return resp.Bytecode, true
 }
 
 // Save output to stdout or file after compilation.

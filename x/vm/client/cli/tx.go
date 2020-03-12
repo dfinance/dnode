@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 	"github.com/cosmos/cosmos-sdk/client"
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,13 +15,7 @@ import (
 	codec "github.com/tendermint/go-amino"
 	"io/ioutil"
 	"os"
-	"strings"
 )
-
-// MVFile struct contains code from file in hex.
-type MVFile struct {
-	Code string `json:"code"`
-}
 
 // Return TX commands for CLI.
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
@@ -29,10 +24,17 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		Short: "VM transactions commands",
 	}
 
-	txCmd.AddCommand(client.PostCommands(
-		DeployContract(cdc),
+	compileCommands := client.PostCommands(
 		ExecuteScript(cdc),
-	)...)
+	)
+
+	for _, cmd := range compileCommands {
+		cmd.Flags().String(FlagCompilerAddr, FlagCompilerDefault, FlagCompilerUsage)
+		txCmd.AddCommand(cmd)
+	}
+
+	txCmd.AddCommand(client.PostCommands(DeployContract(cdc))...)
+	txCmd.AddCommand(compileCommands...)
 
 	return txCmd
 }
@@ -87,21 +89,66 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			// parsing arguments
 			parsedArgs := args[1:]
 			scriptArgs := make([]types.ScriptArg, len(parsedArgs))
+			extractedArgs, err := extractArgs(code)
+			if err != nil {
+				return err
+			}
 
-			for i, pArg := range parsedArgs {
-				parts := strings.Split(pArg, ":")
+			if len(extractedArgs) != len(parsedArgs) {
+				// error not enough args
+				return fmt.Errorf("arguments amount is not enough to call script, some arguments missed")
+			}
 
-				if len(parts) != 2 {
-					return fmt.Errorf("can't parse argument: %s, check correctness of value and type, also seperator format", pArg)
-				}
+			for i, arg := range parsedArgs {
+				switch extractedArgs[i] {
+				case vm_grpc.VMTypeTag_ByteArray:
+					scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("b\"%s\"", hex.EncodeToString([]byte(arg))), extractedArgs[i])
 
-				typeTag, err := types.GetVMTypeByString(parts[1])
-				if err != nil {
-					return err
-				}
+				case vm_grpc.VMTypeTag_Struct:
+					return fmt.Errorf("currently doesnt's support struct type as argument")
 
-				if len(parts) > 0 {
-					scriptArgs[i] = types.NewScriptArg(parts[0], typeTag)
+				case vm_grpc.VMTypeTag_U8, vm_grpc.VMTypeTag_U64, vm_grpc.VMTypeTag_U128:
+					n, isOk := sdk.NewIntFromString(arg)
+
+					if !isOk {
+						return fmt.Errorf("%s is not a unsigned number (max is unsigned 256), wrong argument type, must be: %s", arg, types.VMTypeToStringPanic(extractedArgs[i]))
+					}
+
+					switch extractedArgs[i] {
+					case vm_grpc.VMTypeTag_U8:
+						if n.BigInt().BitLen() > 8 {
+							return fmt.Errorf("argument %s must be U8, current bit length is %d, overflow", arg, n.BigInt().BitLen())
+						}
+
+					case vm_grpc.VMTypeTag_U64:
+						if n.BigInt().BitLen() > 64 {
+							return fmt.Errorf("argument %s must be U64, current bit length is %d, overflow", arg, n.BigInt().BitLen())
+						}
+
+					case vm_grpc.VMTypeTag_U128:
+						if n.BigInt().BitLen() > 128 {
+							return fmt.Errorf("argument %s must be U128, current bit length is %d, overflow", arg, n.BigInt().BitLen())
+						}
+					}
+
+					scriptArgs[i] = types.NewScriptArg(arg, extractedArgs[i])
+
+				case vm_grpc.VMTypeTag_Address:
+					// validate address
+					_, err := sdk.AccAddressFromBech32(arg)
+					if err != nil {
+						return fmt.Errorf("can't parse address argument %s, check address and try again: %s", arg, err.Error())
+					}
+					scriptArgs[i] = types.NewScriptArg(arg, extractedArgs[i])
+
+				case vm_grpc.VMTypeTag_Bool:
+					if arg != "true" || arg != "false" {
+						return fmt.Errorf("%s argument must be bool, means \"true\" or \"false\"", arg)
+					}
+					scriptArgs[i] = types.NewScriptArg(arg, extractedArgs[i])
+
+				default:
+					scriptArgs[i] = types.NewScriptArg(arg, extractedArgs[i])
 				}
 			}
 

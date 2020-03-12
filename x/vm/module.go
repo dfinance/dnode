@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/WingsDao/wings-blockchain/x/vm/client"
 	"github.com/WingsDao/wings-blockchain/x/vm/client/cli"
 	types "github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 )
@@ -75,7 +74,7 @@ func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) 
 
 // Get transaction commands for CLI.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return client.GetTxCmd(cdc)
+	return cli.GetTxCmd(cdc)
 }
 
 // Get query commands for CLI.
