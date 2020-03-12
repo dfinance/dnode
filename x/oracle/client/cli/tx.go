@@ -115,38 +115,28 @@ func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 
 func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "add-asset [nominee_key] [denom] [base_asset] [quote_asset] [oracles]",
-		Example: "wbcli oracle add-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT ETH USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Use:     "add-asset [nominee_key] [denom] [oracles]",
+		Example: "wbcli oracle add-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new asset",
-		Args:    cobra.ExactArgs(5),
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
-
-			oracles, err := types.ParseOracles(args[4])
-			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "oracles", args[4], err)
-			}
-			if len(oracles) == 0 {
-				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[4])
-			}
 
 			denom := args[1]
 			if len(denom) == 0 {
 				return fmt.Errorf("%s argument %q: empty", "denom", args[1])
 			}
 
-			baseAsset := args[2]
-			if len(baseAsset) == 0 {
-				return fmt.Errorf("%s argument %q: empty", "base_asset", args[2])
+			oracles, err := types.ParseOracles(args[2])
+			if err != nil {
+				return fmt.Errorf("%s argument %q: %w", "oracles", args[2], err)
+			}
+			if len(oracles) == 0 {
+				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[2])
 			}
 
-			quoteAsset := args[3]
-			if len(quoteAsset) == 0 {
-				return fmt.Errorf("%s argument %q: empty", "quote_asset", args[3])
-			}
-
-			token := types.NewAsset(denom, baseAsset, quoteAsset, oracles, true)
+			token := types.NewAsset(denom, oracles, true)
 			if err := token.ValidateBasic(); err != nil {
 				return err
 			}
@@ -160,13 +150,18 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 
 func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "set-asset [nominee_key] [denom] [base_asset] [quote_asset] [oracles]",
-		Example: "wbcli oracle set-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT ETH USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Use:     "set-asset [nominee_key] [denom] [oracles]",
+		Example: "wbcli oracle set-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a set asset",
-		Args:    cobra.ExactArgs(5),
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
+
+			denom := args[1]
+			if len(denom) == 0 {
+				return fmt.Errorf("%s argument %q: empty", "denom", args[1])
+			}
 
 			oracles, err := types.ParseOracles(args[3])
 			if err != nil {
@@ -176,22 +171,7 @@ func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[3])
 			}
 
-			denom := args[1]
-			if len(denom) == 0 {
-				return fmt.Errorf("%s argument %q: empty", "denom", args[1])
-			}
-
-			baseAsset := args[2]
-			if len(baseAsset) == 0 {
-				return fmt.Errorf("%s argument %q: empty", "base_asset", args[2])
-			}
-
-			quoteAsset := args[3]
-			if len(quoteAsset) == 0 {
-				return fmt.Errorf("%s argument %q: empty", "quote_asset", args[3])
-			}
-
-			token := types.NewAsset(denom, baseAsset, quoteAsset, oracles, true)
+			token := types.NewAsset(denom, oracles, true)
 			if err := token.ValidateBasic(); err != nil {
 				return err
 			}

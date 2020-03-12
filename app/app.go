@@ -284,6 +284,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		keys[multisig.StoreKey],
 		cdc,
 		app.msRouter,
+		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
 	)
 
 	// Initializing oracle module

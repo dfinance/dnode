@@ -1,9 +1,11 @@
 package keeper
 
 import (
+	"fmt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"strconv"
 
 	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 )
@@ -45,16 +47,17 @@ func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 }
 
 func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err sdk.Error) {
-	var priceList types.QueryRawPricesResp
 	assetCode := path[0]
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
 		return []byte{}, sdk.ErrUnknownRequest("asset not found")
 	}
 
-	rawPrices := keeper.GetRawPrices(ctx, assetCode)
-	for _, price := range rawPrices {
-		priceList = append(priceList, price.String())
+	blockHeight, blockErr := strconv.ParseInt(path[1], 10, 64)
+	if blockErr != nil {
+		return []byte{}, sdk.ErrUnknownRequest(fmt.Sprintf("invalid blockSize: %v", blockErr))
 	}
+
+	priceList := keeper.GetRawPrices(ctx, assetCode, blockHeight)
 	bz, err2 := codec.MarshalJSONIndent(keeper.cdc, priceList)
 	if err2 != nil {
 		panic("could not marshal result to JSON")

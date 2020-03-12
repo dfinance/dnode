@@ -18,11 +18,15 @@ const (
 )
 
 // QueryRawPricesResp response to a rawprice query
-type QueryRawPricesResp []string
+type QueryRawPricesResp []PostedPrice
 
 // implement fmt.Stringer
 func (n QueryRawPricesResp) String() string {
-	return strings.Join(n[:], "\n")
+	strBuilder := strings.Builder{}
+	for _, v := range n {
+		strBuilder.WriteString(v.String() + "\n")
+	}
+	return strBuilder.String()
 }
 
 // QueryAssetsResp response to a assets query

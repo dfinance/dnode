@@ -2,23 +2,20 @@ package commands
 
 import (
 	"fmt"
-	"os"
-	"path"
-	"time"
-
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"os"
+	"path"
 )
 
 var (
-	flagCfgFile    string
-	flagChainID    string
-	flagFees       string
-	flagGas        uint64
-	flagLogLevel   string
-	flagAPIAddress string
-	flagExpiry     time.Duration
+	flagCfgFile  string
+	flagChainID  string
+	flagFees     string
+	flagGas      uint64
+	flagLogLevel string
+	flagAPIURL   string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -42,10 +39,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagCfgFile, "config", "", "config file (default is $HOME/.oracle-app.yaml)")
 	rootCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "warn", "sets an application log level (trace, debug, info, warn, error, fatal, panic)")
 	rootCmd.PersistentFlags().StringVar(&flagChainID, "chain-id", "wings-testnet", "sets the chain ID")
-	rootCmd.PersistentFlags().StringVar(&flagAPIAddress, "api-address", "127.0.0.1:1317", "sets an address for API requests")
+	rootCmd.PersistentFlags().StringVar(&flagAPIURL, "api-url", "http://127.0.0.1:1317", "sets an URL for API requests")
 	rootCmd.PersistentFlags().StringVar(&flagFees, "fees", "1wings", "sets the transaction fees")
 	rootCmd.PersistentFlags().Uint64Var(&flagGas, "gas", 50000, "sets the gas fees")
-	rootCmd.PersistentFlags().DurationVar(&flagExpiry, "price-expiry", time.Second*30, "sets the price exriration duration")
 }
 
 // initConfig reads in config file and ENV variables if set.
