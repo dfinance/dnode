@@ -106,8 +106,7 @@ func setupTestInput(t *testing.T) testInput {
 	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
 	mstore.MountStoreWithDB(input.keyMs, sdk.StoreTypeIAVL, db)
-	err := mstore.LoadLatestVersion()
-	if err != nil {
+	if err := mstore.LoadLatestVersion(); err != nil {
 		t.Fatal(err)
 	}
 

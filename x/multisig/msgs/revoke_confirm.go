@@ -41,7 +41,6 @@ func (msg MsgRevokeConfirm) ValidateBasic() sdk.Error {
 
 func (msg MsgRevokeConfirm) GetSignBytes() []byte {
 	bc, err := json.Marshal(msg)
-
 	if err != nil {
 		panic(err)
 	}

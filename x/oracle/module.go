@@ -50,6 +50,7 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	if err := ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
 		return err
 	}
+
 	return types.ValidateGenesis(data)
 }
 

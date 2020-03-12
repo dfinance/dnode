@@ -36,8 +36,7 @@ func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msg := msgs.NewMsgDestroyCurrency(args[0], args[1], amount, cliCtx.GetFromAddress(), args[3])
-			err := msg.ValidateBasic()
-			if err != nil {
+			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 

@@ -41,7 +41,6 @@ func (msg MsgConfirmCall) ValidateBasic() sdk.Error {
 
 func (msg MsgConfirmCall) GetSignBytes() []byte {
 	bc, err := json.Marshal(msg)
-
 	if err != nil {
 		panic(err)
 	}
