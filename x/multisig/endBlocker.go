@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/WingsDao/wings-blockchain/x/multisig/types"
 	"github.com/WingsDao/wings-blockchain/x/poa"
 )
 
@@ -16,7 +15,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Eve
 	logger := keeper.getLogger(ctx)
 	resEvents := sdk.NewEventManager()
 
-	start := ctx.BlockHeight() - types.IntervalToExecute
+	start := ctx.BlockHeight() - keeper.GetIntervalToExecute(ctx)
 
 	if start < 0 {
 		start = 0
@@ -80,7 +79,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Eve
 		}
 	}
 
-	if start > types.IntervalToExecute {
+	if start > keeper.GetIntervalToExecute(ctx) {
 		resEvents.EmitEvent(sdk.NewEvent("start-rejected-calls-rem", sdk.Attribute{
 			Key:   "callId",
 			Value: fmt.Sprintf("%d", start),
