@@ -125,11 +125,13 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(
 				fmt.Sprintf("custom/%s/value", queryRoute),
 				bz)
+
 			if err != nil {
 				return err
 			}
 
 			out := types.QueryValueResp{Value: hex.EncodeToString(res)}
+
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -143,6 +145,7 @@ func GetDenomHex(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			hex := hex.EncodeToString([]byte(args[0]))
 			fmt.Printf("Denom in hex: %s\n", hex)
+
 			return nil
 		},
 	}
@@ -160,7 +163,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
 				fmt.Println("Error during reading mvir file.")
-				return err
+				return fmt.Errorf("%s argument %q: %w", "mvirFile", args[0], err)
 			}
 
 			// Mvir file
@@ -176,8 +179,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			err = saveOutput(bytecode, cdc)
-			if err != nil {
+			if err := saveOutput(bytecode, cdc); err != nil {
 				fmt.Println("Error during compiled bytes output.")
 				return err
 			}
@@ -201,7 +203,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
 				fmt.Println("Error during reading mvir file.")
-				return err
+				return fmt.Errorf("%s argument %q: %w", "mvirFile", args[0], err)
 			}
 
 			// Mvir file
@@ -217,8 +219,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			err = saveOutput(bytecode, cdc)
-			if err != nil {
+			if err := saveOutput(bytecode, cdc); err != nil {
 				fmt.Println("Error during compiled bytes output.")
 				return err
 			}

@@ -44,6 +44,7 @@ func (msg MsgPostPrice) Type() string { return TypeMsgPostPrice }
 // GetSignBytes Implements Msg.
 func (msg MsgPostPrice) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
+
 	return sdk.MustSortJSON(bz)
 }
 
@@ -67,6 +68,7 @@ func (msg MsgPostPrice) ValidateBasic() sdk.Error {
 		return sdk.ErrInternal(fmt.Sprintf("out of %d bytes limit for price", PriceBytesLimit))
 	}
 	// TODO check coin denoms
+
 	return nil
 }
 
@@ -99,6 +101,7 @@ func (msg MsgAddOracle) Type() string { return "add_oracle" }
 // GetSignBytes Implements Msg.
 func (msg MsgAddOracle) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
+
 	return sdk.MustSortJSON(bz)
 }
 
@@ -120,6 +123,7 @@ func (msg MsgAddOracle) ValidateBasic() sdk.Error {
 	if msg.Nominee.Empty() {
 		return sdk.ErrInvalidAddress("missing nominee address")
 	}
+
 	return nil
 }
 
@@ -215,8 +219,7 @@ func (msg MsgSetAsset) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
 func (msg MsgSetAsset) ValidateBasic() sdk.Error {
-	err := msg.Asset.ValidateBasic()
-	if err != nil {
+	if err := msg.Asset.ValidateBasic(); err != nil {
 		return err
 	}
 
@@ -267,8 +270,7 @@ func (msg MsgAddAsset) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
 func (msg MsgAddAsset) ValidateBasic() sdk.Error {
-	err := msg.Asset.ValidateBasic()
-	if err != nil {
+	if err := msg.Asset.ValidateBasic(); err != nil {
 		return err
 	}
 

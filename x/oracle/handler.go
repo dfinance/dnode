@@ -40,8 +40,7 @@ func HandleMsgPostPrice(
 	msg types.MsgPostPrice) sdk.Result {
 
 	// TODO cleanup message validation and errors
-	err := k.ValidatePostPrice(ctx, msg)
-	if err != nil {
+	if err := k.ValidatePostPrice(ctx, msg); err != nil {
 		return err.Result()
 	}
 	_, er := k.GetOracle(ctx, msg.AssetCode, msg.From)
@@ -51,6 +50,7 @@ func HandleMsgPostPrice(
 	if _, err := k.SetPrice(ctx, msg.From, msg.AssetCode, msg.Price, msg.ReceivedAt); err != nil {
 		return err.Result()
 	}
+
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
@@ -60,18 +60,16 @@ func handleMsgAddOracle(
 	msg types.MsgAddOracle) sdk.Result {
 
 	// TODO cleanup message validation and errors
-	err := msg.ValidateBasic()
-	if err != nil {
+	if err := msg.ValidateBasic(); err != nil {
 		return err.Result()
 	}
-	_, er := k.GetOracle(ctx, msg.Denom, msg.Oracle)
-	if er == nil {
+	if _, err := k.GetOracle(ctx, msg.Denom, msg.Oracle); err == nil {
 		return types.ErrInvalidOracle(k.Codespace()).Result()
 	}
-	er = k.AddOracle(ctx, msg.Nominee.String(), msg.Denom, msg.Oracle)
-	if er != nil {
-		return sdk.ErrInternal(er.Error()).Result()
+	if err := k.AddOracle(ctx, msg.Nominee.String(), msg.Denom, msg.Oracle); err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
 	}
+
 	return sdk.Result{Events: ctx.EventManager().Events()}
 }
 
@@ -81,8 +79,7 @@ func handleMsgSetOracles(
 	msg types.MsgSetOracles) sdk.Result {
 
 	// TODO cleanup message validation and errors
-	err := msg.ValidateBasic()
-	if err != nil {
+	if err := msg.ValidateBasic(); err != nil {
 		return err.Result()
 	}
 	_, found := k.GetAsset(ctx, msg.Denom)
@@ -102,8 +99,7 @@ func handleMsgSetAsset(
 	msg types.MsgSetAsset) sdk.Result {
 
 	// TODO cleanup message validation and errors
-	err := msg.ValidateBasic()
-	if err != nil {
+	if err := msg.ValidateBasic(); err != nil {
 		return err.Result()
 	}
 	_, found := k.GetAsset(ctx, msg.Denom)
@@ -123,8 +119,7 @@ func handleMsgAddAsset(
 	msg types.MsgAddAsset) sdk.Result {
 
 	// TODO cleanup message validation and errors
-	err := msg.ValidateBasic()
-	if err != nil {
+	if err := msg.ValidateBasic(); err != nil {
 		return err.Result()
 	}
 	_, found := k.GetAsset(ctx, msg.Denom)

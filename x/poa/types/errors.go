@@ -16,32 +16,32 @@ const (
 	CodeNotEnoughValidators sdk.CodeType = 301
 )
 
-// When validator already exists
+// Msg.Validator already exists
 func ErrValidatorExists(address string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeValidatorExists, "validator already exists %s", address)
+	return sdk.NewError(DefaultCodespace, CodeValidatorExists, "%q validator already exists", address)
 }
 
-// When validator doesnt exists
+// Msg.Validator not found
 func ErrValidatorDoesntExists(address string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeValidatorDoesntExist, "validator doesn't exist %s", address)
+	return sdk.NewError(DefaultCodespace, CodeValidatorDoesntExist, "%q validator not found", address)
 }
 
-// When validators maximum limit reached
+// Validators maximum limit reached (on genesis init / add validator request)
 func ErrMaxValidatorsReached(max uint16) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeMaxValidatorsReached, "maxium %d validators reached", max)
+	return sdk.NewError(DefaultCodespace, CodeMaxValidatorsReached, "maximum %d validators reached", max)
 }
 
-// When validators minimum limit reached
+// Validators minimum limit reached (on genesis init / add validator request)
 func ErrMinValidatorsReached(min uint16) sdk.Error {
 	return sdk.NewError(DefaultCodespace, CodeMinValidatorsReached, "minimum %d validators reached", min)
 }
 
-// When validator's ethereum address is wrong
+// Validator's ethereum address is invalid (on validator add / replace)
 func ErrWrongEthereumAddress(address string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeWrongEthereumAddress, "wrong ethereum address %s for validator", address)
+	return sdk.NewError(DefaultCodespace, CodeWrongEthereumAddress, "wrong ethereum address %q for validator", address)
 }
 
-// When not enough validators to initialize genesis
+// Not enough validators to initialize genesis
 func ErrNotEnoungValidators(actual uint16, min uint16) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeNotEnoughValidators, "%d not enough validators to init genesis, min is %d", actual, min)
+	return sdk.NewError(DefaultCodespace, CodeNotEnoughValidators, "%d validators is not enough to init genesis, min is %d", actual, min)
 }

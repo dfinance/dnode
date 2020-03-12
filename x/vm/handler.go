@@ -27,8 +27,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 }
 
 func handleMsgScript(ctx sdk.Context, keeper Keeper, msg MsgExecuteScript) sdk.Result {
-	err := keeper.ExecuteScript(ctx, msg)
-	if err != nil {
+	if err := keeper.ExecuteScript(ctx, msg); err != nil {
 		return err.Result()
 	}
 
@@ -38,8 +37,7 @@ func handleMsgScript(ctx sdk.Context, keeper Keeper, msg MsgExecuteScript) sdk.R
 }
 
 func handleMsgDeploy(ctx sdk.Context, keeper Keeper, msg MsgDeployModule) sdk.Result {
-	err := keeper.DeployContract(ctx, msg)
-	if err != nil {
+	if err := keeper.DeployContract(ctx, msg); err != nil {
 		return err.Result()
 	}
 

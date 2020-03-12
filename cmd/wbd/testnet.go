@@ -403,13 +403,11 @@ func writeFile(name string, dir string, contents []byte) error {
 	writePath := filepath.Join(dir)
 	file := filepath.Join(writePath, name)
 
-	err := cmn.EnsureDir(writePath, 0700)
-	if err != nil {
+	if err := cmn.EnsureDir(writePath, 0700); err != nil {
 		return err
 	}
 
-	err = cmn.WriteFile(file, contents, 0600)
-	if err != nil {
+	if err := cmn.WriteFile(file, contents, 0600); err != nil {
 		return err
 	}
 

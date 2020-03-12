@@ -73,12 +73,12 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return err
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			mvFile, err := GetMVFromFile(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %w", "mvFile", args[0], err)
 			}
 
 			code, err := hex.DecodeString(mvFile.Code)
@@ -135,14 +135,13 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 
 				case vm_grpc.VMTypeTag_Address:
 					// validate address
-					_, err := sdk.AccAddressFromBech32(arg)
-					if err != nil {
+					if _, err := sdk.AccAddressFromBech32(arg); err != nil {
 						return fmt.Errorf("can't parse address argument %s, check address and try again: %s", arg, err.Error())
 					}
 					scriptArgs[i] = types.NewScriptArg(arg, extractedArgs[i])
 
 				case vm_grpc.VMTypeTag_Bool:
-					if arg != "true" || arg != "false" {
+					if arg != "true" && arg != "false" {
 						return fmt.Errorf("%s argument must be bool, means \"true\" or \"false\"", arg)
 					}
 					scriptArgs[i] = types.NewScriptArg(arg, extractedArgs[i])
@@ -162,6 +161,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			}
 
 			cliCtx.WithOutput(os.Stdout)
+
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
@@ -179,12 +179,12 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return err
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			mvFile, err := GetMVFromFile(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %w", "mvFile", args[0], err)
 			}
 
 			code, err := hex.DecodeString(mvFile.Code)
@@ -198,6 +198,7 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 			}
 
 			cliCtx.WithOutput(os.Stdout)
+
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}

@@ -47,10 +47,10 @@ func (AppModuleBasic) DefaultGenesis() json.RawMessage {
 // ValidateGenesis module validate genesis
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	var data types.GenesisState
-	err := ModuleCdc.UnmarshalJSON(bz, &data)
-	if err != nil {
+	if err := ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
 		return err
 	}
+
 	return types.ValidateGenesis(data)
 }
 

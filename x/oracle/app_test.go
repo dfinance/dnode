@@ -172,8 +172,7 @@ func setUpMockAppWithoutGenesis() (*mock.App, oracle.Keeper) {
 	// Register routes
 	mapp.Router().AddRoute("oracle", oracle.NewHandler(oracleKeeper))
 	// Mount and load the stores
-	err := mapp.CompleteSetup(keyOracle)
-	if err != nil {
+	if err := mapp.CompleteSetup(keyOracle); err != nil {
 		panic("mock app setup failed")
 	}
 

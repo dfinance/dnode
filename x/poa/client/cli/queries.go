@@ -70,7 +70,7 @@ func GetValidator(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 			address, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %w", "address", args[0], err)
 			}
 
 			query := types.QueryValidator{
@@ -85,6 +85,7 @@ func GetValidator(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(
 				fmt.Sprintf("custom/%s/validators", queryRoute),
 				bz)
+
 			if err != nil {
 				return err
 			}

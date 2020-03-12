@@ -35,6 +35,7 @@ func (e *Encoder) Encode(v interface{}) error {
 		return err
 	}
 	e.w.Flush()
+
 	return nil
 }
 
@@ -68,6 +69,7 @@ func (e *Encoder) encode(rv reflect.Value, enumVariants map[reflect.Type]int32, 
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -87,6 +89,7 @@ func (e *Encoder) encodeSlice(rv reflect.Value, enumVariants map[reflect.Type]in
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -108,6 +111,7 @@ func (e *Encoder) encodeInterface(rv reflect.Value, enumVariants map[reflect.Typ
 	if err = e.encode(rv, nil, 0); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -163,12 +167,12 @@ func (e *Encoder) encodeStruct(rv reflect.Value) (err error) {
 			return
 		}
 	}
+
 	return nil
 }
 
 func (e *Encoder) encodeMap(rv reflect.Value) (err error) {
-	err = binary.Write(e.w, binary.LittleEndian, uint32(rv.Len()))
-	if err != nil {
+	if err := binary.Write(e.w, binary.LittleEndian, uint32(rv.Len())); err != nil {
 		return err
 	}
 
@@ -215,6 +219,7 @@ func (e *Encoder) getEnumVariants(rv reflect.Value) map[string]map[reflect.Type]
 		}
 		r[ev.Name][evt] = ev.Value
 	}
+
 	return r
 }
 
@@ -224,6 +229,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	if err := e.Encode(v); err != nil {
 		return nil, err
 	}
+
 	return b.Bytes(), nil
 }
 
@@ -240,6 +246,7 @@ func parseTag(tag string) map[string]string {
 		}
 		m[key] = value
 	}
+
 	return m
 }
 
@@ -296,10 +303,10 @@ func NewDecoder(r io.Reader) *Decoder {
 }
 
 func (d *Decoder) Decode(v interface{}) error {
-	err := d.decode(reflect.Indirect(reflect.ValueOf(v)), nil, 0)
-	if err != nil {
+	if err := d.decode(reflect.Indirect(reflect.ValueOf(v)), nil, 0); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -308,14 +315,14 @@ func (d *Decoder) EOF() bool {
 	if err == io.EOF {
 		return true
 	}
+
 	return false
 }
 
 func (d *Decoder) decode(rv reflect.Value, enumVariants map[int32]reflect.Type, fixedLen int) (err error) {
 	if rv.Type() == reflect.TypeOf(sdk.Int{}) {
 		bz := make([]byte, 16)
-		err := binary.Read(d.r, binary.LittleEndian, bz)
-		if err != nil {
+		if err := binary.Read(d.r, binary.LittleEndian, bz); err != nil {
 			return err
 		}
 		LeToBig(bz)
@@ -323,6 +330,7 @@ func (d *Decoder) decode(rv reflect.Value, enumVariants map[int32]reflect.Type, 
 		bigVal.SetBytes(bz)
 
 		rv.Set(reflect.ValueOf(sdk.NewIntFromBigInt(bigVal)))
+
 		return nil
 	}
 
@@ -585,6 +593,7 @@ func (d *Decoder) decodeStruct(rv reflect.Value) (err error) {
 			return
 		}
 	}
+
 	return
 }
 

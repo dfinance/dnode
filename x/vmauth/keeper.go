@@ -20,6 +20,7 @@ type VMAccountKeeper struct {
 // Create new VM keeper.
 func NewVMAccountKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Subspace, vmKeeper vm.VMStorage, proto func() exported.Account) VMAccountKeeper {
 	keeper := auth.NewAccountKeeper(cdc, key, paramstore, proto)
+
 	return VMAccountKeeper{
 		AccountKeeper: &keeper,
 		vmKeeper:      vmKeeper,
@@ -76,6 +77,7 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 // todo: process all vm storage accounts and compare with standard accounts.
 func (keeper VMAccountKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account {
 	accounts := keeper.AccountKeeper.GetAllAccounts(ctx)
+
 	return accounts
 }
 
@@ -97,6 +99,7 @@ func GetSignerAcc(ctx sdk.Context, ak VMAccountKeeper, addr sdk.AccAddress) (exp
 	if acc := ak.GetAccount(ctx, addr); acc != nil {
 		return acc, sdk.Result{}
 	}
+
 	return nil, sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", addr)).Result()
 }
 

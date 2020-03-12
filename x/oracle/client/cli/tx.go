@@ -51,7 +51,7 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 			rawPrice := args[2]
 			price, ok := sdk.NewIntFromString(rawPrice)
 			if !ok {
-				return fmt.Errorf("wrong value for price: %s", rawPrice)
+				return fmt.Errorf("%s argument %q: wrong value for price", "price", args[2])
 			}
 			expiryInt, ok := sdk.NewIntFromString(args[3])
 			if !ok {
@@ -60,10 +60,10 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 			}
 			expiry := tmtime.Canonical(time.Unix(expiryInt.Int64(), 0))
 			msg := types.NewMsgPostPrice(cliCtx.GetFromAddress(), args[1], price, expiry)
-			err := msg.ValidateBasic()
-			if err != nil {
+			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
+
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
@@ -81,7 +81,7 @@ func getCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 
 			oracleAddr, err := sdk.AccAddressFromBech32(args[2])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %w", "oracle_address", args[2], err)
 			}
 
 			msg := types.NewMsgAddOracle(cliCtx.GetFromAddress(), args[1], oracleAddr)
@@ -103,7 +103,7 @@ func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 
 			oracles, err := types.ParseOracles(args[2])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %w", "oracle_addresses", args[2], err)
 			}
 
 			msg := types.NewMsgSetOracles(cliCtx.GetFromAddress(), args[1], oracles)
@@ -125,20 +125,19 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 
 			denom := args[1]
 			if len(denom) == 0 {
-				return fmt.Errorf("invalid denom")
+				return fmt.Errorf("%s argument %q: empty", "denom", args[1])
 			}
 
 			oracles, err := types.ParseOracles(args[2])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %w", "oracles", args[2], err)
 			}
 			if len(oracles) == 0 {
-				return fmt.Errorf("invalid oracles")
+				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[2])
 			}
 
 			token := types.NewAsset(denom, oracles, true)
-			err = token.ValidateBasic()
-			if err != nil {
+			if err := token.ValidateBasic(); err != nil {
 				return err
 			}
 
@@ -152,7 +151,7 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-asset [nominee_key] [denom] [oracles]",
-		Example: "wbcli oracle set-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Example: "wbcli oracle set-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a set asset",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -161,20 +160,19 @@ func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 
 			denom := args[1]
 			if len(denom) == 0 {
-				return fmt.Errorf("invalid denom")
+				return fmt.Errorf("%s argument %q: empty", "denom", args[1])
 			}
 
-			oracles, err := types.ParseOracles(args[2])
+			oracles, err := types.ParseOracles(args[3])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %v", "oracles", args[3], err)
 			}
 			if len(oracles) == 0 {
-				return fmt.Errorf("invalid oracles")
+				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[3])
 			}
 
 			token := types.NewAsset(denom, oracles, true)
-			err = token.ValidateBasic()
-			if err != nil {
+			if err := token.ValidateBasic(); err != nil {
 				return err
 			}
 

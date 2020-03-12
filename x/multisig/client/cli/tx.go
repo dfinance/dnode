@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -27,13 +28,12 @@ func PostConfirmCall(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return err
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			callId, err := strconv.ParseUint(args[0], 10, 8)
-
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: parsing uint: %w", "callId", args[0], err)
 			}
 
 			msg := msMsg.NewMsgConfirmCall(callId, cliCtx.GetFromAddress())
@@ -57,13 +57,12 @@ func PostRevokeConfirm(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return err
+				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			callId, err := strconv.ParseUint(args[0], 10, 8)
-
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: parsing uint: %w", "callId", args[0], err)
 			}
 
 			msg := msMsg.NewMsgRevokeConfirm(callId, cliCtx.GetFromAddress())

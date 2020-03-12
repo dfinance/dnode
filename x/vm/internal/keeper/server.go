@@ -71,9 +71,8 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 	server.Logger().Info(fmt.Sprintf("Get path: %s", types.PathToHex(*path)))
 
 	blob := server.keeper.getValue(server.ctx, path)
-	return &ds_grpc.DSRawResponse{
-		Blob: blob,
-	}, nil
+
+	return &ds_grpc.DSRawResponse{Blob: blob}, nil
 }
 
 // Data source processing request to return multiplay values form storage.
