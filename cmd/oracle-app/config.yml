@@ -1,10 +1,19 @@
 exchanges:
   - binance:
-      - code: ETH_USDT
+      - code: eth_usdt
         pair:
           base: ETH
           quote: USDT
-      - code: BTC_USDT
+      - code: btc_usdt
         pair:
           base: BTC
           quote: USDT
+  - wings:
+      - code: wings_eth
+        pair:
+          base: wings
+          quote: eth
+      - code: eth_wings
+        pair:
+          base: eth
+          quote: wings

@@ -123,8 +123,6 @@ func TestApp_PostPrice(t *testing.T) {
 	oracleParams.Assets = oracle.Assets{
 		oracle.Asset{
 			AssetCode:  "uftm",
-			BaseAsset:  "uftm",
-			QuoteAsset: "ucsdt",
 			Oracles: oracle.Oracles{
 				oracle.Oracle{
 					Address: addrs[0],
@@ -138,7 +136,7 @@ func TestApp_PostPrice(t *testing.T) {
 	_, _ = keeper.SetPrice(
 		ctx, addrs[0], "uftm",
 		sdk.NewInt(100000000),
-		time.Now().Add(time.Hour*1))
+		time.Now())
 	_ = keeper.SetCurrentPrices(ctx)
 	mapp.EndBlock(abci.RequestEndBlock{})
 	mapp.Commit()

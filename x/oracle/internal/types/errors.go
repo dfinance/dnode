@@ -20,6 +20,8 @@ const (
 	CodeInvalidAsset sdk.CodeType = 4
 	// CodeInvalidOracle error code for invalid oracle
 	CodeInvalidOracle sdk.CodeType = 5
+	// CodeInvalidReceivedAt error code for invalid prices receivedAt timestamp
+	CodeInvalidReceivedAt sdk.CodeType = 6
 )
 
 // ErrEmptyInput Error constructor
@@ -30,6 +32,11 @@ func ErrEmptyInput(codespace sdk.CodespaceType) sdk.Error {
 // ErrExpired Error constructor for posted price messages with expired price
 func ErrExpired(codespace sdk.CodespaceType) sdk.Error {
 	return sdk.NewError(codespace, CodeExpired, fmt.Sprintf("Price is expired."))
+}
+
+// ErrInvalidReceivedAt Error constructor for posted price messages with invalid receivedAt timestamp
+func ErrInvalidReceivedAt(codespace sdk.CodespaceType, comment string) sdk.Error {
+	return sdk.NewError(codespace, CodeInvalidReceivedAt, fmt.Sprintf("Invalid receivedAt: %s.", comment))
 }
 
 // ErrNoValidPrice Error constructor for posted price messages with expired price

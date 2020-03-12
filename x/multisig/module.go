@@ -133,6 +133,5 @@ func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.V
 
 // Export genesis.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	genesisState := app.msKeeper.ExportGenesis(ctx)
-	return ModuleCdc.MustMarshalJSON(genesisState)
+	return nil
 }

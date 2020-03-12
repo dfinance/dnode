@@ -48,7 +48,7 @@ func HandleMsgPostPrice(
 	if er != nil {
 		return types.ErrInvalidOracle(k.Codespace()).Result()
 	}
-	if _, err := k.SetPrice(ctx, msg.From, msg.AssetCode, msg.Price, msg.Expiry); err != nil {
+	if _, err := k.SetPrice(ctx, msg.From, msg.AssetCode, msg.Price, msg.ReceivedAt); err != nil {
 		return err.Result()
 	}
 	return sdk.Result{Events: ctx.EventManager().Events()}

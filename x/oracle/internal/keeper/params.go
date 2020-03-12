@@ -43,7 +43,7 @@ func (k Keeper) GetOracles(ctx sdk.Context, assetCode string) (types.Oracles, er
 	return types.Oracles{}, fmt.Errorf("asset %s not found", assetCode)
 }
 
-// AddOracle adds the oracle to the oracle store
+// AddOracle adds the oracle to the oracle store for specific assetCode
 func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode string, address sdk.AccAddress) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("not a valid nominee %s", nominee)
@@ -73,6 +73,7 @@ func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode string, add
 	return fmt.Errorf("asset %s not found", assetCode)
 }
 
+// SetOracles sets the oracle store for specific assetCode
 func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode string, addresses types.Oracles) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("not a valid nominee %s", nominee)
@@ -97,6 +98,7 @@ func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode string, ad
 	return fmt.Errorf("asset %s not found", assetCode)
 }
 
+// SetAsset overwrites existing asset for specific assetCode
 func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode string, asset types.Asset) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("not a valid nominee %s", nominee)
@@ -120,8 +122,9 @@ func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode string, asse
 	return fmt.Errorf("asset %s not found", assetCode)
 }
 
-// AddOracle returns the oracle in the oracle store
+// AddAsset adds non-existing asset to the store
 func (k Keeper) AddAsset(ctx sdk.Context, nominee string, assetCode string, asset types.Asset) error {
+	// TODO: assetCode input can be obtained from asset.AssetCode input, so might be excessive
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("not a valid nominee %s", nominee)
 	}
@@ -138,7 +141,7 @@ func (k Keeper) AddAsset(ctx sdk.Context, nominee string, assetCode string, asse
 	return nil
 }
 
-// GetOracle returns the oracle from the store or an error if not found
+// GetOracle returns the oracle from the store or an error if not found for specific assetCode
 func (k Keeper) GetOracle(ctx sdk.Context, assetCode string, address sdk.AccAddress) (types.Oracle, error) {
 	oracles, err := k.GetOracles(ctx, assetCode)
 	if err != nil {

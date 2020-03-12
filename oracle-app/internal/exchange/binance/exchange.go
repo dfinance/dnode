@@ -2,10 +2,10 @@ package binance
 
 import (
 	"fmt"
-	"sync"
-
 	goex "github.com/nntaoli-project/GoEx"
 	ws "github.com/nntaoli-project/GoEx/binance"
+	"sync"
+	"time"
 
 	. "github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
 )
@@ -52,7 +52,11 @@ func (e *exchange) tickerHandler(t *goex.Ticker) {
 		e.lp.Store(t.Pair.String(), price)
 	}
 	select {
-	case out.(chan Ticker) <- NewTicker(NewAsset(fmt.Sprintf("%s_%s", pair.BaseAsset, pair.QuoteAsset), pair), price, exchangeName):
+	case out.(chan Ticker) <- NewTicker(
+		NewAsset(fmt.Sprintf("%s_%s", pair.BaseAsset, pair.QuoteAsset), pair),
+		price,
+		exchangeName,
+		ConvertTickerUnixMsTime(t.Date, time.Now().UTC(), 1*time.Hour)):
 	default:
 	}
 }

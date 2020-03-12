@@ -46,115 +46,137 @@ func NewKeeper(
 	}
 }
 
+// TODO: define the logic (example is commented out)
+func (k Keeper) checkPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.Time) sdk.Error {
+	//const thresholdDur = 1 * time.Minute
+	//
+	//absDuration := func(dur time.Duration) time.Duration {
+	//	if dur < 0 {
+	//		return -dur
+	//	}
+	//	return dur
+	//}
+	//
+	//blockTime := ctx.BlockTime()
+	//diffDur := blockTime.Sub(receivedAt)
+	//if absDuration(diffDur) > thresholdDur {
+	//	return types.ErrInvalidReceivedAt(k.codespace, fmt.Sprintf("timestamp difference %v should be less than %v", diffDur, thresholdDur))
+	//}
+
+	return nil
+}
+
 // SetPrice updates the posted price for a specific oracle
 func (k Keeper) SetPrice(
 	ctx sdk.Context,
 	oracle sdk.AccAddress,
 	assetCode string,
 	price sdk.Int,
-	expiry time.Time) (types.PostedPrice, sdk.Error) {
-	// If the expiry is greater than or equal to the current blockheight, we consider the price valid
-	if expiry.After(ctx.BlockTime()) {
-		store := ctx.KVStore(k.storeKey)
-		prices := k.GetRawPrices(ctx, assetCode)
-		var index int
-		found := false
-		for i := range prices {
-			if prices[i].OracleAddress.Equals(oracle) {
-				index = i
-				found = true
-				break
-			}
-		}
-		// set the price for that particular oracle
-		if found {
-			prices[index] = types.PostedPrice{
-				AssetCode: assetCode, OracleAddress: oracle,
-				Price: price, Expiry: expiry}
-		} else {
-			prices = append(prices, types.PostedPrice{
-				AssetCode: assetCode, OracleAddress: oracle,
-				Price: price, Expiry: expiry})
-			index = len(prices) - 1
-		}
+	receivedAt time.Time) (types.PostedPrice, sdk.Error) {
 
-		store.Set(
-			[]byte(types.RawPriceFeedPrefix+assetCode), k.cdc.MustMarshalBinaryBare(prices),
-		)
-
-		return prices[index], nil
+	// validate price receivedAt timestamp comparing to the current blockHeight timestamp
+	if err := k.checkPriceReceivedAtTimestamp(ctx, receivedAt); err != nil {
+		return types.PostedPrice{}, err
 	}
-	return types.PostedPrice{}, types.ErrExpired(k.codespace)
 
+	// find raw price for specified oracle
+	store := ctx.KVStore(k.storeKey)
+	prices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
+	var index int
+	found := false
+	for i := range prices {
+		if prices[i].OracleAddress.Equals(oracle) {
+			index = i
+			found = true
+			break
+		}
+	}
+
+	// set the rawPrice for that particular oracle
+	if found {
+		prices[index] = types.PostedPrice{
+			AssetCode: assetCode, OracleAddress: oracle,
+			Price: price, ReceivedAt: receivedAt}
+	} else {
+		prices = append(prices, types.PostedPrice{
+			AssetCode: assetCode, OracleAddress: oracle,
+			Price: price, ReceivedAt: receivedAt})
+		index = len(prices) - 1
+	}
+
+	store.Set(
+		types.GetRawPricesKey(assetCode, ctx.BlockHeight()), k.cdc.MustMarshalBinaryBare(prices),
+	)
+
+	return prices[index], nil
 }
 
-// SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs
+// SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs and cleans up previous inputs
 func (k Keeper) SetCurrentPrices(ctx sdk.Context) sdk.Error {
+	store := ctx.KVStore(k.storeKey)
 	assets := k.GetAssetParams(ctx)
-	for _, v := range assets {
 
+	for _, v := range assets {
 		assetCode := v.AssetCode
-		prices := k.GetRawPrices(ctx, assetCode)
-		var notExpiredPrices []types.CurrentPrice
-		// filter out expired prices
-		for _, x := range prices {
-			if x.Expiry.After(ctx.BlockTime()) {
-				notExpiredPrices = append(notExpiredPrices, types.CurrentPrice{
-					AssetCode: x.AssetCode,
-					Price:     x.Price,
-				})
-			}
-		}
-		l := len(notExpiredPrices)
+		rawPrices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
+
+		l := len(rawPrices)
 		var medianPrice sdk.Int
+		var medianReceivedAt time.Time
 		// TODO make threshold for acceptance (ie. require 51% of oracles to have posted valid prices
 		if l == 0 {
 			// Error if there are no valid prices in the raw oracle
 			//return types.ErrNoValidPrice(k.codespace)
-			medianPrice = sdk.NewInt(0)
+			medianPrice = sdk.ZeroInt()
 		} else if l == 1 {
-
 			// Return immediately if there's only one price
-			medianPrice = notExpiredPrices[0].Price
+			medianPrice, medianReceivedAt = rawPrices[0].Price, rawPrices[0].ReceivedAt
 		} else {
 			// sort the prices
-			sort.Slice(notExpiredPrices, func(i, j int) bool {
-				return notExpiredPrices[i].Price.LT(notExpiredPrices[j].Price)
+			sort.Slice(rawPrices, func(i, j int) bool {
+				return rawPrices[i].Price.LT(rawPrices[j].Price)
 			})
 			// If there's an even number of prices
 			if l%2 == 0 {
 				// TODO make sure this is safe.
 				// Since it's a price and not a blance, division with precision loss is OK.
-				price1 := notExpiredPrices[l/2-1].Price
-				price2 := notExpiredPrices[l/2].Price
+				price1 := rawPrices[l/2-1].Price
+				price2 := rawPrices[l/2].Price
 				sum := price1.Add(price2)
 				divsor := sdk.NewInt(2)
 				medianPrice = sum.Quo(divsor)
+				medianReceivedAt = ctx.BlockTime().UTC()
 			} else {
 				// integer division, so we'll get an integer back, rounded down
-				medianPrice = notExpiredPrices[l/2].Price
+				medianPrice, medianReceivedAt = rawPrices[l/2].Price, rawPrices[l/2].ReceivedAt
 			}
 		}
 
-		store := ctx.KVStore(k.storeKey)
+		// check if there is no rawPrices or medianPrice is invalid
+		if medianPrice.IsZero() {
+			continue
+		}
+
+		// check new price for the asset appeared, no need to update after every block
 		oldPrice := k.GetCurrentPrice(ctx, assetCode)
-
-		// Only update if there is a price or expiry change, no need to update after every block
-		if oldPrice.AssetCode == "" || !oldPrice.Price.Equal(medianPrice) {
-
-			newPrice := types.CurrentPrice{
-				AssetCode: assetCode,
-				Price:     medianPrice,
-			}
-
-			store.Set(
-				[]byte(types.CurrentPricePrefix+assetCode), k.cdc.MustMarshalBinaryBare(newPrice),
-			)
-
-			// save price to vm storage
-			accessPath := k.vmKeeper.GetOracleAccessPath(newPrice.AssetCode)
-			k.vmKeeper.SetValue(ctx, accessPath, helpers.BigToBytes(newPrice.Price, types.PriceBytesLimit))
+		if oldPrice.AssetCode != "" && oldPrice.Price.Equal(medianPrice) {
+			continue
 		}
+
+		// set the new price for the asset
+		newPrice := types.CurrentPrice{
+			AssetCode:  assetCode,
+			Price:      medianPrice,
+			ReceivedAt: medianReceivedAt,
+		}
+
+		store.Set(
+			[]byte(types.CurrentPricePrefix+assetCode), k.cdc.MustMarshalBinaryBare(newPrice),
+		)
+
+		// save price to vm storage
+		accessPath := k.vmKeeper.GetOracleAccessPath(newPrice.AssetCode)
+		k.vmKeeper.SetValue(ctx, accessPath, helpers.BigToBytes(newPrice.Price, types.PriceBytesLimit))
 	}
 
 	return nil
@@ -170,10 +192,10 @@ func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode string) types.Current
 	return price
 }
 
-// GetRawPrices fetches the set of all prices posted by oracles for an asset
-func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode string) []types.PostedPrice {
+// GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight
+func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode string, blockHeight int64) []types.PostedPrice {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get([]byte(types.RawPriceFeedPrefix + assetCode))
+	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
 	var prices []types.PostedPrice
 	k.cdc.MustUnmarshalBinaryBare(bz, &prices)
 	return prices
