@@ -16,7 +16,6 @@ func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 
 	types.ModuleCdc.MustUnmarshalJSON(data, &state)
 
-	stateWriteSetPaths := make([]vm_grpc.VMAccessPath, 0, len(state.WriteSet))
 	for _, genWriteOp := range state.WriteSet {
 		bzAddr, err := hex.DecodeString(genWriteOp.Address)
 		if err != nil {
@@ -39,34 +38,19 @@ func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 		}
 
 		keeper.setValue(ctx, accessPath, bzValue)
-		stateWriteSetPaths = append(stateWriteSetPaths, *accessPath)
 	}
 
+	// "data" variable can't be used directly as it might contain extra JSON fields
 	store := ctx.KVStore(keeper.storeKey)
-	store.Set(types.KeyGenesisInitialized, []byte{1})
-	store.Set(types.KeyGenesisWriteSetPaths, types.ModuleCdc.MustMarshalJSON(stateWriteSetPaths))
+	store.Set(types.KeyGenesis, types.ModuleCdc.MustMarshalJSON(state))
 }
 
 func (keeper Keeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
-	state := types.GenesisState{}
 	store := ctx.KVStore(keeper.storeKey)
+	state := types.GenesisState{}
 
-	if !store.Has(types.KeyGenesisInitialized) {
-		return state
-	}
-	if !store.Has(types.KeyGenesisWriteSetPaths) {
-		return state
-	}
-
-	var writeSetPaths []vm_grpc.VMAccessPath
-	types.ModuleCdc.MustUnmarshalJSON(store.Get(types.KeyGenesisWriteSetPaths), &writeSetPaths)
-	for _, path := range writeSetPaths {
-		writeSet := types.GenesisWriteOp{
-			Address: hex.EncodeToString(path.Address),
-			Path:    hex.EncodeToString(path.Path),
-			Value:   hex.EncodeToString(keeper.getValue(ctx, &path)),
-		}
-		state.WriteSet = append(state.WriteSet, writeSet)
+	if store.Has(types.KeyGenesis) {
+		types.ModuleCdc.MustUnmarshalJSON(store.Get(types.KeyGenesis), &state)
 	}
 
 	return state

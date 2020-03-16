@@ -30,10 +30,9 @@ const (
 
 // VM related variables.
 var (
-	KeyGenesisInitialized   = []byte("gen_init")           // used for "genesis inited" flag
-	KeyGenesisWriteSetPaths = []byte("gen_writeset_paths") // used to save WriteSet paths on InitGenesis (to separate from other WriteSets)
-	KeyDelimiter            = []byte(":")
-	VMKey                   = []byte("vm")
+	KeyGenesis   = []byte("gen") // used to save genesis
+	KeyDelimiter = []byte(":")
+	VMKey        = []byte("vm")
 )
 
 // Type of Move contract (bytes).
