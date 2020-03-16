@@ -2,13 +2,11 @@ package commands
 
 import (
 	"fmt"
-	"os"
-	"path"
-	"time"
-
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"os"
+	"path"
 )
 
 var (
@@ -18,7 +16,6 @@ var (
 	flagGas      uint64
 	flagLogLevel string
 	flagAPIURL   string
-	flagExpiry   time.Duration
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -45,7 +42,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagAPIURL, "api-url", "http://127.0.0.1:1317", "sets an URL for API requests")
 	rootCmd.PersistentFlags().StringVar(&flagFees, "fees", "1wings", "sets the transaction fees")
 	rootCmd.PersistentFlags().Uint64Var(&flagGas, "gas", 50000, "sets the gas fees")
-	rootCmd.PersistentFlags().DurationVar(&flagExpiry, "price-expiry", time.Second*30, "sets the price exriration duration")
 }
 
 // initConfig reads in config file and ENV variables if set.

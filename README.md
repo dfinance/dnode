@@ -31,9 +31,18 @@ Other repositories related to Peg Zones could be found at [project page](https:/
 
 Before we start you should have a correct 'GOPATH', 'GOROOT' environment variables.
 
+Required:
+
+    * golang 1.13.8 or later.
+    * protoc - can be installed by [instruction](https://www.grpc.io/docs/quickstart/go/).
+    
 To install fetch this repository:
 
-    git clone git@github.com:WingsDao/blockchain-relay-layer.git
+    git clone --recurse-submodules https://github.com/WingsDao/wings-blockchain
+
+Let's build proto files:
+
+    make protos
 
 And let's build both daemon and cli:
 
@@ -49,9 +58,18 @@ Both commands must execute fine, after it you can run both daemon and cli:
 
 To install both cli and daemon as binaries you can use Makefile:
 
-    make install
+    make install 
 
-So after this command both `wbd` and `wbcli` will be available from console.
+So after this command both `wbd` and `wbcli` will be available from console
+
+    wbd version --long
+    wbcli version --long
+
+If you want to install specific application (not everything), you always can do:
+
+    make protos install-wbd
+    make protos install-wbcli
+    make protos install-oracleapp
 
 # Usage
 
@@ -92,12 +110,15 @@ It should be done before next commands, so see tutorial **[how to initialize gen
     wbd add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
     wbd add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
 
-Replace expressions in brackets with correct addresses, include Ethereum addresses, configure chain by Cosmos SDK documentation:
+Replace expressions in brackets with correct addresses, include Ethereum addresses.
+
+Now configure cli:
 
     wbcli config chain-id wings-testnet
     wbcli config output json
     wbcli config indent true
     wbcli config trust-node true
+    wbcli config compiler 127.0.0.1:50053
 
 Time to change denom in PoS configuration.
 So open `~/.wbd/config/genesis.json` and find this stake settings:
@@ -467,7 +488,7 @@ To launch tests run:
 
 # Contributors
 
-This project has the [following contributors](https://github.com/WingsDao/griffin-consensus-poc/graphs/contributors).
+This project has the [following contributors](https://github.com/WingsDao/wings-blockchain/graphs/contributors).
 
 To help project you always can open [issue](https://github.com/WingsDao/wings-blockchain/pulls) or fork, do changes in your own fork and open [pull request](https://github.com/WingsDao/wings-blockchain/pulls).
 

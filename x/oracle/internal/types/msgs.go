@@ -15,10 +15,10 @@ const (
 // MsgPostPrice struct representing a posted price message.
 // Used by oracles to input prices to the oracle
 type MsgPostPrice struct {
-	From      sdk.AccAddress `json:"from" yaml:"from"`
-	AssetCode string         `json:"asset_code" yaml:"asset_code"`
-	Price     sdk.Int        `json:"price" yaml:"price"`
-	Expiry    time.Time      `json:"expiry" yaml:"expiry"`
+	From       sdk.AccAddress `json:"from" yaml:"from"`
+	AssetCode  string         `json:"asset_code" yaml:"asset_code"`
+	Price      sdk.Int        `json:"price" yaml:"price"`
+	ReceivedAt time.Time      `json:"received_at" yaml:"received_at"`
 }
 
 // NewMsgPostPrice creates a new post price msg
@@ -26,12 +26,12 @@ func NewMsgPostPrice(
 	from sdk.AccAddress,
 	assetCode string,
 	price sdk.Int,
-	expiry time.Time) MsgPostPrice {
+	receivedAt time.Time) MsgPostPrice {
 	return MsgPostPrice{
-		From:      from,
-		AssetCode: assetCode,
-		Price:     price,
-		Expiry:    expiry,
+		From:       from,
+		AssetCode:  assetCode,
+		Price:      price,
+		ReceivedAt: receivedAt,
 	}
 }
 
@@ -44,6 +44,7 @@ func (msg MsgPostPrice) Type() string { return TypeMsgPostPrice }
 // GetSignBytes Implements Msg.
 func (msg MsgPostPrice) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
+
 	return sdk.MustSortJSON(bz)
 }
 
@@ -67,6 +68,7 @@ func (msg MsgPostPrice) ValidateBasic() sdk.Error {
 		return sdk.ErrInternal(fmt.Sprintf("out of %d bytes limit for price", PriceBytesLimit))
 	}
 	// TODO check coin denoms
+
 	return nil
 }
 
@@ -99,6 +101,7 @@ func (msg MsgAddOracle) Type() string { return "add_oracle" }
 // GetSignBytes Implements Msg.
 func (msg MsgAddOracle) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
+
 	return sdk.MustSortJSON(bz)
 }
 
@@ -120,6 +123,7 @@ func (msg MsgAddOracle) ValidateBasic() sdk.Error {
 	if msg.Nominee.Empty() {
 		return sdk.ErrInvalidAddress("missing nominee address")
 	}
+
 	return nil
 }
 
@@ -215,8 +219,7 @@ func (msg MsgSetAsset) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
 func (msg MsgSetAsset) ValidateBasic() sdk.Error {
-	err := msg.Asset.ValidateBasic()
-	if err != nil {
+	if err := msg.Asset.ValidateBasic(); err != nil {
 		return err
 	}
 
@@ -267,8 +270,7 @@ func (msg MsgAddAsset) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
 func (msg MsgAddAsset) ValidateBasic() sdk.Error {
-	err := msg.Asset.ValidateBasic()
-	if err != nil {
+	if err := msg.Asset.ValidateBasic(); err != nil {
 		return err
 	}
 

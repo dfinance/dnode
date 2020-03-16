@@ -45,7 +45,7 @@ func main() {
 	// Construct Root Command
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
-		client.ConfigCmd(app.DefaultCLIHome),
+		wbConfig.ConfigCmd(app.DefaultCLIHome),
 		queryCmd(cdc),
 		txCmd(cdc),
 		client.LineBreak,
@@ -60,8 +60,7 @@ func main() {
 	)
 
 	executor := cli.PrepareMainCmd(rootCmd, "WB", app.DefaultCLIHome)
-	err := executor.Execute()
-	if err != nil {
+	if err := executor.Execute(); err != nil {
 		panic(err)
 	}
 }
@@ -140,5 +139,6 @@ func initConfig(cmd *cobra.Command) error {
 	if err := viper.BindPFlag(cli.EncodingFlag, cmd.PersistentFlags().Lookup(cli.EncodingFlag)); err != nil {
 		return err
 	}
+
 	return viper.BindPFlag(cli.OutputFlag, cmd.PersistentFlags().Lookup(cli.OutputFlag))
 }

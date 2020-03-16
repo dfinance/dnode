@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -30,10 +31,9 @@ func AddOracleNomeneesCmd(ctx *server.Context, cdc *codec.Codec,
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
 			addresses := strings.Split(args[0], ",")
-			for _, a := range addresses {
-				_, err := sdk.AccAddressFromBech32(a)
-				if err != nil {
-					return err
+			for i, a := range addresses {
+				if _, err := sdk.AccAddressFromBech32(a); err != nil {
+					return fmt.Errorf("%q address at index %d: %w", a, i, err)
 				}
 			}
 

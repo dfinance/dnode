@@ -9,14 +9,12 @@ import (
 
 // Confirm call.
 func (keeper Keeper) Confirm(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
-	err := keeper.storeVote(ctx, id, address)
-	return err
+	return keeper.storeVote(ctx, id, address)
 }
 
 // Revoke confirmation from call.
 func (keeper Keeper) RevokeConfirmation(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
-	err := keeper.revokeVote(ctx, id, address)
-	return err
+	return keeper.revokeVote(ctx, id, address)
 }
 
 // Get votes for specific call.
@@ -38,6 +36,7 @@ func (keeper Keeper) GetVotes(ctx sdk.Context, id uint64) (types.Votes, sdk.Erro
 // Get message confirmations.
 func (keeper Keeper) GetConfirmations(ctx sdk.Context, id uint64) (uint64, sdk.Error) {
 	votes, err := keeper.GetVotes(ctx, id)
+
 	return uint64(len(votes)), err
 }
 
@@ -90,6 +89,7 @@ func (keeper Keeper) storeVote(ctx sdk.Context, id uint64, address sdk.AccAddres
 	if !store.Has(types.GetKeyVotesById(id)) {
 		votes := types.Votes{address}
 		store.Set(types.GetKeyVotesById(id), keeper.cdc.MustMarshalBinaryBare(votes))
+
 		return nil
 	}
 

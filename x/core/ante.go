@@ -181,8 +181,7 @@ func processSig(
 		return nil, res
 	}
 
-	err := acc.SetPubKey(pubKey)
-	if err != nil {
+	if err := acc.SetPubKey(pubKey); err != nil {
 		return nil, sdk.ErrInternal("setting PubKey on signer's account").Result()
 	}
 

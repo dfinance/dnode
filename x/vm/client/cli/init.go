@@ -3,6 +3,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -28,7 +29,7 @@ func GenesisWSFromFile(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 
 			file, err := os.Open(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %w", "writeSetJsonFile", args[0], err)
 			}
 			defer file.Close()
 
@@ -62,6 +63,7 @@ func GenesisWSFromFile(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 			}
 
 			genDoc.AppState = appStateJson
+
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		},
 	}

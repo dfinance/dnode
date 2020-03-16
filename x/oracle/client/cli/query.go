@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -52,15 +53,22 @@ func GetCmdCurrentPrice(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdRawPrices queries the current price of an asset
 func GetCmdRawPrices(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "rawprices [assetCode]",
+		Use:   "rawprices [assetCode] [blockHeight]",
 		Short: "get the raw oracle prices for an asset",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
 			assetCode := args[0]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/rawprices/%s", queryRoute, assetCode), nil)
+
+			blockHeight, err := strconv.ParseInt(args[1], 10, 64)
 			if err != nil {
-				fmt.Printf("could not get raw prices for - %s \n", string(assetCode))
+				return fmt.Errorf("%s argument %q not a number: %v", "blockHeight", args[1], err)
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/rawprices/%s/%d", queryRoute, assetCode, blockHeight), nil)
+			if err != nil {
+				fmt.Printf("could not get raw prices for - %s/%d \n", assetCode, blockHeight)
 				return nil
 			}
 

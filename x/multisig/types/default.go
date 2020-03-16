@@ -12,10 +12,9 @@ import (
 const (
 	ModuleName = "multisig"
 
-	RouterKey        = ModuleName
-	DefaultCodespace = ModuleName
-
-	IntervalToExecute int64 = 86400 // interval in blocks to execute proposal.
+	RouterKey         = ModuleName
+	DefaultCodespace  = ModuleName
+	DefaultParamspace = ModuleName
 )
 
 // Storage keys.
@@ -60,4 +59,9 @@ func GetPrefixQueue(height int64) []byte {
 		PrefixQueue,
 		sdk.Uint64ToBigEndian(uint64(height)),
 	}, KeyDelimiter)
+}
+
+// Genesis state parameters contains genesis data.
+type GenesisState struct {
+	Parameters Params `json:"parameters"`
 }

@@ -3,7 +3,6 @@ package cli
 
 import (
 	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,15 +26,14 @@ func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Com
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
 			valAddr, err := sdk.AccAddressFromBech32(args[0])
-
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %w", "address", args[0], err)
 			}
 
 			ethAddress := args[1]
 
 			if !helpers.IsEthereumAddress(ethAddress) {
-				return fmt.Errorf("%s is not an ethereum address", ethAddress)
+				return fmt.Errorf("%s argument %q is not an ethereum address", "ethAddress", ethAddress)
 			}
 
 			// retrieve the app state
@@ -50,7 +48,7 @@ func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Com
 
 			for _, val := range genesisState.PoAValidators {
 				if val.Address.Equals(valAddr) || ethAddress == val.EthAddress {
-					return fmt.Errorf("gensis file already contains validator with such addresses %s %s", val.Address, val.EthAddress)
+					return fmt.Errorf("gensis file already contains validator with addresses %q / %q", val.Address.String(), val.EthAddress)
 				}
 			}
 
@@ -73,6 +71,7 @@ func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Com
 			}
 
 			genDoc.AppState = appStateJson
+
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		},
 	}

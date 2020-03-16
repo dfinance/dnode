@@ -62,6 +62,7 @@ func handleMsMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemo
 	}
 
 	keeper.RemoveValidator(ctx, msg.Address)
+
 	return nil
 }
 
@@ -76,5 +77,6 @@ func handleMsMsgReplaceValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRep
 	}
 
 	keeper.ReplaceValidator(ctx, msg.OldValidator, msg.NewValidator, msg.EthAddress)
+
 	return nil
 }

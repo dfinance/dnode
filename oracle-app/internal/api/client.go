@@ -95,7 +95,7 @@ func (c *Client) PostPrice(t exchange.Ticker) error {
 		WithAccountNumber(acc.AccountNumber).
 		WithSequence(acc.Sequence).
 		WithChainID(c.chainID).
-		BuildAndSign(c.accName, c.passPhrase, []sdk.Msg{oracle.NewMsgPostPrice(acc.Address, t.Asset.Code, intPrice, time.Now().Add(time.Hour))})
+		BuildAndSign(c.accName, c.passPhrase, []sdk.Msg{oracle.NewMsgPostPrice(acc.Address, t.Asset.Code, intPrice, t.ReceivedAt)})
 	if err != nil {
 		return err
 	}

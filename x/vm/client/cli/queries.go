@@ -1,7 +1,6 @@
 package cli
 
 import (
-	connContext "context"
 	"encoding/hex"
 	"fmt"
 	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
@@ -12,14 +11,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 	"io/ioutil"
 	"os"
-)
-
-const (
-	FlagOutput       = "to-file"
-	FlagCompilerAddr = "compiler"
 )
 
 // Get query commands for VM module.
@@ -35,7 +28,7 @@ func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
 	)
 
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(FlagCompilerAddr, "127.0.0.1:50053", "--compiler 127.0.0.1:50053")
+		cmd.Flags().String(FlagCompilerAddr, FlagCompilerDefault, FlagCompilerUsage)
 		cmd.Flags().String(FlagOutput, "", "--to-file ./compiled.mv")
 	}
 
@@ -52,11 +45,6 @@ func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
 	return queries
 }
 
-// Create connection to virtual machine.
-func createVMConn() (*grpc.ClientConn, error) {
-	return grpc.Dial(viper.GetString(FlagCompilerAddr), grpc.WithInsecure())
-}
-
 // Read mvir file by file path.
 func readMvirFile(filePath string) ([]byte, error) {
 	file, err := os.Open(filePath)
@@ -66,35 +54,6 @@ func readMvirFile(filePath string) ([]byte, error) {
 	defer file.Close()
 
 	return ioutil.ReadAll(file)
-}
-
-func compile(sourceFile *vm_grpc.MvIrSourceFile) ([]byte, bool) {
-	conn, err := createVMConn()
-	if err != nil {
-		fmt.Printf("Compilation failed because of error during connection to VM: %s\n", err.Error())
-		return nil, false
-	}
-	defer conn.Close()
-
-	client := vm_grpc.NewVMCompilerClient(conn)
-	connCtx := connContext.Background()
-
-	resp, err := client.Compile(connCtx, sourceFile)
-	if err != nil {
-		fmt.Printf("Compilation failed because of error during compilation and connection to VM: %s\n", err.Error())
-		return nil, false
-	}
-
-	// if contains errors
-	if len(resp.Errors) > 0 {
-		for _, err := range resp.Errors {
-			fmt.Printf("Error from compiler: %s\n", err)
-		}
-		fmt.Println("Compilation failed because of errors from compiler.")
-		return nil, false
-	}
-
-	return resp.Bytecode, true
 }
 
 // Save output to stdout or file after compilation.
@@ -166,11 +125,13 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(
 				fmt.Sprintf("custom/%s/value", queryRoute),
 				bz)
+
 			if err != nil {
 				return err
 			}
 
 			out := types.QueryValueResp{Value: hex.EncodeToString(res)}
+
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -184,6 +145,7 @@ func GetDenomHex(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			hex := hex.EncodeToString([]byte(args[0]))
 			fmt.Printf("Denom in hex: %s\n", hex)
+
 			return nil
 		},
 	}
@@ -201,7 +163,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
 				fmt.Println("Error during reading mvir file.")
-				return err
+				return fmt.Errorf("%s argument %q: %w", "mvirFile", args[0], err)
 			}
 
 			// Mvir file
@@ -217,8 +179,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			err = saveOutput(bytecode, cdc)
-			if err != nil {
+			if err := saveOutput(bytecode, cdc); err != nil {
 				fmt.Println("Error during compiled bytes output.")
 				return err
 			}
@@ -242,7 +203,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
 				fmt.Println("Error during reading mvir file.")
-				return err
+				return fmt.Errorf("%s argument %q: %w", "mvirFile", args[0], err)
 			}
 
 			// Mvir file
@@ -258,8 +219,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			err = saveOutput(bytecode, cdc)
-			if err != nil {
+			if err := saveOutput(bytecode, cdc); err != nil {
 				fmt.Println("Error during compiled bytes output.")
 				return err
 			}

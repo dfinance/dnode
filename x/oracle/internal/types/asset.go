@@ -10,42 +10,34 @@ import (
 
 // Asset struct that represents an asset in the oracle
 type Asset struct {
-	AssetCode  string  `json:"asset_code" yaml:"asset_code"`
-	BaseAsset  string  `json:"base_asset" yaml:"base_asset"`
-	QuoteAsset string  `json:"quote_asset" yaml:"quote_asset"`
-	Oracles    Oracles `json:"oracles" yaml:"oracles"`
-	Active     bool    `json:"active" yaml:"active"`
+	AssetCode string  `json:"asset_code" yaml:"asset_code"`
+	Oracles   Oracles `json:"oracles" yaml:"oracles"`
+	Active    bool    `json:"active" yaml:"active"`
 }
 
 // NewAsset creates a new asset
 func NewAsset(
-	assetCode, baseAsset, quoteAsset string,
+	assetCode string,
 	oracles Oracles,
 	active bool,
 ) Asset {
 	return Asset{
-		AssetCode:  assetCode,
-		BaseAsset:  baseAsset,
-		QuoteAsset: quoteAsset,
-		Oracles:    oracles,
-		Active:     active,
+		AssetCode: assetCode,
+		Oracles:   oracles,
+		Active:    active,
 	}
 }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
 func (a Asset) ValidateBasic() sdk.Error {
-	if len(a.AssetCode) == 0 {
-		return sdk.ErrInternal(fmt.Sprintf("invalid asset: Value: %s. Error: Missing asset_code", a.AssetCode))
+	if err := assetCodeFilter(a.AssetCode); err != nil {
+		return sdk.ErrInternal(fmt.Sprintf("invalid assetCode: Value: %s. Error: %v", a.AssetCode, err))
 	}
-	if len(a.BaseAsset) == 0 {
-		return sdk.ErrInternal(fmt.Sprintf("invalid TokenRecord: BaseAsset: %s. Error: Missing BaseAsset", a.BaseAsset))
-	}
-	if len(a.QuoteAsset) == 0 {
-		return sdk.ErrInternal(fmt.Sprintf("invalid TokenRecord: QuoteAsset: %s. Error: Missing QuoteAsset", a.QuoteAsset))
-	}
+
 	if len(a.Oracles) == 0 {
 		return sdk.ErrInternal("invalid TokenRecord: Error: Missing Oracles")
 	}
+
 	return nil
 }
 
@@ -53,11 +45,9 @@ func (a Asset) ValidateBasic() sdk.Error {
 func (a Asset) String() string {
 	return fmt.Sprintf(`Asset:
 	Asset Code: %s
-	Base Asset: %s
-	Quote Asset: %s
 	Oracles: %s
 	Active: %t`,
-		a.AssetCode, a.BaseAsset, a.QuoteAsset, a.Oracles, a.Active)
+		a.AssetCode, a.Oracles, a.Active)
 }
 
 // Assets array type for oracle
@@ -69,6 +59,7 @@ func (as Assets) String() string {
 	for _, a := range as {
 		out += fmt.Sprintf("%s\n", a.String())
 	}
+
 	return strings.TrimSpace(out)
 }
 
@@ -97,13 +88,15 @@ func (os Oracles) String() string {
 	for _, o := range os {
 		out += fmt.Sprintf("%s\n", o.String())
 	}
+
 	return strings.TrimSpace(out)
 }
 
 // CurrentPrice struct that contains the metadata of a current price for a particular asset in the oracle module.
 type CurrentPrice struct {
-	AssetCode string  `json:"asset_code" yaml:"asset_code"`
-	Price     sdk.Int `json:"price" yaml:"price"`
+	AssetCode  string    `json:"asset_code" yaml:"asset_code"`
+	Price      sdk.Int   `json:"price" yaml:"price"`
+	ReceivedAt time.Time `json:"received_at" yaml:"received_at"`
 }
 
 // PostedPrice struct represented a price for an asset posted by a specific oracle
@@ -111,13 +104,14 @@ type PostedPrice struct {
 	AssetCode     string         `json:"asset_code" yaml:"asset_code"`
 	OracleAddress sdk.AccAddress `json:"oracle_address" yaml:"oracle_address"`
 	Price         sdk.Int        `json:"price" yaml:"price"`
-	Expiry        time.Time      `json:"expiry" yaml:"expiry"`
+	ReceivedAt    time.Time      `json:"received_at" yaml:"received_at"`
 }
 
 // implement fmt.Stringer
 func (cp CurrentPrice) String() string {
 	return strings.TrimSpace(fmt.Sprintf(`AssetCode: %s
-Price: %s`, cp.AssetCode, cp.Price))
+Price: %s
+ReceivedAt: %s`, cp.AssetCode, cp.Price, cp.ReceivedAt))
 }
 
 // implement fmt.Stringer
@@ -125,7 +119,7 @@ func (pp PostedPrice) String() string {
 	return strings.TrimSpace(fmt.Sprintf(`AssetCode: %s
 OracleAddress: %s
 Price: %s
-Expiry: %s`, pp.AssetCode, pp.OracleAddress, pp.Price, pp.Expiry))
+ReceivedAt: %s`, pp.AssetCode, pp.OracleAddress, pp.Price, pp.ReceivedAt))
 }
 
 // SortDecs provides the interface needed to sort sdk.Dec slices

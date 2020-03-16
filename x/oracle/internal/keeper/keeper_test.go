@@ -1,13 +1,11 @@
 package keeper_test
 
 import (
-	"testing"
-	"time"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
+	"testing"
 
 	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
 )
@@ -23,7 +21,7 @@ func TestKeeper_SetGetAsset(t *testing.T) {
 
 	ap := types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd", Oracles: types.Oracles{}, Active: true},
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)
@@ -36,8 +34,8 @@ func TestKeeper_SetGetAsset(t *testing.T) {
 
 	ap = types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
-			types.Asset{AssetCode: "tst2usd", BaseAsset: "tst2", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tst2usd", Oracles: types.Oracles{}, Active: true},
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)
@@ -62,7 +60,7 @@ func TestKeeper_SetAddAsset(t *testing.T) {
 
 	ap := types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd", Oracles: types.Oracles{}, Active: true},
 		},
 		Nominees: []string{helper.addrs[0].String()},
 	}
@@ -73,14 +71,14 @@ func TestKeeper_SetAddAsset(t *testing.T) {
 
 	_, found := helper.keeper.GetAsset(ctx, "tstusd")
 	require.Equal(t, found, true)
-	err := helper.keeper.AddAsset(ctx, helper.addrs[0].String(), "tst2usd", types.Asset{AssetCode: "tst2usd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true})
+	err := helper.keeper.AddAsset(ctx, helper.addrs[0].String(), "tst2usd", types.Asset{AssetCode: "tst2usd", Oracles: types.Oracles{}, Active: true})
 	require.Nil(t, err)
 	assets = helper.keeper.GetAssetParams(ctx)
 	require.Equal(t, len(assets), 2)
 	require.Equal(t, assets[0].AssetCode, "tstusd")
 	require.Equal(t, assets[1].AssetCode, "tst2usd")
 
-	helper.keeper.AddAsset(ctx, helper.addrs[1].String(), "tst3usd", types.Asset{AssetCode: "tst3usd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true})
+	helper.keeper.AddAsset(ctx, helper.addrs[1].String(), "tst3usd", types.Asset{AssetCode: "tst3usd", Oracles: types.Oracles{}, Active: true})
 	assets = helper.keeper.GetAssetParams(ctx)
 	require.Equal(t, len(assets), 2)
 	require.Equal(t, assets[0].AssetCode, "tstusd")
@@ -107,7 +105,7 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 	ctx := helper.mApp.BaseApp.NewContext(false, header)
 	ap := types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd", Oracles: types.Oracles{}, Active: true},
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)
@@ -115,20 +113,20 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 	_, err := helper.keeper.SetPrice(
 		ctx, helper.addrs[0], "tstusd",
 		sdk.NewInt(33000000),
-		header.Time.Add(1*time.Hour))
+		header.Time)
 	require.NoError(t, err)
 	// Get raw prices
-	rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd")
+	rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
 	require.Equal(t, len(rawPrices), 1)
 	require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(33000000)), true)
 	// Set price by oracle 2
 	_, err = helper.keeper.SetPrice(
 		ctx, helper.addrs[1], "tstusd",
 		sdk.NewInt(35000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	require.NoError(t, err)
 
-	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd")
+	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
 	require.Equal(t, len(rawPrices), 2)
 	require.Equal(t, rawPrices[1].Price.Equal(sdk.NewInt(35000000)), true)
 
@@ -136,9 +134,9 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 	_, err = helper.keeper.SetPrice(
 		ctx, helper.addrs[0], "tstusd",
 		sdk.NewInt(37000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	require.NoError(t, err)
-	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd")
+	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
 	require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(37000000)), true)
 }
 
@@ -153,22 +151,22 @@ func TestKeeper_GetSetCurrentPrice(t *testing.T) {
 	ctx := helper.mApp.BaseApp.NewContext(false, header)
 	ap := types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd", BaseAsset: "tst", QuoteAsset: "usd", Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd",Oracles: types.Oracles{}, Active: true},
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[0], "tstusd",
 		sdk.NewInt(33000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[1], "tstusd",
 		sdk.NewInt(35000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	helper.keeper.SetPrice(
 		ctx, helper.addrs[2], "tstusd",
 		sdk.NewInt(34000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	// Set current price
 	err := helper.keeper.SetCurrentPrices(ctx)
 	require.NoError(t, err)
@@ -178,9 +176,21 @@ func TestKeeper_GetSetCurrentPrice(t *testing.T) {
 
 	// Even number of oracles
 	helper.keeper.SetPrice(
+		ctx, helper.addrs[0], "tstusd",
+		sdk.NewInt(33000000),
+		header.Time)
+	helper.keeper.SetPrice(
+		ctx, helper.addrs[1], "tstusd",
+		sdk.NewInt(35000000),
+		header.Time)
+	helper.keeper.SetPrice(
+		ctx, helper.addrs[2], "tstusd",
+		sdk.NewInt(34000000),
+		header.Time)
+	helper.keeper.SetPrice(
 		ctx, helper.addrs[3], "tstusd",
 		sdk.NewInt(36000000),
-		header.Time.Add(time.Hour*1))
+		header.Time)
 	err = helper.keeper.SetCurrentPrices(ctx)
 	require.NoError(t, err)
 	price = helper.keeper.GetCurrentPrice(ctx, "tstusd")

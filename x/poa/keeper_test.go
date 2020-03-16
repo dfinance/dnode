@@ -3,6 +3,7 @@ package poa
 import (
 	"testing"
 
+	poatypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -89,8 +90,7 @@ func setupTestInput(t *testing.T) testInput {
 	mstore.MountStoreWithDB(input.keyPoa, sdk.StoreTypeIAVL, db)
 	//mstore.MountStoreWithDB(input.keyMS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
-	err := mstore.LoadLatestVersion()
-	if err != nil {
+	if err := mstore.LoadLatestVersion(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -127,6 +127,11 @@ func setupTestInput(t *testing.T) testInput {
 	// input.bankKeeper.SetSendEnabled(input.ctx, true)
 
 	return input
+}
+
+func checkError(t *testing.T, expectedErr, receivedErr sdk.Error) {
+	require.Equal(t, expectedErr.Codespace(), receivedErr.Codespace(), "Codespace")
+	require.Equal(t, expectedErr.Code(), receivedErr.Code(), "code")
 }
 
 // func TestKeeper_GetCDC(t *testing.T) {
@@ -268,4 +273,86 @@ func TestKeeper_ReplaceValidator(t *testing.T) {
 	v := target.GetValidator(ctx, addr2)
 	require.Equal(t, addr2.String(), v.Address.String())
 	require.Equal(t, ethAddress2, v.EthAddress)
+}
+
+func TestKeeper_ExportGenesis(t *testing.T) {
+	t.Parallel()
+
+	input := setupTestInput(t)
+	ctx := input.ctx
+	target := input.target
+
+	addr, ethAddr := sdk.AccAddress([]byte("addr1")), ethAddress1
+
+	initGenesis := poatypes.GenesisState{
+		Parameters: poatypes.DefaultParams(),
+		PoAValidators: poatypes.Validators{
+			poatypes.Validator{
+				Address:    addr,
+				EthAddress: ethAddr,
+			},
+		},
+	}
+
+	target.InitGenesis(ctx, initGenesis)
+	exportGenesis := target.ExportGenesis(ctx)
+
+	require.True(t, initGenesis.Parameters.Equal(exportGenesis.Parameters))
+	require.ElementsMatch(t, initGenesis.PoAValidators, exportGenesis.PoAValidators)
+}
+
+func TestModule_ValidateGenesis(t *testing.T) {
+	t.Parallel()
+
+	input := setupTestInput(t)
+	app := NewAppMsModule(input.target)
+	sdkAddress, _ := sdk.AccAddressFromHex("0102030405060708090A0102030405060708090A")
+
+	genesis := poatypes.GenesisState{
+		Parameters:    poatypes.DefaultParams(),
+		PoAValidators: poatypes.Validators{},
+	}
+
+	// check minValidators error
+	if genesis.Parameters.MinValidators > 1 {
+		err := app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis))
+		checkError(t, poatypes.ErrNotEnoungValidators(0, 0), err.(sdk.Error))
+	}
+
+	// check OK
+	{
+		for i := uint16(0); i < genesis.Parameters.MaxValidators; i++ {
+			genesis.PoAValidators = append(genesis.PoAValidators, poatypes.Validator{
+				Address:    sdkAddress,
+				EthAddress: ethAddress1,
+			})
+		}
+		require.Nil(t, app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis)))
+	}
+
+	// check maxValidators error
+	{
+		genesis.PoAValidators = append(genesis.PoAValidators, poatypes.Validator{
+			Address:    sdkAddress,
+			EthAddress: ethAddress1,
+		})
+		err := app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis))
+		checkError(t, poatypes.ErrMaxValidatorsReached(0), err.(sdk.Error))
+	}
+
+	// check params validation
+	if poatypes.DefaultMinValidators > 1 {
+		genesis := poatypes.GenesisState{
+			Parameters:    poatypes.Params{
+				MaxValidators: poatypes.DefaultMinValidators - 1,
+				MinValidators: 0,
+			},
+			PoAValidators: poatypes.Validators{},
+		}
+		require.NotNil(t, app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis)))
+
+		genesis.Parameters.MinValidators = poatypes.DefaultMinValidators
+		genesis.Parameters.MaxValidators = poatypes.DefaultMaxValidators + 1
+		require.NotNil(t, app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis)))
+	}
 }

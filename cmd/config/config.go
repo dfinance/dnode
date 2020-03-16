@@ -73,14 +73,12 @@ func ReadVMConfig(rootDir string) (*VMConfig, error) {
 	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
 		config := DefaultVMConfig()
 		WriteVMConfig(rootDir, config)
-
 		return config, nil
 	}
 
 	viper.SetConfigFile(configFilePath)
 
-	err := viper.ReadInConfig()
-	if err != nil {
+	if err := viper.ReadInConfig(); err != nil {
 		panic(err)
 	}
 

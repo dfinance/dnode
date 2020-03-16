@@ -41,10 +41,10 @@ func (AppModuleBasic) DefaultGenesis() json.RawMessage {
 // module validate genesis
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	var data authTypes.GenesisState
-	err := authTypes.ModuleCdc.UnmarshalJSON(bz, &data)
-	if err != nil {
+	if err := authTypes.ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
 		return err
 	}
+
 	return authTypes.ValidateGenesis(data)
 }
 
@@ -107,12 +107,14 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.Va
 	var genesisState auth.GenesisState
 	authTypes.ModuleCdc.MustUnmarshalJSON(data, &genesisState)
 	am.accountKeeper.SetParams(ctx, genesisState.Params)
+
 	return []abci.ValidatorUpdate{}
 }
 
 // module export genesis
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	params := am.accountKeeper.GetParams(ctx)
+
 	return authTypes.ModuleCdc.MustMarshalJSON(auth.NewGenesisState(params))
 }
 

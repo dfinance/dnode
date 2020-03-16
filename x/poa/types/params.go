@@ -47,11 +47,11 @@ func (p *Params) Equal(p2 Params) bool {
 
 func (p Params) Validate() error {
 	if p.MinValidators < DefaultMinValidators {
-		return fmt.Errorf("minimum amount of validators should be not less %d", DefaultMinValidators)
+		return fmt.Errorf("minimum amount of validators should be not less than %d", DefaultMinValidators)
 	}
 
 	if p.MaxValidators > DefaultMaxValidators {
-		return fmt.Errorf("maximum amount of validators should be not great then %d", DefaultMaxValidators)
+		return fmt.Errorf("maximum amount of validators should be not greater than %d", DefaultMaxValidators)
 	}
 
 	return nil

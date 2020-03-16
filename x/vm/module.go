@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/WingsDao/wings-blockchain/x/vm/client"
 	"github.com/WingsDao/wings-blockchain/x/vm/client/cli"
 	types "github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 )
@@ -48,16 +47,14 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 
 		// address length
 		if len(bzAddr) != types.VmAddressLength {
-			return fmt.Errorf("incorrect address length %s, should be %d bytes length", genWriteOp.Address, types.VmAddressLength)
+			return fmt.Errorf("incorrect address %q length, should be %d bytes length", genWriteOp.Address, types.VmAddressLength)
 		}
 
-		_, err = hex.DecodeString(genWriteOp.Path)
-		if err != nil {
+		if _, err := hex.DecodeString(genWriteOp.Path); err != nil {
 			return err
 		}
 
-		_, err = hex.DecodeString(genWriteOp.Value)
-		if err != nil {
+		if _, err := hex.DecodeString(genWriteOp.Value); err != nil {
 			return err
 		}
 	}
@@ -75,7 +72,7 @@ func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) 
 
 // Get transaction commands for CLI.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return client.GetTxCmd(cdc)
+	return cli.GetTxCmd(cdc)
 }
 
 // Get query commands for CLI.
@@ -137,5 +134,5 @@ func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.V
 // In my opinion we shouldn't export anything, as we can't predict what initially in write set, and how storage
 // resources could be changed during contracts executions.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return json.RawMessage{}
+	return nil
 }

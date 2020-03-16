@@ -26,9 +26,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 
 // Handle destroy message.
 func handleMsgDestroy(ctx sdk.Context, keeper Keeper, msg msgs.MsgDestroyCurrency) sdk.Result {
-	err := keeper.DestroyCurrency(ctx, msg.ChainID, msg.Symbol, msg.Recipient, msg.Amount, msg.Spender)
-
-	if err != nil {
+	if err := keeper.DestroyCurrency(ctx, msg.ChainID, msg.Symbol, msg.Recipient, msg.Amount, msg.Spender); err != nil {
 		return err.Result()
 	}
 

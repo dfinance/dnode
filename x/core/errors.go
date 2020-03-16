@@ -7,14 +7,16 @@ import (
 const (
 	Codespace sdk.CodespaceType = "core"
 
-	CodeFeeRequired   sdk.CodeType = 101 // When fee is zero
-	CodeWrongFeeDenom sdk.CodeType = 102 // When fee denom is wrong
+	CodeFeeRequired   sdk.CodeType = 101
+	CodeWrongFeeDenom sdk.CodeType = 102
 )
 
+// StdTx Fee.Amount is empty
 func ErrFeeRequired() sdk.Error {
-	return sdk.NewError(Codespace, CodeFeeRequired, "tx must contains fees")
+	return sdk.NewError(Codespace, CodeFeeRequired, "tx must contain fees")
 }
 
+// StdTx Fee.Amount wrong denom
 func ErrWrongFeeDenom(denom string) sdk.Error {
-	return sdk.NewError(Codespace, CodeWrongFeeDenom, "tx must contains fees only in %s denom", denom)
+	return sdk.NewError(Codespace, CodeWrongFeeDenom, "tx must contain fees only in %q denom", denom)
 }
