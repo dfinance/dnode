@@ -2,12 +2,14 @@ package vmauth
 
 import (
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vm"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	codec "github.com/tendermint/go-amino"
+
+	"github.com/dfinance/dnode/x/vm"
 )
 
 type VMAccountKeeper struct {

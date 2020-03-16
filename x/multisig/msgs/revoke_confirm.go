@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/WingsDao/wings-blockchain/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Message to revoke confirmation from call.

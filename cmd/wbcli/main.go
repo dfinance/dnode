@@ -1,10 +1,9 @@
 package main
 
 import (
-	"github.com/WingsDao/wings-blockchain/app"
-	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
-	"github.com/WingsDao/wings-blockchain/x/vmauth"
+	"os"
+	"path"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
@@ -18,8 +17,11 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
-	"os"
-	"path"
+
+	"github.com/dfinance/dnode/app"
+	wbConfig "github.com/dfinance/dnode/cmd/config"
+	oraclecli "github.com/dfinance/dnode/x/oracle/client/cli"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
 // Entry function for WB CLI.

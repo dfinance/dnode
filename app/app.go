@@ -3,20 +3,10 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vmauth"
 	"net"
 	"os"
 	"time"
 
-	"github.com/WingsDao/wings-blockchain/cmd/config"
-	"github.com/WingsDao/wings-blockchain/x/core"
-	"github.com/WingsDao/wings-blockchain/x/currencies"
-	"github.com/WingsDao/wings-blockchain/x/multisig"
-	"github.com/WingsDao/wings-blockchain/x/vm"
-
-	"github.com/WingsDao/wings-blockchain/x/oracle"
-	"github.com/WingsDao/wings-blockchain/x/poa"
-	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -38,6 +28,16 @@ import (
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
+
+	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/multisig"
+	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/poa"
+	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/vm"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
 const (

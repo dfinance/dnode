@@ -2,17 +2,19 @@ package app
 
 import (
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/currencies"
-	ccMsgs "github.com/WingsDao/wings-blockchain/x/currencies/msgs"
-	ccTypes "github.com/WingsDao/wings-blockchain/x/currencies/types"
-	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
+	"net/http"
+	"net/url"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
-	"net/http"
-	"net/url"
-	"testing"
+
+	"github.com/dfinance/dnode/x/currencies"
+	ccMsgs "github.com/dfinance/dnode/x/currencies/msgs"
+	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	msTypes "github.com/dfinance/dnode/x/multisig/types"
 )
 
 const (
@@ -411,7 +413,7 @@ func Test_CurrencyIssueHugeAmount(t *testing.T) {
 		checkIssueExists(t, app, issueId, denom, hugeAmount, recipientAddr)
 		checkCurrencyExists(t, app, denom, hugeAmount, 0)
 
-		require.Panics(t, func(){
+		require.Panics(t, func() {
 			app.bankKeeper.GetCoins(GetContext(app, true), recipientAddr)
 		})
 	}

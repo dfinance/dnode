@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	amino "github.com/tendermint/go-amino"
 
-	cli "github.com/WingsDao/wings-blockchain/x/multisig/client/cli"
+	cli "github.com/dfinance/dnode/x/multisig/client/cli"
 )
 
 // Returns get commands for this module.

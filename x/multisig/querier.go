@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/WingsDao/wings-blockchain/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Supported queries.

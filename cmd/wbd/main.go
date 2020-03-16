@@ -2,11 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/WingsDao/wings-blockchain/app"
-	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
-	poaCli "github.com/WingsDao/wings-blockchain/x/poa/client/cli"
-	vmCli "github.com/WingsDao/wings-blockchain/x/vm/client/cli"
+	"io"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -22,7 +19,12 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"io"
+
+	"github.com/dfinance/dnode/app"
+	wbConfig "github.com/dfinance/dnode/cmd/config"
+	oraclecli "github.com/dfinance/dnode/x/oracle/client/cli"
+	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
+	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
 )
 
 // WBD (Daemon) entry function.

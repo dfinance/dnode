@@ -4,7 +4,7 @@ package currencies
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
+	"github.com/dfinance/dnode/x/currencies/msgs"
 )
 
 // Register amino types for Currencies module.

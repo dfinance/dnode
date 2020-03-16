@@ -10,7 +10,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle"
+	"github.com/dfinance/dnode/x/oracle"
 )
 
 const (

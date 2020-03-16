@@ -1,16 +1,17 @@
 package keeper
 
 import (
-	"github.com/WingsDao/wings-blockchain/helpers"
-	"github.com/WingsDao/wings-blockchain/x/vm"
 	"sort"
 	"time"
+
+	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/vm"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // Keeper struct for oracle module

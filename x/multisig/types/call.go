@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/WingsDao/wings-blockchain/x/core"
+	"github.com/dfinance/dnode/x/core"
 )
 
 // Call that will be executed itself, contains msg instances, that executing via router and handler.

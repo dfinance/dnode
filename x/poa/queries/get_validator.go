@@ -1,7 +1,7 @@
 package queries
 
 import (
-	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
 // Get validator response

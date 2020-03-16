@@ -2,8 +2,9 @@
 package keeper
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 // Start Data source (DS) server.

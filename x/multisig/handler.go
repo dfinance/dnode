@@ -6,9 +6,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/WingsDao/wings-blockchain/x/multisig/msgs"
-	"github.com/WingsDao/wings-blockchain/x/multisig/types"
-	poa "github.com/WingsDao/wings-blockchain/x/poa"
+	"github.com/dfinance/dnode/x/multisig/msgs"
+	"github.com/dfinance/dnode/x/multisig/types"
+	poa "github.com/dfinance/dnode/x/poa"
 )
 
 // Handle messages for multisig module.

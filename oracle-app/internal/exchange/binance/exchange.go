@@ -2,12 +2,13 @@ package binance
 
 import (
 	"fmt"
-	goex "github.com/nntaoli-project/GoEx"
-	ws "github.com/nntaoli-project/GoEx/binance"
 	"sync"
 	"time"
 
-	. "github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
+	goex "github.com/nntaoli-project/GoEx"
+	ws "github.com/nntaoli-project/GoEx/binance"
+
+	. "github.com/dfinance/dnode/oracle-app/internal/exchange"
 )
 
 var _ Subscriber = (*exchange)(nil)

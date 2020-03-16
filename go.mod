@@ -1,4 +1,4 @@
-module github.com/WingsDao/wings-blockchain
+module github.com/dfinance/dnode
 
 go 1.12
 

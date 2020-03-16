@@ -9,10 +9,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sirupsen/logrus"
 
-	"github.com/WingsDao/wings-blockchain/oracle-app/internal/api"
-	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
-	_ "github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange/binance"
-	_ "github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange/wings"
+	"github.com/dfinance/dnode/oracle-app/internal/api"
+	"github.com/dfinance/dnode/oracle-app/internal/exchange"
+	_ "github.com/dfinance/dnode/oracle-app/internal/exchange/binance"
+	_ "github.com/dfinance/dnode/oracle-app/internal/exchange/wings"
 )
 
 type Config struct {

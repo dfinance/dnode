@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	. "github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
+	. "github.com/dfinance/dnode/oracle-app/internal/exchange"
 )
 
 const (

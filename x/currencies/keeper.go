@@ -2,11 +2,11 @@
 package currencies
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/currencies/types"
-
 	cdcCodec "github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+
+	"github.com/dfinance/dnode/x/currencies/types"
 )
 
 // Currency keeper struct.

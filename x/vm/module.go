@@ -14,8 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/WingsDao/wings-blockchain/x/vm/client/cli"
-	types "github.com/WingsDao/wings-blockchain/x/vm/internal/types"
+	"github.com/dfinance/dnode/x/vm/client/cli"
+	types "github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 var (

@@ -3,6 +3,7 @@ package cli
 
 import (
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,8 +12,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
 
-	"github.com/WingsDao/wings-blockchain/helpers"
-	"github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/poa/types"
 )
 
 // Add PoA genesis validator via CLI to genesis.json.

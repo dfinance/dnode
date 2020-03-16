@@ -2,11 +2,12 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"path"
+
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
-	"path"
 )
 
 var (

@@ -2,16 +2,18 @@ package app
 
 import (
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
-	msMsgs "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
-	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
-	poaMsgs "github.com/WingsDao/wings-blockchain/x/poa/msgs"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"net/http"
 	"strconv"
 	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/dfinance/dnode/x/currencies/msgs"
+	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
+	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	poaMsgs "github.com/dfinance/dnode/x/poa/msgs"
 )
 
 const (

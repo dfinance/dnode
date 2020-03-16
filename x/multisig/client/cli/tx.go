@@ -6,14 +6,14 @@ import (
 	"os"
 	"strconv"
 
-	msMsg "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
-
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
+
+	msMsg "github.com/dfinance/dnode/x/multisig/msgs"
 )
 
 // Post confirmation for multisig call via CLI.

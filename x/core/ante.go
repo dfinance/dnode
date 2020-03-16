@@ -3,14 +3,15 @@ package core
 
 import (
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vmauth"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/multisig"
 
-	"github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
 var (

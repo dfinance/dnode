@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
@@ -23,7 +23,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		Short:                      "Oracle transaction subcommands",
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
-		RunE: client.ValidateCmd,
+		RunE:                       client.ValidateCmd,
 	}
 	cmd.AddCommand(
 		client.PostCommands(

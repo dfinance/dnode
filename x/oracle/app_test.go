@@ -1,23 +1,21 @@
 package oracle_test
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/vm"
 	"testing"
 	"time"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle"
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/mock"
-	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/tendermint/tendermint/crypto"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/mock"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto"
+
+	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/vm"
 )
 
 const chainID = ""
@@ -122,7 +120,7 @@ func TestApp_PostPrice(t *testing.T) {
 	oracleParams := oracle.DefaultParams()
 	oracleParams.Assets = oracle.Assets{
 		oracle.Asset{
-			AssetCode:  "uftm",
+			AssetCode: "uftm",
 			Oracles: oracle.Oracles{
 				oracle.Oracle{
 					Address: addrs[0],

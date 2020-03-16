@@ -1,9 +1,8 @@
 package multisig
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/core"
-	mstypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
-	"github.com/WingsDao/wings-blockchain/x/poa"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +14,10 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	"testing"
+
+	"github.com/dfinance/dnode/x/core"
+	mstypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/poa"
 )
 
 const (

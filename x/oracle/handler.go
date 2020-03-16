@@ -3,10 +3,10 @@ package oracle
 import (
 	"fmt"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // NewHandler handles all oracle type messages

@@ -2,14 +2,16 @@ package app
 
 import (
 	"fmt"
-	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
-	posMsgs "github.com/WingsDao/wings-blockchain/x/poa/msgs"
-	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
-	"testing"
+
+	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	posMsgs "github.com/dfinance/dnode/x/poa/msgs"
+	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
 const (

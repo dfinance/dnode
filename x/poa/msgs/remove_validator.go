@@ -4,7 +4,7 @@ package msgs
 import (
 	"encoding/json"
 
-	"github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/dfinance/dnode/x/poa/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )

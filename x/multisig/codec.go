@@ -4,8 +4,8 @@ package multisig
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/WingsDao/wings-blockchain/x/core"
-	"github.com/WingsDao/wings-blockchain/x/multisig/msgs"
+	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/multisig/msgs"
 )
 
 // Register amino types for multisig module.

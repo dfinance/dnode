@@ -25,7 +25,7 @@ Additional information could be found in other repositories, that presents part 
 
 WB (Wings Blockchain) is technical name and will be changed in future.
 
-Other repositories related to Peg Zones could be found at [project page](https://github.com/WingsDao).
+Other repositories related to Peg Zones could be found at [project page](https://github.com/dfinance).
 
 # Installation
 
@@ -38,7 +38,7 @@ Required:
     
 To install fetch this repository:
 
-    git clone --recurse-submodules https://github.com/WingsDao/wings-blockchain
+    git clone --recurse-submodules https://github.com/dfinance/dnode
 
 Let's build proto files:
 
@@ -488,9 +488,9 @@ To launch tests run:
 
 # Contributors
 
-This project has the [following contributors](https://github.com/WingsDao/wings-blockchain/graphs/contributors).
+This project has the [following contributors](https://github.com/dfinance/dnode/graphs/contributors).
 
-To help project you always can open [issue](https://github.com/WingsDao/wings-blockchain/pulls) or fork, do changes in your own fork and open [pull request](https://github.com/WingsDao/wings-blockchain/pulls).
+To help project you always can open [issue](https://github.com/dfinance/dnode/pulls) or fork, do changes in your own fork and open [pull request](https://github.com/dfinance/dnode/pulls).
 
 # License
 

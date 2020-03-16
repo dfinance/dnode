@@ -2,9 +2,11 @@ package vmauth
 
 import (
 	"encoding/hex"
-	"github.com/WingsDao/wings-blockchain/helpers"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
 const (

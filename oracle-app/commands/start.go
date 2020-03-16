@@ -22,8 +22,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/WingsDao/wings-blockchain/oracle-app/internal/app"
-	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
+	"github.com/dfinance/dnode/oracle-app/internal/app"
+	"github.com/dfinance/dnode/oracle-app/internal/exchange"
 )
 
 // startCmd represents the start command

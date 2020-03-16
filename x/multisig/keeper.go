@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/WingsDao/wings-blockchain/x/core"
+	"github.com/dfinance/dnode/x/core"
 )
 
 // Multisignature keeper.

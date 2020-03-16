@@ -3,8 +3,8 @@ package poa
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
-	"github.com/WingsDao/wings-blockchain/x/poa/types"
+	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/poa/types"
 )
 
 // New message handler for PoA module.

@@ -2,9 +2,10 @@
 package multisig
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/multisig/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+
+	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // New Paramstore for multisig module.

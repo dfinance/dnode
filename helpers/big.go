@@ -1,8 +1,9 @@
 package helpers
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"math/big"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Convert sdk.Int to bytes with little endian (required by Libra).
