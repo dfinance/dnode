@@ -12,7 +12,7 @@ import (
 	"github.com/dfinance/dnode/oracle-app/internal/api"
 	"github.com/dfinance/dnode/oracle-app/internal/exchange"
 	_ "github.com/dfinance/dnode/oracle-app/internal/exchange/binance"
-	_ "github.com/dfinance/dnode/oracle-app/internal/exchange/wings"
+	_ "github.com/dfinance/dnode/oracle-app/internal/exchange/dfinance"
 )
 
 type Config struct {

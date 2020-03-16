@@ -171,9 +171,9 @@ func TestProcessExecution(t *testing.T) {
 		EventData: u64Bytes,
 	}
 
-	wbEvents := make(sdk.Events, 2)
-	wbEvents[0] = types.NewEventFromVM(respEvents[0])
-	wbEvents[1] = types.NewEventFromVM(respEvents[1])
+	dnEvents := make(sdk.Events, 2)
+	dnEvents[0] = types.NewEventFromVM(respEvents[0])
+	dnEvents[1] = types.NewEventFromVM(respEvents[1])
 
 	writeSet := make([]*vm_grpc.VMValue, 2)
 	writeSet[0] = &vm_grpc.VMValue{
@@ -203,14 +203,14 @@ func TestProcessExecution(t *testing.T) {
 		require.Equal(t, write.Value, input.vk.getValue(input.ctx, write.Path))
 	}
 
-	require.Len(t, events, len(wbEvents)+1)
+	require.Len(t, events, len(dnEvents)+1)
 
 	for i, event := range events[1:] {
-		require.Equal(t, wbEvents[i].Type, event.Type)
+		require.Equal(t, dnEvents[i].Type, event.Type)
 
 		for j, attr := range event.Attributes {
-			require.EqualValues(t, wbEvents[i].Attributes[j].Key, attr.Key)
-			require.EqualValues(t, wbEvents[i].Attributes[j].Value, attr.Value)
+			require.EqualValues(t, dnEvents[i].Attributes[j].Key, attr.Key)
+			require.EqualValues(t, dnEvents[i].Attributes[j].Value, attr.Value)
 		}
 	}
 

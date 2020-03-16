@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	MainDenom            = "wings"
+	MainDenom            = "dfi"
 	MainPrefix           = "wallets"                                                                 // Main prefix for all addresses.
 	Bech32PrefixAccAddr  = MainPrefix                                                                // Bech32 prefix for account addresses.
 	Bech32PrefixAccPub   = MainPrefix + sdk.PrefixPublic                                             // Bech32 prefix for accounts pub keys.
@@ -47,7 +47,7 @@ func DefaultVMConfig() *VMConfig {
 	}
 }
 
-// Initializing WB custom prefixes.
+// Initializing DN custom prefixes.
 func InitBechPrefixes(config *sdk.Config) {
 	config.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
 	config.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)

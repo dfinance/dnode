@@ -19,7 +19,7 @@ var (
 	simSecp256k1Sig [64]byte
 )
 
-// Custom antehandler catches and prevents transactions without fees and fees not in "wings" currency
+// Custom antehandler catches and prevents transactions without fees and fees not in "dfi" currency
 // After execution of custom logic, call standard auth.AnteHandler.
 func NewAnteHandler(ak vmauth.VMAccountKeeper, supplyKeeper types.SupplyKeeper, sigGasConsumer auth.SignatureVerificationGasConsumer) sdk.AnteHandler {
 	return func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, res sdk.Result, abort bool) {

@@ -1,11 +1,11 @@
-# Wings Blockchain / Relay Part
+# Dfinance Blockchain / Relay Part
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![Gitter](https://badges.gitter.im/WingsChat/community.svg)](https://gitter.im/WingsChat/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 **THIS IS VERY EARLY WORK IN PROGRESS, NOT FOR TESTNET/PRODUCTION USAGE**
 
-Wings Blockchain (WB) is based on [Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
+Dfinance Blockchain (DN) is based on [Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
 
 This is work in progress, yet it supports the following features:
 
@@ -21,9 +21,9 @@ This is work in progress, yet it supports the following features:
 
 Motivation is allowing to implement DeFi products without headache.
 
-Additional information could be found in other repositories, that presents part of WB.
+Additional information could be found in other repositories, that presents part of DN.
 
-WB (Wings Blockchain) is technical name and will be changed in future.
+DN (Dfinance Blockchain) is technical name and will be changed in future.
 
 Other repositories related to Peg Zones could be found at [project page](https://github.com/dfinance).
 
@@ -75,7 +75,7 @@ If you want to install specific application (not everything), you always can do:
 
 First of all we need to create genesis configuration and name of node:
 
-    dnd init <moniker> --chain-id wings-testnet
+    dnd init <moniker> --chain-id dn-testnet
 
 Where `<moniker>` must be your node name.
 
@@ -91,7 +91,7 @@ Copy addresses and private keys from output, we will need them in the future.
 
 First of all we create `pos` account, this account will be used later as `Proof of Stake` validator.
 
-As you see we create one account calling `bank` where we will be store all generated **WINGS** coins for start,
+As you see we create one account calling `bank` where we will be store all generated **dfi** coins for start,
 and then 3 accounts to make them PoA validators, we need at least 3 validators because by default it's a minimum amount of PoA validators to have.
 
 Now let's add genesis account and initiate genesis PoA validators and PoS account.
@@ -100,11 +100,11 @@ Also to have VM correct work, needs to deploy standard lib write operations.
 
 It should be done before next commands, so see tutorial **[how to initialize genesis for VM](#genesis-compilation)**.
 
-    dnd add-genesis-account [pos-address]  5000000000000wings
-    dnd add-genesis-account [bank-address] 90000000000000000000000000wings
-    dnd add-genesis-account [validator-1-address]  5000000000000wings
-    dnd add-genesis-account [validator-2-address]  5000000000000wings
-    dnd add-genesis-account [validator-3-address]  5000000000000wings
+    dnd add-genesis-account [pos-address]  5000000000000dfi
+    dnd add-genesis-account [bank-address] 90000000000000000000000000dfi
+    dnd add-genesis-account [validator-1-address]  5000000000000dfi
+    dnd add-genesis-account [validator-2-address]  5000000000000dfi
+    dnd add-genesis-account [validator-3-address]  5000000000000dfi
 
     dnd add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
     dnd add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
@@ -114,7 +114,7 @@ Replace expressions in brackets with correct addresses, include Ethereum address
 
 Now configure cli:
 
-    dncli config chain-id wings-testnet
+    dncli config chain-id dn-testnet
     dncli config output json
     dncli config indent true
     dncli config trust-node true
@@ -146,19 +146,19 @@ Change line:
     "bond_denom": "stake"
 To:
 
-    "bond_denom": "wings"
+    "bond_denom": "dfi"
 
-By changing this we determine "wings" as staking currency.
+By changing this we determine "dfi" as staking currency.
 
 Time to prepare `pos` account:
 
-    dnd gentx --name pos --amount 5000000000000wings
+    dnd gentx --name pos --amount 5000000000000dfi
 
 After run this command you will see output like:
 
     Genesis transaction written to "~/.dnd/config/gentx/gentx-<hash>.json"
 
-After you have generated a genesis transaction, you will have to input the genTx into the genesis file, so that WB chain is aware of the validators. To do so, run:
+After you have generated a genesis transaction, you will have to input the genTx into the genesis file, so that DN chain is aware of the validators. To do so, run:
 
     dnd collect-gentxs
    
@@ -186,7 +186,7 @@ To add new validator use next command:
 
 Where:
 
-* **[validator-address]** - WB bench32 validator address
+* **[validator-address]** - DN bench32 validator address
 * **[eth-address]** - validator ethereum address
 
 To remove:
@@ -209,7 +209,7 @@ To get validator:
 
     dncli query poa validator [address]
 
-Where `[address]` is Bech32 WB address.
+Where `[address]` is Bech32 DN address.
 
 ### Confirm multisignature call
 
@@ -249,7 +249,7 @@ Where:
 | **symbol**     | Currency symbol/denom to issue.                                                                                             |
 | **amount**     | Amount to issue.                                                                                                            |
 | **decimals**   | Currency decimals, maximum is 8.                                                                                            |
-| **recipient**  | WB address of account who's receiving coins.                                                                            |
+| **recipient**  | DN address of account who's receiving coins.                                                                            |
 | **issueID**    | Any issue id, usually transaction id.                                                                                       |
 | **uniqueID**   | Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex. |
 
@@ -286,7 +286,7 @@ Where:
 
 Launch REST API:
 
-    dncli rest-server --chain-id wings-testnet --trust-node
+    dncli rest-server --chain-id dn-testnet --trust-node
 
 All REST API returns JSON.
 
@@ -310,12 +310,12 @@ PoA:
 
 ## Fees
 
-Currently WB supports transactions only with non-zero fees in wings cryptocurrency, so it means each transaction
-must contains at least **1wings**.
+Currently DN supports transactions only with non-zero fees in dfi cryptocurrency, so it means each transaction
+must contains at least **1dfi**.
 
 ## VM
 
-WB blockchain currently supports smart-contracts via Move VM.
+DN blockchain currently supports smart-contracts via Move VM.
 
 Both two types of Move transaction supported, like: deploy module/execute script.
 
@@ -370,7 +370,7 @@ together with even **keep**.
 
 ### Genesis compilation
 
-First of all, to get WB correctly work, needs to compile standard WB smart modules libs,
+First of all, to get DN correctly work, needs to compile standard DN smart modules libs,
 and put result into genesis block. Result is WriteSet operations, that write compiled modules 
 into storage.
 
@@ -378,7 +378,7 @@ So, first of all, go to VM folder, and run:
 
     cargo run --bin stdlib-builder stdlib/mvir mvir -po ../genesis-ws.json
 
-After this, go into WB folder and run:
+After this, go into DN folder and run:
 
     dnd read-genesis-write-set [path to created file genesis-ws.json]
 
@@ -386,7 +386,7 @@ Now everything should be fine.
 
 ### Compilation
 
-Launch compiler server, and WB.
+Launch compiler server, and DN.
 
 Then use commands to compile modules/scripts:
 
@@ -404,7 +404,7 @@ Where:
 Default VM configuration file placed into `~/.dnd/config/vm.toml`, and will be 
 initialized after `init` command.
 
-As Move VM in case of WB connected using GRPC protocol (as alpha implementation,
+As Move VM in case of DN connected using GRPC protocol (as alpha implementation,
 later it will be changed for stability), `vm.toml` contains such default parameters:
 
 ```toml
@@ -429,7 +429,7 @@ vm_execute_timeout = 100
 Where:
 
 * `vm_address` - address of GRPC VM node contains Move VM, using to deploy/execute modules.
-* `vm_data_listen` - address to listen for GRPC Data Source server (part of WB), using to share data between WB and VM.
+* `vm_data_listen` - address to listen for GRPC Data Source server (part of DN), using to share data between DN and VM.
 
 The rest parameters are timeouts, don't recommend to change it.
 

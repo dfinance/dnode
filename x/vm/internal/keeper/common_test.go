@@ -239,7 +239,7 @@ func setupTestInput(launchMock bool) testInput {
 	}
 
 	input.vk.dsServer = NewDSServer(&input.vk)
-	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "wings-testnet-vm-keeper-test"}, false, log.NewNopLogger())
+	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())
 
 	input.addressBytes, err = hex.DecodeString(accountHex)
 	if err != nil {

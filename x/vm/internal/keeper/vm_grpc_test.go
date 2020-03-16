@@ -84,7 +84,7 @@ func TestGetFreeGas(t *testing.T) {
 		panic(err)
 	}
 
-	ctx := sdk.NewContext(mstore, abci.Header{ChainID: "wings-testnet-vm-keeper-test"}, false, log.NewNopLogger())
+	ctx := sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())
 	ctx = ctx.WithGasMeter(sdk.NewGasMeter(gasLimit))
 
 	freeGas := GetFreeGas(ctx)
@@ -143,7 +143,7 @@ func TestNewDeployRequest(t *testing.T) {
 		panic(err)
 	}
 
-	ctx := sdk.NewContext(mstore, abci.Header{ChainID: "wings-testnet-vm-keeper-test"}, false, log.NewNopLogger())
+	ctx := sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())
 	ctx = ctx.WithGasMeter(sdk.NewGasMeter(gasLimit))
 
 	msg := types.MsgDeployModule{

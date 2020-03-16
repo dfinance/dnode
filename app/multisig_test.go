@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/currencies/msgs"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
@@ -24,11 +25,11 @@ const (
 )
 
 func Test_MSQueries(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genValidators, _, _, _ := CreateGenAccounts(7, genCoins)
 
@@ -43,12 +44,12 @@ func Test_MSQueries(t *testing.T) {
 }
 
 func Test_MSRest(t *testing.T) {
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genValidators, _, _, genPrivKeys := CreateGenAccounts(9, genCoins)
 	targetValidators := genValidators[7:]
 
-	app, _, stopFunc := newTestWbAppWithRest(t, genValidators)
+	app, _, stopFunc := newTestDnAppWithRest(t, genValidators)
 	defer stopFunc()
 
 	senderIdx, senderAddr, senderPrivKey := 0, genValidators[0].Address, genPrivKeys[0]
@@ -159,11 +160,11 @@ func Test_MSRest(t *testing.T) {
 }
 
 func Test_MSVoting(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	accs, _, _, privKeys := CreateGenAccounts(9, genCoins)
 	genValidators, genPrivKeys := accs[:7], privKeys[:7]
@@ -318,11 +319,11 @@ func Test_MSVoting(t *testing.T) {
 }
 
 func Test_MSBlockHeight(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
 

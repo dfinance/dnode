@@ -30,7 +30,7 @@ import (
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
-	wbconfig "github.com/dfinance/dnode/cmd/config"
+	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/oracle"
 )
 
@@ -122,7 +122,7 @@ Example:
 	cmd.Flags().String(
 		client.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
 	cmd.Flags().String(
-		server.FlagMinGasPrices, fmt.Sprintf("1%s", wbconfig.MainDenom),
+		server.FlagMinGasPrices, fmt.Sprintf("1%s", dnConfig.MainDenom),
 		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(
 		flagComissionRate, "0.100000000000000000",
@@ -151,8 +151,8 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 	nodeIDs := make([]string, cf.numValidators)
 	valPubKeys := make([]crypto.PubKey, cf.numValidators)
 
-	wbConfig := srvconfig.DefaultConfig()
-	wbConfig.MinGasPrices = cf.minGasPrices
+	dnCfg := srvconfig.DefaultConfig()
+	dnCfg.MinGasPrices = cf.minGasPrices
 
 	// nolint:prealloc
 	var (
@@ -224,7 +224,7 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 
 		accStakingTokens := sdk.TokensFromConsensusPower(500000000000)
 		coins := sdk.Coins{
-			sdk.NewCoin(wbconfig.MainDenom, accStakingTokens),
+			sdk.NewCoin(dnConfig.MainDenom, accStakingTokens),
 		}
 
 		genAccounts = append(genAccounts, genaccounts.NewGenesisAccount(auth.NewBaseAccount(addr, coins.Sort(), nil, 0, 0)))
@@ -233,7 +233,7 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 		msg := staking.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
-			sdk.NewCoin(wbconfig.MainDenom, valTokens),
+			sdk.NewCoin(dnConfig.MainDenom, valTokens),
 			staking.NewDescription(nodeDirName, "", "", ""),
 			staking.NewCommissionRates(cf.comissionRate, cf.comissionMaxRate, cf.comissionMaxChangeRate),
 			sdk.OneInt(),
@@ -260,10 +260,10 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 			return err
 		}
 
-		// TODO: Rename config file to server.toml as it's not particular to Wb
+		// TODO: Rename config file to server.toml as it's not particular to Dn
 		// (REF: https://github.com/cosmos/cosmos-sdk/issues/4125).
-		wbConfigFilePath := filepath.Join(nodeDir, "config/app.toml")
-		srvconfig.WriteConfigFile(wbConfigFilePath, wbConfig)
+		dnConfigFilePath := filepath.Join(nodeDir, "config/app.toml")
+		srvconfig.WriteConfigFile(dnConfigFilePath, dnCfg)
 	}
 
 	if err := initGenFiles(cdc, mbm, cf.chainID, genAccounts, genFiles, cf.numValidators); err != nil {
@@ -295,7 +295,7 @@ func initGenFiles(
 	stakingDataBz := appGenState[staking.ModuleName]
 	var stakingGenState staking.GenesisState
 	cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
-	stakingGenState.Params.BondDenom = wbconfig.MainDenom
+	stakingGenState.Params.BondDenom = dnConfig.MainDenom
 	appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
 	oracleDataBz := appGenState[oracle.ModuleName]

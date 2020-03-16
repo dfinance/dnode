@@ -21,7 +21,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/dfinance/dnode/app"
-	wbConfig "github.com/dfinance/dnode/cmd/config"
+	dnConfig "github.com/dfinance/dnode/cmd/config"
 	oraclecli "github.com/dfinance/dnode/x/oracle/client/cli"
 	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
@@ -30,7 +30,7 @@ import (
 // DND (Daemon) entry function.
 func main() {
 	config := sdk.GetConfig()
-	wbConfig.InitBechPrefixes(config)
+	dnConfig.InitBechPrefixes(config)
 	config.Seal()
 
 	cobra.EnableCommandSorting = false
@@ -40,7 +40,7 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use:               "dnd",
-		Short:             "Wings blockchain app daemon (server).",
+		Short:             "Dfinance blockchain app daemon (server).",
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}
 
@@ -64,7 +64,7 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 
 	// prepare and add flags
-	executor := cli.PrepareBaseCmd(rootCmd, "WB", app.DefaultNodeHome)
+	executor := cli.PrepareBaseCmd(rootCmd, "DN", app.DefaultNodeHome)
 	err := executor.Execute()
 	if err != nil {
 		// handle with #870
@@ -72,37 +72,37 @@ func main() {
 	}
 }
 
-// Creating new WB app.
+// Creating new DN app.
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
 	// read VM config
-	config, err := wbConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
+	config, err := dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
 	if err != nil {
 		panic(err)
 	}
 
-	return app.NewWbServiceApp(logger, db, config)
+	return app.NewDnServiceApp(logger, db, config)
 }
 
 // Exports genesis data and validators.
 func exportAppStateAndTMValidators(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
-	config, err := wbConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
+	config, err := dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
 	if err != nil {
 		panic(err)
 	}
 
 	if height != -1 {
-		wbApp := app.NewWbServiceApp(logger, db, config)
-		err := wbApp.LoadHeight(height)
+		dnApp := app.NewDnServiceApp(logger, db, config)
+		err := dnApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
 		}
-		return wbApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+		return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	wbApp := app.NewWbServiceApp(logger, db, config)
-	return wbApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+	dnApp := app.NewDnServiceApp(logger, db, config)
+	return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }
 
 // Init cmd together with VM configruation.
@@ -111,7 +111,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 	cmd := genutilcli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
 
 	cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {
-		wbConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
+		dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
 	}
 
 	return cmd
