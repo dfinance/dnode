@@ -34,7 +34,7 @@ func main() {
 	cdc := app.MakeCodec()
 
 	rootCmd := &cobra.Command{
-		Use:   "wbcli",
+		Use:   "dncli",
 		Short: "Wings blockchain client tool.",
 	}
 

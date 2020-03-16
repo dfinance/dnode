@@ -1,4 +1,4 @@
-// Configuration for WBD and WBCli.
+// Configuration for DND and DNCli.
 package config
 
 import (

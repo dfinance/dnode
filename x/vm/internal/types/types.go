@@ -5,7 +5,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+	"unicode/utf8"
+
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/crypto/sha3"
 

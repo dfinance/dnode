@@ -48,10 +48,10 @@ type GenesisState map[string]json.RawMessage
 
 var (
 	// default home directories for the application CLI.
-	DefaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.dncli")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored.
-	DefaultNodeHome = os.ExpandEnv("$HOME/.wbd")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.dnd")
 
 	ModuleBasics = module.NewBasicManager(
 		genaccounts.AppModuleBasic{}, // genesis accounts management.

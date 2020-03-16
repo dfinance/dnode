@@ -27,7 +27,7 @@ import (
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
 )
 
-// WBD (Daemon) entry function.
+// DND (Daemon) entry function.
 func main() {
 	config := sdk.GetConfig()
 	wbConfig.InitBechPrefixes(config)
@@ -39,7 +39,7 @@ func main() {
 	ctx := server.NewDefaultContext()
 
 	rootCmd := &cobra.Command{
-		Use:               "wbd",
+		Use:               "dnd",
 		Short:             "Wings blockchain app daemon (server).",
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}

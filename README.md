@@ -46,13 +46,13 @@ Let's build proto files:
 
 And let's build both daemon and cli:
 
-    GO111MODULE=on go build cmd/wbd/main.go
-    GO111MODULE=on go build cmd/wbcli/main.go
+    GO111MODULE=on go build cmd/dnd/main.go
+    GO111MODULE=on go build cmd/dncli/main.go
 
 Both commands must execute fine, after it you can run both daemon and cli:
 
-    GO111MODULE=on go run cmd/wbd/main.go
-    GO111MODULE=on go run cmd/wbcli/main.go
+    GO111MODULE=on go run cmd/dnd/main.go
+    GO111MODULE=on go run cmd/dncli/main.go
 
 ## Install as binary
 
@@ -60,32 +60,32 @@ To install both cli and daemon as binaries you can use Makefile:
 
     make install 
 
-So after this command both `wbd` and `wbcli` will be available from console
+So after this command both `dnd` and `dncli` will be available from console
 
-    wbd version --long
-    wbcli version --long
+    dnd version --long
+    dncli version --long
 
 If you want to install specific application (not everything), you always can do:
 
-    make protos install-wbd
-    make protos install-wbcli
+    make protos install-dnd
+    make protos install-dncli
     make protos install-oracleapp
 
 # Usage
 
 First of all we need to create genesis configuration and name of node:
 
-    wbd init <moniker> --chain-id wings-testnet
+    dnd init <moniker> --chain-id wings-testnet
 
 Where `<moniker>` must be your node name.
 
 Then let's create 4 accounts, one to store coins, the rest for PoA validators:
 
-    wbcli keys add pos
-    wbcli keys add bank
-    wbcli keys add validator1
-    wbcli keys add validator2
-    wbcli keys add validator3
+    dncli keys add pos
+    dncli keys add bank
+    dncli keys add validator1
+    dncli keys add validator2
+    dncli keys add validator3
 
 Copy addresses and private keys from output, we will need them in the future.
 
@@ -100,28 +100,28 @@ Also to have VM correct work, needs to deploy standard lib write operations.
 
 It should be done before next commands, so see tutorial **[how to initialize genesis for VM](#genesis-compilation)**.
 
-    wbd add-genesis-account [pos-address]  5000000000000wings
-    wbd add-genesis-account [bank-address] 90000000000000000000000000wings
-    wbd add-genesis-account [validator-1-address]  5000000000000wings
-    wbd add-genesis-account [validator-2-address]  5000000000000wings
-    wbd add-genesis-account [validator-3-address]  5000000000000wings
+    dnd add-genesis-account [pos-address]  5000000000000wings
+    dnd add-genesis-account [bank-address] 90000000000000000000000000wings
+    dnd add-genesis-account [validator-1-address]  5000000000000wings
+    dnd add-genesis-account [validator-2-address]  5000000000000wings
+    dnd add-genesis-account [validator-3-address]  5000000000000wings
 
-    wbd add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
-    wbd add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
-    wbd add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
+    dnd add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
+    dnd add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
+    dnd add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
 
 Replace expressions in brackets with correct addresses, include Ethereum addresses.
 
 Now configure cli:
 
-    wbcli config chain-id wings-testnet
-    wbcli config output json
-    wbcli config indent true
-    wbcli config trust-node true
-    wbcli config compiler 127.0.0.1:50053
+    dncli config chain-id wings-testnet
+    dncli config output json
+    dncli config indent true
+    dncli config trust-node true
+    dncli config compiler 127.0.0.1:50053
 
 Time to change denom in PoS configuration.
-So open `~/.wbd/config/genesis.json` and find this stake settings:
+So open `~/.dnd/config/genesis.json` and find this stake settings:
 
 ```json
 "staking": {
@@ -152,25 +152,25 @@ By changing this we determine "wings" as staking currency.
 
 Time to prepare `pos` account:
 
-    wbd gentx --name pos --amount 5000000000000wings
+    dnd gentx --name pos --amount 5000000000000wings
 
 After run this command you will see output like:
 
-    Genesis transaction written to "~/.wbd/config/gentx/gentx-<hash>.json"
+    Genesis transaction written to "~/.dnd/config/gentx/gentx-<hash>.json"
 
 After you have generated a genesis transaction, you will have to input the genTx into the genesis file, so that WB chain is aware of the validators. To do so, run:
 
-    wbd collect-gentxs
+    dnd collect-gentxs
    
 To make sure that genesis file is correct:
 
-    wbd validate-genesis
+    dnd validate-genesis
 
 If you want to change VM settings, look at [VM section](#configuration).
 
 Now we are ready to launch testnet:
 
-    wbd start
+    dnd start
 
 # Docs
 
@@ -182,7 +182,7 @@ Before we start managing validators by PoA, let's remember that minimum amount o
 
 To add new validator use next command:
 
-    wbcli tx poa ms-add-validator [validator-address] [eth-address] --validator-1
+    dncli tx poa ms-add-validator [validator-address] [eth-address] --validator-1
 
 Where:
 
@@ -191,23 +191,23 @@ Where:
 
 To remove:
 
-    wbcli tx poa ms-remove-validator [validator-address] --from validator1
+    dncli tx poa ms-remove-validator [validator-address] --from validator1
 
 To replace:
 
-    wbcli tx poa ms-replace-validator [old-address] [new-address] [eth-address] --from validator-1
+    dncli tx poa ms-replace-validator [old-address] [new-address] [eth-address] --from validator-1
 
 To get validators list (include their amount and required confirmations amount to execute call):
 
-    wbcli query poa validators
+    dncli query poa validators
 
 To get minimum/maximum validators amount:
 
-    wbcli query poa minmax
+    dncli query poa minmax
 
 To get validator:
 
-    wbcli query poa validator [address]
+    dncli query poa validator [address]
 
 Where `[address]` is Bech32 WB address.
 
@@ -216,30 +216,30 @@ Where `[address]` is Bech32 WB address.
 To confirm multisignature call you need to extract call id from transaction execution output and confirm this call
 by other validators:
 
-    wbcli tx multisig confirm-call [call-id]
+    dncli tx multisig confirm-call [call-id]
 
 Once call submited under multisignature, there is **86400** blocks interval to confirm it by other validators, if call
 not confirmed by that time, it will be marked as rejected.
 
 To revoke confirmation from call:
 
-    wbcli tx multisig revoke-confirm [call-id]
+    dncli tx multisig revoke-confirm [call-id]
 
 Once call reaches **N/2+1** amount of confirmations, message inside call will be executed.
 
 To get call information:
 
-    wbcli query multisig call [call-id]
+    dncli query multisig call [call-id]
 
 To get calls amount:
 
-    wbcli query multisig lastId
+    dncli query multisig lastId
 
 ### Issuing new currency by multisig
 
 To issue new currency:
 
-    wbcli tx currencies ms-issue-currency [currencyId] [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]  --from validators1
+    dncli tx currencies ms-issue-currency [currencyId] [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]  --from validators1
 
 Where:
 
@@ -255,19 +255,19 @@ Where:
 
 To destroy currency from any account call:
 
-    wbcli tx currencies destroy-currency [symbol] [amount] [recipient] --from account
+    dncli tx currencies destroy-currency [symbol] [amount] [recipient] --from account
 
 To get issued currencies demons/symbols:
 
-    wbcli query currencies currency [symbol]
+    dncli query currencies currency [symbol]
 
 To get specific issue info:
 
-    wbcli query currencies issue [issueID]
+    dncli query currencies issue [issueID]
 
 To get destroys list:
 
-    wbcli query currencies destroys [page] [limit]
+    dncli query currencies destroys [page] [limit]
 
 Where:
 
@@ -276,7 +276,7 @@ Where:
 
 To get destroy by ID:
 
-    wbcli query currencies destroy [destroyID]
+    dncli query currencies destroy [destroyID]
 
 Where:
 
@@ -286,7 +286,7 @@ Where:
 
 Launch REST API:
 
-    wbcli rest-server --chain-id wings-testnet --trust-node
+    dncli rest-server --chain-id wings-testnet --trust-node
 
 All REST API returns JSON.
 
@@ -321,18 +321,18 @@ Both two types of Move transaction supported, like: deploy module/execute script
 
 To deploy module:
 
-    wbcli tx vm deploy-module [fileMV] --from <from> --fees <fees>
+    dncli tx vm deploy-module [fileMV] --from <from> --fees <fees>
     
 To execute script:
 
-    wbcli tx vm execute-script [fileMV] arg1:type1, arg2:type2, arg3:type3... --from <from> --fees <fees>
+    dncli tx vm execute-script [fileMV] arg1:type1, arg2:type2, arg3:type3... --from <from> --fees <fees>
     
     # Or (as example with arguments):
-    wbcli tx vm execute-script [fileMV] true:Bool, 150:U64 --from <from> --fees <fees>
+    dncli tx vm execute-script [fileMV] true:Bool, 150:U64 --from <from> --fees <fees>
     
 To get results of execution, gas spent, events, just query transaction:
 
-    wbcli query tx [transactionId]
+    dncli query tx [transactionId]
 
 Output will contains all events, collected from script execution/module deploy, also events have status, like for successful execution
 (status keep):
@@ -380,7 +380,7 @@ So, first of all, go to VM folder, and run:
 
 After this, go into WB folder and run:
 
-    wbd read-genesis-write-set [path to created file genesis-ws.json]
+    dnd read-genesis-write-set [path to created file genesis-ws.json]
 
 Now everything should be fine.
 
@@ -390,8 +390,8 @@ Launch compiler server, and WB.
 
 Then use commands to compile modules/scripts:
 
-    wbcli query vm compile-script [mvirFile] [address] --to-file <script.mv> --compiler 127.0.0.1:50053
-    wbcli query vm compile-module [mvirFile] [address] --to-file <module.mv> --compiler 127.0.0.1:50053    
+    dncli query vm compile-script [mvirFile] [address] --to-file <script.mv> --compiler 127.0.0.1:50053
+    dncli query vm compile-module [mvirFile] [address] --to-file <module.mv> --compiler 127.0.0.1:50053    
 
 Where:
  * `mvirFile` - file contains MVir code.
@@ -401,7 +401,7 @@ Where:
 
 ### Configuration
 
-Default VM configuration file placed into `~/.wbd/config/vm.toml`, and will be 
+Default VM configuration file placed into `~/.dnd/config/vm.toml`, and will be 
 initialized after `init` command.
 
 As Move VM in case of WB connected using GRPC protocol (as alpha implementation,
@@ -465,13 +465,13 @@ To change these parameters during test launch, use next flags after test command
 
 To launch tests **ONLY** related to VM:
 
-     GO111MODULE=on go test wings-blockchain/x/vm/internal/keeper
+     GO111MODULE=on go test dnode/x/vm/internal/keeper
 
 # Get storage data
 
 It possible to read storage data by path, e.g.:
 
-    wbcli query vm get-data [address] [path]
+    dncli query vm get-data [address] [path]
 
 Where:
  * `address` - address of account contains data, could be bech32 or hex (libra).

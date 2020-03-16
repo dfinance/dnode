@@ -59,7 +59,7 @@ func initConfig() {
 		}
 
 		// Search config in home directory with name ".oracle-app" (without extension).
-		viper.AddConfigPath(path.Join(home, ".wbd-oracle-app"))
+		viper.AddConfigPath(path.Join(home, ".oracle-app"))
 
 		viper.SetConfigName("config.yml")
 	}
