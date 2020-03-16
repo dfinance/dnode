@@ -5,10 +5,12 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+	"unicode/utf8"
+
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/crypto/sha3"
-	"unicode/utf8"
+
+	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
 )
 
 const (
@@ -28,9 +30,9 @@ const (
 
 // VM related variables.
 var (
-	KeyGenesisInitialized = []byte("gen_init")
-	KeyDelimiter          = []byte(":")
-	VMKey                 = []byte("vm")
+	KeyGenesis   = []byte("gen") // used to save genesis
+	KeyDelimiter = []byte(":")
+	VMKey        = []byte("vm")
 )
 
 // Type of Move contract (bytes).

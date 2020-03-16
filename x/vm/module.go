@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -131,8 +132,7 @@ func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.V
 }
 
 // Export genesis.
-// In my opinion we shouldn't export anything, as we can't predict what initially in write set, and how storage
-// resources could be changed during contracts executions.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return nil
+	genesisState := app.vmKeeper.ExportGenesis(ctx)
+	return types.ModuleCdc.MustMarshalJSON(genesisState)
 }
