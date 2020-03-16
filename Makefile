@@ -9,16 +9,16 @@ PROTOBUF_DS_FILES=./vm-proto/protos/data-source.proto
 git_tag=$(shell git describe --tags $(git rev-list --tags --max-count=1))
 git_commit=$(shell git rev-list -1 HEAD)
 tags = -X github.com/cosmos/cosmos-sdk/version.Name=dn \
-	   -X github.com/cosmos/cosmos-sdk/version.ServerName=dnd \
+	   -X github.com/cosmos/cosmos-sdk/version.ServerName=dnode \
 	   -X github.com/cosmos/cosmos-sdk/version.ClientName=dncli \
 	   -X github.com/cosmos/cosmos-sdk/version.Commit=$(git_commit) \
 	   -X github.com/cosmos/cosmos-sdk/version.Version=${git_tag} \
 
 all: install
-install: protos go.sum install-dnd install-dncli install-oracleapp
+install: protos go.sum install-dnode install-dncli install-oracleapp
 
-install-dnd:
-		GO111MODULE=on go install --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dnd
+install-dnode:
+		GO111MODULE=on go install --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dnode
 install-dncli:
 		GO111MODULE=on go install  --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dncli
 install-oracleapp:

@@ -45,12 +45,12 @@ Let's build proto files:
 
 And let's build both daemon and cli:
 
-    GO111MODULE=on go build cmd/dnd/main.go
+    GO111MODULE=on go build cmd/dnode/main.go
     GO111MODULE=on go build cmd/dncli/main.go
 
 Both commands must execute fine, after it you can run both daemon and cli:
 
-    GO111MODULE=on go run cmd/dnd/main.go
+    GO111MODULE=on go run cmd/dnode/main.go
     GO111MODULE=on go run cmd/dncli/main.go
 
 ## Install as binary
@@ -59,14 +59,14 @@ To install both cli and daemon as binaries you can use Makefile:
 
     make install 
 
-So after this command both `dnd` and `dncli` will be available from console
+So after this command both `dnode` and `dncli` will be available from console
 
-    dnd version --long
+    dnode version --long
     dncli version --long
 
 If you want to install specific application (not everything), you always can do:
 
-    make protos install-dnd
+    make protos install-dnode
     make protos install-dncli
     make protos install-oracleapp
 
@@ -74,7 +74,7 @@ If you want to install specific application (not everything), you always can do:
 
 First of all we need to create genesis configuration and name of node:
 
-    dnd init <moniker> --chain-id dn-testnet
+    dnode init <moniker> --chain-id dn-testnet
 
 Where `<moniker>` must be your node name.
 
@@ -99,15 +99,15 @@ Also to have VM correct work, needs to deploy standard lib write operations.
 
 It should be done before next commands, so see tutorial **[how to initialize genesis for VM](#genesis-compilation)**.
 
-    dnd add-genesis-account [pos-address]  5000000000000dfi
-    dnd add-genesis-account [bank-address] 90000000000000000000000000dfi
-    dnd add-genesis-account [validator-1-address]  5000000000000dfi
-    dnd add-genesis-account [validator-2-address]  5000000000000dfi
-    dnd add-genesis-account [validator-3-address]  5000000000000dfi
+    dnode add-genesis-account [pos-address]  5000000000000dfi
+    dnode add-genesis-account [bank-address] 90000000000000000000000000dfi
+    dnode add-genesis-account [validator-1-address]  5000000000000dfi
+    dnode add-genesis-account [validator-2-address]  5000000000000dfi
+    dnode add-genesis-account [validator-3-address]  5000000000000dfi
 
-    dnd add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
-    dnd add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
-    dnd add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
+    dnode add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
+    dnode add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
+    dnode add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
 
 Replace expressions in brackets with correct addresses, include Ethereum addresses.
 
@@ -120,7 +120,7 @@ Now configure cli:
     dncli config compiler 127.0.0.1:50053
 
 Time to change denom in PoS configuration.
-So open `~/.dnd/config/genesis.json` and find this stake settings:
+So open `~/.dnode/config/genesis.json` and find this stake settings:
 
 ```json
 "staking": {
@@ -151,25 +151,25 @@ By changing this we determine "dfi" as staking currency.
 
 Time to prepare `pos` account:
 
-    dnd gentx --name pos --amount 5000000000000dfi
+    dnode gentx --name pos --amount 5000000000000dfi
 
 After run this command you will see output like:
 
-    Genesis transaction written to "~/.dnd/config/gentx/gentx-<hash>.json"
+    Genesis transaction written to "~/.dnode/config/gentx/gentx-<hash>.json"
 
 After you have generated a genesis transaction, you will have to input the genTx into the genesis file, so that DN chain is aware of the validators. To do so, run:
 
-    dnd collect-gentxs
+    dnode collect-gentxs
    
 To make sure that genesis file is correct:
 
-    dnd validate-genesis
+    dnode validate-genesis
 
 If you want to change VM settings, look at [VM section](#configuration).
 
 Now we are ready to launch testnet:
 
-    dnd start
+    dnode start
 
 # Docs
 
@@ -379,7 +379,7 @@ So, first of all, go to VM folder, and run:
 
 After this, go into DN folder and run:
 
-    dnd read-genesis-write-set [path to created file genesis-ws.json]
+    dnode read-genesis-write-set [path to created file genesis-ws.json]
 
 Now everything should be fine.
 
@@ -400,7 +400,7 @@ Where:
 
 ### Configuration
 
-Default VM configuration file placed into `~/.dnd/config/vm.toml`, and will be 
+Default VM configuration file placed into `~/.dnode/config/vm.toml`, and will be 
 initialized after `init` command.
 
 As Move VM in case of DN connected using GRPC protocol (as alpha implementation,

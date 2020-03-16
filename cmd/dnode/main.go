@@ -27,7 +27,7 @@ import (
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
 )
 
-// DND (Daemon) entry function.
+// DNODE (Daemon) entry function.
 func main() {
 	config := sdk.GetConfig()
 	dnConfig.InitBechPrefixes(config)
@@ -39,7 +39,7 @@ func main() {
 	ctx := server.NewDefaultContext()
 
 	rootCmd := &cobra.Command{
-		Use:               "dnd",
+		Use:               "dnode",
 		Short:             "Dfinance blockchain app daemon (server).",
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}

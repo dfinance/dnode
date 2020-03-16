@@ -51,7 +51,7 @@ var (
 	DefaultCLIHome = os.ExpandEnv("$HOME/.dncli")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored.
-	DefaultNodeHome = os.ExpandEnv("$HOME/.dnd")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.dnode")
 
 	ModuleBasics = module.NewBasicManager(
 		genaccounts.AppModuleBasic{}, // genesis accounts management.

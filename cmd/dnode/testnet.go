@@ -67,14 +67,14 @@ func testnetCmd(ctx *server.Context, cdc *codec.Codec,
 
 	cmd := &cobra.Command{
 		Use:   "testnet",
-		Short: "Initialize files for a Dnd testnet",
+		Short: "Initialize files for a Dnode testnet",
 		Long: `testnet will create "v" number of directories and populate each with
 necessary files (private validator, genesis, config, etc.).
 
 Note, strict routability for addresses is turned off in the config file.
 
 Example:
-	dnd testnet --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
+	dnode testnet --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			config := ctx.Config
@@ -113,7 +113,7 @@ Example:
 		"Directory to store initialization data for the testnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node",
 		"Prefix the directory name for each node with (node results in node0, node1, ...)")
-	cmd.Flags().String(flagNodeDaemonHome, "dnd",
+	cmd.Flags().String(flagNodeDaemonHome, "dnode",
 		"Home directory of the node's daemon configuration")
 	cmd.Flags().String(flagNodeCLIHome, "dncli",
 		"Home directory of the node's cli configuration")

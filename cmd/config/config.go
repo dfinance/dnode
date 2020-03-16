@@ -1,4 +1,4 @@
-// Configuration for DND and DNCli.
+// Configuration for DNode and DNCli.
 package config
 
 import (
