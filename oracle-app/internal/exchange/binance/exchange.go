@@ -2,6 +2,7 @@ package binance
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -54,7 +55,7 @@ func (e *exchange) tickerHandler(t *goex.Ticker) {
 	}
 	select {
 	case out.(chan Ticker) <- NewTicker(
-		NewAsset(fmt.Sprintf("%s_%s", pair.BaseAsset, pair.QuoteAsset), pair),
+		NewAsset(fmt.Sprintf("%s_%s", strings.ToLower(pair.BaseAsset), strings.ToLower(pair.QuoteAsset)), pair),
 		price,
 		exchangeName,
 		ConvertTickerUnixMsTime(t.Date, time.Now().UTC(), 1*time.Hour)):
