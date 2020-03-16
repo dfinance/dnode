@@ -128,7 +128,14 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/get", queryRoute), nil)
+			req := types.CurrencyReq{Symbol: args[0]}
+
+			bz, err := cliCtx.Codec.MarshalJSON(req)
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/currency", queryRoute), bz)
 			if err != nil {
 				return err
 			}

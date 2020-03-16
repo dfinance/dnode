@@ -23,7 +23,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		Short:                      "Oracle transaction subcommands",
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
+		RunE: client.ValidateCmd,
 	}
 	cmd.AddCommand(
 		client.PostCommands(
@@ -163,12 +163,12 @@ func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("%s argument %q: empty", "denom", args[1])
 			}
 
-			oracles, err := types.ParseOracles(args[3])
+			oracles, err := types.ParseOracles(args[2])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %v", "oracles", args[3], err)
+				return fmt.Errorf("%s argument %q: %v", "oracles", args[2], err)
 			}
 			if len(oracles) == 0 {
-				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[3])
+				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[2])
 			}
 
 			token := types.NewAsset(denom, oracles, true)
