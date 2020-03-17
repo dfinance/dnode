@@ -43,7 +43,9 @@ func GetAccountCmd(cdc *codec.Codec) *cobra.Command {
 			}
 
 			var acc exported.Account
-			cdc.UnmarshalJSON(res, &acc)
+			if err := cdc.UnmarshalJSON(res, &acc); err != nil {
+				return err
+			}
 
 			return cliCtx.PrintOutput(acc)
 		},

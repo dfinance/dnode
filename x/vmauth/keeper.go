@@ -1,3 +1,4 @@
+// Implements account keeper with vm storage inside to allow work with accounts from VM.
 package vmauth
 
 import (
@@ -12,6 +13,7 @@ import (
 	"github.com/dfinance/dnode/x/vm"
 )
 
+// Implements account keeper with vm storage support.
 type VMAccountKeeper struct {
 	*auth.AccountKeeper
 
@@ -19,7 +21,7 @@ type VMAccountKeeper struct {
 	vmKeeper vm.VMStorage
 }
 
-// Create new VM keeper.
+// Create new account vm keeper.
 func NewVMAccountKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Subspace, vmKeeper vm.VMStorage, proto func() exported.Account) VMAccountKeeper {
 	keeper := auth.NewAccountKeeper(cdc, key, paramstore, proto)
 
@@ -30,16 +32,18 @@ func NewVMAccountKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Su
 	}
 }
 
+// Set account in storage.
 func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
 	keeper.AccountKeeper.SetAccount(ctx, acc)
 	// now store account to vm storage
-	accRes := AccResourceFromAccount(acc)
+	accRes := AccResFromAccount(acc)
 	keeper.vmKeeper.SetValue(ctx, &vm.VMAccessPath{
 		Address: AddrToPathAddr(acc.GetAddress()),
 		Path:    GetResPath(),
-	}, AccToBytes(accRes))
+	}, AccResToBytes(accRes))
 }
 
+// Get account from storage.
 func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) exported.Account {
 	account := keeper.AccountKeeper.GetAccount(ctx, addr)
 
@@ -49,24 +53,29 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 		Path:    GetResPath(),
 	})
 
-	// if account exists, but only in vm.
+	// if account exists in vm.
 	if bz != nil {
 		accRes := BytesToAccRes(bz)
-		realCoins := bytesToCoins(accRes.Balances)
+		realCoins := balancesToCoins(accRes.Balances)
 
 		// load vm account from storage.
 		// check if account exists in vm but not exists in our storage - if so, save account and return.
 		// check if account has differences - balances, something else, and if so - save account and return.
 		if account != nil {
 			if !realCoins.IsEqual(account.GetCoins()) { // also check coins
-				account.SetCoins(realCoins)
+				if err := account.SetCoins(realCoins); err != nil {
+					panic(err) // should never happen
+				}
 
 				keeper.SetAccount(ctx, account)
 			}
 		} else {
 			// if account is not exists - so create it.
 			account = keeper.NewAccountWithAddress(ctx, addr)
-			account.SetCoins(realCoins)
+			if err := account.SetCoins(realCoins); err != nil {
+				panic(err) // should never happen
+			}
+
 			keeper.SetAccount(ctx, account)
 		}
 	}
@@ -83,10 +92,10 @@ func (keeper VMAccountKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account
 	return accounts
 }
 
-// RemoveAccount removes an account for the account mapper store.
+// Removes an account from storage.
 // NOTE: this will cause supply invariant violation if called
 func (keeper VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Account) {
-	keeper.RemoveAccount(ctx, acc)
+	keeper.AccountKeeper.RemoveAccount(ctx, acc)
 
 	// should be remove account from VM storage too
 	keeper.vmKeeper.DelValue(ctx, &vm.VMAccessPath{
@@ -102,41 +111,5 @@ func GetSignerAcc(ctx sdk.Context, ak VMAccountKeeper, addr sdk.AccAddress) (exp
 		return acc, sdk.Result{}
 	}
 
-	return nil, sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", addr)).Result()
+	return nil, sdk.ErrUnknownAddress(fmt.Sprintf("account %q does not exist", addr)).Result()
 }
-
-/*
-// RemoveAccount removes an account for the account mapper store.
-// NOTE: this will cause supply invariant violation if called
-func (ak AccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Account) {
-	addr := acc.GetAddress()
-	store := ctx.KVStore(ak.key)
-	store.Delete(types.AddressStoreKey(addr))
-}
-*/
-/*
-
-// GetAllAccounts returns all accounts in the accountKeeper.
-func (ak AccountKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account {
-	accounts := []exported.Account{}
-	appendAccount := func(acc exported.Account) (stop bool) {
-		accounts = append(accounts, acc)
-		return false
-	}
-	ak.IterateAccounts(ctx, appendAccount)
-	return accounts
-}
-*/
-/*
-func NewAccountKeeper(
-	cdc *codec.Codec, key sdk.StoreKey, paramstore subspace.Subspace, proto func() exported.Account,
-) AccountKeeper {
-
-	return AccountKeeper{
-		key:           key,
-		proto:         proto,
-		cdc:           cdc,
-		paramSubspace: paramstore.WithKeyTable(types.ParamKeyTable()),
-	}
-}
-*/
