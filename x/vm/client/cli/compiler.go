@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 
-	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
 const (

@@ -4,7 +4,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
 const (
