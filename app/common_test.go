@@ -46,8 +46,8 @@ import (
 	tmDbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
-	vmConfig "github.com/dfinance/dnode/cmd/config"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/core"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
