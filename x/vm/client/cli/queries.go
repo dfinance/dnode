@@ -89,7 +89,7 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "get-data [address] [path]",
 		Short:   "get-data from data source storage by address and path, address could be bech32 or hex",
-		Example: "get-data wallets196udj7s8.../00000000... 0019b01c2cf3c2160a43e4dcad70e3e5d18151cc38de7a1d1067c6031bfa0ae4d9",
+		Example: "get-data wallet196udj7s8.../00000000... 0019b01c2cf3c2160a43e4dcad70e3e5d18151cc38de7a1d1067c6031bfa0ae4d9",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -158,7 +158,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "compile-script [mvirFile] [account]",
 		Short:   "compile script using source code from mvir file",
-		Example: "compile-script script.mvir wallets196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file script.mv --compiler 127.0.0.1:50053",
+		Example: "compile-script script.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file script.mv --compiler 127.0.0.1:50053",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// read provided file
@@ -198,7 +198,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "compile-module [mvirFile] [account]",
 		Short:   "compile module connected to account, using source code from mvir file",
-		Example: "compile-module module.mvir wallets196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file module.mv --compiler 127.0.0.1:50053",
+		Example: "compile-module module.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file module.mv --compiler 127.0.0.1:50053",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// read provided file

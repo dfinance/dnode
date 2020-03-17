@@ -72,7 +72,7 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 func getCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "add-oracle [nominee_key] [denom] [oracle_address]",
-		Example: "dncli oracle add-oracle wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Example: "dncli oracle add-oracle wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new oracle",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -94,7 +94,7 @@ func getCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-oracles [nominee_key] [denom] [oracle_addresses]",
-		Example: "dncli oracle set-oracles wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallets10ff6y8gm2re6awfwz5dvesar8jq02tx7vcvuxn,wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Example: "dncli oracle set-oracles wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallet10ff6y8gm2re6awfwz5dvesar8jq02tx7vcvuxn,wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Sets a list of oracles for a denom",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -116,7 +116,7 @@ func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "add-asset [nominee_key] [denom] [oracles]",
-		Example: "dncli oracle add-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Example: "dncli oracle add-asset wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m ETH_USDT wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new asset",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -151,7 +151,7 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-asset [nominee_key] [denom] [oracles]",
-		Example: "dncli oracle set-asset wallets1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallets1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
+		Example: "dncli oracle set-asset wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a set asset",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
