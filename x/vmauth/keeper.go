@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	codec "github.com/tendermint/go-amino"
 
-	"github.com/WingsDao/wings-blockchain/x/vm"
+	"github.com/dfinance/dnode/x/vm"
 )
 
 // Implements account keeper with vm storage support.

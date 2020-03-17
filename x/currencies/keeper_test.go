@@ -17,9 +17,9 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
-	"github.com/WingsDao/wings-blockchain/x/currencies/types"
-	"github.com/WingsDao/wings-blockchain/x/multisig"
+	"github.com/dfinance/dnode/x/currencies/msgs"
+	"github.com/dfinance/dnode/x/currencies/types"
+	"github.com/dfinance/dnode/x/multisig"
 )
 
 const (

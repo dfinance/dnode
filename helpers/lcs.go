@@ -9,13 +9,14 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io"
 	"math/big"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type Encoder struct {

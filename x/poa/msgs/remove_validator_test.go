@@ -1,9 +1,10 @@
 package msgs
 
 import (
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_MsgRemoveValidator(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 func TestMsgSort(t *testing.T) {
@@ -20,7 +20,7 @@ func TestMsgSort(t *testing.T) {
 
 	fee := auth.NewStdFee(200000, nil)
 	stdTx := auth.NewStdTx([]sdk.Msg{msg}, fee, []auth.StdSignature{}, "")
-	signBytes := auth.StdSignBytes("wb", 4, 1, stdTx.Fee, stdTx.Msgs, stdTx.Memo)
+	signBytes := auth.StdSignBytes("dn", 4, 1, stdTx.Fee, stdTx.Msgs, stdTx.Memo)
 
 	t.Logf("%s", signBytes)
 	signed := auth.StdSignBytes(
@@ -44,11 +44,11 @@ func TestMsgPlaceBid_ValidateBasic(t *testing.T) {
 		msg        types.MsgPostPrice
 		expectPass bool
 	}{
-		{"normal", types.MsgPostPrice{addr, "wb", price, expiry}, true},
-		{"emptyAddr", types.MsgPostPrice{sdk.AccAddress{}, "wb", price, expiry}, false},
+		{"normal", types.MsgPostPrice{addr, "dn", price, expiry}, true},
+		{"emptyAddr", types.MsgPostPrice{sdk.AccAddress{}, "dn", price, expiry}, false},
 		{"emptyAsset", types.MsgPostPrice{addr, "", price, expiry}, false},
-		{"negativePrice", types.MsgPostPrice{addr, "wb", negativePrice, expiry}, false},
-		//{"negativeExpiry", types.MsgPostPrice{addr, "wb", price, negativeExpiry}, false},
+		{"negativePrice", types.MsgPostPrice{addr, "dn", negativePrice, expiry}, false},
+		//{"negativeExpiry", types.MsgPostPrice{addr, "dn", price, negativeExpiry}, false},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

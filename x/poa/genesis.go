@@ -2,9 +2,9 @@
 package poa
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/poa/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/dfinance/dnode/x/poa/types"
 )
 
 // Initialize genesis for this module.

@@ -1,9 +1,9 @@
 package oracle
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // InitGenesis sets distribution information for genesis.

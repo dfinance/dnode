@@ -1,15 +1,19 @@
 package msgs
 
 import (
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-type InvalidMsg struct {}
+type InvalidMsg struct{}
+
 func (InvalidMsg) Route() string { return "" }
-func (InvalidMsg) Type() string { return "" }
-func (InvalidMsg) ValidateBasic() sdk.Error { return sdk.NewError(sdk.CodespaceType(0), 0, "some error") }
+func (InvalidMsg) Type() string  { return "" }
+func (InvalidMsg) ValidateBasic() sdk.Error {
+	return sdk.NewError(sdk.CodespaceType(0), 0, "some error")
+}
 
 func Test_SubmitCallValidator(t *testing.T) {
 	t.Parallel()

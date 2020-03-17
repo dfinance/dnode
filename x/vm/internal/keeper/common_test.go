@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"flag"
-	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+	"math/rand"
+	"net"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,8 +17,10 @@ import (
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
-	"math/rand"
-	"net"
+
+	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/vm/internal/types"
+	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 const (
@@ -237,7 +239,7 @@ func setupTestInput(launchMock bool) testInput {
 	}
 
 	input.vk.dsServer = NewDSServer(&input.vk)
-	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "wings-testnet-vm-keeper-test"}, false, log.NewNopLogger())
+	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())
 
 	input.addressBytes, err = hex.DecodeString(accountHex)
 	if err != nil {

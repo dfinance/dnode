@@ -6,8 +6,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/WingsDao/wings-blockchain/helpers"
-	"github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/poa/types"
 )
 
 // Type for codec

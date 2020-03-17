@@ -1,7 +1,9 @@
 // Querier.
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 // Request to print destroys
 type DestroysReq struct {

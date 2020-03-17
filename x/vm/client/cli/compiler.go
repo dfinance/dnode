@@ -3,9 +3,11 @@ package cli
 import (
 	connContext "context"
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
+
+	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 const (

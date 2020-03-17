@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // Convert asset code in hex.

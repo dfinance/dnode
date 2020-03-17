@@ -8,19 +8,19 @@ PROTOBUF_DS_FILES=./vm-proto/protos/data-source.proto
 
 git_tag=$(shell git describe --tags $(git rev-list --tags --max-count=1))
 git_commit=$(shell git rev-list -1 HEAD)
-tags = -X github.com/cosmos/cosmos-sdk/version.Name=wb \
-	   -X github.com/cosmos/cosmos-sdk/version.ServerName=wbd \
-	   -X github.com/cosmos/cosmos-sdk/version.ClientName=wbcli \
+tags = -X github.com/cosmos/cosmos-sdk/version.Name=dfinance \
+	   -X github.com/cosmos/cosmos-sdk/version.ServerName=dnode \
+	   -X github.com/cosmos/cosmos-sdk/version.ClientName=dncli \
 	   -X github.com/cosmos/cosmos-sdk/version.Commit=$(git_commit) \
 	   -X github.com/cosmos/cosmos-sdk/version.Version=${git_tag} \
 
 all: install
-install: protos go.sum install-wbd install-wbcli install-oracleapp
+install: protos go.sum install-dnode install-dncli install-oracleapp
 
-install-wbd:
-		GO111MODULE=on go install --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/wbd
-install-wbcli:
-		GO111MODULE=on go install  --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/wbcli
+install-dnode:
+		GO111MODULE=on go install --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dnode
+install-dncli:
+		GO111MODULE=on go install  --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dncli
 install-oracleapp:
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/oracle-app
 

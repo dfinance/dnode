@@ -1,10 +1,11 @@
 package types
 
 import (
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
-	"testing"
 )
 
 func Test_NewAsset(t *testing.T) {
@@ -27,13 +28,13 @@ func Test_NewAsset(t *testing.T) {
 
 	// check no oracles
 	{
-		a := NewAsset("wb2eth", Oracles{}, true)
+		a := NewAsset("dn2eth", Oracles{}, true)
 		require.Error(t, a.ValidateBasic())
 	}
 
 	// check valid assetCode
 	{
-		a := NewAsset("wb2eth", oracles, true)
+		a := NewAsset("dn2eth", oracles, true)
 		require.NoError(t, a.ValidateBasic())
 	}
 }

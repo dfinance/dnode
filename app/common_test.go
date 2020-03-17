@@ -4,9 +4,16 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/core"
-	msMsgs "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
-	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"sort"
+	"testing"
+	"time"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -35,24 +42,17 @@ import (
 	rpcserver "github.com/tendermint/tendermint/rpc/lib/server"
 	tmTypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
-	"google.golang.org/grpc"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"net/url"
-	"os"
-	"path"
-	"sort"
-	"testing"
-	"time"
-
-	vmConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
-	"github.com/WingsDao/wings-blockchain/x/vm"
-
 	tmDb "github.com/tendermint/tm-db"
 	tmDbm "github.com/tendermint/tm-db"
+	"google.golang.org/grpc"
+
+	dnConfig "github.com/dfinance/dnode/cmd/config"
+	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/core"
+	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
+	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/vm"
 )
 
 var (
@@ -255,7 +255,7 @@ type VMServer struct {
 	vm.UnimplementedVMServiceServer
 }
 
-func newTestWbApp() (*WbServiceApp, *grpc.Server) {
+func newTestDnApp() (*DnServiceApp, *grpc.Server) {
 	config := MockVMConfig()
 
 	vmListener, err := net.Listen("tcp", config.Address)
@@ -273,16 +273,16 @@ func newTestWbApp() (*WbServiceApp, *grpc.Server) {
 		}
 	}()
 
-	return NewWbServiceApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app"), dbm.NewMemDB(), config), server
+	return NewDnServiceApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app"), dbm.NewMemDB(), config), server
 }
 
-func getGenesis(app *WbServiceApp, chainID, monikerID string, accs []*auth.BaseAccount, privValidatorKey *ed25519.PrivKeyEd25519) ([]byte, error) {
+func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseAccount, privValidatorKey *ed25519.PrivKeyEd25519) ([]byte, error) {
 	// generate node validator account
 	var genTxAcc *auth.BaseAccount
 	var genTxPubKey crypto.PubKey
 	var genTxPrivKey secp256k1.PrivKeySecp256k1
 	{
-		accCoins, _ := sdk.ParseCoins("1000000000000000wings")
+		accCoins, _ := sdk.ParseCoins("1000000000000000" + dnConfig.MainDenom)
 
 		if privValidatorKey == nil {
 			k := ed25519.GenPrivKey()
@@ -329,7 +329,7 @@ func getGenesis(app *WbServiceApp, chainID, monikerID string, accs []*auth.BaseA
 
 		stakingGenesis := staking.GenesisState{}
 		app.cdc.MustUnmarshalJSON(genesisState[staking.ModuleName], &stakingGenesis)
-		stakingGenesis.Params.BondDenom = wbConfig.MainDenom
+		stakingGenesis.Params.BondDenom = dnConfig.MainDenom
 		genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, stakingGenesis)
 	}
 
@@ -343,14 +343,14 @@ func getGenesis(app *WbServiceApp, chainID, monikerID string, accs []*auth.BaseA
 		msg := staking.NewMsgCreateValidator(
 			genTxAcc.Address.Bytes(),
 			genTxAcc.PubKey,
-			sdk.NewCoin(wbConfig.MainDenom, tokenAmount),
+			sdk.NewCoin(dnConfig.MainDenom, tokenAmount),
 			staking.NewDescription(monikerID, "", "", ""),
 			staking.NewCommissionRates(commissionRate, commissionMaxRate, commissionChangeRate),
 			sdk.OneInt(),
 		)
 
 		txFee := auth.StdFee{
-			Amount: sdk.Coins{{Denom: "wings", Amount: sdk.NewInt(1)}},
+			Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
 			Gas:    200000,
 		}
 		txMemo := "testmemo"
@@ -382,7 +382,7 @@ func getGenesis(app *WbServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	return stateBytes, nil
 }
 
-func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.Context, error) {
+func setGenesis(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) (sdk.Context, error) {
 	ctx := app.NewContext(true, abci.Header{})
 
 	stateBytes, err := getGenesis(app, "", "testMoniker", accs, nil)
@@ -401,7 +401,7 @@ func setGenesis(t *testing.T, app *WbServiceApp, accs []*auth.BaseAccount) (sdk.
 	return ctx, nil
 }
 
-func newTestWbAppWithRest(t *testing.T, genValidators []*auth.BaseAccount) (app *WbServiceApp, chainId string, stopFunc func()) {
+func newTestDnAppWithRest(t *testing.T, genValidators []*auth.BaseAccount) (app *DnServiceApp, chainId string, stopFunc func()) {
 	chainId = "wd-test"
 
 	var rootDir string
@@ -442,7 +442,7 @@ func newTestWbAppWithRest(t *testing.T, genValidators []*auth.BaseAccount) (app 
 
 	// init the app
 	db := tmDb.NewDB("appInMemDb", tmDb.MemDBBackend, "")
-	app = NewWbServiceApp(ctx.Logger, db, MockVMConfig())
+	app = NewDnServiceApp(ctx.Logger, db, MockVMConfig())
 
 	privValidatorKey := ed25519.GenPrivKey()
 	privValidatorFile := &privval.FilePV{
@@ -497,7 +497,7 @@ func newTestWbAppWithRest(t *testing.T, genValidators []*auth.BaseAccount) (app 
 	return
 }
 
-func RestRequest(t *testing.T, app *WbServiceApp, httpMethod, urlSubPath string, urlValues url.Values, requestValue interface{}, responseValue interface{}, doCheck bool) (retCode int, retErrBody []byte) {
+func RestRequest(t *testing.T, app *DnServiceApp, httpMethod, urlSubPath string, urlValues url.Values, requestValue interface{}, responseValue interface{}, doCheck bool) (retCode int, retErrBody []byte) {
 	u, _ := url.Parse("http://localhost:1317")
 	u.Path = path.Join(u.Path, urlSubPath)
 	if urlValues != nil {
@@ -547,7 +547,7 @@ func RestRequest(t *testing.T, app *WbServiceApp, httpMethod, urlSubPath string,
 	return
 }
 
-func CheckRestError(t *testing.T, app *WbServiceApp, expectedCode, receivedCode int, expectedErr sdk.Error, receivedBody []byte) {
+func CheckRestError(t *testing.T, app *DnServiceApp, expectedCode, receivedCode int, expectedErr sdk.Error, receivedBody []byte) {
 	require.Equal(t, expectedCode, receivedCode, "code")
 
 	if expectedErr != nil {
@@ -567,7 +567,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	memo := "testmemotestmemo"
 
 	fee := auth.StdFee{
-		Amount: sdk.Coins{{Denom: "wings", Amount: sdk.NewInt(1)}},
+		Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
 		Gas:    200000,
 	}
 
@@ -586,7 +586,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	return auth.NewStdTx(msgs, fee, sigs, memo)
 }
 
-func DeliverTx(app *WbServiceApp, tx auth.StdTx) sdk.Result {
+func DeliverTx(app *DnServiceApp, tx auth.StdTx) sdk.Result {
 	if res := app.Simulate(app.cdc.MustMarshalJSON(tx), tx); !res.IsOK() {
 		return res
 	}
@@ -602,24 +602,24 @@ func DeliverTx(app *WbServiceApp, tx auth.StdTx) sdk.Result {
 }
 
 // DeliverTx and success check
-func CheckDeliverTx(t *testing.T, app *WbServiceApp, tx auth.StdTx) {
+func CheckDeliverTx(t *testing.T, app *DnServiceApp, tx auth.StdTx) {
 	res := DeliverTx(app, tx)
 	require.True(t, res.IsOK(), res.Log)
 }
 
 // DeliverTx and fail check
-func CheckDeliverErrorTx(t *testing.T, app *WbServiceApp, tx auth.StdTx) {
+func CheckDeliverErrorTx(t *testing.T, app *DnServiceApp, tx auth.StdTx) {
 	res := DeliverTx(app, tx)
 	require.False(t, res.IsOK(), res.Log)
 }
 
 // DeliverTx and fail check with specific error
-func CheckDeliverSpecificErrorTx(t *testing.T, app *WbServiceApp, tx auth.StdTx, err sdk.Error) {
+func CheckDeliverSpecificErrorTx(t *testing.T, app *DnServiceApp, tx auth.StdTx, err sdk.Error) {
 	res := DeliverTx(app, tx)
 	CheckResultError(t, err, res)
 }
 
-func RunQuery(t *testing.T, app *WbServiceApp, requestData interface{}, path string, responseValue interface{}) abci.ResponseQuery {
+func RunQuery(t *testing.T, app *DnServiceApp, requestData interface{}, path string, responseValue interface{}) abci.ResponseQuery {
 	resp := app.Query(abci.RequestQuery{
 		Data: codec.MustMarshalJSONIndent(app.cdc, requestData),
 		Path: path,
@@ -633,28 +633,28 @@ func RunQuery(t *testing.T, app *WbServiceApp, requestData interface{}, path str
 }
 
 // RunQuery and success check
-func CheckRunQuery(t *testing.T, app *WbServiceApp, requestData interface{}, path string, responseValue interface{}) {
+func CheckRunQuery(t *testing.T, app *DnServiceApp, requestData interface{}, path string, responseValue interface{}) {
 	resp := RunQuery(t, app, requestData, path, responseValue)
 	require.True(t, resp.IsOK())
 }
 
 // RunQuery and fail check with specific error
-func CheckRunQuerySpecificError(t *testing.T, app *WbServiceApp, requestData interface{}, path string, err sdk.Error) {
+func CheckRunQuerySpecificError(t *testing.T, app *DnServiceApp, requestData interface{}, path string, err sdk.Error) {
 	resp := RunQuery(t, app, requestData, path, nil)
 	require.True(t, resp.IsErr())
 	require.Equal(t, string(err.Codespace()), resp.Codespace, "Codespace: %s", resp.Log)
 	require.Equal(t, uint32(err.Code()), resp.Code, "Code: %s", resp.Log)
 }
 
-func GetContext(app *WbServiceApp, isCheckTx bool) sdk.Context {
+func GetContext(app *DnServiceApp, isCheckTx bool) sdk.Context {
 	return app.NewContext(isCheckTx, abci.Header{Height: app.LastBlockHeight() + 1})
 }
 
-func GetAccountCheckTx(app *WbServiceApp, address sdk.AccAddress) auth.Account {
+func GetAccountCheckTx(app *DnServiceApp, address sdk.AccAddress) auth.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
-func GetAccount(app *WbServiceApp, address sdk.AccAddress) auth.Account {
+func GetAccount(app *DnServiceApp, address sdk.AccAddress) auth.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(false, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
@@ -664,7 +664,7 @@ func CheckResultError(t *testing.T, expectedErr sdk.Error, receivedRes sdk.Resul
 	require.Equal(t, expectedErr.Code(), receivedRes.Code, "Code: %s", receivedRes.Log)
 }
 
-func MSMsgSubmitAndVote(t *testing.T, app *WbServiceApp, msMsgID string, msMsg core.MsMsg, submitAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg core.MsMsg, submitAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
 	confirmCnt := int(app.poaKeeper.GetEnoughConfirmations(GetContext(app, true)))
 
 	// lazy input check

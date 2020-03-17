@@ -1,8 +1,9 @@
 package multisig
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/multisig/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Initialize genesis for this module.

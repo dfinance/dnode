@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
+	"github.com/dfinance/dnode/x/currencies/msgs"
 )
 
 // Handler for currencies messages, provess issue/destroy messages.

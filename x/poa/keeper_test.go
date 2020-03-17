@@ -3,7 +3,6 @@ package poa
 import (
 	"testing"
 
-	poatypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,6 +15,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
+
+	poatypes "github.com/dfinance/dnode/x/poa/types"
 )
 
 const (
@@ -343,7 +344,7 @@ func TestModule_ValidateGenesis(t *testing.T) {
 	// check params validation
 	if poatypes.DefaultMinValidators > 1 {
 		genesis := poatypes.GenesisState{
-			Parameters:    poatypes.Params{
+			Parameters: poatypes.Params{
 				MaxValidators: poatypes.DefaultMinValidators - 1,
 				MinValidators: 0,
 			},

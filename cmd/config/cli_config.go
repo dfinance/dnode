@@ -7,11 +7,10 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	toml "github.com/pelletier/go-toml"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/cosmos/cosmos-sdk/client/flags"
 )
 
 const (

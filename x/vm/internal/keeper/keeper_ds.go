@@ -2,8 +2,9 @@
 package keeper
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 // Start Data source (DS) server.
@@ -11,7 +12,7 @@ func (keeper *Keeper) StartDSServer(ctx sdk.Context) {
 	// check if genesis initialized
 	// if no - skip, it will be started later.
 	store := ctx.KVStore(keeper.storeKey)
-	if store.Has(types.KeyGenesisInitialized) && !keeper.dsServer.IsStarted() {
+	if store.Has(types.KeyGenesis) && !keeper.dsServer.IsStarted() {
 		// launch server.
 		keeper.rawDSServer = StartServer(keeper.listener, keeper.dsServer)
 	}

@@ -14,7 +14,7 @@ const (
 )
 
 func TestBalancesToCoins(t *testing.T) {
-	wbCoins := []WBCoin{
+	wbCoins := []DNCoin{
 		{
 			Denom: []byte("wings"),
 			Value: sdk.NewInt(1),
@@ -54,7 +54,7 @@ func TestAddrToPathAddr(t *testing.T) {
 
 func TestBytesToAccRes(t *testing.T) {
 	acc := AccountResource{
-		Balances: []WBCoin{
+		Balances: []DNCoin{
 			{
 				Denom: []byte("wings"),
 				Value: sdk.NewInt(1),
@@ -71,7 +71,7 @@ func TestBytesToAccRes(t *testing.T) {
 
 func TestAccToBytes(t *testing.T) {
 	acc := AccountResource{
-		Balances: []WBCoin{
+		Balances: []DNCoin{
 			{
 				Denom: []byte("wings"),
 				Value: sdk.NewInt(1),

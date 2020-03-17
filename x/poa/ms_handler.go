@@ -6,9 +6,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/WingsDao/wings-blockchain/x/core"
-	"github.com/WingsDao/wings-blockchain/x/poa/msgs"
-	"github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/poa/msgs"
+	"github.com/dfinance/dnode/x/poa/types"
 )
 
 // New multisignature message handler for PoA module.

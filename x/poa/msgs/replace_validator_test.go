@@ -1,10 +1,12 @@
 package msgs
 
 import (
-	poatypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	"testing"
+
+	poatypes "github.com/dfinance/dnode/x/poa/types"
 )
 
 func Test_MsgReplaceValidator(t *testing.T) {

@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
-
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
+
+	"github.com/dfinance/dnode/x/currencies/msgs"
 )
 
 // Destroy currency.

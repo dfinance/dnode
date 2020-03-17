@@ -3,14 +3,15 @@ package core
 
 import (
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vmauth"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/multisig"
 
-	"github.com/WingsDao/wings-blockchain/cmd/config"
+	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 	simSecp256k1Sig [64]byte
 )
 
-// Custom antehandler catches and prevents transactions without fees and fees not in "wings" currency
+// Custom antehandler catches and prevents transactions without fees and fees not in "dfi" currency
 // After execution of custom logic, call standard auth.AnteHandler.
 func NewAnteHandler(ak vmauth.VMAccountKeeper, supplyKeeper types.SupplyKeeper, sigGasConsumer auth.SignatureVerificationGasConsumer) sdk.AnteHandler {
 	return func(ctx sdk.Context, tx sdk.Tx, simulate bool) (newCtx sdk.Context, res sdk.Result, abort bool) {

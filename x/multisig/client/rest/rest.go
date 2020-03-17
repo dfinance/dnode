@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
-	"github.com/WingsDao/wings-blockchain/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Registering routes in the REST API.

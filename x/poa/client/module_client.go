@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	amino "github.com/tendermint/go-amino"
 
-	"github.com/WingsDao/wings-blockchain/x/poa/client/cli"
+	"github.com/dfinance/dnode/x/poa/client/cli"
 )
 
 // Return query commands for PoA module.

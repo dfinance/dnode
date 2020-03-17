@@ -4,8 +4,6 @@ package core
 
 import (
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vm"
-	"github.com/WingsDao/wings-blockchain/x/vmauth"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -19,6 +17,9 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	log "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
+
+	"github.com/dfinance/dnode/x/vm"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
 var (

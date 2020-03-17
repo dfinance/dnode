@@ -3,7 +3,14 @@ package app
 import (
 	"errors"
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vm"
+	"io"
+	"os"
+	"reflect"
+	"runtime/debug"
+	"sort"
+	"strings"
+	"syscall"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -13,13 +20,8 @@ import (
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	"io"
-	"os"
-	"reflect"
-	"runtime/debug"
-	"sort"
-	"strings"
-	"syscall"
+
+	"github.com/dfinance/dnode/x/vm"
 )
 
 // Key to store the consensus params in the main store.

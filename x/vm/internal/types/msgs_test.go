@@ -2,10 +2,12 @@ package types
 
 import (
 	"encoding/json"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	"testing"
+
+	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 func getMsgSignBytes(t *testing.T, msg sdk.Msg) []byte {

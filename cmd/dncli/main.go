@@ -1,10 +1,9 @@
 package main
 
 import (
-	"github.com/WingsDao/wings-blockchain/app"
-	wbConfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	oraclecli "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
-	"github.com/WingsDao/wings-blockchain/x/vmauth"
+	"os"
+	"path"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
@@ -18,22 +17,25 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
-	"os"
-	"path"
+
+	"github.com/dfinance/dnode/app"
+	dnConfig "github.com/dfinance/dnode/cmd/config"
+	oraclecli "github.com/dfinance/dnode/x/oracle/client/cli"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
-// Entry function for WB CLI.
+// Entry function for DN CLI.
 func main() {
 	config := sdk.GetConfig()
-	wbConfig.InitBechPrefixes(config)
+	dnConfig.InitBechPrefixes(config)
 	config.Seal()
 
 	cobra.EnableCommandSorting = false
 	cdc := app.MakeCodec()
 
 	rootCmd := &cobra.Command{
-		Use:   "wbcli",
-		Short: "Wings blockchain client tool.",
+		Use:   "dncli",
+		Short: "Dfinance blockchain client tool.",
 	}
 
 	// Add --chain-id to persistent flags and mark it required
@@ -45,7 +47,7 @@ func main() {
 	// Construct Root Command
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
-		wbConfig.ConfigCmd(app.DefaultCLIHome),
+		dnConfig.ConfigCmd(app.DefaultCLIHome),
 		queryCmd(cdc),
 		txCmd(cdc),
 		client.LineBreak,
@@ -59,7 +61,7 @@ func main() {
 		client.NewCompletionCmd(rootCmd, true),
 	)
 
-	executor := cli.PrepareMainCmd(rootCmd, "WB", app.DefaultCLIHome)
+	executor := cli.PrepareMainCmd(rootCmd, "DN", app.DefaultCLIHome)
 	if err := executor.Execute(); err != nil {
 		panic(err)
 	}

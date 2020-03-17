@@ -6,23 +6,23 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
-	msMsg "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
-
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
+
+	"github.com/dfinance/dnode/x/currencies/msgs"
+	msMsg "github.com/dfinance/dnode/x/multisig/msgs"
 )
 
 // Issue new currency command.
 func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "ms-issue-currency [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]",
+		Use:   "ms-issue-currency [symbol] [amount] [decimals] [recipient] [issueID]",
 		Short: "issue new currency via multisignature",
-		Args:  cobra.ExactArgs(6),
+		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))

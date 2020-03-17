@@ -12,10 +12,10 @@ import (
 	amino "github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/WingsDao/wings-blockchain/x/multisig/client"
-	"github.com/WingsDao/wings-blockchain/x/multisig/client/rest"
-	"github.com/WingsDao/wings-blockchain/x/multisig/types"
-	"github.com/WingsDao/wings-blockchain/x/poa"
+	"github.com/dfinance/dnode/x/multisig/client"
+	"github.com/dfinance/dnode/x/multisig/client/rest"
+	"github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/poa"
 )
 
 var (

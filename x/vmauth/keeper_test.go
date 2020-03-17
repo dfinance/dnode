@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 
-	"github.com/WingsDao/wings-blockchain/x/vm"
+	"github.com/dfinance/dnode/x/vm"
 )
 
 func TestVMAccountKeeper_SetAccount(t *testing.T) {

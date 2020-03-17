@@ -1,7 +1,8 @@
 package vmauth
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/vm"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,7 +11,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	"testing"
+
+	"github.com/dfinance/dnode/x/vm"
 )
 
 // VM storage.

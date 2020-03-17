@@ -1,8 +1,8 @@
 package oracle
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/keeper"
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/oracle/internal/keeper"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 type (

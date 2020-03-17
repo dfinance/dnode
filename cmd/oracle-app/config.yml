@@ -8,12 +8,12 @@ exchanges:
         pair:
           base: BTC
           quote: USDT
-  - wings:
-      - code: wings_eth
+  - dfinance:
+      - code: dfi_eth
         pair:
-          base: wings
+          base: dfi
           quote: eth
-      - code: eth_wings
+      - code: eth_dfi
         pair:
           base: eth
-          quote: wings
+          quote: dfi
