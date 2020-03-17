@@ -3,7 +3,6 @@ module github.com/dfinance/dnode
 go 1.12
 
 require (
-	github.com/WingsDao/wings-blockchain v0.1.0
 	github.com/cosmos/cosmos-sdk v0.37.4
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.3.4
@@ -19,6 +18,7 @@ require (
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.32.8
 	github.com/tendermint/tm-db v0.2.0
-	golang.org/x/tools v0.0.0-20200316212524-3e76bee198d8 // indirect
+	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
 	google.golang.org/grpc v1.27.0
 )

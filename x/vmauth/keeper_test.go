@@ -22,7 +22,7 @@ func TestVMAccountKeeper_SetAccount(t *testing.T) {
 	require.EqualValues(t, &acc, getter)
 
 	// Check set with coins.
-	coin := types.NewCoin("wings", types.NewInt(1))
+	coin := types.NewCoin("dfi", types.NewInt(1))
 	acc = auth.NewBaseAccountWithAddress(addr)
 	if err := acc.SetCoins(types.Coins{coin}); err != nil {
 		t.Fatal(err)
@@ -37,7 +37,7 @@ func TestVMAccountKeeper_GetAccount(t *testing.T) {
 	input := newTestInput(t)
 
 	// Check just get with vm storage.
-	coin := types.NewCoin("wings", types.NewInt(1))
+	coin := types.NewCoin("dfi", types.NewInt(1))
 
 	addr := types.AccAddress("tmp")
 	acc := auth.NewBaseAccountWithAddress(addr)

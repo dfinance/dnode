@@ -16,7 +16,7 @@ const (
 func TestBalancesToCoins(t *testing.T) {
 	wbCoins := []DNCoin{
 		{
-			Denom: []byte("wings"),
+			Denom: []byte("dfi"),
 			Value: sdk.NewInt(1),
 		},
 		{
@@ -56,7 +56,7 @@ func TestBytesToAccRes(t *testing.T) {
 	acc := AccountResource{
 		Balances: []DNCoin{
 			{
-				Denom: []byte("wings"),
+				Denom: []byte("dfi"),
 				Value: sdk.NewInt(1),
 			},
 		},
@@ -73,7 +73,7 @@ func TestAccToBytes(t *testing.T) {
 	acc := AccountResource{
 		Balances: []DNCoin{
 			{
-				Denom: []byte("wings"),
+				Denom: []byte("dfi"),
 				Value: sdk.NewInt(1),
 			},
 		},
@@ -90,7 +90,7 @@ func TestAccToBytes(t *testing.T) {
 
 func TestAccResourceFromAccount(t *testing.T) {
 	acc := auth.NewBaseAccountWithAddress(sdk.AccAddress("tmp"))
-	if err := acc.SetCoins(sdk.Coins{sdk.NewCoin("wings", sdk.NewInt(1))}); err != nil {
+	if err := acc.SetCoins(sdk.Coins{sdk.NewCoin("dfi", sdk.NewInt(1))}); err != nil {
 		t.Fatal(err)
 	}
 
