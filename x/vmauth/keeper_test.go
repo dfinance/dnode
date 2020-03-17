@@ -1,18 +1,20 @@
 package vmauth
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/vm"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
-	"testing"
+
+	"github.com/WingsDao/wings-blockchain/x/vm"
 )
 
 func TestVMAccountKeeper_SetAccount(t *testing.T) {
 	input := newTestInput(t)
 
 	// Check just set.
-	addr := types.AccAddress("tmp")
+	addr := types.AccAddress("tmp1")
 	acc := auth.NewBaseAccountWithAddress(addr)
 	input.accountKeeper.SetAccount(input.ctx, &acc)
 
@@ -22,7 +24,9 @@ func TestVMAccountKeeper_SetAccount(t *testing.T) {
 	// Check set with coins.
 	coin := types.NewCoin("wings", types.NewInt(1))
 	acc = auth.NewBaseAccountWithAddress(addr)
-	acc.SetCoins(types.Coins{coin})
+	if err := acc.SetCoins(types.Coins{coin}); err != nil {
+		t.Fatal(err)
+	}
 	input.accountKeeper.SetAccount(input.ctx, &acc)
 
 	getter = input.accountKeeper.GetAccount(input.ctx, addr)
@@ -37,7 +41,9 @@ func TestVMAccountKeeper_GetAccount(t *testing.T) {
 
 	addr := types.AccAddress("tmp")
 	acc := auth.NewBaseAccountWithAddress(addr)
-	acc.SetCoins(types.Coins{coin})
+	if err := acc.SetCoins(types.Coins{coin}); err != nil {
+		t.Fatal(err)
+	}
 	input.accountKeeper.SetAccount(input.ctx, &acc)
 
 	getter := input.accountKeeper.GetAccount(input.ctx, addr)
@@ -65,7 +71,9 @@ func TestVMAccountKeeper_GetAccount(t *testing.T) {
 
 	// Check get if there is write in vm storage, but not in cosmos storage.
 	vmAcc := auth.NewBaseAccountWithAddress(types.AccAddress("vm"))
-	vmAcc.SetCoins(types.Coins{coin})
+	if err := vmAcc.SetCoins(types.Coins{coin}); err != nil {
+		t.Fatal(err)
+	}
 	vmKey := &vm.VMAccessPath{
 		Address: AddrToPathAddr(vmAcc.GetAddress()),
 		Path:    GetResPath(),

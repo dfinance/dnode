@@ -2,10 +2,11 @@ package vmauth
 
 import (
 	"encoding/hex"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
@@ -89,7 +90,9 @@ func TestAccToBytes(t *testing.T) {
 
 func TestAccResourceFromAccount(t *testing.T) {
 	acc := auth.NewBaseAccountWithAddress(sdk.AccAddress("tmp"))
-	acc.SetCoins(sdk.Coins{sdk.NewCoin("wings", sdk.NewInt(1))})
+	if err := acc.SetCoins(sdk.Coins{sdk.NewCoin("wings", sdk.NewInt(1))}); err != nil {
+		t.Fatal(err)
+	}
 
 	accRes := AccResFromAccount(&acc)
 

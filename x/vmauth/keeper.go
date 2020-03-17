@@ -3,12 +3,14 @@ package vmauth
 
 import (
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vm"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	codec "github.com/tendermint/go-amino"
+
+	"github.com/WingsDao/wings-blockchain/x/vm"
 )
 
 // Implements account keeper with vm storage support.
@@ -51,7 +53,7 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 		Path:    GetResPath(),
 	})
 
-	// if account exists, but only in vm.
+	// if account exists in vm.
 	if bz != nil {
 		accRes := BytesToAccRes(bz)
 		realCoins := balancesToCoins(accRes.Balances)
@@ -61,14 +63,19 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 		// check if account has differences - balances, something else, and if so - save account and return.
 		if account != nil {
 			if !realCoins.IsEqual(account.GetCoins()) { // also check coins
-				account.SetCoins(realCoins)
+				if err := account.SetCoins(realCoins); err != nil {
+					panic(err) // should never happen
+				}
 
 				keeper.SetAccount(ctx, account)
 			}
 		} else {
 			// if account is not exists - so create it.
 			account = keeper.NewAccountWithAddress(ctx, addr)
-			account.SetCoins(realCoins)
+			if err := account.SetCoins(realCoins); err != nil {
+				panic(err) // should never happen
+			}
+
 			keeper.SetAccount(ctx, account)
 		}
 	}
@@ -104,5 +111,5 @@ func GetSignerAcc(ctx sdk.Context, ak VMAccountKeeper, addr sdk.AccAddress) (exp
 		return acc, sdk.Result{}
 	}
 
-	return nil, sdk.ErrUnknownAddress(fmt.Sprintf("account %s does not exist", addr)).Result()
+	return nil, sdk.ErrUnknownAddress(fmt.Sprintf("account %q does not exist", addr)).Result()
 }

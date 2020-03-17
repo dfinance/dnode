@@ -32,7 +32,7 @@ require (
 	github.com/tendermint/tm-db v0.2.0
 	github.com/the729/lcs v0.1.3
 	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e // indirect
-	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933 // indirect
+	golang.org/x/tools v0.0.0-20200316212524-3e76bee198d8 // indirect
 	google.golang.org/genproto v0.0.0-20191203145615-049a07e0debe // indirect
 	google.golang.org/grpc v1.27.0
 	gopkg.in/yaml.v2 v2.2.7 // indirect
