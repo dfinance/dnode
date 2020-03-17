@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	appName = "dn" // application name.
+	appName = "dfinance" // application name.
 )
 
 type GenesisState map[string]json.RawMessage

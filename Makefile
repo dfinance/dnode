@@ -8,7 +8,7 @@ PROTOBUF_DS_FILES=./vm-proto/protos/data-source.proto
 
 git_tag=$(shell git describe --tags $(git rev-list --tags --max-count=1))
 git_commit=$(shell git rev-list -1 HEAD)
-tags = -X github.com/cosmos/cosmos-sdk/version.Name=dn \
+tags = -X github.com/cosmos/cosmos-sdk/version.Name=dfinance \
 	   -X github.com/cosmos/cosmos-sdk/version.ServerName=dnode \
 	   -X github.com/cosmos/cosmos-sdk/version.ClientName=dncli \
 	   -X github.com/cosmos/cosmos-sdk/version.Commit=$(git_commit) \
