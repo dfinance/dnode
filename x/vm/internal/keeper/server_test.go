@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/ds_grpc"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
+	"github.com/dfinance/dnode/x/vm/internal/types/ds_grpc"
+	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 // Initialize connection to DS server.

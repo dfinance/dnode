@@ -11,10 +11,10 @@ import (
 	codec "github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/WingsDao/wings-blockchain/x/core"
-	"github.com/WingsDao/wings-blockchain/x/currencies/client"
-	"github.com/WingsDao/wings-blockchain/x/currencies/client/rest"
-	types "github.com/WingsDao/wings-blockchain/x/currencies/types"
+	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/currencies/client"
+	"github.com/dfinance/dnode/x/currencies/client/rest"
+	types "github.com/dfinance/dnode/x/currencies/types"
 )
 
 var (

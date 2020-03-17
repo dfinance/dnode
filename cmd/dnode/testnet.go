@@ -30,8 +30,8 @@ import (
 	"github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
-	wbconfig "github.com/WingsDao/wings-blockchain/cmd/config"
-	"github.com/WingsDao/wings-blockchain/x/oracle"
+	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/oracle"
 )
 
 var (
@@ -67,14 +67,14 @@ func testnetCmd(ctx *server.Context, cdc *codec.Codec,
 
 	cmd := &cobra.Command{
 		Use:   "testnet",
-		Short: "Initialize files for a Wbd testnet",
+		Short: "Initialize files for a Dnode testnet",
 		Long: `testnet will create "v" number of directories and populate each with
 necessary files (private validator, genesis, config, etc.).
 
 Note, strict routability for addresses is turned off in the config file.
 
 Example:
-	wbd testnet --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
+	dnode testnet --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			config := ctx.Config
@@ -113,16 +113,16 @@ Example:
 		"Directory to store initialization data for the testnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node",
 		"Prefix the directory name for each node with (node results in node0, node1, ...)")
-	cmd.Flags().String(flagNodeDaemonHome, "wbd",
+	cmd.Flags().String(flagNodeDaemonHome, "dnode",
 		"Home directory of the node's daemon configuration")
-	cmd.Flags().String(flagNodeCLIHome, "wbcli",
+	cmd.Flags().String(flagNodeCLIHome, "dncli",
 		"Home directory of the node's cli configuration")
 	cmd.Flags().String(flagStartingIPAddress, "192.168.0.1",
 		"Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(
 		client.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
 	cmd.Flags().String(
-		server.FlagMinGasPrices, fmt.Sprintf("1%s", wbconfig.MainDenom),
+		server.FlagMinGasPrices, fmt.Sprintf("1%s", dnConfig.MainDenom),
 		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(
 		flagComissionRate, "0.100000000000000000",
@@ -151,8 +151,8 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 	nodeIDs := make([]string, cf.numValidators)
 	valPubKeys := make([]crypto.PubKey, cf.numValidators)
 
-	wbConfig := srvconfig.DefaultConfig()
-	wbConfig.MinGasPrices = cf.minGasPrices
+	dnCfg := srvconfig.DefaultConfig()
+	dnCfg.MinGasPrices = cf.minGasPrices
 
 	// nolint:prealloc
 	var (
@@ -224,7 +224,7 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 
 		accStakingTokens := sdk.TokensFromConsensusPower(500000000000)
 		coins := sdk.Coins{
-			sdk.NewCoin(wbconfig.MainDenom, accStakingTokens),
+			sdk.NewCoin(dnConfig.MainDenom, accStakingTokens),
 		}
 
 		genAccounts = append(genAccounts, genaccounts.NewGenesisAccount(auth.NewBaseAccount(addr, coins.Sort(), nil, 0, 0)))
@@ -233,7 +233,7 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 		msg := staking.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
-			sdk.NewCoin(wbconfig.MainDenom, valTokens),
+			sdk.NewCoin(dnConfig.MainDenom, valTokens),
 			staking.NewDescription(nodeDirName, "", "", ""),
 			staking.NewCommissionRates(cf.comissionRate, cf.comissionMaxRate, cf.comissionMaxChangeRate),
 			sdk.OneInt(),
@@ -260,10 +260,10 @@ func InitTestnet(cmd *cobra.Command, config *tmconfig.Config, cdc *codec.Codec,
 			return err
 		}
 
-		// TODO: Rename config file to server.toml as it's not particular to Wb
+		// TODO: Rename config file to server.toml as it's not particular to Dn
 		// (REF: https://github.com/cosmos/cosmos-sdk/issues/4125).
-		wbConfigFilePath := filepath.Join(nodeDir, "config/app.toml")
-		srvconfig.WriteConfigFile(wbConfigFilePath, wbConfig)
+		dnConfigFilePath := filepath.Join(nodeDir, "config/app.toml")
+		srvconfig.WriteConfigFile(dnConfigFilePath, dnCfg)
 	}
 
 	if err := initGenFiles(cdc, mbm, cf.chainID, genAccounts, genFiles, cf.numValidators); err != nil {
@@ -295,7 +295,7 @@ func initGenFiles(
 	stakingDataBz := appGenState[staking.ModuleName]
 	var stakingGenState staking.GenesisState
 	cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
-	stakingGenState.Params.BondDenom = wbconfig.MainDenom
+	stakingGenState.Params.BondDenom = dnConfig.MainDenom
 	appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
 	oracleDataBz := appGenState[oracle.ModuleName]

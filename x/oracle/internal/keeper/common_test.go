@@ -1,15 +1,17 @@
 package keeper_test
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/keeper"
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
-	"github.com/WingsDao/wings-blockchain/x/vm"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
-	"testing"
+
+	"github.com/dfinance/dnode/x/oracle/internal/keeper"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/vm"
 )
 
 type testHelper struct {

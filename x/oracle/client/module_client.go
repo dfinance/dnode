@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	amino "github.com/tendermint/go-amino"
 
-	cmd "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
+	cmd "github.com/dfinance/dnode/x/oracle/client/cli"
 )
 
 // ModuleClient exports all client functionality from this module

@@ -2,14 +2,17 @@ package app
 
 import (
 	"fmt"
-	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
-	posMsgs "github.com/WingsDao/wings-blockchain/x/poa/msgs"
-	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
-	"testing"
+
+	"github.com/dfinance/dnode/cmd/config"
+	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	posMsgs "github.com/dfinance/dnode/x/poa/msgs"
+	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
 const (
@@ -19,11 +22,11 @@ const (
 )
 
 func Test_POAHandlerIsMultisigOnly(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	accs, _, _, privKeys := CreateGenAccounts(8, genCoins)
 	genValidators, genPrivKeys, newValidators := accs[:7], privKeys[:7], accs[7:]
@@ -41,11 +44,11 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 }
 
 func Test_POARest(t *testing.T) {
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genValidators, _, _, _ := CreateGenAccounts(7, genCoins)
 
-	app, _, stopFunc := newTestWbAppWithRest(t, genValidators)
+	app, _, stopFunc := newTestDnAppWithRest(t, genValidators)
 	defer stopFunc()
 
 	// check getValidators endpoint
@@ -63,11 +66,11 @@ func Test_POARest(t *testing.T) {
 }
 
 func Test_POAQueries(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genValidators, _, _, _ := CreateGenAccounts(7, genCoins)
 
@@ -105,7 +108,7 @@ func Test_POAQueries(t *testing.T) {
 }
 
 func Test_POAInvalidGenesis(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
@@ -120,7 +123,7 @@ func Test_POAInvalidGenesis(t *testing.T) {
 
 	// check (minValidators - 1) genesis
 	{
-		genCoins, err := sdk.ParseCoins("1000000000000000wings")
+		genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 		require.NoError(t, err)
 		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMinValidators-1), genCoins)
 
@@ -133,7 +136,7 @@ func Test_POAInvalidGenesis(t *testing.T) {
 
 	// check (maxValidators + 1) genesis
 	{
-		genCoins, err := sdk.ParseCoins("1000000000000000wings")
+		genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 		require.NoError(t, err)
 		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMaxValidators+1), genCoins)
 
@@ -146,11 +149,11 @@ func Test_POAInvalidGenesis(t *testing.T) {
 }
 
 func Test_POAValidatorsAdd(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	accs, _, _, privKeys := CreateGenAccounts(11, genCoins)
 	genValidators, genPrivKeys, newValidators := accs[:7], privKeys[:7], accs[7:]
@@ -201,11 +204,11 @@ func Test_POAValidatorsAdd(t *testing.T) {
 }
 
 func Test_POAValidatorsRemove(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	accs, _, _, privKeys := CreateGenAccounts(11, genCoins)
 	genValidators, genPrivKeys, targetValidators := accs[:7], privKeys[:7], accs[7:]
@@ -259,11 +262,11 @@ func Test_POAValidatorsRemove(t *testing.T) {
 }
 
 func Test_POAValidatorsReplace(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	accs, _, _, privKeys := CreateGenAccounts(8, genCoins)
 	genValidators, genPrivKeys, targetValidators := accs[:7], privKeys[:7], accs[7:]
@@ -293,11 +296,11 @@ func Test_POAValidatorsReplace(t *testing.T) {
 }
 
 func Test_POAValidatorsReplaceExisting(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	accs, _, _, privKeys := CreateGenAccounts(8, genCoins)
 	genValidators, genPrivKeys, targetValidators := accs[:7], privKeys[:7], accs[7:]
@@ -322,11 +325,11 @@ func Test_POAValidatorsReplaceExisting(t *testing.T) {
 func Test_POAValidatorsMinMaxRange(t *testing.T) {
 	defMinValidators, defMaxValidators := poaTypes.DefaultMinValidators, poaTypes.DefaultMaxValidators
 
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	accs, _, _, privKeys := CreateGenAccounts(int(defMaxValidators)+1, genCoins)
 	genValidators, genPrivKeys, targetValidators := accs[:defMaxValidators], privKeys[:defMaxValidators], accs[defMaxValidators:]
@@ -362,7 +365,7 @@ func Test_POAValidatorsMinMaxRange(t *testing.T) {
 	}
 }
 
-func addValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, newValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+func addValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, newValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
 	for _, v := range newValidators {
 		addMsg := posMsgs.NewMsgAddValidator(v.Address, ethAddresses[0], genAccs[0].Address)
 		msgID := fmt.Sprintf("addValidator:%s", v.Address)
@@ -378,7 +381,7 @@ func addValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount,
 	return sdk.Result{}
 }
 
-func replaceValidator(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, oldValidatorAddr, newValidatorAddr sdk.AccAddress, oldPrivKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+func replaceValidator(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, oldValidatorAddr, newValidatorAddr sdk.AccAddress, oldPrivKeys []crypto.PrivKey, doChecks bool) sdk.Result {
 	replaceMsg := posMsgs.NewMsgReplaceValidator(oldValidatorAddr, newValidatorAddr, ethAddresses[0], genAccs[0].GetAddress())
 	msgID := fmt.Sprintf("replaceValidator:%s", newValidatorAddr)
 
@@ -390,7 +393,7 @@ func replaceValidator(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccou
 	return res
 }
 
-func removeValidators(t *testing.T, app *WbServiceApp, genAccs []*auth.BaseAccount, rmValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+func removeValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, rmValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
 	for _, v := range rmValidators {
 		removeMsg := posMsgs.NewMsgRemoveValidator(v.Address, genAccs[0].Address)
 		msgID := fmt.Sprintf("removeValidator:%s", v.Address)

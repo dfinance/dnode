@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	"github.com/WingsDao/wings-blockchain/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Get calls from CLI.

@@ -2,11 +2,12 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"path"
+
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
-	"path"
 )
 
 var (
@@ -38,9 +39,9 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&flagCfgFile, "config", "", "config file (default is $HOME/.oracle-app.yaml)")
 	rootCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "warn", "sets an application log level (trace, debug, info, warn, error, fatal, panic)")
-	rootCmd.PersistentFlags().StringVar(&flagChainID, "chain-id", "wings-testnet", "sets the chain ID")
+	rootCmd.PersistentFlags().StringVar(&flagChainID, "chain-id", "dn-testnet", "sets the chain ID")
 	rootCmd.PersistentFlags().StringVar(&flagAPIURL, "api-url", "http://127.0.0.1:1317", "sets an URL for API requests")
-	rootCmd.PersistentFlags().StringVar(&flagFees, "fees", "1wings", "sets the transaction fees")
+	rootCmd.PersistentFlags().StringVar(&flagFees, "fees", "1dfi", "sets the transaction fees")
 	rootCmd.PersistentFlags().Uint64Var(&flagGas, "gas", 50000, "sets the gas fees")
 }
 
@@ -58,11 +59,11 @@ func initConfig() {
 		}
 
 		// Search config in home directory with name ".oracle-app" (without extension).
-		viper.AddConfigPath(path.Join(home, ".wbd-oracle-app"))
+		viper.AddConfigPath(path.Join(home, ".oracle-app"))
 
 		viper.SetConfigName("config.yml")
 	}
-	viper.SetEnvPrefix("WB_ORACLEAPP")
+	viper.SetEnvPrefix("DN_ORACLEAPP")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.

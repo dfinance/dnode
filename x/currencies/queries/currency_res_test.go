@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/WingsDao/wings-blockchain/x/currencies/types"
+	"github.com/dfinance/dnode/x/currencies/types"
 )
 
 func TestQueryCurrencyRes_String(t *testing.T) {

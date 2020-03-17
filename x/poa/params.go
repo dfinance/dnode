@@ -5,7 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/dfinance/dnode/x/poa/types"
 )
 
 // New Paramstore for PoA module.

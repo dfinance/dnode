@@ -12,11 +12,11 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
-	cmd "github.com/WingsDao/wings-blockchain/x/oracle/client/cli"
-	"github.com/WingsDao/wings-blockchain/x/oracle/client/rest"
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/keeper"
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/oracle/client/cli"
+	cmd "github.com/dfinance/dnode/x/oracle/client/cli"
+	"github.com/dfinance/dnode/x/oracle/client/rest"
+	"github.com/dfinance/dnode/x/oracle/internal/keeper"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 var (

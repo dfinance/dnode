@@ -2,17 +2,20 @@ package app
 
 import (
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/currencies"
-	ccMsgs "github.com/WingsDao/wings-blockchain/x/currencies/msgs"
-	ccTypes "github.com/WingsDao/wings-blockchain/x/currencies/types"
-	msTypes "github.com/WingsDao/wings-blockchain/x/multisig/types"
+	"net/http"
+	"net/url"
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
-	"net/http"
-	"net/url"
-	"testing"
+
+	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/currencies"
+	ccMsgs "github.com/dfinance/dnode/x/currencies/msgs"
+	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	msTypes "github.com/dfinance/dnode/x/multisig/types"
 )
 
 const (
@@ -23,11 +26,11 @@ const (
 )
 
 func Test_CurrencyHandlerIsMultisigOnly(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genValidators, _, _, genPrivKeys := CreateGenAccounts(7, genCoins)
 
@@ -44,11 +47,11 @@ func Test_CurrencyHandlerIsMultisigOnly(t *testing.T) {
 }
 
 func Test_CurrencyRest(t *testing.T) {
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, _, _, genPrivKeys := CreateGenAccounts(7, genCoins)
 
-	app, chainId, stopFunc := newTestWbAppWithRest(t, genAccs)
+	app, chainId, stopFunc := newTestDnAppWithRest(t, genAccs)
 	defer stopFunc()
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
@@ -192,11 +195,11 @@ func Test_CurrencyRest(t *testing.T) {
 }
 
 func Test_CurrencyQueries(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
 
@@ -265,11 +268,11 @@ func Test_CurrencyQueries(t *testing.T) {
 }
 
 func Test_CurrencyIssue(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
 
@@ -374,11 +377,11 @@ func Test_CurrencyIssue(t *testing.T) {
 }
 
 func Test_CurrencyIssueHugeAmount(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
 
@@ -411,18 +414,18 @@ func Test_CurrencyIssueHugeAmount(t *testing.T) {
 		checkIssueExists(t, app, issueId, denom, hugeAmount, recipientAddr)
 		checkCurrencyExists(t, app, denom, hugeAmount, 0)
 
-		require.Panics(t, func(){
+		require.Panics(t, func() {
 			app.bankKeeper.GetCoins(GetContext(app, true), recipientAddr)
 		})
 	}
 }
 
 func Test_CurrencyIssueDecimals(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
 
@@ -485,11 +488,11 @@ func Test_CurrencyIssueDecimals(t *testing.T) {
 }
 
 func Test_CurrencyDestroy(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
 
@@ -540,7 +543,7 @@ func Test_CurrencyDestroy(t *testing.T) {
 	}
 }
 
-func issueCurrency(t *testing.T, app *WbServiceApp,
+func issueCurrency(t *testing.T, app *DnServiceApp,
 	ccSymbol string, ccAmount sdk.Int, ccDecimals int8, msgID, issueID string,
 	recipientAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doCheck bool) sdk.Result {
 
@@ -548,7 +551,7 @@ func issueCurrency(t *testing.T, app *WbServiceApp,
 	return MSMsgSubmitAndVote(t, app, msgID, issueMsg, recipientAccIdx, accs, privKeys, doCheck)
 }
 
-func destroyCurrency(t *testing.T, app *WbServiceApp,
+func destroyCurrency(t *testing.T, app *DnServiceApp,
 	chainID, ccSymbol string, ccAmount sdk.Int,
 	recipientAddr sdk.AccAddress, recipientPrivKey crypto.PrivKey, doCheck bool) sdk.Result {
 
@@ -564,7 +567,7 @@ func destroyCurrency(t *testing.T, app *WbServiceApp,
 	return res
 }
 
-func checkCurrencyExists(t *testing.T, app *WbServiceApp, symbol string, supply sdk.Int, decimals int8) {
+func checkCurrencyExists(t *testing.T, app *DnServiceApp, symbol string, supply sdk.Int, decimals int8) {
 	currencyObj := ccTypes.Currency{}
 	CheckRunQuery(t, app, ccTypes.CurrencyReq{Symbol: symbol}, queryCurrencyGetCurrencyPath, &currencyObj)
 
@@ -573,7 +576,7 @@ func checkCurrencyExists(t *testing.T, app *WbServiceApp, symbol string, supply 
 	require.Equal(t, decimals, currencyObj.Decimals, "decimals")
 }
 
-func checkIssueExists(t *testing.T, app *WbServiceApp, issueID, symbol string, amount sdk.Int, recipientAddr sdk.AccAddress) {
+func checkIssueExists(t *testing.T, app *DnServiceApp, issueID, symbol string, amount sdk.Int, recipientAddr sdk.AccAddress) {
 	issue := ccTypes.Issue{}
 	CheckRunQuery(t, app, ccTypes.IssueReq{IssueID: issueID}, queryCurrencyGetIssuePath, &issue)
 
@@ -582,7 +585,7 @@ func checkIssueExists(t *testing.T, app *WbServiceApp, issueID, symbol string, a
 	require.Equal(t, recipientAddr, issue.Recipient)
 }
 
-func checkRecipientCoins(t *testing.T, app *WbServiceApp, recipientAddr sdk.AccAddress, denom string, amount sdk.Int, decimals int8) {
+func checkRecipientCoins(t *testing.T, app *DnServiceApp, recipientAddr sdk.AccAddress, denom string, amount sdk.Int, decimals int8) {
 	checkBalance := amount
 
 	coins := app.bankKeeper.GetCoins(GetContext(app, true), recipientAddr)

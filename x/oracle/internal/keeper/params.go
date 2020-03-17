@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // GetParams gets params from the store

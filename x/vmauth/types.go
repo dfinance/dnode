@@ -2,26 +2,28 @@ package vmauth
 
 import (
 	"encoding/hex"
-	"github.com/WingsDao/wings-blockchain/helpers"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
 const (
 	resourceKey = "016ee00e2d212d7676b19de9ce7a4b598a339ae2286ef6b378c0c348b3fd3221ed"
 )
 
-type WBCoin struct {
+type DNCoin struct {
 	Denom []byte  // coin denom
 	Value sdk.Int // coin value
 }
 
 type AccountResource struct {
-	Balances []WBCoin // coins
+	Balances []DNCoin // coins
 }
 
 // convert byte array to coins.
-func bytesToCoins(coins []WBCoin) sdk.Coins {
+func bytesToCoins(coins []DNCoin) sdk.Coins {
 	realCoins := make(sdk.Coins, len(coins))
 	for i, coin := range coins {
 		realCoins[i] = sdk.NewCoin(string(coin.Denom), coin.Value)
@@ -57,9 +59,9 @@ func GetResPath() []byte {
 // Convert acc to account resource.
 func AccResourceFromAccount(acc exported.Account) AccountResource {
 	accCoins := acc.GetCoins()
-	balances := make([]WBCoin, len(accCoins))
+	balances := make([]DNCoin, len(accCoins))
 	for i, coin := range accCoins {
-		balances[i] = WBCoin{
+		balances[i] = DNCoin{
 			Denom: []byte(coin.Denom),
 			Value: coin.Amount,
 		}

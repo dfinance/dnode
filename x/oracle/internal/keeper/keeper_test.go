@@ -1,13 +1,14 @@
 package keeper_test
 
 import (
+	"testing"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
-	"testing"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle/internal/types"
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // TestKeeper_SetGetAsset tests adding assets to the oracle, getting assets from the store
@@ -151,7 +152,7 @@ func TestKeeper_GetSetCurrentPrice(t *testing.T) {
 	ctx := helper.mApp.BaseApp.NewContext(false, header)
 	ap := types.Params{
 		Assets: []types.Asset{
-			types.Asset{AssetCode: "tstusd",Oracles: types.Oracles{}, Active: true},
+			types.Asset{AssetCode: "tstusd", Oracles: types.Oracles{}, Active: true},
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)

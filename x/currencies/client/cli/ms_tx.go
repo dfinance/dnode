@@ -6,15 +6,15 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/WingsDao/wings-blockchain/x/currencies/msgs"
-	msMsg "github.com/WingsDao/wings-blockchain/x/multisig/msgs"
-
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
+
+	"github.com/dfinance/dnode/x/currencies/msgs"
+	msMsg "github.com/dfinance/dnode/x/multisig/msgs"
 )
 
 // Issue new currency command.

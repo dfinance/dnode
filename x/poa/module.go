@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/WingsDao/wings-blockchain/x/core"
-	"github.com/WingsDao/wings-blockchain/x/poa/client"
-	"github.com/WingsDao/wings-blockchain/x/poa/client/rest"
-	"github.com/WingsDao/wings-blockchain/x/poa/types"
+	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/poa/client"
+	"github.com/dfinance/dnode/x/poa/client/rest"
+	"github.com/dfinance/dnode/x/poa/types"
 )
 
 var (

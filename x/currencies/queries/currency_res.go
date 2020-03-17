@@ -1,7 +1,7 @@
 package queries
 
 import (
-	"github.com/WingsDao/wings-blockchain/x/currencies/types"
+	"github.com/dfinance/dnode/x/currencies/types"
 )
 
 // Get currency query response

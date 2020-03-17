@@ -15,10 +15,10 @@ import (
 	rest2 "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	sdkutils "github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
-	wbcnf "github.com/WingsDao/wings-blockchain/cmd/config"
-	"github.com/WingsDao/wings-blockchain/oracle-app/internal/exchange"
-	"github.com/WingsDao/wings-blockchain/oracle-app/internal/utils"
-	"github.com/WingsDao/wings-blockchain/x/oracle"
+	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/oracle-app/internal/exchange"
+	"github.com/dfinance/dnode/oracle-app/internal/utils"
+	"github.com/dfinance/dnode/x/oracle"
 )
 
 type Client struct {
@@ -39,7 +39,7 @@ type Client struct {
 
 func init() {
 	config := sdk.GetConfig()
-	wbcnf.InitBechPrefixes(config)
+	dnConfig.InitBechPrefixes(config)
 	config.Seal()
 }
 

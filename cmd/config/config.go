@@ -1,18 +1,19 @@
-// Configuration for WBD and WBCli.
+// Configuration for DNode and DNCli.
 package config
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
 	cmn "github.com/tendermint/tendermint/libs/common"
-	"os"
-	"path/filepath"
 )
 
 const (
-	MainDenom            = "wings"
-	MainPrefix           = "wallets"                                                                 // Main prefix for all addresses.
+	MainDenom            = "dfi"
+	MainPrefix           = "wallet"                                                                 // Main prefix for all addresses.
 	Bech32PrefixAccAddr  = MainPrefix                                                                // Bech32 prefix for account addresses.
 	Bech32PrefixAccPub   = MainPrefix + sdk.PrefixPublic                                             // Bech32 prefix for accounts pub keys.
 	Bech32PrefixValAddr  = MainPrefix + sdk.PrefixValidator + sdk.PrefixOperator                     // Bech32 prefix for validators addresses.
@@ -46,7 +47,7 @@ func DefaultVMConfig() *VMConfig {
 	}
 }
 
-// Initializing WB custom prefixes.
+// Initializing DN custom prefixes.
 func InitBechPrefixes(config *sdk.Config) {
 	config.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
 	config.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)

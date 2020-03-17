@@ -10,7 +10,8 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	"github.com/WingsDao/wings-blockchain/x/oracle"
+	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/oracle"
 )
 
 const (
@@ -20,11 +21,11 @@ const (
 )
 
 func Test_OracleQueries(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
 	_, err = setGenesis(t, app, genAccs)
@@ -174,17 +175,17 @@ func Test_OracleQueries(t *testing.T) {
 }
 
 func Test_OracleAddOracle(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
 	_, err = setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "wb2wb"
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -260,17 +261,17 @@ func Test_OracleAddOracle(t *testing.T) {
 }
 
 func Test_OracleSetOracles(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
 	_, err = setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "wb2wb"
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "db2db"
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -337,17 +338,17 @@ func Test_OracleSetOracles(t *testing.T) {
 }
 
 func Test_OracleAddAsset(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
 	_, err = setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "wb2wb"
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -376,7 +377,7 @@ func Test_OracleAddAsset(t *testing.T) {
 	}
 
 	// check adding new asset with existing nominees
-	newAssetCode := "wb2test"
+	newAssetCode := "dn2test"
 	{
 		msg := oracle.MsgAddAsset{
 			Nominee: nomineeAddr,
@@ -422,17 +423,17 @@ func Test_OracleAddAsset(t *testing.T) {
 }
 
 func TestOracle_SetAsset(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
 	_, err = setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "wb2wb"
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -472,7 +473,7 @@ func TestOracle_SetAsset(t *testing.T) {
 
 	// check setting asset (updating)
 	{
-		updAssetCode := "wb2test1"
+		updAssetCode := "dn2test1"
 
 		msg := oracle.MsgSetAsset{
 			Nominee: nomineeAddr,
@@ -495,17 +496,17 @@ func TestOracle_SetAsset(t *testing.T) {
 }
 
 func Test_OraclePostPrices(t *testing.T) {
-	app, server := newTestWbApp()
+	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000wings")
+	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
 	require.NoError(t, err)
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
 	_, err = setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
-	assetCode := "wb2wb"
+	assetCode := "dn2dn"
 
 	// set params (add asset with oracle 0 / nominees)
 	{

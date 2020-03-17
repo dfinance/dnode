@@ -4,11 +4,11 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/dfinance/dnode/x/vm/internal/types"
+	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 // Deploy script with mocked VM.

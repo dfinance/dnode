@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
 
-	"github.com/WingsDao/wings-blockchain/x/currencies/client/cli"
-	"github.com/WingsDao/wings-blockchain/x/currencies/types"
+	"github.com/dfinance/dnode/x/currencies/client/cli"
+	"github.com/dfinance/dnode/x/currencies/types"
 )
 
 // Returns get commands for this module.

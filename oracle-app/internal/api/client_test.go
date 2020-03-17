@@ -11,11 +11,11 @@ import (
 
 const (
 	mnemonic = "tiny clump grief head sleep eager follow castle twelve stock hamster spend trumpet clump license rude enough afraid faith poem steel sun misery differ"
-	chainID  = "wings-testnet"
+	chainID  = "dn-testnet"
 )
 
 func Test_GetAccount(t *testing.T) {
-	fees, err := sdk.ParseCoins("1wings")
+	fees, err := sdk.ParseCoins("1" + config.MainDenom)
 	require.NoError(t, err)
 	cl, err := NewClient(mnemonic, chainID, "127.0.0.1:1317", fees)
 	require.NoError(t, err)
@@ -26,7 +26,7 @@ func Test_GetAccount(t *testing.T) {
 }
 
 func Test_PostPrice(t *testing.T) {
-	fees, err := sdk.ParseCoins("1wings")
+	fees, err := sdk.ParseCoins("1" + config.MainDenom)
 	require.NoError(t, err)
 	cl, err := NewClient(mnemonic, chainID, "127.0.0.1:1317", fees)
 	require.NoError(t, err)

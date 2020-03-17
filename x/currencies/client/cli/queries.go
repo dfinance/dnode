@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
-	"github.com/WingsDao/wings-blockchain/x/currencies/types"
+	"github.com/dfinance/dnode/x/currencies/types"
 )
 
 // Get destroys by page & limit.

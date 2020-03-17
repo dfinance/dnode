@@ -3,20 +3,10 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/WingsDao/wings-blockchain/x/vmauth"
 	"net"
 	"os"
 	"time"
 
-	"github.com/WingsDao/wings-blockchain/cmd/config"
-	"github.com/WingsDao/wings-blockchain/x/core"
-	"github.com/WingsDao/wings-blockchain/x/currencies"
-	"github.com/WingsDao/wings-blockchain/x/multisig"
-	"github.com/WingsDao/wings-blockchain/x/vm"
-
-	"github.com/WingsDao/wings-blockchain/x/oracle"
-	"github.com/WingsDao/wings-blockchain/x/poa"
-	poaTypes "github.com/WingsDao/wings-blockchain/x/poa/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -38,20 +28,30 @@ import (
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
+
+	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/multisig"
+	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/poa"
+	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/vm"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
 const (
-	appName = "wb" // application name.
+	appName = "dfinance" // application name.
 )
 
 type GenesisState map[string]json.RawMessage
 
 var (
 	// default home directories for the application CLI.
-	DefaultCLIHome = os.ExpandEnv("$HOME/.wbcli")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.dncli")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored.
-	DefaultNodeHome = os.ExpandEnv("$HOME/.wbd")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.dnode")
 
 	ModuleBasics = module.NewBasicManager(
 		genaccounts.AppModuleBasic{}, // genesis accounts management.
@@ -78,8 +78,8 @@ var (
 	}
 )
 
-// WB Service App implements WB mains logic.
-type WbServiceApp struct {
+// DN Service App implements DN mains logic.
+type DnServiceApp struct {
 	*BaseApp
 
 	cdc      *codec.Codec
@@ -109,7 +109,7 @@ type WbServiceApp struct {
 }
 
 // Initialize connection to VM server.
-func (app *WbServiceApp) InitializeVMConnection(addr string) {
+func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
 	var kpParams = keepalive.ClientParameters{
@@ -127,12 +127,12 @@ func (app *WbServiceApp) InitializeVMConnection(addr string) {
 }
 
 // Close VM connection and DS server stops.
-func (app WbServiceApp) CloseConnections() {
+func (app DnServiceApp) CloseConnections() {
 	app.vmKeeper.CloseConnections()
 }
 
 // Initialize listener to listen for connections from VM for data server.
-func (app *WbServiceApp) InitializeVMDataServer(addr string) {
+func (app *DnServiceApp) InitializeVMDataServer(addr string) {
 	var err error
 
 	app.Logger().Info(fmt.Sprintf("up data server listen server %s", addr))
@@ -152,8 +152,8 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
-// NewWbServiceApp is a constructor function for wings blockchain.
-func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, baseAppOptions ...func(*BaseApp)) *WbServiceApp {
+// NewDnServiceApp is a constructor function for dfinance blockchain.
+func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
 	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
@@ -179,7 +179,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		staking.TStoreKey,
 	)
 
-	var app = &WbServiceApp{
+	var app = &DnServiceApp{
 		BaseApp: bApp,
 		cdc:     cdc,
 		keys:    keys,
@@ -371,7 +371,7 @@ func NewWbServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 }
 
 // ModuleAccountAddrs returns all the app's module account addresses.
-func (app *WbServiceApp) ModuleAccountAddrs() map[string]bool {
+func (app *DnServiceApp) ModuleAccountAddrs() map[string]bool {
 	modAccAddrs := make(map[string]bool)
 	for acc := range maccPerms {
 		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
@@ -381,7 +381,7 @@ func (app *WbServiceApp) ModuleAccountAddrs() map[string]bool {
 }
 
 // Initialize chain function (initializing genesis data).
-func (app *WbServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *DnServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 
 	err := app.cdc.UnmarshalJSON(req.AppStateBytes, &genesisState)
@@ -398,22 +398,22 @@ func (app *WbServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain)
 }
 
 // Initialize begin blocker function.
-func (app *WbServiceApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *DnServiceApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
 
 // Initialize end blocker function.
-func (app *WbServiceApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+func (app *DnServiceApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
 
 // Load app with specific height.
-func (app *WbServiceApp) LoadHeight(height int64) error {
+func (app *DnServiceApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }
 
 // Exports genesis and validators.
-func (app *WbServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
+func (app *DnServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
 ) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
 
 	// as if they could withdraw from the start of the next block.

@@ -2,6 +2,7 @@ package vmauth
 
 import (
 	"encoding/json"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"

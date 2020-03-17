@@ -1,7 +1,9 @@
 // Aliases to use them outside pocket without import of specific package.
 package poa
 
-import "github.com/WingsDao/wings-blockchain/x/poa/types"
+import (
+	"github.com/dfinance/dnode/x/poa/types"
+)
 
 const (
 	ModuleName        = types.ModuleName

@@ -3,11 +3,13 @@ package types
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"github.com/WingsDao/wings-blockchain/x/vm/internal/types/vm_grpc"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
+	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 // Test event happens when VM return status to keep changes.
