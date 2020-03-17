@@ -13,8 +13,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
 	"github.com/dfinance/dnode/x/vm/internal/types"
-	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 // Get query commands for VM module.

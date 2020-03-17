@@ -15,8 +15,9 @@ import (
 	"github.com/spf13/cobra"
 	codec "github.com/tendermint/go-amino"
 
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
 	"github.com/dfinance/dnode/x/vm/internal/types"
-	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 // Return TX commands for CLI.

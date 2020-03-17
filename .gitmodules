@@ -1,3 +1,0 @@
-[submodule "vm-proto"]
-	path = vm-proto
-	url = https://github.com/dfinance/dvm-proto.git

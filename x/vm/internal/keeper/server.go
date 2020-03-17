@@ -13,9 +13,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/dfinance/dvm-proto/go/ds_grpc"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
 	"github.com/dfinance/dnode/x/vm/internal/types"
-	"github.com/dfinance/dnode/x/vm/internal/types/ds_grpc"
-	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 // Check type.
