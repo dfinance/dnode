@@ -2,4 +2,4 @@
 include:
   - project: 'DevOps/gitlab-templates'
     ref: master
-    file: '/include/blockchain/wings-blockchain.yml'
+    file: '/include/dfinance/dnode.yml'
