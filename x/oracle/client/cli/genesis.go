@@ -19,12 +19,12 @@ const (
 	flagClientHome = "home-client"
 )
 
-// AddOracleNomeneesCmd returns add-oracle-nomenees cobra Command.
-func AddOracleNomeneesCmd(ctx *server.Context, cdc *codec.Codec,
+// AddOracleNomineesCmd returns add-oracle-nomenees cobra Command.
+func AddOracleNomineesCmd(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-oracle-nomenees [address1,address2...]",
-		Short: "Add oracle nomenees to genesis.json",
+		Use:   "add-oracle-nominees-gen [address1,address2...]",
+		Short: "Add oracle nominees to genesis.json",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config
@@ -88,8 +88,8 @@ func AddOracleNomeneesCmd(ctx *server.Context, cdc *codec.Codec,
 func AddAssetGenCmd(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-asset-gen [denom] [oracles]",
-		Short: "Add asset to genesis.json",
+		Use:   "add-oracle-asset-gen [denom] [oracles]",
+		Short: "Add oracle asset to genesis.json",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			denom := args[0]

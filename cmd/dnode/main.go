@@ -57,7 +57,7 @@ func main() {
 		// Allows user to poa genesis validator
 		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
 		vmCli.GenesisWSFromFile(ctx, cdc),
-		oracleCli.AddOracleNomeneesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
