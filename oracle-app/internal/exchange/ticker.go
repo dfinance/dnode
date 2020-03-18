@@ -28,8 +28,16 @@ func (p *Pair) ID() string {
 }
 
 type Asset struct {
-	Code string `mapstructure:"code"`
-	Pair Pair   `mapstructure:"pair"`
+	Code     string         `mapstructure:"code"`
+	Pair     Pair           `mapstructure:"pair"`
+	Simulate SimulateParams `mapstructure:"simulate"`
+}
+
+type SimulateParams struct {
+	Enabled  bool `mapstructure:"enabled"`
+	MinPrice int  `mapstructure:"min_price"`
+	MaxPrice int  `mapstructure:"max_price"`
+	PeriodS  int  `mapstructure:"period_s"`
 }
 
 func NewAsset(code string, pair Pair) Asset {

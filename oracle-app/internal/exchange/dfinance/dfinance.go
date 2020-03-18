@@ -9,10 +9,7 @@ import (
 )
 
 const (
-	exchangeName = "dfinance"
-
-	basePriceMin = 230
-	basePriceMax = 250
+	exchangeName = "dfinance-test"
 )
 
 var _ Subscriber = (*dnSubscriber)(nil)
@@ -23,18 +20,32 @@ func init() {
 	Register(exchangeName, &dnSubscriber{})
 }
 
-func (d dnSubscriber) Subscribe(_ Asset, out chan Ticker) error {
+func (d dnSubscriber) Subscribe(asset Asset, out chan Ticker) error {
+	if !asset.Simulate.Enabled {
+		return fmt.Errorf("asset %s: simulation disabled", asset.Code)
+	}
+	if asset.Simulate.PeriodS <= 0 {
+		return fmt.Errorf("asset %s: invalid simulation period", asset.Code)
+	}
+	if asset.Simulate.MinPrice < 0 || asset.Simulate.MaxPrice < 0 {
+		return fmt.Errorf("asset %s: invalid simulation minPrice/maxPrice: lt 0", asset.Code)
+	}
+	if asset.Simulate.MinPrice >= asset.Simulate.MaxPrice {
+		return fmt.Errorf("asset %s: invalid simulation minPrice/maxPrice: min ge max", asset.Code)
+	}
+
 	rand.Seed(time.Now().UnixNano())
-	ticker := time.Tick(time.Second)
+	ticker := time.Tick(time.Duration(asset.Simulate.PeriodS) * time.Second)
 	go func() {
 		for {
 			<-ticker
-			randPrice := rand.Intn(basePriceMax-basePriceMin) + basePriceMin
-			priceDfiEth := fmt.Sprintf("%.8f", float64(randPrice)/1000)
-			priceEthDfi := fmt.Sprintf("%.8f", float64(randPrice))
-			out <- NewTicker(NewAsset("dfi_eth", Pair{}), priceDfiEth, "dfi-test", time.Now().UTC())
-			out <- NewTicker(NewAsset("eth_dfi", Pair{}), priceEthDfi, "dfi-test", time.Now().UTC())
+
+			randPrice := rand.Intn(asset.Simulate.MaxPrice-asset.Simulate.MinPrice) + asset.Simulate.MinPrice
+			priceStr := fmt.Sprintf("%.8f", float64(randPrice))
+
+			out <- NewTicker(NewAsset(asset.Code, Pair{}), priceStr, exchangeName, time.Now().UTC())
 		}
 	}()
+
 	return nil
 }
