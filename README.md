@@ -82,6 +82,7 @@ Then let's create 4 accounts, one to store coins, the rest for PoA validators:
 
     dncli keys add pos
     dncli keys add bank
+    dncli keys add nominee
     dncli keys add validator1
     dncli keys add validator2
     dncli keys add validator3
@@ -93,17 +94,20 @@ First of all we create `pos` account, this account will be used later as `Proof 
 As you see we create one account calling `bank` where we will be store all generated **dfi** coins for start,
 and then 3 accounts to make them PoA validators, we need at least 3 validators because by default it's a minimum amount of PoA validators to have.
 
+`nominee` is account administrator of oracles system.
+
 Now let's add genesis account and initiate genesis PoA validators and PoS account.
 
 Also to have VM correct work, needs to deploy standard lib write operations.
 
 It should be done before next commands, so see tutorial **[how to initialize genesis for VM](#genesis-compilation)**.
 
-    dnode add-genesis-account [pos-address]  5000000000000dfi
-    dnode add-genesis-account [bank-address] 90000000000000000000000000dfi
-    dnode add-genesis-account [validator-1-address]  5000000000000dfi
-    dnode add-genesis-account [validator-2-address]  5000000000000dfi
-    dnode add-genesis-account [validator-3-address]  5000000000000dfi
+    dnode add-genesis-account [pos-address]  1000000000000000000000000dfi
+    dnode add-genesis-account [bank-address] 95000000000000000000000000dfi
+    dnode add-genesis-account [nominee]      1000000000000000000000000dfi
+    dnode add-genesis-account [validator-1-address]  1000000000000000000000000dfi
+    dnode add-genesis-account [validator-2-address]  1000000000000000000000000dfi
+    dnode add-genesis-account [validator-3-address]  1000000000000000000000000dfi
 
     dnode add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
     dnode add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
@@ -151,7 +155,7 @@ By changing this we determine "dfi" as staking currency.
 
 Time to prepare `pos` account:
 
-    dnode gentx --name pos --amount 5000000000000dfi
+    dnode gentx --name pos --amount 13000000000000000000000000dfi
 
 After run this command you will see output like:
 
