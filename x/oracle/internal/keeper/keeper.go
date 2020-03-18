@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -47,22 +48,26 @@ func NewKeeper(
 	}
 }
 
-// TODO: define the logic (example is commented out)
-func (k Keeper) checkPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.Time) sdk.Error {
-	//const thresholdDur = 1 * time.Minute
-	//
-	//absDuration := func(dur time.Duration) time.Duration {
-	//	if dur < 0 {
-	//		return -dur
-	//	}
-	//	return dur
-	//}
-	//
-	//blockTime := ctx.BlockTime()
-	//diffDur := blockTime.Sub(receivedAt)
-	//if absDuration(diffDur) > thresholdDur {
-	//	return types.ErrInvalidReceivedAt(k.codespace, fmt.Sprintf("timestamp difference %v should be less than %v", diffDur, thresholdDur))
-	//}
+// Check PostPrice's ReceivedAt timestamp (algorithm depends on module params)
+func (k Keeper) CheckPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.Time) sdk.Error {
+	cfg := k.GetPostPriceParams(ctx)
+
+	if cfg.ReceivedAtDiffInS > 0 {
+		thresholdDur := time.Duration(cfg.ReceivedAtDiffInS) * time.Second
+
+		absDuration := func(dur time.Duration) time.Duration {
+			if dur < 0 {
+				return -dur
+			}
+			return dur
+		}
+
+		blockTime := ctx.BlockTime()
+		diffDur := blockTime.Sub(receivedAt)
+		if absDuration(diffDur) > thresholdDur {
+			return types.ErrInvalidReceivedAt(k.codespace, fmt.Sprintf("timestamp difference %v should be less than %v", diffDur, thresholdDur))
+		}
+	}
 
 	return nil
 }
@@ -76,7 +81,7 @@ func (k Keeper) SetPrice(
 	receivedAt time.Time) (types.PostedPrice, sdk.Error) {
 
 	// validate price receivedAt timestamp comparing to the current blockHeight timestamp
-	if err := k.checkPriceReceivedAtTimestamp(ctx, receivedAt); err != nil {
+	if err := k.CheckPriceReceivedAtTimestamp(ctx, receivedAt); err != nil {
 		return types.PostedPrice{}, err
 	}
 
