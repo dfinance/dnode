@@ -6,7 +6,8 @@ Oracle app fetching data from exchanges and place prices to Dfinance blockchain.
 
 To install oracle app as binary:
 
-    cd ../
+    git clone https://github.com/dfinance/dnode.git
+    cd node
     make install-oracleapp
     mkdir ~/.oracle-app
     oracle-app init
@@ -17,7 +18,7 @@ You can try help:
     
 ### Launch
 
-**IMPORTANT:** this actions works only if have access to oracle account of specific asset.
+**IMPORTANT:** this actions works only if you have access to oracle account of specific asset.
 
 To launch oracle app first open a configuration:
 
@@ -58,6 +59,7 @@ exchanges:
           period_s: 1
 ```
 
+Save file.
 Now it's possible to launch:
 
     DN_ORACLEAPP_MNEMONIC="<mnemonic>" oracle-app start
