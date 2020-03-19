@@ -151,9 +151,7 @@ By changing this we determine "dfi" as staking currency.
 
 Time to prepare `pos` account:
 
-    dnode gentx --name pos --amount 1000000000000000000dfi
-    
-Max `--amount` value is `0xFFFFFFFFFFFFFFF` (consensus power units restriction).
+    dnode gentx --name pos --amount 1000000000000000000000000dfi
 
 After run this command you will see output like:
 
