@@ -49,10 +49,8 @@ func (e *exchange) tickerHandler(t *goex.Ticker) {
 	if !found {
 		return
 	}
-	price, err := utils.FloatToFPString(t.Last, utils.Precision)
-	if err != nil {
-		fmt.Printf("error converting price: %v\n", err)
-	}
+	price := utils.FloatToFPString(t.Last, utils.Precision)
+
 	if old, found := e.lp.Load(t.Pair.String()); found && old.(string) == price {
 		return
 	} else {
