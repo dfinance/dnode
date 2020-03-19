@@ -117,6 +117,7 @@ Now configure cli:
     dncli config indent true
     dncli config trust-node true
     dncli config compiler 127.0.0.1:50053
+    dncli config node 127.0.0.1:26657
 
 Time to change denom in PoS configuration.
 So open `~/.dnode/config/genesis.json` and find this stake settings:
@@ -150,7 +151,7 @@ By changing this we determine "dfi" as staking currency.
 
 Time to prepare `pos` account:
 
-    dnode gentx --name pos --amount 13000000000000000000000000dfi
+    dnode gentx --name pos --amount 1000000000000000000000000dfi
 
 After run this command you will see output like:
 
@@ -159,10 +160,6 @@ After run this command you will see output like:
 After you have generated a genesis transaction, you will have to input the genTx into the genesis file, so that DN chain is aware of the validators. To do so, run:
 
     dnode collect-gentxs
-   
-To make sure that genesis file is correct:
-
-    dnode validate-genesis
 
 If you want to change VM settings, look at [VM section](#configuration).
 
@@ -172,6 +169,10 @@ Also, you can setup an initial oracles, using next command:
 
 Where `[denom]` is currency pair, like 'eth_usdt' or 'btc_eth', etc.
 And `[oracles]` could be oracles accounts or nominee account, separated by comma.
+
+To make sure that genesis file is correct:
+
+    dnode validate-genesis
 
 Now we are ready to launch testnet:
 
