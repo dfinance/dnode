@@ -22,7 +22,7 @@ func ParamKeyTable() params.KeyTable {
 
 // Params params for oracle. Can be altered via governance
 type Params struct {
-	Assets    []Asset         `json:"assets" yaml:"assets"` //  Array containing the assets supported by the oracle
+	Assets    Assets          `json:"assets" yaml:"assets"` //  Array containing the assets supported by the oracle
 	Nominees  []string        `json:"nominees" yaml:"nominees"`
 	PostPrice PostPriceParams `json:"post_price" yaml:"post_price"`
 }
