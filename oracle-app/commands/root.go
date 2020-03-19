@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 
@@ -42,7 +43,23 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&flagChainID, "chain-id", "dn-testnet", "sets the chain ID")
 	rootCmd.PersistentFlags().StringVar(&flagAPIURL, "api-url", "http://127.0.0.1:1317", "sets an URL for API requests")
 	rootCmd.PersistentFlags().StringVar(&flagFees, "fees", "1dfi", "sets the transaction fees")
-	rootCmd.PersistentFlags().Uint64Var(&flagGas, "gas", 50000, "sets the gas fees")
+	rootCmd.PersistentFlags().Uint64Var(&flagGas, "gas", 200000, "sets the gas fees")
+
+	if err := viper.BindPFlag("chain-id", rootCmd.PersistentFlags().Lookup("chain-id")); err != nil {
+		log.Fatal("Unable to bind flag:", err)
+	}
+
+	if err := viper.BindPFlag("api-url", rootCmd.PersistentFlags().Lookup("api-url")); err != nil {
+		log.Fatal("Unable to bind flag:", err)
+	}
+
+	if err := viper.BindPFlag("fees", rootCmd.PersistentFlags().Lookup("fees")); err != nil {
+		log.Fatal("Unable to bind flag:", err)
+	}
+
+	if err := viper.BindPFlag("gas", rootCmd.PersistentFlags().Lookup("gas")); err != nil {
+		log.Fatal("Unable to bind flag:", err)
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -59,15 +76,19 @@ func initConfig() {
 		}
 
 		// Search config in home directory with name ".oracle-app" (without extension).
-		viper.AddConfigPath(path.Join(home, ".oracle-app"))
-
-		viper.SetConfigName("config.yml")
+		viper.SetConfigType("yaml")
+		viper.SetConfigFile(path.Join(home, ".oracle-app", "config.yaml"))
 	}
+
 	viper.SetEnvPrefix("DN_ORACLEAPP")
 	viper.AutomaticEnv() // read in environment variables that match
 
+	viper.SafeWriteConfig()
+
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		fmt.Println("Config file:", viper.ConfigFileUsed())
+	} else {
+		log.Fatal(err)
 	}
 }

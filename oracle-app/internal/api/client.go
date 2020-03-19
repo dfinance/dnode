@@ -67,10 +67,10 @@ func NewClient(mnemonic string, account, index uint32, gas uint64, chainID strin
 
 	kb := keys.NewInMemory()
 	ki, err := kb.CreateAccount(accname, mnemonic, "", pass, account, index)
-	fmt.Printf("Client address is %s\n", ki.GetAddress())
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("Client address is %s\n", ki.GetAddress())
 	cl := &http.Client{
 		Timeout: time.Second * 10,
 	}
