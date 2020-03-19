@@ -190,6 +190,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.InitializeVMDataServer(config.DataListen)
 	app.InitializeVMConnection(config.Address)
 
+	// Reduce ConsensusPower reduction coefficient (1 dfi == 1 power unit)
+	sdk.PowerReduction = sdk.NewInt(1)
+
 	// Initializing vm keeper.
 	var err error
 	app.vmKeeper = vm.NewKeeper(
