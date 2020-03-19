@@ -17,6 +17,7 @@ This is work in progress, yet it supports the following features:
 * **86400** blocks interval to confirm call execution under multisig.
 * **Support PoS**: staking, delegation, slashing, supply, etc.
 * **Supports Smart Contracts**: Move Virtual Machine developed by Libra (Facebook).
+* **Oracles** system based on PoA for now (with migration to PoA/PoS hybrid later).
 
 Motivation is allowing to implement DeFi products without headache.
 
@@ -35,24 +36,6 @@ Required:
     * golang 1.13.8 or later.
     * protoc - can be installed by [instruction](https://www.grpc.io/docs/quickstart/go/).
     
-To install fetch this repository:
-
-    git clone --recurse-submodules https://github.com/dfinance/dnode
-
-Let's build proto files:
-
-    make protos
-
-And let's build both daemon and cli:
-
-    GO111MODULE=on go build cmd/dnode/main.go
-    GO111MODULE=on go build cmd/dncli/main.go
-
-Both commands must execute fine, after it you can run both daemon and cli:
-
-    GO111MODULE=on go run cmd/dnode/main.go
-    GO111MODULE=on go run cmd/dncli/main.go
-
 ## Install as binary
 
 To install both cli and daemon as binaries you can use Makefile:
@@ -66,9 +49,21 @@ So after this command both `dnode` and `dncli` will be available from console
 
 If you want to install specific application (not everything), you always can do:
 
-    make protos install-dnode
-    make protos install-dncli
-    make protos install-oracleapp
+    make install-dnode
+    make install-dncli
+    make install-oracleapp
+
+## Build without Makefile
+
+And let's build both daemon and cli:
+
+    GO111MODULE=on go build -o dnode cmd/dnode/main.go cmd/dnode/testnet.go
+    GO111MODULE=on go build -o dncli cmd/dncli/main.go
+
+Both commands must execute fine, after it you can run both daemon and cli:
+
+    GO111MODULE=on go run cmd/dnode/main.go cmd/dnode/testnet.go
+    GO111MODULE=on go run cmd/dncli/main.go
 
 # Usage
 
@@ -166,6 +161,13 @@ To make sure that genesis file is correct:
     dnode validate-genesis
 
 If you want to change VM settings, look at [VM section](#configuration).
+
+Also, you can setup an initial oracles, using next command:
+
+    dnode add-oracle-asset-gen [denom] [oracles]
+
+Where `[denom]` is currency pair, like 'eth_usdt' or 'btc_eth', etc.
+And `[oracles]` could be oracles accounts or nominee account, separated by comma.
 
 Now we are ready to launch testnet:
 
