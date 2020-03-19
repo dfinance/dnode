@@ -6,10 +6,12 @@ import (
 	"sync"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	goex "github.com/nntaoli-project/GoEx"
 	ws "github.com/nntaoli-project/GoEx/binance"
 
 	. "github.com/dfinance/dnode/oracle-app/internal/exchange"
+	"github.com/dfinance/dnode/oracle-app/internal/utils"
 )
 
 var _ Subscriber = (*exchange)(nil)
@@ -47,16 +49,22 @@ func (e *exchange) tickerHandler(t *goex.Ticker) {
 	if !found {
 		return
 	}
-	price := goex.FloatToString(t.Last, 8)
+	price := utils.FloatToFPString(t.Last, utils.Precision)
+
 	if old, found := e.lp.Load(t.Pair.String()); found && old.(string) == price {
 		return
 	} else {
 		e.lp.Store(t.Pair.String(), price)
 	}
+
+	intPrice, isOk := sdk.NewIntFromString(price)
+	if !isOk {
+		fmt.Printf("error during parsing int price %q to bigint", price)
+	}
 	select {
 	case out.(chan Ticker) <- NewTicker(
 		NewAsset(fmt.Sprintf("%s_%s", strings.ToLower(pair.BaseAsset), strings.ToLower(pair.QuoteAsset)), pair),
-		price,
+		intPrice,
 		exchangeName,
 		ConvertTickerUnixMsTime(t.Date, time.Now().UTC(), 1*time.Hour)):
 	default:

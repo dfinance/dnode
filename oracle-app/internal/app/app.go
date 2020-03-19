@@ -78,7 +78,7 @@ func (a *OracleApp) lisrenUpdates() error {
 			return fmt.Errorf("%s: assets config not found", name)
 		}
 		for _, asset := range assets {
-			err := subscriber.Subscribe(exchange.NewAsset(asset.Code, asset.Pair), a.tickersCh)
+			err := subscriber.Subscribe(asset, a.tickersCh)
 			if err != nil {
 				return fmt.Errorf("%s: subscribe error: %s", name, err)
 			}

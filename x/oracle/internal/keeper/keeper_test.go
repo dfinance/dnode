@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -110,35 +111,45 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 		},
 	}
 	helper.keeper.SetParams(ctx, ap)
+
 	// Set price by oracle 1
-	_, err := helper.keeper.SetPrice(
-		ctx, helper.addrs[0], "tstusd",
-		sdk.NewInt(33000000),
-		header.Time)
-	require.NoError(t, err)
-	// Get raw prices
-	rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
-	require.Equal(t, len(rawPrices), 1)
-	require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(33000000)), true)
+	{
+		_, err := helper.keeper.SetPrice(
+			ctx, helper.addrs[0], "tstusd",
+			sdk.NewInt(33000000),
+			header.Time)
+		require.NoError(t, err)
+
+		// Get raw prices
+		rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
+		require.Equal(t, len(rawPrices), 1)
+		require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(33000000)), true)
+	}
+
 	// Set price by oracle 2
-	_, err = helper.keeper.SetPrice(
-		ctx, helper.addrs[1], "tstusd",
-		sdk.NewInt(35000000),
-		header.Time)
-	require.NoError(t, err)
+	{
+		_, err := helper.keeper.SetPrice(
+			ctx, helper.addrs[1], "tstusd",
+			sdk.NewInt(35000000),
+			header.Time)
+		require.NoError(t, err)
 
-	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
-	require.Equal(t, len(rawPrices), 2)
-	require.Equal(t, rawPrices[1].Price.Equal(sdk.NewInt(35000000)), true)
+		rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
+		require.Equal(t, len(rawPrices), 2)
+		require.Equal(t, rawPrices[1].Price.Equal(sdk.NewInt(35000000)), true)
+	}
 
-	// Update Price by Oracle 1
-	_, err = helper.keeper.SetPrice(
-		ctx, helper.addrs[0], "tstusd",
-		sdk.NewInt(37000000),
-		header.Time)
-	require.NoError(t, err)
-	rawPrices = helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
-	require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(37000000)), true)
+	// Update Price by oracle 1
+	{
+		_, err := helper.keeper.SetPrice(
+			ctx, helper.addrs[0], "tstusd",
+			sdk.NewInt(37000000),
+			header.Time)
+		require.NoError(t, err)
+
+		rawPrices := helper.keeper.GetRawPrices(ctx, "tstusd", header.Height)
+		require.Equal(t, rawPrices[0].Price.Equal(sdk.NewInt(37000000)), true)
+	}
 }
 
 // nolint:errcheck
@@ -196,4 +207,47 @@ func TestKeeper_GetSetCurrentPrice(t *testing.T) {
 	require.NoError(t, err)
 	price = helper.keeper.GetCurrentPrice(ctx, "tstusd")
 	require.Equal(t, price.Price.Equal(sdk.NewInt(34500000)), true)
+}
+
+func TestKeeper_checkPriceReceivedAtTimestamp(t *testing.T) {
+	helper := getMockApp(t, 2, types.GenesisState{}, nil)
+
+	header := abci.Header{Height: helper.mApp.LastBlockHeight() + 1, Time: tmtime.Now()}
+	helper.mApp.BeginBlock(abci.RequestBeginBlock{Header: header})
+	ctx := helper.mApp.BaseApp.NewContext(false, header)
+
+	helper.keeper.SetParams(ctx, types.DefaultParams())
+	receivedAtDiffDur := time.Duration(helper.keeper.GetPostPriceParams(ctx).ReceivedAtDiffInS) * time.Second
+
+	// check equal timestamps
+	{
+		require.Nil(t, helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time))
+	}
+
+	// check timestamps within +-range
+	{
+		dur := receivedAtDiffDur / 2
+		require.Nil(t, helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(dur)))
+		require.Nil(t, helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(-dur)))
+	}
+
+	// check timestamps outside of +-range
+	{
+		dur := receivedAtDiffDur + 1*time.Second
+		targetErr := types.ErrInvalidReceivedAt(helper.keeper.Codespace(), "")
+
+		{
+			err := helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(dur))
+			require.NotNil(t, err)
+			require.Equal(t, targetErr.Codespace(), err.Codespace())
+			require.Equal(t, targetErr.Code(), err.Code())
+		}
+
+		{
+			err := helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(-dur))
+			require.NotNil(t, err)
+			require.Equal(t, targetErr.Codespace(), err.Codespace())
+			require.Equal(t, targetErr.Code(), err.Code())
+		}
+	}
 }

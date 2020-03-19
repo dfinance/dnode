@@ -20,7 +20,6 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
-	oraclecli "github.com/dfinance/dnode/x/oracle/client/cli"
 	"github.com/dfinance/dnode/x/vmauth"
 )
 
@@ -55,7 +54,6 @@ func main() {
 		client.LineBreak,
 		keys.Commands(),
 		client.LineBreak,
-		oraclecli.GetTxCmd(cdc),
 		client.LineBreak,
 		version.Cmd,
 		client.NewCompletionCmd(rootCmd, true),

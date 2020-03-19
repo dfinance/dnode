@@ -17,6 +17,7 @@ This is work in progress, yet it supports the following features:
 * **86400** blocks interval to confirm call execution under multisig.
 * **Support PoS**: staking, delegation, slashing, supply, etc.
 * **Supports Smart Contracts**: Move Virtual Machine developed by Libra (Facebook).
+* **Oracles** system based on PoA for now (with migration to PoA/PoS hybrid later).
 
 Motivation is allowing to implement DeFi products without headache.
 
@@ -35,24 +36,6 @@ Required:
     * golang 1.13.8 or later.
     * protoc - can be installed by [instruction](https://www.grpc.io/docs/quickstart/go/).
     
-To install fetch this repository:
-
-    git clone --recurse-submodules https://github.com/dfinance/dnode
-
-Let's build proto files:
-
-    make protos
-
-And let's build both daemon and cli:
-
-    GO111MODULE=on go build cmd/dnode/main.go
-    GO111MODULE=on go build cmd/dncli/main.go
-
-Both commands must execute fine, after it you can run both daemon and cli:
-
-    GO111MODULE=on go run cmd/dnode/main.go
-    GO111MODULE=on go run cmd/dncli/main.go
-
 ## Install as binary
 
 To install both cli and daemon as binaries you can use Makefile:
@@ -66,9 +49,21 @@ So after this command both `dnode` and `dncli` will be available from console
 
 If you want to install specific application (not everything), you always can do:
 
-    make protos install-dnode
-    make protos install-dncli
-    make protos install-oracleapp
+    make install-dnode
+    make install-dncli
+    make install-oracleapp
+
+## Build without Makefile
+
+And let's build both daemon and cli:
+
+    GO111MODULE=on go build -o dnode cmd/dnode/main.go cmd/dnode/testnet.go
+    GO111MODULE=on go build -o dncli cmd/dncli/main.go
+
+Both commands must execute fine, after it you can run both daemon and cli:
+
+    GO111MODULE=on go run cmd/dnode/main.go cmd/dnode/testnet.go
+    GO111MODULE=on go run cmd/dncli/main.go
 
 # Usage
 
@@ -82,6 +77,7 @@ Then let's create 4 accounts, one to store coins, the rest for PoA validators:
 
     dncli keys add pos
     dncli keys add bank
+    dncli keys add nominee
     dncli keys add validator1
     dncli keys add validator2
     dncli keys add validator3
@@ -93,17 +89,20 @@ First of all we create `pos` account, this account will be used later as `Proof 
 As you see we create one account calling `bank` where we will be store all generated **dfi** coins for start,
 and then 3 accounts to make them PoA validators, we need at least 3 validators because by default it's a minimum amount of PoA validators to have.
 
+`nominee` is account administrator of oracles system.
+
 Now let's add genesis account and initiate genesis PoA validators and PoS account.
 
 Also to have VM correct work, needs to deploy standard lib write operations.
 
 It should be done before next commands, so see tutorial **[how to initialize genesis for VM](#genesis-compilation)**.
 
-    dnode add-genesis-account [pos-address]  5000000000000dfi
-    dnode add-genesis-account [bank-address] 90000000000000000000000000dfi
-    dnode add-genesis-account [validator-1-address]  5000000000000dfi
-    dnode add-genesis-account [validator-2-address]  5000000000000dfi
-    dnode add-genesis-account [validator-3-address]  5000000000000dfi
+    dnode add-genesis-account [pos-address]  1000000000000000000000000dfi
+    dnode add-genesis-account [bank-address] 95000000000000000000000000dfi
+    dnode add-genesis-account [nominee]      1000000000000000000000000dfi
+    dnode add-genesis-account [validator-1-address]  1000000000000000000000000dfi
+    dnode add-genesis-account [validator-2-address]  1000000000000000000000000dfi
+    dnode add-genesis-account [validator-3-address]  1000000000000000000000000dfi
 
     dnode add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
     dnode add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
@@ -118,6 +117,7 @@ Now configure cli:
     dncli config indent true
     dncli config trust-node true
     dncli config compiler 127.0.0.1:50053
+    dncli config node 127.0.0.1:26657
 
 Time to change denom in PoS configuration.
 So open `~/.dnode/config/genesis.json` and find this stake settings:
@@ -151,7 +151,7 @@ By changing this we determine "dfi" as staking currency.
 
 Time to prepare `pos` account:
 
-    dnode gentx --name pos --amount 5000000000000dfi
+    dnode gentx --name pos --amount 1000000000000000000000000dfi
 
 After run this command you will see output like:
 
@@ -160,12 +160,19 @@ After run this command you will see output like:
 After you have generated a genesis transaction, you will have to input the genTx into the genesis file, so that DN chain is aware of the validators. To do so, run:
 
     dnode collect-gentxs
-   
+
+If you want to change VM settings, look at [VM section](#configuration).
+
+Also, you can setup an initial oracles, using next command:
+
+    dnode add-oracle-asset-gen [denom] [oracles]
+
+Where `[denom]` is currency pair, like 'eth_usdt' or 'btc_eth', etc.
+And `[oracles]` could be oracles accounts or nominee account, separated by comma.
+
 To make sure that genesis file is correct:
 
     dnode validate-genesis
-
-If you want to change VM settings, look at [VM section](#configuration).
 
 Now we are ready to launch testnet:
 

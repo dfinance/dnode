@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	goex "github.com/nntaoli-project/GoEx"
 )
 
@@ -28,8 +29,16 @@ func (p *Pair) ID() string {
 }
 
 type Asset struct {
-	Code string `mapstructure:"code"`
-	Pair Pair   `mapstructure:"pair"`
+	Code     string         `mapstructure:"code"`
+	Pair     Pair           `mapstructure:"pair"`
+	Simulate SimulateParams `mapstructure:"simulate"`
+}
+
+type SimulateParams struct {
+	Enabled  bool `mapstructure:"enabled"`
+	MinPrice int  `mapstructure:"min_price"`
+	MaxPrice int  `mapstructure:"max_price"`
+	PeriodS  int  `mapstructure:"period_s"`
 }
 
 func NewAsset(code string, pair Pair) Asset {
@@ -40,7 +49,7 @@ type CurrencyPair = goex.CurrencyPair
 
 type Ticker struct {
 	Asset      Asset
-	Price      string
+	Price      sdk.Int
 	Exchange   string
 	ReceivedAt time.Time
 }
@@ -49,6 +58,6 @@ func (t Ticker) String() string {
 	return fmt.Sprintf("Asset: %s Price: %s ReceivedAt: %v", t.Asset.Code, t.Price, t.ReceivedAt)
 }
 
-func NewTicker(asset Asset, price, exchange string, receivedAt time.Time) Ticker {
+func NewTicker(asset Asset, price sdk.Int, exchange string, receivedAt time.Time) Ticker {
 	return Ticker{Asset: asset, Price: price, Exchange: exchange, ReceivedAt: receivedAt}
 }
