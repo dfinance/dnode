@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/types"
+
 	. "github.com/dfinance/dnode/oracle-app/internal/exchange"
 )
 
@@ -41,9 +43,8 @@ func (d dnSubscriber) Subscribe(asset Asset, out chan Ticker) error {
 			<-ticker
 
 			randPrice := rand.Intn(asset.Simulate.MaxPrice-asset.Simulate.MinPrice) + asset.Simulate.MinPrice
-			priceStr := fmt.Sprintf("%.8f", float64(randPrice))
 
-			out <- NewTicker(NewAsset(asset.Code, Pair{}), priceStr, exchangeName, time.Now().UTC())
+			out <- NewTicker(NewAsset(asset.Code, Pair{}), types.NewInt(int64(randPrice)), exchangeName, time.Now().UTC())
 		}
 	}()
 

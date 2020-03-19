@@ -1,62 +1,60 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
-	"math/big"
 	"strconv"
 	"strings"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func NewIntFromString(str string, precision uint) (i sdk.Int, err error) {
-	if len(str) == 0 {
-		return i, errors.New("decimal string is empty")
-	}
+// Standard precision amount
+const Precision = 8
 
-	// first extract any negative symbol
-	neg := false
-	if str[0] == '-' {
-		neg = true
-		str = str[1:]
-	}
+// Converts float to floating point int string with precision.
+// E.g. 1.632
+func FloatToFPString(a float64, prec int) (string, error) {
+	str := strconv.FormatFloat(a, 'f', -1, 64)
+	parts := strings.Split(str, ".")
 
-	if len(str) == 0 {
-		return i, errors.New("decimal string is empty")
-	}
-
-	strs := strings.Split(str, ".")
-	lenDecs := 0
-	combinedStr := strs[0]
-
-	if len(strs) == 2 { // has a decimal place
-		lenDecs = len(strs[1])
-		if lenDecs == 0 || len(combinedStr) == 0 {
-			return i, errors.New("bad decimal length")
+	if len(parts) == 1 {
+		for i := 0; i < prec; i++ {
+			parts[0] += "0"
 		}
-		combinedStr = combinedStr + strs[1]
 
-	} else if len(strs) > 2 {
-		return i, errors.New("too many periods to be a decimal string")
+		return parts[0], nil
 	}
 
-	if lenDecs > int(precision) {
-		return i, errors.New(
-			fmt.Sprintf("too much precision, maximum %v, len decimal %v", precision, lenDecs))
+	if len(parts) > 2 {
+		return "", fmt.Errorf("wrong floating point number %q", str)
 	}
 
-	// add some extra zero's to correct to the Precision factor
-	zerosToAdd := int(precision) - lenDecs
-	zeros := fmt.Sprintf(`%0`+strconv.Itoa(zerosToAdd)+`s`, "")
-	combinedStr = combinedStr + zeros
+	res := parts[0]
+	precpart := parts[1]
 
-	combined, ok := new(big.Int).SetString(combinedStr, 10) // base 10
-	if !ok {
-		return i, errors.New(fmt.Sprintf("bad string to integer conversion, combinedStr: %v", combinedStr))
+	if len(precpart) < prec {
+		missedZeros := prec - len(precpart)
+		for i := 0; i < missedZeros; i++ {
+			precpart += "0"
+		}
+	} else if len(precpart) > prec {
+		// cut
+		precpart = precpart[:prec]
 	}
-	if neg {
-		combined = new(big.Int).Neg(combined)
+
+	if res == "0" || res == "-0" {
+		if res[0] == '-' {
+			res = "-"
+		} else {
+			res = ""
+		}
+
+		// remove zeros
+		for i := range precpart {
+			if precpart[i] != '0' {
+				precpart = precpart[i:]
+				break
+			}
+		}
 	}
-	return sdk.NewIntFromBigInt(combined), nil
+
+	return res + precpart, nil
 }

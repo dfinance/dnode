@@ -81,10 +81,6 @@ func NewClient(mnemonic string, account, index uint32, gas uint64, chainID strin
 }
 
 func (c *Client) PostPrice(t exchange.Ticker) error {
-	intPrice, err := utils.NewIntFromString(t.Price, 8)
-	if err != nil {
-		return err
-	}
 	broadcastReq := rest2.BroadcastReq{Mode: "block"}
 
 	acc, err := c.getAccount()
@@ -95,7 +91,7 @@ func (c *Client) PostPrice(t exchange.Ticker) error {
 		WithAccountNumber(acc.AccountNumber).
 		WithSequence(acc.Sequence).
 		WithChainID(c.chainID).
-		BuildAndSign(c.accName, c.passPhrase, []sdk.Msg{oracle.NewMsgPostPrice(acc.Address, t.Asset.Code, intPrice, t.ReceivedAt)})
+		BuildAndSign(c.accName, c.passPhrase, []sdk.Msg{oracle.NewMsgPostPrice(acc.Address, t.Asset.Code, t.Price, t.ReceivedAt)})
 	if err != nil {
 		return err
 	}

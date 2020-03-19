@@ -15,8 +15,8 @@ exchanges:
           quote: eth
         simulate:
           enabled: true
-          min_price: 869000.0
-          max_price: 871000.0
+          min_price: 869000
+          max_price: 871000
           period_s: 1
       - code: dfi_btc
         pair:
@@ -24,6 +24,6 @@ exchanges:
           quote: btc
         simulate:
           enabled: true
-          min_price: 18000.0
-          max_price: 20000.0
+          min_price: 18000
+          max_price: 20000
           period_s: 1
