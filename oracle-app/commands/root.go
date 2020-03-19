@@ -40,10 +40,10 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&flagCfgFile, "config", "", "config file (default is $HOME/.oracle-app.yaml)")
 	rootCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "warn", "sets an application log level (trace, debug, info, warn, error, fatal, panic)")
-	rootCmd.PersistentFlags().StringVar(&flagChainID, "chain-id", "dn-testnet", "sets the chain ID")
-	rootCmd.PersistentFlags().StringVar(&flagAPIURL, "api-url", "http://127.0.0.1:1317", "sets an URL for API requests")
-	rootCmd.PersistentFlags().StringVar(&flagFees, "fees", "1dfi", "sets the transaction fees")
-	rootCmd.PersistentFlags().Uint64Var(&flagGas, "gas", 200000, "sets the gas fees")
+	rootCmd.PersistentFlags().String("chain-id", "dn-testnet", "sets the chain ID")
+	rootCmd.PersistentFlags().String("api-url", "http://127.0.0.1:1317", "sets an URL for API requests")
+	rootCmd.PersistentFlags().String("fees", "1dfi", "sets the transaction fees")
+	rootCmd.PersistentFlags().Uint64("gas", 200000, "sets the gas fees")
 
 	if err := viper.BindPFlag("chain-id", rootCmd.PersistentFlags().Lookup("chain-id")); err != nil {
 		log.Fatal("Unable to bind flag:", err)
@@ -91,4 +91,9 @@ func initConfig() {
 	} else {
 		log.Fatal(err)
 	}
+
+	flagChainID = viper.GetString("chain-id")
+	flagFees = viper.GetString("fees")
+	flagGas = viper.GetUint64("gas")
+	flagAPIURL = viper.GetString("api-url")
 }
