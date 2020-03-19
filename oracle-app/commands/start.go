@@ -32,7 +32,7 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize configuration file",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Configuration file initialized!\n")
+		fmt.Println("Configuration file initialized!")
 	},
 }
 
