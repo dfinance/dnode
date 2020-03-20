@@ -32,7 +32,6 @@ import (
 	rpcServer "github.com/tendermint/tendermint/rpc/lib/server"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	vmConfig "github.com/dfinance/dnode/cmd/config"
@@ -64,7 +63,6 @@ var (
 		"0x10A1c1CB95c92EC31D3f22C66Eef1d9f3F258c6B",
 		"0xe0FC04FA2d34a66B779fd5CEe748268032a146c0",
 	}
-	bufferSize = 1024 * 1024
 )
 
 // copy of SDK's lcd.RestServer, but stoppable (the original has no graceful shutdown) + embedded configuration
@@ -248,8 +246,10 @@ type VMServer struct {
 func newTestDnApp() (*DnServiceApp, *grpc.Server) {
 	config := MockVMConfig()
 
-	vmListener := bufconn.Listen(bufferSize)
-
+	vmListener, err := net.Listen("tcp", config.Address)
+	if err != nil {
+		panic(err)
+	}
 	vmServer := VMServer{}
 	server := grpc.NewServer()
 
@@ -270,7 +270,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	var genTxPubKey crypto.PubKey
 	var genTxPrivKey secp256k1.PrivKeySecp256k1
 	{
-		accCoins, _ := sdk.ParseCoins("600000000000000000000000" + dnConfig.MainDenom)
+		accCoins, _ := sdk.ParseCoins("1000000000000000" + dnConfig.MainDenom)
 
 		if privValidatorKey == nil {
 			k := ed25519.GenPrivKey()
