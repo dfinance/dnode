@@ -90,7 +90,7 @@ func NewCLITester(t *testing.T) *CLITester {
 
 	ct.Accounts["pos"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			config.MainDenom: sdk.NewCoin(config.MainDenom, bigAmount),
 		},
 	}
 	ct.Accounts["bank"] = &CLIAccount{
@@ -136,6 +136,8 @@ func NewCLITester(t *testing.T) *CLITester {
 	ct.initChain()
 
 	ct.startDemon()
+
+	ct.UpdateAccountsBalance()
 
 	return &ct
 }
@@ -263,7 +265,7 @@ func (ct *CLITester) initChain() {
 			// Oracle nominee
 			if accValue.IsOracleNominee {
 				cmd := ct.newWbdCmd().
-					AddArg("", "add-oracle-nomenees").
+					AddArg("", "add-oracle-nominees-gen").
 					AddArg("", accValue.Address)
 
 				cmd.CheckSuccessfulExecute(nil)
@@ -358,6 +360,29 @@ func (ct *CLITester) genesisState() GenesisState {
 	require.NoError(ct.t, cdc.UnmarshalJSON(genDoc.AppState, &appState), "unmarshal appState")
 
 	return appState
+}
+
+func (ct *CLITester) UpdateAccountsBalance() {
+	for accName, prevAcc := range ct.Accounts {
+		q, curAcc := ct.QueryAccount(prevAcc.Address)
+		q.CheckSucceeded()
+
+		for _, curCoin := range curAcc.Coins {
+			doUpdate := false
+			prevCoin, ok := prevAcc.Coins[curCoin.Denom]
+			if !ok {
+				doUpdate = true
+				ct.t.Logf("Account %q balance updated: %q %s\n", accName, curCoin.Denom, curCoin.Amount.String())
+			} else if !curCoin.Amount.Equal(prevCoin.Amount) {
+				doUpdate = true
+				ct.t.Logf("Account %q balance updated: %q %s -> %s\n", accName, curCoin.Denom, prevCoin.Amount.String(), curCoin.Amount.String())
+			}
+
+			if doUpdate {
+				prevAcc.Coins[curCoin.Denom] = curCoin
+			}
+		}
+	}
 }
 
 func (ct *CLITester) WaitForNextNBLocks(n int) {

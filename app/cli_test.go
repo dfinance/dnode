@@ -142,14 +142,13 @@ func Test_CurrencyCLI(t *testing.T) {
 
 	// check currency Query
 	{
-		// TODO: that query doesn't work
-		//q, currency := ct.QueryCurrenciesCurrency(ccSymbol)
-		//q.CheckSucceeded()
-		//
-		//require.True(ct.t, currency.CurrencyId.IsZero())
-		//require.Equal(ct.t, ccSymbol, currency.Symbol)
-		//require.True(ct.t, ccCurAmount.Equal(currency.Supply))
-		//require.Equal(ct.t, ccDecimals, currency.Decimals)
+		q, currency := ct.QueryCurrenciesCurrency(ccSymbol)
+		q.CheckSucceeded()
+
+		require.True(ct.t, currency.CurrencyId.IsZero())
+		require.Equal(ct.t, ccSymbol, currency.Symbol)
+		require.True(ct.t, ccCurAmount.Equal(currency.Supply))
+		require.Equal(ct.t, ccDecimals, currency.Decimals)
 	}
 
 	// check destroy Query
