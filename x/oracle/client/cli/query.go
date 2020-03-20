@@ -88,7 +88,7 @@ func GetCmdAssets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/assets", queryRoute), nil)
 			if err != nil {
-				fmt.Printf("could not get assets")
+				fmt.Printf("could not get assets %v", err)
 				return nil
 			}
 

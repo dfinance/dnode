@@ -22,7 +22,7 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
-	oraclecli "github.com/dfinance/dnode/x/oracle/client/cli"
+	oracleCli "github.com/dfinance/dnode/x/oracle/client/cli"
 	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
 )
@@ -57,7 +57,8 @@ func main() {
 		// Allows user to poa genesis validator
 		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
 		vmCli.GenesisWSFromFile(ctx, cdc),
-		oraclecli.AddOracleNomeneesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 

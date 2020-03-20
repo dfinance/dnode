@@ -16,6 +16,7 @@ limitations under the License.
 package commands
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -25,6 +26,15 @@ import (
 	"github.com/dfinance/dnode/oracle-app/internal/app"
 	"github.com/dfinance/dnode/oracle-app/internal/exchange"
 )
+
+// init configuration file
+var initCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Initialize configuration file",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Configuration file initialized!")
+	},
+}
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
@@ -77,6 +87,7 @@ var startCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(initCmd)
 
 	// Here you will define your flags and configuration settings.
 

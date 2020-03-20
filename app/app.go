@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net"
 	"os"
 	"time"
@@ -189,6 +190,10 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// initialize connections
 	app.InitializeVMDataServer(config.DataListen)
 	app.InitializeVMConnection(config.Address)
+
+	// Reduce ConsensusPower reduction coefficient (1 dfi == 1 power unit)
+	// 1 dfi == 1000000000000000000
+	sdk.PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
 	// Initializing vm keeper.
 	var err error

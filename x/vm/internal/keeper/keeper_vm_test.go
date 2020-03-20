@@ -9,8 +9,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
 	"github.com/dfinance/dnode/x/vm/internal/types"
-	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 // TODO: change listener logic to don't close it here?

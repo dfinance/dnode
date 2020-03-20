@@ -6,15 +6,13 @@ import (
 
 // GenesisState - oracle state that must be provided at genesis
 type GenesisState struct {
-	Params       Params        `json:"asset_params" yaml:"asset_params"`
-	PostedPrices []PostedPrice `json:"posted_prices" yaml:"posted_prices"`
+	Params Params `json:"asset_params" yaml:"asset_params"`
 }
 
 // NewGenesisState creates a new genesis state for the oracle module
-func NewGenesisState(p Params, pp []PostedPrice) GenesisState {
+func NewGenesisState(p Params) GenesisState {
 	return GenesisState{
-		Params:       p,
-		PostedPrices: pp,
+		Params: p,
 	}
 }
 
@@ -22,7 +20,6 @@ func NewGenesisState(p Params, pp []PostedPrice) GenesisState {
 func DefaultGenesisState() GenesisState {
 	return NewGenesisState(
 		DefaultParams(),
-		[]PostedPrice{},
 	)
 }
 

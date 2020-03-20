@@ -1,9 +1,10 @@
 package vm
 
 import (
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
 	"github.com/dfinance/dnode/x/vm/internal/keeper"
 	"github.com/dfinance/dnode/x/vm/internal/types"
-	"github.com/dfinance/dnode/x/vm/internal/types/vm_grpc"
 )
 
 const (
@@ -30,4 +31,5 @@ type (
 var (
 	NewKeeper               = keeper.NewKeeper
 	RegisterVMServiceServer = vm_grpc.RegisterVMServiceServer
+	MakePathKey             = types.MakePathKey
 )

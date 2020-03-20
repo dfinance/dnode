@@ -4,12 +4,8 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
-	"net/http"
-	"net/url"
 	"os"
-	"path"
 	"sort"
 	"testing"
 	"time"
@@ -20,7 +16,6 @@ import (
 	sdkKeybase "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkRest "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
@@ -32,25 +27,18 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
-	tmFlags "github.com/tendermint/tendermint/libs/cli/flags"
 	"github.com/tendermint/tendermint/libs/log"
-	tmNode "github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/p2p"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
-	rpcserver "github.com/tendermint/tendermint/rpc/lib/server"
-	tmTypes "github.com/tendermint/tendermint/types"
+	rpcServer "github.com/tendermint/tendermint/rpc/lib/server"
 	dbm "github.com/tendermint/tm-db"
-	tmDb "github.com/tendermint/tm-db"
-	tmDbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
-	vmConfig "github.com/dfinance/dnode/cmd/config"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/core"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
 )
@@ -112,19 +100,19 @@ func (rs *StoppableRestServer) Start(listenAddr string, maxOpen int, readTimeout
 		rs.log.Error("error closing listener", "err", err)
 	})
 
-	cfg := rpcserver.DefaultConfig()
+	cfg := rpcServer.DefaultConfig()
 	cfg.MaxOpenConnections = maxOpen
 	cfg.ReadTimeout = time.Duration(readTimeout) * time.Second
 	cfg.WriteTimeout = time.Duration(writeTimeout) * time.Second
 
-	rs.listener, err = rpcserver.Listen(listenAddr, cfg)
+	rs.listener, err = rpcServer.Listen(listenAddr, cfg)
 	if err != nil {
 		return
 	}
 	rs.log.Info("Starting application REST service...")
 
 	go func() {
-		if err := rpcserver.StartHTTPServer(rs.listener, rs.Mux, rs.log, cfg); err != nil {
+		if err := rpcServer.StartHTTPServer(rs.listener, rs.Mux, rs.log, cfg); err != nil {
 			rs.log.Info(fmt.Sprintf("Application REST service stopped: %v", err))
 		}
 	}()
@@ -331,6 +319,24 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 		app.cdc.MustUnmarshalJSON(genesisState[staking.ModuleName], &stakingGenesis)
 		stakingGenesis.Params.BondDenom = dnConfig.MainDenom
 		genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, stakingGenesis)
+
+		oracleGenesis := oracle.GenesisState{
+			Params: oracle.Params{
+				Assets: []oracle.Asset{
+					{
+						AssetCode: "oracle_rest_asset",
+						Oracles:   []oracle.Oracle{},
+						Active:    true,
+					},
+				},
+				Nominees: []string{},
+			},
+		}
+		for i := 0; i < len(accs) && i < 2; i++ {
+			oracleGenesis.Params.Assets[0].Oracles = append(oracleGenesis.Params.Assets[0].Oracles, oracle.Oracle{Address: accs[i].Address})
+			oracleGenesis.Params.Nominees = append(oracleGenesis.Params.Nominees, accs[i].Address.String())
+		}
+		genesisState[oracle.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, oracleGenesis)
 	}
 
 	// generate node validator genTx and update genutil module genesis
@@ -399,166 +405,6 @@ func setGenesis(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) (sdk.
 	app.Commit()
 
 	return ctx, nil
-}
-
-func newTestDnAppWithRest(t *testing.T, genValidators []*auth.BaseAccount) (app *DnServiceApp, chainId string, stopFunc func()) {
-	chainId = "wd-test"
-
-	var rootDir string
-	var node *tmNode.Node
-	var restServer *StoppableRestServer
-	var err error
-
-	stopFunc = func() {
-		if rootDir != "" {
-			os.RemoveAll(rootDir)
-		}
-		if node != nil {
-			node.Stop()
-		}
-		if restServer != nil {
-			restServer.Stop()
-		}
-	}
-
-	// sdk.GetConfig() setup and seal is omitted as oracle-app does it at the init() stage already
-
-	// tmp dir primary used for "cs.wal" file (consensus write ahead logs)
-	rootDir, err = ioutil.TempDir("/tmp", "wd-test-")
-	require.NoError(t, err, "TempDir")
-
-	// adjust default config
-	ctx := server.NewDefaultContext()
-	cfg := ctx.Config
-	cfg.SetRoot(rootDir)
-	cfg.Instrumentation.Prometheus = false
-	cfg.Moniker = "wd-test-moniker"
-	cfg.LogLevel = "main:error,state:error,*:error"
-
-	// lower default logger filter level
-	logger, err := tmFlags.ParseLogLevel(cfg.LogLevel, ctx.Logger, "error")
-	require.NoError(t, err, "logger filter")
-	ctx.Logger = logger
-
-	// init the app
-	db := tmDb.NewDB("appInMemDb", tmDb.MemDBBackend, "")
-	app = NewDnServiceApp(ctx.Logger, db, MockVMConfig())
-
-	privValidatorKey := ed25519.GenPrivKey()
-	privValidatorFile := &privval.FilePV{
-		Key: privval.FilePVKey{
-			Address: privValidatorKey.PubKey().Address(),
-			PubKey:  privValidatorKey.PubKey(),
-			PrivKey: privValidatorKey,
-		},
-		LastSignState: privval.FilePVLastSignState{
-			Step: 0,
-		},
-	}
-
-	// generate test app state (genesis)
-	appState, err := getGenesis(app, chainId, cfg.Moniker, genValidators, &privValidatorKey)
-	require.NoError(t, err, "getGenesis")
-
-	// tendermint node configuration
-	privNodeKey := ed25519.GenPrivKey()
-	nodeKey := &p2p.NodeKey{PrivKey: privNodeKey}
-
-	genesisDocProvider := func() (*tmTypes.GenesisDoc, error) {
-		genDoc := &tmTypes.GenesisDoc{ChainID: chainId, AppState: appState}
-		return genDoc, nil
-	}
-
-	dbProvider := func(*tmNode.DBContext) (tmDbm.DB, error) {
-		return tmDb.NewDB("nodeInMemDb", tmDb.MemDBBackend, ""), nil
-	}
-
-	// tendermint node start
-	node, err = tmNode.NewNode(
-		cfg,
-		privValidatorFile,
-		nodeKey,
-		proxy.NewLocalClientCreator(app),
-		genesisDocProvider,
-		dbProvider,
-		tmNode.DefaultMetricsProvider(cfg.Instrumentation),
-		ctx.Logger.With("module", "node"),
-	)
-	require.NoError(t, err, "node.NewNode")
-	require.NoError(t, node.Start(), "node.Start")
-
-	// commit genesis
-	app.Commit()
-
-	// start REST server
-	restServer = NewStoppableRestServer(app.cdc, rpcClient.NewLocal(node))
-	require.NoError(t, restServer.Start("tcp://localhost:1317", 10, 5, 5), "server start")
-
-	return
-}
-
-func RestRequest(t *testing.T, app *DnServiceApp, httpMethod, urlSubPath string, urlValues url.Values, requestValue interface{}, responseValue interface{}, doCheck bool) (retCode int, retErrBody []byte) {
-	u, _ := url.Parse("http://localhost:1317")
-	u.Path = path.Join(u.Path, urlSubPath)
-	if urlValues != nil {
-		u.RawQuery = urlValues.Encode()
-	}
-
-	_, err := url.Parse(u.String())
-	require.NoError(t, err, "ParseRequestURI: %s", u.String())
-
-	var reqBodyBytes []byte
-	if requestValue != nil {
-		var err error
-		reqBodyBytes, err = app.cdc.MarshalJSON(requestValue)
-		require.NoError(t, err, "requestValue")
-	}
-
-	req, err := http.NewRequest(httpMethod, u.String(), bytes.NewBuffer(reqBodyBytes))
-	require.NoError(t, err, "NewRequest")
-	req.Header.Set("Content-type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
-	require.NoError(t, err, "HTTP request")
-	require.NotNil(t, resp, "HTTP response")
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err, "HTTP response body read")
-
-	retCode = resp.StatusCode
-	if doCheck {
-		require.Equal(t, retCode, http.StatusOK, "HTTP code %q (%s): %s", resp.Status, u.String(), string(bodyBytes))
-	}
-
-	if retCode != http.StatusOK {
-		retErrBody = bodyBytes
-		app.cdc.UnmarshalJSON(bodyBytes, responseValue)
-
-		return
-	}
-
-	if responseValue != nil {
-		respMsg := sdkRest.ResponseWithHeight{}
-		require.NoError(t, app.cdc.UnmarshalJSON(bodyBytes, &respMsg), "ResponseWithHeight")
-		require.NoError(t, app.cdc.UnmarshalJSON(respMsg.Result, responseValue), "responseValue")
-	}
-
-	return
-}
-
-func CheckRestError(t *testing.T, app *DnServiceApp, expectedCode, receivedCode int, expectedErr sdk.Error, receivedBody []byte) {
-	require.Equal(t, expectedCode, receivedCode, "code")
-
-	if expectedErr != nil {
-		require.NotNil(t, receivedBody, "receivedBody")
-
-		restErr, abciErr := &RestError{}, &ABCIError{}
-		require.NoError(t, app.cdc.UnmarshalJSON(receivedBody, restErr), "unmarshal to RestError: %s", string(receivedBody))
-		require.NoError(t, app.cdc.UnmarshalJSON([]byte(restErr.Error), abciErr), "unmarshal to ABCIError: %s", string(receivedBody))
-		require.Equal(t, expectedErr.Codespace(), abciErr.Codespace, "Codespace: %s", string(receivedBody))
-		require.Equal(t, expectedErr.Code(), abciErr.Code, "Code: %s", string(receivedBody))
-	}
 }
 
 // GenTx generates a signed mock transaction.

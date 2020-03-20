@@ -10,8 +10,9 @@ import (
 
 var (
 	// KeyAssets store key for assets
-	KeyAssets   = []byte("oracleassets")
-	KeyNominees = []byte("oraclenominees")
+	KeyAssets    = []byte("oracleassets")
+	KeyNominees  = []byte("oraclenominees")
+	KeyPostPrice = []byte("oraclepostprice")
 )
 
 // ParamKeyTable Key declaration for parameters
@@ -21,8 +22,23 @@ func ParamKeyTable() params.KeyTable {
 
 // Params params for oracle. Can be altered via governance
 type Params struct {
-	Assets   []Asset  `json:"assets" yaml:"assets"` //  Array containing the assets supported by the oracle
-	Nominees []string `json:"nominees" yaml:"nominees"`
+	Assets    Assets          `json:"assets" yaml:"assets"` //  Array containing the assets supported by the oracle
+	Nominees  []string        `json:"nominees" yaml:"nominees"`
+	PostPrice PostPriceParams `json:"post_price" yaml:"post_price"`
+}
+
+// Posting rawPrices from oracles configuration params
+type PostPriceParams struct {
+	// allowed timestamp difference between current block time and oracle's receivedAt (0 - disabled) [sec]
+	ReceivedAtDiffInS uint32 `json:"received_at_diff_in_s" yaml:"received_at_diff_in_s"`
+}
+
+func (p PostPriceParams) String() string {
+	out := strings.Builder{}
+	out.WriteString("PostPrice:\n")
+	out.WriteString(fmt.Sprintf("\tReceivedAtDiffInS: %d\n", p.ReceivedAtDiffInS))
+
+	return out.String()
 }
 
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
@@ -31,33 +47,43 @@ func (p Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		{Key: KeyAssets, Value: &p.Assets},
 		{Key: KeyNominees, Value: &p.Nominees},
+		{Key: KeyPostPrice, Value: &p.PostPrice},
 	}
 }
 
 // NewParams creates a new AssetParams object
-func NewParams(assets []Asset, nominees []string) Params {
+func NewParams(assets []Asset, nominees []string, postPrice PostPriceParams) Params {
 	return Params{
-		Assets:   assets,
-		Nominees: nominees,
+		Assets:    assets,
+		Nominees:  nominees,
+		PostPrice: postPrice,
 	}
 }
 
 // DefaultParams default params for oracle
 func DefaultParams() Params {
-	return NewParams(Assets{}, []string{})
+	return NewParams(
+		Assets{},
+		[]string{},
+		PostPriceParams{
+			ReceivedAtDiffInS: 60 * 60,
+		},
+	)
 }
 
 // String implements fmt.stringer
 func (p Params) String() string {
-	out := "Params:\n"
-	for _, a := range p.Assets {
-		out += a.String()
+	out := strings.Builder{}
+	out.WriteString("Params:\n")
+	for i, a := range p.Assets {
+		out.WriteString(fmt.Sprintf("Asset [%d]: %s\n", i, a.String()))
 	}
-	for _, a := range p.Nominees {
-		out += a
+	for i, n := range p.Nominees {
+		out.WriteString(fmt.Sprintf("Nominee [%d]: %s\n", i, n))
 	}
+	out.WriteString(p.PostPrice.String())
 
-	return strings.TrimSpace(out)
+	return strings.TrimSpace(out.String())
 }
 
 // ParamSubspace defines the expected Subspace interface for parameters
@@ -68,10 +94,15 @@ type ParamSubspace interface {
 
 // Validate ensure that params have valid values
 func (p Params) Validate() error {
-	// iterate over assets and verify them
 	for _, asset := range p.Assets {
-		if asset.AssetCode == "" {
-			return fmt.Errorf("invalid asset %q: missing asset code", asset.String())
+		if err := assetCodeFilter(asset.AssetCode); err != nil {
+			return fmt.Errorf("invalid asset %q: %w", asset.String(), err)
+		}
+	}
+
+	for i, nominee := range p.Nominees {
+		if nominee == "" {
+			return fmt.Errorf("invalid nominee [%d]: empty", i)
 		}
 	}
 

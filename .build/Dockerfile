@@ -15,7 +15,6 @@ ARG CI_COMMIT_REF_NAME
 ARG CI_COMMIT_SHA
 RUN apk add --no-cache ca-certificates;
 RUN echo "${CI_PIPELINE_ID}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}" > version
-COPY --from=build /opt/app/cmd/oracle-app/config.yml ./
 COPY --from=build \
             /go/bin/dnode \
             /go/bin/dncli \
