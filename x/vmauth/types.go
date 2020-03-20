@@ -11,7 +11,8 @@ import (
 
 // Resource key for WBCoins resource from VM stdlib.
 const (
-	resourceKey = "016ee00e2d212d7676b19de9ce7a4b598a339ae2286ef6b378c0c348b3fd3221ed"
+	resourceKey        = "01fc0e661c5c73d4acaf1c8d0494acec68953a8279674d9e850fc11f36b31302c2"
+	libraAddressLength = 32
 )
 
 type DNCoin struct {
@@ -38,7 +39,7 @@ func balancesToCoins(coins []DNCoin) sdk.Coins {
 func AddrToPathAddr(addr []byte) []byte {
 	config := sdk.GetConfig()
 	prefix := config.GetBech32AccountAddrPrefix()
-	zeros := make([]byte, 5)
+	zeros := make([]byte, libraAddressLength-len(prefix)-len(addr))
 
 	bytes := make([]byte, 0)
 	bytes = append(bytes, []byte(prefix)...)
