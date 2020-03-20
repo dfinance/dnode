@@ -68,8 +68,13 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deckarep/golang-set v1.7.1/go.mod h1:93vsz/8Wt4joVM7c2AVqh+YRMiUSc14yDtF28KmMOgQ=
-github.com/dfinance/dvm-proto/go v0.0.0-20200317155352-39224abb50e8 h1:2nssScbqyHcbuB7BYwuOSyfSCUSuBMhp7RWkB6RvkDA=
-github.com/dfinance/dvm-proto/go v0.0.0-20200317155352-39224abb50e8/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
+github.com/dfinance/dvm-proto v0.1.0 h1:hnZ78SK8F5ogWTCxa9IBufi7ot8SjiOKn8Uu94mGyE4=
+github.com/dfinance/dvm-proto v0.1.1-0.20200319133507-2cc43452935f h1:3Gwu+A2yTEqiTIq3MN3YBIqukcJpW7MYtbqoVXFHCvg=
+github.com/dfinance/dvm-proto v0.1.1-0.20200319133507-2cc43452935f/go.mod h1:x5SRzwNLh7zjilQh4JlbSLAGELcuCCXeuUPQy4rchuI=
+github.com/dfinance/dvm-proto/go v0.0.0-20200319131328-f6e38b0416cd h1:tJoZzJAzO5oHzS7JROeYjnXl1DmcR48cJViQjiMT6MM=
+github.com/dfinance/dvm-proto/go v0.0.0-20200319131328-f6e38b0416cd/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
+github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f h1:uqOMu+6zvwp/LXhSabe8q2rKjHr3SwsFEUw1fiPJI1Q=
+github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
