@@ -22,7 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-  - name: Build and push docker image to own registry
+    - name: Build and push docker image to own registry
       uses: dfinance/gh-actions@master
       with:
         name: dfinance/dnode
