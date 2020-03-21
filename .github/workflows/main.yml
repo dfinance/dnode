@@ -26,8 +26,8 @@ jobs:
       uses: dfinance/gh-actions@master
       with:
         name: dfinance/dnode
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        username: ${{ secrets.REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_PWD }}
         dockerfile: ./build/Dockerfile
         build_params: --build-arg CI_PIPELINE_ID=${GITHUB_RUN_ID} --build-arg CI_COMMIT_REF_NAME=${GITHUB_REF} --build-arg CI_COMMIT_SHA=${GITHUB_SHA}
         registry: registry.wings.ai
