@@ -25,7 +25,7 @@ jobs:
     - name: Build and push docker image to own registry
       uses: dfinance/gh-actions@master
       with:
-        name: dfinance/dnode
+        name: registry.wings.toys/dfinance/dnode
         username: ${{ secrets.REGISTRY_USER }}
         password: ${{ secrets.REGISTRY_PWD }}
         dockerfile: ./build/Dockerfile
