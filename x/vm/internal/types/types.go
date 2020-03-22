@@ -2,7 +2,6 @@
 package types
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"unicode/utf8"
@@ -11,6 +10,8 @@ import (
 	"github.com/tendermint/crypto/sha3"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 const (
@@ -30,9 +31,7 @@ const (
 
 // VM related variables.
 var (
-	KeyGenesis   = []byte("gen") // used to save genesis
-	KeyDelimiter = []byte(":")
-	VMKey        = []byte("vm")
+	KeyGenesis = []byte("gen") // used to save genesis
 )
 
 // Type of Move contract (bytes).
@@ -51,24 +50,12 @@ func Bech32ToLibra(acc types.AccAddress) string {
 	return hex.EncodeToString(bytes)
 }
 
-// Make path for storage from VMAccessPath.
-func MakePathKey(path vm_grpc.VMAccessPath) []byte {
-	return bytes.Join(
-		[][]byte{
-			VMKey,
-			path.Address,
-			path.Path,
-		},
-		KeyDelimiter,
-	)
-}
-
 // Convert VMAccessPath to hex string
 func PathToHex(path vm_grpc.VMAccessPath) string {
 	return fmt.Sprintf("Access path: \n"+
 		"\tAddress: %s\n"+
 		"\tPath:    %s\n"+
-		"\tKey:     %s\n", hex.EncodeToString(path.Address), hex.EncodeToString(path.Path), hex.EncodeToString(MakePathKey(path)))
+		"\tKey:     %s\n", hex.EncodeToString(path.Address), hex.EncodeToString(path.Path), hex.EncodeToString(common_vm.MakePathKey(path)))
 }
 
 // Get TypeTag by string TypeTag representation.

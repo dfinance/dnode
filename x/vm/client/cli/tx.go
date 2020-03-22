@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	codec "github.com/tendermint/go-amino"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
@@ -71,6 +72,8 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 		Short: "execute Move script",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			compilerAddr := viper.GetString(FlagCompilerAddr)
+
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
@@ -92,7 +95,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			// parsing arguments
 			parsedArgs := args[1:]
 			scriptArgs := make([]types.ScriptArg, len(parsedArgs))
-			extractedArgs, err := extractArgs(code)
+			extractedArgs, err := ExtractArguments(compilerAddr, code)
 			if err != nil {
 				return err
 			}
