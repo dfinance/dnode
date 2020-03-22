@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/currencies/msgs"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
@@ -29,11 +28,9 @@ func Test_MSQueries(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genValidators, _, _, _ := CreateGenAccounts(7, genCoins)
+	genValidators, _, _, _ := CreateGenAccounts(7, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// check call by non-existing uniqueId query
@@ -159,14 +156,12 @@ func Test_MSVoting(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	accs, _, _, privKeys := CreateGenAccounts(9, genCoins)
+	accs, _, _, privKeys := CreateGenAccounts(9, GenDefCoins(t))
 	genValidators, genPrivKeys := accs[:7], privKeys[:7]
 	targetValidator := accs[7]
 	nonExistingValidator, nonExistingValidatorPrivKey := accs[8], privKeys[8]
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// create account for non-existing validator
@@ -318,11 +313,9 @@ func Test_MSBlockHeight(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	// generate blocks to reach multisig call reject condition

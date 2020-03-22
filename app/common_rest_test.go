@@ -2,35 +2,103 @@ package app
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"testing"
+	"time"
 
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdkKeybase "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
-	"github.com/cosmos/cosmos-sdk/tests"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkRest "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmFlags "github.com/tendermint/tendermint/libs/cli/flags"
+	"github.com/tendermint/tendermint/libs/log"
 	tmNode "github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpcServer "github.com/tendermint/tendermint/rpc/lib/server"
 	tmTypes "github.com/tendermint/tendermint/types"
 	tmDb "github.com/tendermint/tm-db"
 	tmDbm "github.com/tendermint/tm-db"
 
-	"github.com/dfinance/dnode/cmd/config"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 )
+
+// copy of SDK's lcd.RestServer, but stoppable (the original has no graceful shutdown) + embedded configuration
+// TODO: newer SDK version does have a better lcd.RestServer, remove this on SDK dependency change
+type StoppableRestServer struct {
+	Mux     *mux.Router
+	CliCtx  context.CLIContext
+	KeyBase sdkKeybase.Keybase
+
+	log      log.Logger
+	listener net.Listener
+}
+
+func NewStoppableRestServer(cdc *codec.Codec, customRpcClient rpcClient.Client) *StoppableRestServer {
+	r := mux.NewRouter()
+	cliCtx := context.NewCLIContext().WithCodec(cdc).WithTrustNode(true).WithClient(customRpcClient)
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "rest-server")
+
+	rs := &StoppableRestServer{
+		Mux:    r,
+		CliCtx: cliCtx,
+		log:    logger,
+	}
+
+	client.RegisterRoutes(rs.CliCtx, rs.Mux)
+	sdkAuthRest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
+	ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
+
+	return rs
+}
+
+func (rs *StoppableRestServer) Start(listenAddr string, maxOpen int, readTimeout, writeTimeout uint) (err error) {
+	server.TrapSignal(func() {
+		err := rs.listener.Close()
+		rs.log.Error("error closing listener", "err", err)
+	})
+
+	cfg := rpcServer.DefaultConfig()
+	cfg.MaxOpenConnections = maxOpen
+	cfg.ReadTimeout = time.Duration(readTimeout) * time.Second
+	cfg.WriteTimeout = time.Duration(writeTimeout) * time.Second
+
+	rs.listener, err = rpcServer.Listen(listenAddr, cfg)
+	if err != nil {
+		return
+	}
+	rs.log.Info("Starting application REST service...")
+
+	go func() {
+		if err := rpcServer.StartHTTPServer(rs.listener, rs.Mux, rs.log, cfg); err != nil {
+			rs.log.Info(fmt.Sprintf("Application REST service stopped: %v", err))
+		}
+	}()
+
+	return nil
+}
+
+func (rs *StoppableRestServer) Stop() {
+	rs.listener.Close()
+}
 
 type RestTester struct {
 	RootDir          string
@@ -53,9 +121,7 @@ func NewRestTester(t *testing.T) *RestTester {
 		t:                t,
 	}
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(r.t, err, "ParseCoins")
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(7, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 	r.Accounts, r.PrivKeys = genAccs, genPrivKeys
 
 	// sdk.GetConfig() setup and seal is omitted as oracle-app does it at the init() stage already
@@ -137,7 +203,7 @@ func NewRestTester(t *testing.T) *RestTester {
 	require.NoError(r.t, r.restServer.Start("tcp://localhost:1317", 10, 5, 5), "server start")
 
 	// wait for node to start
-	r.WaitForHeight(1)
+	r.WaitForBlockHeight(2)
 
 	return &r
 }
@@ -154,9 +220,48 @@ func (r *RestTester) Close() {
 	}
 }
 
-// Wait until node generates {blockHeight} number of blocks
-func (r *RestTester) WaitForHeight(blockHeight int64) {
-	tests.WaitForHeight(blockHeight, "1317")
+// Get current block height
+func (r *RestTester) CurrentBlockHeight() int64 {
+	res, err := http.Get("http://localhost:1317/blocks/latest")
+	require.NoError(r.t, err, "blocks/latest")
+
+	body, err := ioutil.ReadAll(res.Body)
+	require.NoError(r.t, err, "reading body")
+	require.NoError(r.t, res.Body.Close(), "closing body")
+
+	resultBlock := tmCoreTypes.ResultBlock{}
+	require.NoError(r.t, r.App.cdc.UnmarshalJSON(body, &resultBlock), "unmarshal body")
+
+	if resultBlock.Block == nil {
+		return 0
+	}
+
+	return resultBlock.Block.Height
+}
+
+// Wait until node reaches {blockHeight}
+func (r *RestTester) WaitForBlockHeight(targetHeight int64) {
+	for {
+		curHeight := r.CurrentBlockHeight()
+		if curHeight >= targetHeight {
+			return
+		}
+
+		time.Sleep(time.Millisecond * 100)
+	}
+}
+
+// Wait until node starts a new block
+func (r *RestTester) WaitForNextBlock() int64 {
+	prevHeight := r.CurrentBlockHeight()
+	for {
+		time.Sleep(time.Millisecond * 50)
+
+		curHeight := r.CurrentBlockHeight()
+		if curHeight != prevHeight {
+			return curHeight
+		}
+	}
 }
 
 // Send REST request with relative subPath, URL variables and optional request/response (pointer) objects
