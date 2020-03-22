@@ -11,6 +11,8 @@ import (
 	"github.com/tendermint/crypto/sha3"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
 const (
@@ -92,7 +94,8 @@ func VMTypeToString(tag vm_grpc.VMTypeTag) (string, error) {
 // Convert TypeTag to string representation with panic.
 func VMTypeToStringPanic(tag vm_grpc.VMTypeTag) string {
 	if val, ok := vm_grpc.VMTypeTag_name[int32(tag)]; !ok {
-		panic(fmt.Errorf("can't find string representation of type %d, check correctness of type value", tag))
+		helpers.CrashWithMessage("can't find string representation of type %d, check correctness of type value", tag)
+		return ""
 	} else {
 		return val
 	}

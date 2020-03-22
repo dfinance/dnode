@@ -13,6 +13,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 	"github.com/dfinance/dnode/x/vm"
@@ -55,7 +56,7 @@ func GenTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	for i, p := range priv {
 		sig, err := p.Sign(auth.StdSignBytes(chainID, accnums[i], seq[i], fee, msgs, memo))
 		if err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 
 		sigs[i] = auth.StdSignature{
@@ -171,7 +172,7 @@ func setUpMockAppWithoutGenesis() (*mock.App, oracle.Keeper) {
 	mapp.Router().AddRoute("oracle", oracle.NewHandler(oracleKeeper))
 	// Mount and load the stores
 	if err := mapp.CompleteSetup(keyOracle); err != nil {
-		panic("mock app setup failed")
+		helpers.CrashWithMessage("mock app setup failed")
 	}
 
 	return mapp, oracleKeeper

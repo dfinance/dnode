@@ -1,11 +1,11 @@
 package app
 
 import (
-	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	dbm "github.com/tendermint/tm-db"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
 // File for storing in-package BaseApp optional functions,
@@ -20,7 +20,7 @@ func SetPruning(opts sdk.PruningOptions) func(*BaseApp) {
 func SetMinGasPrices(gasPricesStr string) func(*BaseApp) {
 	gasPrices, err := sdk.ParseDecCoins(gasPricesStr)
 	if err != nil {
-		panic(fmt.Sprintf("invalid minimum gas prices: %v", err))
+		helpers.CrashWithMessage("invalid minimum gas prices: %w", err)
 	}
 
 	return func(bap *BaseApp) { bap.setMinGasPrices(gasPrices) }
@@ -38,7 +38,7 @@ func SetHaltTime(haltTime uint64) func(*BaseApp) {
 
 func (app *BaseApp) SetName(name string) {
 	if app.sealed {
-		panic("SetName() on sealed BaseApp")
+		helpers.CrashWithMessage("SetName() on sealed BaseApp")
 	}
 	app.name = name
 }
@@ -46,70 +46,70 @@ func (app *BaseApp) SetName(name string) {
 // SetAppVersion sets the application's version string.
 func (app *BaseApp) SetAppVersion(v string) {
 	if app.sealed {
-		panic("SetAppVersion() on sealed BaseApp")
+		helpers.CrashWithMessage("SetAppVersion() on sealed BaseApp")
 	}
 	app.appVersion = v
 }
 
 func (app *BaseApp) SetDB(db dbm.DB) {
 	if app.sealed {
-		panic("SetDB() on sealed BaseApp")
+		helpers.CrashWithMessage("SetDB() on sealed BaseApp")
 	}
 	app.db = db
 }
 
 func (app *BaseApp) SetCMS(cms store.CommitMultiStore) {
 	if app.sealed {
-		panic("SetEndBlocker() on sealed BaseApp")
+		helpers.CrashWithMessage("SetEndBlocker() on sealed BaseApp")
 	}
 	app.cms = cms
 }
 
 func (app *BaseApp) SetInitChainer(initChainer sdk.InitChainer) {
 	if app.sealed {
-		panic("SetInitChainer() on sealed BaseApp")
+		helpers.CrashWithMessage("SetInitChainer() on sealed BaseApp")
 	}
 	app.initChainer = initChainer
 }
 
 func (app *BaseApp) SetBeginBlocker(beginBlocker sdk.BeginBlocker) {
 	if app.sealed {
-		panic("SetBeginBlocker() on sealed BaseApp")
+		helpers.CrashWithMessage("SetBeginBlocker() on sealed BaseApp")
 	}
 	app.beginBlocker = beginBlocker
 }
 
 func (app *BaseApp) SetEndBlocker(endBlocker sdk.EndBlocker) {
 	if app.sealed {
-		panic("SetEndBlocker() on sealed BaseApp")
+		helpers.CrashWithMessage("SetEndBlocker() on sealed BaseApp")
 	}
 	app.endBlocker = endBlocker
 }
 
 func (app *BaseApp) SetAnteHandler(ah sdk.AnteHandler) {
 	if app.sealed {
-		panic("SetAnteHandler() on sealed BaseApp")
+		helpers.CrashWithMessage("SetAnteHandler() on sealed BaseApp")
 	}
 	app.anteHandler = ah
 }
 
 func (app *BaseApp) SetAddrPeerFilter(pf sdk.PeerFilter) {
 	if app.sealed {
-		panic("SetAddrPeerFilter() on sealed BaseApp")
+		helpers.CrashWithMessage("SetAddrPeerFilter() on sealed BaseApp")
 	}
 	app.addrPeerFilter = pf
 }
 
 func (app *BaseApp) SetIDPeerFilter(pf sdk.PeerFilter) {
 	if app.sealed {
-		panic("SetIDPeerFilter() on sealed BaseApp")
+		helpers.CrashWithMessage("SetIDPeerFilter() on sealed BaseApp")
 	}
 	app.idPeerFilter = pf
 }
 
 func (app *BaseApp) SetFauxMerkleMode() {
 	if app.sealed {
-		panic("SetFauxMerkleMode() on sealed BaseApp")
+		helpers.CrashWithMessage("SetFauxMerkleMode() on sealed BaseApp")
 	}
 	app.fauxMerkleMode = true
 }

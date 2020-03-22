@@ -71,9 +71,8 @@ func (msg MsgReplaceValidator) ValidateBasic() sdk.Error {
 // Get bytes to sign from message
 func (msg MsgReplaceValidator) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
-
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return sdk.MustSortJSON(b)

@@ -2,12 +2,11 @@
 package keeper
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -103,7 +102,7 @@ func (keeper Keeper) processWriteSet(ctx sdk.Context, writeSet []*vm_grpc.VMValu
 			keeper.setValue(ctx, value.Path, value.Value)
 		} else {
 			// must not happens at all
-			panic(fmt.Sprintf("Unknown write op, couldn't happen: %d", value.Type))
+			helpers.CrashWithMessage("Unknown write op, couldn't happen: %d", value.Type)
 		}
 	}
 }

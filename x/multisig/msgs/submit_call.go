@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/core"
 	types "github.com/dfinance/dnode/x/multisig/types"
 )
@@ -49,9 +50,8 @@ func (msg MsgSubmitCall) ValidateBasic() sdk.Error {
 
 func (msg MsgSubmitCall) GetSignBytes() []byte {
 	bc, err := json.Marshal(msg)
-
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return sdk.MustSortJSON(bc)

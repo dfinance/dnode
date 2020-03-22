@@ -21,6 +21,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -128,9 +129,8 @@ func randomPath() *vm_grpc.VMAccessPath {
 func randomValue(len int) []byte {
 	rndBytes := make([]byte, len)
 
-	_, err := rand.Read(rndBytes)
-	if err != nil {
-		panic(err)
+	if _, err := rand.Read(rndBytes); err != nil {
+		helpers.CrashWithError(err)
 	}
 
 	return rndBytes
@@ -179,7 +179,7 @@ func setupTestInput(launchMock bool) testInput {
 	mstore.MountStoreWithDB(input.keyVM, sdk.StoreTypeIAVL, db)
 	err := mstore.LoadLatestVersion()
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	var vmListener *bufconn.Listener
@@ -211,7 +211,7 @@ func setupTestInput(launchMock bool) testInput {
 	} else {
 		listener, err = net.Listen("tcp", config.DataListen)
 		if err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 	}
 
@@ -222,12 +222,12 @@ func setupTestInput(launchMock bool) testInput {
 		ctx := context.TODO()
 		clientConn, err = grpc.DialContext(ctx, "", grpc.WithContextDialer(GetBufDialer(vmListener)), grpc.WithInsecure())
 		if err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 	} else {
 		clientConn, err = grpc.Dial(config.Address, grpc.WithInsecure())
 		if err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 	}
 
@@ -244,22 +244,22 @@ func setupTestInput(launchMock bool) testInput {
 
 	input.addressBytes, err = hex.DecodeString(accountHex)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	input.pathBytes, err = hex.DecodeString(movePath)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	input.codeBytes, err = hex.DecodeString(moveCode)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	input.valueBytes, err = hex.DecodeString(value)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return input
@@ -318,7 +318,7 @@ func (server VMServer) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExec
 				Status:   vm_grpc.ContractStatus_Keep,
 			}
 		} else {
-			panic("wrong contract type")
+			helpers.CrashWithMessage("wrong contract type")
 		}
 	}
 
@@ -334,7 +334,7 @@ func LaunchVMMock() (*VMServer, *grpc.Server, *bufconn.Listener) {
 
 	go func() {
 		if err := server.Serve(vmListener); err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 	}()
 

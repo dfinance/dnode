@@ -16,6 +16,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/ds_grpc"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -117,7 +118,7 @@ func StartServer(listener net.Listener, dsServer *DSServer) *grpc.Server {
 	go func() {
 		dsServer.isStarted = true
 		if err := server.Serve(listener); err != nil {
-			panic(err) // should not happen during running application, after start
+			helpers.CrashWithError(err) // should not happen during running application, after start
 		}
 	}()
 

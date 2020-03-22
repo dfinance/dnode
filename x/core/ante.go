@@ -11,6 +11,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/multisig"
 
 	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vmauth"
 )
 
@@ -56,7 +57,7 @@ func AuthAnteHandler(ak vmauth.VMAccountKeeper, supplyKeeper types.SupplyKeeper,
 	) (newCtx sdk.Context, res sdk.Result, abort bool) {
 
 		if addr := supplyKeeper.GetModuleAddress(types.FeeCollectorName); addr == nil {
-			panic(fmt.Sprintf("%s module account has not been set", types.FeeCollectorName))
+			helpers.CrashWithMessage("%s module account has not been set", types.FeeCollectorName)
 		}
 
 		// all transactions must be of type auth.StdTx
@@ -100,7 +101,7 @@ func AuthAnteHandler(ak vmauth.VMAccountKeeper, supplyKeeper types.SupplyKeeper,
 					res.GasUsed = newCtx.GasMeter().GasConsumed()
 					abort = true
 				default:
-					panic(r)
+					helpers.CrashWithObject(r)
 				}
 			}
 		}()
@@ -203,7 +204,7 @@ func processSig(
 	}
 
 	if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return acc, res

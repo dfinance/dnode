@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/poa"
 )
 
@@ -32,9 +33,8 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Eve
 		keeper.cdc.MustUnmarshalBinaryLengthPrefixed(bs, &callId)
 
 		confirmations, err := keeper.GetConfirmations(ctx, callId)
-
 		if err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 
 		// check if call is confirmed enough

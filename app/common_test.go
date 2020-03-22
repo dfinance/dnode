@@ -35,6 +35,7 @@ import (
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/core"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
@@ -169,7 +170,8 @@ func (b AddrKeysSlice) Less(i, j int) bool {
 	case 0, 1:
 		return false
 	default:
-		panic("not fail-able with `bytes.Comparable` bounded [-1, 1].")
+		helpers.CrashWithMessage("not fail-able with `bytes.Comparable` bounded [-1, 1].")
+		return false
 	}
 }
 
@@ -248,7 +250,7 @@ func newTestDnApp() (*DnServiceApp, *grpc.Server) {
 
 	vmListener, err := net.Listen("tcp", config.Address)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 	vmServer := VMServer{}
 	server := grpc.NewServer()
@@ -257,7 +259,7 @@ func newTestDnApp() (*DnServiceApp, *grpc.Server) {
 
 	go func() {
 		if err := server.Serve(vmListener); err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 	}()
 
@@ -420,7 +422,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	for i, p := range priv {
 		sig, err := p.Sign(auth.StdSignBytes(chainID, accnums[i], seq[i], fee, msgs, memo))
 		if err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 
 		sigs[i] = auth.StdSignature{

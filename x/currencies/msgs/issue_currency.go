@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/currencies/types"
 )
 
@@ -72,7 +73,7 @@ func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
 func (msg MsgIssueCurrency) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return sdk.MustSortJSON(b)

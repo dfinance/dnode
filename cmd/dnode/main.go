@@ -3,15 +3,18 @@ package main
 import (
 	"encoding/json"
 	"io"
+	stdLog "log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	genaccscli "github.com/cosmos/cosmos-sdk/x/genaccounts/client/cli"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/getsentry/sentry-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -22,6 +25,7 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	oracleCli "github.com/dfinance/dnode/x/oracle/client/cli"
 	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
@@ -64,12 +68,19 @@ func main() {
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
 
+	// configure Sentry integration
+	if err := sentry.Init(helpers.GetSentryOptions(version.ServerName, version.Version, version.Commit)); err != nil {
+		stdLog.Fatalf("sentry init: %v", err)
+	}
+	defer helpers.SentryDeferHandler()
+
 	// prepare and add flags
 	executor := cli.PrepareBaseCmd(rootCmd, "DN", app.DefaultNodeHome)
 	err := executor.Execute()
 	if err != nil {
 		// handle with #870
-		panic(err)
+		helpers.CrashWithError(err)
+		helpers.CrashWithError(err)
 	}
 }
 
@@ -78,7 +89,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 	// read VM config
 	config, err := dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return app.NewDnServiceApp(logger, db, config)
@@ -90,7 +101,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 	config, err := dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	if height != -1 {

@@ -15,6 +15,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -78,7 +79,7 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
-		panic(types.NewErrVMCrashed(err))
+		helpers.CrashWithObject(types.NewErrVMCrashed(err))
 	}
 
 	if len(resp.Executions) != 1 {
@@ -106,7 +107,7 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
-		panic(types.NewErrVMCrashed(err))
+		helpers.CrashWithObject(types.NewErrVMCrashed(err))
 	}
 
 	if len(resp.Executions) != 1 {

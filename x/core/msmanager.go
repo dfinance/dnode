@@ -3,6 +3,8 @@ package core
 
 import (
 	"github.com/cosmos/cosmos-sdk/types/module"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
 // Multisignature modules manager.
@@ -20,7 +22,7 @@ func NewMsManager(modules ...interface{}) *MsManager {
 
 	for _, instance := range modules {
 		if _, ok := instance.(module.AppModule); !ok {
-			panic("not an module!")
+			helpers.CrashWithMessage("not an module!")
 		}
 
 		realModule := instance.(module.AppModule)

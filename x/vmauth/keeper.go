@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	codec "github.com/tendermint/go-amino"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -64,7 +65,7 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 		if account != nil {
 			if !realCoins.IsEqual(account.GetCoins()) { // also check coins
 				if err := account.SetCoins(realCoins); err != nil {
-					panic(err) // should never happen
+					helpers.CrashWithError(err) // should never happen
 				}
 
 				keeper.SetAccount(ctx, account)
@@ -73,7 +74,7 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 			// if account is not exists - so create it.
 			account = keeper.NewAccountWithAddress(ctx, addr)
 			if err := account.SetCoins(realCoins); err != nil {
-				panic(err) // should never happen
+				helpers.CrashWithError(err) // should never happen
 			}
 
 			keeper.SetAccount(ctx, account)

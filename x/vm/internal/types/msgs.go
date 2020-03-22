@@ -6,6 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
 var (
@@ -52,7 +54,7 @@ func (msg MsgDeployModule) ValidateBasic() sdk.Error {
 func (msg MsgDeployModule) GetSignBytes() []byte {
 	bc, err := json.Marshal(msg)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return sdk.MustSortJSON(bc)
@@ -120,7 +122,7 @@ func (msg MsgExecuteScript) ValidateBasic() sdk.Error {
 func (msg MsgExecuteScript) GetSignBytes() []byte {
 	bc, err := json.Marshal(msg)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return sdk.MustSortJSON(bc)

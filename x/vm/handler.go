@@ -21,7 +21,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgScript(ctx, keeper, msg)
 
 		default:
-			errMsg := fmt.Sprintf("unrecognized vm msg type: %v", msg.Type())
+			errMsg := fmt.Sprintf("Unrecognized vm msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}

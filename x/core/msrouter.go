@@ -2,8 +2,9 @@
 package core
 
 import (
-	"fmt"
 	"regexp"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
 var (
@@ -37,7 +38,7 @@ func NewRouter() Router {
 // added. Seal will panic if called more than once.
 func (rtr *router) Seal() {
 	if rtr.sealed {
-		panic("router already sealed")
+		helpers.CrashWithMessage("router already sealed")
 	}
 	rtr.sealed = true
 }
@@ -46,13 +47,13 @@ func (rtr *router) Seal() {
 // so AddRoute calls can be linked. It will panic if the router is sealed.
 func (rtr *router) AddRoute(path string, h MsHandler) Router {
 	if rtr.sealed {
-		panic("router sealed; cannot add route handler")
+		helpers.CrashWithMessage("router sealed; cannot add route handler")
 	}
 	if !isAlphaNumeric(path) {
-		panic("route expressions can only contain alphanumeric characters")
+		helpers.CrashWithMessage("route expressions can only contain alphanumeric characters")
 	}
 	if rtr.HasRoute(path) {
-		panic(fmt.Sprintf("route %s has already been initialized", path))
+		helpers.CrashWithMessage("route %s has already been initialized", path)
 	}
 
 	rtr.routes[path] = h
@@ -68,7 +69,7 @@ func (rtr *router) HasRoute(path string) bool {
 // GetRoute returns a Handler for a given path.
 func (rtr *router) GetRoute(path string) MsHandler {
 	if !rtr.HasRoute(path) {
-		panic(fmt.Sprintf("route \"%s\" does not exist", path))
+		helpers.CrashWithMessage("route %q does not exist", path)
 	}
 
 	return rtr.routes[path]

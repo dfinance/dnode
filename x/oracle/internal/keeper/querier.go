@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
@@ -41,7 +42,7 @@ func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 
 	bz, err2 := codec.MarshalJSONIndent(keeper.cdc, currentPrice)
 	if err2 != nil {
-		panic("could not marshal result to JSON")
+		helpers.CrashWithMessage("could not marshal result to JSON")
 	}
 
 	return bz, nil
@@ -61,7 +62,7 @@ func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	priceList := keeper.GetRawPrices(ctx, assetCode, blockHeight)
 	bz, err2 := codec.MarshalJSONIndent(keeper.cdc, priceList)
 	if err2 != nil {
-		panic("could not marshal result to JSON")
+		helpers.CrashWithMessage("could not marshal result to JSON")
 	}
 
 	return bz, nil

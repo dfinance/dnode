@@ -13,6 +13,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -82,7 +83,7 @@ func TestGetFreeGas(t *testing.T) {
 	mstore := store.NewCommitMultiStore(db)
 	err := mstore.LoadLatestVersion()
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	ctx := sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())
@@ -141,7 +142,7 @@ func TestNewDeployRequest(t *testing.T) {
 	mstore := store.NewCommitMultiStore(db)
 	err := mstore.LoadLatestVersion()
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	ctx := sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())

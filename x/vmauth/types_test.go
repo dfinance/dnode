@@ -7,6 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
 const (
@@ -39,7 +41,7 @@ func TestBalancesToCoins(t *testing.T) {
 func TestAddrToPathAddr(t *testing.T) {
 	addr, err := sdk.AccAddressFromBech32("cosmos14ng6lzsvyy26sxmujmjthvrjde8x6gkk2gzeft")
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	libraAddr := AddrToPathAddr(addr)

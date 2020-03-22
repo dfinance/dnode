@@ -53,7 +53,7 @@ func AddrToPathAddr(addr []byte) []byte {
 func GetResPath() []byte {
 	data, err := hex.DecodeString(resourceKey)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return data
@@ -77,7 +77,7 @@ func AccResFromAccount(acc exported.Account) AccountResource {
 func AccResToBytes(acc AccountResource) []byte {
 	bytes, err := helpers.Marshal(acc)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return bytes
@@ -88,7 +88,7 @@ func BytesToAccRes(bz []byte) AccountResource {
 	var accRes AccountResource
 	err := helpers.Unmarshal(bz, &accRes)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return accRes

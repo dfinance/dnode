@@ -9,6 +9,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -21,17 +22,17 @@ func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	for _, genWriteOp := range state.WriteSet {
 		bzAddr, err := hex.DecodeString(genWriteOp.Address)
 		if err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 
 		bzPath, err := hex.DecodeString(genWriteOp.Path)
 		if err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 
 		bzValue, err := hex.DecodeString(genWriteOp.Value)
 		if err != nil {
-			panic(err)
+			helpers.CrashWithError(err)
 		}
 
 		accessPath := &vm_grpc.VMAccessPath{

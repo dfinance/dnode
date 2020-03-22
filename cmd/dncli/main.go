@@ -1,6 +1,7 @@
 package main
 
 import (
+	stdLog "log"
 	"os"
 	"path"
 
@@ -13,6 +14,7 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
+	"github.com/getsentry/sentry-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -20,6 +22,7 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vmauth"
 )
 
@@ -59,9 +62,16 @@ func main() {
 		client.NewCompletionCmd(rootCmd, true),
 	)
 
+	// configure Sentry integration
+	if err := sentry.Init(helpers.GetSentryOptions(version.ClientName, version.Version, version.Commit)); err != nil {
+		stdLog.Fatalf("sentry init: %v", err)
+	}
+	defer helpers.SentryDeferHandler()
+
+	// prepare and add flags
 	executor := cli.PrepareMainCmd(rootCmd, "DN", app.DefaultCLIHome)
 	if err := executor.Execute(); err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 }
 

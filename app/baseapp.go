@@ -21,6 +21,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -156,7 +157,7 @@ func (app *BaseApp) MountStores(keys ...sdk.StoreKey) {
 		case *sdk.TransientStoreKey:
 			app.MountStore(key, sdk.StoreTypeTransient)
 		default:
-			panic("Unrecognized store key type " + reflect.TypeOf(key).Name())
+			helpers.CrashWithMessage("unrecognized store key type: %s", reflect.TypeOf(key).Name())
 		}
 	}
 }
@@ -234,7 +235,7 @@ func (app *BaseApp) initFromMainStore(baseKey *sdk.KVStoreKey) error {
 
 	// memoize baseKey
 	if app.baseKey != nil {
-		panic("app.baseKey expected to be nil; duplicate init?")
+		helpers.CrashWithMessage("app.baseKey expected to be nil; duplicate init?")
 	}
 	app.baseKey = baseKey
 
@@ -246,9 +247,8 @@ func (app *BaseApp) initFromMainStore(baseKey *sdk.KVStoreKey) error {
 	if consensusParamsBz != nil {
 		var consensusParams = &abci.ConsensusParams{}
 
-		err := proto.Unmarshal(consensusParamsBz, consensusParams)
-		if err != nil {
-			panic(err)
+		if err := proto.Unmarshal(consensusParamsBz, consensusParams); err != nil {
+			helpers.CrashWithError(err)
 		}
 
 		app.setConsensusParams(consensusParams)
@@ -278,7 +278,7 @@ func (app *BaseApp) Router() sdk.Router {
 	if app.sealed {
 		// We cannot return a router when the app is sealed because we can't have
 		// any routes modified which would cause unexpected routing behavior.
-		panic("Router() on sealed BaseApp")
+		helpers.CrashWithMessage("Router() on sealed BaseApp")
 	}
 	return app.router
 }
@@ -333,7 +333,7 @@ func (app *BaseApp) setConsensusParams(consensusParams *abci.ConsensusParams) {
 func (app *BaseApp) storeConsensusParams(consensusParams *abci.ConsensusParams) {
 	consensusParamsBz, err := proto.Marshal(consensusParams)
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 	mainStore := app.cms.GetKVStore(app.baseKey)
 	mainStore.Set(mainConsensusParamsKey, consensusParamsBz)
@@ -350,7 +350,8 @@ func (app *BaseApp) getMaximumBlockGas() uint64 {
 	maxGas := app.consensusParams.Block.MaxGas
 	switch {
 	case maxGas < -1:
-		panic(fmt.Sprintf("invalid maximum block gas: %d", maxGas))
+		helpers.CrashWithMessage("invalid maximum block gas: %d", maxGas)
+		return 0
 
 	case maxGas == -1:
 		return 0
@@ -408,15 +409,13 @@ func (app *BaseApp) InitChain(req abci.RequestInitChain) (res abci.ResponseInitC
 	// sanity check
 	if len(req.Validators) > 0 {
 		if len(req.Validators) != len(res.Validators) {
-			panic(fmt.Errorf(
-				"len(RequestInitChain.Validators) != len(validators) (%d != %d)",
-				len(req.Validators), len(res.Validators)))
+			helpers.CrashWithMessage("len(RequestInitChain.Validators) != len(validators) (%d != %d)", len(req.Validators), len(res.Validators))
 		}
 		sort.Sort(abci.ValidatorUpdates(req.Validators))
 		sort.Sort(abci.ValidatorUpdates(res.Validators))
 		for i, val := range res.Validators {
 			if !val.Equal(req.Validators[i]) {
-				panic(fmt.Errorf("validators[%d] != req.Validators[%d] ", i, i))
+				helpers.CrashWithMessage("validators[%d] != req.Validators[%d] ", i, i)
 			}
 		}
 	}
@@ -651,7 +650,7 @@ func (app *BaseApp) BeginBlock(req abci.RequestBeginBlock) (res abci.ResponseBeg
 	}
 
 	if err := app.validateHeight(req); err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	// Initialize the DeliverTx state. If this is the first block, it should
@@ -887,7 +886,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 		if r := recover(); r != nil {
 			switch rType := r.(type) {
 			case vm.ErrVMCrashed:
-				panic(r)
+				helpers.CrashWithObject(r)
 
 			case sdk.ErrorOutOfGas:
 				log := fmt.Sprintf(
@@ -918,7 +917,7 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 			)
 
 			if ctx.BlockGasMeter().GasConsumed() < startingGas {
-				panic(sdk.ErrorGasOverflow{Descriptor: "tx gas summation"})
+				helpers.CrashWithObject(sdk.ErrorGasOverflow{Descriptor: "tx gas summation"})
 			}
 		}
 	}()

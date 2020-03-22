@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/poa/types"
 )
 
@@ -145,7 +146,7 @@ func (poaKeeper Keeper) getValidatorsList(ctx sdk.Context) types.Validators {
 	err := poaKeeper.cdc.UnmarshalBinaryBare(bs, &validators)
 
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return validators

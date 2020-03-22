@@ -4,6 +4,7 @@ package multisig
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/multisig/types"
 )
@@ -133,10 +134,8 @@ func (keeper Keeper) getNextCallId(ctx sdk.Context) uint64 {
 	b := store.Get(types.LastCallId)
 
 	var id uint64
-	err := keeper.cdc.UnmarshalBinaryLengthPrefixed(b, &id)
-
-	if err != nil {
-		panic(err)
+	if err := keeper.cdc.UnmarshalBinaryLengthPrefixed(b, &id); err != nil {
+		helpers.CrashWithError(err)
 	}
 
 	id++

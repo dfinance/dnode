@@ -4,6 +4,7 @@ package msgs
 import (
 	"encoding/json"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/poa/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -54,9 +55,8 @@ func (msg MsgRemoveValidator) ValidateBasic() sdk.Error {
 // Get bytes to sign from message data
 func (msg MsgRemoveValidator) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
-
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return sdk.MustSortJSON(b)

@@ -67,7 +67,7 @@ func (msg MsgAddValidator) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
 
 	if err != nil {
-		panic(err)
+		helpers.CrashWithError(err)
 	}
 
 	return sdk.MustSortJSON(b)
