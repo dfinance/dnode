@@ -491,6 +491,16 @@ To launch tests run:
     
     And with integration tests:
     GO111MODULE=on go test ./... --tags integ
+    
+# Sentry integration
+
+[Sentry](https://sentry.io) is used to capture crash reports for `dnode` and `dncli` applications.
+By default the integration is switched off.
+
+The following environment variables should be defined in order to enable the integration:
+* `SENTRY_DSN` - Sentry DSN token (`https://[token]@sentry.io/5167345`);
+* `SENTRY_ENVIRONMENT` - sets the environment code to separate events from testnet and production (could be empty);
+* `SENTRY_TRANSPORT` - if variable is set to `sync`, events are published as they are captured, otherwise events are buffered and send asynchronously on exit;
 
 # Contributors
 
