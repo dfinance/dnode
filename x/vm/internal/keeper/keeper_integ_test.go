@@ -39,7 +39,6 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 
 	// launch docker
 	client, c := launchDocker(t)
-	t.Log("launched docker")
 	defer stopDocker(t, client, c)
 
 	// create accounts.
