@@ -475,7 +475,7 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 	requiredVotes := len(validatorAddrs)/2 + 1
 
 	// get callID
-	q, call := ct.QueryMultisigUnique(uniqueID)
+	q, call := ct.QueryMultiSigUnique(uniqueID)
 	q.CheckSucceeded()
 	require.Equal(ct.t, uniqueID, call.Call.UniqueID)
 	require.False(ct.t, call.Call.Approved)
@@ -496,13 +496,13 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 
 	// send confirms
 	for i := 0; i < requiredVotes-len(call.Votes); i++ {
-		ct.TxMultisigConfirmCall(validatorAddrs[i], call.Call.MsgID).CheckSucceeded()
+		ct.TxMultiSigConfirmCall(validatorAddrs[i], call.Call.MsgID).CheckSucceeded()
 	}
 	ct.WaitForNextBlocks(1)
 
 	// check call approved
 	{
-		q, call := ct.QueryMultisigUnique(uniqueID)
+		q, call := ct.QueryMultiSigUnique(uniqueID)
 		q.CheckSucceeded()
 		require.Equal(ct.t, uniqueID, call.Call.UniqueID)
 		require.True(ct.t, call.Call.Approved)
@@ -643,12 +643,23 @@ func (ct *CLITester) TxOraclePostPrice(nomineeAddress, assetCode string, price s
 	return r
 }
 
-func (ct *CLITester) TxMultisigConfirmCall(fromAddress string, callID uint64) *TxRequest {
+func (ct *CLITester) TxMultiSigConfirmCall(fromAddress string, callID uint64) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"multisig",
 		fromAddress,
 		"confirm-call",
+		strconv.FormatUint(callID, 10))
+
+	return r
+}
+
+func (ct *CLITester) TxMultiSigRevokeConfirm(fromAddress string, callID uint64) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"multisig",
+		fromAddress,
+		"revoke-confirm",
 		strconv.FormatUint(callID, 10))
 
 	return r
@@ -717,14 +728,6 @@ func (ct *CLITester) QueryOraclePrice(assetCode string) (*QueryRequest, *oracle.
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMultisigUnique(uniqueID string) (*QueryRequest, *msTypes.CallResp) {
-	resObj := &msTypes.CallResp{}
-	q := ct.newQueryRequest(resObj)
-	q.SetCmd("multisig", "unique", uniqueID)
-
-	return q, resObj
-}
-
 func (ct *CLITester) QueryPoaValidators() (*QueryRequest, *poaTypes.ValidatorsConfirmations) {
 	resObj := &poaTypes.ValidatorsConfirmations{}
 	q := ct.newQueryRequest(resObj)
@@ -745,6 +748,38 @@ func (ct *CLITester) QueryPoaMinMax() (*QueryRequest, *poaTypes.Params) {
 	resObj := &poaTypes.Params{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("poa", "minmax")
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryMultiSigUnique(uniqueID string) (*QueryRequest, *msTypes.CallResp) {
+	resObj := &msTypes.CallResp{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("multisig", "unique", uniqueID)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryMultiSigCall(callID uint64) (*QueryRequest, *msTypes.CallResp) {
+	resObj := &msTypes.CallResp{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("multisig", "call", strconv.FormatUint(callID, 10))
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryMultiSigCalls() (*QueryRequest, *msTypes.CallsResp) {
+	resObj := &msTypes.CallsResp{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("multisig", "calls")
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *msTypes.LastIdRes) {
+	resObj := &msTypes.LastIdRes{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("multisig", "lastId")
 
 	return q, resObj
 }

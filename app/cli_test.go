@@ -11,6 +11,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
@@ -501,7 +502,7 @@ func Test_OracleCLI(t *testing.T) {
 	}
 }
 
-func Test_PoeCli(t *testing.T) {
+func Test_PoeCLI(t *testing.T) {
 	ct := NewCLITester(t)
 	defer ct.Close()
 
@@ -746,6 +747,178 @@ func Test_PoeCli(t *testing.T) {
 
 				require.Empty(t, rcvV.EthAddress)
 				require.True(t, rcvV.Address.Empty())
+			}
+		}
+	}
+}
+
+func Test_MultiSigCLI(t *testing.T) {
+	ct := NewCLITester(t)
+	defer ct.Close()
+
+	ccSymbol1, ccSymbol2 := "cc1", "cc2"
+	ccCurAmount, ccDecimals := sdk.NewInt(1000), int8(1)
+	ccRecipient1, ccRecipient2 := ct.Accounts["validator1"].Address, ct.Accounts["validator2"].Address
+	callUniqueId1, callUniqueId2 := "issue1", "issue2"
+	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
+
+	// create calls
+	ct.TxCurrenciesIssue(ccRecipient1, ccRecipient1, ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
+	ct.WaitForNextBlocks(2)
+	ct.TxCurrenciesIssue(ccRecipient2, ccRecipient2, ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).CheckSucceeded()
+	ct.WaitForNextBlocks(2)
+
+	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
+		require.Len(t, call.Votes, len(votesAddr))
+		for i := range call.Votes {
+			require.Equal(t, call.Votes[i].String(), votesAddr[i])
+		}
+		require.Equal(t, approved, call.Call.Approved)
+		require.Equal(t, approved, call.Call.Executed)
+		require.False(t, call.Call.Failed)
+		require.False(t, call.Call.Rejected)
+		require.GreaterOrEqual(t, call.Call.Height, int64(0))
+		require.Empty(t, call.Call.Error)
+		require.Equal(t, creatorAddr, call.Call.Creator.String())
+		require.NotNil(t, call.Call.Msg)
+		require.Equal(t, callID, call.Call.MsgID)
+		require.Equal(t, uniqueID, call.Call.UniqueID)
+		require.NotEmpty(t, call.Call.MsgRoute)
+		require.NotEmpty(t, call.Call.MsgType)
+	}
+
+	// check calls query
+	{
+		q, calls := ct.QueryMultiSigCalls()
+		q.CheckSucceeded()
+
+		require.Len(t, *calls, 2)
+		checkCall((*calls)[0], false, 0, callUniqueId1, ccRecipient1, ccRecipient1)
+		checkCall((*calls)[1], false, 1, callUniqueId2, ccRecipient2, ccRecipient2)
+	}
+
+	// check call query
+	{
+		q, call := ct.QueryMultiSigCall(0)
+		q.CheckSucceeded()
+
+		checkCall(*call, false, 0, callUniqueId1, ccRecipient1, ccRecipient1)
+
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				q, _ := ct.QueryMultiSigCall(0)
+				q.RemoveCmdArg("0")
+				q.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// invalid callID
+			{
+				q, _ := ct.QueryMultiSigCall(0)
+				q.ChangeCmdArg("0", "abc")
+				q.CheckFailedWithErrorSubstring("id")
+			}
+			// non-existing callID
+			{
+				q, _ := ct.QueryMultiSigCall(2)
+				q.CheckFailedWithErrorSubstring("not found")
+			}
+		}
+	}
+
+	// check uniqueCall query
+	{
+		q, call := ct.QueryMultiSigUnique(callUniqueId1)
+		q.CheckSucceeded()
+
+		checkCall(*call, false, 0, callUniqueId1, ccRecipient1, ccRecipient1)
+
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				q, _ := ct.QueryMultiSigUnique(callUniqueId1)
+				q.RemoveCmdArg(callUniqueId1)
+				q.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// non-existing uniqueID
+			{
+				q, _ := ct.QueryMultiSigUnique("non_existing_uniqueID")
+				q.CheckFailedWithErrorSubstring("not found")
+			}
+		}
+	}
+
+	// check lastId query
+	{
+		q, lastId := ct.QueryMultiLastId()
+		q.CheckSucceeded()
+
+		require.Equal(t, uint64(1), lastId.LastId)
+	}
+
+	// check confirm call Tx
+	{
+		// add vote for existing call from an other sender
+		callID, callUniqueID := uint64(1), callUniqueId2
+		ct.TxMultiSigConfirmCall(ccRecipient1, callID).CheckSucceeded()
+		ct.WaitForNextBlocks(2)
+
+		// check call approved (assuming we have 3 validators)
+		q, call := ct.QueryMultiSigCall(callID)
+		q.CheckSucceeded()
+
+		checkCall(*call, true, callID, callUniqueID, ccRecipient2, ccRecipient2, ccRecipient1)
+
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				tx := ct.TxMultiSigConfirmCall(ccRecipient1, callID)
+				tx.RemoveCmdArg(strconv.FormatUint(callID, 10))
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// non-existing fromAddress
+			{
+				tx := ct.TxMultiSigConfirmCall(nonExistingAddress.String(), callID)
+				tx.CheckFailedWithErrorSubstring("not found")
+			}
+			// invalid callID
+			{
+				tx := ct.TxMultiSigConfirmCall(ccRecipient1, callID)
+				tx.ChangeCmdArg(strconv.FormatUint(callID, 10), "not_int")
+				tx.CheckFailedWithErrorSubstring("callId")
+			}
+		}
+	}
+
+	// check revoke confirm Tx
+	{
+		ct.TxMultiSigRevokeConfirm(ccRecipient1, 0).CheckSucceeded()
+		ct.WaitForNextBlocks(2)
+
+		// check call removed
+		q, _ := ct.QueryMultiSigCall(0)
+		q.CheckFailedWithErrorSubstring("not found")
+
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipient1, 0)
+				tx.RemoveCmdArg(strconv.FormatUint(0, 10))
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// non-existing fromAddress
+			{
+				tx := ct.TxMultiSigRevokeConfirm(nonExistingAddress.String(), 0)
+				tx.CheckFailedWithErrorSubstring("not found")
+			}
+			// invalid callID
+			{
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipient1, 0)
+				tx.ChangeCmdArg(strconv.FormatUint(0, 10), "not_int")
+				tx.CheckFailedWithErrorSubstring("callId")
 			}
 		}
 	}
