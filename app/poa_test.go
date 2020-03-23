@@ -44,22 +44,18 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 }
 
 func Test_POARest(t *testing.T) {
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genValidators, _, _, _ := CreateGenAccounts(7, genCoins)
-
-	app, _, stopFunc := newTestDnAppWithRest(t, genValidators)
-	defer stopFunc()
+	r := NewRestTester(t)
+	defer r.Close()
 
 	// check getValidators endpoint
 	{
 		reqSubPath := fmt.Sprintf("%s/validators", poaTypes.ModuleName)
 		respMsg := poaTypes.ValidatorsConfirmations{}
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
 
-		require.Equal(t, len(genValidators), len(respMsg.Validators))
+		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
+		require.Equal(t, len(r.Accounts), len(respMsg.Validators))
 		for idx := range respMsg.Validators {
-			require.Equal(t, genValidators[idx].GetAddress(), respMsg.Validators[idx].Address)
+			require.Equal(t, r.Accounts[idx].GetAddress(), respMsg.Validators[idx].Address)
 			require.Equal(t, "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615", respMsg.Validators[idx].EthAddress)
 		}
 	}
