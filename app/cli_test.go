@@ -1,19 +1,24 @@
 package app
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	"github.com/dfinance/dnode/x/oracle"
 )
 
 func Test_CurrencyCLI(t *testing.T) {
 	ct := NewCLITester(t)
 	defer ct.Close()
+
+	fmt.Println("start")
 
 	ccSymbol, ccCurAmount, ccDecimals, ccRecipient := "testcc", sdk.NewInt(1000), int8(1), ct.Accounts["validator1"].Address
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
@@ -23,7 +28,7 @@ func Test_CurrencyCLI(t *testing.T) {
 	{
 		// submit & confirm call
 		ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID).CheckSucceeded()
-		ct.WaitForNextNBLocks(1)
+		ct.WaitForNextBlocks(1)
 		ct.ConfirmCall(issueID)
 		// check currency issued
 		q, issue := ct.QueryCurrenciesIssue(issueID)
@@ -75,7 +80,7 @@ func Test_CurrencyCLI(t *testing.T) {
 		// reduce amount
 		destroyAmount := sdk.NewInt(100)
 		ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, destroyAmount).CheckSucceeded()
-		ct.WaitForNextNBLocks(1)
+		ct.WaitForNextBlocks(1)
 		ccCurAmount = ccCurAmount.Sub(destroyAmount)
 		// check destroy
 		q, destroy := ct.QueryCurrenciesDestroy(sdk.ZeroInt())
@@ -132,6 +137,12 @@ func Test_CurrencyCLI(t *testing.T) {
 	{
 		// check incorrect inputs
 		{
+			// invalid number of args
+			{
+				q, _ := ct.QueryCurrenciesIssue(issueID)
+				q.RemoveCmdArg(issueID)
+				q.CheckFailedWithErrorSubstring("arg(s)")
+			}
 			// non-existing issueID
 			{
 				q, _ := ct.QueryCurrenciesIssue("non_existing")
@@ -149,12 +160,28 @@ func Test_CurrencyCLI(t *testing.T) {
 		require.Equal(ct.t, ccSymbol, currency.Symbol)
 		require.True(ct.t, ccCurAmount.Equal(currency.Supply))
 		require.Equal(ct.t, ccDecimals, currency.Decimals)
+
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				q, _ := ct.QueryCurrenciesCurrency(ccSymbol)
+				q.RemoveCmdArg(ccSymbol)
+				q.CheckFailedWithErrorSubstring("arg(s)")
+			}
+		}
 	}
 
 	// check destroy Query
 	{
 		// check incorrect inputs
 		{
+			// invalid number of args
+			{
+				q, _ := ct.QueryCurrenciesCurrency(ccSymbol)
+				q.RemoveCmdArg(ccSymbol)
+				q.CheckFailedWithErrorSubstring("arg(s)")
+			}
 			// non-existing destroyID
 			{
 				q, _ := ct.QueryCurrenciesDestroy(sdk.OneInt())
@@ -194,12 +221,13 @@ func Test_OracleCLI(t *testing.T) {
 	defer ct.Close()
 
 	nomineeAddr := ct.Accounts["oracle1"].Address
-	assetCode, assetOracle1, assetOracle2 := "eth_dfi", ct.Accounts["oracle1"].Address, ct.Accounts["oracle2"].Address
+	assetCode := "eth_dfi"
+	assetOracle1, assetOracle2, assetOracle3 := ct.Accounts["oracle1"].Address, ct.Accounts["oracle2"].Address, ct.Accounts["oracle3"].Address
 
 	// check add asset Tx
 	{
 		ct.TxOracleAddAsset(nomineeAddr, assetCode, assetOracle1).CheckSucceeded()
-		ct.WaitForNextNBLocks(1)
+		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
@@ -208,42 +236,42 @@ func Test_OracleCLI(t *testing.T) {
 		require.Len(t, (*assets)[0].Oracles, 1)
 		require.Equal(t, assetOracle1, (*assets)[0].Oracles[0].Address.String())
 		require.True(t, (*assets)[0].Active)
-	}
 
-	// check add asset with incorrect inputs
-	{
-		// invalid number of args
+		// check incorrect inputs
 		{
-			tx := ct.TxOracleAddAsset(nomineeAddr, assetCode, assetOracle1)
-			tx.RemoveCmdArg(assetCode)
-			tx.CheckFailedWithErrorSubstring("arg(s)")
-		}
-		// invalid denom
-		{
-			tx := ct.TxOracleAddAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
-			tx.CheckFailedWithErrorSubstring("non lower case symbol")
-		}
-		// invalid oracles
-		{
-			tx := ct.TxOracleAddAsset(nomineeAddr, assetCode, "123")
-			tx.CheckFailedWithErrorSubstring("")
-		}
-		// empty denom
-		{
-			tx := ct.TxOracleAddAsset(nomineeAddr, "", assetOracle1)
-			tx.CheckFailedWithErrorSubstring("denom argument")
-		}
-		// empty oracles
-		{
-			tx := ct.TxOracleAddAsset(nomineeAddr, assetCode)
-			tx.CheckFailedWithErrorSubstring("oracles argument")
+			// invalid number of args
+			{
+				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode, assetOracle1)
+				tx.RemoveCmdArg(assetCode)
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// invalid denom
+			{
+				tx := ct.TxOracleAddAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
+				tx.CheckFailedWithErrorSubstring("non lower case symbol")
+			}
+			// invalid oracles
+			{
+				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode, "123")
+				tx.CheckFailedWithErrorSubstring("")
+			}
+			// empty denom
+			{
+				tx := ct.TxOracleAddAsset(nomineeAddr, "", assetOracle1)
+				tx.CheckFailedWithErrorSubstring("denom argument")
+			}
+			// empty oracles
+			{
+				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode)
+				tx.CheckFailedWithErrorSubstring("oracles argument")
+			}
 		}
 	}
 
 	// check set asset Tx
 	{
 		ct.TxOracleSetAsset(nomineeAddr, assetCode, assetOracle1, assetOracle2).CheckSucceeded()
-		ct.WaitForNextNBLocks(1)
+		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
@@ -253,35 +281,221 @@ func Test_OracleCLI(t *testing.T) {
 		require.Equal(t, assetOracle1, (*assets)[0].Oracles[0].Address.String())
 		require.Equal(t, assetOracle2, (*assets)[0].Oracles[1].Address.String())
 		require.True(t, (*assets)[0].Active)
+
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				tx := ct.TxOracleSetAsset(nomineeAddr, assetCode, assetOracle1)
+				tx.RemoveCmdArg(nomineeAddr)
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// invalid denom
+			{
+				tx := ct.TxOracleSetAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
+				tx.CheckFailedWithErrorSubstring("non lower case symbol")
+			}
+			// invalid oracles
+			{
+				tx := ct.TxOracleSetAsset(nomineeAddr, assetCode, "123")
+				tx.CheckFailedWithErrorSubstring("")
+			}
+			// empty denom
+			{
+				tx := ct.TxOracleSetAsset(nomineeAddr, "", assetOracle1)
+				tx.CheckFailedWithErrorSubstring("denom argument")
+			}
+			// empty oracles
+			{
+				tx := ct.TxOracleSetAsset(nomineeAddr, assetCode)
+				tx.CheckFailedWithErrorSubstring("oracles argument")
+			}
+		}
 	}
 
-	// check set asset with incorrect inputs
+	// check post price Tx
+	{
+		now := time.Now().Truncate(1 * time.Second).UTC()
+		postPrices := []struct {
+			assetCode  string
+			sender     string
+			price      sdk.Int
+			receivedAt time.Time
+		}{
+			{
+				assetCode:  assetCode,
+				sender:     assetOracle1,
+				price:      sdk.NewInt(100),
+				receivedAt: now,
+			},
+			{
+				assetCode:  assetCode,
+				sender:     assetOracle2,
+				price:      sdk.NewInt(150),
+				receivedAt: now.Add(1 * time.Second),
+			},
+		}
+
+		startBlockHeight := ct.WaitForNextBlocks(1)
+		for _, postPrice := range postPrices {
+			tx := ct.TxOraclePostPrice(postPrice.sender, postPrice.assetCode, postPrice.price, postPrice.receivedAt)
+			tx.CheckSucceeded()
+		}
+		endBlockHeight := ct.WaitForNextBlocks(1)
+
+		// price could be posted in block height range [startBlockHeight:endBlockHeight], so we have to query all
+		rawPricesRange := make([]oracle.PostedPrice, 0)
+		for i := startBlockHeight; i <= endBlockHeight; i++ {
+			q, rawPrices := ct.QueryOracleRawPrices(assetCode, i)
+			q.CheckSucceeded()
+
+			rawPricesRange = append(rawPricesRange, *rawPrices...)
+		}
+
+		require.Len(t, rawPricesRange, 2)
+		for i, postPrice := range postPrices {
+			rawPrice := rawPricesRange[i]
+			require.Equal(t, postPrice.assetCode, rawPrice.AssetCode)
+			require.Equal(t, postPrice.sender, rawPrice.OracleAddress.String())
+			require.True(t, postPrice.price.Equal(rawPrice.Price))
+			require.True(t, postPrice.receivedAt.Equal(rawPrice.ReceivedAt))
+		}
+
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
+				tx.RemoveCmdArg(nomineeAddr)
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// invalid price
+			{
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
+				tx.ChangeCmdArg(sdk.OneInt().String(), "not_int")
+				tx.CheckFailedWithErrorSubstring("wrong value for price")
+			}
+			// invalid receivedAt
+			{
+				now := time.Now()
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), now)
+				tx.ChangeCmdArg(strconv.FormatInt(now.Unix(), 10), "not_time.Time")
+				tx.CheckFailedWithErrorSubstring("wrong value for time")
+			}
+			// MsgPostPrice ValidateBasic
+			{
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewIntWithDecimal(1, 20), time.Now())
+				tx.CheckFailedWithErrorSubstring("bytes limit")
+			}
+		}
+	}
+
+	// check add oracle Tx
+	{
+		ct.TxOracleAddOracle(nomineeAddr, assetCode, assetOracle3).CheckSucceeded()
+		ct.WaitForNextBlocks(2)
+
+		q, assets := ct.QueryOracleAssets()
+		q.CheckSucceeded()
+		require.Len(t, *assets, 1)
+		require.Equal(t, assetCode, (*assets)[0].AssetCode)
+		require.Len(t, (*assets)[0].Oracles, 3)
+		require.Equal(t, assetOracle1, (*assets)[0].Oracles[0].Address.String())
+		require.Equal(t, assetOracle2, (*assets)[0].Oracles[1].Address.String())
+		require.Equal(t, assetOracle3, (*assets)[0].Oracles[2].Address.String())
+		require.True(t, (*assets)[0].Active)
+
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				tx := ct.TxOracleAddOracle(nomineeAddr, assetCode, "invalid_address")
+				tx.RemoveCmdArg(nomineeAddr)
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// invalid oracleAddress
+			{
+				tx := ct.TxOracleAddOracle(nomineeAddr, assetCode, "invalid_address")
+				tx.CheckFailedWithErrorSubstring("oracle_address")
+			}
+		}
+	}
+
+	// check set oracle Tx
+	{
+		ct.TxOracleSetOracles(nomineeAddr, assetCode, assetOracle3, assetOracle2, assetOracle1).CheckSucceeded()
+		ct.WaitForNextBlocks(2)
+
+		q, assets := ct.QueryOracleAssets()
+		q.CheckSucceeded()
+		require.Len(t, *assets, 1)
+		require.Equal(t, assetCode, (*assets)[0].AssetCode)
+		require.Len(t, (*assets)[0].Oracles, 3)
+		require.Equal(t, assetOracle3, (*assets)[0].Oracles[0].Address.String())
+		require.Equal(t, assetOracle2, (*assets)[0].Oracles[1].Address.String())
+		require.Equal(t, assetOracle1, (*assets)[0].Oracles[2].Address.String())
+		require.True(t, (*assets)[0].Active)
+
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				tx := ct.TxOracleSetOracles(nomineeAddr, assetCode, assetOracle3, assetOracle2, assetOracle1)
+				tx.RemoveCmdArg(nomineeAddr)
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// invalid oracles
+			{
+				tx := ct.TxOracleSetOracles(nomineeAddr, assetCode, "123")
+				tx.CheckFailedWithErrorSubstring("")
+			}
+		}
+	}
+
+	// check rawPrices query with invalid arguments
 	{
 		// invalid number of args
 		{
-			tx := ct.TxOracleSetAsset(nomineeAddr, assetCode, assetOracle1)
-			tx.RemoveCmdArg(nomineeAddr)
-			tx.CheckFailedWithErrorSubstring("arg(s)")
+			q, _ := ct.QueryOracleRawPrices(assetCode, 1)
+			q.RemoveCmdArg(assetCode)
+			q.CheckFailedWithErrorSubstring("arg(s)")
 		}
-		// invalid denom
+		// invalid blockHeight
 		{
-			tx := ct.TxOracleSetAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
-			tx.CheckFailedWithErrorSubstring("non lower case symbol")
+			q, _ := ct.QueryOracleRawPrices(assetCode, 1)
+			q.ChangeCmdArg("1", "abc")
+			q.CheckFailedWithErrorSubstring("blockHeight")
 		}
-		// invalid oracles
+		// blockHeight with no rawPrices
 		{
-			tx := ct.TxOracleSetAsset(nomineeAddr, assetCode, "123")
-			tx.CheckFailedWithErrorSubstring("")
+			q, rawPrices := ct.QueryOracleRawPrices(assetCode, 1)
+			q.CheckSucceeded()
+
+			require.Empty(t, *rawPrices)
 		}
-		// empty denom
+	}
+
+	// check price query
+	{
+		q, price := ct.QueryOraclePrice(assetCode)
+		q.CheckSucceeded()
+
+		require.Equal(t, assetCode, price.AssetCode)
+		require.False(t, price.Price.IsZero())
+
+		// check incorrect inputs
 		{
-			tx := ct.TxOracleSetAsset(nomineeAddr, "", assetOracle1)
-			tx.CheckFailedWithErrorSubstring("denom argument")
-		}
-		// empty oracles
-		{
-			tx := ct.TxOracleSetAsset(nomineeAddr, assetCode)
-			tx.CheckFailedWithErrorSubstring("oracles argument")
+			// invalid number of args
+			{
+				q, _ := ct.QueryOraclePrice(assetCode)
+				q.RemoveCmdArg(assetCode)
+				q.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// non-existing assetCode
+			{
+				q, _ := ct.QueryOraclePrice("non_existing_assetCode")
+				q.CheckFailedWithSDKError(sdk.ErrUnknownRequest(""))
+			}
 		}
 	}
 }

@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
@@ -19,9 +21,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+	tmCTypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmRPCTypes "github.com/tendermint/tendermint/rpc/lib/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
 	"github.com/dfinance/dnode/cmd/config"
@@ -123,6 +126,12 @@ func NewCLITester(t *testing.T) *CLITester {
 		IsOracleNominee: true,
 	}
 	ct.Accounts["oracle2"] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+		IsOracleNominee: false,
+	}
+	ct.Accounts["oracle3"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
@@ -321,6 +330,8 @@ func (ct *CLITester) initChain() {
 }
 
 func (ct *CLITester) startDemon() {
+	const startRetries = 100
+
 	require.Nil(ct.t, ct.daemon)
 
 	cmd := ct.newWbdCmd().
@@ -329,8 +340,23 @@ func (ct *CLITester) startDemon() {
 		AddArg("p2p.laddr", ct.p2pAddress)
 	cmd.Start(true)
 
-	tests.WaitForTMStart(ct.rpcPort)
-	ct.WaitForNextNBLocks(0)
+	// wait for the node to start up
+	i := 0
+	for ; i < startRetries; i++ {
+		time.Sleep(50 * time.Millisecond)
+		blockHeight, err := ct.GetCurrentBlockHeight()
+		if err != nil {
+			continue
+		}
+		if blockHeight < 2 {
+			continue
+		}
+
+		break
+	}
+	if i == startRetries {
+		ct.t.Fatalf("wait for the node to start up: failed")
+	}
 }
 
 func (ct *CLITester) updateGenesisState(appState GenesisState) {
@@ -385,8 +411,53 @@ func (ct *CLITester) UpdateAccountsBalance() {
 	}
 }
 
-func (ct *CLITester) WaitForNextNBLocks(n int) {
-	tests.WaitForNextNBlocksTM(int64(n+1), ct.rpcPort)
+func (ct *CLITester) GetCurrentBlockHeight() (int64, error) {
+	url := fmt.Sprintf("http://localhost:%s/block", ct.rpcPort)
+
+	res, err := http.Get(url)
+	if err != nil {
+		return -1, fmt.Errorf("block request: %w", err)
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return -1, fmt.Errorf("body read: %w", err)
+	}
+
+	if err := res.Body.Close(); err != nil {
+		return -1, fmt.Errorf("body close: %w", err)
+	}
+
+	resultResp := tmRPCTypes.RPCResponse{}
+	if err := ct.Cdc.UnmarshalJSON(body, &resultResp); err != nil {
+		return -1, fmt.Errorf("body unmarshal: %w", err)
+	}
+
+	resultBlock := tmCTypes.ResultBlock{}
+	if err := ct.Cdc.UnmarshalJSON(resultResp.Result, &resultBlock); err != nil {
+		return -1, fmt.Errorf("result unmarshal: %w", err)
+	}
+
+	if resultBlock.Block == nil {
+		return 0, nil
+	}
+
+	return resultBlock.Block.Height, nil
+}
+
+func (ct *CLITester) WaitForNextBlocks(n int64) int64 {
+	prevHeight, err := ct.GetCurrentBlockHeight()
+	require.NoError(ct.t, err, "prevBlockHeight")
+
+	for {
+		time.Sleep(time.Millisecond * 5)
+
+		curHeight, err := ct.GetCurrentBlockHeight()
+		require.NoError(ct.t, err, "curBlockHeight")
+		if curHeight - prevHeight >= n {
+			return curHeight
+		}
+	}
 }
 
 func (ct *CLITester) ConfirmCall(uniqueID string) {
@@ -417,7 +488,7 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 	for i := 0; i < requiredVotes-len(call.Votes); i++ {
 		ct.TxMultisigConfirmCall(validatorAddrs[i], call.Call.MsgID).CheckSucceeded()
 	}
-	ct.WaitForNextNBLocks(1)
+	ct.WaitForNextBlocks(1)
 
 	// check call approved
 	{
@@ -483,6 +554,46 @@ func (ct *CLITester) TxOracleSetAsset(nomineeAddress, assetCode string, oracleAd
 	return r
 }
 
+func (ct *CLITester) TxOracleAddOracle(nomineeAddress, assetCode string, oracleAddress string) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"oracle",
+		"",
+		"add-oracle",
+		nomineeAddress,
+		assetCode,
+		oracleAddress)
+
+	return r
+}
+
+func (ct *CLITester) TxOracleSetOracles(nomineeAddress, assetCode string, oracleAddresses ...string) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"oracle",
+		"",
+		"set-oracles",
+		nomineeAddress,
+		assetCode,
+		strings.Join(oracleAddresses, ","))
+
+	return r
+}
+
+func (ct *CLITester) TxOraclePostPrice(nomineeAddress, assetCode string, price sdk.Int, receivedAt time.Time) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"oracle",
+		"",
+		"postprice",
+		nomineeAddress,
+		assetCode,
+		price.String(),
+		strconv.FormatInt(receivedAt.Unix(), 10))
+
+	return r
+}
+
 func (ct *CLITester) TxMultisigConfirmCall(fromAddress string, callID uint64) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
@@ -530,6 +641,29 @@ func (ct *CLITester) QueryOracleAssets() (*QueryRequest, *oracle.Assets) {
 	resObj := &oracle.Assets{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("oracle", "assets")
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryOracleRawPrices(assetCode string, blockHeight int64) (*QueryRequest, *[]oracle.PostedPrice) {
+	resObj := &[]oracle.PostedPrice{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd(
+		"oracle",
+		"rawprices",
+		assetCode,
+		strconv.FormatInt(blockHeight, 10))
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryOraclePrice(assetCode string) (*QueryRequest, *oracle.CurrentPrice) {
+	resObj := &oracle.CurrentPrice{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd(
+		"oracle",
+		"price",
+		assetCode)
 
 	return q, resObj
 }
