@@ -137,6 +137,11 @@ func NewCLITester(t *testing.T) *CLITester {
 		},
 		IsOracleNominee: false,
 	}
+	ct.Accounts["plain"] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+	}
 
 	rootDir, err := ioutil.TempDir("/tmp", fmt.Sprintf("wd-cli-test-%s-", ct.t.Name()))
 	require.NoError(t, err, "TempDir")
@@ -259,16 +264,15 @@ func (ct *CLITester) initChain() {
 			// POA validator
 			if accValue.IsPOAValidator {
 				require.True(ct.t, poaValidatorIdx < len(ethAddresses), "add more predefined ethAddresses")
+				accValue.EthAddress = ethAddresses[poaValidatorIdx]
 
 				cmd := ct.newWbdCmd().
 					AddArg("", "add-genesis-poa-validator").
 					AddArg("", accValue.Address).
-					AddArg("", ethAddresses[poaValidatorIdx])
+					AddArg("", accValue.EthAddress)
 				poaValidatorIdx++
 
 				cmd.CheckSuccessfulExecute(nil)
-
-				ct.validatorAddrs = append(ct.validatorAddrs, accValue.Address)
 			}
 
 			// Oracle nominee
@@ -454,14 +458,21 @@ func (ct *CLITester) WaitForNextBlocks(n int64) int64 {
 
 		curHeight, err := ct.GetCurrentBlockHeight()
 		require.NoError(ct.t, err, "curBlockHeight")
-		if curHeight - prevHeight >= n {
+		if curHeight-prevHeight >= n {
 			return curHeight
 		}
 	}
 }
 
 func (ct *CLITester) ConfirmCall(uniqueID string) {
-	validatorAddrs := append([]string(nil), ct.validatorAddrs...)
+	// get validators list
+	validatorAddrs := make([]string, 0)
+	for _, acc := range ct.Accounts {
+		if acc.IsPOAValidator {
+			validatorAddrs = append(validatorAddrs, acc.Address)
+		}
+	}
+	requiredVotes := len(validatorAddrs)/2 + 1
 
 	// get callID
 	q, call := ct.QueryMultisigUnique(uniqueID)
@@ -480,7 +491,6 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 	}
 
 	// check multisig minValidators
-	requiredVotes := int(poaTypes.DefaultMinValidators)/2 + 1
 	availableVotes := len(call.Votes) + len(validatorAddrs)
 	require.LessOrEqual(ct.t, requiredVotes, availableVotes, "not enough validators to confirm call")
 
@@ -537,6 +547,45 @@ func (ct *CLITester) TxOracleAddAsset(nomineeAddress, assetCode string, oracleAd
 		nomineeAddress,
 		assetCode,
 		strings.Join(oracleAddresses, ","))
+
+	return r
+}
+
+func (ct *CLITester) TxPoeAddValidator(fromAddr, address, ethAddress, issueId string) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"poa",
+		fromAddr,
+		"ms-add-validator",
+		address,
+		ethAddress,
+		issueId)
+
+	return r
+}
+
+func (ct *CLITester) TxPoeRemoveValidator(fromAddr, address, issueId string) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"poa",
+		fromAddr,
+		"ms-remove-validator",
+		address,
+		issueId)
+
+	return r
+}
+
+func (ct *CLITester) TxPoeReplaceValidator(fromAddr, targetAddress, address, ethAddress, issueId string) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"poa",
+		fromAddr,
+		"ms-replace-validator",
+		targetAddress,
+		address,
+		ethAddress,
+		issueId)
 
 	return r
 }
@@ -676,6 +725,30 @@ func (ct *CLITester) QueryMultisigUnique(uniqueID string) (*QueryRequest, *msTyp
 	return q, resObj
 }
 
+func (ct *CLITester) QueryPoaValidators() (*QueryRequest, *poaTypes.ValidatorsConfirmations) {
+	resObj := &poaTypes.ValidatorsConfirmations{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("poa", "validators")
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryPoaValidator(address string) (*QueryRequest, *poaTypes.Validator) {
+	resObj := &poaTypes.Validator{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("poa", "validator", address)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryPoaMinMax() (*QueryRequest, *poaTypes.Params) {
+	resObj := &poaTypes.Params{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("poa", "minmax")
+
+	return q, resObj
+}
+
 func (ct *CLITester) QueryAccount(address string) (*QueryRequest, *auth.BaseAccount) {
 	resObj := &auth.BaseAccount{}
 	q := ct.newQueryRequest(resObj)
@@ -687,6 +760,7 @@ func (ct *CLITester) QueryAccount(address string) (*QueryRequest, *auth.BaseAcco
 type CLIAccount struct {
 	Name            string
 	Address         string
+	EthAddress      string
 	PubKey          string
 	Mnemonic        string
 	Coins           map[string]sdk.Coin
@@ -894,7 +968,7 @@ func (r *TxRequest) CheckFailedWithErrorSubstring(subStr string) (output string)
 	if strings.Contains(stdoutStr, subStr) || strings.Contains(stderrErr, subStr) {
 		return
 	}
-	r.t.Fatalf("%s: stdout/stderr doesn't contain %q sub string", r.String(), subStr)
+	r.t.Fatalf("%s: stdout/stderr doesn't contain %q sub string: %s", r.String(), subStr, stdoutStr)
 
 	return
 }

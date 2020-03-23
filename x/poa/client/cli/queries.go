@@ -83,7 +83,7 @@ func GetValidator(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			res, _, err := cliCtx.QueryWithData(
-				fmt.Sprintf("custom/%s/validators", queryRoute),
+				fmt.Sprintf("custom/%s/validator", queryRoute),
 				bz)
 
 			if err != nil {

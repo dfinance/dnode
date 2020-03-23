@@ -12,6 +12,7 @@ import (
 
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	"github.com/dfinance/dnode/x/oracle"
+	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
 func Test_CurrencyCLI(t *testing.T) {
@@ -28,7 +29,7 @@ func Test_CurrencyCLI(t *testing.T) {
 	{
 		// submit & confirm call
 		ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
+		ct.WaitForNextBlocks(2)
 		ct.ConfirmCall(issueID)
 		// check currency issued
 		q, issue := ct.QueryCurrenciesIssue(issueID)
@@ -495,6 +496,256 @@ func Test_OracleCLI(t *testing.T) {
 			{
 				q, _ := ct.QueryOraclePrice("non_existing_assetCode")
 				q.CheckFailedWithSDKError(sdk.ErrUnknownRequest(""))
+			}
+		}
+	}
+}
+
+func Test_PoeCli(t *testing.T) {
+	ct := NewCLITester(t)
+	defer ct.Close()
+
+	curValidators := make([]poaTypes.Validator, 0)
+	addValidator := func(address, ethAddress string) {
+		sdkAddr, err := sdk.AccAddressFromBech32(address)
+		require.NoError(t, err, "converting account address")
+		curValidators = append(curValidators, poaTypes.Validator{
+			Address:    sdkAddr,
+			EthAddress: ethAddress,
+		})
+	}
+	removeValidator := func(address string) {
+		idx := -1
+		for i, v := range curValidators {
+			if v.Address.String() == address {
+				idx = i
+			}
+		}
+
+		require.GreaterOrEqual(t, idx, 0, "not found")
+		curValidators = append(curValidators[:idx], curValidators[idx+1:]...)
+	}
+
+	for _, acc := range ct.Accounts {
+		if acc.IsPOAValidator {
+			addValidator(acc.Address, acc.EthAddress)
+		}
+	}
+
+	senderAddr := ct.Accounts["validator1"].Address
+	newValidatorAccName := "plain"
+	newValidatorAcc := ct.Accounts[newValidatorAccName]
+	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
+
+	// check add validator Tx
+	{
+		require.LessOrEqual(t, len(curValidators), len(ethAddresses), "not enough predefined ethAddresses")
+		newEthAddress, issueID := ethAddresses[len(curValidators)], "newValidator"
+
+		ct.TxPoeAddValidator(senderAddr, newValidatorAcc.Address, newEthAddress, issueID).CheckSucceeded()
+		ct.WaitForNextBlocks(2)
+		ct.ConfirmCall(issueID)
+
+		// update account
+		addValidator(newValidatorAcc.Address, newEthAddress)
+		ct.Accounts[newValidatorAccName].IsPOAValidator = true
+
+		// check validator added
+		newValidator := curValidators[len(curValidators)-1]
+		q, validators := ct.QueryPoaValidators()
+		q.CheckSucceeded()
+		q, rcvV := ct.QueryPoaValidator(newValidator.Address.String())
+		q.CheckSucceeded()
+
+		require.Len(t, (*validators).Validators, len(curValidators))
+		require.True(t, newValidator.Address.Equals(rcvV.Address))
+		require.Equal(t, newValidator.EthAddress, rcvV.EthAddress)
+
+		// check incorrect inputs
+		{
+			// wrong number of args
+			{
+				tx := ct.TxPoeAddValidator(senderAddr, newValidatorAcc.Address, newEthAddress, issueID)
+				tx.RemoveCmdArg(issueID)
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// non-existing fromAddress
+			{
+				tx := ct.TxPoeAddValidator(nonExistingAddress.String(), newValidatorAcc.Address, newEthAddress, issueID)
+				tx.CheckFailedWithErrorSubstring("not found")
+			}
+			// invalid validator address
+			{
+				tx := ct.TxPoeAddValidator(senderAddr, "invalid_address", newEthAddress, issueID)
+				tx.CheckFailedWithErrorSubstring("address")
+			}
+			// MsgAddValidator ValidateBasic
+			{
+				tx := ct.TxPoeAddValidator(senderAddr, newValidatorAcc.Address, "invalid_eth_address", issueID)
+				tx.CheckFailedWithErrorSubstring("invalid_eth_address")
+			}
+		}
+	}
+
+	// check remove validator Tx
+	{
+		issueID := "rmValidator"
+		ct.TxPoeRemoveValidator(senderAddr, newValidatorAcc.Address, issueID).CheckSucceeded()
+		ct.WaitForNextBlocks(2)
+		ct.ConfirmCall(issueID)
+
+		// update account
+		removeValidator(newValidatorAcc.Address)
+		ct.Accounts[newValidatorAccName].IsPOAValidator = false
+
+		// check validator removed
+		q, validators := ct.QueryPoaValidators()
+		q.CheckSucceeded()
+		q, rcvV := ct.QueryPoaValidator(newValidatorAcc.Address)
+		q.CheckSucceeded()
+
+		require.Len(t, (*validators).Validators, len(curValidators))
+		require.True(t, rcvV.Address.Empty())
+		require.Empty(t, rcvV.EthAddress)
+
+		// check incorrect inputs
+		{
+			// wrong number of args
+			{
+				tx := ct.TxPoeRemoveValidator(senderAddr, newValidatorAcc.Address, issueID)
+				tx.RemoveCmdArg(issueID)
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// non-existing fromAddress
+			{
+				tx := ct.TxPoeRemoveValidator(nonExistingAddress.String(), newValidatorAcc.Address, issueID)
+				tx.CheckFailedWithErrorSubstring("not found")
+			}
+			// invalid validator address
+			{
+				tx := ct.TxPoeRemoveValidator(senderAddr, "invalid_address", issueID)
+				tx.CheckFailedWithErrorSubstring("address")
+			}
+		}
+	}
+
+	// check replace validator Tx
+	{
+		require.LessOrEqual(t, len(curValidators), len(ethAddresses), "not enough predefined ethAddresses")
+		newEthAddress := ethAddresses[len(curValidators)]
+
+		targetValidatorName := "validator2"
+		targetValidatorAcc := ct.Accounts[targetValidatorName]
+		issueID := "replaceValidator"
+
+		tx := ct.TxPoeReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
+		tx.CheckSucceeded()
+		ct.WaitForNextBlocks(2)
+		ct.ConfirmCall(issueID)
+
+		// update accounts
+		removeValidator(targetValidatorAcc.Address)
+		addValidator(newValidatorAcc.Address, newEthAddress)
+		ct.Accounts[targetValidatorName].IsPOAValidator = false
+		ct.Accounts[newValidatorAccName].IsPOAValidator = true
+
+		// check validator replaced
+		newValidator := curValidators[len(curValidators)-1]
+		q, validators := ct.QueryPoaValidators()
+		q.CheckSucceeded()
+		q, rcvV := ct.QueryPoaValidator(newValidatorAcc.Address)
+		q.CheckSucceeded()
+
+		require.Len(t, (*validators).Validators, len(curValidators))
+		require.True(t, newValidator.Address.Equals(rcvV.Address))
+		require.Equal(t, newValidator.EthAddress, rcvV.EthAddress)
+
+		// check incorrect inputs
+		{
+			// wrong number of args
+			{
+				tx := ct.TxPoeReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
+				tx.RemoveCmdArg(issueID)
+				tx.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// non-existing fromAddress
+			{
+				tx := ct.TxPoeReplaceValidator(nonExistingAddress.String(), targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
+				tx.CheckFailedWithErrorSubstring("not found")
+			}
+			// invalid old validator address
+			{
+				tx := ct.TxPoeReplaceValidator(senderAddr, "invalid_address", newValidatorAcc.Address, newEthAddress, issueID)
+				tx.CheckFailedWithErrorSubstring("oldValidator")
+			}
+			// invalid new validator address
+			{
+				tx := ct.TxPoeReplaceValidator(senderAddr, targetValidatorAcc.Address, "invalid_address", newEthAddress, issueID)
+				tx.CheckFailedWithErrorSubstring("newValidator")
+			}
+			// invalid ethAddress
+			{
+				tx := ct.TxPoeReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, "invalid_eth_address", issueID)
+				tx.CheckFailedWithErrorSubstring("invalid_eth_address")
+			}
+		}
+	}
+
+	// check validators query
+	{
+		q, validators := ct.QueryPoaValidators()
+		q.CheckSucceeded()
+
+		require.Equal(t, len(curValidators)/2+1, int(validators.Confirmations))
+		require.Len(t, validators.Validators, len(curValidators))
+		for _, rcvV := range validators.Validators {
+			found := false
+			for _, curV := range curValidators {
+				if rcvV.EthAddress == curV.EthAddress && curV.Address.Equals(rcvV.Address) {
+					found = true
+				}
+			}
+			require.True(t, found, "validator %s: not found", rcvV.String())
+		}
+	}
+
+	// check minMax params query
+	{
+		q, params := ct.QueryPoaMinMax()
+		q.CheckSucceeded()
+
+		poaGenesis := poaTypes.GenesisState{}
+		require.NoError(t, ct.Cdc.UnmarshalJSON(ct.genesisState()[poaTypes.ModuleName], &poaGenesis))
+		require.Equal(t, poaGenesis.Parameters.MaxValidators, params.MaxValidators)
+		require.Equal(t, poaGenesis.Parameters.MinValidators, params.MinValidators)
+	}
+
+	// check validator query
+	{
+		// check incorrect inputs
+		{
+			// invalid number of args
+			{
+				q, _ := ct.QueryPoaValidator(curValidators[0].Address.String())
+				q.RemoveCmdArg(curValidators[0].Address.String())
+				q.CheckFailedWithErrorSubstring("arg(s)")
+			}
+			// invalid address
+			{
+				// non-existing assetCode
+				{
+					q, _ := ct.QueryPoaValidator("invalid_address")
+					q.CheckFailedWithErrorSubstring("address")
+				}
+			}
+			// non-existing validator
+			{
+				addr := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+				q, rcvV := ct.QueryPoaValidator(addr.String())
+				q.CheckSucceeded()
+
+				require.Empty(t, rcvV.EthAddress)
+				require.True(t, rcvV.Address.Empty())
 			}
 		}
 	}
