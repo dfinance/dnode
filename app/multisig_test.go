@@ -294,17 +294,12 @@ func Test_MSVoting(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
 		revokeMsg := msMsgs.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAcc.GetAddress()}
 		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		// TODO: revoking call's last vote doesn't remove the call (panic occurs), is that correct?
-		expectedErr := msTypes.ErrWrongCallId(callMsgId)
-		require.PanicsWithError(t, expectedErr.Error(), func() {
-			DeliverTx(app, tx)
-		})
+		CheckDeliverTx(t, app, tx)
 
-		// check call exists with one vote (last vote was not removed 'cause of the panic)
+		// check call revoked
 		calls := msTypes.CallsResp{}
 		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
-		require.Equal(t, 1, len(calls))
-		require.Equal(t, 1, len(calls[0].Votes))
+		require.Empty(t, calls)
 	}
 }
 
