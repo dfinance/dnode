@@ -132,20 +132,22 @@ func (keeper Keeper) revokeVote(ctx sdk.Context, id uint64, address sdk.AccAddre
 	keeper.cdc.MustUnmarshalBinaryBare(bs, &votes)
 
 	if len(votes) == 1 {
-		votes = types.Votes{}
 		store.Delete(types.GetKeyVotesById(id))
-	} else {
-		index := -1
-		for i, vote := range votes {
-			if vote.Equals(address) {
-				index = i
-				break
-			}
-		}
+		keeper.removeCallFromQueue(ctx, id, call.Height)
 
-		votes = append(votes[:index], votes[index+1:]...)
-		store.Set(types.GetKeyVotesById(id), keeper.cdc.MustMarshalBinaryBare(votes))
+		return nil
 	}
+
+	index := -1
+	for i, vote := range votes {
+		if vote.Equals(address) {
+			index = i
+			break
+		}
+	}
+
+	votes = append(votes[:index], votes[index+1:]...)
+	store.Set(types.GetKeyVotesById(id), keeper.cdc.MustMarshalBinaryBare(votes))
 
 	return nil
 }
