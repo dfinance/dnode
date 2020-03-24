@@ -8,6 +8,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/poa"
 )
 
@@ -34,6 +35,10 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Eve
 
 		confirmations, err := keeper.GetConfirmations(ctx, callId)
 		if err != nil {
+			if err.Codespace() == types.DefaultCodespace && err.Code() == types.CodeErrWrongCallId {
+				continue
+			}
+
 			helpers.CrashWithError(err)
 		}
 
