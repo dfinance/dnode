@@ -41,7 +41,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 // GetCmdPostPrice cli command for posting prices.
 func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "postprice [from_key_or_address] [assetCode] [price] [expiry]",
+		Use:   "postprice [from_key_or_address] [assetCode] [price] [receivedAt]",
 		Short: "post the latest price for a particular asset",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -53,13 +53,12 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 			if !ok {
 				return fmt.Errorf("%s argument %q: wrong value for price", "price", args[2])
 			}
-			expiryInt, ok := sdk.NewIntFromString(args[3])
+			receivedAtInt, ok := sdk.NewIntFromString(args[3])
 			if !ok {
-				fmt.Printf("invalid expiry - %s \n", args[2])
-				return nil
+				return fmt.Errorf("%s argument %q: wrong value for time", "receivedAt", args[3])
 			}
-			expiry := tmtime.Canonical(time.Unix(expiryInt.Int64(), 0))
-			msg := types.NewMsgPostPrice(cliCtx.GetFromAddress(), args[1], price, expiry)
+			receivedAt := tmtime.Canonical(time.Unix(receivedAtInt.Int64(), 0))
+			msg := types.NewMsgPostPrice(cliCtx.GetFromAddress(), args[1], price, receivedAt)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

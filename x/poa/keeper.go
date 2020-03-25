@@ -65,6 +65,9 @@ func (poaKeeper Keeper) ReplaceValidator(ctx sdk.Context, oldAddress sdk.AccAddr
 
 	validator := types.NewValidator(newAddress, ethAddress)
 	store.Set(newAddress, poaKeeper.cdc.MustMarshalBinaryBare(validator))
+
+	poaKeeper.removeValidatorFromList(ctx, oldAddress)
+	poaKeeper.addValidatorToList(ctx, validator)
 }
 
 // Getting validator from storage.
