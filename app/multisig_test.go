@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/currencies/msgs"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
@@ -29,11 +28,9 @@ func Test_MSQueries(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genValidators, _, _, _ := CreateGenAccounts(7, genCoins)
+	genValidators, _, _, _ := CreateGenAccounts(7, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// check call by non-existing uniqueId query
@@ -44,22 +41,17 @@ func Test_MSQueries(t *testing.T) {
 }
 
 func Test_MSRest(t *testing.T) {
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genValidators, _, _, genPrivKeys := CreateGenAccounts(9, genCoins)
-	targetValidators := genValidators[7:]
+	r := NewRestTester(t)
+	defer r.Close()
 
-	app, _, stopFunc := newTestDnAppWithRest(t, genValidators)
-	defer stopFunc()
-
-	senderIdx, senderAddr, senderPrivKey := 0, genValidators[0].Address, genPrivKeys[0]
+	senderAddr, senderPrivKey := r.Accounts[0].Address, r.PrivKeys[0]
 	calls := msTypes.CallsResp{}
 	msgIDs := make([]string, 0)
 
 	// submit remove validator call (1st one)
 	{
-		senderAcc := GetAccountCheckTx(app, genValidators[senderIdx].Address)
-		targetValidator := targetValidators[0]
+		senderAcc := GetAccountCheckTx(r.App, senderAddr)
+		targetValidator := r.Accounts[len(r.Accounts)-1]
 
 		removeMsg := poaMsgs.NewMsgRemoveValidator(targetValidator.Address, senderAcc.GetAddress())
 		msgID := fmt.Sprintf("removeValidator:%s", targetValidator.Address)
@@ -67,17 +59,17 @@ func Test_MSRest(t *testing.T) {
 
 		submitMsg := msMsgs.NewMsgSubmitCall(removeMsg, msgID, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverTx(t, app, tx)
+		CheckDeliverTx(t, r.App, tx)
 
-		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
+		CheckRunQuery(t, r.App, nil, queryMsGetCallsPath, &calls)
 		require.Equal(t, 1, len(calls))
 		require.Equal(t, 1, len(calls[0].Votes))
 	}
 
 	// submit remove validator call (2nd one)
 	{
-		senderAcc := GetAccountCheckTx(app, genValidators[senderIdx].Address)
-		targetValidator := targetValidators[1]
+		senderAcc := GetAccountCheckTx(r.App, senderAddr)
+		targetValidator := r.Accounts[len(r.Accounts)-2]
 
 		removeMsg := poaMsgs.NewMsgRemoveValidator(targetValidator.Address, senderAcc.GetAddress())
 		msgID := fmt.Sprintf("removeValidator:%s", targetValidator)
@@ -85,9 +77,9 @@ func Test_MSRest(t *testing.T) {
 
 		submitMsg := msMsgs.NewMsgSubmitCall(removeMsg, msgID, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverTx(t, app, tx)
+		CheckDeliverTx(t, r.App, tx)
 
-		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
+		CheckRunQuery(t, r.App, nil, queryMsGetCallsPath, &calls)
 		require.Equal(t, 2, len(calls))
 		require.Equal(t, 1, len(calls[1].Votes))
 	}
@@ -97,7 +89,7 @@ func Test_MSRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/calls", msTypes.ModuleName)
 		respMsg := msTypes.CallsResp{}
 
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
 		require.Len(t, respMsg, 2)
 		for i, call := range respMsg {
 			require.Len(t, call.Votes, 1)
@@ -113,7 +105,7 @@ func Test_MSRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/call/%d", msTypes.ModuleName, 0)
 		respMsg := msTypes.CallResp{}
 
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
 		require.Len(t, respMsg.Votes, 1)
 		require.Equal(t, senderAddr, respMsg.Votes[0])
 		require.Equal(t, uint64(0), respMsg.Call.MsgID)
@@ -125,16 +117,16 @@ func Test_MSRest(t *testing.T) {
 	{
 		reqSubPath := fmt.Sprintf("%s/call/-1", msTypes.ModuleName)
 
-		respCode, _ := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
-		CheckRestError(t, app, http.StatusInternalServerError, respCode, nil, nil)
+		respCode, _ := r.Request("GET", reqSubPath, nil, nil, nil, false)
+		r.CheckError(http.StatusInternalServerError, respCode, nil, nil)
 	}
 
 	// check getCall endpoint (non-existing "id")
 	{
 		reqSubPath := fmt.Sprintf("%s/call/2", msTypes.ModuleName)
 
-		respCode, respBytes := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
-		CheckRestError(t, app, http.StatusInternalServerError, respCode, msTypes.ErrWrongCallId(0), respBytes)
+		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
+		r.CheckError(http.StatusInternalServerError, respCode, msTypes.ErrWrongCallId(0), respBytes)
 	}
 
 	// check getCallByUnique endpoint
@@ -142,7 +134,7 @@ func Test_MSRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/unique/%s", msTypes.ModuleName, msgIDs[0])
 		respMsg := msTypes.CallResp{}
 
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
 		require.Len(t, respMsg.Votes, 1)
 		require.Equal(t, senderAddr, respMsg.Votes[0])
 		require.Equal(t, uint64(0), respMsg.Call.MsgID)
@@ -154,8 +146,8 @@ func Test_MSRest(t *testing.T) {
 	{
 		reqSubPath := fmt.Sprintf("%s/unique/non-existing-UNIQUE", msTypes.ModuleName)
 
-		respCode, respBytes := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
-		CheckRestError(t, app, http.StatusInternalServerError, respCode, msTypes.ErrNotFoundUniqueID(""), respBytes)
+		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
+		r.CheckError(http.StatusInternalServerError, respCode, msTypes.ErrNotFoundUniqueID(""), respBytes)
 	}
 }
 
@@ -164,14 +156,12 @@ func Test_MSVoting(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	accs, _, _, privKeys := CreateGenAccounts(9, genCoins)
+	accs, _, _, privKeys := CreateGenAccounts(9, GenDefCoins(t))
 	genValidators, genPrivKeys := accs[:7], privKeys[:7]
 	targetValidator := accs[7]
 	nonExistingValidator, nonExistingValidatorPrivKey := accs[8], privKeys[8]
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// create account for non-existing validator
@@ -304,17 +294,12 @@ func Test_MSVoting(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
 		revokeMsg := msMsgs.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAcc.GetAddress()}
 		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		// TODO: revoking call's last vote doesn't remove the call (panic occurs), is that correct?
-		expectedErr := msTypes.ErrWrongCallId(callMsgId)
-		require.PanicsWithError(t, expectedErr.Error(), func() {
-			DeliverTx(app, tx)
-		})
+		CheckDeliverTx(t, app, tx)
 
-		// check call exists with one vote (last vote was not removed 'cause of the panic)
+		// check call revoked
 		calls := msTypes.CallsResp{}
 		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
-		require.Equal(t, 1, len(calls))
-		require.Equal(t, 1, len(calls[0].Votes))
+		require.Empty(t, calls)
 	}
 }
 
@@ -323,11 +308,9 @@ func Test_MSBlockHeight(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	// generate blocks to reach multisig call reject condition

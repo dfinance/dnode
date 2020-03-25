@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/poa"
 )
 
@@ -32,8 +33,11 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Eve
 		keeper.cdc.MustUnmarshalBinaryLengthPrefixed(bs, &callId)
 
 		confirmations, err := keeper.GetConfirmations(ctx, callId)
-
 		if err != nil {
+			if err.Codespace() == types.DefaultCodespace && err.Code() == types.CodeErrWrongCallId {
+				continue
+			}
+
 			panic(err)
 		}
 

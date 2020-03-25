@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
 
-	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/currencies"
 	ccMsgs "github.com/dfinance/dnode/x/currencies/msgs"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
@@ -30,11 +29,9 @@ func Test_CurrencyHandlerIsMultisigOnly(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genValidators, _, _, genPrivKeys := CreateGenAccounts(7, genCoins)
+	genValidators, _, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// check module supports only multisig calls (using MSRouter)
@@ -47,29 +44,25 @@ func Test_CurrencyHandlerIsMultisigOnly(t *testing.T) {
 }
 
 func Test_CurrencyRest(t *testing.T) {
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(7, genCoins)
+	r := NewRestTester(t)
+	defer r.Close()
 
-	app, chainId, stopFunc := newTestDnAppWithRest(t, genAccs)
-	defer stopFunc()
-
-	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
+	recipientIdx, recipientAddr, recipientPrivKey := uint(0), r.Accounts[0].Address, r.PrivKeys[0]
 	curAmount, curDecimals, denom := sdk.NewInt(100), int8(0), currency1Symbol
 	destroyAmounts := make([]sdk.Int, 0)
 
 	// issue currency
 	msgId, issueId := "1", "issue1"
-	issueCurrency(t, app, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
-	checkIssueExists(t, app, issueId, denom, curAmount, recipientAddr)
-	checkCurrencyExists(t, app, denom, curAmount, curDecimals)
+	issueCurrency(t, r.App, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, r.Accounts, r.PrivKeys, true)
+	checkIssueExists(t, r.App, issueId, denom, curAmount, recipientAddr)
+	checkCurrencyExists(t, r.App, denom, curAmount, curDecimals)
 
 	// check getIssue endpoint
 	{
 		reqSubPath := fmt.Sprintf("%s/issue/%s", ccTypes.ModuleName, issueId)
 		respMsg := &ccTypes.Issue{}
 
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, respMsg, true)
+		r.Request("GET", reqSubPath, nil, nil, respMsg, true)
 		require.Equal(t, denom, respMsg.Symbol)
 		require.True(t, respMsg.Amount.Equal(curAmount))
 		require.Equal(t, recipientAddr, respMsg.Recipient)
@@ -79,8 +72,8 @@ func Test_CurrencyRest(t *testing.T) {
 	{
 		reqSubPath := fmt.Sprintf("%s/issue/non_existing_ID", ccTypes.ModuleName)
 
-		respCode, respBytes := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
-		CheckRestError(t, app, http.StatusInternalServerError, respCode, ccTypes.ErrWrongIssueID(""), respBytes)
+		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
+		r.CheckError(http.StatusInternalServerError, respCode, ccTypes.ErrWrongIssueID(""), respBytes)
 	}
 
 	// check getCurrency endpoint
@@ -88,7 +81,7 @@ func Test_CurrencyRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/currency/%s", ccTypes.ModuleName, denom)
 		respMsg := &ccTypes.Currency{}
 
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, respMsg, true)
+		r.Request("GET", reqSubPath, nil, nil, respMsg, true)
 		require.Equal(t, denom, respMsg.Symbol)
 		require.True(t, respMsg.Supply.Equal(curAmount))
 		require.Equal(t, curDecimals, respMsg.Decimals)
@@ -98,8 +91,8 @@ func Test_CurrencyRest(t *testing.T) {
 	{
 		reqSubPath := fmt.Sprintf("%s/currency/non_existing_symbol", ccTypes.ModuleName)
 
-		respCode, respBytes := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
-		CheckRestError(t, app, http.StatusInternalServerError, respCode, ccTypes.ErrNotExistCurrency(""), respBytes)
+		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
+		r.CheckError(http.StatusInternalServerError, respCode, ccTypes.ErrNotExistCurrency(""), respBytes)
 	}
 
 	// check getDestroys endpoint (no destroys)
@@ -107,15 +100,15 @@ func Test_CurrencyRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/destroys/1", ccTypes.ModuleName)
 		respMsg := ccTypes.Destroys{}
 
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
 		require.Len(t, respMsg, 0)
 	}
 
 	// destroy currency
 	newAmount := sdk.NewInt(50)
 	curAmount = curAmount.Sub(newAmount)
-	destroyCurrency(t, app, chainId, denom, newAmount, recipientAddr, recipientPrivKey, true)
-	checkCurrencyExists(t, app, denom, curAmount, 0)
+	destroyCurrency(t, r.App, r.ChainId, denom, newAmount, recipientAddr, recipientPrivKey, true)
+	checkCurrencyExists(t, r.App, denom, curAmount, 0)
 	destroyAmounts = append(destroyAmounts, newAmount)
 
 	// check getDestroy endpoint
@@ -123,9 +116,9 @@ func Test_CurrencyRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/destroy/%d", ccTypes.ModuleName, 0)
 		respMsg := &ccTypes.Destroy{}
 
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, respMsg, true)
+		r.Request("GET", reqSubPath, nil, nil, respMsg, true)
 		require.Equal(t, int64(0), respMsg.ID.Int64())
-		require.Equal(t, chainId, respMsg.ChainID)
+		require.Equal(t, r.ChainId, respMsg.ChainID)
 		require.Equal(t, denom, respMsg.Symbol)
 		require.True(t, respMsg.Amount.Equal(newAmount))
 		require.Equal(t, recipientAddr, respMsg.Spender)
@@ -136,8 +129,8 @@ func Test_CurrencyRest(t *testing.T) {
 	{
 		reqSubPath := fmt.Sprintf("%s/destroy/abc", ccTypes.ModuleName)
 
-		respCode, _ := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
-		CheckRestError(t, app, http.StatusInternalServerError, respCode, nil, nil)
+		respCode, _ := r.Request("GET", reqSubPath, nil, nil, nil, false)
+		r.CheckError(http.StatusInternalServerError, respCode, nil, nil)
 	}
 
 	// check getDestroy endpoint (non-existing destroyID)
@@ -145,7 +138,7 @@ func Test_CurrencyRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/destroy/1", ccTypes.ModuleName)
 		respMsg := &ccTypes.Destroy{}
 
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, respMsg, true)
+		r.Request("GET", reqSubPath, nil, nil, respMsg, true)
 		require.Empty(t, respMsg.ChainID)
 		require.Empty(t, respMsg.Symbol)
 		require.True(t, respMsg.Amount.IsZero())
@@ -154,8 +147,8 @@ func Test_CurrencyRest(t *testing.T) {
 	// destroy currency once more
 	newAmount = sdk.NewInt(25)
 	curAmount = curAmount.Sub(newAmount)
-	destroyCurrency(t, app, chainId, denom, newAmount, recipientAddr, recipientPrivKey, true)
-	checkCurrencyExists(t, app, denom, curAmount, 0)
+	destroyCurrency(t, r.App, r.ChainId, denom, newAmount, recipientAddr, recipientPrivKey, true)
+	checkCurrencyExists(t, r.App, denom, curAmount, 0)
 	destroyAmounts = append(destroyAmounts, newAmount)
 
 	// check getDestroys endpoint
@@ -163,12 +156,12 @@ func Test_CurrencyRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/destroys/1", ccTypes.ModuleName)
 		respMsg := ccTypes.Destroys{}
 
-		RestRequest(t, app, "GET", reqSubPath, nil, nil, &respMsg, true)
+		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
 		require.Len(t, respMsg, len(destroyAmounts))
 		for i, amount := range destroyAmounts {
 			destroy := respMsg[i]
 			require.Equal(t, int64(i), destroy.ID.Int64())
-			require.Equal(t, chainId, destroy.ChainID)
+			require.Equal(t, r.ChainId, destroy.ChainID)
 			require.Equal(t, denom, destroy.Symbol)
 			require.True(t, destroy.Amount.Equal(amount))
 			require.Equal(t, recipientAddr, destroy.Spender)
@@ -181,16 +174,16 @@ func Test_CurrencyRest(t *testing.T) {
 		// invalid "page" value
 		reqSubPath := fmt.Sprintf("%s/destroys/abc", ccTypes.ModuleName)
 
-		respCode, _ := RestRequest(t, app, "GET", reqSubPath, nil, nil, nil, false)
-		CheckRestError(t, app, http.StatusInternalServerError, respCode, nil, nil)
+		respCode, _ := r.Request("GET", reqSubPath, nil, nil, nil, false)
+		r.CheckError(http.StatusInternalServerError, respCode, nil, nil)
 
 		// invalid "limit" value
 		reqSubPath = fmt.Sprintf("%s/destroys/1", ccTypes.ModuleName)
 		reqValues := url.Values{}
 		reqValues.Set("limit", "abc")
 
-		respCode, _ = RestRequest(t, app, "GET", reqSubPath, reqValues, nil, nil, false)
-		CheckRestError(t, app, http.StatusInternalServerError, respCode, nil, nil)
+		respCode, _ = r.Request("GET", reqSubPath, reqValues, nil, nil, false)
+		r.CheckError(http.StatusInternalServerError, respCode, nil, nil)
 	}
 }
 
@@ -199,11 +192,9 @@ func Test_CurrencyQueries(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
@@ -272,11 +263,9 @@ func Test_CurrencyIssue(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr := uint(0), genAccs[0].Address
@@ -381,11 +370,9 @@ func Test_CurrencyIssueHugeAmount(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr := uint(0), genAccs[0].Address
@@ -425,11 +412,9 @@ func Test_CurrencyIssueDecimals(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
@@ -492,11 +477,9 @@ func Test_CurrencyDestroy(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]

@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/oracle"
 )
 
@@ -20,15 +20,129 @@ const (
 	queryOracleGetAssetsPath          = "/custom/oracle/assets"
 )
 
+func Test_OracleRest(t *testing.T) {
+	r := NewRestTester(t)
+	defer r.Close()
+
+	// check getAssets endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/assets", oracle.ModuleName)
+		respMsg := oracle.Assets{}
+
+		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
+		require.Len(t, respMsg, 1)
+		require.Equal(t, r.DefaultAssetCode, respMsg[0].AssetCode)
+		require.Len(t, respMsg[0].Oracles, 2)
+		require.True(t, r.Accounts[0].Address.Equals(respMsg[0].Oracles[0].Address))
+		require.True(t, r.Accounts[1].Address.Equals(respMsg[0].Oracles[1].Address))
+		require.True(t, respMsg[0].Active)
+	}
+
+	now := time.Now()
+	postPrices := []struct {
+		AssetCode     string
+		SenderIdx     uint
+		OracleAddress sdk.AccAddress
+		Price         sdk.Int
+		ReceivedAt    time.Time
+	}{
+		{
+			AssetCode:     r.DefaultAssetCode,
+			SenderIdx:     0,
+			OracleAddress: r.Accounts[0].Address,
+			Price:         sdk.NewInt(100),
+			ReceivedAt:    now,
+		},
+		{
+			AssetCode:     r.DefaultAssetCode,
+			SenderIdx:     1,
+			OracleAddress: r.Accounts[1].Address,
+			Price:         sdk.NewInt(200),
+			ReceivedAt:    now.Add(5 * time.Second),
+		},
+	}
+
+	// check postPrice and rawPrices endpoints
+	{
+		prevBlockHeight := r.WaitForNextBlock()
+		for _, postPrice := range postPrices {
+			reqMsg := oracle.NewMsgPostPrice(postPrice.OracleAddress, postPrice.AssetCode, postPrice.Price, postPrice.ReceivedAt)
+
+			r.TxSyncRequest(postPrice.SenderIdx, reqMsg, true)
+		}
+		curBlockHeight := r.WaitForNextBlock()
+
+		// rawPrices could be stored in [prevBlockHeight : curBlockHeight], so we need to find them
+		rawPrices := make([]oracle.PostedPrice, 0)
+		for blockHeight := prevBlockHeight; blockHeight <= curBlockHeight; blockHeight++ {
+			reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, r.DefaultAssetCode, blockHeight)
+
+			r.Request("GET", reqSubPath, nil, nil, &rawPrices, true)
+			if len(rawPrices) > 0 {
+				return
+			}
+		}
+
+		require.Len(t, rawPrices, len(postPrices))
+		for i, rawPrice := range rawPrices {
+			postPrice := postPrices[i]
+			require.Equal(t, rawPrice.AssetCode, postPrice.AssetCode)
+			require.True(t, rawPrice.OracleAddress.Equals(postPrice.OracleAddress))
+			require.True(t, rawPrice.Price.Equal(postPrice.Price))
+			require.True(t, rawPrice.ReceivedAt.Equal(postPrice.ReceivedAt))
+		}
+	}
+
+	// check rawPrices endpoint (invalid arguments)
+	{
+		// blockHeight
+		{
+			reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, r.DefaultAssetCode, 1)
+			rawPrices := make([]oracle.PostedPrice, 0)
+
+			r.Request("GET", reqSubPath, nil, nil, &rawPrices, true)
+			require.Empty(t, rawPrices)
+		}
+		// assetCode
+		{
+			reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, "non_existing_asset", 1)
+
+			rcvCode, rcvBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
+			r.CheckError(http.StatusNotFound, rcvCode, sdk.ErrUnknownRequest(""), rcvBytes)
+		}
+	}
+
+	// check price endpoint
+	{
+		reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, r.DefaultAssetCode)
+		avgPrice := postPrices[0].Price.Add(postPrices[1].Price).Quo(sdk.NewInt(2))
+		price := oracle.CurrentPrice{}
+
+		r.Request("GET", reqSubPath, nil, nil, &price, true)
+		require.True(t, price.Price.Equal(avgPrice))
+		require.False(t, price.ReceivedAt.Equal(postPrices[0].ReceivedAt))
+		require.False(t, price.ReceivedAt.Equal(postPrices[1].ReceivedAt))
+	}
+
+	// check price endpoint (invalid arguments)
+	{
+		// assetCode
+		{
+			reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, "non_existing_asset")
+
+			rcvCode, rcvBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
+			r.CheckError(http.StatusNotFound, rcvCode, sdk.ErrUnknownRequest(""), rcvBytes)
+		}
+	}
+}
+
 func Test_OracleQueries(t *testing.T) {
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	assetCodePrefix := "asset_"
@@ -179,10 +293,8 @@ func Test_OracleAddOracle(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
@@ -265,10 +377,8 @@ func Test_OracleSetOracles(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "db2db"
@@ -342,10 +452,8 @@ func Test_OracleAddAsset(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
@@ -427,10 +535,8 @@ func TestOracle_SetAsset(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
@@ -500,10 +606,8 @@ func Test_OraclePostPrices(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	assetCode := "dn2dn"

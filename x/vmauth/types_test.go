@@ -37,12 +37,16 @@ func TestBalancesToCoins(t *testing.T) {
 }
 
 func TestAddrToPathAddr(t *testing.T) {
-	addr := sdk.AccAddress("tmp")
+	addr, err := sdk.AccAddressFromBech32("cosmos14ng6lzsvyy26sxmujmjthvrjde8x6gkk2gzeft")
+	if err != nil {
+		panic(err)
+	}
+
 	libraAddr := AddrToPathAddr(addr)
 
 	config := sdk.GetConfig()
 	prefix := config.GetBech32AccountAddrPrefix()
-	zeros := make([]byte, 5)
+	zeros := make([]byte, libraAddressLength-len(prefix)-len(addr))
 
 	bytes := make([]byte, 0)
 	bytes = append(bytes, []byte(prefix)...)
