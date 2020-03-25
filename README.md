@@ -2,8 +2,6 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
-**THIS IS VERY EARLY WORK IN PROGRESS, NOT FOR TESTNET/PRODUCTION USAGE**
-
 Dfinance Blockchain (DN) is based on [Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
 
 This is work in progress, yet it supports the following features:
