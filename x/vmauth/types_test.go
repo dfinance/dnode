@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 )
 
 const (
@@ -37,11 +38,7 @@ func TestBalancesToCoins(t *testing.T) {
 }
 
 func TestAddrToPathAddr(t *testing.T) {
-	addr, err := sdk.AccAddressFromBech32("cosmos14ng6lzsvyy26sxmujmjthvrjde8x6gkk2gzeft")
-	if err != nil {
-		panic(err)
-	}
-
+	addr := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	libraAddr := AddrToPathAddr(addr)
 
 	config := sdk.GetConfig()

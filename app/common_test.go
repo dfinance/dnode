@@ -3,7 +3,6 @@ package app
 import (
 	"bytes"
 	"flag"
-	"net"
 	"os"
 	"sort"
 	"testing"
@@ -22,6 +21,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	vmConfig "github.com/dfinance/dnode/cmd/config"
@@ -53,6 +53,7 @@ var (
 		"0x10A1c1CB95c92EC31D3f22C66Eef1d9f3F258c6B",
 		"0xe0FC04FA2d34a66B779fd5CEe748268032a146c0",
 	}
+	bufferSize = 1024 * 1024
 )
 
 // REST endpoint error object
@@ -177,10 +178,8 @@ type VMServer struct {
 func newTestDnApp() (*DnServiceApp, *grpc.Server) {
 	config := MockVMConfig()
 
-	vmListener, err := net.Listen("tcp", config.Address)
-	if err != nil {
-		panic(err)
-	}
+	vmListener := bufconn.Listen(bufferSize)
+
 	vmServer := VMServer{}
 	server := grpc.NewServer()
 
