@@ -3,7 +3,6 @@ package app
 import (
 	"bytes"
 	"flag"
-	"net"
 	"os"
 	"sort"
 	"testing"
