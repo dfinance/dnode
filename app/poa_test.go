@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
 
-	"github.com/dfinance/dnode/cmd/config"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	posMsgs "github.com/dfinance/dnode/x/poa/msgs"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
@@ -26,12 +25,10 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	accs, _, _, privKeys := CreateGenAccounts(8, genCoins)
+	accs, _, _, privKeys := CreateGenAccounts(8, GenDefCoins(t))
 	genValidators, genPrivKeys, newValidators := accs[:7], privKeys[:7], accs[7:]
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// check module supports only multisig calls (using MSRouter)
@@ -66,11 +63,9 @@ func Test_POAQueries(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genValidators, _, _, _ := CreateGenAccounts(7, genCoins)
+	genValidators, _, _, _ := CreateGenAccounts(7, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	validators := app.poaKeeper.GetValidators(GetContext(app, true))
@@ -119,12 +114,10 @@ func Test_POAInvalidGenesis(t *testing.T) {
 
 	// check (minValidators - 1) genesis
 	{
-		genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-		require.NoError(t, err)
-		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMinValidators-1), genCoins)
+		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMinValidators-1), GenDefCoins(t))
 
 		expectedErr := poaTypes.ErrNotEnoungValidators(0, 0)
-		_, err = setGenesis(t, app, accs)
+		_, err := setGenesis(t, app, accs)
 		require.Error(t, err)
 		require.Equal(t, expectedErr.Code(), err.(sdk.Error).Code())
 		require.Equal(t, expectedErr.Codespace(), err.(sdk.Error).Codespace())
@@ -132,12 +125,10 @@ func Test_POAInvalidGenesis(t *testing.T) {
 
 	// check (maxValidators + 1) genesis
 	{
-		genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-		require.NoError(t, err)
-		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMaxValidators+1), genCoins)
+		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMaxValidators+1), GenDefCoins(t))
 
 		expectedErr := poaTypes.ErrMaxValidatorsReached(0)
-		_, err = setGenesis(t, app, accs)
+		_, err := setGenesis(t, app, accs)
 		require.Error(t, err)
 		require.Equal(t, expectedErr.Code(), err.(sdk.Error).Code())
 		require.Equal(t, expectedErr.Codespace(), err.(sdk.Error).Codespace())
@@ -149,12 +140,10 @@ func Test_POAValidatorsAdd(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	accs, _, _, privKeys := CreateGenAccounts(11, genCoins)
+	accs, _, _, privKeys := CreateGenAccounts(11, GenDefCoins(t))
 	genValidators, genPrivKeys, newValidators := accs[:7], privKeys[:7], accs[7:]
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// add new validators
@@ -204,12 +193,10 @@ func Test_POAValidatorsRemove(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	accs, _, _, privKeys := CreateGenAccounts(11, genCoins)
+	accs, _, _, privKeys := CreateGenAccounts(11, GenDefCoins(t))
 	genValidators, genPrivKeys, targetValidators := accs[:7], privKeys[:7], accs[7:]
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// add validators to remove later
@@ -262,12 +249,10 @@ func Test_POAValidatorsReplace(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	accs, _, _, privKeys := CreateGenAccounts(8, genCoins)
+	accs, _, _, privKeys := CreateGenAccounts(8, GenDefCoins(t))
 	genValidators, genPrivKeys, targetValidators := accs[:7], privKeys[:7], accs[7:]
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	oldValidator, newValidator := genValidators[len(genValidators)-1], targetValidators[0]
@@ -296,12 +281,10 @@ func Test_POAValidatorsReplaceExisting(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	accs, _, _, privKeys := CreateGenAccounts(8, genCoins)
+	accs, _, _, privKeys := CreateGenAccounts(8, GenDefCoins(t))
 	genValidators, genPrivKeys, targetValidators := accs[:7], privKeys[:7], accs[7:]
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// replace existing with existing validator
@@ -325,12 +308,10 @@ func Test_POAValidatorsMinMaxRange(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	accs, _, _, privKeys := CreateGenAccounts(int(defMaxValidators)+1, genCoins)
+	accs, _, _, privKeys := CreateGenAccounts(int(defMaxValidators)+1, GenDefCoins(t))
 	genValidators, genPrivKeys, targetValidators := accs[:defMaxValidators], privKeys[:defMaxValidators], accs[defMaxValidators:]
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// check module params are set to default values

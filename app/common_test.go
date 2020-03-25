@@ -3,33 +3,23 @@ package app
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"net"
 	"os"
 	"sort"
 	"testing"
-	"time"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdkKeybase "github.com/cosmos/cosmos-sdk/crypto/keys"
-	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"github.com/tendermint/tendermint/libs/log"
-	rpcClient "github.com/tendermint/tendermint/rpc/client"
-	rpcServer "github.com/tendermint/tendermint/rpc/lib/server"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
@@ -64,65 +54,6 @@ var (
 		"0xe0FC04FA2d34a66B779fd5CEe748268032a146c0",
 	}
 )
-
-// copy of SDK's lcd.RestServer, but stoppable (the original has no graceful shutdown) + embedded configuration
-// TODO: newer SDK version does have a better lcd.RestServer, remove this on SDK dependency change
-type StoppableRestServer struct {
-	Mux     *mux.Router
-	CliCtx  context.CLIContext
-	KeyBase sdkKeybase.Keybase
-
-	log      log.Logger
-	listener net.Listener
-}
-
-func NewStoppableRestServer(cdc *codec.Codec, customRpcClient rpcClient.Client) *StoppableRestServer {
-	r := mux.NewRouter()
-	cliCtx := context.NewCLIContext().WithCodec(cdc).WithTrustNode(true).WithClient(customRpcClient)
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "rest-server")
-
-	rs := &StoppableRestServer{
-		Mux:    r,
-		CliCtx: cliCtx,
-		log:    logger,
-	}
-
-	client.RegisterRoutes(rs.CliCtx, rs.Mux)
-	sdkAuthRest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
-	ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
-
-	return rs
-}
-
-func (rs *StoppableRestServer) Start(listenAddr string, maxOpen int, readTimeout, writeTimeout uint) (err error) {
-	server.TrapSignal(func() {
-		err := rs.listener.Close()
-		rs.log.Error("error closing listener", "err", err)
-	})
-
-	cfg := rpcServer.DefaultConfig()
-	cfg.MaxOpenConnections = maxOpen
-	cfg.ReadTimeout = time.Duration(readTimeout) * time.Second
-	cfg.WriteTimeout = time.Duration(writeTimeout) * time.Second
-
-	rs.listener, err = rpcServer.Listen(listenAddr, cfg)
-	if err != nil {
-		return
-	}
-	rs.log.Info("Starting application REST service...")
-
-	go func() {
-		if err := rpcServer.StartHTTPServer(rs.listener, rs.Mux, rs.log, cfg); err != nil {
-			rs.log.Info(fmt.Sprintf("Application REST service stopped: %v", err))
-		}
-	}()
-
-	return nil
-}
-
-func (rs *StoppableRestServer) Stop() {
-	rs.listener.Close()
-}
 
 // REST endpoint error object
 type RestError struct {
@@ -270,8 +201,6 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	var genTxPubKey crypto.PubKey
 	var genTxPrivKey secp256k1.PrivKeySecp256k1
 	{
-		accCoins, _ := sdk.ParseCoins("1000000000000000" + dnConfig.MainDenom)
-
 		if privValidatorKey == nil {
 			k := ed25519.GenPrivKey()
 			privValidatorKey = &k
@@ -284,7 +213,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 		genTxAcc = &auth.BaseAccount{
 			AccountNumber: uint64(len(accs)),
 			Address:       accAddr,
-			Coins:         accCoins,
+			Coins:         GenDefCoins(nil),
 			PubKey:        privValidatorKey.PubKey(),
 		}
 	}
@@ -344,7 +273,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 		commissionRate, _ := sdk.NewDecFromStr("0.100000000000000000")
 		commissionMaxRate, _ := sdk.NewDecFromStr("0.200000000000000000")
 		commissionChangeRate, _ := sdk.NewDecFromStr("0.010000000000000000")
-		tokenAmount := sdk.TokensFromConsensusPower(500000)
+		tokenAmount := sdk.TokensFromConsensusPower(1)
 
 		msg := staking.NewMsgCreateValidator(
 			genTxAcc.Address.Bytes(),
@@ -430,6 +359,15 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	}
 
 	return auth.NewStdTx(msgs, fee, sigs, memo)
+}
+
+func GenDefCoins(t *testing.T) sdk.Coins {
+	coins, err := sdk.ParseCoins("1000000000000000000000" + dnConfig.MainDenom)
+	if t != nil {
+		require.NoError(t, err)
+	}
+
+	return coins
 }
 
 func DeliverTx(app *DnServiceApp, tx auth.StdTx) sdk.Result {
