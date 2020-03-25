@@ -103,7 +103,7 @@ func TestProcessExecution(t *testing.T) {
 
 	resp := &vm_grpc.VMExecuteResponse{
 		Status: vm_grpc.ContractStatus_Discard,
-		StatusStruct: &vm_grpc.VMErrorStatus{
+		StatusStruct: &vm_grpc.VMStatus{
 			MajorStatus: 1,
 			SubStatus:   250,
 			Message:     "this is another errorr!!!1111",
@@ -290,7 +290,7 @@ func TestExecStatusKeeperNotAnError(t *testing.T) {
 	input := setupTestInput(true)
 	defer closeInput(input)
 
-	errorStatus := vm_grpc.VMErrorStatus{
+	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: types.VMCodeExecuted,
 		SubStatus:   0,
 		Message:     "",
@@ -318,7 +318,7 @@ func TestExecKeepAndError(t *testing.T) {
 	input := setupTestInput(true)
 	defer closeInput(input)
 
-	errorStatus := vm_grpc.VMErrorStatus{
+	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: 16,
 		SubStatus:   0,
 		Message:     "aborted error!11111!1!!!",
