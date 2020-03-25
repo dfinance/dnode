@@ -30,7 +30,7 @@ func TestNewEventDiscard(t *testing.T) {
 	require.Equal(t, event.Type, EventTypeDiscard)
 	require.Empty(t, event.Attributes) // has empty attributes if error status is not provided.
 
-	errorStatus := vm_grpc.VMErrorStatus{
+	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: 0,
 		SubStatus:   0,
 		Message:     "this is error!!111",
@@ -87,7 +87,7 @@ func TestNewEventFromVM(t *testing.T) {
 
 // Test event happens when VM return status with errors.
 func TestNewEventError(t *testing.T) {
-	errorStatus := vm_grpc.VMErrorStatus{
+	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: 0,
 		SubStatus:   0,
 		Message:     "this is error!!111",
@@ -112,18 +112,18 @@ func TestNewEventError(t *testing.T) {
 
 // Test creation event with error status.
 func TestNewEventWithError(t *testing.T) {
-	event := newEventErrorStatus(EventTypeError, nil)
+	event := newEventStatus(EventTypeError, nil)
 
 	require.Empty(t, event.Attributes)
 	require.Equal(t, EventTypeError, event.Type)
 
-	errorStatus := vm_grpc.VMErrorStatus{
+	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: 0,
 		SubStatus:   0,
 		Message:     "this is error!!111",
 	}
 
-	event = newEventErrorStatus(EventTypeDiscard, &errorStatus)
+	event = newEventStatus(EventTypeDiscard, &errorStatus)
 
 	require.Equal(t, EventTypeDiscard, event.Type)
 
