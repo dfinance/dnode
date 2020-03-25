@@ -361,6 +361,8 @@ func (ct *CLITester) startDemon() {
 	if i == startRetries {
 		ct.t.Fatalf("wait for the node to start up: failed")
 	}
+
+	ct.daemon = cmd
 }
 
 func (ct *CLITester) updateGenesisState(appState GenesisState) {
@@ -498,7 +500,7 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 	for i := 0; i < requiredVotes-len(call.Votes); i++ {
 		ct.TxMultiSigConfirmCall(validatorAddrs[i], call.Call.MsgID).CheckSucceeded()
 	}
-	ct.WaitForNextBlocks(1)
+	ct.WaitForNextBlocks(2)
 
 	// check call approved
 	{
@@ -902,7 +904,7 @@ func (c *CLICmd) Start(startLoggers bool) {
 
 func (c *CLICmd) Stop() {
 	require.NotNil(c.t, c.proc, "proc")
-	require.NoError(c.t, c.proc.Stop(false), "proc.Stop")
+	require.NoError(c.t, c.proc.Stop(true), "proc.Stop")
 	c.proc = nil
 }
 
