@@ -888,7 +888,6 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (result sdk
 			switch rType := r.(type) {
 			case vm.ErrVMCrashed:
 				panic(r)
-
 			case sdk.ErrorOutOfGas:
 				log := fmt.Sprintf(
 					"out of gas in location: %v; gasWanted: %d, gasUsed: %d",
