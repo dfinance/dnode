@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
 
-	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/currencies"
 	ccMsgs "github.com/dfinance/dnode/x/currencies/msgs"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
@@ -30,11 +29,9 @@ func Test_CurrencyHandlerIsMultisigOnly(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genValidators, _, _, genPrivKeys := CreateGenAccounts(7, genCoins)
+	genValidators, _, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genValidators)
+	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
 	// check module supports only multisig calls (using MSRouter)
@@ -195,11 +192,9 @@ func Test_CurrencyQueries(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
@@ -268,11 +263,9 @@ func Test_CurrencyIssue(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr := uint(0), genAccs[0].Address
@@ -377,11 +370,9 @@ func Test_CurrencyIssueHugeAmount(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr := uint(0), genAccs[0].Address
@@ -421,11 +412,9 @@ func Test_CurrencyIssueDecimals(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
@@ -488,11 +477,9 @@ func Test_CurrencyDestroy(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, genCoins)
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
 
-	_, err = setGenesis(t, app, genAccs)
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]

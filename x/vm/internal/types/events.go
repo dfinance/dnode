@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
@@ -33,12 +32,12 @@ func NewEventKeep() sdk.Event {
 }
 
 // Creating discard/errors statuses.
-func newEventErrorStatus(topic string, errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
+func newEventStatus(topic string, vmStatus *vm_grpc.VMStatus) sdk.Event {
 	attributes := make([]sdk.Attribute, 0)
-	if errorStatus != nil {
-		attributes = append(attributes, sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10)))
-		attributes = append(attributes, sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10)))
-		attributes = append(attributes, sdk.NewAttribute(AttrKeyMessage, errorStatus.Message))
+	if vmStatus != nil {
+		attributes = append(attributes, sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(vmStatus.MajorStatus, 10)))
+		attributes = append(attributes, sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(vmStatus.SubStatus, 10)))
+		attributes = append(attributes, sdk.NewAttribute(AttrKeyMessage, vmStatus.Message))
 	}
 
 	return sdk.NewEvent(
@@ -48,13 +47,13 @@ func newEventErrorStatus(topic string, errorStatus *vm_grpc.VMErrorStatus) sdk.E
 }
 
 // New event with error status.
-func NewEventError(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
-	return newEventErrorStatus(EventTypeError, errorStatus)
+func NewEventError(vmStatus *vm_grpc.VMStatus) sdk.Event {
+	return newEventStatus(EventTypeError, vmStatus)
 }
 
 // New event with discard status.
-func NewEventDiscard(errorStatus *vm_grpc.VMErrorStatus) sdk.Event {
-	return newEventErrorStatus(EventTypeDiscard, errorStatus)
+func NewEventDiscard(errorStatus *vm_grpc.VMStatus) sdk.Event {
+	return newEventStatus(EventTypeDiscard, errorStatus)
 }
 
 // Parse VM event to standard SDK event.

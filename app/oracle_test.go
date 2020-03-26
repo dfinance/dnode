@@ -11,7 +11,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/oracle"
 )
 
@@ -65,19 +64,25 @@ func Test_OracleRest(t *testing.T) {
 
 	// check postPrice and rawPrices endpoints
 	{
-		r.WaitForHeight(1)
+		prevBlockHeight := r.WaitForNextBlock()
 		for _, postPrice := range postPrices {
 			reqMsg := oracle.NewMsgPostPrice(postPrice.OracleAddress, postPrice.AssetCode, postPrice.Price, postPrice.ReceivedAt)
 
 			r.TxSyncRequest(postPrice.SenderIdx, reqMsg, true)
 		}
-		r.WaitForHeight(2)
+		curBlockHeight := r.WaitForNextBlock()
 
-		blockHeight := r.App.LastBlockHeight()
-		reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, r.DefaultAssetCode, blockHeight)
+		// rawPrices could be stored in [prevBlockHeight : curBlockHeight], so we need to find them
 		rawPrices := make([]oracle.PostedPrice, 0)
+		for blockHeight := prevBlockHeight; blockHeight <= curBlockHeight; blockHeight++ {
+			reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, r.DefaultAssetCode, blockHeight)
 
-		r.Request("GET", reqSubPath, nil, nil, &rawPrices, true)
+			r.Request("GET", reqSubPath, nil, nil, &rawPrices, true)
+			if len(rawPrices) > 0 {
+				return
+			}
+		}
+
 		require.Len(t, rawPrices, len(postPrices))
 		for i, rawPrice := range rawPrices {
 			postPrice := postPrices[i]
@@ -136,10 +141,8 @@ func Test_OracleQueries(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	assetCodePrefix := "asset_"
@@ -290,10 +293,8 @@ func Test_OracleAddOracle(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
@@ -376,10 +377,8 @@ func Test_OracleSetOracles(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "db2db"
@@ -453,10 +452,8 @@ func Test_OracleAddAsset(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
@@ -538,10 +535,8 @@ func TestOracle_SetAsset(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
@@ -611,10 +606,8 @@ func Test_OraclePostPrices(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	genCoins, err := sdk.ParseCoins("1000000000000000" + config.MainDenom)
-	require.NoError(t, err)
-	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, genCoins)
-	_, err = setGenesis(t, app, genAccs)
+	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
 	assetCode := "dn2dn"
