@@ -45,7 +45,7 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:               "dnode",
 		Short:             "Dfinance blockchain app daemon (server).",
-		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
+		PersistentPreRunE: PersistentPreRunEFn(ctx),
 	}
 
 	rootCmd.AddCommand(

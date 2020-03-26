@@ -12,15 +12,21 @@ type DNLogger struct {
 }
 
 func NewDNLogger() log.Logger {
-	l := DNLogger{
-		Logger: log.NewTMLogger(os.Stdout),
+	return &DNLogger{
+		Logger: log.NewTMLogger(log.NewSyncWriter(os.Stdout)),
 	}
-
-	return &l
 }
 
 // Extended Error() implementation with Sentry support
 func (l *DNLogger) Error(msg string, keyvals ...interface{}) {
 	l.Logger.Error(msg, keyvals...)
 	sentryCaptureMessage(msg, keyvals...)
+}
+
+
+// Method overwrite
+func (l *DNLogger) With(keyvals ...interface{}) log.Logger {
+	return &DNLogger{
+		Logger: l.Logger.With(keyvals...),
+	}
 }
