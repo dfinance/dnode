@@ -36,16 +36,10 @@ require (
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.32.8
 	github.com/tendermint/tm-db v0.2.0
-<<<<<<< HEAD
 	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933 // indirect
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
 	golang.org/x/sys v0.0.0-20200321134203-328b4cd54aae // indirect
 	google.golang.org/genproto v0.0.0-20200319113533-08878b785e9c // indirect
-=======
-	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e // indirect
-	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933
-	google.golang.org/genproto v0.0.0-20191203145615-049a07e0debe // indirect
->>>>>>> a96be6639613da0534e662be5c4081f2f7bef339
 	google.golang.org/grpc v1.28.0
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )
