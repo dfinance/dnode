@@ -34,7 +34,9 @@ func TestKeeper_DeployContractMock(t *testing.T) {
 	events := input.ctx.EventManager().Events()
 
 	require.Len(t, events, 1)
-	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
+	require.EqualValues(t, types.EventTypeContractStatus, events[0].Type)
+	require.EqualValues(t, types.AttrKeyStatus, events[0].Attributes[0].Key)
+	require.EqualValues(t, types.StatusKeep, events[0].Attributes[0].Value)
 }
 
 // Deploy script execute with mocked VM.
@@ -59,7 +61,9 @@ func TestKeeper_ExecuteScriptMock(t *testing.T) {
 	events := input.ctx.EventManager().Events()
 
 	require.Len(t, events, 2)
-	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
+	require.EqualValues(t, types.EventTypeContractStatus, events[0].Type)
+	require.EqualValues(t, types.AttrKeyStatus, events[0].Attributes[0].Key)
+	require.EqualValues(t, types.StatusKeep, events[0].Attributes[0].Value)
 }
 
 // Check genesis Import / Export functionality
