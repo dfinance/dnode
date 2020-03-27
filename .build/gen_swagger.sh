@@ -4,6 +4,6 @@
 
 set -e
 
-swag init --dir . --output ./build --generalInfo ./cmd/dnode/main.go
+swag init --dir . --output ./build --generalInfo ./cmd/dnode/main.go --parseDependency
 
 swagger-go serve -F=swagger ./build/swagger.yaml

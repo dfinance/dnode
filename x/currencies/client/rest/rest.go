@@ -29,7 +29,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // @Produce json
 // @Param page path int true "page number"
 // @Param limit query int false "items per page (default: 100)"
-// @Success 200 {object} RespGetDestroys
+// @Success 200 {object} CCRespGetDestroys
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /currencies/destroys/{page} [get]
@@ -82,7 +82,7 @@ func getDestroys(cliCtx context.CLIContext) http.HandlerFunc {
 // @Accept  json
 // @Produce json
 // @Param destroyID path int true "destroyID"
-// @Success 200 {object} RespGetDestroy
+// @Success 200 {object} CCRespGetDestroy
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /currencies/destroy/{destroyID} [get]
@@ -123,7 +123,7 @@ func getDestroy(cliCtx context.CLIContext) http.HandlerFunc {
 // @Accept  json
 // @Produce json
 // @Param issueID path string true "issueID"
-// @Success 200 {object} RespGetIssue
+// @Success 200 {object} CCRespGetIssue
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /currencies/issue/{issueID} [get]
@@ -156,7 +156,7 @@ func getIssue(cliCtx context.CLIContext) http.HandlerFunc {
 // @Accept  json
 // @Produce json
 // @Param symbol path string true "symbol / denom"
-// @Success 200 {object} RespGetCurrency
+// @Success 200 {object} CCRespGetCurrency
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /currencies/currency/{symbol} [get]
@@ -172,7 +172,6 @@ func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/currency", types.ModuleName), bz)
-
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

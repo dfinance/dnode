@@ -32,7 +32,7 @@ import (
 
 // @host localhost:1317
 // @BasePath /
-// @schemes http https
+// @schemes http
 // @query.collection.format multi
 
 // DNODE (Daemon) entry function.

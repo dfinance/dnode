@@ -9,8 +9,8 @@ import (
 
 // Response from querier with confirmations and validators list.
 type ValidatorsConfirmations struct {
-	Validators    Validators `json:"validators"`
-	Confirmations uint16     `json:"confirmations"`
+	Validators    Validators `json:"validators"`                // Registered validators list
+	Confirmations uint16     `json:"confirmations" example:"3"` // Minimum number of confirmations needed to approve Call
 }
 
 func (q ValidatorsConfirmations) String() string {

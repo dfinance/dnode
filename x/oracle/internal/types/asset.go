@@ -10,9 +10,9 @@ import (
 
 // Asset struct that represents an asset in the oracle
 type Asset struct {
-	AssetCode string  `json:"asset_code" yaml:"asset_code"`
-	Oracles   Oracles `json:"oracles" yaml:"oracles"`
-	Active    bool    `json:"active" yaml:"active"`
+	AssetCode string  `json:"asset_code" yaml:"asset_code" example:"dfi"`
+	Oracles   Oracles `json:"oracles" yaml:"oracles"` // List of registered RawPrice sources
+	Active    bool    `json:"active" yaml:"active"`   // Not used ATM
 }
 
 // NewAsset creates a new asset
@@ -94,17 +94,17 @@ func (os Oracles) String() string {
 
 // CurrentPrice struct that contains the metadata of a current price for a particular asset in the oracle module.
 type CurrentPrice struct {
-	AssetCode  string    `json:"asset_code" yaml:"asset_code"`
-	Price      sdk.Int   `json:"price" yaml:"price"`
-	ReceivedAt time.Time `json:"received_at" yaml:"received_at"`
+	AssetCode  string    `json:"asset_code" yaml:"asset_code" example:"dfi"` // Denom
+	Price      sdk.Int   `json:"price" yaml:"price" example:"1000"`
+	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
 // PostedPrice struct represented a price for an asset posted by a specific oracle
 type PostedPrice struct {
-	AssetCode     string         `json:"asset_code" yaml:"asset_code"`
-	OracleAddress sdk.AccAddress `json:"oracle_address" yaml:"oracle_address"`
-	Price         sdk.Int        `json:"price" yaml:"price"`
-	ReceivedAt    time.Time      `json:"received_at" yaml:"received_at"`
+	AssetCode     string         `json:"asset_code" yaml:"asset_code" example:"dfi"`                                                   // Denom
+	OracleAddress sdk.AccAddress `json:"oracle_address" yaml:"oracle_address" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"` // Price source
+	Price         sdk.Int        `json:"price" yaml:"price" example:"1000"`
+	ReceivedAt    time.Time      `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
 // implement fmt.Stringer

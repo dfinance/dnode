@@ -22,10 +22,10 @@ const (
 )
 
 type postPriceReq struct {
-	BaseReq    rest.BaseReq `json:"base_req"`
-	AssetCode  string       `json:"asset_code"`
-	Price      string       `json:"price"`
-	ReceivedAt string       `json:"received_at"`
+	BaseReq    rest.BaseReq `json:"base_req" yaml:"base_req"`
+	AssetCode  string       `json:"asset_code" example:"dfi"`                                            // Denom
+	Price      string       `json:"price" example:"100"`                                                 // BigInt
+	ReceivedAt string       `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
 // RegisterRoutes - Central function to define routes that get registered by the main application
@@ -36,6 +36,17 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/assets", storeName), getAssetsHandler(cliCtx, storeName)).Methods("GET")
 }
 
+// PostPrice godoc
+// @Tags oracle
+// @Summary Post Asset RawPrice
+// @Description Send Asset RawPrice signed Tx
+// @ID oraclePostPrice
+// @Accept  json
+// @Produce json
+// @Param postRequest body postPriceReq true "PostPrice request with signed transaction"
+// @Success 200 {object} OracleRespGetAssets
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /oracle/rawprices [put]
 func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req postPriceReq
@@ -80,6 +91,19 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// GetRawPrices godoc
+// @Tags oracle
+// @Summary Get RawPrices
+// @Description Get RawPrice objects by assetCode and blockHeight
+// @ID oracleGetRawPrices
+// @Accept  json
+// @Produce json
+// @Param assetCode path string true "asset code"
+// @Param blockHeight path int true "block height rawPrices relates to"
+// @Success 200 {object} OracleRespGetRawPrices
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /oracle/rawprices/{assetCode}/{blockHeight} [get]
 func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -106,6 +130,18 @@ func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.Handl
 	}
 }
 
+// GetCurPrice godoc
+// @Tags oracle
+// @Summary Get current Price
+// @Description Get current Price by assetCode
+// @ID oracleGetRawPrices
+// @Accept  json
+// @Produce json
+// @Param assetCode path string true "asset code"
+// @Success 200 {object} OracleRespGetPrice
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /oracle/currentprice/{assetCode} [get]
 func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -126,6 +162,16 @@ func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.Ha
 	}
 }
 
+// GetAssets godoc
+// @Tags oracle
+// @Summary Get Assets
+// @Description Get Asset objects
+// @ID oracleGetAssets
+// @Accept  json
+// @Produce json
+// @Success 200 {object} OracleRespGetAssets
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /oracle/assets [get]
 func getAssetsHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)

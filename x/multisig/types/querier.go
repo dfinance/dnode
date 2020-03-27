@@ -26,8 +26,8 @@ func (q LastIdRes) String() string {
 
 // Type to get a call as response with votes.
 type CallResp struct {
-	Call  Call  `json:"call"`
-	Votes Votes `json:"votes"`
+	Call  Call  `json:"call"`  // Call info
+	Votes Votes `json:"votes" swaggertype:"array,string"` // Accounts address array
 }
 
 // Call response to string.
