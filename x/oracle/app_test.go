@@ -9,13 +9,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/mock"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
-	"github.com/dfinance/dnode/x/vm"
 )
 
 const chainID = ""
@@ -27,18 +27,18 @@ func NewVMStorage() VMStorageImpl {
 	return VMStorageImpl{}
 }
 
-func (storage VMStorageImpl) GetOracleAccessPath(_ string) *vm.VMAccessPath {
-	return &vm.VMAccessPath{}
+func (storage VMStorageImpl) GetOracleAccessPath(_ string) *vm_grpc.VMAccessPath {
+	return &vm_grpc.VMAccessPath{}
 }
 
-func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm.VMAccessPath, value []byte) {
+func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 }
 
-func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm.VMAccessPath) []byte {
+func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	return nil
 }
 
-func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm.VMAccessPath) {
+func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 }
 
 // GenTx generates a signed mock transaction.

@@ -8,13 +8,14 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 // Set value in storage by access path.
 func (keeper Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 	store := ctx.KVStore(keeper.storeKey)
-	key := types.MakePathKey(*accessPath)
+	key := common_vm.MakePathKey(*accessPath)
 
 	store.Set(key, value)
 }
@@ -46,7 +47,7 @@ func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath
 // Get value from storage by access path.
 func (keeper Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	store := ctx.KVStore(keeper.storeKey)
-	key := types.MakePathKey(*accessPath)
+	key := common_vm.MakePathKey(*accessPath)
 
 	return store.Get(key)
 }
@@ -54,7 +55,7 @@ func (keeper Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 // Check if storage has value by access path.
 func (keeper Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
 	store := ctx.KVStore(keeper.storeKey)
-	key := types.MakePathKey(*accessPath)
+	key := common_vm.MakePathKey(*accessPath)
 
 	return store.Has(key)
 }
@@ -62,7 +63,7 @@ func (keeper Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 // Delete key in storage by access path.
 func (keeper Keeper) delValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 	store := ctx.KVStore(keeper.storeKey)
-	key := types.MakePathKey(*accessPath)
+	key := common_vm.MakePathKey(*accessPath)
 
 	store.Delete(key)
 }
