@@ -11,8 +11,26 @@ import (
 )
 
 const (
-	accBytes1 = "010000000300000064666901000000000000000000000000000000"
+	accBytes1 = "01000000030000006466690100000000000000000000000000000000000000000000002800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000028000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+	toDecode  = "000000000000000000000000000000000000000000000000000000000000000000000000"
 )
+
+func TestMarshalEmpty(t *testing.T) {
+	accRes := AccountResource{
+		WithdrawEvents: &EventHandle{},
+		DepositEvents:  &EventHandle{},
+	}
+	AccResToBytes(accRes)
+}
+
+func TestUnmarshalEmpty(t *testing.T) {
+	bz, err := hex.DecodeString(toDecode)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	BytesToAccRes(bz)
+}
 
 func TestBalancesToCoins(t *testing.T) {
 	wbCoins := []DNCoin{
@@ -61,6 +79,15 @@ func TestBytesToAccRes(t *testing.T) {
 				Value: sdk.NewInt(1),
 			},
 		},
+		WithdrawEvents: &EventHandle{
+			Count: 0,
+			Key:   make([]byte, 40),
+		},
+		DepositEvents: &EventHandle{
+			Count: 0,
+			Key:   make([]byte, 40),
+		},
+		EventGenerator: 0,
 	}
 
 	bz := AccResToBytes(acc)
@@ -78,6 +105,15 @@ func TestAccToBytes(t *testing.T) {
 				Value: sdk.NewInt(1),
 			},
 		},
+		WithdrawEvents: &EventHandle{
+			Count: 0,
+			Key:   make([]byte, 40),
+		},
+		DepositEvents: &EventHandle{
+			Count: 0,
+			Key:   make([]byte, 40),
+		},
+		EventGenerator: 0,
 	}
 
 	bz := AccResToBytes(acc)
@@ -95,12 +131,48 @@ func TestAccResourceFromAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	accRes := AccResFromAccount(&acc)
+	accRes := AccResFromAccount(&acc, nil)
 
 	for i, coin := range acc.Coins {
 		require.EqualValues(t, coin.Denom, accRes.Balances[i].Denom)
 		require.EqualValues(t, coin.Amount, accRes.Balances[i].Value)
 	}
+}
+
+func TestAccResFromSource(t *testing.T) {
+	source := AccountResource{
+		Balances: []DNCoin{
+			{
+				Denom: []byte("mmm"),
+				Value: sdk.NewInt(1),
+			},
+		},
+		WithdrawEvents: &EventHandle{
+			Count: 0,
+			Key:   make([]byte, 40),
+		},
+		DepositEvents: &EventHandle{
+			Count: 0,
+			Key:   make([]byte, 40),
+		},
+		EventGenerator: 1,
+	}
+
+	acc := auth.NewBaseAccountWithAddress(sdk.AccAddress("tmp"))
+	if err := acc.SetCoins(sdk.Coins{sdk.NewCoin("dfi", sdk.NewInt(1))}); err != nil {
+		t.Fatal(err)
+	}
+
+	accRes := AccResFromAccount(&acc, &source)
+
+	for i, coin := range acc.Coins {
+		require.EqualValues(t, coin.Denom, accRes.Balances[i].Denom)
+		require.EqualValues(t, coin.Amount, accRes.Balances[i].Value)
+	}
+
+	require.Equal(t, source.EventGenerator, accRes.EventGenerator)
+	require.EqualValues(t, source.DepositEvents, accRes.DepositEvents)
+	require.EqualValues(t, source.WithdrawEvents, accRes.WithdrawEvents)
 }
 
 func TestGetResPath(t *testing.T) {

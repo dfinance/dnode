@@ -4,14 +4,19 @@ import (
 	"context"
 	"encoding/hex"
 	"flag"
+	"fmt"
 	"math/rand"
 	"net"
+	"os"
+	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	docker "github.com/fsouza/go-dockerclient"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
@@ -22,6 +27,7 @@ import (
 
 	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/vm/internal/types"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
 const (
@@ -40,6 +46,7 @@ const (
 
 	FlagVMAddress = "vm.address"
 	FlagDSListen  = "ds.listen"
+	FlagCompiler  = "vm.compiler"
 )
 
 type VMServer struct {
@@ -51,7 +58,7 @@ type testInput struct {
 	ctx sdk.Context
 
 	k  Keeper
-	ak auth.AccountKeeper
+	ak vmauth.VMAccountKeeper
 	pk params.Keeper
 	vk Keeper
 
@@ -71,19 +78,25 @@ type testInput struct {
 	vmServer    *VMServer
 
 	dsListener *bufconn.Listener
+	dsPort     int
 }
 
 var (
 	vmMockAddress  *string
 	dataListenMock *string
 
-	vmAddress *string
-	dsListen  *string
+	vmAddress  *string
+	vmCompiler *string
+	dsListen   *string
 
 	bufferSize = 1024 * 1024
 )
 
 func init() {
+	if flag.Lookup(FlagCompiler) == nil {
+		vmCompiler = flag.String(FlagCompiler, "127.0.0.1:50053", "compiler address")
+	}
+
 	if flag.Lookup(FlagVMAddress) == nil {
 		vmAddress = flag.String(FlagVMAddress, vmConfig.DefaultVMAddress, "Move VM address to connect during unit tests")
 	}
@@ -187,14 +200,6 @@ func setupTestInput(launchMock bool) testInput {
 		input.vmServer, input.rawVMServer, vmListener = LaunchVMMock()
 	}
 
-	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams, params.DefaultCodespace)
-	input.ak = auth.NewAccountKeeper(
-		input.cdc,
-		input.keyAccount,
-		input.pk.Subspace(auth.DefaultParamspace),
-		auth.ProtoBaseAccount,
-	)
-
 	var config *vmConfig.VMConfig
 
 	if launchMock {
@@ -209,10 +214,11 @@ func setupTestInput(launchMock bool) testInput {
 		input.dsListener = bufconn.Listen(bufferSize)
 		listener = input.dsListener
 	} else {
-		listener, err = net.Listen("tcp", config.DataListen)
+		listener, err = net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			panic(err)
 		}
+		input.dsPort = listener.Addr().(*net.TCPAddr).Port
 	}
 
 	// no blocking, so we can launch part of tests even without vm
@@ -238,6 +244,15 @@ func setupTestInput(launchMock bool) testInput {
 		listener: listener,
 		config:   config,
 	}
+
+	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams, params.DefaultCodespace)
+	input.ak = vmauth.NewVMAccountKeeper(
+		input.cdc,
+		input.keyAccount,
+		input.pk.Subspace(auth.DefaultParamspace),
+		input.vk,
+		auth.ProtoBaseAccount,
+	)
 
 	input.vk.dsServer = NewDSServer(&input.vk)
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())
@@ -345,4 +360,135 @@ func GetBufDialer(listener *bufconn.Listener) func(context.Context, string) (net
 	return func(ctx context.Context, url string) (net.Conn, error) {
 		return listener.Dial()
 	}
+}
+
+func createVMOptions(registry, dsServerUrl, tag string) docker.CreateContainerOptions {
+	ports := make(map[docker.Port]struct{})
+	ports["50051/tcp"] = struct{}{}
+
+	opts := docker.CreateContainerOptions{
+		Config: &docker.Config{
+			Image:        registry + "/dfinance/dvm:" + tag,
+			ExposedPorts: ports,
+			Cmd: []string{
+				"./dvm",
+				"0.0.0.0:50051",
+				dsServerUrl,
+			},
+		},
+		HostConfig: &docker.HostConfig{
+			PortBindings: map[docker.Port][]docker.PortBinding{
+				"50051/tcp": {{HostIP: "0.0.0.0", HostPort: "50051"}},
+			},
+		},
+	}
+
+	return opts
+}
+
+// creating compiler options.
+func createCompilerOptions(registry, dsServerUrl, tag string) docker.CreateContainerOptions {
+	ports := make(map[docker.Port]struct{})
+	ports["50053/tcp"] = struct{}{}
+
+	opts := docker.CreateContainerOptions{
+		Config: &docker.Config{
+			Image:        registry + "/dfinance/dvm:" + tag,
+			ExposedPorts: ports,
+			Cmd: []string{
+				"./compiler",
+				"0.0.0.0:50053",
+				dsServerUrl,
+			},
+		},
+		HostConfig: &docker.HostConfig{
+			PortBindings: map[docker.Port][]docker.PortBinding{
+				"50053/tcp": {{HostIP: "0.0.0.0", HostPort: "50053"}},
+			},
+		},
+	}
+
+	return opts
+}
+
+// stop docker
+func stopDocker(t *testing.T, client *docker.Client, container *docker.Container) {
+	if err := client.RemoveContainer(docker.RemoveContainerOptions{
+		ID:    container.ID,
+		Force: true,
+	}); err != nil {
+		t.Fatalf("can't remove container: %v", err)
+	}
+}
+
+// Launch docker container with dvm.
+func launchDocker(dsServerUrl string, t *testing.T) (*docker.Client, *docker.Container, *docker.Container) {
+	tag := os.Getenv("TAG")
+	if tag == "" {
+		tag = "master"
+	}
+
+	registry := os.Getenv("REGISTRY")
+	if registry == "" {
+		t.Fatalf("provide REGISTRY via env, e.g. REGISTRY=...")
+	}
+
+	client, err := docker.NewClientFromEnv()
+	if err != nil {
+		t.Fatalf("can't connect to docker: %v", err)
+	}
+
+	compiler, err := client.CreateContainer(createCompilerOptions(registry, dsServerUrl, tag))
+	if err != nil {
+		t.Fatalf("can't create container for compiler: %v", err)
+	}
+
+	err = client.StartContainer(compiler.ID, nil)
+	if err != nil {
+		t.Fatalf("cannot start docker container for compiler: %v", err)
+	}
+
+	vm, err := client.CreateContainer(createVMOptions(registry, dsServerUrl, tag))
+	if err != nil {
+		t.Fatalf("can't create container for vm: %v", err)
+	}
+
+	err = client.StartContainer(vm.ID, nil)
+	if err != nil {
+		t.Fatalf("can't start docker container for vm: %v", err)
+	}
+
+	return client, compiler, vm
+}
+
+// waitStarted waits for a container to start for the maxWait time.
+func waitStarted(client *docker.Client, id string, maxWait time.Duration) error {
+	done := time.Now().Add(maxWait)
+	for time.Now().Before(done) {
+		c, err := client.InspectContainerWithOptions(docker.InspectContainerOptions{
+			ID: id,
+		})
+		if err != nil {
+			break
+		}
+		if c.State.Running {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return fmt.Errorf("cannot start container %s for %v", id, maxWait)
+}
+
+// waitReachable waits for hostport to became reachable for the maxWait time.
+func waitReachable(hostport string, maxWait time.Duration) error {
+	done := time.Now().Add(maxWait)
+	for time.Now().Before(done) {
+		c, err := net.Dial("tcp", hostport)
+		if err == nil {
+			c.Close()
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return fmt.Errorf("cannot connect %v for %v", hostport, maxWait)
 }

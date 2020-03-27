@@ -2,8 +2,6 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
-**THIS IS VERY EARLY WORK IN PROGRESS, NOT FOR TESTNET/PRODUCTION USAGE**
-
 Dfinance Blockchain (DN) is based on [Cosmos SDK](https://github.com/cosmos/cosmos-sdk).
 
 This is work in progress, yet it supports the following features:
@@ -489,8 +487,13 @@ To launch tests run:
 
     GO111MODULE=on go test ./...
     
-    And with integration tests:
-    GO111MODULE=on go test ./... --tags integ
+    And with integration tests (required docker installed and authorization to dvm registry)
+    export TAG=master # needed tag (master by default)
+    export REGISTRY=  # replace of registry contains dvm
+    
+    docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
+    
+    GO111MODULE=on go test ./x/vm/internal/keeper --tags=integ
 
 # Contributors
 
