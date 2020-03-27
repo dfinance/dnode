@@ -8,11 +8,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/dfinance/dnode/x/vm"
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 // VM storage.
@@ -33,7 +34,7 @@ type testInput struct {
 
 	paramsKeeper  params.Keeper
 	accountKeeper VMAccountKeeper
-	vmStorage     vm.VMStorage
+	vmStorage     common_vm.VMStorage
 }
 
 // Create VM storage for tests.
@@ -44,23 +45,23 @@ func NewVMStorage(storeKey sdk.StoreKey) VMStorageImpl {
 	}
 }
 
-func (storage VMStorageImpl) GetOracleAccessPath(_ string) *vm.VMAccessPath {
-	return &vm.VMAccessPath{}
+func (storage VMStorageImpl) GetOracleAccessPath(_ string) *vm_grpc.VMAccessPath {
+	return &vm_grpc.VMAccessPath{}
 }
 
-func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm.VMAccessPath, value []byte) {
+func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 	store := ctx.KVStore(storage.storeKey)
-	store.Set(vm.MakePathKey(*accessPath), value)
+	store.Set(common_vm.MakePathKey(*accessPath), value)
 }
 
-func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm.VMAccessPath) []byte {
+func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	store := ctx.KVStore(storage.storeKey)
-	return store.Get(vm.MakePathKey(*accessPath))
+	return store.Get(common_vm.MakePathKey(*accessPath))
 }
 
-func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm.VMAccessPath) {
+func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 	store := ctx.KVStore(storage.storeKey)
-	store.Delete(vm.MakePathKey(*accessPath))
+	store.Delete(common_vm.MakePathKey(*accessPath))
 }
 
 func newTestInput(t *testing.T) testInput {
