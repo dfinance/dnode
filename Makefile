@@ -26,3 +26,8 @@ go.sum: go.mod
 deps:
 	@echo "  >  Checking if there is any missing dependencies..."
 	go get -u github.com/golang/protobuf/protoc-gen-go
+
+## binaries builds (xgo required: https://github.com/karalabe/xgo)
+binaries: go.sum
+	mkdir -p ./builds
+	xgo --targets=darwin/amd64,linux/386,linux/amd64,windows/amd64,windows/386 --out ./builds/dncli-${git_tag} --ldflags "$(tags)" -tags "$(build_tags)" ./cmd/dncli

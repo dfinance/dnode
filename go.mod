@@ -11,6 +11,7 @@ require (
 	github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f
 	github.com/gogo/protobuf v1.3.1
 	github.com/gorilla/mux v1.7.3
+	github.com/karalabe/xgo v0.0.0-20191115072854-c5ccff8648a7 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nntaoli-project/GoEx v1.0.11
