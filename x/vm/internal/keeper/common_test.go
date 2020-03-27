@@ -78,6 +78,7 @@ type testInput struct {
 	vmServer    *VMServer
 
 	dsListener *bufconn.Listener
+	dsPort     int
 }
 
 var (
@@ -213,10 +214,11 @@ func setupTestInput(launchMock bool) testInput {
 		input.dsListener = bufconn.Listen(bufferSize)
 		listener = input.dsListener
 	} else {
-		listener, err = net.Listen("tcp", config.DataListen)
+		listener, err = net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			panic(err)
 		}
+		input.dsPort = listener.Addr().(*net.TCPAddr).Port
 	}
 
 	// no blocking, so we can launch part of tests even without vm
@@ -360,28 +362,47 @@ func GetBufDialer(listener *bufconn.Listener) func(context.Context, string) (net
 	}
 }
 
-// Create options for docker.
-func createDockerOptions(name string) docker.CreateContainerOptions {
+func createVMOptions(registry, dsServerUrl, tag string) docker.CreateContainerOptions {
 	ports := make(map[docker.Port]struct{})
 	ports["50051/tcp"] = struct{}{}
-	ports["50053/tcp"] = struct{}{}
-
-	dsServerUrl := os.Getenv("DS_SERVER_URL")
-	if dsServerUrl == "" {
-		dsServerUrl = "http://docker.for.mac.localhost:50052"
-	}
 
 	opts := docker.CreateContainerOptions{
 		Config: &docker.Config{
-			Image:        name,
+			Image:        registry + "/dfinance/dvm:" + tag,
 			ExposedPorts: ports,
-			Env: []string{
-				"DS_SERVER_URL=" + dsServerUrl,
+			Cmd: []string{
+				"./dvm",
+				"0.0.0.0:50051",
+				dsServerUrl,
 			},
 		},
 		HostConfig: &docker.HostConfig{
 			PortBindings: map[docker.Port][]docker.PortBinding{
 				"50051/tcp": {{HostIP: "0.0.0.0", HostPort: "50051"}},
+			},
+		},
+	}
+
+	return opts
+}
+
+// creating compiler options.
+func createCompilerOptions(registry, dsServerUrl, tag string) docker.CreateContainerOptions {
+	ports := make(map[docker.Port]struct{})
+	ports["50053/tcp"] = struct{}{}
+
+	opts := docker.CreateContainerOptions{
+		Config: &docker.Config{
+			Image:        registry + "/dfinance/dvm:" + tag,
+			ExposedPorts: ports,
+			Cmd: []string{
+				"./compiler",
+				"0.0.0.0:50053",
+				dsServerUrl,
+			},
+		},
+		HostConfig: &docker.HostConfig{
+			PortBindings: map[docker.Port][]docker.PortBinding{
 				"50053/tcp": {{HostIP: "0.0.0.0", HostPort: "50053"}},
 			},
 		},
@@ -401,22 +422,43 @@ func stopDocker(t *testing.T, client *docker.Client, container *docker.Container
 }
 
 // Launch docker container with dvm.
-func launchDocker(t *testing.T) (*docker.Client, *docker.Container) {
+func launchDocker(dsServerUrl string, t *testing.T) (*docker.Client, *docker.Container, *docker.Container) {
+	tag := os.Getenv("TAG")
+	if tag == "" {
+		tag = "master"
+	}
+
+	registry := os.Getenv("REGISTRY")
+	if registry == "" {
+		t.Fatalf("provide REGISTRY via env, e.g. REGISTRY=...")
+	}
+
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
 		t.Fatalf("can't connect to docker: %v", err)
 	}
-	c, err := client.CreateContainer(createDockerOptions("dvm"))
+
+	compiler, err := client.CreateContainer(createCompilerOptions(registry, dsServerUrl, tag))
 	if err != nil {
-		t.Fatalf("can't create container: %v", err)
+		t.Fatalf("can't create container for compiler: %v", err)
 	}
 
-	err = client.StartContainer(c.ID, nil)
+	err = client.StartContainer(compiler.ID, nil)
 	if err != nil {
-		t.Fatalf("cannot start docker container: %v", err)
+		t.Fatalf("cannot start docker container for compiler: %v", err)
 	}
 
-	return client, c
+	vm, err := client.CreateContainer(createVMOptions(registry, dsServerUrl, tag))
+	if err != nil {
+		t.Fatalf("can't create container for vm: %v", err)
+	}
+
+	err = client.StartContainer(vm.ID, nil)
+	if err != nil {
+		t.Fatalf("can't start docker container for vm: %v", err)
+	}
+
+	return client, compiler, vm
 }
 
 // waitStarted waits for a container to start for the maxWait time.

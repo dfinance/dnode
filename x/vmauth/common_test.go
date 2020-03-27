@@ -13,7 +13,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 // VM storage.
@@ -34,7 +34,7 @@ type testInput struct {
 
 	paramsKeeper  params.Keeper
 	accountKeeper VMAccountKeeper
-	vmStorage     core.VMStorage
+	vmStorage     common_vm.VMStorage
 }
 
 // Create VM storage for tests.
@@ -51,17 +51,17 @@ func (storage VMStorageImpl) GetOracleAccessPath(_ string) *vm_grpc.VMAccessPath
 
 func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 	store := ctx.KVStore(storage.storeKey)
-	store.Set(core.MakePathKey(*accessPath), value)
+	store.Set(common_vm.MakePathKey(*accessPath), value)
 }
 
 func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	store := ctx.KVStore(storage.storeKey)
-	return store.Get(core.MakePathKey(*accessPath))
+	return store.Get(common_vm.MakePathKey(*accessPath))
 }
 
 func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 	store := ctx.KVStore(storage.storeKey)
-	store.Delete(core.MakePathKey(*accessPath))
+	store.Delete(common_vm.MakePathKey(*accessPath))
 }
 
 func newTestInput(t *testing.T) testInput {
