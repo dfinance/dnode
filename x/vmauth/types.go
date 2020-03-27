@@ -1,6 +1,7 @@
 package vmauth
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,9 +21,18 @@ type DNCoin struct {
 	Value sdk.Int // coin value
 }
 
+// Event handle for account.
+type EventHandle struct {
+	Count uint64
+	Key   []byte
+}
+
 // Balances of account in case of standard lib.
 type AccountResource struct {
-	Balances []DNCoin // coins
+	Balances       []DNCoin     // coins.
+	WithdrawEvents *EventHandle // receive events handler.
+	DepositEvents  *EventHandle // sent events handler.
+	EventGenerator uint64       // event generator.
 }
 
 // Convert byte array to coins.
@@ -59,8 +69,19 @@ func GetResPath() []byte {
 	return data
 }
 
+// Get GUID for events.
+func getGUID(address sdk.AccAddress, counter uint64) []byte {
+	bzCounter := make([]byte, 8)
+
+	addr := AddrToPathAddr(address)
+
+	binary.LittleEndian.PutUint64(bzCounter, counter)
+
+	return append(bzCounter, addr...)
+}
+
 // Convert acc to account resource.
-func AccResFromAccount(acc exported.Account) AccountResource {
+func AccResFromAccount(acc exported.Account, source *AccountResource) AccountResource {
 	accCoins := acc.GetCoins()
 	balances := make([]DNCoin, len(accCoins))
 	for i, coin := range accCoins {
@@ -70,7 +91,33 @@ func AccResFromAccount(acc exported.Account) AccountResource {
 		}
 	}
 
-	return AccountResource{Balances: balances}
+	accRes := AccountResource{
+		Balances: balances,
+	}
+
+	if source != nil {
+		accRes.WithdrawEvents = source.WithdrawEvents
+		accRes.DepositEvents = source.DepositEvents
+		accRes.EventGenerator = source.EventGenerator
+	} else {
+		// just create new event handlers.
+		accRes.EventGenerator = 0
+
+		accRes.WithdrawEvents = &EventHandle{
+			Count: 0,
+			Key:   getGUID(acc.GetAddress(), accRes.EventGenerator),
+		}
+		accRes.EventGenerator += 1
+
+		//  increase event generator for another id.
+		accRes.DepositEvents = &EventHandle{
+			Count: 0,
+			Key:   getGUID(acc.GetAddress(), accRes.EventGenerator),
+		}
+		accRes.EventGenerator += 1
+	}
+
+	return accRes
 }
 
 // Convert account resource to bytes.
