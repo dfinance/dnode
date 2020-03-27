@@ -27,6 +27,14 @@ import (
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
 )
 
+// @title Dfinance dnode REST API
+// @version 1.0
+
+// @host localhost:1317
+// @BasePath /
+// @schemes http https
+// @query.collection.format multi
+
 // DNODE (Daemon) entry function.
 func main() {
 	config := sdk.GetConfig()

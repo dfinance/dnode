@@ -10,15 +10,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 )
 
+// swagger:model
 type Destroy struct {
-	ID        types.Int        `json:"id"`
-	ChainID   string           `json:"chainID"`
-	Symbol    string           `json:"symbol"`
-	Amount    types.Int        `json:"amount"`
-	Spender   types.AccAddress `json:"spender"`
-	Recipient string           `json:"recipient"`
-	Timestamp int64            `json:"timestamp"`
-	TxHash    string           `json:"tx_hash"`
+	ID        types.Int        `json:"id" example:"0"` // CallID
+	ChainID   string           `json:"chainID" example:"testnet"`
+	Symbol    string           `json:"symbol" example:"dfi"`
+	Amount    types.Int        `json:"amount" example:"100"`
+	Spender   types.AccAddress `json:"spender" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	Recipient string           `json:"recipient" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	Timestamp int64            `json:"timestamp" example:"1585295757"` // UNIX time [s]
+	TxHash    string           `json:"tx_hash" example:"fd82ce32835dfd7042808eaf6ff09cece952b9da20460fa462420a93607fa96f"`
 }
 
 func NewDestroy(id types.Int, chainID string, symbol string, amount types.Int, spender types.AccAddress, recipient string, txBytes []byte, timestamp int64) Destroy {
