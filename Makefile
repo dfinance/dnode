@@ -30,4 +30,4 @@ deps:
 ## binaries builds (xgo required: https://github.com/karalabe/xgo)
 binaries: go.sum
 	mkdir -p ./builds
-	xgo --targets=darwin/amd64,linux/386,linux/amd64,windows/amd64,windows/386 --out ./builds/dncli-${git_tag} --ldflags "$(tags)" -tags "$(build_tags)" ./cmd/dncli
+	xgo --targets=darwin/amd64,linux/386,linux/amd64,windows/amd64,windows/386 --out ./builds/dncli-${git_tag} --ldflags "$(tags)" -tags "$(build_tags)" github.com/dfinance/dnode/cmd/dncli
