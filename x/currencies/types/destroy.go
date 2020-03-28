@@ -12,11 +12,11 @@ import (
 
 // swagger:model
 type Destroy struct {
-	ID        types.Int        `json:"id" example:"0"` // CallID
+	ID        types.Int        `json:"id" swaggertype:"string" example:"0"` // CallID
 	ChainID   string           `json:"chainID" example:"testnet"`
 	Symbol    string           `json:"symbol" example:"dfi"`
-	Amount    types.Int        `json:"amount" example:"100"`
-	Spender   types.AccAddress `json:"spender" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	Amount    types.Int        `json:"amount" swaggertype:"string" example:"100"`
+	Spender   types.AccAddress `json:"spender" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	Recipient string           `json:"recipient" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	Timestamp int64            `json:"timestamp" format:"seconds" example:"1585295757"` // UNIX time
 	TxHash    string           `json:"tx_hash" example:"fd82ce32835dfd7042808eaf6ff09cece952b9da20460fa462420a93607fa96f"`

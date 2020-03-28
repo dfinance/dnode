@@ -11,7 +11,7 @@ import (
 
 // Call that will be executed itself, contains msg instances, that executing via router and handler.
 type Call struct {
-	Creator  sdk.AccAddress `json:"creator" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	Creator  sdk.AccAddress `json:"creator" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	MsgID    uint64         `json:"msg_id" example:"0"`           // Call ID
 	UniqueID string         `json:"unique_id" example:"issue1"`   // Call uniqueID
 	Approved bool           `json:"approved"`                     // Call is approved to execute

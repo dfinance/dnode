@@ -15,6 +15,7 @@ cosmos_version=v0.37.4
 
 all: install
 install: go.sum install-dnode install-dncli install-oracleapp
+swagger-ui: swagger-ui-deps swagger-ui-build
 
 install-dnode:
 		GO111MODULE=on go install --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dnode
@@ -32,21 +33,28 @@ deps:
 	@echo "-->  Checking if there is any missing dependencies..."
 	go get -u github.com/golang/protobuf/protoc-gen-go
 
-swagger-ui:
-	@echo "--> Building Swagger API specificaion, merging it to Cosmos SDK"
+swagger-ui-deps:
+	@echo "--> Preparing deps fro building Swagger API specificaion"
 
 	@echo "-> Make tmp build folder"
 	rm -rf $(swagger_dir)
 	mkdir -p $(cosmos_dir)
 
 	@echo "-> Cosmos-SDK $(cosmos_version) checkout"
-#	#git -C $(swagger_dir) clone --branch $(cosmos_version) https://github.com/cosmos/cosmos-sdk.git
+	git -C $(swagger_dir) clone --branch $(cosmos_version) https://github.com/cosmos/cosmos-sdk.git
+	cp $(cosmos_dir)/client/lcd/swagger-ui/swagger.yaml ./cmd/dncli/docs/swagger-ui/sdk-swagger.yaml
 
-	@echo "-> Build swagger.yaml using Golang swag (that takes time)"
+	@echo "-> Fetching Golang libraries: swag, statik"
 	go get -u github.com/swaggo/swag/cmd/swag
-	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
-
-	@echo "-> Build statik FS using Golang statik"
 	go get github.com/rakyll/statik
-	cp $(swagger_dir)/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/dn-swagger.yaml
-	statik -src=$(cosmos_dir)/client/lcd/swagger-ui -dest=./cmd/dncli/docs
+
+swagger-ui-build:
+	@echo "--> Building Swagger API specificaion, merging it to Cosmos SDK"
+
+	@echo "-> Build swagger.yaml (that takes time)"
+	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
+	cp $(swagger_dir)/swagger.yaml ./cmd/dncli/docs/swagger-ui/dn-swagger.yaml
+
+	@echo "-> Build statik FS"
+	rm -rf ./cmd/dncli/docs/statik
+	statik -src=./cmd/dncli/docs/swagger-ui -dest=./cmd/dncli/docs
