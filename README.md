@@ -292,6 +292,11 @@ Launch REST API:
 
     dncli rest-server --chain-id dn-testnet --trust-node
 
+Swagger-UI API specification endpoint is available when REST server is up and running:
+* `http://localhost:1317/swagger-ui/` 
+* `http://localhost:1317/swagger-ui/?urls.primaryName=Cosmos%20SDK%20API` - Cosmos SDK / Tendermint specification 
+* `http://localhost:1317/swagger-ui/?urls.primaryName=Dfinance%20API`     - Dfinance custom modules specification 
+
 All REST API returns JSON.
 
 Multisig:
