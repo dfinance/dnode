@@ -30,12 +30,6 @@ jobs:
             dep ensure
         fi
 
-    - name: Install Protoc
-      uses: Arduino/actions/setup-protoc@master
-
-    - name: Make deps
-      run: make deps
-
     - name: Make binaries
       run: make binaries
 

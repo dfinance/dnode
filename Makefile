@@ -24,11 +24,6 @@ go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
 		GO111MODULE=on go mod verify
 
-## deps: Install missing dependencies. Runs `go get` internally. e.
-deps:
-	@echo "  >  Checking if there is any missing dependencies..."
-	go get -u github.com/golang/protobuf/protoc-gen-go
-
 ## binaries builds (xgo required: https://github.com/karalabe/xgo)
 binaries: go.sum
 	mkdir -p ./builds
