@@ -11,7 +11,6 @@ require (
 	github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f
 	github.com/gogo/protobuf v1.3.1
 	github.com/gorilla/mux v1.7.3
-	github.com/karalabe/xgo v0.0.0-20191115072854-c5ccff8648a7 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nntaoli-project/GoEx v1.0.11
@@ -32,7 +31,7 @@ require (
 	github.com/tendermint/tendermint v0.32.8
 	github.com/tendermint/tm-db v0.2.0
 	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e // indirect
-	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933
+	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933 // indirect
 	google.golang.org/genproto v0.0.0-20191203145615-049a07e0debe // indirect
 	google.golang.org/grpc v1.28.0
 	gopkg.in/yaml.v2 v2.2.7 // indirect

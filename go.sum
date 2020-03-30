@@ -68,11 +68,6 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deckarep/golang-set v1.7.1/go.mod h1:93vsz/8Wt4joVM7c2AVqh+YRMiUSc14yDtF28KmMOgQ=
-github.com/dfinance/dvm-proto v0.1.0 h1:hnZ78SK8F5ogWTCxa9IBufi7ot8SjiOKn8Uu94mGyE4=
-github.com/dfinance/dvm-proto v0.1.1-0.20200319133507-2cc43452935f h1:3Gwu+A2yTEqiTIq3MN3YBIqukcJpW7MYtbqoVXFHCvg=
-github.com/dfinance/dvm-proto v0.1.1-0.20200319133507-2cc43452935f/go.mod h1:x5SRzwNLh7zjilQh4JlbSLAGELcuCCXeuUPQy4rchuI=
-github.com/dfinance/dvm-proto/go v0.0.0-20200319131328-f6e38b0416cd h1:tJoZzJAzO5oHzS7JROeYjnXl1DmcR48cJViQjiMT6MM=
-github.com/dfinance/dvm-proto/go v0.0.0-20200319131328-f6e38b0416cd/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
 github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f h1:uqOMu+6zvwp/LXhSabe8q2rKjHr3SwsFEUw1fiPJI1Q=
 github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
@@ -169,8 +164,6 @@ github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCV
 github.com/json-iterator/go v1.1.7 h1:KfgG9LzI+pYjr4xvmz/5H4FXjokeP+rlHLhv3iH62Fo=
 github.com/json-iterator/go v1.1.7/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
-github.com/karalabe/xgo v0.0.0-20191115072854-c5ccff8648a7 h1:AYzjK/SHz6m6mg5iuFwkrAhCc14jvCpW9d6frC9iDPE=
-github.com/karalabe/xgo v0.0.0-20191115072854-c5ccff8648a7/go.mod h1:iYGcTYIPUvEWhFo6aKUuLchs+AV4ssYdyuBbQJZGcBk=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
