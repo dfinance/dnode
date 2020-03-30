@@ -8,7 +8,6 @@ tags = -X github.com/cosmos/cosmos-sdk/version.Name=dfinance \
 	   -X github.com/cosmos/cosmos-sdk/version.Commit=$(git_commit) \
 	   -X github.com/cosmos/cosmos-sdk/version.Version=${git_tag} \
 
-platforms = "darwin/amd64" "linux/386" "linux/amd64" "windows/amd64" "windows/386"
 dncli =./cmd/dncli
 
 all: install
