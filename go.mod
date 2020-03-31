@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/OneOfOne/xxhash v1.2.7
+	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/containerd/containerd v1.3.3 // indirect
@@ -12,10 +13,9 @@ require (
 	github.com/cosmos/cosmos-sdk v0.37.4
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f
-	github.com/getsentry/sentry-go v0.5.1
 	github.com/fsouza/go-dockerclient v1.6.3
+	github.com/getsentry/sentry-go v0.5.1
 	github.com/go-openapi/spec v0.19.7 // indirect
 	github.com/go-openapi/swag v0.19.8 // indirect
 	github.com/gogo/protobuf v1.3.1
@@ -38,12 +38,11 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.5.0
 	github.com/stretchr/testify v1.5.1
-	github.com/swaggo/swag v1.6.5 // indirect
+	github.com/swaggo/swag v1.6.5
 	github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.32.8
 	github.com/tendermint/tm-db v0.2.0
-	github.com/urfave/cli v1.22.3 // indirect
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
 	golang.org/x/tools v0.0.0-20200331025713-a30bf2db82d4 // indirect
