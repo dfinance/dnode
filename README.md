@@ -292,6 +292,11 @@ Launch REST API:
 
     dncli rest-server --chain-id dn-testnet --trust-node
 
+Swagger-UI API specification endpoint is available when REST server is up and running:
+* `http://localhost:1317/swagger-ui/` 
+* `http://localhost:1317/swagger-ui/?urls.primaryName=Cosmos%20SDK%20API` - Cosmos SDK / Tendermint specification 
+* `http://localhost:1317/swagger-ui/?urls.primaryName=Dfinance%20API`     - Dfinance custom modules specification 
+
 All REST API returns JSON.
 
 Multisig:
@@ -494,6 +499,15 @@ To launch tests run:
     docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
     
     GO111MODULE=on go test ./x/vm/internal/keeper --tags=integ
+
+# Sentry integration
+
+[Sentry](https://sentry.io) is used to capture crash reports for `dnode` and `dncli` applications.
+By default the integration is switched off.
+
+The following environment variables should be defined in order to enable the integration:
+* `DN_SENTRY_DSN` - Sentry DSN token (`https://[token]@sentry.io/5167345`);
+* `DN_SENTRY_ENVIRONMENT` - sets the environment code to separate events from testnet and production (could be empty);
 
 # Contributors
 

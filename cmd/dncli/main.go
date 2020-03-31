@@ -1,6 +1,7 @@
 package main
 
 import (
+	stdLog "log"
 	"os"
 	"path"
 
@@ -20,6 +21,8 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	_ "github.com/dfinance/dnode/cmd/dncli/docs/statik"
+	"github.com/dfinance/dnode/helpers/logger"
 	"github.com/dfinance/dnode/x/vmauth"
 )
 
@@ -59,6 +62,13 @@ func main() {
 		client.NewCompletionCmd(rootCmd, true),
 	)
 
+	// configure crash logging
+	if err := logger.SetupSentry(version.ClientName, version.Version, version.Commit); err != nil {
+		stdLog.Fatal(err)
+	}
+	defer logger.CrashDeferHandler()
+
+	// prepare and add flags
 	executor := cli.PrepareMainCmd(rootCmd, "DN", app.DefaultCLIHome)
 	if err := executor.Execute(); err != nil {
 		panic(err)

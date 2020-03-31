@@ -1,0 +1,744 @@
+basePath: /
+definitions:
+  core.MsMsg:
+    type: object
+  crypto.Address:
+    $ref: '#/definitions/cmn.HexBytes'
+  crypto.PubKey:
+    type: object
+  rest.BaseReq:
+    properties:
+      account_number:
+        type: integer
+      chain_id:
+        type: string
+      fees:
+        $ref: '#/definitions/types.Coins'
+        type: object
+      from:
+        type: string
+      gas:
+        type: string
+      gas_adjustment:
+        type: string
+      gas_prices:
+        $ref: '#/definitions/types.DecCoins'
+        type: object
+      memo:
+        type: string
+      sequence:
+        type: integer
+      simulate:
+        type: boolean
+    type: object
+  rest.CCRespGetCurrency:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.Currency'
+        type: object
+    type: object
+  rest.CCRespGetDestroy:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.Destroy'
+        type: object
+    type: object
+  rest.CCRespGetDestroys:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.Destroys'
+        type: object
+    type: object
+  rest.CCRespGetIssue:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.Issue'
+        type: object
+    type: object
+  rest.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      error:
+        type: string
+    type: object
+  rest.MSRespGetCall:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.CallResp'
+        type: object
+    type: object
+  rest.MSRespGetCalls:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.CallsResp'
+        type: object
+    type: object
+  rest.OracleRespGetAssets:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.Assets'
+        type: object
+    type: object
+  rest.OracleRespGetPrice:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.CurrentPrice'
+        type: object
+    type: object
+  rest.OracleRespGetRawPrices:
+    properties:
+      height:
+        type: integer
+      result:
+        items:
+          $ref: '#/definitions/types.PostedPrice'
+        type: array
+    type: object
+  rest.PoaRespGetValidators:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.ValidatorsConfirmations'
+        type: object
+    type: object
+  rest.postPriceReq:
+    properties:
+      asset_code:
+        description: Denom
+        example: dfi
+        type: string
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      price:
+        description: BigInt
+        example: "100"
+        type: string
+      received_at:
+        description: Timestamp Price createdAt
+        example: "2020-03-27T13:45:15.293426Z"
+        format: RFC 3339
+        type: string
+    type: object
+  types.AccAddress:
+    items:
+      type: integer
+    type: array
+  types.Address:
+    $ref: '#/definitions/crypto.Address'
+  types.Asset:
+    properties:
+      active:
+        description: Not used ATM
+        type: boolean
+      asset_code:
+        example: dfi
+        type: string
+      oracles:
+        $ref: '#/definitions/types.Oracles'
+        description: List of registered RawPrice sources
+        type: object
+    type: object
+  types.Assets:
+    items:
+      $ref: '#/definitions/types.Asset'
+    type: array
+  types.Call:
+    properties:
+      approved:
+        description: Call is approved to execute
+        type: boolean
+      creator:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      error:
+        description: Call failed reason
+        type: string
+      executed:
+        description: Call was executed
+        type: boolean
+      failed:
+        description: Call failed to execute
+        type: boolean
+      height:
+        description: BlockHeight when call was submitted
+        example: 1
+        type: integer
+      msg_data:
+        $ref: '#/definitions/core.MsMsg'
+        description: Message to execute
+        type: object
+      msg_id:
+        description: Call ID
+        example: 0
+        type: integer
+      msg_route:
+        description: Message route
+        example: oracle
+        type: string
+      msg_type:
+        description: Message type
+        example: add_asset
+        type: string
+      rejected:
+        description: Call was rejected
+        type: boolean
+      unique_id:
+        description: Call uniqueID
+        example: issue1
+        type: string
+    type: object
+  types.CallResp:
+    properties:
+      call:
+        $ref: '#/definitions/types.Call'
+        description: Call info
+        type: object
+      votes:
+        description: Accounts address array
+        items:
+          type: string
+        type: array
+    type: object
+  types.CallsResp:
+    items:
+      $ref: '#/definitions/types.CallResp'
+    type: array
+  types.Coin:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Int'
+        description: |-
+          To allow the use of unsigned integers (see: #1273) a larger refactor will
+          need to be made. So we use signed integers for now with safety measures in
+          place preventing negative values being used.
+        type: object
+      denom:
+        type: string
+    type: object
+  types.Coins:
+    items:
+      $ref: '#/definitions/types.Coin'
+    type: array
+  types.Currency:
+    properties:
+      currencyId:
+        type: string
+      decimals:
+        example: 0
+        type: integer
+      supply:
+        description: Total amount
+        example: "100"
+        type: string
+      symbol:
+        description: Denom
+        example: dfi
+        type: string
+    type: object
+  types.CurrentPrice:
+    properties:
+      asset_code:
+        description: Denom
+        example: dfi
+        type: string
+      price:
+        example: "1000"
+        type: string
+      received_at:
+        description: Timestamp Price createdAt
+        example: "2020-03-27T13:45:15.293426Z"
+        format: RFC 3339
+        type: string
+    type: object
+  types.Dec:
+    type: object
+  types.DecCoin:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      denom:
+        type: string
+    type: object
+  types.DecCoins:
+    items:
+      $ref: '#/definitions/types.DecCoin'
+    type: array
+  types.Destroy:
+    properties:
+      amount:
+        example: "100"
+        type: string
+      chainID:
+        example: testnet
+        type: string
+      id:
+        description: CallID
+        example: "0"
+        type: string
+      recipient:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      spender:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      symbol:
+        example: dfi
+        type: string
+      timestamp:
+        description: UNIX time
+        example: 1585295757
+        format: seconds
+        type: integer
+      tx_hash:
+        example: fd82ce32835dfd7042808eaf6ff09cece952b9da20460fa462420a93607fa96f
+        type: string
+    type: object
+  types.Destroys:
+    items:
+      $ref: '#/definitions/types.Destroy'
+    type: array
+  types.Int:
+    properties:
+      i:
+        type: string
+    type: object
+  types.Issue:
+    properties:
+      amount:
+        example: "100"
+        type: string
+      recipient:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      symbol:
+        description: Denom
+        example: dfi
+        type: string
+    type: object
+  types.Oracle:
+    properties:
+      address:
+        $ref: '#/definitions/types.AccAddress'
+        type: object
+    type: object
+  types.Oracles:
+    items:
+      $ref: '#/definitions/types.Oracle'
+    type: array
+  types.PostedPrice:
+    properties:
+      asset_code:
+        description: Denom
+        example: dfi
+        type: string
+      oracle_address:
+        description: Price source
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        type: string
+      price:
+        example: "1000"
+        type: string
+      received_at:
+        description: Timestamp Price createdAt
+        example: "2020-03-27T13:45:15.293426Z"
+        format: RFC 3339
+        type: string
+    type: object
+  types.Validator:
+    properties:
+      address:
+        $ref: '#/definitions/types.Address'
+        type: object
+      proposer_priority:
+        type: integer
+      pub_key:
+        $ref: '#/definitions/crypto.PubKey'
+        type: object
+      voting_power:
+        type: integer
+    type: object
+  types.Validators:
+    items:
+      $ref: '#/definitions/types.Validator'
+    type: array
+  types.ValidatorsConfirmations:
+    properties:
+      confirmations:
+        description: Minimum number of confirmations needed to approve Call
+        example: 3
+        type: integer
+      validators:
+        $ref: '#/definitions/types.Validators'
+        description: Registered validators list
+        type: object
+    type: object
+host: localhost:1317
+info:
+  contact: {}
+  license: {}
+  title: Dfinance dnode REST API
+  version: "1.0"
+paths:
+  /currencies/currency/{symbol}:
+    get:
+      consumes:
+      - application/json
+      description: Get currency by symbol
+      operationId: currenciesGetCurrency
+      parameters:
+      - description: symbol / denom
+        in: path
+        name: symbol
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespGetCurrency'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get currency
+      tags:
+      - currencies
+  /currencies/destroy/{destroyID}:
+    get:
+      consumes:
+      - application/json
+      description: Get currency destroy by destroyID
+      operationId: currenciesGetDestroy
+      parameters:
+      - description: destroyID
+        in: path
+        name: destroyID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespGetDestroy'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get currency destroy
+      tags:
+      - currencies
+  /currencies/destroys/{page}:
+    get:
+      consumes:
+      - application/json
+      description: Get array of Destroy objects with pagination
+      operationId: currenciesGetDestroys
+      parameters:
+      - description: page number
+        in: path
+        name: page
+        required: true
+        type: integer
+      - description: 'items per page (default: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespGetDestroys'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get currency destroys
+      tags:
+      - currencies
+  /currencies/issue/{issueID}:
+    get:
+      consumes:
+      - application/json
+      description: Get currency issue by issueID
+      operationId: currenciesGetIssue
+      parameters:
+      - description: issueID
+        in: path
+        name: issueID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespGetIssue'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get currency issue
+      tags:
+      - currencies
+  /multisig/call/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get call object by it's ID
+      operationId: multisigGetCall
+      parameters:
+      - description: call ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.MSRespGetCall'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get call
+      tags:
+      - multisig
+  /multisig/calls:
+    get:
+      consumes:
+      - application/json
+      description: Get call objects
+      operationId: multisigGetCalls
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.MSRespGetCalls'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get calls
+      tags:
+      - multisig
+  /multisig/unique/{uniqueID}:
+    get:
+      consumes:
+      - application/json
+      description: Get call object by it's uniqueID
+      operationId: multisigGetUniqueCall
+      parameters:
+      - description: call uniqueID
+        in: path
+        name: uniqueID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.MSRespGetCall'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get call
+      tags:
+      - multisig
+  /oracle/assets:
+    get:
+      consumes:
+      - application/json
+      description: Get Asset objects
+      operationId: oracleGetAssets
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.OracleRespGetAssets'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get Assets
+      tags:
+      - oracle
+  /oracle/currentprice/{assetCode}:
+    get:
+      consumes:
+      - application/json
+      description: Get current Price by assetCode
+      operationId: oracleGetRawPrices
+      parameters:
+      - description: asset code
+        in: path
+        name: assetCode
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.OracleRespGetPrice'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get current Price
+      tags:
+      - oracle
+  /oracle/rawprices:
+    put:
+      consumes:
+      - application/json
+      description: Send Asset RawPrice signed Tx
+      operationId: oraclePostPrice
+      parameters:
+      - description: PostPrice request with signed transaction
+        in: body
+        name: postRequest
+        required: true
+        schema:
+          $ref: '#/definitions/rest.postPriceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.OracleRespGetAssets'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Post Asset RawPrice
+      tags:
+      - oracle
+  /oracle/rawprices/{assetCode}/{blockHeight}:
+    get:
+      consumes:
+      - application/json
+      description: Get RawPrice objects by assetCode and blockHeight
+      operationId: oracleGetRawPrices
+      parameters:
+      - description: asset code
+        in: path
+        name: assetCode
+        required: true
+        type: string
+      - description: block height rawPrices relates to
+        in: path
+        name: blockHeight
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.OracleRespGetRawPrices'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get RawPrices
+      tags:
+      - oracle
+  /poa/validators:
+    get:
+      consumes:
+      - application/json
+      description: Get validator objects
+      operationId: poaValidators
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.PoaRespGetValidators'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get validators
+      tags:
+      - poa
+schemes:
+- http
+swagger: "2.0"

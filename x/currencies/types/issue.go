@@ -8,9 +8,9 @@ import (
 )
 
 type Issue struct {
-	Symbol    string         `json:"symbol"`
-	Amount    sdk.Int        `json:"amount"`
-	Recipient sdk.AccAddress `json:"recipient"`
+	Symbol    string         `json:"symbol" example:"dfi"` // Denom
+	Amount    sdk.Int        `json:"amount" swaggertype:"string" example:"100"`
+	Recipient sdk.AccAddress `json:"recipient" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 }
 
 func NewIssue(symbol string, amount sdk.Int, recipient sdk.AccAddress) Issue {
