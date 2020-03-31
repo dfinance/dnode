@@ -2,9 +2,14 @@
 package keeper
 
 import (
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	"strings"
 
+	"github.com/OneOfOne/xxhash"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/crypto/sha3"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
@@ -37,7 +42,25 @@ func (keeper Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 
 // Public get path for oracle price.
 func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath {
-	path := types.AssetCodeToPath(assetCode)
+	seed := xxhash.NewS64(0)
+	_, err := seed.WriteString(strings.ToLower(assetCode))
+	if err != nil {
+		panic(err)
+	}
+
+	ticketPair := seed.Sum64()
+
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, ticketPair)
+	tag, err := hex.DecodeString("ff")
+	if err != nil {
+		panic(err)
+	}
+
+	hash := sha3.New256()
+	hash.Write(bz)
+	path := hash.Sum(tag)
+
 	return &vm_grpc.VMAccessPath{
 		Address: make([]byte, types.VmAddressLength),
 		Path:    path,
