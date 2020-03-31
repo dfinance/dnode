@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
+	github.com/OneOfOne/xxhash v1.2.7
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/containerd/containerd v1.3.3 // indirect

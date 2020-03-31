@@ -26,6 +26,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 	"github.com/dfinance/dnode/x/vmauth"
 )
@@ -61,9 +62,11 @@ type testInput struct {
 	ak vmauth.VMAccountKeeper
 	pk params.Keeper
 	vk Keeper
+	ok oracle.Keeper
 
 	keyMain    *sdk.KVStoreKey
 	keyAccount *sdk.KVStoreKey
+	keyOracle  *sdk.KVStoreKey
 	keyParams  *sdk.KVStoreKey
 	tkeyParams *sdk.TransientStoreKey
 	keyVM      *sdk.KVStoreKey
@@ -173,6 +176,7 @@ func setupTestInput(launchMock bool) testInput {
 		keyMain:    sdk.NewKVStoreKey("main"),
 		keyAccount: sdk.NewKVStoreKey("acc"),
 		//keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
+		keyOracle:  sdk.NewKVStoreKey("oracle"),
 		keyParams:  sdk.NewKVStoreKey("params"),
 		tkeyParams: sdk.NewTransientStoreKey("transient_params"),
 		keyVM:      sdk.NewKVStoreKey("vm"),
@@ -182,12 +186,14 @@ func setupTestInput(launchMock bool) testInput {
 	auth.RegisterCodec(input.cdc)
 	sdk.RegisterCodec(input.cdc)
 	codec.RegisterCrypto(input.cdc)
+	oracle.RegisterCodec(input.cdc)
 
 	db := dbm.NewMemDB()
 	mstore := store.NewCommitMultiStore(db)
 	mstore.MountStoreWithDB(input.keyMain, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyOracle, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
 	mstore.MountStoreWithDB(input.keyVM, sdk.StoreTypeIAVL, db)
 	err := mstore.LoadLatestVersion()
@@ -253,6 +259,8 @@ func setupTestInput(launchMock bool) testInput {
 		input.vk,
 		auth.ProtoBaseAccount,
 	)
+
+	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), oracle.DefaultCodespace, input.vk)
 
 	input.vk.dsServer = NewDSServer(&input.vk)
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())

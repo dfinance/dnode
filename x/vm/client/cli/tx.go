@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 
+	"github.com/OneOfOne/xxhash"
 	"github.com/cosmos/cosmos-sdk/client"
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -114,6 +117,23 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 					return fmt.Errorf("currently doesnt's support struct type as argument")
 
 				case vm_grpc.VMTypeTag_U8, vm_grpc.VMTypeTag_U64, vm_grpc.VMTypeTag_U128:
+					if arg[0] == '#' {
+						// try to convert to xxhash
+						seed := xxhash.NewS64(0)
+
+						if len(arg) < 2 {
+							return fmt.Errorf("incorrect format for xxHash argument (prefixed #) %q", arg)
+						}
+
+						fmt.Printf("Result: %s\n", strings.ToLower(arg[1:]))
+						_, err := seed.WriteString(strings.ToLower(arg[1:]))
+						if err != nil {
+							return fmt.Errorf("can't format to xxHash argument %q (format happens because of '#' prefix)", arg)
+						}
+
+						arg = strconv.FormatUint(seed.Sum64(), 10)
+					}
+
 					n, isOk := sdk.NewIntFromString(arg)
 
 					if !isOk {

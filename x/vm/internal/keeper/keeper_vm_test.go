@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"strconv"
 	"testing"
 
@@ -350,4 +351,15 @@ func TestExecKeepAndError(t *testing.T) {
 	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.MajorStatus, 10)), events[1].Attributes[1].Value)
 	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.SubStatus, 10)), events[1].Attributes[2].Value)
 	require.EqualValues(t, []byte(errorStatus.Message), events[1].Attributes[3].Value)
+}
+
+// test access path generation for oracles.
+func Test_KeeperGetOracleAccessPath(t *testing.T) {
+	input := setupTestInput(true)
+	defer closeInput(input)
+
+	assetCode := "eth_usdt"
+	path := input.vk.GetOracleAccessPath(assetCode)
+	require.Equal(t, make([]byte, types.VmAddressLength), path.Address)
+	require.Equal(t, "ffe300b84cc0315d7a963b504ca77202c8c38cd28bad5bce7bbe0301c806666200", hex.EncodeToString(path.Path))
 }
