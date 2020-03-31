@@ -40,24 +40,6 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 	}
 }
 
-func Test_POARest(t *testing.T) {
-	r := NewRestTester(t)
-	defer r.Close()
-
-	// check getValidators endpoint
-	{
-		reqSubPath := fmt.Sprintf("%s/validators", poaTypes.ModuleName)
-		respMsg := poaTypes.ValidatorsConfirmations{}
-
-		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
-		require.Equal(t, len(r.Accounts), len(respMsg.Validators))
-		for idx := range respMsg.Validators {
-			require.Equal(t, r.Accounts[idx].GetAddress(), respMsg.Validators[idx].Address)
-			require.Equal(t, "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615", respMsg.Validators[idx].EthAddress)
-		}
-	}
-}
-
 func Test_POAQueries(t *testing.T) {
 	app, server := newTestDnApp()
 	defer app.CloseConnections()

@@ -492,13 +492,22 @@ To launch tests run:
 
     GO111MODULE=on go test ./...
     
-    And with integration tests (required docker installed and authorization to dvm registry)
+To launch VM integration tests (required docker installed and authorization to dvm registry) run:
+
     export TAG=master # needed tag (master by default)
     export REGISTRY=  # replace of registry contains dvm
     
     docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
     
     GO111MODULE=on go test ./x/vm/internal/keeper --tags=integ
+    
+To launch REST API tests run:
+
+    GO111MODULE=on go test ./... --tags=rest
+    
+To launch CLI tests (`dnode`, `dncli` binaries should be build and available within `$PATH`) run:
+
+    GO111MODULE=on go test ./... --tags=cli
 
 # Sentry integration
 
