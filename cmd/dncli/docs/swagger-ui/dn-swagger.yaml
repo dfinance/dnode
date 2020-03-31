@@ -2,6 +2,8 @@ basePath: /
 definitions:
   core.MsMsg:
     type: object
+  crypto.Address:
+    $ref: '#/definitions/cmn.HexBytes'
   crypto.PubKey:
     type: object
   rest.BaseReq:
@@ -140,6 +142,8 @@ definitions:
     items:
       type: integer
     type: array
+  types.Address:
+    $ref: '#/definitions/crypto.Address'
   types.Asset:
     properties:
       active:
@@ -235,25 +239,6 @@ definitions:
     items:
       $ref: '#/definitions/types.Coin'
     type: array
-  types.Commission:
-    properties:
-      max_change_rate:
-        $ref: '#/definitions/types.Dec'
-        description: maximum daily increase of the validator commission, as a fraction
-        type: object
-      max_rate:
-        $ref: '#/definitions/types.Dec'
-        description: maximum commission rate which validator can ever charge, as a
-          fraction
-        type: object
-      rate:
-        $ref: '#/definitions/types.Dec'
-        description: the commission rate charged to delegators, as a fraction
-        type: object
-      update_time:
-        description: the last time the commission rate was changed
-        type: string
-    type: object
   types.Currency:
     properties:
       currencyId:
@@ -299,21 +284,6 @@ definitions:
     items:
       $ref: '#/definitions/types.DecCoin'
     type: array
-  types.Description:
-    properties:
-      details:
-        description: optional details
-        type: string
-      identity:
-        description: optional identity signature (ex. UPort or Keybase)
-        type: string
-      moniker:
-        description: name
-        type: string
-      website:
-        description: optional website link
-        type: string
-    type: object
   types.Destroy:
     properties:
       amount:
@@ -398,52 +368,18 @@ definitions:
         format: RFC 3339
         type: string
     type: object
-  types.ValAddress:
-    items:
-      type: integer
-    type: array
   types.Validator:
     properties:
-      commission:
-        $ref: '#/definitions/types.Commission'
-        description: commission parameters
+      address:
+        $ref: '#/definitions/types.Address'
         type: object
-      consensus_pubkey:
+      proposer_priority:
+        type: integer
+      pub_key:
         $ref: '#/definitions/crypto.PubKey'
-        description: the consensus public key of the validator; bech encoded in JSON
         type: object
-      delegator_shares:
-        $ref: '#/definitions/types.Dec'
-        description: total shares issued to a validator's delegators
-        type: object
-      description:
-        $ref: '#/definitions/types.Description'
-        description: description terms for the validator
-        type: object
-      jailed:
-        description: has the validator been jailed from bonded status?
-        type: boolean
-      min_self_delegation:
-        $ref: '#/definitions/types.Int'
-        description: validator's self declared minimum self delegation
-        type: object
-      operator_address:
-        $ref: '#/definitions/types.ValAddress'
-        description: address of the validator's operator; bech encoded in JSON
-        type: object
-      status:
-        description: validator status (bonded/unbonding/unbonded)
+      voting_power:
         type: integer
-      tokens:
-        $ref: '#/definitions/types.Int'
-        description: delegated tokens (incl. self-delegation)
-        type: object
-      unbonding_height:
-        description: if unbonding, height at which this validator has begun unbonding
-        type: integer
-      unbonding_time:
-        description: if unbonding, min time for the validator to complete unbonding
-        type: string
     type: object
   types.Validators:
     items:

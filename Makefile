@@ -12,6 +12,7 @@ build_dir=./.build
 swagger_dir=$(build_dir)/swagger
 cosmos_dir=$(swagger_dir)/cosmos-sdk
 cosmos_version=v0.37.4
+dncli =./cmd/dncli
 
 all: install
 install: go.sum install-dnode install-dncli install-oracleapp
@@ -20,18 +21,13 @@ swagger-ui: swagger-ui-deps swagger-ui-build
 install-dnode:
 		GO111MODULE=on go install --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dnode
 install-dncli:
-		GO111MODULE=on go install  --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dncli
+		GO111MODULE=on go install  --ldflags "$(tags)"  -tags "$(build_tags)" ${dncli}
 install-oracleapp:
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/oracle-app
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
 		GO111MODULE=on go mod verify
-
-## deps: Install missing dependencies. Runs `go get` internally. e.
-deps:
-	@echo "-->  Checking if there is any missing dependencies..."
-	go get -u github.com/golang/protobuf/protoc-gen-go
 
 swagger-ui-deps:
 	@echo "--> Preparing deps fro building Swagger API specificaion"
@@ -58,3 +54,12 @@ swagger-ui-build:
 	@echo "-> Build statik FS"
 	rm -rf ./cmd/dncli/docs/statik
 	statik -src=./cmd/dncli/docs/swagger-ui -dest=./cmd/dncli/docs
+
+## binaries builds (xgo required: https://github.com/karalabe/xgo)
+binaries: go.sum
+	mkdir -p ./builds
+	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-darwin-amd64 ${dncli}
+	GOOS=linux GOARCH=386 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-linux-386 ${dncli}
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-linux-amd64 ${dncli}
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-windows-amd64.exe ${dncli}
+	GOOS=windows GOARCH=386 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-windows-386.exe ${dncli}
