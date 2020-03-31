@@ -8,10 +8,10 @@ import (
 )
 
 type Currency struct {
-	CurrencyId sdk.Int `json:"currencyId"`
-	Symbol     string  `json:"symbol"`
-	Supply     sdk.Int `json:"supply"`
-	Decimals   int8    `json:"decimals"`
+	CurrencyId sdk.Int `json:"currencyId" swaggertype:"string"`
+	Symbol     string  `json:"symbol" example:"dfi"`                      // Denom
+	Supply     sdk.Int `json:"supply" swaggertype:"string" example:"100"` // Total amount
+	Decimals   int8    `json:"decimals" example:"0"`
 }
 
 // New currency
