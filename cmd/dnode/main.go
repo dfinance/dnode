@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"io"
+	stdLog "log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	genaccscli "github.com/cosmos/cosmos-sdk/x/genaccounts/client/cli"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
@@ -22,6 +24,7 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers/logger"
 	oracleCli "github.com/dfinance/dnode/x/oracle/client/cli"
 	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
@@ -45,11 +48,12 @@ func main() {
 
 	cdc := app.MakeCodec()
 	ctx := server.NewDefaultContext()
+	ctx.Logger = logger.NewDNLogger()
 
 	rootCmd := &cobra.Command{
 		Use:               "dnode",
 		Short:             "Dfinance blockchain app daemon (server).",
-		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
+		PersistentPreRunE: PersistentPreRunEFn(ctx),
 	}
 
 	rootCmd.AddCommand(
@@ -71,6 +75,12 @@ func main() {
 	)
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
+
+	// configure crash logging
+	if err := logger.SetupSentry(version.ServerName, version.Version, version.Commit); err != nil {
+		stdLog.Fatal(err)
+	}
+	defer logger.CrashDeferHandler()
 
 	// prepare and add flags
 	executor := cli.PrepareBaseCmd(rootCmd, "DN", app.DefaultNodeHome)
