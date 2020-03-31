@@ -20,7 +20,19 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/destroys/{page}", types.ModuleName), getDestroys(cliCtx)).Methods("GET")
 }
 
-// Get destroys REST API handler.
+// GetDestroys godoc
+// @Tags currencies
+// @Summary Get currency destroys
+// @Description Get array of Destroy objects with pagination
+// @ID currenciesGetDestroys
+// @Accept  json
+// @Produce json
+// @Param page path int true "page number"
+// @Param limit query int false "items per page (default: 100)"
+// @Success 200 {object} CCRespGetDestroys
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /currencies/destroys/{page} [get]
 func getDestroys(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -62,7 +74,18 @@ func getDestroys(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// Get destroy REST API handler.
+// GetDestroy godoc
+// @Tags currencies
+// @Summary Get currency destroy
+// @Description Get currency destroy by destroyID
+// @ID currenciesGetDestroy
+// @Accept  json
+// @Produce json
+// @Param destroyID path int true "destroyID"
+// @Success 200 {object} CCRespGetDestroy
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /currencies/destroy/{destroyID} [get]
 func getDestroy(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -92,7 +115,18 @@ func getDestroy(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// Get issue REST API handler.
+// GetIssue godoc
+// @Tags currencies
+// @Summary Get currency issue
+// @Description Get currency issue by issueID
+// @ID currenciesGetIssue
+// @Accept  json
+// @Produce json
+// @Param issueID path string true "issueID"
+// @Success 200 {object} CCRespGetIssue
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /currencies/issue/{issueID} [get]
 func getIssue(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -114,7 +148,18 @@ func getIssue(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// Get currency REST API handler.
+// GetCurrency godoc
+// @Tags currencies
+// @Summary Get currency
+// @Description Get currency by symbol
+// @ID currenciesGetCurrency
+// @Accept  json
+// @Produce json
+// @Param symbol path string true "symbol / denom"
+// @Success 200 {object} CCRespGetCurrency
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /currencies/currency/{symbol} [get]
 func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -127,7 +172,6 @@ func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/currency", types.ModuleName), bz)
-
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

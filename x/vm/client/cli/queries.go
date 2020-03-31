@@ -102,13 +102,12 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				address, err = sdk.AccAddressFromBech32(rawAddress)
 				if err != nil {
-					fmt.Printf("can't parse address: %s\n, check address format, it could be libra hex or bech32\n", rawAddress)
-					return nil
+					return fmt.Errorf("can't parse address: %s\n, check address format, it could be libra hex or bech32", rawAddress)
 				}
 
 				address, err = hex.DecodeString(types.Bech32ToLibra(address))
 				if err != nil {
-					return err
+					return fmt.Errorf("can't parse address: %s\n, check address format, it could be libra hex or bech32", rawAddress)
 				}
 			}
 
@@ -162,11 +161,12 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 		Example: "compile-script script.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file script.mv --compiler 127.0.0.1:50053",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			compilerAddr := viper.GetString(FlagCompilerAddr)
+
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
-				fmt.Println("Error during reading mvir file.")
-				return fmt.Errorf("%s argument %q: %w", "mvirFile", args[0], err)
+				return fmt.Errorf("error during reading mvir file %q: %v", args[0], err)
 			}
 
 			// Mvir file
@@ -177,14 +177,13 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// compile mvir file
-			bytecode, isOk := compile(sourceFile)
-			if !isOk {
-				return nil
+			bytecode, err := Compile(compilerAddr, sourceFile)
+			if err != nil {
+				return err
 			}
 
 			if err := saveOutput(bytecode, cdc); err != nil {
-				fmt.Println("Error during compiled bytes output.")
-				return err
+				return fmt.Errorf("error during compiled bytes output: %v", err)
 			}
 
 			fmt.Println("Compilation successful done.")
@@ -202,11 +201,12 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 		Example: "compile-module module.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file module.mv --compiler 127.0.0.1:50053",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			compilerAddr := viper.GetString(FlagCompilerAddr)
+
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])
 			if err != nil {
-				fmt.Println("Error during reading mvir file.")
-				return fmt.Errorf("%s argument %q: %w", "mvirFile", args[0], err)
+				return fmt.Errorf("error during reading mvir file %q: %v", args[0], err)
 			}
 
 			// Mvir file
@@ -217,14 +217,13 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// compile mvir file
-			bytecode, isOk := compile(sourceFile)
-			if !isOk {
-				return nil
+			bytecode, err := Compile(compilerAddr, sourceFile)
+			if err != nil {
+				return err
 			}
 
 			if err := saveOutput(bytecode, cdc); err != nil {
-				fmt.Println("Error during compiled bytes output.")
-				return err
+				return fmt.Errorf("error during compiled bytes output: %v", err)
 			}
 
 			fmt.Println("Compilation successful done.")

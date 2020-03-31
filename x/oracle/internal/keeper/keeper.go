@@ -5,12 +5,12 @@ import (
 	"sort"
 	"time"
 
-	"github.com/dfinance/dnode/helpers"
-	"github.com/dfinance/dnode/x/vm"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+
+	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/common_vm"
 
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
@@ -26,7 +26,7 @@ type Keeper struct {
 	// Reserved codespace
 	codespace sdk.CodespaceType
 	// Virtual machine keeper
-	vmKeeper vm.VMStorage
+	vmKeeper common_vm.VMStorage
 }
 
 // NewKeeper returns a new keeper for the oralce module. It handles:
@@ -37,7 +37,7 @@ func NewKeeper(
 	cdc *codec.Codec,
 	paramstore params.Subspace,
 	codespace sdk.CodespaceType,
-	vmKeeper vm.VMStorage,
+	vmKeeper common_vm.VMStorage,
 ) Keeper {
 	return Keeper{
 		paramstore: paramstore.WithKeyTable(types.ParamKeyTable()),

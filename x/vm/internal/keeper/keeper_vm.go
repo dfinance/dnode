@@ -2,19 +2,25 @@
 package keeper
 
 import (
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	"strings"
 
+	"github.com/OneOfOne/xxhash"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/crypto/sha3"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 // Set value in storage by access path.
 func (keeper Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 	store := ctx.KVStore(keeper.storeKey)
-	key := types.MakePathKey(*accessPath)
+	key := common_vm.MakePathKey(*accessPath)
 
 	store.Set(key, value)
 }
@@ -36,7 +42,25 @@ func (keeper Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 
 // Public get path for oracle price.
 func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath {
-	path := types.AssetCodeToPath(assetCode)
+	seed := xxhash.NewS64(0)
+	_, err := seed.WriteString(strings.ToLower(assetCode))
+	if err != nil {
+		panic(err)
+	}
+
+	ticketPair := seed.Sum64()
+
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, ticketPair)
+	tag, err := hex.DecodeString("ff")
+	if err != nil {
+		panic(err)
+	}
+
+	hash := sha3.New256()
+	hash.Write(bz)
+	path := hash.Sum(tag)
+
 	return &vm_grpc.VMAccessPath{
 		Address: make([]byte, types.VmAddressLength),
 		Path:    path,
@@ -46,7 +70,7 @@ func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath
 // Get value from storage by access path.
 func (keeper Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	store := ctx.KVStore(keeper.storeKey)
-	key := types.MakePathKey(*accessPath)
+	key := common_vm.MakePathKey(*accessPath)
 
 	return store.Get(key)
 }
@@ -54,7 +78,7 @@ func (keeper Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 // Check if storage has value by access path.
 func (keeper Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
 	store := ctx.KVStore(keeper.storeKey)
-	key := types.MakePathKey(*accessPath)
+	key := common_vm.MakePathKey(*accessPath)
 
 	return store.Has(key)
 }
@@ -62,7 +86,7 @@ func (keeper Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 // Delete key in storage by access path.
 func (keeper Keeper) delValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 	store := ctx.KVStore(keeper.storeKey)
-	key := types.MakePathKey(*accessPath)
+	key := common_vm.MakePathKey(*accessPath)
 
 	store.Delete(key)
 }

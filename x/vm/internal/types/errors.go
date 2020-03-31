@@ -5,6 +5,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 const (
@@ -53,5 +55,5 @@ func ErrWrongArgTypeTag(err error) sdk.Error {
 
 // Value missed in Data Source server
 func ErrDSMissedValue(accessPath vm_grpc.VMAccessPath) sdk.Error {
-	return sdk.NewError(Codespace, CodeErrDSMissedValue, "value is missed in storage: %s", MakePathKey(accessPath))
+	return sdk.NewError(Codespace, CodeErrDSMissedValue, "value is missed in storage: %s", common_vm.MakePathKey(accessPath))
 }

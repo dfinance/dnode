@@ -11,37 +11,18 @@ import (
 
 // Call that will be executed itself, contains msg instances, that executing via router and handler.
 type Call struct {
-	// Creator
-	Creator sdk.AccAddress `json:"creator"`
-
-	// ID
-	MsgID uint64 `json:"msg_id"`
-
-	// Unique ID
-	UniqueID string `json:"unique_id"`
-
-	// When call approved to execute
-	Approved bool `json:"approved"`
-
-	// Execution failed or executed
-	Executed bool `json:"executed"`
-	Failed   bool `json:"failed"`
-
-	// If call was rejected
-	Rejected bool   `json:"rejected"`
-	Error    string `json:"error"`
-
-	// Msg to execute
-	Msg core.MsMsg `json:"msg_data"`
-
-	// Msg route
-	MsgRoute string `json:"msg_route"`
-
-	// Msg type
-	MsgType string `json:"msg_type"`
-
-	// Height when call submitted
-	Height int64 `json:"height"`
+	Creator  sdk.AccAddress `json:"creator" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	MsgID    uint64         `json:"msg_id" example:"0"`           // Call ID
+	UniqueID string         `json:"unique_id" example:"issue1"`   // Call uniqueID
+	Approved bool           `json:"approved"`                     // Call is approved to execute
+	Executed bool           `json:"executed"`                     // Call was executed
+	Failed   bool           `json:"failed"`                       // Call failed to execute
+	Rejected bool           `json:"rejected"`                     // Call was rejected
+	Error    string         `json:"error"`                        // Call failed reason
+	Msg      core.MsMsg     `json:"msg_data"`                     // Message to execute
+	MsgRoute string         `json:"msg_route" example:"oracle"`   // Message route
+	MsgType  string         `json:"msg_type" example:"add_asset"` // Message type
+	Height   int64          `json:"height" example:"1"`           // BlockHeight when call was submitted
 }
 
 // Create new call instance.

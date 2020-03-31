@@ -24,6 +24,7 @@ type (
 	MsgSetOracles      = types.MsgSetOracles
 	MsgAddAsset        = types.MsgAddAsset
 	MsgSetAsset        = types.MsgSetAsset
+	PostPriceParams    = types.PostPriceParams
 )
 
 const (

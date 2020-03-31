@@ -6,13 +6,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 
+	"github.com/OneOfOne/xxhash"
 	"github.com/cosmos/cosmos-sdk/client"
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	codec "github.com/tendermint/go-amino"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
@@ -71,6 +75,8 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 		Short: "execute Move script",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			compilerAddr := viper.GetString(FlagCompilerAddr)
+
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
@@ -92,7 +98,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			// parsing arguments
 			parsedArgs := args[1:]
 			scriptArgs := make([]types.ScriptArg, len(parsedArgs))
-			extractedArgs, err := extractArgs(code)
+			extractedArgs, err := ExtractArguments(compilerAddr, code)
 			if err != nil {
 				return err
 			}
@@ -111,6 +117,23 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 					return fmt.Errorf("currently doesnt's support struct type as argument")
 
 				case vm_grpc.VMTypeTag_U8, vm_grpc.VMTypeTag_U64, vm_grpc.VMTypeTag_U128:
+					if arg[0] == '#' {
+						// try to convert to xxhash
+						seed := xxhash.NewS64(0)
+
+						if len(arg) < 2 {
+							return fmt.Errorf("incorrect format for xxHash argument (prefixed #) %q", arg)
+						}
+
+						fmt.Printf("Result: %s\n", strings.ToLower(arg[1:]))
+						_, err := seed.WriteString(strings.ToLower(arg[1:]))
+						if err != nil {
+							return fmt.Errorf("can't format to xxHash argument %q (format happens because of '#' prefix)", arg)
+						}
+
+						arg = strconv.FormatUint(seed.Sum64(), 10)
+					}
+
 					n, isOk := sdk.NewIntFromString(arg)
 
 					if !isOk {

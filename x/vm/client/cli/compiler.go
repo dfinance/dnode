@@ -3,8 +3,8 @@ package cli
 import (
 	connContext "context"
 	"fmt"
+	"strings"
 
-	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
@@ -22,14 +22,14 @@ type MVFile struct {
 	Code string `json:"code"`
 }
 
-// Create connection to virtual machine.
-func createVMConn() (*grpc.ClientConn, error) {
-	return grpc.Dial(viper.GetString(FlagCompilerAddr), grpc.WithInsecure())
+// Create connection to vm.
+func CreateConnection(addr string) (*grpc.ClientConn, error) {
+	return grpc.Dial(addr, grpc.WithInsecure())
 }
 
 // Extract arguments from bytecode with compiler.
-func extractArgs(bytecode []byte) ([]vm_grpc.VMTypeTag, error) {
-	conn, err := createVMConn()
+func ExtractArguments(addr string, bytecode []byte) ([]vm_grpc.VMTypeTag, error) {
+	conn, err := CreateConnection(addr)
 	if err != nil {
 		return nil, fmt.Errorf("Can't extract contract metadata because of error during connection to VM: %s\n", err.Error())
 	}
@@ -50,11 +50,10 @@ func extractArgs(bytecode []byte) ([]vm_grpc.VMTypeTag, error) {
 }
 
 // Compile script via grpc compiler.
-func compile(sourceFile *vm_grpc.MvIrSourceFile) ([]byte, bool) {
-	conn, err := createVMConn()
+func Compile(addr string, sourceFile *vm_grpc.MvIrSourceFile) ([]byte, error) {
+	conn, err := CreateConnection(addr)
 	if err != nil {
-		fmt.Printf("Compilation failed because of error during connection to VM: %s\n", err.Error())
-		return nil, false
+		return nil, fmt.Errorf("compilation failed because of error during connection to VM: %v", err)
 	}
 	defer conn.Close()
 
@@ -63,18 +62,13 @@ func compile(sourceFile *vm_grpc.MvIrSourceFile) ([]byte, bool) {
 
 	resp, err := client.Compile(connCtx, sourceFile)
 	if err != nil {
-		fmt.Printf("Compilation failed because of error during compilation and connection to VM: %s\n", err.Error())
-		return nil, false
+		return nil, fmt.Errorf("compilation failed because of error during compilation and connection to VM: %v", err)
 	}
 
 	// if contains errors
 	if len(resp.Errors) > 0 {
-		for _, err := range resp.Errors {
-			fmt.Printf("Error from compiler: %s\n", err)
-		}
-		fmt.Println("Compilation failed because of errors from compiler.")
-		return nil, false
+		return nil, fmt.Errorf("compilation failed because of errors from compiler: %s", strings.Join(resp.Errors, "\n"))
 	}
 
-	return resp.Bytecode, true
+	return resp.Bytecode, nil
 }

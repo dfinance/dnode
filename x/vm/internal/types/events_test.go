@@ -17,8 +17,9 @@ func TestNewEventKeep(t *testing.T) {
 	t.Parallel()
 
 	event := NewEventKeep()
-	require.Equal(t, event.Type, EventTypeKeep)
-	require.Empty(t, event.Attributes)
+	require.Equal(t, EventTypeContractStatus, event.Type)
+	require.EqualValues(t, AttrKeyStatus, event.Attributes[0].Key)
+	require.EqualValues(t, StatusKeep, event.Attributes[0].Value)
 }
 
 // Test event happens when VM return status discard.
@@ -27,8 +28,9 @@ func TestNewEventDiscard(t *testing.T) {
 
 	event := NewEventDiscard(nil)
 
-	require.Equal(t, event.Type, EventTypeDiscard)
-	require.Empty(t, event.Attributes) // has empty attributes if error status is not provided.
+	require.Equal(t, EventTypeContractStatus, event.Type)
+	require.EqualValues(t, AttrKeyStatus, event.Attributes[0].Key)
+	require.EqualValues(t, StatusDiscard, event.Attributes[0].Value)
 
 	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: 0,
@@ -36,13 +38,15 @@ func TestNewEventDiscard(t *testing.T) {
 		Message:     "this is error!!111",
 	}
 
-	attrs := make([]sdk.Attribute, 3)
-	attrs[0] = sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10))
-	attrs[1] = sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10))
-	attrs[2] = sdk.NewAttribute(AttrKeyMessage, errorStatus.Message)
+	attrs := make([]sdk.Attribute, 4)
+	attrs[0] = sdk.NewAttribute(AttrKeyStatus, StatusDiscard)
+	attrs[1] = sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10))
+	attrs[2] = sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10))
+	attrs[3] = sdk.NewAttribute(AttrKeyMessage, errorStatus.Message)
 
 	event = NewEventDiscard(&errorStatus)
 	require.Len(t, event.Attributes, len(attrs))
+	require.Equal(t, EventTypeContractStatus, event.Type)
 
 	for i, attr := range attrs {
 		require.EqualValuesf(t, []byte(attr.Key), event.Attributes[i].Key, "incorrect attribute key for event discard at position %d", i)
@@ -74,15 +78,17 @@ func TestNewEventFromVM(t *testing.T) {
 	}
 
 	event := NewEventFromVM(&vmEvent)
-	require.Equal(t, "0x"+hex.EncodeToString(vmEvent.Key), event.Type)
-	require.Len(t, event.Attributes, 3)
+	require.Equal(t, EventTypeMvirEvent, event.Type)
+	require.Len(t, event.Attributes, 4)
 
-	require.EqualValues(t, AttrKeySequenceNumber, event.Attributes[0].Key)
-	require.EqualValues(t, strconv.FormatUint(vmEvent.SequenceNumber, 10), event.Attributes[0].Value)
-	require.EqualValues(t, AttrKeyType, event.Attributes[1].Key)
-	require.EqualValues(t, VMTypeToStringPanic(vmEvent.Type.Tag), event.Attributes[1].Value)
-	require.EqualValues(t, AttrKeyData, event.Attributes[2].Key)
-	require.EqualValues(t, "0x"+hex.EncodeToString(valBytes), event.Attributes[2].Value)
+	require.EqualValues(t, AttrKeyGuid, event.Attributes[0].Key)
+	require.EqualValues(t, "0x"+hex.EncodeToString(vmEvent.Key), event.Attributes[0].Value)
+	require.EqualValues(t, AttrKeySequenceNumber, event.Attributes[1].Key)
+	require.EqualValues(t, strconv.FormatUint(vmEvent.SequenceNumber, 10), event.Attributes[1].Value)
+	require.EqualValues(t, AttrKeyType, event.Attributes[2].Key)
+	require.EqualValues(t, VMTypeToStringPanic(vmEvent.Type.Tag), event.Attributes[2].Value)
+	require.EqualValues(t, AttrKeyData, event.Attributes[3].Key)
+	require.EqualValues(t, "0x"+hex.EncodeToString(valBytes), event.Attributes[3].Value)
 }
 
 // Test event happens when VM return status with errors.
@@ -95,10 +101,11 @@ func TestNewEventError(t *testing.T) {
 
 	event := NewEventError(&errorStatus)
 
-	attrs := make([]sdk.Attribute, 3)
-	attrs[0] = sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10))
-	attrs[1] = sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10))
-	attrs[2] = sdk.NewAttribute(AttrKeyMessage, errorStatus.Message)
+	attrs := make([]sdk.Attribute, 4)
+	attrs[0] = sdk.NewAttribute(AttrKeyStatus, StatusError)
+	attrs[1] = sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10))
+	attrs[2] = sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10))
+	attrs[3] = sdk.NewAttribute(AttrKeyMessage, errorStatus.Message)
 
 	require.Len(t, event.Attributes, len(attrs))
 
@@ -107,15 +114,16 @@ func TestNewEventError(t *testing.T) {
 		require.EqualValuesf(t, []byte(attr.Value), event.Attributes[i].Value, "incorrect attribute key for event discard at position %d", i)
 	}
 
-	require.EqualValues(t, event.Type, EventTypeError)
+	require.EqualValues(t, EventTypeContractStatus, event.Type)
 }
 
 // Test creation event with error status.
 func TestNewEventWithError(t *testing.T) {
-	event := newEventStatus(EventTypeError, nil)
+	event := newEventStatus(StatusKeep, nil)
 
-	require.Empty(t, event.Attributes)
-	require.Equal(t, EventTypeError, event.Type)
+	require.Equal(t, EventTypeContractStatus, event.Type)
+	require.EqualValues(t, AttrKeyStatus, event.Attributes[0].Key)
+	require.EqualValues(t, StatusKeep, event.Attributes[0].Value)
 
 	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: 0,
@@ -123,14 +131,14 @@ func TestNewEventWithError(t *testing.T) {
 		Message:     "this is error!!111",
 	}
 
-	event = newEventStatus(EventTypeDiscard, &errorStatus)
+	event = newEventStatus(StatusDiscard, &errorStatus)
+	require.Equal(t, EventTypeContractStatus, event.Type)
 
-	require.Equal(t, EventTypeDiscard, event.Type)
-
-	attrs := make([]sdk.Attribute, 3)
-	attrs[0] = sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10))
-	attrs[1] = sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10))
-	attrs[2] = sdk.NewAttribute(AttrKeyMessage, errorStatus.Message)
+	attrs := make([]sdk.Attribute, 4)
+	attrs[0] = sdk.NewAttribute(AttrKeyStatus, StatusDiscard)
+	attrs[1] = sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10))
+	attrs[2] = sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10))
+	attrs[3] = sdk.NewAttribute(AttrKeyMessage, errorStatus.Message)
 	require.Len(t, event.Attributes, len(attrs))
 
 	for i, attr := range attrs {

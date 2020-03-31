@@ -3,7 +3,8 @@ package keeper
 import (
 	"bytes"
 	"encoding/binary"
-	"reflect"
+	"encoding/hex"
+	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -131,8 +132,6 @@ func TestProcessExecution(t *testing.T) {
 	event = types.NewEventDiscard(nil)
 
 	require.Len(t, events, 1)
-	require.Nil(t, events[0].Attributes)
-
 	require.Equal(t, event, events[0])
 
 	// status keep
@@ -306,10 +305,13 @@ func TestExecStatusKeeperNotAnError(t *testing.T) {
 	input.vk.processExecution(input.ctx, resp)
 	events := input.ctx.EventManager().Events()
 
-	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
+	require.EqualValues(t, types.EventTypeContractStatus, events[0].Type)
 
-	for _, event := range events {
-		require.NotEqual(t, types.EventTypeError, event.Type)
+	require.EqualValues(t, types.AttrKeyStatus, events[0].Attributes[0].Key)
+	require.EqualValues(t, types.StatusKeep, events[0].Attributes[0].Value)
+
+	for _, attr := range events[0].Attributes {
+		require.NotEqual(t, []byte(types.StatusError), attr.Key)
 	}
 }
 
@@ -334,11 +336,30 @@ func TestExecKeepAndError(t *testing.T) {
 	input.vk.processExecution(input.ctx, resp)
 	events := input.ctx.EventManager().Events()
 
-	require.EqualValues(t, types.EventTypeKeep, events[0].Type)
+	require.EqualValues(t, types.EventTypeContractStatus, events[0].Type)
+	require.EqualValues(t, types.AttrKeyStatus, events[0].Attributes[0].Key)
+	require.EqualValues(t, types.StatusKeep, events[0].Attributes[0].Value)
 
-	errEvent := events[1]
-	require.Equal(t, types.EventTypeError, errEvent.Type)
+	require.EqualValues(t, types.EventTypeContractStatus, events[1].Type)
+	require.EqualValues(t, types.AttrKeyStatus, events[1].Attributes[0].Key)
+	require.EqualValues(t, types.StatusError, events[1].Attributes[0].Value)
 
-	shouldBeErr := types.NewEventError(&errorStatus)
-	require.True(t, reflect.DeepEqual(shouldBeErr, errEvent))
+	require.EqualValues(t, types.AttrKeyMajorStatus, events[1].Attributes[1].Key)
+	require.EqualValues(t, types.AttrKeySubStatus, events[1].Attributes[2].Key)
+	require.EqualValues(t, types.AttrKeyMessage, events[1].Attributes[3].Key)
+
+	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.MajorStatus, 10)), events[1].Attributes[1].Value)
+	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.SubStatus, 10)), events[1].Attributes[2].Value)
+	require.EqualValues(t, []byte(errorStatus.Message), events[1].Attributes[3].Value)
+}
+
+// test access path generation for oracles.
+func Test_KeeperGetOracleAccessPath(t *testing.T) {
+	input := setupTestInput(true)
+	defer closeInput(input)
+
+	assetCode := "eth_usdt"
+	path := input.vk.GetOracleAccessPath(assetCode)
+	require.Equal(t, make([]byte, types.VmAddressLength), path.Address)
+	require.Equal(t, "ffe300b84cc0315d7a963b504ca77202c8c38cd28bad5bce7bbe0301c806666200", hex.EncodeToString(path.Path))
 }

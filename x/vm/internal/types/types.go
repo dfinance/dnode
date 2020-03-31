@@ -2,15 +2,13 @@
 package types
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
-	"unicode/utf8"
 
 	"github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/crypto/sha3"
-
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 const (
@@ -30,9 +28,7 @@ const (
 
 // VM related variables.
 var (
-	KeyGenesis   = []byte("gen") // used to save genesis
-	KeyDelimiter = []byte(":")
-	VMKey        = []byte("vm")
+	KeyGenesis = []byte("gen") // used to save genesis
 )
 
 // Type of Move contract (bytes).
@@ -51,24 +47,12 @@ func Bech32ToLibra(acc types.AccAddress) string {
 	return hex.EncodeToString(bytes)
 }
 
-// Make path for storage from VMAccessPath.
-func MakePathKey(path vm_grpc.VMAccessPath) []byte {
-	return bytes.Join(
-		[][]byte{
-			VMKey,
-			path.Address,
-			path.Path,
-		},
-		KeyDelimiter,
-	)
-}
-
 // Convert VMAccessPath to hex string
 func PathToHex(path vm_grpc.VMAccessPath) string {
 	return fmt.Sprintf("Access path: \n"+
 		"\tAddress: %s\n"+
 		"\tPath:    %s\n"+
-		"\tKey:     %s\n", hex.EncodeToString(path.Address), hex.EncodeToString(path.Path), hex.EncodeToString(MakePathKey(path)))
+		"\tKey:     %s\n", hex.EncodeToString(path.Address), hex.EncodeToString(path.Path), hex.EncodeToString(common_vm.MakePathKey(path)))
 }
 
 // Get TypeTag by string TypeTag representation.
@@ -96,46 +80,4 @@ func VMTypeToStringPanic(tag vm_grpc.VMTypeTag) string {
 	} else {
 		return val
 	}
-}
-
-// Convert asset code to libra path.
-func AssetCodeToPath(assetCode string) []byte {
-	asciiBytes := StringToAsciiBytes(assetCode)
-	for i, b := range asciiBytes {
-		if b >= 'A' && b <= 'Z' {
-			asciiBytes[i] = b | ((IsAsciiUpperCase(b)) << 5)
-		}
-	}
-
-	hasher := sha3.New256()
-	hasher.Write(asciiBytes)
-	hash := hasher.Sum(nil)
-
-	res := make([]byte, len(hash)+1)
-	res[0] = 255
-	for i, b := range hash {
-		res[i+1] = b
-	}
-
-	return res
-}
-
-// If ascii is upper case to u8.
-func IsAsciiUpperCase(b byte) uint8 {
-	if b >= 'A' && b <= 'Z' {
-		return 1
-	} else {
-		return 0
-	}
-}
-
-// Convert string to ascii bytes
-func StringToAsciiBytes(s string) []byte {
-	t := make([]byte, utf8.RuneCountInString(s))
-	i := 0
-	for _, r := range s {
-		t[i] = byte(r)
-		i++
-	}
-	return t
 }

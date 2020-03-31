@@ -8,9 +8,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	codec "github.com/tendermint/go-amino"
 
-	"github.com/dfinance/dnode/x/vm"
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 // Implements account keeper with vm storage support.
@@ -18,11 +19,11 @@ type VMAccountKeeper struct {
 	*auth.AccountKeeper
 
 	cdc      *codec.Codec
-	vmKeeper vm.VMStorage
+	vmKeeper common_vm.VMStorage
 }
 
 // Create new account vm keeper.
-func NewVMAccountKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Subspace, vmKeeper vm.VMStorage, proto func() exported.Account) VMAccountKeeper {
+func NewVMAccountKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Subspace, vmKeeper common_vm.VMStorage, proto func() exported.Account) VMAccountKeeper {
 	keeper := auth.NewAccountKeeper(cdc, key, paramstore, proto)
 
 	return VMAccountKeeper{
@@ -35,12 +36,24 @@ func NewVMAccountKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Su
 // Set account in storage.
 func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
 	keeper.AccountKeeper.SetAccount(ctx, acc)
-	// now store account to vm storage
-	accRes := AccResFromAccount(acc)
-	keeper.vmKeeper.SetValue(ctx, &vm.VMAccessPath{
+	// check if account exists in vm
+	accessPath := &vm_grpc.VMAccessPath{
 		Address: AddrToPathAddr(acc.GetAddress()),
 		Path:    GetResPath(),
-	}, AccResToBytes(accRes))
+	}
+
+	vmBz := keeper.vmKeeper.GetValue(ctx, accessPath)
+	if vmBz != nil {
+		// get account from vm and copy event data
+		// now store account to vm storage
+		source := BytesToAccRes(vmBz)
+		accRes := AccResFromAccount(acc, &source)
+		keeper.vmKeeper.SetValue(ctx, accessPath, AccResToBytes(accRes))
+	} else {
+		// just create new account
+		accRes := AccResFromAccount(acc, nil)
+		keeper.vmKeeper.SetValue(ctx, accessPath, AccResToBytes(accRes))
+	}
 }
 
 // Get account from storage.
@@ -48,7 +61,7 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 	account := keeper.AccountKeeper.GetAccount(ctx, addr)
 
 	// check if account maybe exists in vm storage.
-	bz := keeper.vmKeeper.GetValue(ctx, &vm.VMAccessPath{
+	bz := keeper.vmKeeper.GetValue(ctx, &vm_grpc.VMAccessPath{
 		Address: AddrToPathAddr(addr),
 		Path:    GetResPath(),
 	})
@@ -98,7 +111,7 @@ func (keeper VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Accoun
 	keeper.AccountKeeper.RemoveAccount(ctx, acc)
 
 	// should be remove account from VM storage too
-	keeper.vmKeeper.DelValue(ctx, &vm.VMAccessPath{
+	keeper.vmKeeper.DelValue(ctx, &vm_grpc.VMAccessPath{
 		Address: AddrToPathAddr(acc.GetAddress()),
 		Path:    GetResPath(),
 	})
