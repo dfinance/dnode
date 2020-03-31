@@ -143,32 +143,26 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// wait for compiler
-	if err := waitStarted(client, compiler.ID, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to docker compiler: %v", err)
-	}
+	err := waitStarted(client, compiler.ID, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to docker compiler: %v", err)
 
-	if err := waitStarted(client, vm.ID, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to docker vm: %v", err)
-	}
+	err = waitStarted(client, vm.ID, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to docker vm: %v", err)
 
 	// wait reachable compiler
-	if err := waitReachable(*vmCompiler, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to compiler server: %v", err)
-	}
+	err = waitReachable(*vmCompiler, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to compiler server: %v", err)
 
 	// wait reachable vm
-	if err := waitReachable(*vmAddress, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to vm server: %v", err)
-	}
+	err = waitReachable(*vmAddress, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
 	bytecode, err := cli.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    sendScript,
 		Address: []byte(addr1.String()),
 		Type:    vm_grpc.ContractType_Script,
 	})
-	if err != nil {
-		t.Fatalf("can't get code for send script: %v", err)
-	}
+	require.NoErrorf(t, err, "can't get code for send script: %v", err)
 
 	// execute contract.
 	args := make([]types.ScriptArg, 3)
@@ -233,42 +227,34 @@ func TestKeeper_DeployModule(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// wait for compiler
-	if err := waitStarted(client, compiler.ID, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to docker compiler: %v", err)
-	}
+	err := waitStarted(client, compiler.ID, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to docker compiler: %v", err)
 
-	if err := waitStarted(client, vm.ID, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to docker vm: %v", err)
-	}
+	err = waitStarted(client, vm.ID, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to docker vm: %v", err)
 
 	// wait reachable compiler
-	if err := waitReachable(*vmCompiler, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to compiler server: %v", err)
-	}
+	err = waitReachable(*vmCompiler, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to compiler server: %v", err)
 
 	// wait reachable vm
-	if err := waitReachable(*vmAddress, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to vm server: %v", err)
-	}
+	err = waitReachable(*vmAddress, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
 	bytecodeModule, err := cli.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    mathModule,
 		Address: []byte(addr1.String()),
 		Type:    vm_grpc.ContractType_Module,
 	})
-	if err != nil {
-		t.Fatalf("can't get code for math module: %v", err)
-	}
+	require.NoErrorf(t, err, "can't get code for math module: %v", err)
 
 	msg := types.NewMsgDeployModule(addr1, bytecodeModule)
-	if err := msg.ValidateBasic(); err != nil {
-		t.Fatalf("can't validate err: %v", err)
-	}
+	err = msg.ValidateBasic()
+	require.NoErrorf(t, err, "can't validate err: %v", err)
 
 	ctx, writeCtx := input.ctx.CacheContext()
-	if err := input.vk.DeployContract(ctx, msg); err != nil {
-		t.Fatalf("can't deploy contract: %v", err)
-	}
+	err = input.vk.DeployContract(ctx, msg)
+	require.NoErrorf(t, err, "can't deploy contract: %v", err)
 
 	events := ctx.EventManager().Events()
 	checkNoErrors(events, t)
@@ -280,9 +266,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 		Address: []byte(addr1.String()),
 		Type:    vm_grpc.ContractType_Script,
 	})
-	if err != nil {
-		t.Fatalf("can't compiler script for math module: %v", err)
-	}
+	require.NoErrorf(t, err, "can't compiler script for math module: %v", err)
 
 	args := make([]types.ScriptArg, 2)
 	args[0] = types.ScriptArg{
@@ -304,9 +288,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 
 	checkNoErrors(events, t)
 
-	if events[1].Type != types.EventTypeMvirEvent {
-		t.Fatal("script after execution doesn't contain event with amount")
-	}
+	require.Equal(t, events[1].Type, types.EventTypeMvirEvent, "script after execution doesn't contain event with amount")
 
 	require.Len(t, events[1].Attributes, 4)
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeySequenceNumber)
@@ -339,13 +321,6 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 
 	input.ak.SetAccount(input.ctx, acc1)
 
-	/*
-		type Asset struct {
-			AssetCode string  `json:"asset_code" yaml:"asset_code"`
-			Oracles   Oracles `json:"oracles" yaml:"oracles"`
-			Active    bool    `json:"active" yaml:"active"`
-		}
-	*/
 	assetCode := "eth_usdt"
 	okInitParams := oracle.Params{
 		Assets: oracle.Assets{
@@ -376,38 +351,30 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// wait for compiler
-	if err := waitStarted(client, compiler.ID, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to docker compiler: %v", err)
-	}
+	err := waitStarted(client, compiler.ID, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to docker compiler: %v", err)
 
-	if err := waitStarted(client, vm.ID, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to docker vm: %v", err)
-	}
+	err = waitStarted(client, vm.ID, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to docker vm: %v", err)
 
 	// wait reachable compiler
-	if err := waitReachable(*vmCompiler, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to compiler server: %v", err)
-	}
+	err = waitReachable(*vmCompiler, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to compiler server: %v", err)
 
 	// wait reachable vm
-	if err := waitReachable(*vmAddress, 5*time.Second); err != nil {
-		t.Fatalf("can't connect to vm server: %v", err)
-	}
+	err = waitReachable(*vmAddress, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
 	bytecodeScript, err := cli.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    oraclePriceScript,
 		Address: []byte(addr1.String()),
 		Type:    vm_grpc.ContractType_Script,
 	})
-	if err != nil {
-		t.Fatalf("can't get code for oracle script: %v", err)
-	}
+	require.NoErrorf(t, err, "can't get code for oracle script: %v", err)
 
 	seed := xxhash.NewS64(0)
 	_, err = seed.WriteString(strings.ToLower(assetCode))
-	if err != nil {
-		t.Fatalf("can't convert: %v", err)
-	}
+	require.NoErrorf(t, err, "can't convert: %v", err)
 	value := seed.Sum64()
 
 	args := make([]types.ScriptArg, 1)
