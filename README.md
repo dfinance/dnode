@@ -487,8 +487,13 @@ To launch tests run:
 
     GO111MODULE=on go test ./...
     
-    And with integration tests:
-    GO111MODULE=on go test ./... --tags integ
+    And with integration tests (required docker installed and authorization to dvm registry)
+    export TAG=master # needed tag (master by default)
+    export REGISTRY=  # replace of registry contains dvm
+    
+    docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
+    
+    GO111MODULE=on go test ./x/vm/internal/keeper --tags=integ
 
 # Contributors
 

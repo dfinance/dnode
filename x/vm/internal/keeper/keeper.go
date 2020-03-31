@@ -15,6 +15,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -33,16 +34,8 @@ type Keeper struct {
 	rawDSServer *grpc.Server // GRPC raw server.
 }
 
-// Interface for other keepers to get/set data.
-type VMStorage interface {
-	GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath
-	SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte)
-	GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte
-	DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
-}
-
 // Check that VMStorage is compatible with keeper (later we can do it by events probably).
-var _ VMStorage = Keeper{}
+var _ common_vm.VMStorage = Keeper{}
 
 // Initialize VM keeper (include grpc client to VM and grpc server for data store).
 func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, listener net.Listener, config *config.VMConfig) (keeper Keeper) {

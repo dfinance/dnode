@@ -7,8 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
-
-	"github.com/dfinance/dnode/x/vm"
 )
 
 func TestVMAccountKeeper_SetAccount(t *testing.T) {
@@ -98,7 +96,7 @@ func TestVMAccountKeeper_GetAccount(t *testing.T) {
 	getter := input.accountKeeper.GetAccount(input.ctx, addr)
 	require.EqualValues(t, &acc, getter)
 
-	key := &vm.VMAccessPath{
+	key := &vm_grpc.VMAccessPath{
 		Address: AddrToPathAddr(addr),
 		Path:    GetResPath(),
 	}
@@ -123,7 +121,7 @@ func TestVMAccountKeeper_GetAccount(t *testing.T) {
 	if err := vmAcc.SetCoins(types.Coins{coin}); err != nil {
 		t.Fatal(err)
 	}
-	vmKey := &vm.VMAccessPath{
+	vmKey := &vm_grpc.VMAccessPath{
 		Address: AddrToPathAddr(vmAcc.GetAddress()),
 		Path:    GetResPath(),
 	}
@@ -151,7 +149,7 @@ func TestVMAccountKeeper_RemoveAccount(t *testing.T) {
 	getter := input.accountKeeper.GetAccount(input.ctx, addr)
 	require.Nil(t, getter)
 
-	key := &vm.VMAccessPath{
+	key := &vm_grpc.VMAccessPath{
 		Address: AddrToPathAddr(addr),
 		Path:    GetResPath(),
 	}
