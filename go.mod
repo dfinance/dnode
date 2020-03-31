@@ -15,6 +15,7 @@ require (
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f
 	github.com/fsouza/go-dockerclient v1.6.3
+	github.com/getsentry/sentry-go v0.5.1
 	github.com/go-openapi/spec v0.19.7 // indirect
 	github.com/go-openapi/swag v0.19.8 // indirect
 	github.com/gogo/protobuf v1.3.1
