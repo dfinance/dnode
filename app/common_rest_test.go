@@ -218,6 +218,7 @@ func (r *RestTester) Close() {
 	if r.RootDir != "" {
 		os.RemoveAll(r.RootDir)
 	}
+	time.Sleep(1 * time.Second)
 }
 
 // Get current block height

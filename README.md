@@ -492,13 +492,22 @@ To launch tests run:
 
     GO111MODULE=on go test ./...
     
-    And with integration tests (required docker installed and authorization to dvm registry)
+To launch VM integration tests (required docker installed and authorization to dvm registry) run:
+
     export TAG=master # needed tag (master by default)
     export REGISTRY=  # replace of registry contains dvm
     
     docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
     
     GO111MODULE=on go test ./x/vm/internal/keeper --tags=integ
+    
+To launch REST API tests run:
+
+    GO111MODULE=on go test ./... --tags=rest
+    
+To launch CLI tests (`dnode`, `dncli` binaries should be build and available within `$PATH`) run:
+
+    GO111MODULE=on go test ./... --tags=cli
 
 # Sentry integration
 
@@ -517,7 +526,7 @@ To help project you always can open [issue](https://github.com/dfinance/dnode/pu
 
 # License
 
-Copyright © 2019 Wings Foundation
+Copyright © 2019 Wings Stiftung
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 

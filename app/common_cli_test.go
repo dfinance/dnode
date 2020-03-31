@@ -55,8 +55,6 @@ type CLITester struct {
 }
 
 func NewCLITester(t *testing.T) *CLITester {
-	RequireCliTestEnv(t)
-
 	sdkConfig := sdk.GetConfig()
 	dnConfig.InitBechPrefixes(sdkConfig)
 
@@ -342,7 +340,7 @@ func (ct *CLITester) startDemon() {
 		AddArg("", "start").
 		AddArg("rpc.laddr", ct.rpcAddress).
 		AddArg("p2p.laddr", ct.p2pAddress)
-	cmd.Start(true)
+	cmd.Start(ct.t, true)
 
 	// wait for the node to start up
 	i := 0
@@ -874,7 +872,7 @@ func (c *CLICmd) Execute(stdinInput ...string) (retCode int, retStdout, retStder
 	return
 }
 
-func (c *CLICmd) Start(startLoggers bool) {
+func (c *CLICmd) Start(t *testing.T, startLoggers bool) {
 	proc, err := tests.CreateProcess("", c.base, c.args)
 	require.NoError(c.t, err, "cmd %q: CreateProcess", c.String())
 
@@ -889,8 +887,7 @@ func (c *CLICmd) Start(startLoggers bool) {
 					return
 				}
 
-				//ct.t.Logf("%s: %s\n", pipeName, line)
-				fmt.Printf("%s: %s\n", pipeName, line)
+				t.Logf("%s: %s\n", pipeName, line)
 			}
 		}
 
