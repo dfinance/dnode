@@ -37,8 +37,16 @@ func (c sentryConfig) getClientOptions() sentry.ClientOptions {
 }
 
 func SetupSentry(appName, appVersion, appCommit string) error {
-	sentryDsn := os.Getenv("SENTRY_DSN")
-	sentryEnvironment := os.Getenv("SENTRY_ENVIRONMENT")
+	// force overwrite standard Sentry envs
+	if err := os.Setenv("SENTRY_DSN", ""); err != nil {
+		return fmt.Errorf("can't overwrite %q: %w", "SENTRY_DSN", err)
+	}
+	if err := os.Setenv("SENTRY_ENVIRONMENT", ""); err != nil {
+		return fmt.Errorf("can't overwrite %q: %w", "SENTRY_ENVIRONMENT", err)
+	}
+
+	sentryDsn := os.Getenv("DN_SENTRY_DSN")
+	sentryEnvironment := os.Getenv("DN_SENTRY_ENVIRONMENT")
 	hostname, _ := os.Hostname()
 
 	if appName == "" {

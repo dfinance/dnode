@@ -498,8 +498,8 @@ To launch tests run:
 By default the integration is switched off.
 
 The following environment variables should be defined in order to enable the integration:
-* `SENTRY_DSN` - Sentry DSN token (`https://[token]@sentry.io/5167345`);
-* `SENTRY_ENVIRONMENT` - sets the environment code to separate events from testnet and production (could be empty);
+* `DN_SENTRY_DSN` - Sentry DSN token (`https://[token]@sentry.io/5167345`);
+* `DN_SENTRY_ENVIRONMENT` - sets the environment code to separate events from testnet and production (could be empty);
 
 # Contributors
 
