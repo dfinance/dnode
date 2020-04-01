@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"path"
@@ -31,6 +30,7 @@ import (
 
 	"github.com/dfinance/dnode/cmd/config"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	dnTests "github.com/dfinance/dnode/helpers/tests"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
@@ -44,6 +44,7 @@ type CLITester struct {
 	AccountPassphrase string
 	Accounts          map[string]*CLIAccount
 	Cdc               *codec.Codec
+	VmListenPort      string
 	t                 *testing.T
 	validatorAddrs    []string
 	wbdBinary         string
@@ -83,6 +84,7 @@ func NewCLITester(t *testing.T, printDaemonLogs bool) *CLITester {
 		rpcPort:           srvPort,
 		p2pAddress:        p2pAddr,
 		vmConnectAddress:  fmt.Sprintf("127.0.0.1:%s", vmConnectPort),
+		VmListenPort:      vmListenPort,
 		vmListenAddress:   fmt.Sprintf("127.0.0.1:%s", vmListenPort),
 		vmCompilerAddress: "",
 		Accounts:          make(map[string]*CLIAccount, 0),
@@ -299,6 +301,19 @@ func (ct *CLITester) initChain() {
 		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
 	}
 
+	// VM default write sets
+	{
+		defWriteSetsPath := "${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json"
+		defWriteSetsPath = os.ExpandEnv(defWriteSetsPath)
+
+		cmd := ct.newWbdCmd().
+			AddArg("", "read-genesis-write-set").
+			AddArg("", defWriteSetsPath).
+			AddArg("home", ct.RootDir)
+
+		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
+	}
+
 	// change default genesis params
 	{
 		appState := ct.genesisState()
@@ -428,19 +443,9 @@ func (ct *CLITester) CheckDaemonStopped(timeout time.Duration) (exitCode int, da
 	return
 }
 
-func (ct *CLITester) PingTcpAddress(address string) error {
-	conn, err := net.Dial("tcp", address)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	return nil
-}
-
 func (ct *CLITester) SetVMCompilerAddress(address string) {
 	ct.vmCompilerAddress = address
-	require.NoError(ct.t, ct.PingTcpAddress(address), "VM compiler address")
+	require.NoError(ct.t, dnTests.PingTcpAddress(address), "VM compiler address")
 }
 
 func (ct *CLITester) UpdateAccountsBalance() {

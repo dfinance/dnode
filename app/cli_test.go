@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
+	"github.com/dfinance/dnode/helpers/tests"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
@@ -943,7 +944,15 @@ main(recipient: address, amount: u128, denom: bytearray) {
 	ct := NewCLITester(t, false)
 	defer ct.Close()
 
-	ct.SetVMCompilerAddress("rpc.demo.wings.toys:50053")
+	//ct.SetVMCompilerAddress("rpc.demo.wings.toys:50053")
+
+	compilerContainer, compilerPort, err := tests.NewVMCompilerContainer(ct.VmListenPort)
+	require.NoError(t, err, "compiler container creation")
+
+	require.NoError(t, compilerContainer.Start(5 * time.Second), "compiler container creation")
+	defer compilerContainer.Stop()
+
+	ct.SetVMCompilerAddress("127.0.0.1:" + compilerPort)
 
 	senderAddr := ct.Accounts["validator1"].Address
 	mvirPath := path.Join(ct.RootDir, "script.mvir")
@@ -960,6 +969,7 @@ main(recipient: address, amount: u128, denom: bytearray) {
 	ct.QueryVmCompileScript(mvirPath, compiledPath, senderAddr).CheckSucceeded()
 
 	// Execute .json script file
+	// Should panic as there is no local VM running
 	ct.TxVmExecuteScript(senderAddr, compiledPath, senderAddr, "100", "dfi").CheckSucceeded()
 
 	// Check CONSENSUS FAILURE did occur
