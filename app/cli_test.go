@@ -16,6 +16,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	"github.com/dfinance/dnode/helpers/tests"
+	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
@@ -23,7 +24,7 @@ import (
 )
 
 func Test_CurrencyCLI(t *testing.T) {
-	ct := NewCLITester(t, false)
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	fmt.Println("start")
@@ -93,12 +94,12 @@ func Test_CurrencyCLI(t *testing.T) {
 		// check destroy
 		q, destroy := ct.QueryCurrenciesDestroy(sdk.ZeroInt())
 		q.CheckSucceeded()
-		require.True(ct.t, sdk.ZeroInt().Equal(destroy.ID))
-		require.Equal(ct.t, ccSymbol, destroy.Symbol)
-		require.Equal(ct.t, ct.ChainID, destroy.ChainID)
-		require.Equal(ct.t, ccRecipient, destroy.Recipient)
-		require.Equal(ct.t, ccRecipient, destroy.Spender.String())
-		require.True(ct.t, destroyAmount.Equal(destroy.Amount))
+		require.True(t, sdk.ZeroInt().Equal(destroy.ID))
+		require.Equal(t, ccSymbol, destroy.Symbol)
+		require.Equal(t, ct.ChainID, destroy.ChainID)
+		require.Equal(t, ccRecipient, destroy.Recipient)
+		require.Equal(t, ccRecipient, destroy.Spender.String())
+		require.True(t, destroyAmount.Equal(destroy.Amount))
 
 		// check incorrect inputs
 		{
@@ -164,10 +165,10 @@ func Test_CurrencyCLI(t *testing.T) {
 		q, currency := ct.QueryCurrenciesCurrency(ccSymbol)
 		q.CheckSucceeded()
 
-		require.True(ct.t, currency.CurrencyId.IsZero())
-		require.Equal(ct.t, ccSymbol, currency.Symbol)
-		require.True(ct.t, ccCurAmount.Equal(currency.Supply))
-		require.Equal(ct.t, ccDecimals, currency.Decimals)
+		require.True(t, currency.CurrencyId.IsZero())
+		require.Equal(t, ccSymbol, currency.Symbol)
+		require.True(t, ccCurAmount.Equal(currency.Supply))
+		require.Equal(t, ccDecimals, currency.Decimals)
 
 		// check incorrect inputs
 		{
@@ -225,7 +226,7 @@ func Test_CurrencyCLI(t *testing.T) {
 }
 
 func Test_OracleCLI(t *testing.T) {
-	ct := NewCLITester(t, false)
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	nomineeAddr := ct.Accounts["oracle1"].Address
@@ -508,8 +509,8 @@ func Test_OracleCLI(t *testing.T) {
 	}
 }
 
-func Test_PoeCLI(t *testing.T) {
-	ct := NewCLITester(t, false)
+func Test_PoaCLI(t *testing.T) {
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	curValidators := make([]poaTypes.Validator, 0)
@@ -722,7 +723,7 @@ func Test_PoeCLI(t *testing.T) {
 		q.CheckSucceeded()
 
 		poaGenesis := poaTypes.GenesisState{}
-		require.NoError(t, ct.Cdc.UnmarshalJSON(ct.genesisState()[poaTypes.ModuleName], &poaGenesis))
+		require.NoError(t, ct.Cdc.UnmarshalJSON(ct.GenesisState()[poaTypes.ModuleName], &poaGenesis))
 		require.Equal(t, poaGenesis.Parameters.MaxValidators, params.MaxValidators)
 		require.Equal(t, poaGenesis.Parameters.MinValidators, params.MinValidators)
 	}
@@ -759,7 +760,7 @@ func Test_PoeCLI(t *testing.T) {
 }
 
 func Test_MultiSigCLI(t *testing.T) {
-	ct := NewCLITester(t, false)
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	ccSymbol1, ccSymbol2 := "cc1", "cc2"
@@ -941,7 +942,7 @@ main(recipient: address, amount: u128, denom: bytearray) {
     return;
 }
 `
-	ct := NewCLITester(t, false)
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	//ct.SetVMCompilerAddress("rpc.demo.wings.toys:50053")
@@ -949,7 +950,7 @@ main(recipient: address, amount: u128, denom: bytearray) {
 	compilerContainer, compilerPort, err := tests.NewVMCompilerContainer(ct.VmListenPort)
 	require.NoError(t, err, "compiler container creation")
 
-	require.NoError(t, compilerContainer.Start(5 * time.Second), "compiler container creation")
+	require.NoError(t, compilerContainer.Start(5*time.Second), "compiler container creation")
 	defer compilerContainer.Stop()
 
 	ct.SetVMCompilerAddress("127.0.0.1:" + compilerPort)

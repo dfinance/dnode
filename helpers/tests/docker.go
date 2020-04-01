@@ -2,7 +2,6 @@ package tests
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"strings"
 	"time"
@@ -202,14 +201,4 @@ func NewVMCompilerContainer(dsServerPort string) (retContainer *DockerContainer,
 		WithTcpPorts([]string{port}))
 
 	return
-}
-
-func PingTcpAddress(address string) error {
-	conn, err := net.DialTimeout("tcp", address, 500*time.Millisecond)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	return nil
 }
