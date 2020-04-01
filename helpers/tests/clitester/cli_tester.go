@@ -45,6 +45,7 @@ type CLITester struct {
 	vmListenAddress   string
 	vmCompilerAddress string
 	daemon            *CLICmd
+	restServer        *CLICmd
 }
 
 type CLIAccount struct {
@@ -160,6 +161,10 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 }
 
 func (ct *CLITester) Close() {
+	if ct.restServer != nil {
+		ct.restServer.Stop()
+	}
+
 	if ct.daemon != nil {
 		ct.daemon.Stop()
 	}
@@ -452,6 +457,44 @@ func (ct *CLITester) DaemonLogsContain(subStr string) bool {
 	require.NotNil(ct.t, ct.daemon, "daemon wasn't started")
 
 	return ct.daemon.LogsContain(subStr)
+}
+
+func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
+	const startRetries = 100
+
+	require.Nil(ct.t, ct.restServer)
+
+	_, restPort, err := server.FreeTCPAddr()
+	require.NoError(ct.t, err, "FreeTCPAddr for REST server")
+	restAddress := "localhost:" + restPort
+	restUrl = "http://" + restAddress
+
+	cmd := ct.newWbcliCmd().
+		AddArg("", "rest-server").
+		AddArg("laddr", "tcp://"+restAddress).
+		AddArg("node", ct.rpcAddress)
+	cmd.Start(ct.t, printLogs)
+
+	// wait for the server to start up
+	i := 0
+	for ; i < startRetries; i++ {
+		resp, err := http.Get(restUrl + "/node_info")
+		if err == nil && resp.StatusCode == http.StatusOK {
+			break
+		}
+
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if i == startRetries {
+		ct.t.Fatalf("wait for the REST server to start up: failed")
+	}
+
+	ct.restServer = cmd
+
+	return
 }
 
 func (ct *CLITester) SetVMCompilerAddress(address string) {

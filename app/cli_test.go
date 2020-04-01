@@ -4,6 +4,8 @@ package app
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"strconv"
@@ -14,6 +16,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/dfinance/dnode/helpers/tests"
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
@@ -994,5 +997,31 @@ main(recipient: address, amount: u128, denom: bytearray) {
 
 		require.NotZero(t, retCode, "daemon exitCode")
 		require.Contains(t, strings.Join(daemonLogs, ","), "panic", "daemon didn't panic")
+	}
+}
+
+func Test_RestServer(t *testing.T) {
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+
+	restUrl := ct.StartRestServer(false)
+
+	// check server is running
+	{
+		resp, err := http.Get(restUrl + "/blocks/latest")
+		require.NoError(t, err, "Get request")
+		require.NotNil(t, resp, "response")
+		require.NotNil(t, resp.Body, "response body")
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err, "body read")
+
+		resultBlock := tmCoreTypes.ResultBlock{}
+		require.NoError(t, ct.Cdc.UnmarshalJSON(body, &resultBlock), "body unmarshal")
+
+		require.NotNil(t, resultBlock.Block, "result block")
+		require.Equal(t, ct.ChainID, resultBlock.Block.ChainID)
+		require.GreaterOrEqual(t, resultBlock.Block.Height, int64(1))
 	}
 }
