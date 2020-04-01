@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -51,10 +53,11 @@ type CLITester struct {
 	p2pAddress        string
 	vmConnectAddress  string
 	vmListenAddress   string
+	vmCompilerAddress string
 	daemon            *CLICmd
 }
 
-func NewCLITester(t *testing.T) *CLITester {
+func NewCLITester(t *testing.T, printDaemonLogs bool) *CLITester {
 	sdkConfig := sdk.GetConfig()
 	dnConfig.InitBechPrefixes(sdkConfig)
 
@@ -81,6 +84,7 @@ func NewCLITester(t *testing.T) *CLITester {
 		p2pAddress:        p2pAddr,
 		vmConnectAddress:  fmt.Sprintf("127.0.0.1:%s", vmConnectPort),
 		vmListenAddress:   fmt.Sprintf("127.0.0.1:%s", vmListenPort),
+		vmCompilerAddress: "",
 		Accounts:          make(map[string]*CLIAccount, 0),
 	}
 
@@ -147,7 +151,7 @@ func NewCLITester(t *testing.T) *CLITester {
 
 	ct.initChain()
 
-	ct.startDemon()
+	ct.startDemon(true, printDaemonLogs)
 
 	ct.UpdateAccountsBalance()
 
@@ -331,7 +335,7 @@ func (ct *CLITester) initChain() {
 	}
 }
 
-func (ct *CLITester) startDemon() {
+func (ct *CLITester) startDemon(waitForStart, printLogs bool) {
 	const startRetries = 100
 
 	require.Nil(ct.t, ct.daemon)
@@ -340,24 +344,26 @@ func (ct *CLITester) startDemon() {
 		AddArg("", "start").
 		AddArg("rpc.laddr", ct.rpcAddress).
 		AddArg("p2p.laddr", ct.p2pAddress)
-	cmd.Start(ct.t, true)
+	cmd.Start(ct.t, printLogs)
 
 	// wait for the node to start up
-	i := 0
-	for ; i < startRetries; i++ {
-		time.Sleep(50 * time.Millisecond)
-		blockHeight, err := ct.GetCurrentBlockHeight()
-		if err != nil {
-			continue
-		}
-		if blockHeight < 2 {
-			continue
-		}
+	if waitForStart {
+		i := 0
+		for ; i < startRetries; i++ {
+			time.Sleep(50 * time.Millisecond)
+			blockHeight, err := ct.GetCurrentBlockHeight()
+			if err != nil {
+				continue
+			}
+			if blockHeight < 2 {
+				continue
+			}
 
-		break
-	}
-	if i == startRetries {
-		ct.t.Fatalf("wait for the node to start up: failed")
+			break
+		}
+		if i == startRetries {
+			ct.t.Fatalf("wait for the node to start up: failed")
+		}
 	}
 
 	ct.daemon = cmd
@@ -390,6 +396,51 @@ func (ct *CLITester) genesisState() GenesisState {
 	require.NoError(ct.t, cdc.UnmarshalJSON(genDoc.AppState, &appState), "unmarshal appState")
 
 	return appState
+}
+
+func (ct *CLITester) RestartDaemon(waitForStart, printLogs bool) {
+	require.NotNil(ct.t, ct.daemon, "daemon is not running")
+
+	ct.daemon.Stop()
+	ct.daemon = nil
+
+	ct.startDemon(waitForStart, printLogs)
+}
+
+func (ct *CLITester) DaemonLogsContain(subStr string) bool {
+	require.NotNil(ct.t, ct.daemon, "daemon wasn't started")
+
+	return ct.daemon.LogsContain(subStr)
+}
+
+func (ct *CLITester) CheckDaemonStopped(timeout time.Duration) (exitCode int, daemonLogs []string) {
+	require.NotNil(ct.t, ct.daemon, "daemon wasn't started")
+
+	retCode := ct.daemon.WaitForStop(timeout)
+	require.NotNil(ct.t, retCode, "daemon didn't stop in %v", timeout)
+
+	exitCode = *retCode
+	daemonLogs = make([]string, len(ct.daemon.logs))
+	copy(daemonLogs, ct.daemon.logs)
+
+	ct.daemon = nil
+
+	return
+}
+
+func (ct *CLITester) PingTcpAddress(address string) error {
+	conn, err := net.Dial("tcp", address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	return nil
+}
+
+func (ct *CLITester) SetVMCompilerAddress(address string) {
+	ct.vmCompilerAddress = address
+	require.NoError(ct.t, ct.PingTcpAddress(address), "VM compiler address")
 }
 
 func (ct *CLITester) UpdateAccountsBalance() {
@@ -551,7 +602,7 @@ func (ct *CLITester) TxOracleAddAsset(nomineeAddress, assetCode string, oracleAd
 	return r
 }
 
-func (ct *CLITester) TxPoeAddValidator(fromAddr, address, ethAddress, issueId string) *TxRequest {
+func (ct *CLITester) TxPoaAddValidator(fromAddr, address, ethAddress, issueId string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"poa",
@@ -564,7 +615,7 @@ func (ct *CLITester) TxPoeAddValidator(fromAddr, address, ethAddress, issueId st
 	return r
 }
 
-func (ct *CLITester) TxPoeRemoveValidator(fromAddr, address, issueId string) *TxRequest {
+func (ct *CLITester) TxPoaRemoveValidator(fromAddr, address, issueId string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"poa",
@@ -576,7 +627,7 @@ func (ct *CLITester) TxPoeRemoveValidator(fromAddr, address, issueId string) *Tx
 	return r
 }
 
-func (ct *CLITester) TxPoeReplaceValidator(fromAddr, targetAddress, address, ethAddress, issueId string) *TxRequest {
+func (ct *CLITester) TxPoaReplaceValidator(fromAddr, targetAddress, address, ethAddress, issueId string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"poa",
@@ -661,6 +712,22 @@ func (ct *CLITester) TxMultiSigRevokeConfirm(fromAddress string, callID uint64) 
 		fromAddress,
 		"revoke-confirm",
 		strconv.FormatUint(callID, 10))
+
+	return r
+}
+
+func (ct *CLITester) TxVmExecuteScript(fromAddress, filePath string, args ...string) *TxRequest {
+	cmdArgs := make([]string, 0, 2+len(args))
+	cmdArgs = append(cmdArgs, "execute-script")
+	cmdArgs = append(cmdArgs, filePath)
+	cmdArgs = append(cmdArgs, args...)
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"vm",
+		fromAddress,
+		cmdArgs...)
+	r.cmd.AddArg("compiler", ct.vmCompilerAddress)
 
 	return r
 }
@@ -784,6 +851,15 @@ func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *msTypes.LastIdRes) {
 	return q, resObj
 }
 
+func (ct *CLITester) QueryVmCompileScript(mvirFilePath, savePath, accountAddress string) *QueryRequest {
+	q := ct.newQueryRequest(nil)
+	q.SetCmd("vm", "compile-script", mvirFilePath, accountAddress)
+	q.cmd.AddArg("compiler", ct.vmCompilerAddress)
+	q.cmd.AddArg("to-file", savePath)
+
+	return q
+}
+
 func (ct *CLITester) QueryAccount(address string) (*QueryRequest, *auth.BaseAccount) {
 	resObj := &auth.BaseAccount{}
 	q := ct.newQueryRequest(resObj)
@@ -804,11 +880,14 @@ type CLIAccount struct {
 }
 
 type CLICmd struct {
-	t      *testing.T
-	base   string
-	args   []string
-	inputs string
-	proc   *tests.Process
+	sync.Mutex
+	t            *testing.T
+	base         string
+	args         []string
+	inputs       string
+	proc         *tests.Process
+	logs         []string
+	pipeLoggerWG sync.WaitGroup
 }
 
 func (c *CLICmd) AddArg(flagName, flagValue string) *CLICmd {
@@ -872,28 +951,39 @@ func (c *CLICmd) Execute(stdinInput ...string) (retCode int, retStdout, retStder
 	return
 }
 
-func (c *CLICmd) Start(t *testing.T, startLoggers bool) {
+func (c *CLICmd) Start(t *testing.T, printLogs bool) {
 	proc, err := tests.CreateProcess("", c.base, c.args)
 	require.NoError(c.t, err, "cmd %q: CreateProcess", c.String())
 
-	if startLoggers {
-		pipeLogger := func(pipeName string, pipe io.ReadCloser) {
-			buf := bufio.NewReader(pipe)
-			for {
-				line, _, err := buf.ReadLine()
-				if err != nil {
+	pipeLogger := func(pipeName string, pipe io.ReadCloser, wg *sync.WaitGroup) {
+		defer wg.Done()
+
+		buf := bufio.NewReader(pipe)
+		for {
+			line, _, err := buf.ReadLine()
+			if err != nil {
+				if printLogs {
 					c.t.Logf("%q %s: reading daemon pipe: %v", c.base, pipeName, err)
-					c.t.Logf("%q %s: reading daemon pipe: %v", c.base, pipeName, err)
-					return
 				}
-
-				t.Logf("%s: %s\n", pipeName, line)
+				return
 			}
-		}
+			logMsg := fmt.Sprintf("%s: %s", pipeName, line)
 
-		go pipeLogger("stdout", proc.StdoutPipe)
-		go pipeLogger("stderr", proc.StderrPipe)
+			if printLogs {
+				t.Log(logMsg)
+			}
+
+			c.Lock()
+			c.logs = append(c.logs, logMsg)
+			c.Unlock()
+		}
 	}
+
+	c.pipeLoggerWG = sync.WaitGroup{}
+	c.pipeLoggerWG.Add(2)
+
+	go pipeLogger("stdout", proc.StdoutPipe, &c.pipeLoggerWG)
+	go pipeLogger("stderr", proc.StderrPipe, &c.pipeLoggerWG)
 
 	require.NoError(c.t, proc.Cmd.Start(), "cmd %q: Start", c.String())
 	c.proc = proc
@@ -903,6 +993,32 @@ func (c *CLICmd) Stop() {
 	require.NotNil(c.t, c.proc, "proc")
 	require.NoError(c.t, c.proc.Stop(true), "proc.Stop")
 	c.proc = nil
+}
+
+func (c *CLICmd) WaitForStop(timeout time.Duration) (exitCode *int) {
+	require.NotNil(c.t, c.proc, "proc")
+
+	timeoutCh := time.NewTimer(timeout).C
+	stopCh := make(chan bool)
+
+	go func() {
+		c.proc.Wait()
+		state := c.proc.ExitState
+		if state != nil {
+			code := state.ExitCode()
+			exitCode = &code
+		}
+
+		c.pipeLoggerWG.Wait()
+		close(stopCh)
+	}()
+
+	select {
+	case <-timeoutCh:
+	case <-stopCh:
+	}
+
+	return
 }
 
 func (c *CLICmd) CheckSuccessfulExecute(resultObj interface{}, stdinInput ...string) {
@@ -919,6 +1035,19 @@ func (c *CLICmd) CheckSuccessfulExecute(resultObj interface{}, stdinInput ...str
 
 		c.t.Fatalf("%s: stdout/stderr unmarshal to object type %t", c.String(), resultObj)
 	}
+}
+
+func (c *CLICmd) LogsContain(subStr string) bool {
+	c.Lock()
+	defer c.Unlock()
+
+	for _, l := range c.logs {
+		if strings.Contains(l, subStr) {
+			return true
+		}
+	}
+
+	return false
 }
 
 type TxRequest struct {

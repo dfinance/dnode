@@ -52,10 +52,16 @@ type StoppableRestServer struct {
 	listener net.Listener
 }
 
-func NewStoppableRestServer(cdc *codec.Codec, customRpcClient rpcClient.Client) *StoppableRestServer {
+func NewStoppableRestServer(cdc *codec.Codec, customRpcClient rpcClient.Client, printLogs bool) *StoppableRestServer {
 	r := mux.NewRouter()
 	cliCtx := context.NewCLIContext().WithCodec(cdc).WithTrustNode(true).WithClient(customRpcClient)
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "rest-server")
+
+	var logger log.Logger
+	if printLogs {
+		logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "rest-server")
+	} else {
+		logger = log.NewNopLogger()
+	}
 
 	rs := &StoppableRestServer{
 		Mux:    r,
@@ -112,7 +118,7 @@ type RestTester struct {
 	restServer       *StoppableRestServer
 }
 
-func NewRestTester(t *testing.T) *RestTester {
+func NewRestTester(t *testing.T, printLogs bool) *RestTester {
 	var err error
 
 	r := RestTester{
@@ -139,7 +145,10 @@ func NewRestTester(t *testing.T) *RestTester {
 	cfg.SetRoot(r.RootDir)
 	cfg.Instrumentation.Prometheus = false
 	cfg.Moniker = "dn-test-moniker"
-	cfg.LogLevel = "main:error,state:error,*:error"
+	cfg.LogLevel = "*:none"
+	if printLogs {
+		cfg.LogLevel = "main:error,state:error,*:error"
+	}
 
 	// lower default logger filter level
 	logger, err := tmFlags.ParseLogLevel(cfg.LogLevel, ctx.Logger, "error")
@@ -199,7 +208,7 @@ func NewRestTester(t *testing.T) *RestTester {
 	require.NoError(r.t, r.node.Start(), "node.Start")
 
 	// start REST server
-	r.restServer = NewStoppableRestServer(r.App.cdc, rpcClient.NewLocal(r.node))
+	r.restServer = NewStoppableRestServer(r.App.cdc, rpcClient.NewLocal(r.node), printLogs)
 	require.NoError(r.t, r.restServer.Start("tcp://localhost:1317", 10, 5, 5), "server start")
 
 	// wait for node to start
