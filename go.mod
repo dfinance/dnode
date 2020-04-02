@@ -12,7 +12,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.37.4
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
-	github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f
+	github.com/dfinance/dvm-proto/go v0.0.0-20200328135315-584972a1a270
 	github.com/fsouza/go-dockerclient v1.6.3
 	github.com/getsentry/sentry-go v0.5.1
 	github.com/gogo/protobuf v1.3.1

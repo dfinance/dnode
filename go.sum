@@ -108,6 +108,8 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/deckarep/golang-set v1.7.1/go.mod h1:93vsz/8Wt4joVM7c2AVqh+YRMiUSc14yDtF28KmMOgQ=
 github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f h1:uqOMu+6zvwp/LXhSabe8q2rKjHr3SwsFEUw1fiPJI1Q=
 github.com/dfinance/dvm-proto/go v0.0.0-20200319133507-2cc43452935f/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
+github.com/dfinance/dvm-proto/go v0.0.0-20200328135315-584972a1a270 h1:GxffdjSLANOcaaCEb6O9ieclVoFHgeXUZnpTP0Kl+X0=
+github.com/dfinance/dvm-proto/go v0.0.0-20200328135315-584972a1a270/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2/go.mod h1:SqUrOPUnsFjfmXRMNPybcSiG0BgUW2AuFH8PAnS2iTw=
