@@ -21,6 +21,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -36,7 +37,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	)
 
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(FlagCompilerAddr, FlagCompilerDefault, FlagCompilerUsage)
+		cmd.Flags().String(FlagCompilerAddr, vmClient.DefaultCompilerAddr, FlagCompilerUsage)
 		txCmd.AddCommand(cmd)
 	}
 
@@ -47,8 +48,8 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 // Read MVir file contains code in hex.
-func GetMVFromFile(filePath string) (MVFile, error) {
-	var mvir MVFile
+func GetMVFromFile(filePath string) (vmClient.MVFile, error) {
+	var mvir vmClient.MVFile
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -98,7 +99,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			// parsing arguments
 			parsedArgs := args[1:]
 			scriptArgs := make([]types.ScriptArg, len(parsedArgs))
-			extractedArgs, err := ExtractArguments(compilerAddr, code)
+			extractedArgs, err := vmClient.ExtractArguments(compilerAddr, code)
 			if err != nil {
 				return err
 			}
