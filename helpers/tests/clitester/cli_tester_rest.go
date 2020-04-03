@@ -13,6 +13,7 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
 func (ct *CLITester) newRestTxRequest(httpMethod, subPath string, accName string, msg sdk.Msg, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
@@ -55,7 +56,7 @@ func (ct *CLITester) newRestTxRequest(httpMethod, subPath string, accName string
 	return
 }
 
-func (ct *CLITester) RestQueryCurrenciesIssue(issueId string) (*RestRequest, *ccTypes.Issue){
+func (ct *CLITester) RestQueryCurrenciesIssue(issueId string) (*RestRequest, *ccTypes.Issue) {
 	reqSubPath := fmt.Sprintf("%s/issue/%s", ccTypes.ModuleName, issueId)
 	respMsg := &ccTypes.Issue{}
 
@@ -64,7 +65,7 @@ func (ct *CLITester) RestQueryCurrenciesIssue(issueId string) (*RestRequest, *cc
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *ccTypes.Currency){
+func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *ccTypes.Currency) {
 	reqSubPath := fmt.Sprintf("%s/currency/%s", ccTypes.ModuleName, symbol)
 	respMsg := &ccTypes.Currency{}
 
@@ -73,7 +74,7 @@ func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesDestroy(id sdk.Int) (*RestRequest, *ccTypes.Destroy){
+func (ct *CLITester) RestQueryCurrenciesDestroy(id sdk.Int) (*RestRequest, *ccTypes.Destroy) {
 	reqSubPath := fmt.Sprintf("%s/destroy/%d", ccTypes.ModuleName, id.Int64())
 	respMsg := &ccTypes.Destroy{}
 
@@ -82,7 +83,7 @@ func (ct *CLITester) RestQueryCurrenciesDestroy(id sdk.Int) (*RestRequest, *ccTy
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesDestroys(page int, limit *int) (*RestRequest, *ccTypes.Destroys){
+func (ct *CLITester) RestQueryCurrenciesDestroys(page int, limit *int) (*RestRequest, *ccTypes.Destroys) {
 	reqSubPath := fmt.Sprintf("%s/destroys/%d", ccTypes.ModuleName, page)
 	respMsg := &ccTypes.Destroys{}
 	var reqValues url.Values
@@ -117,6 +118,15 @@ func (ct *CLITester) RestQueryMultiSigCall(callID uint64) (*RestRequest, *msType
 func (ct *CLITester) RestQueryMultiSigUnique(uniqueID string) (*RestRequest, *msTypes.CallResp) {
 	reqSubPath := fmt.Sprintf("%s/unique/%s", msTypes.ModuleName, uniqueID)
 	respMsg := &msTypes.CallResp{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryPoaValidators() (*RestRequest, *poaTypes.ValidatorsConfirmations) {
+	reqSubPath := fmt.Sprintf("%s/validators", poaTypes.ModuleName)
+	respMsg := &poaTypes.ValidatorsConfirmations{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
