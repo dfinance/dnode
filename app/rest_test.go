@@ -15,7 +15,6 @@ import (
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
 func Test_CurrencyRest(t *testing.T) {
@@ -369,19 +368,30 @@ func Test_OracleRest(t *testing.T) {
 }
 
 func Test_POARest(t *testing.T) {
-	r := NewRestTester(t, false)
-	defer r.Close()
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	// get all validators
+	accs := make(map[string]cliTester.CLIAccount, 0)
+	for _, acc := range ct.Accounts {
+		if acc.IsPOAValidator {
+			accs[acc.Address] = *acc
+		}
+	}
 
 	// check getValidators endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/validators", poaTypes.ModuleName)
-		respMsg := poaTypes.ValidatorsConfirmations{}
+		req, respMsg := ct.RestQueryPoaValidators()
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
-		require.Equal(t, len(r.Accounts), len(respMsg.Validators))
+		require.Equal(t, len(accs), len(respMsg.Validators))
 		for idx := range respMsg.Validators {
-			require.Equal(t, r.Accounts[idx].GetAddress(), respMsg.Validators[idx].Address)
-			require.Equal(t, "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615", respMsg.Validators[idx].EthAddress)
+			sdkAddr := respMsg.Validators[idx].Address.String()
+			ethAddr := respMsg.Validators[idx].EthAddress
+
+			require.Contains(t, accs, sdkAddr)
+			require.Equal(t, accs[sdkAddr].EthAddress, ethAddr)
 		}
 	}
 }
