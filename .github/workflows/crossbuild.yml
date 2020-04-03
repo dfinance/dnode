@@ -36,7 +36,7 @@ jobs:
         docker login -u ${OWN_REGISTRY_USR} --password-stdin ${REGISTRY} <<< ${OWN_REGISTRY_PWD}
         docker image pull ${REGISTRY}/dfinance/dvm:${DVM_TAG}
         make
-        go test ./... --tags=cli,rest,integ
+        go test -v ./... --tags=cli,rest,integ
         docker logout
       env:
         GOPATH: /tmp/go
