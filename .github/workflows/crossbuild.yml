@@ -39,7 +39,7 @@ jobs:
         go test ./... --tags=cli,rest,integ
         docker logout
       env:
-        GOPATH: /go
+        GOPATH: /tmp/go
         DVM_TAG: ${{ secrets.DVM_TAG }}
         REGISTRY: ${{ secrets.OWN_REGISTRY }}
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
