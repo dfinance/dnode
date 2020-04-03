@@ -2,8 +2,8 @@ name: Crossbuild & Upload artifacts
 on:
   pull_request:
   push:
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+
+    # tags:
+    #   - v[0-9]+.[0-9]+.[0-9]+
       # - v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+
 
 jobs:
@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.13
+    - name: Set up Go 1.14.1
       uses: actions/setup-go@v1
       with:
-        go-version: 1.13
+        go-version: 1.14.1
       id: go
 
     - name: Check out code into the Go module directory
@@ -30,7 +30,17 @@ jobs:
             dep ensure
         fi
 
-    - name: Make binaries
+    - name: Make and run tests
+      run: |
+        export PATH="$GOPATH/bin:$PATH"
+        make
+        export REGISTRY=${OWN_REGISTRY}
+        docker login -u ${OWN_REGISTRY_USR} --password-stdin ${OWN_REGISTRY} <<< ${OWN_REGISTRY_PWD}
+        docker image pull ${OWN_REGISTRY}/dfinance/dvm:${DVM_TAG}
+        go test ./... --tags=cli,rest,integ
+        docker logout
+
+    - name: Make binaries crossbuild
       run: make binaries
 
     - name: GitHub Release
@@ -42,3 +52,4 @@ jobs:
           builds/dncli-*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

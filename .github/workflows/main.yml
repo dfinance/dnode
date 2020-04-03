@@ -1,14 +1,14 @@
-name: Build & Push
+name: Build docker & Push
 
 # on: [push, pull_request]
 on:
   push:
-    branches:
-      - master
-      - feature-*
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+
-  # pull_request:
+    # branches:
+    #   - master
+    #   - feature-*
+    # tags:
+    #   - v[0-9]+.[0-9]+.[0-9]+
+  pull_request:
   #   branches:
   #     - master
   #     - feature-*
@@ -22,13 +22,24 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Build and push docker image to own registry
+    - name: '[OwnRegistry] Build and push docker image'
       uses: dfinance/gh-actions@master
       with:
         name: registry.wings.toys/dfinance/dnode
-        username: ${{ secrets.REGISTRY_USER }}
-        password: ${{ secrets.REGISTRY_PWD }}
+        username: ${{ secrets.OWN_REGISTRY_USR }}
+        password: ${{ secrets.OWN_REGISTRY_PWD }}
         dockerfile: ./.build/Dockerfile
         build_params: --build-arg CI_PIPELINE_ID=${GITHUB_RUN_ID} --build-arg CI_COMMIT_REF_NAME=${GITHUB_REF} --build-arg CI_COMMIT_SHA=${GITHUB_SHA}
         registry: registry.wings.toys
+        cache: true
+
+    - name: '[DockerHub] Build and push docker image'
+      uses: dfinance/gh-actions@master
+      # if: success() && startsWith(github.ref, 'refs/tags/')
+      with:
+        name: dfinance/dnode
+        username: ${{ secrets.DH_REGISTRY_USR }}
+        password: ${{ secrets.DH_REGISTRY_PWD }}
+        dockerfile: ./.build/Dockerfile
+        build_params: --build-arg CI_PIPELINE_ID=${GITHUB_RUN_ID} --build-arg CI_COMMIT_REF_NAME=${GITHUB_REF} --build-arg CI_COMMIT_SHA=${GITHUB_SHA}
         cache: true
