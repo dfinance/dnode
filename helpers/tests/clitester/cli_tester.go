@@ -35,7 +35,7 @@ type CLITester struct {
 	Cdc               *codec.Codec
 	VmListenPort      string
 	t                 *testing.T
-	validatorAddrs    []string
+	keyBase           sdkKeys.Keybase
 	wbdBinary         string
 	wbcliBinary       string
 	rpcAddress        string
@@ -44,6 +44,7 @@ type CLITester struct {
 	vmConnectAddress  string
 	vmListenAddress   string
 	vmCompilerAddress string
+	restAddress       string
 	daemon            *CLICmd
 	restServer        *CLICmd
 }
@@ -77,6 +78,7 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		Cdc:               makeCodec(),
 		wbdBinary:         "dnode",
 		wbcliBinary:       "dncli",
+		keyBase:           sdkKeys.NewInMemory(),
 		ChainID:           "test-chain",
 		MonikerID:         "test-moniker",
 		AccountPassphrase: "passphrase",
@@ -190,6 +192,14 @@ func (ct *CLITester) newWbcliCmd() *CLICmd {
 	return cmd
 }
 
+func (ct *CLITester) newRestRequest() *RestRequest {
+	return &RestRequest{
+		t:       ct.t,
+		cdc:     ct.Cdc,
+		baseUrl: ct.restAddress,
+	}
+}
+
 func (ct *CLITester) newTxRequest() *TxRequest {
 	return &TxRequest{
 		t:              ct.t,
@@ -248,7 +258,7 @@ func (ct *CLITester) initChain() {
 
 	// configure accounts
 	{
-		poaValidatorIdx := 0
+		accIdx, poaValidatorIdx := uint32(0), 0
 		for accName, accValue := range ct.Accounts {
 			// create key
 			{
@@ -263,6 +273,9 @@ func (ct *CLITester) initChain() {
 				accValue.Address = output.Address
 				accValue.PubKey = output.PubKey
 				accValue.Mnemonic = output.Mnemonic
+
+				_, err := ct.keyBase.CreateAccount(accName, accValue.Mnemonic, "", ct.AccountPassphrase, accIdx, 0)
+				require.NoError(ct.t, err, "account %q: keyBase.CreateAccount", accName)
 			}
 
 			// genesis account
@@ -303,6 +316,8 @@ func (ct *CLITester) initChain() {
 
 				cmd.CheckSuccessfulExecute(nil)
 			}
+
+			accIdx++
 		}
 	}
 
@@ -469,10 +484,11 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	restAddress := "localhost:" + restPort
 	restUrl = "http://" + restAddress
 
-	cmd := ct.newWbcliCmd().
-		AddArg("", "rest-server").
-		AddArg("laddr", "tcp://"+restAddress).
-		AddArg("node", ct.rpcAddress)
+	//cmd := ct.newWbcliCmd().
+	cmd := &CLICmd{t: ct.t, base: ct.wbcliBinary}
+	cmd.AddArg("", "rest-server")
+	cmd.AddArg("laddr", "tcp://"+restAddress)
+	cmd.AddArg("node", ct.rpcAddress)
 	cmd.Start(ct.t, printLogs)
 
 	// wait for the server to start up
@@ -492,7 +508,7 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 		ct.t.Fatalf("wait for the REST server to start up: failed")
 	}
 
-	ct.restServer = cmd
+	ct.restServer, ct.restAddress = cmd, restUrl
 
 	return
 }

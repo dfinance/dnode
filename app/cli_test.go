@@ -3,7 +3,6 @@
 package app
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -29,8 +28,6 @@ import (
 func Test_CurrencyCLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
-
-	fmt.Println("start")
 
 	ccSymbol, ccCurAmount, ccDecimals, ccRecipient := "testcc", sdk.NewInt(1000), int8(1), ct.Accounts["validator1"].Address
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
