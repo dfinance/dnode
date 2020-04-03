@@ -40,7 +40,7 @@ func Test_CurrencyCLI(t *testing.T) {
 	{
 		// submit & confirm call
 		ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		ct.WaitForNextBlocks(1)
 		ct.ConfirmCall(issueID)
 		// check currency issued
 		q, issue := ct.QueryCurrenciesIssue(issueID)
@@ -405,7 +405,7 @@ func Test_OracleCLI(t *testing.T) {
 	// check add oracle Tx
 	{
 		ct.TxOracleAddOracle(nomineeAddr, assetCode, assetOracle3).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
@@ -436,7 +436,7 @@ func Test_OracleCLI(t *testing.T) {
 	// check set oracle Tx
 	{
 		ct.TxOracleSetOracles(nomineeAddr, assetCode, assetOracle3, assetOracle2, assetOracle1).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
@@ -554,7 +554,7 @@ func Test_PoaCLI(t *testing.T) {
 		newEthAddress, issueID := ethAddresses[len(curValidators)], "newValidator"
 
 		ct.TxPoaAddValidator(senderAddr, newValidatorAcc.Address, newEthAddress, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		ct.WaitForNextBlocks(1)
 		ct.ConfirmCall(issueID)
 
 		// update account
@@ -602,7 +602,7 @@ func Test_PoaCLI(t *testing.T) {
 	{
 		issueID := "rmValidator"
 		ct.TxPoaRemoveValidator(senderAddr, newValidatorAcc.Address, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		ct.WaitForNextBlocks(1)
 		ct.ConfirmCall(issueID)
 
 		// update account
@@ -651,7 +651,7 @@ func Test_PoaCLI(t *testing.T) {
 
 		tx := ct.TxPoaReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
 		tx.CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		ct.WaitForNextBlocks(1)
 		ct.ConfirmCall(issueID)
 
 		// update accounts
@@ -774,9 +774,9 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	// create calls
 	ct.TxCurrenciesIssue(ccRecipient1, ccRecipient1, ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
-	ct.WaitForNextBlocks(2)
+	ct.WaitForNextBlocks(1)
 	ct.TxCurrenciesIssue(ccRecipient2, ccRecipient2, ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).CheckSucceeded()
-	ct.WaitForNextBlocks(2)
+	ct.WaitForNextBlocks(1)
 
 	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))
@@ -872,7 +872,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		// add vote for existing call from an other sender
 		callID, callUniqueID := uint64(1), callUniqueId2
 		ct.TxMultiSigConfirmCall(ccRecipient1, callID).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		ct.WaitForNextBlocks(1)
 
 		// check call approved (assuming we have 3 validators)
 		q, call := ct.QueryMultiSigCall(callID)
@@ -905,7 +905,7 @@ func Test_MultiSigCLI(t *testing.T) {
 	// check revoke confirm Tx
 	{
 		ct.TxMultiSigRevokeConfirm(ccRecipient1, 0).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		ct.WaitForNextBlocks(1)
 
 		// check call removed
 		q, _ := ct.QueryMultiSigCall(0)
@@ -974,7 +974,7 @@ main(recipient: address, amount: u128, denom: bytearray) {
 
 	// Execute .json script file
 	// Should panic as there is no local VM running
-	ct.TxVmExecuteScript(senderAddr, compiledPath, senderAddr, "100", "dfi").CheckSucceeded()
+	ct.TxVmExecuteScript(senderAddr, compiledPath, senderAddr, "100", "dfi").DisableBroadcastMode().CheckSucceeded()
 
 	// Check CONSENSUS FAILURE did occur
 	{

@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	dsServerUrl = "http://docker.for.mac.localhost:"
+	dsServerUrl = "http://host.docker.internal:"
 )
 
 const sendScript = `

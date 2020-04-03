@@ -21,7 +21,6 @@ type TxRequest struct {
 }
 
 func (r *TxRequest) SetCmd(module, fromAddress string, args ...string) {
-	//cmd.AddArg("broadcast-mode", "block")
 	r.cmd.AddArg("", "tx")
 	r.cmd.AddArg("", module)
 
@@ -32,17 +31,28 @@ func (r *TxRequest) SetCmd(module, fromAddress string, args ...string) {
 	if fromAddress != "" {
 		r.cmd.AddArg("from", fromAddress)
 	}
+	r.cmd.AddArg("broadcast-mode", "block")
 	r.cmd.AddArg("node", r.nodeRpcAddress)
 	r.cmd.AddArg("fees", "1"+config.MainDenom)
 	r.cmd.AddArg("", "--yes")
 }
 
-func (r *TxRequest) ChangeCmdArg(oldArg, newArg string) {
-	r.cmd.ChangeArg(oldArg, newArg)
+func (r *TxRequest) DisableBroadcastMode() *TxRequest {
+	r.cmd.RemoveArg("broadcast-mode")
+
+	return r
 }
 
-func (r *TxRequest) RemoveCmdArg(arg string) {
+func (r *TxRequest) ChangeCmdArg(oldArg, newArg string) *TxRequest {
+	r.cmd.ChangeArg(oldArg, newArg)
+
+	return r
+}
+
+func (r *TxRequest) RemoveCmdArg(arg string) *TxRequest {
 	r.cmd.RemoveArg(arg)
+
+	return r
 }
 
 func (r *TxRequest) Send() (retCode int, retStdout, retStderr []byte) {

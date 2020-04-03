@@ -52,8 +52,9 @@ func (c *CLICmd) ChangeArg(oldArg, newArg string) *CLICmd {
 }
 
 func (c *CLICmd) RemoveArg(arg string) *CLICmd {
+	argAlt := "--" + arg
 	for i := 0; i < len(c.args); i++ {
-		if c.args[i] == arg || ("--"+c.args[i]) == arg {
+		if strings.HasPrefix(c.args[i], arg) || strings.HasPrefix(c.args[i], argAlt) {
 			c.args = append(c.args[:i], c.args[i+1:]...)
 			break
 		}
