@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	FlagCompilerAddr    = "compiler"
 	DefaultCompilerAddr = "127.0.0.1:50053"
 )
 

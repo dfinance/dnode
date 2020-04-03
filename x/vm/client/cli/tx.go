@@ -37,7 +37,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	)
 
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(FlagCompilerAddr, vmClient.DefaultCompilerAddr, FlagCompilerUsage)
+		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, FlagCompilerUsage)
 		txCmd.AddCommand(cmd)
 	}
 
@@ -76,7 +76,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 		Short: "execute Move script",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			compilerAddr := viper.GetString(FlagCompilerAddr)
+			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))

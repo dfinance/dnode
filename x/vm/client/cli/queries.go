@@ -32,7 +32,7 @@ func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
 	)
 
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(FlagCompilerAddr, vmClient.DefaultCompilerAddr, FlagCompilerUsage)
+		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, FlagCompilerUsage)
 		cmd.Flags().String(FlagOutput, "", "--to-file ./compiled.mv")
 	}
 
@@ -162,7 +162,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 		Example: "compile-script script.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file script.mv --compiler 127.0.0.1:50053",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			compilerAddr := viper.GetString(FlagCompilerAddr)
+			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])
@@ -202,7 +202,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 		Example: "compile-module module.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6:Address --to-file module.mv --compiler 127.0.0.1:50053",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			compilerAddr := viper.GetString(FlagCompilerAddr)
+			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])

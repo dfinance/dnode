@@ -6,19 +6,18 @@ import (
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 type compileReq struct {
-	Code        string         `json:"code"`                                                                                     // Script code
-	Account     sdk.AccAddress `json:"address" swaggertype:"string" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`     // Sender address
-	CompilerUrl string         `json:"compiler_url" extensions:"x-nullable" default:"127.0.0.1:50053" example:"127.0.0.1:50053"` // VM compiler URL (optional)
+	Code    string `json:"code"`                                                            // Script code
+	Account string `json:"address" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"` // Code address
 }
 
 // Registering routes for REST API.
@@ -67,17 +66,14 @@ func commonCompileHandler(cliCtx context.CLIContext, compileType vm_grpc.Contrac
 			return
 		}
 
-		if req.CompilerUrl == "" {
-			req.CompilerUrl = vmClient.DefaultCompilerAddr
-		}
-
+		compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 		sourceFile := &vm_grpc.MvIrSourceFile{
 			Text:    req.Code,
-			Address: []byte(req.Account.String()),
+			Address: []byte(req.Account),
 			Type:    compileType,
 		}
 
-		byteCode, err := vmClient.Compile(req.CompilerUrl, sourceFile)
+		byteCode, err := vmClient.Compile(compilerAddr, sourceFile)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
