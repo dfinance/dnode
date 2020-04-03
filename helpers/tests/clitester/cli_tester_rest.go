@@ -12,6 +12,7 @@ import (
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	msTypes "github.com/dfinance/dnode/x/multisig/types"
 )
 
 func (ct *CLITester) newRestTxRequest(httpMethod, subPath string, accName string, msg sdk.Msg, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
@@ -91,6 +92,33 @@ func (ct *CLITester) RestQueryCurrenciesDestroys(page int, limit *int) (*RestReq
 	}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, reqValues, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryMultiSigCalls() (*RestRequest, *msTypes.CallsResp) {
+	reqSubPath := fmt.Sprintf("%s/calls", msTypes.ModuleName)
+	respMsg := &msTypes.CallsResp{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryMultiSigCall(callID uint64) (*RestRequest, *msTypes.CallResp) {
+	reqSubPath := fmt.Sprintf("%s/call/%d", msTypes.ModuleName, callID)
+	respMsg := &msTypes.CallResp{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryMultiSigUnique(uniqueID string) (*RestRequest, *msTypes.CallResp) {
+	reqSubPath := fmt.Sprintf("%s/unique/%s", msTypes.ModuleName, uniqueID)
+	respMsg := &msTypes.CallResp{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }

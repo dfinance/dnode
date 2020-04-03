@@ -13,10 +13,8 @@ import (
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
-	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
-	poaMsgs "github.com/dfinance/dnode/x/poa/msgs"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
@@ -164,113 +162,93 @@ func Test_CurrencyRest(t *testing.T) {
 }
 
 func Test_MSRest(t *testing.T) {
-	r := NewRestTester(t, false)
-	defer r.Close()
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
 
-	senderAddr, senderPrivKey := r.Accounts[0].Address, r.PrivKeys[0]
-	calls := msTypes.CallsResp{}
+	senderAddr := ct.Accounts["validator1"].Address
 	msgIDs := make([]string, 0)
 
 	// submit remove validator call (1st one)
 	{
-		senderAcc := GetAccountCheckTx(r.App, senderAddr)
-		targetValidator := r.Accounts[len(r.Accounts)-1]
-
-		removeMsg := poaMsgs.NewMsgRemoveValidator(targetValidator.Address, senderAcc.GetAddress())
-		msgID := fmt.Sprintf("removeValidator:%s", targetValidator.Address)
+		targetValidator := ct.Accounts["validator3"].Address
+		msgID := fmt.Sprintf("removeValidator:%s", targetValidator)
 		msgIDs = append(msgIDs, msgID)
 
-		submitMsg := msMsgs.NewMsgSubmitCall(removeMsg, msgID, senderAcc.GetAddress())
-		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverTx(t, r.App, tx)
-
-		CheckRunQuery(t, r.App, nil, queryMsGetCallsPath, &calls)
-		require.Equal(t, 1, len(calls))
-		require.Equal(t, 1, len(calls[0].Votes))
+		ct.TxPoaRemoveValidator(senderAddr, targetValidator, msgID).CheckSucceeded()
 	}
 
 	// submit remove validator call (2nd one)
 	{
-		senderAcc := GetAccountCheckTx(r.App, senderAddr)
-		targetValidator := r.Accounts[len(r.Accounts)-2]
-
-		removeMsg := poaMsgs.NewMsgRemoveValidator(targetValidator.Address, senderAcc.GetAddress())
+		targetValidator := ct.Accounts["validator2"].Address
 		msgID := fmt.Sprintf("removeValidator:%s", targetValidator)
 		msgIDs = append(msgIDs, msgID)
 
-		submitMsg := msMsgs.NewMsgSubmitCall(removeMsg, msgID, senderAcc.GetAddress())
-		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverTx(t, r.App, tx)
-
-		CheckRunQuery(t, r.App, nil, queryMsGetCallsPath, &calls)
-		require.Equal(t, 2, len(calls))
-		require.Equal(t, 1, len(calls[1].Votes))
+		ct.TxPoaRemoveValidator(senderAddr, targetValidator, msgID).CheckSucceeded()
 	}
 
 	// check getCalls endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/calls", msTypes.ModuleName)
-		respMsg := msTypes.CallsResp{}
+		req, respMsg := ct.RestQueryMultiSigCalls()
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
-		require.Len(t, respMsg, 2)
-		for i, call := range respMsg {
+		require.Len(t, *respMsg, 2)
+		for i, call := range *respMsg {
 			require.Len(t, call.Votes, 1)
-			require.Equal(t, senderAddr, call.Votes[0])
+			require.Equal(t, senderAddr, call.Votes[0].String())
 			require.Equal(t, uint64(i), call.Call.MsgID)
-			require.Equal(t, senderAddr, call.Call.Creator)
+			require.Equal(t, senderAddr, call.Call.Creator.String())
 			require.Equal(t, msgIDs[i], call.Call.UniqueID)
 		}
 	}
 
 	// check getCall endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/call/%d", msTypes.ModuleName, 0)
-		respMsg := msTypes.CallResp{}
+		req, respMsg := ct.RestQueryMultiSigCall(0)
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
 		require.Len(t, respMsg.Votes, 1)
-		require.Equal(t, senderAddr, respMsg.Votes[0])
+		require.Equal(t, senderAddr, respMsg.Votes[0].String())
 		require.Equal(t, uint64(0), respMsg.Call.MsgID)
-		require.Equal(t, senderAddr, respMsg.Call.Creator)
+		require.Equal(t, senderAddr, respMsg.Call.Creator.String())
 		require.Equal(t, msgIDs[0], respMsg.Call.UniqueID)
-	}
 
-	// check getCall endpoint (invalid "id")
-	{
-		reqSubPath := fmt.Sprintf("%s/call/-1", msTypes.ModuleName)
+		// check invalid inputs
+		{
+			// invalid "id"
+			{
+				req, _ := ct.RestQueryMultiSigCall(0)
+				req.ModifySubPath("0", "-1")
+				req.CheckFailed(http.StatusInternalServerError, nil)
+			}
 
-		respCode, _ := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, nil, nil)
-	}
-
-	// check getCall endpoint (non-existing "id")
-	{
-		reqSubPath := fmt.Sprintf("%s/call/2", msTypes.ModuleName)
-
-		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, msTypes.ErrWrongCallId(0), respBytes)
+			// non-existing "id"
+			{
+				req, _ := ct.RestQueryMultiSigCall(2)
+				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrWrongCallId(0))
+			}
+		}
 	}
 
 	// check getCallByUnique endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/unique/%s", msTypes.ModuleName, msgIDs[0])
-		respMsg := msTypes.CallResp{}
+		req, respMsg := ct.RestQueryMultiSigUnique(msgIDs[0])
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
 		require.Len(t, respMsg.Votes, 1)
-		require.Equal(t, senderAddr, respMsg.Votes[0])
+		require.Equal(t, senderAddr, respMsg.Votes[0].String())
 		require.Equal(t, uint64(0), respMsg.Call.MsgID)
-		require.Equal(t, senderAddr, respMsg.Call.Creator)
+		require.Equal(t, senderAddr, respMsg.Call.Creator.String())
 		require.Equal(t, msgIDs[0], respMsg.Call.UniqueID)
-	}
 
-	// check getCallByUnique endpoint (non-existing "unique")
-	{
-		reqSubPath := fmt.Sprintf("%s/unique/non-existing-UNIQUE", msTypes.ModuleName)
-
-		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, msTypes.ErrNotFoundUniqueID(""), respBytes)
+		// check invalid inputs
+		{
+			// non-existing "unique"
+			{
+				req, _ := ct.RestQueryMultiSigUnique("non-existing-UNIQUE")
+				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrNotFoundUniqueID(""))
+			}
+		}
 	}
 }
 
