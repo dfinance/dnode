@@ -5,13 +5,13 @@ package app
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"testing"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
@@ -21,146 +21,145 @@ import (
 )
 
 func Test_CurrencyRest(t *testing.T) {
-	r := NewRestTester(t, false)
-	defer r.Close()
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
 
-	recipientIdx, recipientAddr, recipientPrivKey := uint(0), r.Accounts[0].Address, r.PrivKeys[0]
-	curAmount, curDecimals, denom := sdk.NewInt(100), int8(0), currency1Symbol
+	recipientAddr := ct.Accounts["validator1"].Address
+	curAmount, curDecimals, denom, issueId := sdk.NewInt(100), int8(0), "tstdnm", "issue1"
 	destroyAmounts := make([]sdk.Int, 0)
 
 	// issue currency
-	msgId, issueId := "1", "issue1"
-	issueCurrency(t, r.App, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, r.Accounts, r.PrivKeys, true)
-	checkIssueExists(t, r.App, issueId, denom, curAmount, recipientAddr)
-	checkCurrencyExists(t, r.App, denom, curAmount, curDecimals)
+	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, denom, curAmount, curDecimals, issueId).CheckSucceeded()
+	ct.WaitForNextBlocks(1)
+	ct.ConfirmCall(issueId)
 
 	// check getIssue endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/issue/%s", ccTypes.ModuleName, issueId)
-		respMsg := &ccTypes.Issue{}
+		req, respMsg := ct.RestQueryCurrenciesIssue(issueId)
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, respMsg, true)
 		require.Equal(t, denom, respMsg.Symbol)
 		require.True(t, respMsg.Amount.Equal(curAmount))
-		require.Equal(t, recipientAddr, respMsg.Recipient)
-	}
+		require.Equal(t, recipientAddr, respMsg.Recipient.String())
 
-	// check getIssue endpoint (invalid issueID)
-	{
-		reqSubPath := fmt.Sprintf("%s/issue/non_existing_ID", ccTypes.ModuleName)
-
-		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, ccTypes.ErrWrongIssueID(""), respBytes)
+		// check incorrect inputs
+		{
+			// non-existing issueID
+			{
+				req, _ := ct.RestQueryCurrenciesIssue("non_existing_ID")
+				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongIssueID(""))
+			}
+		}
 	}
 
 	// check getCurrency endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/currency/%s", ccTypes.ModuleName, denom)
-		respMsg := &ccTypes.Currency{}
+		req, respMsg := ct.RestQueryCurrenciesCurrency(denom)
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, respMsg, true)
 		require.Equal(t, denom, respMsg.Symbol)
 		require.True(t, respMsg.Supply.Equal(curAmount))
 		require.Equal(t, curDecimals, respMsg.Decimals)
-	}
 
-	// check getCurrency endpoint (invalid symbol)
-	{
-		reqSubPath := fmt.Sprintf("%s/currency/non_existing_symbol", ccTypes.ModuleName)
-
-		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, ccTypes.ErrNotExistCurrency(""), respBytes)
+		// check incorrect inputs
+		{
+			// non-existing symbol
+			{
+				req, _ := ct.RestQueryCurrenciesCurrency("non_existing_symbol")
+				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrNotExistCurrency(""))
+			}
+		}
 	}
 
 	// check getDestroys endpoint (no destroys)
 	{
-		reqSubPath := fmt.Sprintf("%s/destroys/1", ccTypes.ModuleName)
-		respMsg := ccTypes.Destroys{}
+		req, respMsg := ct.RestQueryCurrenciesDestroys(1, nil)
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
-		require.Len(t, respMsg, 0)
+		require.Len(t, *respMsg, 0)
 	}
 
 	// destroy currency
 	newAmount := sdk.NewInt(50)
 	curAmount = curAmount.Sub(newAmount)
-	destroyCurrency(t, r.App, r.ChainId, denom, newAmount, recipientAddr, recipientPrivKey, true)
-	checkCurrencyExists(t, r.App, denom, curAmount, 0)
+	ct.TxCurrenciesDestroy(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
+	ct.WaitForNextBlocks(1)
 	destroyAmounts = append(destroyAmounts, newAmount)
 
 	// check getDestroy endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/destroy/%d", ccTypes.ModuleName, 0)
-		respMsg := &ccTypes.Destroy{}
+		req, respMsg := ct.RestQueryCurrenciesDestroy(sdk.NewInt(0))
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, respMsg, true)
 		require.Equal(t, int64(0), respMsg.ID.Int64())
-		require.Equal(t, r.ChainId, respMsg.ChainID)
+		require.Equal(t, ct.ChainID, respMsg.ChainID)
 		require.Equal(t, denom, respMsg.Symbol)
 		require.True(t, respMsg.Amount.Equal(newAmount))
-		require.Equal(t, recipientAddr, respMsg.Spender)
-		require.Equal(t, recipientAddr.String(), respMsg.Recipient)
-	}
+		require.Equal(t, recipientAddr, respMsg.Spender.String())
+		require.Equal(t, recipientAddr, respMsg.Recipient)
 
-	// check getDestroy endpoint (invalid destroyID)
-	{
-		reqSubPath := fmt.Sprintf("%s/destroy/abc", ccTypes.ModuleName)
+		// check incorrect inputs
+		{
+			// invalid destroyID
+			{
+				req, _ := ct.RestQueryCurrenciesDestroy(sdk.NewInt(0))
+				req.ModifySubPath("0", "abc")
+				req.CheckFailed(http.StatusInternalServerError, nil)
+			}
 
-		respCode, _ := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, nil, nil)
-	}
+			// non-existing destroyID
+			{
+				req, respMsg := ct.RestQueryCurrenciesDestroy(sdk.NewInt(1))
+				req.CheckSucceeded()
 
-	// check getDestroy endpoint (non-existing destroyID)
-	{
-		reqSubPath := fmt.Sprintf("%s/destroy/1", ccTypes.ModuleName)
-		respMsg := &ccTypes.Destroy{}
-
-		r.Request("GET", reqSubPath, nil, nil, respMsg, true)
-		require.Empty(t, respMsg.ChainID)
-		require.Empty(t, respMsg.Symbol)
-		require.True(t, respMsg.Amount.IsZero())
+				require.Empty(t, respMsg.ChainID)
+				require.Empty(t, respMsg.Symbol)
+				require.True(t, respMsg.Amount.IsZero())
+			}
+		}
 	}
 
 	// destroy currency once more
 	newAmount = sdk.NewInt(25)
 	curAmount = curAmount.Sub(newAmount)
-	destroyCurrency(t, r.App, r.ChainId, denom, newAmount, recipientAddr, recipientPrivKey, true)
-	checkCurrencyExists(t, r.App, denom, curAmount, 0)
+	ct.TxCurrenciesDestroy(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
+	ct.WaitForNextBlocks(1)
 	destroyAmounts = append(destroyAmounts, newAmount)
 
 	// check getDestroys endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/destroys/1", ccTypes.ModuleName)
-		respMsg := ccTypes.Destroys{}
+		req, respMsg := ct.RestQueryCurrenciesDestroys(1, nil)
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
-		require.Len(t, respMsg, len(destroyAmounts))
+		require.Len(t, *respMsg, len(destroyAmounts))
 		for i, amount := range destroyAmounts {
-			destroy := respMsg[i]
+			destroy := (*respMsg)[i]
 			require.Equal(t, int64(i), destroy.ID.Int64())
-			require.Equal(t, r.ChainId, destroy.ChainID)
+			require.Equal(t, ct.ChainID, destroy.ChainID)
 			require.Equal(t, denom, destroy.Symbol)
 			require.True(t, destroy.Amount.Equal(amount))
-			require.Equal(t, recipientAddr, destroy.Spender)
-			require.Equal(t, recipientAddr.String(), destroy.Recipient)
+			require.Equal(t, recipientAddr, destroy.Spender.String())
+			require.Equal(t, recipientAddr, destroy.Recipient)
 		}
-	}
 
-	// check getDestroys endpoint (invalid query values)
-	{
-		// invalid "page" value
-		reqSubPath := fmt.Sprintf("%s/destroys/abc", ccTypes.ModuleName)
+		// check incorrect inputs
+		{
+			// invalid "page" value
+			{
+				req, _ := ct.RestQueryCurrenciesDestroys(1, nil)
+				req.ModifySubPath("1", "abc")
+				req.CheckFailed(http.StatusInternalServerError, nil)
+			}
 
-		respCode, _ := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, nil, nil)
-
-		// invalid "limit" value
-		reqSubPath = fmt.Sprintf("%s/destroys/1", ccTypes.ModuleName)
-		reqValues := url.Values{}
-		reqValues.Set("limit", "abc")
-
-		respCode, _ = r.Request("GET", reqSubPath, reqValues, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, nil, nil)
+			// invalid "limit" value
+			{
+				limit := 1
+				req, _ := ct.RestQueryCurrenciesDestroys(1, &limit)
+				req.ModifyUrlValues("limit", "abc")
+				req.CheckFailed(http.StatusInternalServerError, nil)
+			}
+		}
 	}
 }
 
