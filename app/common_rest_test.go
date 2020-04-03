@@ -112,8 +112,9 @@ type RestTester struct {
 	DefaultAssetCode string
 	Accounts         []*auth.BaseAccount
 	PrivKeys         []crypto.PrivKey
-	t                *testing.T
 	App              *DnServiceApp
+	t                *testing.T
+	restUrl          string
 	node             *tmNode.Node
 	restServer       *StoppableRestServer
 }
@@ -208,8 +209,33 @@ func NewRestTester(t *testing.T, printLogs bool) *RestTester {
 	require.NoError(r.t, r.node.Start(), "node.Start")
 
 	// start REST server
+	_, srvPort, err := server.FreeTCPAddr()
+	require.NoError(t, err, "FreeTCPAddr for REST server")
+	r.restUrl = "http://localhost:" + srvPort
+
 	r.restServer = NewStoppableRestServer(r.App.cdc, rpcClient.NewLocal(r.node), printLogs)
-	require.NoError(r.t, r.restServer.Start("tcp://localhost:1317", 10, 5, 5), "server start")
+	require.NoError(r.t, r.restServer.Start("tcp://localhost:"+srvPort, 10, 5, 5), "server start")
+
+	// wait for server to start
+	const timeoutDur = 2 * time.Second
+	timeoutCh := time.NewTimer(timeoutDur).C
+	for {
+		resp, err := http.Get(r.restUrl + "/node_info")
+		if err == nil && resp.StatusCode == http.StatusOK {
+			break
+		}
+
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+
+		select {
+		case <-timeoutCh:
+			r.t.Fatalf("REST server didn't start in %v", timeoutDur)
+		default:
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
 
 	// wait for node to start
 	r.WaitForBlockHeight(2)
@@ -232,7 +258,7 @@ func (r *RestTester) Close() {
 
 // Get current block height
 func (r *RestTester) CurrentBlockHeight() int64 {
-	res, err := http.Get("http://localhost:1317/blocks/latest")
+	res, err := http.Get(r.restUrl + "/blocks/latest")
 	require.NoError(r.t, err, "blocks/latest")
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -277,7 +303,7 @@ func (r *RestTester) WaitForNextBlock() int64 {
 // Send REST request with relative subPath, URL variables and optional request/response (pointer) objects
 //   {doCheck} flag checks if request was successful
 func (r *RestTester) Request(httpMethod, urlSubPath string, urlValues url.Values, requestValue interface{}, responseValue interface{}, doCheck bool) (retCode int, retErrBody []byte) {
-	u, _ := url.Parse("http://localhost:1317")
+	u, _ := url.Parse(r.restUrl)
 	u.Path = path.Join(u.Path, urlSubPath)
 	if urlValues != nil {
 		u.RawQuery = urlValues.Encode()
