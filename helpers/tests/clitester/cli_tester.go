@@ -125,6 +125,18 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		},
 		IsPOAValidator: true,
 	}
+	ct.Accounts["validator4"] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+		IsPOAValidator: true,
+	}
+	ct.Accounts["validator5"] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+		IsPOAValidator: true,
+	}
 	ct.Accounts["oracle1"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
@@ -303,9 +315,9 @@ func (ct *CLITester) initChain() {
 					AddArg("", "add-genesis-poa-validator").
 					AddArg("", accValue.Address).
 					AddArg("", accValue.EthAddress)
-				poaValidatorIdx++
-
 				cmd.CheckSuccessfulExecute(nil)
+
+				poaValidatorIdx++
 			}
 
 			// Oracle nominee

@@ -765,14 +765,21 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	ccSymbol1, ccSymbol2 := "cc1", "cc2"
 	ccCurAmount, ccDecimals := sdk.NewInt(1000), int8(1)
-	ccRecipient1, ccRecipient2 := ct.Accounts["validator1"].Address, ct.Accounts["validator2"].Address
 	callUniqueId1, callUniqueId2 := "issue1", "issue2"
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 
+	// get all validators
+	ccRecipients := make([]string, 0)
+	for _, acc := range ct.Accounts {
+		if acc.IsPOAValidator {
+			ccRecipients = append(ccRecipients, acc.Address)
+		}
+	}
+
 	// create calls
-	ct.TxCurrenciesIssue(ccRecipient1, ccRecipient1, ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
 	ct.WaitForNextBlocks(1)
-	ct.TxCurrenciesIssue(ccRecipient2, ccRecipient2, ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).CheckSucceeded()
 	ct.WaitForNextBlocks(1)
 
 	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
@@ -800,8 +807,8 @@ func Test_MultiSigCLI(t *testing.T) {
 		q.CheckSucceeded()
 
 		require.Len(t, *calls, 2)
-		checkCall((*calls)[0], false, 0, callUniqueId1, ccRecipient1, ccRecipient1)
-		checkCall((*calls)[1], false, 1, callUniqueId2, ccRecipient2, ccRecipient2)
+		checkCall((*calls)[0], false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
+		checkCall((*calls)[1], false, 1, callUniqueId2, ccRecipients[1], ccRecipients[1])
 	}
 
 	// check call query
@@ -809,7 +816,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		q, call := ct.QueryMultiSigCall(0)
 		q.CheckSucceeded()
 
-		checkCall(*call, false, 0, callUniqueId1, ccRecipient1, ccRecipient1)
+		checkCall(*call, false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
 
 		// check incorrect inputs
 		{
@@ -838,7 +845,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		q, call := ct.QueryMultiSigUnique(callUniqueId1)
 		q.CheckSucceeded()
 
-		checkCall(*call, false, 0, callUniqueId1, ccRecipient1, ccRecipient1)
+		checkCall(*call, false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
 
 		// check incorrect inputs
 		{
@@ -866,22 +873,26 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	// check confirm call Tx
 	{
-		// add vote for existing call from an other sender
-		callID, callUniqueID := uint64(1), callUniqueId2
-		ct.TxMultiSigConfirmCall(ccRecipient1, callID).CheckSucceeded()
+		// add votes for existing call from an other senders
+		callID, callUniqueID := uint64(0), callUniqueId1
+		votes := []string{ccRecipients[0]}
+		for i := 1; i < len(ccRecipients) / 2 + 1; i++ {
+			ct.TxMultiSigConfirmCall(ccRecipients[i], callID).CheckSucceeded()
+			votes = append(votes, ccRecipients[i])
+		}
 		ct.WaitForNextBlocks(1)
 
-		// check call approved (assuming we have 3 validators)
+		// check call approved
 		q, call := ct.QueryMultiSigCall(callID)
 		q.CheckSucceeded()
 
-		checkCall(*call, true, callID, callUniqueID, ccRecipient2, ccRecipient2, ccRecipient1)
+		checkCall(*call, true, callID, callUniqueID, ccRecipients[0], votes...)
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxMultiSigConfirmCall(ccRecipient1, callID)
+				tx := ct.TxMultiSigConfirmCall(ccRecipients[0], callID)
 				tx.RemoveCmdArg(strconv.FormatUint(callID, 10))
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
@@ -892,7 +903,7 @@ func Test_MultiSigCLI(t *testing.T) {
 			}
 			// invalid callID
 			{
-				tx := ct.TxMultiSigConfirmCall(ccRecipient1, callID)
+				tx := ct.TxMultiSigConfirmCall(ccRecipients[0], callID)
 				tx.ChangeCmdArg(strconv.FormatUint(callID, 10), "not_int")
 				tx.CheckFailedWithErrorSubstring("callId")
 			}
@@ -901,18 +912,18 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	// check revoke confirm Tx
 	{
-		ct.TxMultiSigRevokeConfirm(ccRecipient1, 0).CheckSucceeded()
+		ct.TxMultiSigRevokeConfirm(ccRecipients[1], 1).CheckSucceeded()
 		ct.WaitForNextBlocks(1)
 
 		// check call removed
-		q, _ := ct.QueryMultiSigCall(0)
+		q, _ := ct.QueryMultiSigCall(1)
 		q.CheckFailedWithErrorSubstring("not found")
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxMultiSigRevokeConfirm(ccRecipient1, 0)
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], 0)
 				tx.RemoveCmdArg(strconv.FormatUint(0, 10))
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
@@ -923,7 +934,7 @@ func Test_MultiSigCLI(t *testing.T) {
 			}
 			// invalid callID
 			{
-				tx := ct.TxMultiSigRevokeConfirm(ccRecipient1, 0)
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], 0)
 				tx.ChangeCmdArg(strconv.FormatUint(0, 10), "not_int")
 				tx.CheckFailedWithErrorSubstring("callId")
 			}
