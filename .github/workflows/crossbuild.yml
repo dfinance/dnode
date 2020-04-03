@@ -33,10 +33,10 @@ jobs:
     - name: Make and run tests
       run: |
         export PATH="$GOPATH/bin:$PATH"
+        docker login -u ${OWN_REGISTRY_USR} -p ${OWN_REGISTRY_PWD} ${OWN_REGISTRY}
+        docker image pull ${OWN_REGISTRY}/dfinance/dvm:${DVM_TAG}
         make
         export REGISTRY=${OWN_REGISTRY}
-        docker login -u ${OWN_REGISTRY_USR} --password-stdin ${OWN_REGISTRY} <<< ${OWN_REGISTRY_PWD}
-        docker image pull ${OWN_REGISTRY}/dfinance/dvm:${DVM_TAG}
         go test ./... --tags=cli,rest,integ
         docker logout
 
