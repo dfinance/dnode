@@ -229,7 +229,7 @@ func Test_OracleCLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	nomineeAddr := ct.Accounts["oracle1"].Address
+	nomineeAddr := ct.Accounts["nominee"].Address
 	assetCode := "eth_dfi"
 	assetOracle1, assetOracle2, assetOracle3 := ct.Accounts["oracle1"].Address, ct.Accounts["oracle2"].Address, ct.Accounts["oracle3"].Address
 
@@ -240,11 +240,13 @@ func Test_OracleCLI(t *testing.T) {
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
-		require.Len(t, *assets, 1)
-		require.Equal(t, assetCode, (*assets)[0].AssetCode)
-		require.Len(t, (*assets)[0].Oracles, 1)
-		require.Equal(t, assetOracle1, (*assets)[0].Oracles[0].Address.String())
-		require.True(t, (*assets)[0].Active)
+		require.Len(t, *assets, 2)
+		asset := (*assets)[1]
+		require.Equal(t, ct.DefAssetCode, (*assets)[0].AssetCode)
+		require.Equal(t, assetCode, asset.AssetCode)
+		require.Len(t, asset.Oracles, 1)
+		require.Equal(t, assetOracle1, asset.Oracles[0].Address.String())
+		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
@@ -284,12 +286,13 @@ func Test_OracleCLI(t *testing.T) {
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
-		require.Len(t, *assets, 1)
-		require.Equal(t, assetCode, (*assets)[0].AssetCode)
-		require.Len(t, (*assets)[0].Oracles, 2)
-		require.Equal(t, assetOracle1, (*assets)[0].Oracles[0].Address.String())
-		require.Equal(t, assetOracle2, (*assets)[0].Oracles[1].Address.String())
-		require.True(t, (*assets)[0].Active)
+		require.Len(t, *assets, 2)
+		asset := (*assets)[1]
+		require.Equal(t, assetCode, asset.AssetCode)
+		require.Len(t, asset.Oracles, 2)
+		require.Equal(t, assetOracle1, asset.Oracles[0].Address.String())
+		require.Equal(t, assetOracle2, asset.Oracles[1].Address.String())
+		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
@@ -375,7 +378,7 @@ func Test_OracleCLI(t *testing.T) {
 			// invalid number of args
 			{
 				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
-				tx.RemoveCmdArg(nomineeAddr)
+				tx.RemoveCmdArg(assetOracle1)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid price
@@ -406,13 +409,14 @@ func Test_OracleCLI(t *testing.T) {
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
-		require.Len(t, *assets, 1)
-		require.Equal(t, assetCode, (*assets)[0].AssetCode)
-		require.Len(t, (*assets)[0].Oracles, 3)
-		require.Equal(t, assetOracle1, (*assets)[0].Oracles[0].Address.String())
-		require.Equal(t, assetOracle2, (*assets)[0].Oracles[1].Address.String())
-		require.Equal(t, assetOracle3, (*assets)[0].Oracles[2].Address.String())
-		require.True(t, (*assets)[0].Active)
+		require.Len(t, *assets, 2)
+		asset := (*assets)[1]
+		require.Equal(t, assetCode, asset.AssetCode)
+		require.Len(t, asset.Oracles, 3)
+		require.Equal(t, assetOracle1, asset.Oracles[0].Address.String())
+		require.Equal(t, assetOracle2, asset.Oracles[1].Address.String())
+		require.Equal(t, assetOracle3, asset.Oracles[2].Address.String())
+		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
@@ -437,13 +441,14 @@ func Test_OracleCLI(t *testing.T) {
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
-		require.Len(t, *assets, 1)
-		require.Equal(t, assetCode, (*assets)[0].AssetCode)
-		require.Len(t, (*assets)[0].Oracles, 3)
-		require.Equal(t, assetOracle3, (*assets)[0].Oracles[0].Address.String())
-		require.Equal(t, assetOracle2, (*assets)[0].Oracles[1].Address.String())
-		require.Equal(t, assetOracle1, (*assets)[0].Oracles[2].Address.String())
-		require.True(t, (*assets)[0].Active)
+		require.Len(t, *assets, 2)
+		asset := (*assets)[1]
+		require.Equal(t, assetCode, asset.AssetCode)
+		require.Len(t, asset.Oracles, 3)
+		require.Equal(t, assetOracle3, asset.Oracles[0].Address.String())
+		require.Equal(t, assetOracle2, asset.Oracles[1].Address.String())
+		require.Equal(t, assetOracle1, asset.Oracles[2].Address.String())
+		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
