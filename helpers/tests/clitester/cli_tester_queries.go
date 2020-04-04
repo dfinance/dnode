@@ -144,6 +144,16 @@ func (ct *CLITester) QueryAccount(address string) (*QueryRequest, *auth.BaseAcco
 	resObj := &auth.BaseAccount{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("account", address)
+	q.cmd.AddArg("node", ct.rpcAddress)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryAuthAccount(address string) (*QueryRequest, *auth.BaseAccount) {
+	resObj := &auth.BaseAccount{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("auth", "account", address)
+	q.cmd.AddArg("node", ct.rpcAddress)
 
 	return q, resObj
 }

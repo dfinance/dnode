@@ -101,7 +101,7 @@ func (r *RestRequest) CheckSucceeded() {
 
 	// parse Tx response or Query response
 	if r.responseValue != nil {
-		if _, ok := r.requestValue.(*sdk.TxResponse); !ok {
+		if _, ok := r.responseValue.(*sdk.TxResponse); !ok {
 			respMsg := sdkRest.ResponseWithHeight{}
 			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, &respMsg), "%s: unmarshal ResponseWithHeight: %s", r.String(), string(respBody))
 			if respMsg.Result != nil {
@@ -109,6 +109,9 @@ func (r *RestRequest) CheckSucceeded() {
 			}
 		} else {
 			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, r.responseValue), "%s: unmarshal txResponseValue: %s", r.String(), string(respBody))
+
+			txResp := r.responseValue.(*sdk.TxResponse)
+			require.Equal(r.t, uint32(0), txResp.Code, "%s: tx code %d: %s", r.String(), txResp.Code, txResp.RawLog)
 		}
 	}
 }
