@@ -28,7 +28,6 @@ func Test_CurrencyRest(t *testing.T) {
 
 	// issue currency
 	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, denom, curAmount, curDecimals, issueId).CheckSucceeded()
-	ct.WaitForNextBlocks(1)
 	ct.ConfirmCall(issueId)
 
 	// check getIssue endpoint
@@ -81,7 +80,6 @@ func Test_CurrencyRest(t *testing.T) {
 	newAmount := sdk.NewInt(50)
 	curAmount = curAmount.Sub(newAmount)
 	ct.TxCurrenciesDestroy(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
-	ct.WaitForNextBlocks(1)
 	destroyAmounts = append(destroyAmounts, newAmount)
 
 	// check getDestroy endpoint
@@ -121,7 +119,6 @@ func Test_CurrencyRest(t *testing.T) {
 	newAmount = sdk.NewInt(25)
 	curAmount = curAmount.Sub(newAmount)
 	ct.TxCurrenciesDestroy(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
-	ct.WaitForNextBlocks(1)
 	destroyAmounts = append(destroyAmounts, newAmount)
 
 	// check getDestroys endpoint
