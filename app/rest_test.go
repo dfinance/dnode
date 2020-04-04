@@ -251,7 +251,7 @@ func Test_MSRest(t *testing.T) {
 	}
 }
 
-func Test_OracleRestNew(t *testing.T) {
+func Test_OracleRest(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
