@@ -37,7 +37,6 @@ func Test_CurrencyCLI(t *testing.T) {
 	{
 		// submit & confirm call
 		ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 		ct.ConfirmCall(issueID)
 		// check currency issued
 		q, issue := ct.QueryCurrenciesIssue(issueID)
@@ -89,7 +88,6 @@ func Test_CurrencyCLI(t *testing.T) {
 		// reduce amount
 		destroyAmount := sdk.NewInt(100)
 		ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, destroyAmount).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 		ccCurAmount = ccCurAmount.Sub(destroyAmount)
 		// check destroy
 		q, destroy := ct.QueryCurrenciesDestroy(sdk.ZeroInt())
@@ -236,7 +234,6 @@ func Test_OracleCLI(t *testing.T) {
 	// check add asset Tx
 	{
 		ct.TxOracleAddAsset(nomineeAddr, assetCode, assetOracle1).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
@@ -282,7 +279,6 @@ func Test_OracleCLI(t *testing.T) {
 	// check set asset Tx
 	{
 		ct.TxOracleSetAsset(nomineeAddr, assetCode, assetOracle1, assetOracle2).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
@@ -405,7 +401,6 @@ func Test_OracleCLI(t *testing.T) {
 	// check add oracle Tx
 	{
 		ct.TxOracleAddOracle(nomineeAddr, assetCode, assetOracle3).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
@@ -437,7 +432,6 @@ func Test_OracleCLI(t *testing.T) {
 	// check set oracle Tx
 	{
 		ct.TxOracleSetOracles(nomineeAddr, assetCode, assetOracle3, assetOracle2, assetOracle1).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
@@ -556,7 +550,6 @@ func Test_PoaCLI(t *testing.T) {
 		newEthAddress, issueID := ethAddresses[len(curValidators)], "newValidator"
 
 		ct.TxPoaAddValidator(senderAddr, newValidatorAcc.Address, newEthAddress, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 		ct.ConfirmCall(issueID)
 
 		// update account
@@ -604,7 +597,6 @@ func Test_PoaCLI(t *testing.T) {
 	{
 		issueID := "rmValidator"
 		ct.TxPoaRemoveValidator(senderAddr, newValidatorAcc.Address, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 		ct.ConfirmCall(issueID)
 
 		// update account
@@ -653,7 +645,6 @@ func Test_PoaCLI(t *testing.T) {
 
 		tx := ct.TxPoaReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
 		tx.CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 		ct.ConfirmCall(issueID)
 
 		// update accounts
@@ -783,9 +774,7 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	// create calls
 	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
-	ct.WaitForNextBlocks(1)
 	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).CheckSucceeded()
-	ct.WaitForNextBlocks(1)
 
 	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))
@@ -885,7 +874,6 @@ func Test_MultiSigCLI(t *testing.T) {
 			ct.TxMultiSigConfirmCall(ccRecipients[i], callID).CheckSucceeded()
 			votes = append(votes, ccRecipients[i])
 		}
-		ct.WaitForNextBlocks(1)
 
 		// check call approved
 		q, call := ct.QueryMultiSigCall(callID)
@@ -918,7 +906,6 @@ func Test_MultiSigCLI(t *testing.T) {
 	// check revoke confirm Tx
 	{
 		ct.TxMultiSigRevokeConfirm(ccRecipients[1], 1).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 
 		// check call removed
 		q, _ := ct.QueryMultiSigCall(1)
