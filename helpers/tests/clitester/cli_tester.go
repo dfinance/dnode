@@ -34,6 +34,7 @@ type CLITester struct {
 	Accounts          map[string]*CLIAccount
 	Cdc               *codec.Codec
 	VmListenPort      string
+	DefAssetCode      string
 	t                 *testing.T
 	keyBase           sdkKeys.Keybase
 	wbdBinary         string
@@ -58,6 +59,7 @@ type CLIAccount struct {
 	Coins           map[string]sdk.Coin
 	IsPOAValidator  bool
 	IsOracleNominee bool
+	IsOracle        bool
 }
 
 func New(t *testing.T, printDaemonLogs bool) *CLITester {
@@ -82,6 +84,7 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		ChainID:           "test-chain",
 		MonikerID:         "test-moniker",
 		AccountPassphrase: "passphrase",
+		DefAssetCode:      "tst",
 		rpcAddress:        srvAddr,
 		rpcPort:           srvPort,
 		p2pAddress:        p2pAddr,
@@ -137,23 +140,29 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		},
 		IsPOAValidator: true,
 	}
-	ct.Accounts["oracle1"] = &CLIAccount{
+	ct.Accounts["nominee"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
 		IsOracleNominee: true,
 	}
+	ct.Accounts["oracle1"] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+		IsOracle: true,
+	}
 	ct.Accounts["oracle2"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
-		IsOracleNominee: false,
+		IsOracle: false,
 	}
 	ct.Accounts["oracle3"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
-		IsOracleNominee: false,
+		IsOracle: false,
 	}
 	ct.Accounts["plain"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
@@ -270,7 +279,7 @@ func (ct *CLITester) initChain() {
 
 	// configure accounts
 	{
-		accIdx, poaValidatorIdx := uint32(0), 0
+		poaValidatorIdx := 0
 		for accName, accValue := range ct.Accounts {
 			// create key
 			{
@@ -286,7 +295,7 @@ func (ct *CLITester) initChain() {
 				accValue.PubKey = output.PubKey
 				accValue.Mnemonic = output.Mnemonic
 
-				_, err := ct.keyBase.CreateAccount(accName, accValue.Mnemonic, "", ct.AccountPassphrase, accIdx, 0)
+				_, err := ct.keyBase.CreateAccount(accName, accValue.Mnemonic, "", ct.AccountPassphrase, 0, 0)
 				require.NoError(ct.t, err, "account %q: keyBase.CreateAccount", accName)
 			}
 
@@ -328,8 +337,6 @@ func (ct *CLITester) initChain() {
 
 				cmd.CheckSuccessfulExecute(nil)
 			}
-
-			accIdx++
 		}
 	}
 
@@ -354,7 +361,21 @@ func (ct *CLITester) initChain() {
 			AddArg("", defWriteSetsPath).
 			AddArg("home", ct.RootDir)
 
-		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
+		cmd.CheckSuccessfulExecute(nil)
+	}
+
+	// add Oracle assets
+	{
+		oracles := make([]string, 0)
+		oracles = append(oracles, ct.Accounts["oracle1"].Address)
+		oracles = append(oracles, ct.Accounts["oracle2"].Address)
+
+		cmd := ct.newWbdCmd().
+			AddArg("", "add-oracle-asset-gen").
+			AddArg("", ct.DefAssetCode).
+			AddArg("", strings.Join(oracles, ","))
+
+		cmd.CheckSuccessfulExecute(nil)
 	}
 
 	// change default genesis params

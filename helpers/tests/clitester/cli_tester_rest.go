@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -13,16 +14,11 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
-func (ct *CLITester) newRestTxRequest(httpMethod, subPath string, accName string, msg sdk.Msg, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
-	accInfo := ct.Accounts[accName]
-	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
-
-	accQuery, accData := ct.QueryAccount(accInfo.Address)
-	accQuery.CheckSucceeded()
-
+func (ct *CLITester) newRestTxRequest(accName string, acc *auth.BaseAccount, msg sdk.Msg, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
 	// build broadcast Tx request
 	txFee := auth.StdFee{
 		Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
@@ -30,12 +26,12 @@ func (ct *CLITester) newRestTxRequest(httpMethod, subPath string, accName string
 	}
 	txMemo := "restTxMemo"
 
-	signBytes := auth.StdSignBytes(ct.ChainID, accData.GetAccountNumber(), accData.GetSequence(), txFee, []sdk.Msg{msg}, txMemo)
-	signature, _, err := ct.keyBase.Sign(accName, ct.AccountPassphrase, signBytes)
+	signBytes := auth.StdSignBytes(ct.ChainID, acc.GetAccountNumber(), acc.GetSequence(), txFee, []sdk.Msg{msg}, txMemo)
+	signature, pubKey, err := ct.keyBase.Sign(accName, ct.AccountPassphrase, signBytes)
 	require.NoError(ct.t, err, "signing Tx")
 
 	stdSig := auth.StdSignature{
-		PubKey:    accData.GetPubKey(),
+		PubKey:    pubKey,
 		Signature: signature,
 	}
 	tx := auth.NewStdTx([]sdk.Msg{msg}, txFee, []auth.StdSignature{stdSig}, txMemo)
@@ -131,4 +127,43 @@ func (ct *CLITester) RestQueryPoaValidators() (*RestRequest, *poaTypes.Validator
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOracleAssets() (*RestRequest, *oracle.Assets) {
+	reqSubPath := fmt.Sprintf("%s/assets", oracle.ModuleName)
+	respMsg := &oracle.Assets{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOracleRawPrices(assetCode string, blockHeight int64) (*RestRequest, *[]oracle.PostedPrice) {
+	reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, assetCode, blockHeight)
+	respMsg := &[]oracle.PostedPrice{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOraclePrice(assetCode string) (*RestRequest, *oracle.CurrentPrice) {
+	reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, assetCode)
+	respMsg := &oracle.CurrentPrice{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.Int, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
+	accInfo := ct.Accounts[accName]
+	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
+
+	accQuery, acc := ct.QueryAccount(accInfo.Address)
+	accQuery.CheckSucceeded()
+
+	msg := oracle.NewMsgPostPrice(acc.Address, assetCode, price, receivedAt)
+
+	return ct.newRestTxRequest(accName, acc, msg, false)
 }

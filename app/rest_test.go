@@ -251,43 +251,52 @@ func Test_MSRest(t *testing.T) {
 	}
 }
 
-func Test_OracleRest(t *testing.T) {
-	r := NewRestTester(t, false)
-	defer r.Close()
+func Test_OracleRestNew(t *testing.T) {
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	oracleName1, oracleName2 := "oracle1", "oracle2"
+	oracleAddr1, oracleAddr2 := ct.Accounts[oracleName1].Address, ct.Accounts[oracleName2].Address
 
 	// check getAssets endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/assets", oracle.ModuleName)
-		respMsg := oracle.Assets{}
+		req, respMsg := ct.RestQueryOracleAssets()
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, &respMsg, true)
-		require.Len(t, respMsg, 1)
-		require.Equal(t, r.DefaultAssetCode, respMsg[0].AssetCode)
-		require.Len(t, respMsg[0].Oracles, 2)
-		require.True(t, r.Accounts[0].Address.Equals(respMsg[0].Oracles[0].Address))
-		require.True(t, r.Accounts[1].Address.Equals(respMsg[0].Oracles[1].Address))
-		require.True(t, respMsg[0].Active)
+		require.Len(t, *respMsg, 1)
+		asset := (*respMsg)[0]
+		require.Equal(t, ct.DefAssetCode, asset.AssetCode)
+		require.Len(t, asset.Oracles, 2)
+		require.Equal(t, oracleAddr1, asset.Oracles[0].Address.String())
+		require.Equal(t, oracleAddr2, asset.Oracles[1].Address.String())
+		require.True(t, asset.Active)
 	}
 
 	now := time.Now()
 	postPrices := []struct {
 		AssetCode     string
 		SenderIdx     uint
-		OracleAddress sdk.AccAddress
+		OracleName    string
+		OracleAddress string
 		Price         sdk.Int
 		ReceivedAt    time.Time
+		BlockHeight   int64
 	}{
 		{
-			AssetCode:     r.DefaultAssetCode,
+			AssetCode:     ct.DefAssetCode,
 			SenderIdx:     0,
-			OracleAddress: r.Accounts[0].Address,
+			OracleName:    oracleName1,
+			OracleAddress: oracleAddr1,
 			Price:         sdk.NewInt(100),
 			ReceivedAt:    now,
+			BlockHeight:   0,
 		},
 		{
-			AssetCode:     r.DefaultAssetCode,
+			AssetCode:     ct.DefAssetCode,
 			SenderIdx:     1,
-			OracleAddress: r.Accounts[1].Address,
+			OracleName:    oracleName2,
+			OracleAddress: oracleAddr2,
 			Price:         sdk.NewInt(200),
 			ReceivedAt:    now.Add(5 * time.Second),
 		},
@@ -295,22 +304,23 @@ func Test_OracleRest(t *testing.T) {
 
 	// check postPrice and rawPrices endpoints
 	{
-		prevBlockHeight := r.WaitForNextBlock()
+		// TX broadcast mode is "block" as using "sync" makes this test very unpredictable:
+		//   it's not easy to find out when those TXs are Delivered
+		prevBlockHeight := ct.WaitForNextBlocks(1)
 		for _, postPrice := range postPrices {
-			reqMsg := oracle.NewMsgPostPrice(postPrice.OracleAddress, postPrice.AssetCode, postPrice.Price, postPrice.ReceivedAt)
-
-			r.TxSyncRequest(postPrice.SenderIdx, reqMsg, true)
+			req, _ := ct.RestTxOraclePostPrice(postPrice.OracleName, postPrice.AssetCode, postPrice.Price, postPrice.ReceivedAt)
+			req.CheckSucceeded()
 		}
-		curBlockHeight := r.WaitForNextBlock()
+		curBlockHeight := ct.WaitForNextBlocks(1)
 
 		// rawPrices could be stored in [prevBlockHeight : curBlockHeight], so we need to find them
 		rawPrices := make([]oracle.PostedPrice, 0)
 		for blockHeight := prevBlockHeight; blockHeight <= curBlockHeight; blockHeight++ {
-			reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, r.DefaultAssetCode, blockHeight)
+			req, respMsg := ct.RestQueryOracleRawPrices(ct.DefAssetCode, blockHeight)
+			req.CheckSucceeded()
 
-			r.Request("GET", reqSubPath, nil, nil, &rawPrices, true)
-			if len(rawPrices) > 0 {
-				return
+			if len(*respMsg) > 0 {
+				rawPrices = append(rawPrices, *respMsg...)
 			}
 		}
 
@@ -318,51 +328,44 @@ func Test_OracleRest(t *testing.T) {
 		for i, rawPrice := range rawPrices {
 			postPrice := postPrices[i]
 			require.Equal(t, rawPrice.AssetCode, postPrice.AssetCode)
-			require.True(t, rawPrice.OracleAddress.Equals(postPrice.OracleAddress))
+			require.Equal(t, postPrice.OracleAddress, rawPrice.OracleAddress.String())
 			require.True(t, rawPrice.Price.Equal(postPrice.Price))
 			require.True(t, rawPrice.ReceivedAt.Equal(postPrice.ReceivedAt))
 		}
 	}
 
-	// check rawPrices endpoint (invalid arguments)
+	// check rawPrices endpoint (invalid inputs)
 	{
-		// blockHeight
+		// blockHeight without rawPrices
 		{
-			reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, r.DefaultAssetCode, 1)
-			rawPrices := make([]oracle.PostedPrice, 0)
+			req, respMsg := ct.RestQueryOracleRawPrices(ct.DefAssetCode, 1)
+			req.CheckSucceeded()
 
-			r.Request("GET", reqSubPath, nil, nil, &rawPrices, true)
-			require.Empty(t, rawPrices)
+			require.Empty(t, *respMsg)
 		}
-		// assetCode
-		{
-			reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, "non_existing_asset", 1)
 
-			rcvCode, rcvBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-			r.CheckError(http.StatusNotFound, rcvCode, sdk.ErrUnknownRequest(""), rcvBytes)
+		// non-existing assetCode
+		{
+			req, _ := ct.RestQueryOracleRawPrices("non_existing_asset", 1)
+			req.CheckFailed(http.StatusNotFound, sdk.ErrUnknownRequest(""))
 		}
 	}
 
 	// check price endpoint
 	{
-		reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, r.DefaultAssetCode)
-		avgPrice := postPrices[0].Price.Add(postPrices[1].Price).Quo(sdk.NewInt(2))
-		price := oracle.CurrentPrice{}
+		req, respMsg := ct.RestQueryOraclePrice(ct.DefAssetCode)
+		req.CheckSucceeded()
 
-		r.Request("GET", reqSubPath, nil, nil, &price, true)
-		require.True(t, price.Price.Equal(avgPrice))
-		require.False(t, price.ReceivedAt.Equal(postPrices[0].ReceivedAt))
-		require.False(t, price.ReceivedAt.Equal(postPrices[1].ReceivedAt))
-	}
+		require.True(t, respMsg.Price.Equal(postPrices[1].Price))
+		require.True(t, respMsg.ReceivedAt.Equal(postPrices[1].ReceivedAt))
 
-	// check price endpoint (invalid arguments)
-	{
-		// assetCode
+		// check invalid inputs
 		{
-			reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, "non_existing_asset")
-
-			rcvCode, rcvBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-			r.CheckError(http.StatusNotFound, rcvCode, sdk.ErrUnknownRequest(""), rcvBytes)
+			// non-existing assetCode
+			{
+				req, _ := ct.RestQueryOraclePrice("non_existing_asset")
+				req.CheckFailed(http.StatusNotFound, sdk.ErrUnknownRequest(""))
+			}
 		}
 	}
 }
