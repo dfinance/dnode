@@ -1,4 +1,4 @@
-FROM golang:alpine as build
+FROM golang:1.14.1-alpine as build
 WORKDIR /opt/app
 RUN apk update && \
     apk upgrade && \
@@ -19,3 +19,5 @@ COPY --from=build \
             /go/bin/dncli \
             /go/bin/oracle-app \
             /usr/local/bin/
+
+STOPSIGNAL SIGTERM
