@@ -7,6 +7,8 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"google.golang.org/grpc"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
 const (
@@ -21,7 +23,7 @@ type MVFile struct {
 
 // Create connection to vm.
 func CreateConnection(addr string) (*grpc.ClientConn, error) {
-	return grpc.Dial(addr, grpc.WithInsecure())
+	return helpers.GetGRpcClientConnection(addr, 0)
 }
 
 // Extract arguments from bytecode with compiler.

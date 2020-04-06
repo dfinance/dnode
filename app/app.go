@@ -28,9 +28,9 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 
 	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/multisig"
@@ -113,17 +113,12 @@ type DnServiceApp struct {
 func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
-	var kpParams = keepalive.ClientParameters{
-		Time:                time.Second, // send pings every 1 second if there is no activity
-		Timeout:             time.Second, // wait 1 second for ping ack before considering the connection dead
-		PermitWithoutStream: true,        // send pings even without active streams
-	}
-
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithKeepaliveParams(kpParams))
+	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1 * time.Second)
 	if err != nil {
 		panic(err)
 	}
+
 	app.Logger().Info(fmt.Sprintf("successful connected to vm, connection status is %d", app.vmConn.GetState()))
 }
 
@@ -137,10 +132,11 @@ func (app *DnServiceApp) InitializeVMDataServer(addr string) {
 	var err error
 
 	app.Logger().Info(fmt.Sprintf("up data server listen server %s", addr))
-	app.vmListener, err = net.Listen("tcp", addr)
+	app.vmListener, err = helpers.GetGRpcNetListener(addr)
 	if err != nil {
 		panic(err)
 	}
+
 	app.Logger().Info("data server is up")
 }
 
