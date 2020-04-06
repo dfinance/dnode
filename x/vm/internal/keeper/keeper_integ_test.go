@@ -17,7 +17,7 @@ import (
 
 	dnodeConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/oracle"
-	"github.com/dfinance/dnode/x/vm/client/cli"
+	compilerClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	dsServerUrl = "http://docker.for.mac.localhost:"
+	dsServerUrl = "http://host.docker.internal:"
 )
 
 const sendScript = `
@@ -157,7 +157,7 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	err = waitReachable(*vmAddress, 5*time.Second)
 	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
-	bytecode, err := cli.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+	bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    sendScript,
 		Address: []byte(addr1.String()),
 		Type:    vm_grpc.ContractType_Script,
@@ -241,7 +241,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 	err = waitReachable(*vmAddress, 5*time.Second)
 	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
-	bytecodeModule, err := cli.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+	bytecodeModule, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    mathModule,
 		Address: []byte(addr1.String()),
 		Type:    vm_grpc.ContractType_Module,
@@ -261,7 +261,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 
 	writeCtx()
 
-	bytecodeScript, err := cli.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    strings.Replace(mathScript, "{{sender}}", addr1.String(), 1),
 		Address: []byte(addr1.String()),
 		Type:    vm_grpc.ContractType_Script,
@@ -365,7 +365,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	err = waitReachable(*vmAddress, 5*time.Second)
 	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
-	bytecodeScript, err := cli.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    oraclePriceScript,
 		Address: []byte(addr1.String()),
 		Type:    vm_grpc.ContractType_Script,

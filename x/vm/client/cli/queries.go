@@ -15,6 +15,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -31,7 +32,7 @@ func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
 	)
 
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(FlagCompilerAddr, FlagCompilerDefault, FlagCompilerUsage)
+		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, FlagCompilerUsage)
 		cmd.Flags().String(FlagOutput, "", "--to-file ./compiled.mv")
 	}
 
@@ -63,7 +64,7 @@ func saveOutput(bytecode []byte, cdc *codec.Codec) error {
 	code := hex.EncodeToString(bytecode)
 	output := viper.GetString(FlagOutput)
 
-	mvFile := MVFile{Code: code}
+	mvFile := vmClient.MVFile{Code: code}
 	mvBytes, err := cdc.MarshalJSONIndent(mvFile, "", "    ")
 	if err != nil {
 		return err
@@ -146,7 +147,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 		Example: "compile-script script.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file script.mvir.json",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			compilerAddr := viper.GetString(FlagCompilerAddr)
+			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])
@@ -162,7 +163,7 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// compile mvir file
-			bytecode, err := Compile(compilerAddr, sourceFile)
+			bytecode, err := vmClient.Compile(compilerAddr, sourceFile)
 			if err != nil {
 				return err
 			}
@@ -186,7 +187,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 		Example: "compile-module module.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file module.mvir.json",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			compilerAddr := viper.GetString(FlagCompilerAddr)
+			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
 			// read provided file
 			mvirContent, err := readMvirFile(args[0])
@@ -202,7 +203,7 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// compile mvir file
-			bytecode, err := Compile(compilerAddr, sourceFile)
+			bytecode, err := vmClient.Compile(compilerAddr, sourceFile)
 			if err != nil {
 				return err
 			}

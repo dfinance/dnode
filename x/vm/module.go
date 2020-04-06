@@ -15,6 +15,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/x/vm/client/cli"
+	"github.com/dfinance/dnode/x/vm/client/rest"
 	types "github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -69,7 +70,9 @@ func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
 }
 
 // Register REST routes.
-func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {}
+func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
+	rest.RegisterRoutes(ctx, r)
+}
 
 // Get transaction commands for CLI.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {

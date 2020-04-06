@@ -1,20 +1,17 @@
-package cli
+package client
 
 import (
 	connContext "context"
 	"fmt"
 	"strings"
 
-	"google.golang.org/grpc"
-
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"google.golang.org/grpc"
 )
 
 const (
-	FlagOutput          = "to-file"
 	FlagCompilerAddr    = "compiler"
-	FlagCompilerDefault = "127.0.0.1:50053"
-	FlagCompilerUsage   = "--compiler 127.0.0.1:50053"
+	DefaultCompilerAddr = "127.0.0.1:50053"
 )
 
 // MVFile struct contains code from file in hex.
@@ -53,7 +50,7 @@ func ExtractArguments(addr string, bytecode []byte) ([]vm_grpc.VMTypeTag, error)
 func Compile(addr string, sourceFile *vm_grpc.MvIrSourceFile) ([]byte, error) {
 	conn, err := CreateConnection(addr)
 	if err != nil {
-		return nil, fmt.Errorf("compilation failed because of error during connection to VM: %v", err)
+		return nil, fmt.Errorf("compilation failed because of error during connection to VM: %w", err)
 	}
 	defer conn.Close()
 
@@ -62,7 +59,7 @@ func Compile(addr string, sourceFile *vm_grpc.MvIrSourceFile) ([]byte, error) {
 
 	resp, err := client.Compile(connCtx, sourceFile)
 	if err != nil {
-		return nil, fmt.Errorf("compilation failed because of error during compilation and connection to VM: %v", err)
+		return nil, fmt.Errorf("compilation failed because of error during compilation and connection to VM: %w", err)
 	}
 
 	// if contains errors
