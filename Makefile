@@ -45,7 +45,7 @@ swagger-ui-deps:
 
 	@echo "-> Modify SDK's swagger-ui"
 	mv $(cosmos_dir)/client/lcd/swagger-ui/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/sdk-swagger.yaml
-	sed -i.bak -e 's/url:.*/urls: [{url: \"\.\/sdk-swagger\.yaml\", name: \"Cosmos SDK API\"},{url: \".\/dn-swagger.yaml\", name: \"Dfinance API\"}],/' $(cosmos_dir)/client/lcd/swagger-ui/index.html
+	sed -i.bak -e 's/url:.*/urls: [{url: \".\/dn-swagger.yaml\", name: \"Dfinance API\"},{url: \"\.\/sdk-swagger\.yaml\", name: \"Cosmos SDK API\"}],/' $(cosmos_dir)/client/lcd/swagger-ui/index.html
 
 swagger-ui-build:
 	@echo "--> Building Swagger API specificaion, merging it to Cosmos SDK"
