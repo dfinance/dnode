@@ -19,3 +19,5 @@ COPY --from=build \
             /go/bin/dncli \
             /go/bin/oracle-app \
             /usr/local/bin/
+
+STOPSIGNAL SIGKILL
