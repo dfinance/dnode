@@ -446,7 +446,7 @@ The rest parameters are timeouts, don't recommend to change it.
 
 During standard launch of tests:
 
-    GO111MODULE=on go test ./...
+    GO111MODULE=on go test ./... --tags=unit
 
 VM will use default configuration for integration tests (with connection to VM),
 and with unit tests (using Mock servers), standard configuration looks so:

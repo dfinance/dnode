@@ -242,18 +242,6 @@ func (ct *CLITester) newQueryRequest(resultObj interface{}) *QueryRequest {
 }
 
 func (ct *CLITester) initChain() {
-	ethAddresses := []string{
-		"0x82A978B3f5962A5b0957d9ee9eEf472EE55B42F1",
-		"0x7d577a597B2742b498Cb5Cf0C26cDCD726d39E6e",
-		"0xDCEceAF3fc5C0a63d195d69b1A90011B7B19650D",
-		"0x598443F1880Ef585B21f1d7585Bd0577402861E5",
-		"0x13cBB8D99C6C4e0f2728C7d72606e78A29C4E224",
-		"0x77dB2BEBBA79Db42a978F896968f4afCE746ea1F",
-		"0x24143873e0E0815fdCBcfFDbe09C979CbF9Ad013",
-		"0x10A1c1CB95c92EC31D3f22C66Eef1d9f3F258c6B",
-		"0xe0FC04FA2d34a66B779fd5CEe748268032a146c0",
-	}
-
 	// init chain
 	cmd := ct.newWbdCmd().AddArg("", "init").AddArg("", ct.MonikerID).AddArg("chain-id", ct.ChainID)
 	cmd.CheckSuccessfulExecute(nil)
@@ -317,8 +305,8 @@ func (ct *CLITester) initChain() {
 
 			// POA validator
 			if accValue.IsPOAValidator {
-				require.True(ct.t, poaValidatorIdx < len(ethAddresses), "add more predefined ethAddresses")
-				accValue.EthAddress = ethAddresses[poaValidatorIdx]
+				require.True(ct.t, poaValidatorIdx < len(EthAddresses), "add more predefined ethAddresses")
+				accValue.EthAddress = EthAddresses[poaValidatorIdx]
 
 				cmd := ct.newWbdCmd().
 					AddArg("", "add-genesis-poa-validator").

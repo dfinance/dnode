@@ -1,3 +1,5 @@
+// +build unit
+
 // Cover empty fee and wrong denom fee with test.
 // The rest of antehandler tests in x/auth/ante_test.go tests.
 package core
