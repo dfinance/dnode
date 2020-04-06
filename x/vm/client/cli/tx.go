@@ -42,7 +42,6 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	txCmd.AddCommand(client.PostCommands(DeployContract(cdc))...)
-	txCmd.AddCommand(compileCommands...)
 
 	return txCmd
 }
@@ -72,9 +71,10 @@ func GetMVFromFile(filePath string) (vmClient.MVFile, error) {
 // Execute script contract.
 func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "execute-script [mvFile] [arg1:type1,arg2:type2,...]",
-		Short: "execute Move script",
-		Args:  cobra.MinimumNArgs(1),
+		Use:     "execute-script [compileMvir] [arg1,arg2,arg3,...]",
+		Short:   "execute Move script",
+		Example: "execute-script ./script.mvir.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\"",
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
@@ -112,7 +112,15 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			for i, arg := range parsedArgs {
 				switch extractedArgs[i] {
 				case vm_grpc.VMTypeTag_ByteArray:
-					scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("b\"%s\"", hex.EncodeToString([]byte(arg))), extractedArgs[i])
+					// trying to parse hex
+					_, err := hex.DecodeString(arg)
+					if err != nil {
+						// if not success, just convert string to hex.
+						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("b\"%s\"", hex.EncodeToString([]byte(arg))), extractedArgs[i])
+					} else {
+						// otherwise just use hex.
+						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("b\"%s\"", arg), extractedArgs[i])
+					}
 
 				case vm_grpc.VMTypeTag_Struct:
 					return fmt.Errorf("currently doesnt's support struct type as argument")
@@ -197,9 +205,10 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 // Deploy contract cli TX command.
 func DeployContract(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "deploy-module [mvFile]",
-		Short: "deploy Move contract",
-		Args:  cobra.ExactArgs(1),
+		Use:     "deploy-module [mvFile]",
+		Short:   "deploy Move contract",
+		Example: "deploy-module ./my_module.mvir.json",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
