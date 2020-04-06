@@ -38,22 +38,25 @@ swagger-ui-deps:
 
 	@echo "-> Cosmos-SDK $(cosmos_version) checkout"
 	git -C $(swagger_dir) clone --branch $(cosmos_version) https://github.com/cosmos/cosmos-sdk.git
-	cp $(cosmos_dir)/client/lcd/swagger-ui/swagger.yaml ./cmd/dncli/docs/swagger-ui/sdk-swagger.yaml
 
 	@echo "-> Fetching Golang libraries: swag, statik"
 	go get -u github.com/swaggo/swag/cmd/swag
 	go get github.com/rakyll/statik
+
+	@echo "-> Modify SDK's swagger-ui"
+	mv $(cosmos_dir)/client/lcd/swagger-ui/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/sdk-swagger.yaml
+	sed -i.bak -e 's/url:.*/urls: [{url: \".\/dn-swagger.yaml\", name: \"Dfinance API\"},{url: \"\.\/sdk-swagger\.yaml\", name: \"Cosmos SDK API\"}],/' $(cosmos_dir)/client/lcd/swagger-ui/index.html
 
 swagger-ui-build:
 	@echo "--> Building Swagger API specificaion, merging it to Cosmos SDK"
 
 	@echo "-> Build swagger.yaml (that takes time)"
 	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
-	cp $(swagger_dir)/swagger.yaml ./cmd/dncli/docs/swagger-ui/dn-swagger.yaml
+	cp $(swagger_dir)/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/dn-swagger.yaml
 
 	@echo "-> Build statik FS"
 	rm -rf ./cmd/dncli/docs/statik
-	statik -src=./cmd/dncli/docs/swagger-ui -dest=./cmd/dncli/docs
+	statik -src=$(cosmos_dir)/client/lcd/swagger-ui -dest=./cmd/dncli/docs
 
 ## binaries builds (xgo required: https://github.com/karalabe/xgo)
 binaries: go.sum
