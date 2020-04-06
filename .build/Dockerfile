@@ -20,4 +20,4 @@ COPY --from=build \
             /go/bin/oracle-app \
             /usr/local/bin/
 
-STOPSIGNAL SIGKILL
+STOPSIGNAL SIGTERM
