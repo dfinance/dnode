@@ -22,9 +22,10 @@ import (
 // File contains write set operations for standard libraries.
 func GenesisWSFromFile(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "read-genesis-write-set [writeSetJsonFile]",
-		Short: "Read write set from json file and place into genesis state, if write set already exists - will be rewritten",
-		Args:  cobra.ExactArgs(1),
+		Use:     "read-genesis-write-set [writeSetJsonFile]",
+		Example: "read-genesis-write-set ./write_set.json",
+		Short:   "Read write set from json file and place into genesis state, if write set already exists - will be rewritten",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config
 			config.SetRoot(viper.GetString(cli.HomeFlag))
