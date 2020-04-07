@@ -931,10 +931,10 @@ func Test_MultiSigCLI(t *testing.T) {
 }
 
 func Test_RestServer(t *testing.T) {
-	ct := cliTester.New(t, false)
+	ct := cliTester.New(t, true)
 	defer ct.Close()
 
-	restUrl := ct.StartRestServer(false)
+	restUrl := ct.StartRestServer(true)
 
 	// check server is running
 	{
