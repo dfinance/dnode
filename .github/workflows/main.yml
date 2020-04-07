@@ -38,26 +38,40 @@ jobs:
       with:
         path: go/src/github.com/${{ github.repository }}
 
+    - name: Get dependencies
+      run: |
+        cd go/src/github.com/${{ github.repository }}
+        go mod download
+        if [ -f Gopkg.toml ]; then
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+        fi
+
     - name: Make binaries for integration tests
       run: |
+        cd go/src/github.com/${{ github.repository }}
         make
 
     - name: Run UNIT tests
       run: |
+        cd go/src/github.com/${{ github.repository }}
         go test ./... --tags=unit
 
     - name: Run CLI tests
       run: |
+        cd go/src/github.com/${{ github.repository }}
         go test ./... --tags=cli
 
     - name: Run REST tests
       run: |
+        cd go/src/github.com/${{ github.repository }}
         go test ./... --tags=rest
 
     - name: Run INTEG tests
       run: |
         docker login -u ${OWN_REGISTRY_USR} --password-stdin ${REGISTRY} <<< ${OWN_REGISTRY_PWD}
         docker image pull ${REGISTRY}/dfinance/dvm:${DVM_TAG}
+        cd go/src/github.com/${{ github.repository }}
         go test ./... --tags=integ
         docker logout
       env:
@@ -67,7 +81,9 @@ jobs:
         OWN_REGISTRY_PWD: ${{ secrets.OWN_REGISTRY_PWD }}
 
     - name: Make binaries crossbuild
-      run: make binaries
+      run: |
+        cd go/src/github.com/${{ github.repository }}
+        make binaries
 
     - name: GitHub Release
       uses: softprops/action-gh-release@v1
@@ -78,7 +94,6 @@ jobs:
           builds/dncli-*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 
   docker-build:
     name: Docker Build
