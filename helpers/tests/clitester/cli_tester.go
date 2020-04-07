@@ -403,7 +403,7 @@ func (ct *CLITester) initChain() {
 }
 
 func (ct *CLITester) startDemon(waitForStart, printLogs bool) {
-	const startRetries = 100
+	const startTimeout = 30 * time.Second
 
 	require.Nil(ct.t, ct.daemon)
 
@@ -415,21 +415,19 @@ func (ct *CLITester) startDemon(waitForStart, printLogs bool) {
 
 	// wait for the node to start up
 	if waitForStart {
-		i := 0
-		for ; i < startRetries; i++ {
-			time.Sleep(50 * time.Millisecond)
+		timeoutCh := time.NewTimer(startTimeout).C
+		for {
 			blockHeight, err := ct.GetCurrentBlockHeight()
-			if err != nil {
-				continue
-			}
-			if blockHeight < 2 {
-				continue
+			if err == nil && blockHeight > 1 {
+				break
 			}
 
-			break
-		}
-		if i == startRetries {
-			ct.t.Fatalf("wait for the node to start up: failed")
+			select {
+			case <-timeoutCh:
+				ct.t.Fatalf("wait for the node to start up (%v): failed", startTimeout)
+			default:
+				time.Sleep(50 * time.Millisecond)
+			}
 		}
 	}
 
@@ -496,7 +494,7 @@ func (ct *CLITester) DaemonLogsContain(subStr string) bool {
 }
 
 func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
-	const startRetries = 100
+	const startTimeout = 30 * time.Second
 
 	require.Nil(ct.t, ct.restServer)
 
@@ -513,8 +511,8 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	cmd.Start(ct.t, printLogs)
 
 	// wait for the server to start up
-	i := 0
-	for ; i < startRetries; i++ {
+	timeoutCh := time.NewTimer(startTimeout).C
+	for {
 		resp, err := http.Get(restUrl + "/node_info")
 		if err == nil && resp.StatusCode == http.StatusOK {
 			break
@@ -523,10 +521,13 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 		if resp != nil && resp.Body != nil {
 			resp.Body.Close()
 		}
-		time.Sleep(50 * time.Millisecond)
-	}
-	if i == startRetries {
-		ct.t.Fatalf("wait for the REST server to start up: failed")
+
+		select {
+		case <-timeoutCh:
+			ct.t.Fatalf("wait for the REST server to start (%v): failed", startTimeout)
+		default:
+			time.Sleep(50 * time.Millisecond)
+		}
 	}
 
 	ct.restServer, ct.restAddress = cmd, restUrl
