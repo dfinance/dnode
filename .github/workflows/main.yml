@@ -32,6 +32,12 @@ jobs:
       with:
         path: src/github.com/${{ github.repository }}
 
+    - name: Set GOPATH
+      run: |
+        echo "##[set-env name=GOPATH;]$(dirname $GITHUB_WORKSPACE)"
+        echo "##[add-path]$(dirname $GITHUB_WORKSPACE)/bin"
+      shell: bash
+
     - name: Get dependencies
       run: |
         go get -v -t -d ./...
@@ -43,8 +49,6 @@ jobs:
     - name: Make binaries for integration tests
       run: |
         make
-      env:
-        GOPATH: /tmp/go
 
     - name: Run UNIT tests
       run: |
@@ -52,27 +56,19 @@ jobs:
 
     - name: Run CLI tests
       run: |
-        export PATH="$GOPATH/bin:$PATH"
         go test ./... --tags=cli
-      env:
-        GOPATH: /tmp/go
 
     - name: Run REST tests
       run: |
-        export PATH="$GOPATH/bin:$PATH"
         go test ./... --tags=rest
-      env:
-        GOPATH: /tmp/go
 
     - name: Run INTEG tests
       run: |
-        export PATH="$GOPATH/bin:$PATH"
         docker login -u ${OWN_REGISTRY_USR} --password-stdin ${REGISTRY} <<< ${OWN_REGISTRY_PWD}
         docker image pull ${REGISTRY}/dfinance/dvm:${DVM_TAG}
         go test ./... --tags=integ
         docker logout
       env:
-        GOPATH: /tmp/go
         DVM_TAG: ${{ secrets.DVM_TAG }}
         REGISTRY: ${{ secrets.OWN_REGISTRY }}
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
