@@ -38,13 +38,36 @@ jobs:
             dep ensure
         fi
 
-    - name: Make and run tests
+    - name: Make binaries for integration tests
+      run: |
+        make
+      env:
+        GOPATH: /tmp/go
+
+    - name: Run UNIT tests
+      run: |
+        go test ./... --tags=unit
+
+    - name: Run CLI tests
+      run: |
+        export PATH="$GOPATH/bin:$PATH"
+        go test ./... --tags=cli
+      env:
+        GOPATH: /tmp/go
+
+    - name: Run REST tests
+      run: |
+        export PATH="$GOPATH/bin:$PATH"
+        go test ./... --tags=rest
+      env:
+        GOPATH: /tmp/go
+
+    - name: Run INTEG tests
       run: |
         export PATH="$GOPATH/bin:$PATH"
         docker login -u ${OWN_REGISTRY_USR} --password-stdin ${REGISTRY} <<< ${OWN_REGISTRY_PWD}
         docker image pull ${REGISTRY}/dfinance/dvm:${DVM_TAG}
-        make
-        go test ./... --tags=cli,rest,integ
+        go test ./... --tags=integ
         docker logout
       env:
         GOPATH: /tmp/go
