@@ -508,6 +508,7 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	cmd.AddArg("", "rest-server")
 	cmd.AddArg("laddr", "tcp://"+restAddress)
 	cmd.AddArg("node", ct.rpcAddress)
+	cmd.AddArg("trust-node", "true")
 	cmd.Start(ct.t, printLogs)
 
 	// wait for the server to start up
