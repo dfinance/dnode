@@ -3,6 +3,7 @@ package tests
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 )
 
-type DockerContainerOption func(*DockerContainer)
+type DockerContainerOption func(*DockerContainer) error
 
 type DockerContainer struct {
 	dClient    *docker.Client
@@ -18,7 +19,7 @@ type DockerContainer struct {
 	dOptions   docker.CreateContainerOptions
 }
 
-func NewDockerContainer(options ...DockerContainerOption) *DockerContainer {
+func NewDockerContainer(options ...DockerContainerOption) (*DockerContainer, error) {
 	c := DockerContainer{}
 
 	c.dOptions = docker.CreateContainerOptions{
@@ -27,26 +28,30 @@ func NewDockerContainer(options ...DockerContainerOption) *DockerContainer {
 	}
 
 	for _, options := range options {
-		options(&c)
+		if err := options(&c); err != nil {
+			return nil, err
+		}
 	}
 
-	return &c
+	return &c, nil
 }
 
 func WithCreds(registry, name, tag string) DockerContainerOption {
-	return func(c *DockerContainer) {
+	return func(c *DockerContainer) error {
 		c.dOptions.Config.Image = fmt.Sprintf("%s/%s:%s", registry, name, tag)
+		return nil
 	}
 }
 
 func WithCmdArgs(cmdArgs []string) DockerContainerOption {
-	return func(c *DockerContainer) {
+	return func(c *DockerContainer) error {
 		c.dOptions.Config.Cmd = cmdArgs
+		return nil
 	}
 }
 
 func WithTcpPorts(tcpPorts []string) DockerContainerOption {
-	return func(c *DockerContainer) {
+	return func(c *DockerContainer) error {
 		ports := make(map[docker.Port]struct{}, len(tcpPorts))
 		portBindings := make(map[docker.Port][]docker.PortBinding, len(tcpPorts))
 		for _, p := range tcpPorts {
@@ -63,6 +68,21 @@ func WithTcpPorts(tcpPorts []string) DockerContainerOption {
 
 		c.dOptions.Config.ExposedPorts = ports
 		c.dOptions.HostConfig.PortBindings = portBindings
+
+		return nil
+	}
+}
+
+func WithHostNetwork() DockerContainerOption {
+	return func(c *DockerContainer) error {
+		_, mode, err := hostMachineNetwork()
+		if err != nil {
+			return err
+		}
+
+		c.dOptions.HostConfig.NetworkMode = mode
+
+		return nil
 	}
 }
 
@@ -192,13 +212,29 @@ func NewVMCompilerContainer(dsServerPort string) (retContainer *DockerContainer,
 		return
 	}
 
-	dsServerAddress := fmt.Sprintf("http://%s:%s", "host.docker.internal", dsServerPort)
+	hostUrl, _, _ := hostMachineNetwork()
+	dsServerAddress := fmt.Sprintf("%s:%s", hostUrl, dsServerPort)
 	cmdArgs := []string{"./compiler", "0.0.0.0:" + port, dsServerAddress}
 
-	retContainer = NewDockerContainer(
+	retContainer, retErr = NewDockerContainer(
 		WithCreds(registry, "dfinance/dvm", tag),
 		WithCmdArgs(cmdArgs),
-		WithTcpPorts([]string{port}))
+		WithTcpPorts([]string{port}),
+		WithHostNetwork(),
+	)
+
+	return
+}
+
+func hostMachineNetwork() (hostUrl, hostNetworkMode string, err error) {
+	switch runtime.GOOS {
+	case "darwin", "windows":
+		hostUrl, hostNetworkMode = "http://host.docker.internal", ""
+	case "linux":
+		hostUrl, hostNetworkMode = "http://localhost", "host"
+	default:
+		err = fmt.Errorf("unsupported OS: %s", runtime.GOOS)
+	}
 
 	return
 }
