@@ -21,7 +21,7 @@ import (
 )
 
 func Test_CurrencyRest(t *testing.T) {
-	r := NewRestTester(t)
+	r := NewRestTester(t, false)
 	defer r.Close()
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), r.Accounts[0].Address, r.PrivKeys[0]
@@ -165,7 +165,7 @@ func Test_CurrencyRest(t *testing.T) {
 }
 
 func Test_MSRest(t *testing.T) {
-	r := NewRestTester(t)
+	r := NewRestTester(t, false)
 	defer r.Close()
 
 	senderAddr, senderPrivKey := r.Accounts[0].Address, r.PrivKeys[0]
@@ -276,7 +276,7 @@ func Test_MSRest(t *testing.T) {
 }
 
 func Test_OracleRest(t *testing.T) {
-	r := NewRestTester(t)
+	r := NewRestTester(t, false)
 	defer r.Close()
 
 	// check getAssets endpoint
@@ -392,7 +392,7 @@ func Test_OracleRest(t *testing.T) {
 }
 
 func Test_POARest(t *testing.T) {
-	r := NewRestTester(t)
+	r := NewRestTester(t, false)
 	defer r.Close()
 
 	// check getValidators endpoint

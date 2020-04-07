@@ -4,14 +4,22 @@ package app
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
+	"github.com/dfinance/dnode/helpers/tests"
+	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
@@ -19,7 +27,7 @@ import (
 )
 
 func Test_CurrencyCLI(t *testing.T) {
-	ct := NewCLITester(t)
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	fmt.Println("start")
@@ -89,12 +97,12 @@ func Test_CurrencyCLI(t *testing.T) {
 		// check destroy
 		q, destroy := ct.QueryCurrenciesDestroy(sdk.ZeroInt())
 		q.CheckSucceeded()
-		require.True(ct.t, sdk.ZeroInt().Equal(destroy.ID))
-		require.Equal(ct.t, ccSymbol, destroy.Symbol)
-		require.Equal(ct.t, ct.ChainID, destroy.ChainID)
-		require.Equal(ct.t, ccRecipient, destroy.Recipient)
-		require.Equal(ct.t, ccRecipient, destroy.Spender.String())
-		require.True(ct.t, destroyAmount.Equal(destroy.Amount))
+		require.True(t, sdk.ZeroInt().Equal(destroy.ID))
+		require.Equal(t, ccSymbol, destroy.Symbol)
+		require.Equal(t, ct.ChainID, destroy.ChainID)
+		require.Equal(t, ccRecipient, destroy.Recipient)
+		require.Equal(t, ccRecipient, destroy.Spender.String())
+		require.True(t, destroyAmount.Equal(destroy.Amount))
 
 		// check incorrect inputs
 		{
@@ -160,10 +168,10 @@ func Test_CurrencyCLI(t *testing.T) {
 		q, currency := ct.QueryCurrenciesCurrency(ccSymbol)
 		q.CheckSucceeded()
 
-		require.True(ct.t, currency.CurrencyId.IsZero())
-		require.Equal(ct.t, ccSymbol, currency.Symbol)
-		require.True(ct.t, ccCurAmount.Equal(currency.Supply))
-		require.Equal(ct.t, ccDecimals, currency.Decimals)
+		require.True(t, currency.CurrencyId.IsZero())
+		require.Equal(t, ccSymbol, currency.Symbol)
+		require.True(t, ccCurAmount.Equal(currency.Supply))
+		require.Equal(t, ccDecimals, currency.Decimals)
 
 		// check incorrect inputs
 		{
@@ -221,7 +229,7 @@ func Test_CurrencyCLI(t *testing.T) {
 }
 
 func Test_OracleCLI(t *testing.T) {
-	ct := NewCLITester(t)
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	nomineeAddr := ct.Accounts["oracle1"].Address
@@ -504,8 +512,8 @@ func Test_OracleCLI(t *testing.T) {
 	}
 }
 
-func Test_PoeCLI(t *testing.T) {
-	ct := NewCLITester(t)
+func Test_PoaCLI(t *testing.T) {
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	curValidators := make([]poaTypes.Validator, 0)
@@ -545,7 +553,7 @@ func Test_PoeCLI(t *testing.T) {
 		require.LessOrEqual(t, len(curValidators), len(ethAddresses), "not enough predefined ethAddresses")
 		newEthAddress, issueID := ethAddresses[len(curValidators)], "newValidator"
 
-		ct.TxPoeAddValidator(senderAddr, newValidatorAcc.Address, newEthAddress, issueID).CheckSucceeded()
+		ct.TxPoaAddValidator(senderAddr, newValidatorAcc.Address, newEthAddress, issueID).CheckSucceeded()
 		ct.WaitForNextBlocks(2)
 		ct.ConfirmCall(issueID)
 
@@ -568,23 +576,23 @@ func Test_PoeCLI(t *testing.T) {
 		{
 			// wrong number of args
 			{
-				tx := ct.TxPoeAddValidator(senderAddr, newValidatorAcc.Address, newEthAddress, issueID)
+				tx := ct.TxPoaAddValidator(senderAddr, newValidatorAcc.Address, newEthAddress, issueID)
 				tx.RemoveCmdArg(issueID)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// non-existing fromAddress
 			{
-				tx := ct.TxPoeAddValidator(nonExistingAddress.String(), newValidatorAcc.Address, newEthAddress, issueID)
+				tx := ct.TxPoaAddValidator(nonExistingAddress.String(), newValidatorAcc.Address, newEthAddress, issueID)
 				tx.CheckFailedWithErrorSubstring("not found")
 			}
 			// invalid validator address
 			{
-				tx := ct.TxPoeAddValidator(senderAddr, "invalid_address", newEthAddress, issueID)
+				tx := ct.TxPoaAddValidator(senderAddr, "invalid_address", newEthAddress, issueID)
 				tx.CheckFailedWithErrorSubstring("address")
 			}
 			// MsgAddValidator ValidateBasic
 			{
-				tx := ct.TxPoeAddValidator(senderAddr, newValidatorAcc.Address, "invalid_eth_address", issueID)
+				tx := ct.TxPoaAddValidator(senderAddr, newValidatorAcc.Address, "invalid_eth_address", issueID)
 				tx.CheckFailedWithErrorSubstring("invalid_eth_address")
 			}
 		}
@@ -593,7 +601,7 @@ func Test_PoeCLI(t *testing.T) {
 	// check remove validator Tx
 	{
 		issueID := "rmValidator"
-		ct.TxPoeRemoveValidator(senderAddr, newValidatorAcc.Address, issueID).CheckSucceeded()
+		ct.TxPoaRemoveValidator(senderAddr, newValidatorAcc.Address, issueID).CheckSucceeded()
 		ct.WaitForNextBlocks(2)
 		ct.ConfirmCall(issueID)
 
@@ -615,18 +623,18 @@ func Test_PoeCLI(t *testing.T) {
 		{
 			// wrong number of args
 			{
-				tx := ct.TxPoeRemoveValidator(senderAddr, newValidatorAcc.Address, issueID)
+				tx := ct.TxPoaRemoveValidator(senderAddr, newValidatorAcc.Address, issueID)
 				tx.RemoveCmdArg(issueID)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// non-existing fromAddress
 			{
-				tx := ct.TxPoeRemoveValidator(nonExistingAddress.String(), newValidatorAcc.Address, issueID)
+				tx := ct.TxPoaRemoveValidator(nonExistingAddress.String(), newValidatorAcc.Address, issueID)
 				tx.CheckFailedWithErrorSubstring("not found")
 			}
 			// invalid validator address
 			{
-				tx := ct.TxPoeRemoveValidator(senderAddr, "invalid_address", issueID)
+				tx := ct.TxPoaRemoveValidator(senderAddr, "invalid_address", issueID)
 				tx.CheckFailedWithErrorSubstring("address")
 			}
 		}
@@ -641,7 +649,7 @@ func Test_PoeCLI(t *testing.T) {
 		targetValidatorAcc := ct.Accounts[targetValidatorName]
 		issueID := "replaceValidator"
 
-		tx := ct.TxPoeReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
+		tx := ct.TxPoaReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
 		tx.CheckSucceeded()
 		ct.WaitForNextBlocks(2)
 		ct.ConfirmCall(issueID)
@@ -667,28 +675,28 @@ func Test_PoeCLI(t *testing.T) {
 		{
 			// wrong number of args
 			{
-				tx := ct.TxPoeReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
+				tx := ct.TxPoaReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
 				tx.RemoveCmdArg(issueID)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// non-existing fromAddress
 			{
-				tx := ct.TxPoeReplaceValidator(nonExistingAddress.String(), targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
+				tx := ct.TxPoaReplaceValidator(nonExistingAddress.String(), targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
 				tx.CheckFailedWithErrorSubstring("not found")
 			}
 			// invalid old validator address
 			{
-				tx := ct.TxPoeReplaceValidator(senderAddr, "invalid_address", newValidatorAcc.Address, newEthAddress, issueID)
+				tx := ct.TxPoaReplaceValidator(senderAddr, "invalid_address", newValidatorAcc.Address, newEthAddress, issueID)
 				tx.CheckFailedWithErrorSubstring("oldValidator")
 			}
 			// invalid new validator address
 			{
-				tx := ct.TxPoeReplaceValidator(senderAddr, targetValidatorAcc.Address, "invalid_address", newEthAddress, issueID)
+				tx := ct.TxPoaReplaceValidator(senderAddr, targetValidatorAcc.Address, "invalid_address", newEthAddress, issueID)
 				tx.CheckFailedWithErrorSubstring("newValidator")
 			}
 			// invalid ethAddress
 			{
-				tx := ct.TxPoeReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, "invalid_eth_address", issueID)
+				tx := ct.TxPoaReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, "invalid_eth_address", issueID)
 				tx.CheckFailedWithErrorSubstring("invalid_eth_address")
 			}
 		}
@@ -718,7 +726,7 @@ func Test_PoeCLI(t *testing.T) {
 		q.CheckSucceeded()
 
 		poaGenesis := poaTypes.GenesisState{}
-		require.NoError(t, ct.Cdc.UnmarshalJSON(ct.genesisState()[poaTypes.ModuleName], &poaGenesis))
+		require.NoError(t, ct.Cdc.UnmarshalJSON(ct.GenesisState()[poaTypes.ModuleName], &poaGenesis))
 		require.Equal(t, poaGenesis.Parameters.MaxValidators, params.MaxValidators)
 		require.Equal(t, poaGenesis.Parameters.MinValidators, params.MinValidators)
 	}
@@ -755,7 +763,7 @@ func Test_PoeCLI(t *testing.T) {
 }
 
 func Test_MultiSigCLI(t *testing.T) {
-	ct := NewCLITester(t)
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	ccSymbol1, ccSymbol2 := "cc1", "cc2"
@@ -923,5 +931,97 @@ func Test_MultiSigCLI(t *testing.T) {
 				tx.CheckFailedWithErrorSubstring("callId")
 			}
 		}
+	}
+}
+
+func Test_ConsensusFailure(t *testing.T) {
+	const script = `
+import 0x0.Account;
+import 0x0.Coins;
+main(recipient: address, amount: u128, denom: bytearray) {
+    let coin: Coins.Coin;
+    coin = Account.withdraw_from_sender(move(amount), move(denom));
+    Account.deposit(move(recipient), move(coin));
+    return;
+}
+`
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+
+	//ct.SetVMCompilerAddress("rpc.demo.wings.toys:50053")
+
+	compilerContainer, compilerPort, err := tests.NewVMCompilerContainer(ct.VmListenPort)
+	require.NoError(t, err, "compiler container creation")
+
+	require.NoError(t, compilerContainer.Start(5*time.Second), "compiler container creation")
+	defer compilerContainer.Stop()
+
+	ct.SetVMCompilerAddress("127.0.0.1:" + compilerPort)
+
+	senderAddr := ct.Accounts["validator1"].Address
+	mvirPath := path.Join(ct.RootDir, "script.mvir")
+	compiledPath := path.Join(ct.RootDir, "script.json")
+
+	// Create .mvir script file
+	mvirFile, err := os.Create(mvirPath)
+	require.NoError(t, err, "creating script file")
+	_, err = mvirFile.WriteString(script)
+	require.NoError(t, err, "write script file")
+	require.NoError(t, mvirFile.Close(), "close script file")
+
+	// Compile .mvir script file
+	ct.QueryVmCompileScript(mvirPath, compiledPath, senderAddr).CheckSucceeded()
+
+	// Execute .json script file
+	// Should panic as there is no local VM running
+	ct.TxVmExecuteScript(senderAddr, compiledPath, senderAddr, "100", "dfi").CheckSucceeded()
+
+	// Check CONSENSUS FAILURE did occur
+	{
+		consensusFailure := false
+		for i := 0; i < 10; i++ {
+			if ct.DaemonLogsContain("CONSENSUS FAILURE") {
+				consensusFailure = true
+				break
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+		require.True(t, consensusFailure, "CONSENSUS FAILURE not occurred")
+	}
+
+	// Check restarted application panics
+	{
+		ct.RestartDaemon(false, false)
+
+		retCode, daemonLogs := ct.CheckDaemonStopped(2 * time.Second)
+
+		require.NotZero(t, retCode, "daemon exitCode")
+		require.Contains(t, strings.Join(daemonLogs, ","), "panic", "daemon didn't panic")
+	}
+}
+
+func Test_RestServer(t *testing.T) {
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+
+	restUrl := ct.StartRestServer(false)
+
+	// check server is running
+	{
+		resp, err := http.Get(restUrl + "/blocks/latest")
+		require.NoError(t, err, "Get request")
+		require.NotNil(t, resp, "response")
+		require.NotNil(t, resp.Body, "response body")
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err, "body read")
+
+		resultBlock := tmCoreTypes.ResultBlock{}
+		require.NoError(t, ct.Cdc.UnmarshalJSON(body, &resultBlock), "body unmarshal")
+
+		require.NotNil(t, resultBlock.Block, "result block")
+		require.Equal(t, ct.ChainID, resultBlock.Block.ChainID)
+		require.GreaterOrEqual(t, resultBlock.Block.Height, int64(1))
 	}
 }
