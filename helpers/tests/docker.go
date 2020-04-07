@@ -75,7 +75,7 @@ func WithTcpPorts(tcpPorts []string) DockerContainerOption {
 
 func WithHostNetwork() DockerContainerOption {
 	return func(c *DockerContainer) error {
-		_, mode, err := hostMachineNetwork()
+		_, mode, err := HostMachineDockerUrl()
 		if err != nil {
 			return err
 		}
@@ -212,7 +212,7 @@ func NewVMCompilerContainer(dsServerPort string) (retContainer *DockerContainer,
 		return
 	}
 
-	hostUrl, _, _ := hostMachineNetwork()
+	hostUrl, _, _ := HostMachineDockerUrl()
 	dsServerAddress := fmt.Sprintf("%s:%s", hostUrl, dsServerPort)
 	cmdArgs := []string{"./compiler", "0.0.0.0:" + port, dsServerAddress}
 
@@ -226,7 +226,7 @@ func NewVMCompilerContainer(dsServerPort string) (retContainer *DockerContainer,
 	return
 }
 
-func hostMachineNetwork() (hostUrl, hostNetworkMode string, err error) {
+func HostMachineDockerUrl() (hostUrl, hostNetworkMode string, err error) {
 	switch runtime.GOOS {
 	case "darwin", "windows":
 		hostUrl, hostNetworkMode = "http://host.docker.internal", ""
