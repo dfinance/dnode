@@ -38,15 +38,6 @@ jobs:
       with:
         path: go/src/github.com/${{ github.repository }}
 
-    - name: Get dependencies
-      run: |
-        go mod download
-        go mod verify
-        if [ -f Gopkg.toml ]; then
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-            dep ensure
-        fi
-
     - name: Make binaries for integration tests
       run: |
         make
