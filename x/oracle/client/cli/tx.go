@@ -1,10 +1,10 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,28 +16,6 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
-// GetTxCmd returns the transaction commands for this module
-func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:                        types.ModuleName,
-		Short:                      "Oracle transaction subcommands",
-		DisableFlagParsing:         true,
-		SuggestionsMinimumDistance: 2,
-		RunE:                       client.ValidateCmd,
-	}
-	cmd.AddCommand(
-		client.PostCommands(
-			GetCmdPostPrice(cdc),
-			getCmdAddOracle(cdc),
-			getCmdSetOracles(cdc),
-			getCmdSetAsset(cdc),
-			getCmdAddAsset(cdc),
-		)...,
-	)
-
-	return cmd
-}
-
 // GetCmdPostPrice cli command for posting prices.
 func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
@@ -45,7 +23,8 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 		Short: "post the latest price for a particular asset",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
 			rawPrice := args[2]
@@ -68,14 +47,15 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func getCmdAddOracle(cdc *codec.Codec) *cobra.Command {
+func GetCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "add-oracle [nominee_key] [denom] [oracle_address]",
 		Example: "dncli oracle add-oracle wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new oracle",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
 			oracleAddr, err := sdk.AccAddressFromBech32(args[2])
@@ -90,14 +70,15 @@ func getCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
+func GetCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-oracles [nominee_key] [denom] [oracle_addresses]",
 		Example: "dncli oracle set-oracles wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet10ff6y8gm2re6awfwz5dvesar8jq02tx7vcvuxn,wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Sets a list of oracles for a denom",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
 			oracles, err := types.ParseOracles(args[2])
@@ -112,14 +93,15 @@ func getCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
+func GetCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "add-asset [nominee_key] [denom] [oracles]",
 		Example: "dncli oracle add-asset wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new asset",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
 			denom := args[1]
@@ -147,14 +129,15 @@ func getCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func getCmdSetAsset(cdc *codec.Codec) *cobra.Command {
+func GetCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-asset [nominee_key] [denom] [oracles]",
 		Example: "dncli oracle set-asset wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a set asset",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithFrom(args[0]).WithCodec(cdc)
 
 			denom := args[1]

@@ -28,7 +28,6 @@ type (
 )
 
 const (
-	DefaultCodespace  = types.DefaultCodespace
 	ModuleName        = types.ModuleName
 	RouterKey         = types.RouterKey
 	QuerierRoute      = types.QuerierRoute

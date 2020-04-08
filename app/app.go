@@ -16,16 +16,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	abci "github.com/tendermint/tendermint/abci/types"
-	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/libs/log"
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmOs "github.com/tendermint/tendermint/libs/os"
+	tmTypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -33,6 +32,7 @@ import (
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/poa"
@@ -55,8 +55,8 @@ var (
 	DefaultNodeHome = os.ExpandEnv("$HOME/.dnode")
 
 	ModuleBasics = module.NewBasicManager(
-		genaccounts.AppModuleBasic{}, // genesis accounts management.
-		genutil.AppModuleBasic{},     // utils to generate genesis transaction, genesis file validation, etc.
+		genaccounts.AppModuleBasic{},
+		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
 		staking.AppModuleBasic{},
@@ -206,7 +206,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	// The ParamsKeeper handles parameter storage for the application.
-	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
+	app.paramsKeeper = params.NewKeeper(
+		app.cdc,
+		keys[params.StoreKey],
+		tkeys[params.TStoreKey],
+	)
 
 	// The AccountKeeper handles address -> account lookups.
 	app.accountKeeper = vmauth.NewVMAccountKeeper(
@@ -221,7 +225,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.bankKeeper = bank.NewBaseKeeper(
 		app.accountKeeper,
 		app.paramsKeeper.Subspace(bank.DefaultParamspace),
-		bank.DefaultCodespace,
 		app.ModuleAccountAddrs(),
 	)
 
@@ -232,10 +235,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	stakingKeeper := staking.NewKeeper(
 		cdc,
 		keys[staking.StoreKey],
-		tkeys[staking.TStoreKey],
 		app.supplyKeeper,
 		app.paramsKeeper.Subspace(staking.DefaultParamspace),
-		staking.DefaultCodespace,
 	)
 
 	// Initialize currency keeper.
@@ -252,7 +253,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.paramsKeeper.Subspace(distribution.DefaultParamspace),
 		stakingKeeper,
 		app.supplyKeeper,
-		distribution.DefaultCodespace,
 		auth.FeeCollectorName,
 		app.ModuleAccountAddrs(),
 	)
@@ -263,7 +263,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		keys[slashing.StoreKey],
 		stakingKeeper,
 		app.paramsKeeper.Subspace(slashing.DefaultParamspace),
-		slashing.DefaultCodespace,
 	)
 
 	// Initialize staking keeper.
@@ -297,7 +296,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		keys[oracle.StoreKey],
 		cdc,
 		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
-		oracle.DefaultCodespace,
 		app.vmKeeper,
 	)
 
@@ -308,9 +306,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		vmauth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
-		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
-		distribution.NewAppModule(app.distrKeeper, app.supplyKeeper),
-		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
+		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
+		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
+		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
@@ -361,7 +359,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	err = app.LoadLatestVersion(app.keys[bam.MainStoreKey])
 	if err != nil {
-		cmn.Exit(err.Error())
+		tmOs.Exit(err.Error())
 	}
 
 	// Temporary solution, but seems works.
@@ -419,7 +417,7 @@ func (app *DnServiceApp) LoadHeight(height int64) error {
 
 // Exports genesis and validators.
 func (app *DnServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
-) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
+) (appState json.RawMessage, validators []tmTypes.GenesisValidator, err error) {
 
 	// as if they could withdraw from the start of the next block.
 	ctx := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})

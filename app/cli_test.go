@@ -14,6 +14,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -158,7 +159,7 @@ func Test_CurrencyCLI(t *testing.T) {
 			// non-existing issueID
 			{
 				q, _ := ct.QueryCurrenciesIssue("non_existing")
-				q.CheckFailedWithSDKError(ccTypes.ErrWrongIssueID(""))
+				q.CheckFailedWithSDKError(ccTypes.ErrWrongIssueID)
 			}
 		}
 	}
@@ -506,7 +507,7 @@ func Test_OracleCLI(t *testing.T) {
 			// non-existing assetCode
 			{
 				q, _ := ct.QueryOraclePrice("non_existing_assetCode")
-				q.CheckFailedWithSDKError(sdk.ErrUnknownRequest(""))
+				q.CheckFailedWithSDKError(sdkErrors.ErrUnknownRequest)
 			}
 		}
 	}

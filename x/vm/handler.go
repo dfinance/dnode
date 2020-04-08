@@ -1,14 +1,13 @@
 package vm
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // New message handler for PoA module.
 func NewHandler(keeper Keeper) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		// settings actual context for ds.
 		// TODO: move it to base app and set before transaction execution maybe? or find way to have actual context always
 		keeper.SetDSContext(ctx)
@@ -21,28 +20,23 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgScript(ctx, keeper, msg)
 
 		default:
-			errMsg := fmt.Sprintf("unrecognized vm msg type: %v", msg.Type())
-			return sdk.ErrUnknownRequest(errMsg).Result()
+			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized vm msg type: %v", msg.Type())
 		}
 	}
 }
 
-func handleMsgScript(ctx sdk.Context, keeper Keeper, msg MsgExecuteScript) sdk.Result {
+func handleMsgScript(ctx sdk.Context, keeper Keeper, msg MsgExecuteScript) (*sdk.Result, error) {
 	if err := keeper.ExecuteScript(ctx, msg); err != nil {
-		return err.Result()
+		return nil, err
 	}
 
-	return sdk.Result{
-		Events: ctx.EventManager().Events(),
-	}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgDeploy(ctx sdk.Context, keeper Keeper, msg MsgDeployModule) sdk.Result {
+func handleMsgDeploy(ctx sdk.Context, keeper Keeper, msg MsgDeployModule) (*sdk.Result, error) {
 	if err := keeper.DeployContract(ctx, msg); err != nil {
-		return err.Result()
+		return nil, err
 	}
 
-	return sdk.Result{
-		Events: ctx.EventManager().Events(),
-	}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

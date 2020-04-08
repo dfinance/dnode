@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
@@ -15,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
 	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/poa"

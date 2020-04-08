@@ -3,15 +3,16 @@ package multisig
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Submit call to execute by confirmations from validators.
-func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string, sender sdk.AccAddress) sdk.Error {
+func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string, sender sdk.AccAddress) error {
 	if !keeper.router.HasRoute(msg.Route()) {
-		return types.ErrRouteDoesntExist(msg.Route())
+		return sdkErrors.Wrap(types.ErrRouteDoesntExist, msg.Route())
 	}
 
 	cacheCtx, _ := ctx.CacheContext()
@@ -22,7 +23,7 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string
 	}
 
 	if keeper.HasCallByUniqueId(ctx, uniqueID) {
-		return types.ErrNotUniqueID(uniqueID)
+		return sdkErrors.Wrap(types.ErrNotUniqueID, uniqueID)
 	}
 
 	nextId := keeper.getNextCallId(ctx)
@@ -43,20 +44,20 @@ func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string
 }
 
 // Get call by id.
-func (keeper Keeper) GetCall(ctx sdk.Context, id uint64) (types.Call, sdk.Error) {
+func (keeper Keeper) GetCall(ctx sdk.Context, id uint64) (types.Call, error) {
 	if !keeper.HasCall(ctx, id) {
-		return types.Call{}, types.ErrWrongCallId(id)
+		return types.Call{}, sdkErrors.Wrapf(types.ErrWrongCallId, "%d", id)
 	}
 
 	return keeper.getCallById(ctx, id), nil
 }
 
 // Get call by unique id.
-func (keeper Keeper) GetCallIDByUnique(ctx sdk.Context, uniqueID string) (uint64, sdk.Error) {
+func (keeper Keeper) GetCallIDByUnique(ctx sdk.Context, uniqueID string) (uint64, error) {
 	store := ctx.KVStore(keeper.storeKey)
 
 	if !keeper.HasCallByUniqueId(ctx, uniqueID) {
-		return 0, types.ErrNotFoundUniqueID(uniqueID)
+		return 0, sdkErrors.Wrap(types.ErrNotFoundUniqueID, uniqueID)
 	}
 
 	bz := store.Get(types.GetUniqueID(uniqueID))

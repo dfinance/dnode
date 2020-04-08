@@ -258,7 +258,7 @@ func (ct *CLITester) initChain() {
 					AddArg("", accName)
 				output := sdkKeys.KeyOutput{}
 
-				cmd.CheckSuccessfulExecute(&output, ct.AccountPassphrase, ct.AccountPassphrase)
+				cmd.CheckSuccessfulExecute(&output, ct.AccountPassphrase)
 				accValue.Name = output.Name
 				accValue.Address = output.Address
 				accValue.PubKey = output.PubKey

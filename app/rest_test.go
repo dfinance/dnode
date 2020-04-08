@@ -10,6 +10,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
@@ -50,7 +51,7 @@ func Test_CurrencyRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/issue/non_existing_ID", ccTypes.ModuleName)
 
 		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, ccTypes.ErrWrongIssueID(""), respBytes)
+		r.CheckError(http.StatusInternalServerError, respCode, ccTypes.ErrWrongIssueID, respBytes)
 	}
 
 	// check getCurrency endpoint
@@ -69,7 +70,7 @@ func Test_CurrencyRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/currency/non_existing_symbol", ccTypes.ModuleName)
 
 		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, ccTypes.ErrNotExistCurrency(""), respBytes)
+		r.CheckError(http.StatusInternalServerError, respCode, ccTypes.ErrNotExistCurrency, respBytes)
 	}
 
 	// check getDestroys endpoint (no destroys)
@@ -250,7 +251,7 @@ func Test_MSRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/call/2", msTypes.ModuleName)
 
 		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, msTypes.ErrWrongCallId(0), respBytes)
+		r.CheckError(http.StatusInternalServerError, respCode, msTypes.ErrWrongCallId, respBytes)
 	}
 
 	// check getCallByUnique endpoint
@@ -271,7 +272,7 @@ func Test_MSRest(t *testing.T) {
 		reqSubPath := fmt.Sprintf("%s/unique/non-existing-UNIQUE", msTypes.ModuleName)
 
 		respCode, respBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-		r.CheckError(http.StatusInternalServerError, respCode, msTypes.ErrNotFoundUniqueID(""), respBytes)
+		r.CheckError(http.StatusInternalServerError, respCode, msTypes.ErrNotFoundUniqueID, respBytes)
 	}
 }
 
@@ -363,7 +364,7 @@ func Test_OracleRest(t *testing.T) {
 			reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, "non_existing_asset", 1)
 
 			rcvCode, rcvBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-			r.CheckError(http.StatusNotFound, rcvCode, sdk.ErrUnknownRequest(""), rcvBytes)
+			r.CheckError(http.StatusNotFound, rcvCode, sdkErrors.ErrUnknownRequest, rcvBytes)
 		}
 	}
 
@@ -386,7 +387,7 @@ func Test_OracleRest(t *testing.T) {
 			reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, "non_existing_asset")
 
 			rcvCode, rcvBytes := r.Request("GET", reqSubPath, nil, nil, nil, false)
-			r.CheckError(http.StatusNotFound, rcvCode, sdk.ErrUnknownRequest(""), rcvBytes)
+			r.CheckError(http.StatusNotFound, rcvCode, sdkErrors.ErrUnknownRequest, rcvBytes)
 		}
 	}
 }

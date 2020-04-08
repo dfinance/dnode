@@ -10,21 +10,21 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
-	genaccscli "github.com/cosmos/cosmos-sdk/x/genaccounts/client/cli"
-	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	genutilCli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/log"
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmTypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/logger"
+	"github.com/dfinance/dnode/x/genaccounts"
+	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
 	oracleCli "github.com/dfinance/dnode/x/oracle/client/cli"
 	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
@@ -58,20 +58,20 @@ func main() {
 
 	rootCmd.AddCommand(
 		InitCmd(ctx, cdc, app.ModuleBasics, app.DefaultNodeHome),
-		genutilcli.CollectGenTxsCmd(ctx, cdc, genaccounts.AppModuleBasic{}, app.DefaultNodeHome),
-		genutilcli.GenTxCmd(
+		genutilCli.CollectGenTxsCmd(ctx, cdc, genaccounts.AppModuleBasic{}, app.DefaultNodeHome),
+		genutilCli.GenTxCmd(
 			ctx, cdc, app.ModuleBasics, staking.AppModuleBasic{},
 			genaccounts.AppModuleBasic{}, app.DefaultNodeHome, app.DefaultCLIHome,
 		),
-		genutilcli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics),
+		genutilCli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics),
 		// AddGenesisAccountCmd allows users to add accounts to the genesis file
-		genaccscli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		genaccsCli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		// Allows user to poa genesis validator
 		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
 		vmCli.GenesisWSFromFile(ctx, cdc),
 		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
-		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
+		//testnetCmd(ctx, cdc, app.ModuleBasics, auth.GenesisAccountIterator{}),
 	)
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
@@ -105,7 +105,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 // Exports genesis data and validators.
 func exportAppStateAndTMValidators(
 	logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
-) (json.RawMessage, []tmtypes.GenesisValidator, error) {
+) (json.RawMessage, []tmTypes.GenesisValidator, error) {
 	config, err := dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))
 	if err != nil {
 		panic(err)
@@ -127,7 +127,7 @@ func exportAppStateAndTMValidators(
 // Init cmd together with VM configruation.
 func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 	defaultNodeHome string) *cobra.Command { // nolint: golint
-	cmd := genutilcli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
+	cmd := genutilCli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
 
 	cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {
 		dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))

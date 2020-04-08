@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,15 +49,18 @@ func (q *QueryRequest) CheckSucceeded() {
 	}
 }
 
-func (q *QueryRequest) CheckFailedWithSDKError(sdkErr sdk.Error) {
+func (q *QueryRequest) CheckFailedWithSDKError(err error) {
+	sdkErr, ok := err.(*sdkErrors.Error)
+	require.True(q.t, ok, "not a SDK error")
+
 	code, stdout, stderr := q.cmd.Execute()
 	require.NotEqual(q.t, 0, code, "%s: succeeded", q.String())
 	stdout, stderr = trimCliOutput(stdout), trimCliOutput(stderr)
 
 	qResponse := struct {
-		Codespace sdk.CodespaceType `json:"codespace"`
-		Code      sdk.CodeType      `json:"code"`
-	}{sdk.CodespaceType(""), sdk.CodeType(0)}
+		Codespace string `json:"codespace"`
+		Code      uint32 `json:"code"`
+	}{"", 0}
 	stdoutErr := q.cdc.UnmarshalJSON(stdout, &qResponse)
 	stderrErr := q.cdc.UnmarshalJSON(stderr, &qResponse)
 	if stdoutErr != nil && stderrErr != nil {
@@ -65,7 +68,7 @@ func (q *QueryRequest) CheckFailedWithSDKError(sdkErr sdk.Error) {
 	}
 
 	require.Equal(q.t, sdkErr.Codespace(), qResponse.Codespace, "%s: codespace", q.String())
-	require.Equal(q.t, sdkErr.Code(), qResponse.Code, "%s: code", q.String())
+	require.Equal(q.t, sdkErr.ABCICode(), qResponse.Code, "%s: code", q.String())
 }
 
 func (q *QueryRequest) CheckFailedWithErrorSubstring(subStr string) (output string) {

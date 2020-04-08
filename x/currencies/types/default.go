@@ -9,10 +9,9 @@ import (
 )
 
 const (
-	ModuleName                         = "currencies"
-	Router                             = ModuleName
-	RouterKey                          = ModuleName
-	DefaultCodespace sdk.CodespaceType = ModuleName
+	ModuleName = "currencies"
+	Router     = ModuleName
+	RouterKey  = ModuleName
 )
 
 var (

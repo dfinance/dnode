@@ -1,11 +1,11 @@
 package keeper
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/x/oracle/internal/types"
@@ -17,7 +17,7 @@ import (
 
 // NewQuerier is the module level router for state queries
 func NewQuerier(keeper Keeper) sdk.Querier {
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err error) {
 		switch path[0] {
 		case types.QueryCurrentPrice:
 			return queryCurrentPrice(ctx, path[1:], req, keeper)
@@ -26,16 +26,15 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		case types.QueryAssets:
 			return queryAssets(ctx, req, keeper)
 		default:
-			return nil, sdk.ErrUnknownRequest("unknown oracle query endpoint")
+			return nil, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "unknown oracle query endpoint")
 		}
 	}
-
 }
 
-func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err sdk.Error) {
+func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
 	assetCode := path[0]
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
-		return []byte{}, sdk.ErrUnknownRequest("asset not found")
+		return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "asset not found")
 	}
 	currentPrice := keeper.GetCurrentPrice(ctx, assetCode)
 
@@ -47,15 +46,15 @@ func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	return bz, nil
 }
 
-func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err sdk.Error) {
+func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
 	assetCode := path[0]
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
-		return []byte{}, sdk.ErrUnknownRequest("asset not found")
+		return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "asset not found")
 	}
 
 	blockHeight, blockErr := strconv.ParseInt(path[1], 10, 64)
 	if blockErr != nil {
-		return []byte{}, sdk.ErrUnknownRequest(fmt.Sprintf("invalid blockSize: %v", blockErr))
+		return []byte{}, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "invalid blockSize: %v", blockErr)
 	}
 
 	priceList := keeper.GetRawPrices(ctx, assetCode, blockHeight)
@@ -67,7 +66,7 @@ func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	return bz, nil
 }
 
-func queryAssets(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+func queryAssets(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	assets := keeper.GetAssetParams(ctx)
 	bz := codec.MustMarshalJSONIndent(keeper.cdc, &assets)
 

@@ -27,7 +27,7 @@ func stringFilter(str string, strOpts []strFilterOpt, runeOpts []runeFilterOpt) 
 	for i, r := range str {
 		for _, opt := range runeOpts {
 			if err := opt(r); err != nil {
-				return fmt.Errorf("rune %q at %d index: %v", r, i, err)
+				return fmt.Errorf("rune %q at %d index: %w", r, i, err)
 			}
 		}
 	}

@@ -1,7 +1,7 @@
 package client
 
 import (
-	connContext "context"
+	"context"
 	"fmt"
 	"strings"
 
@@ -12,6 +12,8 @@ import (
 const (
 	FlagCompilerAddr    = "compiler"
 	DefaultCompilerAddr = "127.0.0.1:50053"
+	FlagOutput          = "to-file"
+	FlagCompilerUsage   = "--compiler " + DefaultCompilerAddr
 )
 
 // MVFile struct contains code from file in hex.
@@ -33,7 +35,7 @@ func ExtractArguments(addr string, bytecode []byte) ([]vm_grpc.VMTypeTag, error)
 	defer conn.Close()
 
 	client := vm_grpc.NewVMScriptMetadataClient(conn)
-	connCtx := connContext.Background()
+	connCtx := context.Background()
 
 	res, err := client.GetSignature(connCtx, &vm_grpc.VMScript{
 		Code: bytecode,
@@ -55,7 +57,7 @@ func Compile(addr string, sourceFile *vm_grpc.MvIrSourceFile) ([]byte, error) {
 	defer conn.Close()
 
 	client := vm_grpc.NewVMCompilerClient(conn)
-	connCtx := connContext.Background()
+	connCtx := context.Background()
 
 	resp, err := client.Compile(connCtx, sourceFile)
 	if err != nil {

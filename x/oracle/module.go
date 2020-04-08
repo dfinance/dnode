@@ -3,7 +3,6 @@ package oracle
 import (
 	"encoding/json"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,8 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/x/oracle/client/cli"
-	cmd "github.com/dfinance/dnode/x/oracle/client/cli"
+	"github.com/dfinance/dnode/x/oracle/client"
 	"github.com/dfinance/dnode/x/oracle/client/rest"
 	"github.com/dfinance/dnode/x/oracle/internal/keeper"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
@@ -61,25 +59,12 @@ func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router
 
 // GetTxCmd returns the root tx command for the bank module.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+	return client.GetTxCmd(cdc)
 }
 
 // GetQueryCmd returns no root query command for the bank module.
-func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
-	// Group nameservice queries under a subcommand
-	queryCmd := &cobra.Command{
-		Use:   "oracle",
-		Short: "Querying commands for the oracle module",
-	}
-
-	queryCmd.AddCommand(client.GetCommands(
-		cmd.GetCmdCurrentPrice(StoreKey, ModuleCdc),
-		cmd.GetCmdRawPrices(StoreKey, ModuleCdc),
-		cmd.GetCmdAssets(StoreKey, ModuleCdc),
-		cmd.GetCmdAssetCodeHex(),
-	)...)
-
-	return queryCmd
+func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return client.GetQueryCmd(cdc)
 }
 
 // AppModule app module type

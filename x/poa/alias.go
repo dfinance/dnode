@@ -8,7 +8,6 @@ import (
 const (
 	ModuleName        = types.ModuleName
 	StoreKey          = types.ModuleName
-	DefaultCodespace  = types.DefaultCodespace
 	DefaultParamspace = types.DefaultParamspace
 	QuerierRoute      = types.ModuleName
 )

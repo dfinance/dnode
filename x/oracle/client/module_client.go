@@ -2,50 +2,48 @@ package client
 
 import (
 	"github.com/cosmos/cosmos-sdk/client"
+	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 	amino "github.com/tendermint/go-amino"
 
-	cmd "github.com/dfinance/dnode/x/oracle/client/cli"
+	"github.com/dfinance/dnode/x/oracle/client/cli"
 )
 
-// ModuleClient exports all client functionality from this module
-type ModuleClient struct {
-	storeKey string
-	cdc      *amino.Codec
-}
-
-// NewModuleClient creates client for the module
-func NewModuleClient(storeKey string, cdc *amino.Codec) ModuleClient {
-	return ModuleClient{storeKey, cdc}
-}
-
-// GetQueryCmd returns the cli query commands for this module
-func (mc ModuleClient) GetQueryCmd() *cobra.Command {
-	// Group nameservice queries under a subcommand
+// Returns get commands for this module.
+func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
 		Use:   "oracle",
 		Short: "Querying commands for the oracle module",
 	}
 
-	queryCmd.AddCommand(client.GetCommands(
-		cmd.GetCmdCurrentPrice(mc.storeKey, mc.cdc),
-		cmd.GetCmdRawPrices(mc.storeKey, mc.cdc),
-		cmd.GetCmdAssets(mc.storeKey, mc.cdc),
+	queryCmd.AddCommand(sdkClient.GetCommands(
+		cli.GetCmdCurrentPrice("oracle", cdc),
+		cli.GetCmdRawPrices("oracle", cdc),
+		cli.GetCmdAssets("oracle", cdc),
+		cli.GetCmdAssetCodeHex(),
 	)...)
 
 	return queryCmd
 }
 
-// GetTxCmd returns the transaction commands for this module
-func (mc ModuleClient) GetTxCmd() *cobra.Command {
+// GetTxCmd returns the transaction commands for this module.
+func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
-		Use:   "oracle",
-		Short: "Oracle transactions subcommands",
+		Use:                        "oracle",
+		Short:                      "Oracle transaction subcommands",
+		DisableFlagParsing:         true,
+		SuggestionsMinimumDistance: 2,
+		RunE:                       client.ValidateCmd,
 	}
 
-	txCmd.AddCommand(client.PostCommands(
-		cmd.GetCmdPostPrice(mc.cdc),
-	)...)
+	txCmd.AddCommand(sdkClient.PostCommands(
+		cli.GetCmdPostPrice(cdc),
+		cli.GetCmdAddOracle(cdc),
+		cli.GetCmdSetOracles(cdc),
+		cli.GetCmdSetAsset(cdc),
+		cli.GetCmdAddAsset(cdc),
+	)...,
+	)
 
 	return txCmd
 }

@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
-	cmn "github.com/tendermint/tendermint/libs/common"
+	tmOs "github.com/tendermint/tendermint/libs/os"
 )
 
 const (
@@ -64,7 +64,7 @@ func WriteVMConfig(rootDir string, vmConfig *VMConfig) {
 		panic(err)
 	}
 
-	cmn.MustWriteFile(configFilePath, buffer.Bytes(), 0644)
+	tmOs.MustWriteFile(configFilePath, buffer.Bytes(), 0644)
 }
 
 // Read VM config file from configuration directory.

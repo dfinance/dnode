@@ -3,14 +3,16 @@ package app
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"os"
 	"sort"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	authExported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/require"
@@ -26,6 +28,7 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/genaccounts"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
@@ -63,9 +66,9 @@ type RestError struct {
 
 // ABCI error object helper, used to unmarshal RestError.Error string
 type ABCIError struct {
-	Codespace sdk.CodespaceType `json:"codespace"`
-	Code      sdk.CodeType      `json:"code"`
-	Message   string            `json:"message"`
+	Codespace string `json:"codespace"`
+	Code      uint32 `json:"code"`
+	Message   string `json:"message"`
 }
 
 // Type that combines an Address with the privKey and pubKey to that address
@@ -200,10 +203,10 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	var genTxPubKey crypto.PubKey
 	var genTxPrivKey secp256k1.PrivKeySecp256k1
 	{
-		if privValidatorKey == nil {
-			k := ed25519.GenPrivKey()
-			privValidatorKey = &k
-		}
+		//if privValidatorKey == nil {
+		//	k := ed25519.GenPrivKey()
+		//	privValidatorKey = &k
+		//}
 
 		genTxPrivKey = secp256k1.GenPrivKey()
 		genTxPubKey = genTxPrivKey.PubKey()
@@ -213,18 +216,19 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 			AccountNumber: uint64(len(accs)),
 			Address:       accAddr,
 			Coins:         GenDefCoins(nil),
-			PubKey:        privValidatorKey.PubKey(),
+			//PubKey:        privValidatorKey.PubKey(),
+			PubKey:        genTxPubKey,
 		}
 	}
 
 	// generate genesis state based on defaults
 	genesisState := ModuleBasics.DefaultGenesis()
 	{
-		accounts := make(genaccounts.GenesisAccounts, 0, len(accs)+1)
+		accounts := make(genaccounts.GenesisState, 0, len(accs)+1)
 		for _, acc := range accs {
-			accounts = append(accounts, genaccounts.NewGenesisAccount(acc))
+			accounts = append(accounts, *acc)
 		}
-		accounts = append(accounts, genaccounts.NewGenesisAccount(genTxAcc))
+		accounts = append(accounts, *genTxAcc)
 
 		genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, accounts)
 
@@ -278,7 +282,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 			genTxAcc.Address.Bytes(),
 			genTxAcc.PubKey,
 			sdk.NewCoin(dnConfig.MainDenom, tokenAmount),
-			staking.NewDescription(monikerID, "", "", ""),
+			staking.NewDescription(monikerID, "", "", "", ""),
 			staking.NewCommissionRates(commissionRate, commissionMaxRate, commissionChangeRate),
 			sdk.OneInt(),
 		)
@@ -369,37 +373,50 @@ func GenDefCoins(t *testing.T) sdk.Coins {
 	return coins
 }
 
-func DeliverTx(app *DnServiceApp, tx auth.StdTx) sdk.Result {
-	if res := app.Simulate(app.cdc.MustMarshalJSON(tx), tx); !res.IsOK() {
-		return res
+func DeliverTx(app *DnServiceApp, tx auth.StdTx) (*sdk.Result, error) {
+	if _, res, err := app.Simulate(app.cdc.MustMarshalJSON(tx), tx); err != nil {
+		return res, err
 	}
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
-	if res := app.Deliver(tx); !res.IsOK() {
-		return res
+	_, res, err := app.Deliver(tx)
+	if err != nil {
+		return res, err
 	}
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
 
-	return sdk.Result{}
+	return res, nil
 }
 
 // DeliverTx and success check
 func CheckDeliverTx(t *testing.T, app *DnServiceApp, tx auth.StdTx) {
-	res := DeliverTx(app, tx)
-	require.True(t, res.IsOK(), res.Log)
+	res, err := DeliverTx(app, tx)
+
+	resLog := ""
+	if res != nil {
+		resLog = res.Log
+	}
+
+	require.NoError(t, err, "res.Log %q: %v", resLog, err)
 }
 
 // DeliverTx and fail check
 func CheckDeliverErrorTx(t *testing.T, app *DnServiceApp, tx auth.StdTx) {
-	res := DeliverTx(app, tx)
-	require.False(t, res.IsOK(), res.Log)
+	res, err := DeliverTx(app, tx)
+
+	resLog := ""
+	if res != nil {
+		resLog = res.Log
+	}
+
+	require.Error(t, err, resLog)
 }
 
 // DeliverTx and fail check with specific error
-func CheckDeliverSpecificErrorTx(t *testing.T, app *DnServiceApp, tx auth.StdTx, err sdk.Error) {
-	res := DeliverTx(app, tx)
-	CheckResultError(t, err, res)
+func CheckDeliverSpecificErrorTx(t *testing.T, app *DnServiceApp, tx auth.StdTx, expectedErr error) {
+	res, err := DeliverTx(app, tx)
+	CheckResultError(t, expectedErr, res, err)
 }
 
 func RunQuery(t *testing.T, app *DnServiceApp, requestData interface{}, path string, responseValue interface{}) abci.ResponseQuery {
@@ -422,32 +439,48 @@ func CheckRunQuery(t *testing.T, app *DnServiceApp, requestData interface{}, pat
 }
 
 // RunQuery and fail check with specific error
-func CheckRunQuerySpecificError(t *testing.T, app *DnServiceApp, requestData interface{}, path string, err sdk.Error) {
+func CheckRunQuerySpecificError(t *testing.T, app *DnServiceApp, requestData interface{}, path string, expectedErr error) {
+	expectedSdkErr, ok := expectedErr.(*sdkErrors.Error)
+	require.True(t, ok, "expectedErr not a SDK error")
+
 	resp := RunQuery(t, app, requestData, path, nil)
 	require.True(t, resp.IsErr())
-	require.Equal(t, string(err.Codespace()), resp.Codespace, "Codespace: %s", resp.Log)
-	require.Equal(t, uint32(err.Code()), resp.Code, "Code: %s", resp.Log)
+	require.Equal(t, expectedSdkErr.Codespace(), resp.Codespace, "Codespace: %s", resp.Log)
+	require.Equal(t, expectedSdkErr.ABCICode(), resp.Code, "Code: %s", resp.Log)
 }
 
 func GetContext(app *DnServiceApp, isCheckTx bool) sdk.Context {
 	return app.NewContext(isCheckTx, abci.Header{Height: app.LastBlockHeight() + 1})
 }
 
-func GetAccountCheckTx(app *DnServiceApp, address sdk.AccAddress) auth.Account {
+func GetAccountCheckTx(app *DnServiceApp, address sdk.AccAddress) authExported.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
-func GetAccount(app *DnServiceApp, address sdk.AccAddress) auth.Account {
+func GetAccount(app *DnServiceApp, address sdk.AccAddress) authExported.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(false, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
 // Check if expected / received tx results are equal
-func CheckResultError(t *testing.T, expectedErr sdk.Error, receivedRes sdk.Result) {
-	require.Equal(t, expectedErr.Codespace(), receivedRes.Codespace, "Codespace: %s", receivedRes.Log)
-	require.Equal(t, expectedErr.Code(), receivedRes.Code, "Code: %s", receivedRes.Log)
+func CheckResultError(t *testing.T, expectedErr error, receivedRes *sdk.Result, receivedErr error) {
+	expectedSdkErr, ok := expectedErr.(*sdkErrors.Error)
+	require.True(t, ok, "expectedErr not a SDK error: %T", expectedErr)
+
+	resMsg := ResultErrorMsg(receivedRes, receivedErr)
+	require.Error(t, receivedErr, resMsg)
+	require.True(t, expectedSdkErr.Is(receivedErr), resMsg)
 }
 
-func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg core.MsMsg, submitAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+func ResultErrorMsg(res *sdk.Result, err error) string {
+	resLog := ""
+	if res != nil {
+		resLog = res.Log
+	}
+
+	return fmt.Sprintf("result with log %q: %v", resLog, err)
+}
+
+func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg core.MsMsg, submitAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
 	confirmCnt := int(app.poaKeeper.GetEnoughConfirmations(GetContext(app, true)))
 
 	// lazy input check
@@ -464,8 +497,8 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg c
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		if doChecks {
 			CheckDeliverTx(t, app, tx)
-		} else if res := DeliverTx(app, tx); !res.IsOK() {
-			return res
+		} else if res, err := DeliverTx(app, tx); err != nil {
+			return res, err
 		}
 
 		// check vote added
@@ -489,8 +522,8 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg c
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		if doChecks {
 			CheckDeliverTx(t, app, tx)
-		} else if res := DeliverTx(app, tx); !res.IsOK() {
-			return res
+		} else if res, err := DeliverTx(app, tx); err != nil {
+			return res, err
 		}
 
 		// check vote added / call removed
@@ -508,8 +541,8 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg c
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		if doChecks {
 			CheckDeliverTx(t, app, tx)
-		} else if res := DeliverTx(app, tx); !res.IsOK() {
-			return res
+		} else if res, err := DeliverTx(app, tx); err != nil {
+			return res, err
 		}
 
 		// check call removed
@@ -518,5 +551,5 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg c
 		require.Equal(t, 0, len(calls))
 	}
 
-	return sdk.Result{}
+	return nil, nil
 }

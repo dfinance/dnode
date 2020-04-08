@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/cosmos/cosmos-sdk/client"
+	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 	amino "github.com/tendermint/go-amino"
 
@@ -10,32 +10,32 @@ import (
 
 // Return query commands for PoA module.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
-	poaQueryCmd := &cobra.Command{
+	queryCmd := &cobra.Command{
 		Use:   "poa",
 		Short: "PoA commands for the validators module",
 	}
 
-	poaQueryCmd.AddCommand(client.GetCommands(
+	queryCmd.AddCommand(sdkClient.GetCommands(
 		cli.GetValidator("poa", cdc),
 		cli.GetValidators("poa", cdc),
 		cli.GetMinMax("poa", cdc),
 	)...)
 
-	return poaQueryCmd
+	return queryCmd
 }
 
 // Returns transactions commands for this module.
 func GetTxCmd(cdc *amino.Codec) *cobra.Command {
-	poaTxCmd := &cobra.Command{
+	txCmd := &cobra.Command{
 		Use:   "poa",
 		Short: "PoA transactions subcommands",
 	}
 
-	poaTxCmd.AddCommand(client.PostCommands(
+	txCmd.AddCommand(sdkClient.PostCommands(
 		cli.PostMsAddValidator(cdc),
 		cli.PostMsRemoveValidator(cdc),
 		cli.PostMsReplaceValidator(cdc),
 	)...)
 
-	return poaTxCmd
+	return txCmd
 }

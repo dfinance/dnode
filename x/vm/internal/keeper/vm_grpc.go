@@ -15,7 +15,7 @@ func GetFreeGas(ctx sdk.Context) sdk.Gas {
 }
 
 // Create new contract in grpc format for VM request.
-func NewContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, contractType vm_grpc.ContractType, args []*vm_grpc.VMArgs) (*vm_grpc.VMContract, sdk.Error) {
+func NewContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, contractType vm_grpc.ContractType, args []*vm_grpc.VMArgs) (*vm_grpc.VMContract, error) {
 	return &vm_grpc.VMContract{
 		Address:      address.String(),
 		MaxGasAmount: maxGas,
@@ -27,7 +27,7 @@ func NewContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, contractTy
 }
 
 // Create deploy request for VM grpc server.
-func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMExecuteRequest, sdk.Error) {
+func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMExecuteRequest, error) {
 	gas := GetFreeGas(ctx)
 
 	contract, err := NewContract(msg.Signer, gas, msg.Module, vm_grpc.ContractType_Module, []*vm_grpc.VMArgs{})
@@ -42,7 +42,7 @@ func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMEx
 }
 
 // Create execute script request for VM grpc server.
-func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteRequest, sdk.Error) {
+func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteRequest, error) {
 	gas := GetFreeGas(ctx)
 
 	args := make([]*vm_grpc.VMArgs, len(msg.Args))

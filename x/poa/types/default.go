@@ -1,13 +1,10 @@
 // Described types for PoA module.
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
-
 const (
-	ModuleName                          = "poa"
-	RouterKey                           = ModuleName
-	DefaultCodespace  sdk.CodespaceType = ModuleName
-	DefaultParamspace                   = ModuleName
+	ModuleName        = "poa"
+	RouterKey         = ModuleName
+	DefaultParamspace = ModuleName
 )
 
 var (

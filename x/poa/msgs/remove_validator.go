@@ -4,6 +4,8 @@ package msgs
 import (
 	"encoding/json"
 
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/dfinance/dnode/x/poa/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -39,13 +41,13 @@ func (msg MsgRemoveValidator) Type() string {
 }
 
 // Validate basic for remove validator message
-func (msg MsgRemoveValidator) ValidateBasic() sdk.Error {
+func (msg MsgRemoveValidator) ValidateBasic() error {
 	if msg.Address.Empty() {
-		return sdk.ErrInvalidAddress(msg.Address.String())
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress,"empty address")
 	}
 
 	if msg.Sender.Empty() {
-		return sdk.ErrInvalidAddress(msg.Sender.String())
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress,"empty sender")
 	}
 
 	return nil

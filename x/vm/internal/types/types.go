@@ -17,8 +17,7 @@ const (
 	StoreKey  = ModuleName
 	RouterKey = ModuleName
 
-	Codespace         types.CodespaceType = ModuleName
-	DefaultParamspace                     = ModuleName
+	DefaultParamspace = ModuleName
 
 	VmAddressLength = 32
 	VmGasPrice      = 1

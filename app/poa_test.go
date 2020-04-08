@@ -36,7 +36,7 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
 		addMsg := posMsgs.NewMsgAddValidator(newValidators[0].Address, ethAddresses[0], genValidators[0].Address)
 		tx := genTx([]sdk.Msg{addMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrOnlyMultisig(poaTypes.DefaultCodespace, poaTypes.ModuleName))
+		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrOnlyMultisig)
 	}
 }
 
@@ -87,33 +87,24 @@ func Test_POAInvalidGenesis(t *testing.T) {
 
 	// check no validators genesis
 	{
-		expectedErr := poaTypes.ErrNotEnoungValidators(0, 0)
 		_, err := setGenesis(t, app, []*auth.BaseAccount{})
-		require.Error(t, err)
-		require.Equal(t, expectedErr.Code(), err.(sdk.Error).Code())
-		require.Equal(t, expectedErr.Codespace(), err.(sdk.Error).Codespace())
+		CheckResultError(t, poaTypes.ErrNotEnoungValidators, nil, err)
 	}
 
 	// check (minValidators - 1) genesis
 	{
 		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMinValidators-1), GenDefCoins(t))
 
-		expectedErr := poaTypes.ErrNotEnoungValidators(0, 0)
 		_, err := setGenesis(t, app, accs)
-		require.Error(t, err)
-		require.Equal(t, expectedErr.Code(), err.(sdk.Error).Code())
-		require.Equal(t, expectedErr.Codespace(), err.(sdk.Error).Codespace())
+		CheckResultError(t, poaTypes.ErrNotEnoungValidators, nil, err)
 	}
 
 	// check (maxValidators + 1) genesis
 	{
 		accs, _, _, _ := CreateGenAccounts(int(poaTypes.DefaultMaxValidators+1), GenDefCoins(t))
 
-		expectedErr := poaTypes.ErrMaxValidatorsReached(0)
 		_, err := setGenesis(t, app, accs)
-		require.Error(t, err)
-		require.Equal(t, expectedErr.Code(), err.(sdk.Error).Code())
-		require.Equal(t, expectedErr.Codespace(), err.(sdk.Error).Codespace())
+		CheckResultError(t, poaTypes.ErrMaxValidatorsReached, nil, err)
 	}
 }
 
@@ -165,8 +156,8 @@ func Test_POAValidatorsAdd(t *testing.T) {
 
 	// add already existing validator
 	{
-		res := addValidators(t, app, genValidators, []*auth.BaseAccount{newValidators[0]}, genPrivKeys, false)
-		CheckResultError(t, poaTypes.ErrValidatorExists(""), res)
+		res, err := addValidators(t, app, genValidators, []*auth.BaseAccount{newValidators[0]}, genPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrValidatorExists, res, err)
 	}
 }
 
@@ -221,8 +212,8 @@ func Test_POAValidatorsRemove(t *testing.T) {
 
 	// remove non-existing validator
 	{
-		res := removeValidators(t, app, genValidators, []*auth.BaseAccount{targetValidators[0]}, genPrivKeys, false)
-		CheckResultError(t, poaTypes.ErrValidatorDoesntExists(""), res)
+		res, err := removeValidators(t, app, genValidators, []*auth.BaseAccount{targetValidators[0]}, genPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrValidatorDoesntExists, res, err)
 	}
 }
 
@@ -272,14 +263,15 @@ func Test_POAValidatorsReplaceExisting(t *testing.T) {
 	// replace existing with existing validator
 	{
 		oldValidator, newValidator := genValidators[0], genValidators[1]
-		res := replaceValidator(t, app, genValidators, oldValidator.Address, newValidator.Address, genPrivKeys, false)
-		CheckResultError(t, poaTypes.ErrValidatorExists(""), res)
+		res, err := replaceValidator(t, app, genValidators, oldValidator.Address, newValidator.Address, genPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrValidatorExists, res, err)
 	}
+
 	// replace non-existing with existing validator
 	{
 		nonExistingValidator, newValidator := targetValidators[0], genValidators[1]
-		res := replaceValidator(t, app, genValidators, nonExistingValidator.Address, newValidator.Address, genPrivKeys, false)
-		CheckResultError(t, poaTypes.ErrValidatorDoesntExists(""), res)
+		res, err := replaceValidator(t, app, genValidators, nonExistingValidator.Address, newValidator.Address, genPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrValidatorDoesntExists, res, err)
 	}
 }
 
@@ -303,8 +295,8 @@ func Test_POAValidatorsMinMaxRange(t *testing.T) {
 	// check adding (defMaxValidators + 1) validator
 	{
 		newValidator := targetValidators[0]
-		res := addValidators(t, app, genValidators, []*auth.BaseAccount{newValidator}, genPrivKeys, false)
-		CheckResultError(t, poaTypes.ErrMaxValidatorsReached(0), res)
+		res, err := addValidators(t, app, genValidators, []*auth.BaseAccount{newValidator}, genPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrMaxValidatorsReached, res, err)
 	}
 
 	// check removing (defMinValidators - 1) validator
@@ -319,51 +311,46 @@ func Test_POAValidatorsMinMaxRange(t *testing.T) {
 
 		// remove the last one
 		delValidator := genValidators[len(curValidators)-1]
-		res := removeValidators(t, app, curValidators, []*auth.BaseAccount{delValidator}, curPrivKeys, false)
-		CheckResultError(t, poaTypes.ErrMinValidatorsReached(0), res)
+		res, err := removeValidators(t, app, curValidators, []*auth.BaseAccount{delValidator}, curPrivKeys, false)
+		CheckResultError(t, poaTypes.ErrMinValidatorsReached, res, err)
 	}
 }
 
-func addValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, newValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+func addValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, newValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
 	for _, v := range newValidators {
 		addMsg := posMsgs.NewMsgAddValidator(v.Address, ethAddresses[0], genAccs[0].Address)
 		msgID := fmt.Sprintf("addValidator:%s", v.Address)
 
-		res := MSMsgSubmitAndVote(t, app, msgID, addMsg, 0, genAccs, privKeys, doChecks)
+		res, err := MSMsgSubmitAndVote(t, app, msgID, addMsg, 0, genAccs, privKeys, doChecks)
 		if doChecks {
-			require.True(t, res.IsOK())
-		} else if !res.IsOK() {
-			return res
+			require.NoError(t, err)
+		} else if err != nil {
+			return res, err
 		}
 	}
 
-	return sdk.Result{}
+	return nil, nil
 }
 
-func replaceValidator(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, oldValidatorAddr, newValidatorAddr sdk.AccAddress, oldPrivKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+func replaceValidator(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, oldValidatorAddr, newValidatorAddr sdk.AccAddress, oldPrivKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
 	replaceMsg := posMsgs.NewMsgReplaceValidator(oldValidatorAddr, newValidatorAddr, ethAddresses[0], genAccs[0].GetAddress())
 	msgID := fmt.Sprintf("replaceValidator:%s", newValidatorAddr)
 
-	res := MSMsgSubmitAndVote(t, app, msgID, replaceMsg, 0, genAccs, oldPrivKeys, doChecks)
-	if doChecks {
-		require.True(t, res.IsOK())
-	}
-
-	return res
+	return MSMsgSubmitAndVote(t, app, msgID, replaceMsg, 0, genAccs, oldPrivKeys, doChecks)
 }
 
-func removeValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, rmValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) sdk.Result {
+func removeValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, rmValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
 	for _, v := range rmValidators {
 		removeMsg := posMsgs.NewMsgRemoveValidator(v.Address, genAccs[0].Address)
 		msgID := fmt.Sprintf("removeValidator:%s", v.Address)
 
-		res := MSMsgSubmitAndVote(t, app, msgID, removeMsg, 0, genAccs, privKeys, doChecks)
+		res, err := MSMsgSubmitAndVote(t, app, msgID, removeMsg, 0, genAccs, privKeys, doChecks)
 		if doChecks {
-			require.True(t, res.IsOK())
-		} else if !res.IsOK() {
-			return res
+			require.NoError(t, err)
+		} else if err != nil {
+			return res, err
 		}
 	}
 
-	return sdk.Result{}
+	return nil, nil
 }

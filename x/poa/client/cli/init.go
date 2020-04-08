@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -54,7 +55,7 @@ func AddGenesisPoAValidatorCmd(ctx *server.Context, cdc *codec.Codec) *cobra.Com
 			}
 
 			if len(genesisState.PoAValidators) == int(genesisState.Parameters.MaxValidators) {
-				return types.ErrMaxValidatorsReached(genesisState.Parameters.MaxValidators)
+				return sdkErrors.Wrapf(types.ErrMaxValidatorsReached, "%d", genesisState.Parameters.MaxValidators)
 			}
 
 			validator := types.NewValidator(

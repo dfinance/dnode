@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
@@ -50,11 +51,11 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	length := len(genesisState.PoAValidators)
 
 	if length < int(params.MinValidators) {
-		return types.ErrNotEnoungValidators(uint16(length), params.MinValidators)
+		return sdkErrors.Wrapf(types.ErrNotEnoungValidators, "%d should be >= %d", length, params.MinValidators)
 	}
 
 	if length > int(params.MaxValidators) {
-		return types.ErrMaxValidatorsReached(params.MaxValidators)
+		return sdkErrors.Wrapf(types.ErrMaxValidatorsReached, "%d should be <= %d", length, params.MaxValidators)
 	}
 
 	return nil

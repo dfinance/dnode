@@ -10,10 +10,8 @@ import (
 
 // Default constants.
 const (
-	ModuleName = "multisig"
-
+	ModuleName        = "multisig"
 	RouterKey         = ModuleName
-	DefaultCodespace  = ModuleName
 	DefaultParamspace = ModuleName
 )
 

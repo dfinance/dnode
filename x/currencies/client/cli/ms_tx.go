@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -25,7 +26,8 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
-			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {

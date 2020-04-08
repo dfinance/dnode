@@ -2,7 +2,7 @@
 package client
 
 import (
-	"github.com/cosmos/cosmos-sdk/client"
+	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
 
@@ -12,33 +12,33 @@ import (
 
 // Returns get commands for this module.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
-	currenciesQueryCmd := &cobra.Command{
+	queryCmd := &cobra.Command{
 		Use:   types.ModuleName,
 		Short: "Querying commands for the currencies module",
 	}
 
-	currenciesQueryCmd.AddCommand(
-		client.GetCommands(
+	queryCmd.AddCommand(
+		sdkClient.GetCommands(
 			cli.GetIssue("currencies", cdc),
 			cli.GetCurrency("currencies", cdc),
 			cli.GetDestroy("currencies", cdc),
 			cli.GetDestroys("currencies", cdc),
 		)...)
 
-	return currenciesQueryCmd
+	return queryCmd
 }
 
 // GetTxCmd returns the transaction commands for this module.
 func GetTxCmd(cdc *amino.Codec) *cobra.Command {
-	currenciesTxCmd := &cobra.Command{
+	txCmd := &cobra.Command{
 		Use:   types.ModuleName,
 		Short: "Currency transactions subcommands",
 	}
 
-	currenciesTxCmd.AddCommand(client.PostCommands(
+	txCmd.AddCommand(sdkClient.PostCommands(
 		cli.PostMsIssueCurrency(cdc),
 		cli.PostDestroyCurrency(cdc),
 	)...)
 
-	return currenciesTxCmd
+	return txCmd
 }

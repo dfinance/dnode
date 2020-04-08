@@ -18,6 +18,7 @@ import (
 	sdkKeybase "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkRest "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
@@ -374,7 +375,7 @@ func (r *RestTester) txRequest(senderIdx uint, msg sdk.Msg, sync, doCheck bool) 
 	if !doCheck {
 		return txResp
 	}
-	require.Equal(r.t, sdk.CodeOK, sdk.CodeType(txResp.Code), "tx failed: %v", txResp)
+	require.Equal(r.t, uint32(0), txResp.Code, "tx failed: %v", txResp)
 
 	return txResp
 }
@@ -387,16 +388,19 @@ func (r *RestTester) TxSyncRequest(senderIdx uint, msg sdk.Msg, doCheck bool) sd
 	return r.txRequest(senderIdx, msg, true, doCheck)
 }
 
-func (r *RestTester) CheckError(expectedCode, receivedCode int, expectedErr sdk.Error, receivedBody []byte) {
+func (r *RestTester) CheckError(expectedCode, receivedCode int, expectedErr error, receivedBody []byte) {
 	require.Equal(r.t, expectedCode, receivedCode, "code")
 
 	if expectedErr != nil {
+		expectedSdkErr, ok := expectedErr.(*sdkErrors.Error)
+		require.True(r.t, ok, "expectedErr not a SDK error")
+
 		require.NotNil(r.t, receivedBody, "receivedBody")
 
 		restErr, abciErr := &RestError{}, &ABCIError{}
 		require.NoError(r.t, r.App.cdc.UnmarshalJSON(receivedBody, restErr), "unmarshal to RestError: %s", string(receivedBody))
 		require.NoError(r.t, r.App.cdc.UnmarshalJSON([]byte(restErr.Error), abciErr), "unmarshal to ABCIError: %s", string(receivedBody))
-		require.Equal(r.t, expectedErr.Codespace(), abciErr.Codespace, "Codespace: %s", string(receivedBody))
-		require.Equal(r.t, expectedErr.Code(), abciErr.Code, "Code: %s", string(receivedBody))
+		require.Equal(r.t, expectedSdkErr.Codespace(), abciErr.Codespace, "Codespace: %s", string(receivedBody))
+		require.Equal(r.t, expectedSdkErr.ABCICode(), abciErr.Code, "Code: %s", string(receivedBody))
 	}
 }

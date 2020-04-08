@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 // Asset struct that represents an asset in the oracle
@@ -29,13 +30,13 @@ func NewAsset(
 }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
-func (a Asset) ValidateBasic() sdk.Error {
+func (a Asset) ValidateBasic() error {
 	if err := assetCodeFilter(a.AssetCode); err != nil {
-		return sdk.ErrInternal(fmt.Sprintf("invalid assetCode: Value: %s. Error: %v", a.AssetCode, err))
+		return sdkErrors.Wrapf(ErrInternal, "invalid assetCode: value (%s), error (%v)", a.AssetCode, err)
 	}
 
 	if len(a.Oracles) == 0 {
-		return sdk.ErrInternal("invalid TokenRecord: Error: Missing Oracles")
+		return sdkErrors.Wrap(ErrInternal, "invalid TokenRecord: missing Oracles")
 	}
 
 	return nil

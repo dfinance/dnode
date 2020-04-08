@@ -2,10 +2,9 @@
 package multisig
 
 import (
-	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/x/multisig/types"
@@ -21,7 +20,7 @@ const (
 
 // Creating new Querier.
 func NewQuerier(msKeeper Keeper) sdk.Querier {
-	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, sdk.Error) {
+	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
 		case QueryGetCalls:
 			return queryGetCalls(msKeeper, ctx)
@@ -36,29 +35,28 @@ func NewQuerier(msKeeper Keeper) sdk.Querier {
 			return queryGetUnique(msKeeper, ctx, req)
 
 		default:
-			return nil, sdk.ErrUnknownRequest("unknown query")
+			return nil, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "unknown query")
 		}
 	}
 }
 
 // Process request to get last id.
-func queryGetLastId(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
+func queryGetLastId(msKeeper Keeper, ctx sdk.Context) ([]byte, error) {
 	resp := types.LastIdRes{LastId: msKeeper.GetLastId(ctx)}
 
 	bz, err := codec.MarshalJSONIndent(msKeeper.cdc, resp)
 	if err != nil {
-		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "could not marshal result to JSON: %v", err)
 	}
 
 	return bz, nil
 }
 
 // Process request to get calls.
-func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
+func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, error) {
 	calls := make(types.CallsResp, 0)
 
 	start := ctx.BlockHeight() - msKeeper.GetIntervalToExecute(ctx)
-
 	if start < 0 {
 		start = 0
 	}
@@ -70,10 +68,8 @@ func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 		bs := activeIterator.Value()
 
 		var callId uint64
-		err := ModuleCdc.UnmarshalBinaryLengthPrefixed(bs, &callId)
-
-		if err != nil {
-			return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal call id", err.Error()))
+		if err := ModuleCdc.UnmarshalBinaryLengthPrefixed(bs, &callId); err != nil {
+			return nil, sdkErrors.Wrapf(types.ErrInternal, "could not marshal call id: %v", err)
 		}
 
 		var callResp types.CallResp
@@ -81,7 +77,7 @@ func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 		votes, err := msKeeper.GetVotes(ctx, callId)
 
 		if err != nil {
-			return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not extract votes for call by id", err.Error()))
+			return nil, sdkErrors.Wrapf(types.ErrInternal, "could not extract votes for call by id: %v", err)
 		}
 
 		callResp.Call = call
@@ -92,18 +88,18 @@ func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, sdk.Error) {
 
 	bz, err := codec.MarshalJSONIndent(msKeeper.cdc, calls)
 	if err != nil {
-		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "could not marshal result to JSON: %v", err)
 	}
 
 	return bz, nil
 }
 
 // Process request to get call.
-func queryGetCall(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, sdk.Error) {
+func queryGetCall(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, error) {
 	var params types.CallReq
 
 	if err := ModuleCdc.UnmarshalJSON(req.Data, &params); err != nil {
-		return nil, sdk.ErrInternal(fmt.Sprintf("failed to parse params: %s", err))
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "failed to parse params: %v", err)
 	}
 
 	call, err := msKeeper.GetCall(ctx, params.CallId)
@@ -123,17 +119,17 @@ func queryGetCall(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]by
 
 	bz, errMarshal := codec.MarshalJSONIndent(msKeeper.cdc, callResp)
 	if errMarshal != nil {
-		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", errMarshal.Error()))
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "could not marshal result to JSON: %v", errMarshal)
 	}
 
 	return bz, nil
 }
 
 // Process query to get call by unique id.
-func queryGetUnique(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, sdk.Error) {
+func queryGetUnique(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, error) {
 	var params types.UniqueReq
 	if err := ModuleCdc.UnmarshalJSON(req.Data, &params); err != nil {
-		return nil, sdk.ErrInternal(fmt.Sprintf("failed to parse params: %s", err))
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "failed to parse params: %v", err)
 	}
 
 	id, err := msKeeper.GetCallIDByUnique(ctx, params.UniqueId)
@@ -158,7 +154,7 @@ func queryGetUnique(msKeeper Keeper, ctx sdk.Context, req abci.RequestQuery) ([]
 
 	bz, errMarshal := codec.MarshalJSONIndent(msKeeper.cdc, callResp)
 	if errMarshal != nil {
-		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", errMarshal.Error()))
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "could not marshal result to JSON: %v", errMarshal)
 	}
 
 	return bz, nil
