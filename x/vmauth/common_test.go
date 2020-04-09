@@ -90,7 +90,7 @@ func newTestInput(t *testing.T) testInput {
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
-	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams, params.DefaultCodespace)
+	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
 
 	// Init vm storage.
 	input.vmStorage = NewVMStorage(input.keyVMStorage)

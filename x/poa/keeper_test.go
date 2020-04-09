@@ -18,6 +18,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/dfinance/dnode/helpers/tests"
 	poatypes "github.com/dfinance/dnode/x/poa/types"
 )
 
@@ -98,7 +99,7 @@ func setupTestInput(t *testing.T) testInput {
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
-	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams, params.DefaultCodespace)
+	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
 
 	// The AccountKeeper handles address -> account lookups
 	input.accountKeeper = auth.NewAccountKeeper(
@@ -112,7 +113,6 @@ func setupTestInput(t *testing.T) testInput {
 	input.bankKeeper = bank.NewBaseKeeper(
 		input.accountKeeper,
 		input.paramsKeeper.Subspace(bank.DefaultParamspace),
-		bank.DefaultCodespace,
 		input.ModuleAccountAddrs(),
 	)
 
@@ -130,11 +130,6 @@ func setupTestInput(t *testing.T) testInput {
 	// input.bankKeeper.SetSendEnabled(input.ctx, true)
 
 	return input
-}
-
-func checkError(t *testing.T, expectedErr, receivedErr sdk.Error) {
-	require.Equal(t, expectedErr.Codespace(), receivedErr.Codespace(), "Codespace")
-	require.Equal(t, expectedErr.Code(), receivedErr.Code(), "code")
 }
 
 // func TestKeeper_GetCDC(t *testing.T) {
@@ -319,7 +314,7 @@ func TestModule_ValidateGenesis(t *testing.T) {
 	// check minValidators error
 	if genesis.Parameters.MinValidators > 1 {
 		err := app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis))
-		checkError(t, poatypes.ErrNotEnoungValidators(0, 0), err.(sdk.Error))
+		tests.CheckExpectedErr(t, poatypes.ErrNotEnoungValidators, err)
 	}
 
 	// check OK
@@ -340,7 +335,7 @@ func TestModule_ValidateGenesis(t *testing.T) {
 			EthAddress: ethAddress1,
 		})
 		err := app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis))
-		checkError(t, poatypes.ErrMaxValidatorsReached(0), err.(sdk.Error))
+		tests.CheckExpectedErr(t, poatypes.ErrMaxValidatorsReached, err)
 	}
 
 	// check params validation

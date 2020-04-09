@@ -5,7 +5,6 @@
 package core
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/mock"
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -59,7 +59,7 @@ func setupTestInput() testInput {
 
 	ps := subspace.NewSubspace(cdc, keyParams, tkeyParams, types.DefaultParamspace)
 	ak := vmauth.NewVMAccountKeeper(cdc, authCapKey, ps, vmk, types.ProtoBaseAccount)
-	sk := auth.NewDummySupplyKeeper(*ak.AccountKeeper)
+	sk := mock.NewDummySupplyKeeper(*ak.AccountKeeper)
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain-id", Height: 1}, false, log.NewNopLogger())
 
@@ -69,21 +69,15 @@ func setupTestInput() testInput {
 }
 
 // run the tx through the anteHandler and ensure it fails with the given code.
-func checkInvalidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, tx sdk.Tx, simulate bool, code sdk.CodeType) {
-	_, result, abort := anteHandler(ctx, tx, simulate)
-	require.True(t, abort)
-
-	require.Equal(t, code, result.Code, fmt.Sprintf("Expected %v, got %v", code, result))
-	require.Equal(t, Codespace, result.Codespace)
+func checkInvalidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, tx sdk.Tx, simulate bool, expectedErr error) {
+	_, err := anteHandler(ctx, tx, simulate)
+	require.Error(t, err)
 }
 
 // run the tx through the anteHandler and ensure its valid.
 func checkValidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, tx sdk.Tx, simulate bool) {
-	_, result, abort := anteHandler(ctx, tx, simulate)
-	require.Equal(t, "", result.Log)
-	require.False(t, abort)
-	require.Equal(t, sdk.CodeOK, result.Code)
-	require.True(t, result.IsOK())
+	_, err := anteHandler(ctx, tx, simulate)
+	require.NoError(t, err)
 }
 
 // nolint:errcheck
@@ -107,7 +101,7 @@ func TestAnteHandlerWrongZeroFee(t *testing.T) {
 	tx := types.NewTestTx(input.ctx, msgs, privs, accNums, seqs, fee)
 
 	ah := NewAnteHandler(input.ak, input.sk, auth.DefaultSigVerificationGasConsumer)
-	checkInvalidTx(t, ah, input.ctx, tx, true, CodeFeeRequired)
+	checkInvalidTx(t, ah, input.ctx, tx, true, ErrFeeRequired)
 }
 
 // nolint:errcheck
@@ -131,7 +125,7 @@ func TestAnteHandlerWrongFeeDenom(t *testing.T) {
 	tx := types.NewTestTx(input.ctx, msgs, privs, accNums, seqs, fee)
 
 	ah := NewAnteHandler(input.ak, input.sk, auth.DefaultSigVerificationGasConsumer)
-	checkInvalidTx(t, ah, input.ctx, tx, true, CodeWrongFeeDenom)
+	checkInvalidTx(t, ah, input.ctx, tx, true, ErrWrongFeeDenom)
 }
 
 // nolint:errcheck

@@ -17,6 +17,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/core"
 	mstypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/poa"
@@ -76,7 +77,7 @@ type TestMsg struct {
 
 func (m TestMsg) Route() string            { return m.msgRoute }
 func (m TestMsg) Type() string             { return m.msgType }
-func (m TestMsg) ValidateBasic() sdk.Error { return nil }
+func (m TestMsg) ValidateBasic() error { return nil }
 
 func NewTestMsg(msgRoute, msgType string) TestMsg {
 	return TestMsg{
@@ -114,7 +115,7 @@ func setupTestInput(t *testing.T) testInput {
 		t.Fatal(err)
 	}
 
-	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams, params.DefaultCodespace)
+	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
 
 	input.accountKeeper = auth.NewAccountKeeper(
 		input.cdc,
@@ -126,7 +127,6 @@ func setupTestInput(t *testing.T) testInput {
 	input.bankKeeper = bank.NewBaseKeeper(
 		input.accountKeeper,
 		input.paramsKeeper.Subspace(bank.DefaultParamspace),
-		bank.DefaultCodespace,
 		input.ModuleAccountAddrs(),
 	)
 
@@ -135,7 +135,7 @@ func setupTestInput(t *testing.T) testInput {
 	input.poaKeeper = poa.NewKeeper(input.keyPoa, input.cdc, input.paramsKeeper.Subspace(poa.DefaultParamspace))
 
 	input.msRouter = core.NewRouter()
-	input.msRouter.AddRoute(msgRouteNoop, func(ctx sdk.Context, msg core.MsMsg) sdk.Error {
+	input.msRouter.AddRoute(msgRouteNoop, func(ctx sdk.Context, msg core.MsMsg) error {
 		return nil
 	})
 
@@ -145,11 +145,6 @@ func setupTestInput(t *testing.T) testInput {
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
 
 	return input
-}
-
-func checkError(t *testing.T, expectedErr, receivedErr sdk.Error) {
-	require.Equal(t, expectedErr.Codespace(), receivedErr.Codespace(), "Codespace")
-	require.Equal(t, expectedErr.Code(), receivedErr.Code(), "code")
 }
 
 func TestKeeper_ExportGenesis(t *testing.T) {
@@ -179,12 +174,12 @@ func TestKeeper_SubmitCallInvalidMsg(t *testing.T) {
 	// check msg has no route condition
 	{
 		err := target.SubmitCall(ctx, NewTestMsg("", ""), "", sdk.AccAddress([]byte("addr1")))
-		checkError(t, mstypes.ErrRouteDoesntExist(""), err)
+		tests.CheckExpectedErr(t, mstypes.ErrRouteDoesntExist, err)
 	}
 	// check msg has no type
 	{
 		err := target.SubmitCall(ctx, NewTestMsg(msgRouteNoop, ""), "", sdk.AccAddress([]byte("addr1")))
-		checkError(t, mstypes.ErrEmptyType(0), err)
+		tests.CheckExpectedErr(t, mstypes.ErrEmptyType, err)
 	}
 }
 
@@ -205,7 +200,7 @@ func TestKeeper_SubmitCallUniqueness(t *testing.T) {
 	// confirm non-existing calId
 	{
 		err := target.Confirm(ctx, 1, addr)
-		checkError(t, mstypes.ErrWrongCallId(0), err)
+		tests.CheckExpectedErr(t, mstypes.ErrWrongCallId, err)
 	}
 	// get existing unique call
 	{
@@ -216,13 +211,13 @@ func TestKeeper_SubmitCallUniqueness(t *testing.T) {
 	// get non-existing unique call
 	{
 		id, err := target.GetCallIDByUnique(ctx, "2")
-		checkError(t, mstypes.ErrNotFoundUniqueID(""), err)
+		tests.CheckExpectedErr(t, mstypes.ErrNotFoundUniqueID, err)
 		require.Equal(t, uint64(0), id)
 	}
 	// check call with uniqueID already exists
 	{
 		err := target.SubmitCall(ctx, testMsg, uniqueCallId, addr)
-		checkError(t, mstypes.ErrNotUniqueID(""), err)
+		tests.CheckExpectedErr(t, mstypes.ErrNotUniqueID, err)
 	}
 }
 
