@@ -61,31 +61,41 @@ func (q *QueryRequest) CheckFailedWithSDKError(err error) {
 		Codespace string `json:"codespace"`
 		Code      uint32 `json:"code"`
 	}{"", 0}
-	stdoutErr := q.cdc.UnmarshalJSON(stdout, &qResponse)
-	stderrErr := q.cdc.UnmarshalJSON(stderr, &qResponse)
-	if stdoutErr != nil && stderrErr != nil {
-		q.t.Fatalf("%s: unmarshal stdout/stderr: %s / %s", q.String(), string(stdout), string(stderr))
+
+	if err := q.cdc.UnmarshalJSON(stdout, &qResponse); err == nil {
+		require.Equal(q.t, sdkErr.Codespace(), qResponse.Codespace, "%s: codespace", q.String())
+		require.Equal(q.t, sdkErr.ABCICode(), qResponse.Code, "%s: code", q.String())
+		return
 	}
 
-	require.Equal(q.t, sdkErr.Codespace(), qResponse.Codespace, "%s: codespace", q.String())
-	require.Equal(q.t, sdkErr.ABCICode(), qResponse.Code, "%s: code", q.String())
+	if err := q.cdc.UnmarshalJSON(stderr, &qResponse); err == nil {
+		require.Equal(q.t, sdkErr.Codespace(), qResponse.Codespace, "%s: codespace", q.String())
+		require.Equal(q.t, sdkErr.ABCICode(), qResponse.Code, "%s: code", q.String())
+		return
+	}
+
+	if strings.Contains(string(stdout), sdkErr.Error()) || strings.Contains(string(stderr), sdkErr.Error()) {
+		return
+	}
+
+	q.t.Fatalf("%s: error %q can't be found in stdout/stderr: %s / %s", q.String(), err.Error(), string(stdout), string(stderr))
 }
 
 func (q *QueryRequest) CheckFailedWithErrorSubstring(subStr string) (output string) {
 	code, stdout, stderr := q.cmd.Execute()
 	require.NotEqual(q.t, 0, code, "%s: succeeded", q.String())
 
-	stdoutStr, stderrErr := string(stdout), string(stderr)
-	output = fmt.Sprintf("stdout: %s\nstderr: %s", stdoutStr, stderrErr)
+	stdoutStr, stderrStr := string(stdout), string(stderr)
+	output = fmt.Sprintf("stdout: %s\nstderr: %s", stdoutStr, stderrStr)
 
 	if subStr == "" {
 		return
 	}
 
-	if strings.Contains(stdoutStr, subStr) || strings.Contains(stderrErr, subStr) {
+	if strings.Contains(stdoutStr, subStr) || strings.Contains(stderrStr, subStr) {
 		return
 	}
-	q.t.Fatalf("%s: stdout/stderr doesn't contain %q sub string", q.String(), subStr)
+	q.t.Fatalf("%s: stdout/stderr doesn't contain %q sub string:\n%s", q.String(), subStr, output)
 
 	return
 }

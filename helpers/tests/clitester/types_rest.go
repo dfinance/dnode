@@ -12,6 +12,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkRest "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/stretchr/testify/require"
 )
@@ -34,9 +35,9 @@ type RestError struct {
 
 // ABCI error object helper, used to unmarshal RestError.Error string
 type ABCIError struct {
-	Codespace sdk.CodespaceType `json:"codespace"`
-	Code      sdk.CodeType      `json:"code"`
-	Message   string            `json:"message"`
+	Codespace string `json:"codespace"`
+	Code      uint32 `json:"code"`
+	Message   string `json:"message"`
 }
 
 func (r *RestRequest) SetQuery(httpMethod, subPath string, urlValues url.Values, requestValue interface{}, responseValue interface{}) *RestRequest {
@@ -116,19 +117,29 @@ func (r *RestRequest) CheckSucceeded() {
 	}
 }
 
-func (r *RestRequest) CheckFailed(expectedCode int, expectedErr sdk.Error) {
+func (r *RestRequest) CheckFailed(expectedCode int, expectedErr error) {
 	respCode, respBody := r.Request()
-
+	bodyStr := string(respBody)
 	require.Equal(r.t, expectedCode, respCode, "%s: HTTP code", r.String())
 
 	if expectedErr != nil {
+		expectedSdkErr, ok := expectedErr.(*sdkErrors.Error)
+		require.True(r.t, ok, "not a SDK error")
+
 		require.NotNil(r.t, respBody, "%s: respBody", r.String())
 
 		restErr, abciErr := &RestError{}, &ABCIError{}
 		require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, restErr), "%s: unmarshal RestError: %s", r.String(), string(respBody))
-		require.NoError(r.t, r.cdc.UnmarshalJSON([]byte(restErr.Error), abciErr), "%s: unmarshal ABCIError: %s", r.String(), string(respBody))
-		require.Equal(r.t, expectedErr.Codespace(), abciErr.Codespace, "%s: err codespace: %s", r.String(), string(respBody))
-		require.Equal(r.t, expectedErr.Code(), abciErr.Code, "%s: err code: %s", r.String(), string(respBody))
+
+		if err := r.cdc.UnmarshalJSON([]byte(restErr.Error), abciErr); err == nil {
+			require.Equal(r.t, expectedSdkErr.Codespace(), abciErr.Codespace, "%s: err codespace: %s", r.String(), string(respBody))
+			require.Equal(r.t, expectedSdkErr.ABCICode(), abciErr.Code, "%s: err code: %s", r.String(), string(respBody))
+			return
+		} else if strings.Contains(bodyStr, expectedErr.Error()) {
+			return
+		}
+
+		r.t.Fatalf("%s: ABCIError unmarshal failed and %q error not found: %s", r.String(), expectedErr.Error(), bodyStr)
 	}
 }
 

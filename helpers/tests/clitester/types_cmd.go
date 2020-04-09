@@ -157,9 +157,11 @@ func (c *CLICmd) WaitForStop(timeout time.Duration) (exitCode *int) {
 	return
 }
 
-func (c *CLICmd) CheckSuccessfulExecute(resultObj interface{}, stdinInput ...string) {
+func (c *CLICmd) CheckSuccessfulExecute(resultObj interface{}, stdinInput ...string) (output string) {
 	code, stdout, stderr := c.Execute(stdinInput...)
 	require.Equal(c.t, 0, code, "%s: stderr: %s", c.String(), string(stderr))
+
+	output = string(stdout) + string(stderr)
 
 	if resultObj != nil {
 		if err := json.Unmarshal(stdout, resultObj); err == nil {
@@ -171,6 +173,8 @@ func (c *CLICmd) CheckSuccessfulExecute(resultObj interface{}, stdinInput ...str
 
 		c.t.Fatalf("%s: stdout/stderr unmarshal to object type %t", c.String(), resultObj)
 	}
+
+	return
 }
 
 func (c *CLICmd) LogsContain(subStr string) bool {

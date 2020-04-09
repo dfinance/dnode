@@ -95,9 +95,10 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		Accounts:          make(map[string]*CLIAccount, 0),
 	}
 
-	smallAmount, ok := sdk.NewIntFromString("5000000000000")
+	smallAmount, ok := sdk.NewIntFromString("1000000000000000000000")
 	require.True(t, ok, "NewInt for smallAmount")
-	bigAmount, ok := sdk.NewIntFromString("90000000000000000000000000")
+	bigAmount, ok := sdk.NewIntFromString("1000000000000000000000")
+	//bigAmount, ok := sdk.NewIntFromString("90000000000000000000000000")
 	require.True(t, ok, "NewInt for bigAmount")
 
 	ct.Accounts["pos"] = &CLIAccount{
@@ -277,14 +278,22 @@ func (ct *CLITester) initChain() {
 					AddArg("", accName)
 				output := sdkKeys.KeyOutput{}
 
-				cmd.CheckSuccessfulExecute(&output, ct.AccountPassphrase, ct.AccountPassphrase)
+				cmd.CheckSuccessfulExecute(&output, "y", ct.AccountPassphrase)
 				accValue.Name = output.Name
 				accValue.Address = output.Address
 				accValue.PubKey = output.PubKey
 				accValue.Mnemonic = output.Mnemonic
+			}
 
-				_, err := ct.keyBase.CreateAccount(accName, accValue.Mnemonic, "", ct.AccountPassphrase, 0, 0)
-				require.NoError(ct.t, err, "account %q: keyBase.CreateAccount", accName)
+			// get armored private key
+			{
+				cmd := ct.newWbcliCmd().
+					AddArg("", "keys").
+					AddArg("", "export").
+					AddArg("", accName)
+
+				output := cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase)
+				require.NoError(ct.t, ct.keyBase.ImportPrivKey(accName, output, ct.AccountPassphrase), "account %q: keyBase.ImportPrivKey", accName)
 			}
 
 			// genesis account
@@ -510,6 +519,8 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	cmd.AddArg("", "rest-server")
 	cmd.AddArg("laddr", "tcp://"+restAddress)
 	cmd.AddArg("node", ct.rpcAddress)
+	cmd.AddArg("", "--trust-node")
+	ct.t.Log(cmd.String())
 	cmd.Start(ct.t, printLogs)
 
 	// wait for the server to start up
