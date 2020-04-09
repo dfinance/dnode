@@ -3,23 +3,17 @@
 package app
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"path"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/dfinance/dnode/helpers/tests"
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
@@ -31,8 +25,6 @@ func Test_CurrencyCLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	fmt.Println("start")
-
 	ccSymbol, ccCurAmount, ccDecimals, ccRecipient := "testcc", sdk.NewInt(1000), int8(1), ct.Accounts["validator1"].Address
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 	issueID := "issue1"
@@ -41,7 +33,6 @@ func Test_CurrencyCLI(t *testing.T) {
 	{
 		// submit & confirm call
 		ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
 		ct.ConfirmCall(issueID)
 		// check currency issued
 		q, issue := ct.QueryCurrenciesIssue(issueID)
@@ -93,7 +84,6 @@ func Test_CurrencyCLI(t *testing.T) {
 		// reduce amount
 		destroyAmount := sdk.NewInt(100)
 		ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, destroyAmount).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 		ccCurAmount = ccCurAmount.Sub(destroyAmount)
 		// check destroy
 		q, destroy := ct.QueryCurrenciesDestroy(sdk.ZeroInt())
@@ -233,22 +223,23 @@ func Test_OracleCLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	nomineeAddr := ct.Accounts["oracle1"].Address
+	nomineeAddr := ct.Accounts["nominee"].Address
 	assetCode := "eth_dfi"
 	assetOracle1, assetOracle2, assetOracle3 := ct.Accounts["oracle1"].Address, ct.Accounts["oracle2"].Address, ct.Accounts["oracle3"].Address
 
 	// check add asset Tx
 	{
 		ct.TxOracleAddAsset(nomineeAddr, assetCode, assetOracle1).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
-		require.Len(t, *assets, 1)
-		require.Equal(t, assetCode, (*assets)[0].AssetCode)
-		require.Len(t, (*assets)[0].Oracles, 1)
-		require.Equal(t, assetOracle1, (*assets)[0].Oracles[0].Address.String())
-		require.True(t, (*assets)[0].Active)
+		require.Len(t, *assets, 2)
+		asset := (*assets)[1]
+		require.Equal(t, ct.DefAssetCode, (*assets)[0].AssetCode)
+		require.Equal(t, assetCode, asset.AssetCode)
+		require.Len(t, asset.Oracles, 1)
+		require.Equal(t, assetOracle1, asset.Oracles[0].Address.String())
+		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
@@ -284,16 +275,16 @@ func Test_OracleCLI(t *testing.T) {
 	// check set asset Tx
 	{
 		ct.TxOracleSetAsset(nomineeAddr, assetCode, assetOracle1, assetOracle2).CheckSucceeded()
-		ct.WaitForNextBlocks(1)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
-		require.Len(t, *assets, 1)
-		require.Equal(t, assetCode, (*assets)[0].AssetCode)
-		require.Len(t, (*assets)[0].Oracles, 2)
-		require.Equal(t, assetOracle1, (*assets)[0].Oracles[0].Address.String())
-		require.Equal(t, assetOracle2, (*assets)[0].Oracles[1].Address.String())
-		require.True(t, (*assets)[0].Active)
+		require.Len(t, *assets, 2)
+		asset := (*assets)[1]
+		require.Equal(t, assetCode, asset.AssetCode)
+		require.Len(t, asset.Oracles, 2)
+		require.Equal(t, assetOracle1, asset.Oracles[0].Address.String())
+		require.Equal(t, assetOracle2, asset.Oracles[1].Address.String())
+		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
@@ -379,7 +370,7 @@ func Test_OracleCLI(t *testing.T) {
 			// invalid number of args
 			{
 				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
-				tx.RemoveCmdArg(nomineeAddr)
+				tx.RemoveCmdArg(assetOracle1)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid price
@@ -406,17 +397,17 @@ func Test_OracleCLI(t *testing.T) {
 	// check add oracle Tx
 	{
 		ct.TxOracleAddOracle(nomineeAddr, assetCode, assetOracle3).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
-		require.Len(t, *assets, 1)
-		require.Equal(t, assetCode, (*assets)[0].AssetCode)
-		require.Len(t, (*assets)[0].Oracles, 3)
-		require.Equal(t, assetOracle1, (*assets)[0].Oracles[0].Address.String())
-		require.Equal(t, assetOracle2, (*assets)[0].Oracles[1].Address.String())
-		require.Equal(t, assetOracle3, (*assets)[0].Oracles[2].Address.String())
-		require.True(t, (*assets)[0].Active)
+		require.Len(t, *assets, 2)
+		asset := (*assets)[1]
+		require.Equal(t, assetCode, asset.AssetCode)
+		require.Len(t, asset.Oracles, 3)
+		require.Equal(t, assetOracle1, asset.Oracles[0].Address.String())
+		require.Equal(t, assetOracle2, asset.Oracles[1].Address.String())
+		require.Equal(t, assetOracle3, asset.Oracles[2].Address.String())
+		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
@@ -437,17 +428,17 @@ func Test_OracleCLI(t *testing.T) {
 	// check set oracle Tx
 	{
 		ct.TxOracleSetOracles(nomineeAddr, assetCode, assetOracle3, assetOracle2, assetOracle1).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
-		require.Len(t, *assets, 1)
-		require.Equal(t, assetCode, (*assets)[0].AssetCode)
-		require.Len(t, (*assets)[0].Oracles, 3)
-		require.Equal(t, assetOracle3, (*assets)[0].Oracles[0].Address.String())
-		require.Equal(t, assetOracle2, (*assets)[0].Oracles[1].Address.String())
-		require.Equal(t, assetOracle1, (*assets)[0].Oracles[2].Address.String())
-		require.True(t, (*assets)[0].Active)
+		require.Len(t, *assets, 2)
+		asset := (*assets)[1]
+		require.Equal(t, assetCode, asset.AssetCode)
+		require.Len(t, asset.Oracles, 3)
+		require.Equal(t, assetOracle3, asset.Oracles[0].Address.String())
+		require.Equal(t, assetOracle2, asset.Oracles[1].Address.String())
+		require.Equal(t, assetOracle1, asset.Oracles[2].Address.String())
+		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
@@ -551,11 +542,10 @@ func Test_PoaCLI(t *testing.T) {
 
 	// check add validator Tx
 	{
-		require.LessOrEqual(t, len(curValidators), len(ethAddresses), "not enough predefined ethAddresses")
-		newEthAddress, issueID := ethAddresses[len(curValidators)], "newValidator"
+		require.LessOrEqual(t, len(curValidators), len(cliTester.EthAddresses), "not enough predefined ethAddresses")
+		newEthAddress, issueID := cliTester.EthAddresses[len(curValidators)], "newValidator"
 
 		ct.TxPoaAddValidator(senderAddr, newValidatorAcc.Address, newEthAddress, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
 		ct.ConfirmCall(issueID)
 
 		// update account
@@ -603,7 +593,6 @@ func Test_PoaCLI(t *testing.T) {
 	{
 		issueID := "rmValidator"
 		ct.TxPoaRemoveValidator(senderAddr, newValidatorAcc.Address, issueID).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
 		ct.ConfirmCall(issueID)
 
 		// update account
@@ -643,8 +632,8 @@ func Test_PoaCLI(t *testing.T) {
 
 	// check replace validator Tx
 	{
-		require.LessOrEqual(t, len(curValidators), len(ethAddresses), "not enough predefined ethAddresses")
-		newEthAddress := ethAddresses[len(curValidators)]
+		require.LessOrEqual(t, len(curValidators), len(cliTester.EthAddresses), "not enough predefined ethAddresses")
+		newEthAddress := cliTester.EthAddresses[len(curValidators)]
 
 		targetValidatorName := "validator2"
 		targetValidatorAcc := ct.Accounts[targetValidatorName]
@@ -652,7 +641,6 @@ func Test_PoaCLI(t *testing.T) {
 
 		tx := ct.TxPoaReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
 		tx.CheckSucceeded()
-		ct.WaitForNextBlocks(2)
 		ct.ConfirmCall(issueID)
 
 		// update accounts
@@ -769,15 +757,20 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	ccSymbol1, ccSymbol2 := "cc1", "cc2"
 	ccCurAmount, ccDecimals := sdk.NewInt(1000), int8(1)
-	ccRecipient1, ccRecipient2 := ct.Accounts["validator1"].Address, ct.Accounts["validator2"].Address
 	callUniqueId1, callUniqueId2 := "issue1", "issue2"
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 
+	// get all validators
+	ccRecipients := make([]string, 0)
+	for _, acc := range ct.Accounts {
+		if acc.IsPOAValidator {
+			ccRecipients = append(ccRecipients, acc.Address)
+		}
+	}
+
 	// create calls
-	ct.TxCurrenciesIssue(ccRecipient1, ccRecipient1, ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
-	ct.WaitForNextBlocks(2)
-	ct.TxCurrenciesIssue(ccRecipient2, ccRecipient2, ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).CheckSucceeded()
-	ct.WaitForNextBlocks(2)
+	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).CheckSucceeded()
 
 	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))
@@ -804,8 +797,8 @@ func Test_MultiSigCLI(t *testing.T) {
 		q.CheckSucceeded()
 
 		require.Len(t, *calls, 2)
-		checkCall((*calls)[0], false, 0, callUniqueId1, ccRecipient1, ccRecipient1)
-		checkCall((*calls)[1], false, 1, callUniqueId2, ccRecipient2, ccRecipient2)
+		checkCall((*calls)[0], false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
+		checkCall((*calls)[1], false, 1, callUniqueId2, ccRecipients[1], ccRecipients[1])
 	}
 
 	// check call query
@@ -813,7 +806,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		q, call := ct.QueryMultiSigCall(0)
 		q.CheckSucceeded()
 
-		checkCall(*call, false, 0, callUniqueId1, ccRecipient1, ccRecipient1)
+		checkCall(*call, false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
 
 		// check incorrect inputs
 		{
@@ -842,7 +835,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		q, call := ct.QueryMultiSigUnique(callUniqueId1)
 		q.CheckSucceeded()
 
-		checkCall(*call, false, 0, callUniqueId1, ccRecipient1, ccRecipient1)
+		checkCall(*call, false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
 
 		// check incorrect inputs
 		{
@@ -870,22 +863,25 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	// check confirm call Tx
 	{
-		// add vote for existing call from an other sender
-		callID, callUniqueID := uint64(1), callUniqueId2
-		ct.TxMultiSigConfirmCall(ccRecipient1, callID).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		// add votes for existing call from an other senders
+		callID, callUniqueID := uint64(0), callUniqueId1
+		votes := []string{ccRecipients[0]}
+		for i := 1; i < len(ccRecipients) / 2 + 1; i++ {
+			ct.TxMultiSigConfirmCall(ccRecipients[i], callID).CheckSucceeded()
+			votes = append(votes, ccRecipients[i])
+		}
 
-		// check call approved (assuming we have 3 validators)
+		// check call approved
 		q, call := ct.QueryMultiSigCall(callID)
 		q.CheckSucceeded()
 
-		checkCall(*call, true, callID, callUniqueID, ccRecipient2, ccRecipient2, ccRecipient1)
+		checkCall(*call, true, callID, callUniqueID, ccRecipients[0], votes...)
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxMultiSigConfirmCall(ccRecipient1, callID)
+				tx := ct.TxMultiSigConfirmCall(ccRecipients[0], callID)
 				tx.RemoveCmdArg(strconv.FormatUint(callID, 10))
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
@@ -896,7 +892,7 @@ func Test_MultiSigCLI(t *testing.T) {
 			}
 			// invalid callID
 			{
-				tx := ct.TxMultiSigConfirmCall(ccRecipient1, callID)
+				tx := ct.TxMultiSigConfirmCall(ccRecipients[0], callID)
 				tx.ChangeCmdArg(strconv.FormatUint(callID, 10), "not_int")
 				tx.CheckFailedWithErrorSubstring("callId")
 			}
@@ -905,18 +901,17 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	// check revoke confirm Tx
 	{
-		ct.TxMultiSigRevokeConfirm(ccRecipient1, 0).CheckSucceeded()
-		ct.WaitForNextBlocks(2)
+		ct.TxMultiSigRevokeConfirm(ccRecipients[1], 1).CheckSucceeded()
 
 		// check call removed
-		q, _ := ct.QueryMultiSigCall(0)
+		q, _ := ct.QueryMultiSigCall(1)
 		q.CheckFailedWithErrorSubstring("not found")
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxMultiSigRevokeConfirm(ccRecipient1, 0)
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], 0)
 				tx.RemoveCmdArg(strconv.FormatUint(0, 10))
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
@@ -927,77 +922,11 @@ func Test_MultiSigCLI(t *testing.T) {
 			}
 			// invalid callID
 			{
-				tx := ct.TxMultiSigRevokeConfirm(ccRecipient1, 0)
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], 0)
 				tx.ChangeCmdArg(strconv.FormatUint(0, 10), "not_int")
 				tx.CheckFailedWithErrorSubstring("callId")
 			}
 		}
-	}
-}
-
-func Test_ConsensusFailure(t *testing.T) {
-	const script = `
-import 0x0.Account;
-import 0x0.Coins;
-main(recipient: address, amount: u128, denom: bytearray) {
-    let coin: Coins.Coin;
-    coin = Account.withdraw_from_sender(move(amount), move(denom));
-    Account.deposit(move(recipient), move(coin));
-    return;
-}
-`
-	ct := cliTester.New(t, false)
-	defer ct.Close()
-
-	//ct.SetVMCompilerAddress("rpc.demo.wings.toys:50053")
-
-	compilerContainer, compilerPort, err := tests.NewVMCompilerContainer(ct.VmListenPort)
-	require.NoError(t, err, "compiler container creation")
-
-	require.NoError(t, compilerContainer.Start(5*time.Second), "compiler container creation")
-	defer compilerContainer.Stop()
-
-	ct.SetVMCompilerAddress("127.0.0.1:" + compilerPort)
-
-	senderAddr := ct.Accounts["validator1"].Address
-	mvirPath := path.Join(ct.RootDir, "script.mvir")
-	compiledPath := path.Join(ct.RootDir, "script.json")
-
-	// Create .mvir script file
-	mvirFile, err := os.Create(mvirPath)
-	require.NoError(t, err, "creating script file")
-	_, err = mvirFile.WriteString(script)
-	require.NoError(t, err, "write script file")
-	require.NoError(t, mvirFile.Close(), "close script file")
-
-	// Compile .mvir script file
-	ct.QueryVmCompileScript(mvirPath, compiledPath, senderAddr).CheckSucceeded()
-
-	// Execute .json script file
-	// Should panic as there is no local VM running
-	ct.TxVmExecuteScript(senderAddr, compiledPath, senderAddr, "100", "dfi").CheckSucceeded()
-
-	// Check CONSENSUS FAILURE did occur
-	{
-		consensusFailure := false
-		for i := 0; i < 10; i++ {
-			if ct.DaemonLogsContain("CONSENSUS FAILURE") {
-				consensusFailure = true
-				break
-			}
-			time.Sleep(500 * time.Millisecond)
-		}
-		require.True(t, consensusFailure, "CONSENSUS FAILURE not occurred")
-	}
-
-	// Check restarted application panics
-	{
-		ct.RestartDaemon(false, false)
-
-		retCode, daemonLogs := ct.CheckDaemonStopped(2 * time.Second)
-
-		require.NotZero(t, retCode, "daemon exitCode")
-		require.Contains(t, strings.Join(daemonLogs, ","), "panic", "daemon didn't panic")
 	}
 }
 
