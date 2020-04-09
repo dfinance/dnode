@@ -557,8 +557,8 @@ func (app *BaseApp) runTx(mode runTxMode, txBytes []byte, tx sdk.Tx) (gInfo sdk.
 				)
 
 			default:
-				if sdkError, ok := r.(*sdkerrors.Error); ok {
-					if sdkError.Is(vm.ErrVMCrashed) {
+				if err, ok := r.(error); ok {
+					if vm.ErrVMCrashed.Is(err) {
 						panic(r)
 					}
 				}
