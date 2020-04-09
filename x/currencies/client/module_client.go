@@ -19,10 +19,10 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 
 	queryCmd.AddCommand(
 		sdkClient.GetCommands(
-			cli.GetIssue("currencies", cdc),
-			cli.GetCurrency("currencies", cdc),
-			cli.GetDestroy("currencies", cdc),
-			cli.GetDestroys("currencies", cdc),
+			cli.GetIssue(types.ModuleName, cdc),
+			cli.GetCurrency(types.ModuleName, cdc),
+			cli.GetDestroy(types.ModuleName, cdc),
+			cli.GetDestroys(types.ModuleName, cdc),
 		)...)
 
 	return queryCmd

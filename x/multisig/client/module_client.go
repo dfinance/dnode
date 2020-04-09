@@ -7,20 +7,21 @@ import (
 	amino "github.com/tendermint/go-amino"
 
 	"github.com/dfinance/dnode/x/multisig/client/cli"
+	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Returns get commands for this module.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
-		Use:   "multisig",
+		Use:   types.ModuleName,
 		Short: "Multisig commands for the validators module",
 	}
 
 	queryCmd.AddCommand(sdkClient.GetCommands(
-		cli.GetLastId("multisig", cdc),
-		cli.GetCall("multisig", cdc),
-		cli.GetCalls("multisig", cdc),
-		cli.GetCallByUniqueID("multisig", cdc),
+		cli.GetLastId(types.ModuleName, cdc),
+		cli.GetCall(types.ModuleName, cdc),
+		cli.GetCalls(types.ModuleName, cdc),
+		cli.GetCallByUniqueID(types.ModuleName, cdc),
 	)...)
 
 	return queryCmd
@@ -29,7 +30,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 // GetTxCmd returns the transaction commands for this module.
 func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
-		Use:   "multisig",
+		Use:   types.ModuleName,
 		Short: "Multisig transactions subcommands",
 	}
 

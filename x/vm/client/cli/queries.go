@@ -23,7 +23,7 @@ import (
 // Returns get commands for this module.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
-		Use:   "vm",
+		Use:   types.ModuleName,
 		Short: "VM query commands, includes compiler",
 	}
 
@@ -37,7 +37,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	}
 
 	commands := sdkClient.GetCommands(
-		GetData("vm", cdc),
+		GetData(types.ModuleName, cdc),
 	)
 	commands = append(commands, compileCommands...)
 
