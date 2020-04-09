@@ -69,8 +69,8 @@ func (r *TxRequest) CheckSucceeded() {
 	if len(stdout) > 0 {
 		txResponse := sdk.TxResponse{}
 		require.NoError(r.t, r.cdc.UnmarshalJSON(stdout, &txResponse), "%s: unmarshal", r.String())
-		require.Equal(r.t, "", txResponse.Codespace, "%s: SDK codespace", r.String())
-		require.Equal(r.t, uint32(0), txResponse.Code, "%s: SDK code", r.String())
+		require.Equal(r.t, "", txResponse.Codespace, "%s: codespace: %s", r.String(), string(stdout))
+		require.Equal(r.t, uint32(0), txResponse.Code, "%s: code: %s", r.String(), string(stdout))
 	}
 }
 

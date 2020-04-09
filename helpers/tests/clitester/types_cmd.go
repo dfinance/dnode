@@ -103,7 +103,7 @@ func (c *CLICmd) Start(t *testing.T, printLogs bool) {
 				}
 				return
 			}
-			logMsg := fmt.Sprintf("%s: %s", pipeName, line)
+			logMsg := fmt.Sprintf("%s->%s: %s", c.base, pipeName, line)
 
 			if printLogs {
 				t.Log(logMsg)

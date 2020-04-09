@@ -61,18 +61,6 @@ var (
 	bufferSize = 1024 * 1024
 )
 
-// REST endpoint error object
-type RestError struct {
-	Error string `json:"error"`
-}
-
-// ABCI error object helper, used to unmarshal RestError.Error string
-type ABCIError struct {
-	Codespace string `json:"codespace"`
-	Code      uint32 `json:"code"`
-	Message   string `json:"message"`
-}
-
 // Type that combines an Address with the privKey and pubKey to that address
 type AddrKeys struct {
 	Address sdk.AccAddress
