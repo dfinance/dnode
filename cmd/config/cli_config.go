@@ -18,11 +18,12 @@ const (
 )
 
 var configDefaults = map[string]string{
-	"chain-id":       "",
-	"output":         "text",
-	"node":           "tcp://localhost:26657",
-	"broadcast-mode": "sync",
-	"compiler":       "127.0.0.1:50053",
+	"chain-id":        "",
+	"keyring-backend": "os",
+	"output":          "text",
+	"node":            "tcp://localhost:26657",
+	"broadcast-mode":  "sync",
+	"compiler":        "127.0.0.1:50053",
 }
 
 // ConfigCmd returns a CLI command to interactively create an application CLI
@@ -97,7 +98,7 @@ func runConfigCmd(cmd *cobra.Command, args []string) error {
 
 	// set config value for a given key
 	switch key {
-	case "chain-id", "output", "node", "broadcast-mode", "compiler":
+	case "chain-id", "output", "node", "broadcast-mode", "compiler", "keyring-backend":
 		tree.Set(key, value)
 
 	case "trace", "trust-node", "indent":

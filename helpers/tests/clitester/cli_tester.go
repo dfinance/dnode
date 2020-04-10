@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/99designs/keyring"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdkKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -28,6 +29,7 @@ import (
 
 type CLITester struct {
 	RootDir           string
+	DncliDir          string
 	ChainID           string
 	MonikerID         string
 	AccountPassphrase string
@@ -48,6 +50,7 @@ type CLITester struct {
 	restAddress       string
 	daemon            *CLICmd
 	restServer        *CLICmd
+	keyringBackend    keyring.BackendType
 }
 
 type CLIAccount struct {
@@ -85,6 +88,7 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		MonikerID:         "test-moniker",
 		AccountPassphrase: "passphrase",
 		DefAssetCode:      "tst",
+		keyringBackend:    keyring.FileBackend,
 		rpcAddress:        srvAddr,
 		rpcPort:           srvPort,
 		p2pAddress:        p2pAddr,
@@ -174,6 +178,7 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 	rootDir, err := ioutil.TempDir("/tmp", fmt.Sprintf("wd-cli-test-%s-", ct.t.Name()))
 	require.NoError(t, err, "TempDir")
 	ct.RootDir = rootDir
+	ct.DncliDir = path.Join(rootDir, "dncli")
 
 	ct.initChain()
 
@@ -207,7 +212,7 @@ func (ct *CLITester) newWbdCmd() *CLICmd {
 
 func (ct *CLITester) newWbcliCmd() *CLICmd {
 	cmd := &CLICmd{t: ct.t, base: ct.wbcliBinary}
-	cmd.AddArg("home", ct.RootDir)
+	cmd.AddArg("home", ct.DncliDir)
 	cmd.AddArg("chain-id", ct.ChainID)
 	cmd.AddArg("output", "json")
 
@@ -247,6 +252,14 @@ func (ct *CLITester) initChain() {
 	cmd := ct.newWbdCmd().AddArg("", "init").AddArg("", ct.MonikerID).AddArg("chain-id", ct.ChainID)
 	cmd.CheckSuccessfulExecute(nil)
 
+	{
+		cmd := ct.newWbcliCmd().
+			AddArg("", "config").
+			AddArg("", "keyring-backend").
+			AddArg("", string(ct.keyringBackend))
+		cmd.CheckSuccessfulExecute(nil)
+	}
+
 	// adjust tendermint config (make blocks generation faster)
 	{
 		cfgFile := path.Join(ct.RootDir, "config", "config.toml")
@@ -278,7 +291,7 @@ func (ct *CLITester) initChain() {
 					AddArg("", accName)
 				output := sdkKeys.KeyOutput{}
 
-				cmd.CheckSuccessfulExecute(&output, "y", ct.AccountPassphrase)
+				cmd.CheckSuccessfulExecute(&output, ct.AccountPassphrase, ct.AccountPassphrase)
 				accValue.Name = output.Name
 				accValue.Address = output.Address
 				accValue.PubKey = output.PubKey
@@ -292,7 +305,7 @@ func (ct *CLITester) initChain() {
 					AddArg("", "export").
 					AddArg("", accName)
 
-				output := cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase)
+				output := cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase)
 				require.NoError(ct.t, ct.keyBase.ImportPrivKey(accName, output, ct.AccountPassphrase), "account %q: keyBase.ImportPrivKey", accName)
 			}
 
@@ -309,7 +322,7 @@ func (ct *CLITester) initChain() {
 				}
 				cmd.AddArg("", strings.Join(coinsArg, ","))
 
-				cmd.CheckSuccessfulExecute(nil)
+				cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
 			}
 
 			// POA validator
@@ -321,7 +334,7 @@ func (ct *CLITester) initChain() {
 					AddArg("", "add-genesis-poa-validator").
 					AddArg("", accValue.Address).
 					AddArg("", accValue.EthAddress)
-				cmd.CheckSuccessfulExecute(nil)
+				cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
 
 				poaValidatorIdx++
 			}
@@ -332,7 +345,7 @@ func (ct *CLITester) initChain() {
 					AddArg("", "add-oracle-nominees-gen").
 					AddArg("", accValue.Address)
 
-				cmd.CheckSuccessfulExecute(nil)
+				cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
 			}
 		}
 	}
@@ -341,11 +354,12 @@ func (ct *CLITester) initChain() {
 	{
 		cmd := ct.newWbdCmd().
 			AddArg("", "gentx").
-			AddArg("home-client", ct.RootDir).
+			AddArg("home-client", ct.DncliDir).
 			AddArg("name", "pos").
-			AddArg("amount", ct.Accounts["pos"].Coins[config.MainDenom].String())
+			AddArg("amount", ct.Accounts["pos"].Coins[config.MainDenom].String()).
+			AddArg("keyring-backend", string(ct.keyringBackend))
 
-		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
+		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase)
 	}
 
 	// VM default write sets

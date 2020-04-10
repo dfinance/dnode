@@ -80,9 +80,9 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
-			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
@@ -213,9 +213,9 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 		Example: "deploy-module ./my_module.mvir.json",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {

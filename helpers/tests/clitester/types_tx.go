@@ -57,7 +57,7 @@ func (r *TxRequest) RemoveCmdArg(arg string) *TxRequest {
 }
 
 func (r *TxRequest) Send() (retCode int, retStdout, retStderr []byte) {
-	return r.cmd.Execute(r.accPassphrase)
+	return r.cmd.Execute(r.accPassphrase, r.accPassphrase)
 }
 
 func (r *TxRequest) CheckSucceeded() {

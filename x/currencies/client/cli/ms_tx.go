@@ -25,9 +25,9 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 		Short: "issue new currency via multisignature",
 		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {

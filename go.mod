@@ -3,6 +3,7 @@ module github.com/dfinance/dnode
 go 1.13
 
 require (
+	github.com/99designs/keyring v1.1.3
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/OneOfOne/xxhash v1.2.7
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
