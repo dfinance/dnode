@@ -71,7 +71,7 @@ func main() {
 		vmCli.GenesisWSFromFile(ctx, cdc),
 		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
-		//testnetCmd(ctx, cdc, app.ModuleBasics, auth.GenesisAccountIterator{}),
+		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
