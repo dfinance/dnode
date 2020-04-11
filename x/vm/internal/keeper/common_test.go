@@ -1,3 +1,5 @@
+// +build unit integ
+
 package keeper
 
 import (
@@ -17,6 +19,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
@@ -26,6 +29,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 	"github.com/dfinance/dnode/x/vmauth"
@@ -371,6 +375,8 @@ func GetBufDialer(listener *bufconn.Listener) func(context.Context, string) (net
 }
 
 func createVMOptions(registry, dsServerUrl, tag string) docker.CreateContainerOptions {
+	_, hostNetworkMode, _ := tests.HostMachineDockerUrl()
+
 	ports := make(map[docker.Port]struct{})
 	ports["50051/tcp"] = struct{}{}
 
@@ -388,6 +394,7 @@ func createVMOptions(registry, dsServerUrl, tag string) docker.CreateContainerOp
 			PortBindings: map[docker.Port][]docker.PortBinding{
 				"50051/tcp": {{HostIP: "0.0.0.0", HostPort: "50051"}},
 			},
+			NetworkMode: hostNetworkMode,
 		},
 	}
 
@@ -396,6 +403,8 @@ func createVMOptions(registry, dsServerUrl, tag string) docker.CreateContainerOp
 
 // creating compiler options.
 func createCompilerOptions(registry, dsServerUrl, tag string) docker.CreateContainerOptions {
+	_, hostNetworkMode, _ := tests.HostMachineDockerUrl()
+
 	ports := make(map[docker.Port]struct{})
 	ports["50053/tcp"] = struct{}{}
 
@@ -413,6 +422,7 @@ func createCompilerOptions(registry, dsServerUrl, tag string) docker.CreateConta
 			PortBindings: map[docker.Port][]docker.PortBinding{
 				"50053/tcp": {{HostIP: "0.0.0.0", HostPort: "50053"}},
 			},
+			NetworkMode: hostNetworkMode,
 		},
 	}
 
@@ -430,7 +440,11 @@ func stopDocker(t *testing.T, client *docker.Client, container *docker.Container
 }
 
 // Launch docker container with dvm.
-func launchDocker(dsServerUrl string, t *testing.T) (*docker.Client, *docker.Container, *docker.Container) {
+func launchDocker(dsServerPort int, t *testing.T) (*docker.Client, *docker.Container, *docker.Container) {
+	hostUrl, _, err := tests.HostMachineDockerUrl()
+	require.NoError(t, err)
+	dsServerUrl := fmt.Sprintf("%s:%d", hostUrl, dsServerPort)
+
 	tag := os.Getenv("TAG")
 	if tag == "" {
 		tag = "master"

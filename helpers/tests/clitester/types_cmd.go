@@ -52,8 +52,9 @@ func (c *CLICmd) ChangeArg(oldArg, newArg string) *CLICmd {
 }
 
 func (c *CLICmd) RemoveArg(arg string) *CLICmd {
+	argAlt := "--" + arg
 	for i := 0; i < len(c.args); i++ {
-		if c.args[i] == arg || ("--"+c.args[i]) == arg {
+		if strings.HasPrefix(c.args[i], arg) || strings.HasPrefix(c.args[i], argAlt) {
 			c.args = append(c.args[:i], c.args[i+1:]...)
 			break
 		}
@@ -102,7 +103,7 @@ func (c *CLICmd) Start(t *testing.T, printLogs bool) {
 				}
 				return
 			}
-			logMsg := fmt.Sprintf("%s: %s", pipeName, line)
+			logMsg := fmt.Sprintf("%s->%s: %s", c.base, pipeName, line)
 
 			if printLogs {
 				t.Log(logMsg)

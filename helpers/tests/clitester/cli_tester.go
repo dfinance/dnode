@@ -34,8 +34,9 @@ type CLITester struct {
 	Accounts          map[string]*CLIAccount
 	Cdc               *codec.Codec
 	VmListenPort      string
+	DefAssetCode      string
 	t                 *testing.T
-	validatorAddrs    []string
+	keyBase           sdkKeys.Keybase
 	wbdBinary         string
 	wbcliBinary       string
 	rpcAddress        string
@@ -44,6 +45,7 @@ type CLITester struct {
 	vmConnectAddress  string
 	vmListenAddress   string
 	vmCompilerAddress string
+	restAddress       string
 	daemon            *CLICmd
 	restServer        *CLICmd
 }
@@ -57,6 +59,7 @@ type CLIAccount struct {
 	Coins           map[string]sdk.Coin
 	IsPOAValidator  bool
 	IsOracleNominee bool
+	IsOracle        bool
 }
 
 func New(t *testing.T, printDaemonLogs bool) *CLITester {
@@ -77,9 +80,11 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		Cdc:               makeCodec(),
 		wbdBinary:         "dnode",
 		wbcliBinary:       "dncli",
+		keyBase:           sdkKeys.NewInMemory(),
 		ChainID:           "test-chain",
 		MonikerID:         "test-moniker",
 		AccountPassphrase: "passphrase",
+		DefAssetCode:      "tst",
 		rpcAddress:        srvAddr,
 		rpcPort:           srvPort,
 		p2pAddress:        p2pAddr,
@@ -123,23 +128,41 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		},
 		IsPOAValidator: true,
 	}
-	ct.Accounts["oracle1"] = &CLIAccount{
+	ct.Accounts["validator4"] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+		IsPOAValidator: true,
+	}
+	ct.Accounts["validator5"] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+		IsPOAValidator: true,
+	}
+	ct.Accounts["nominee"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
 		IsOracleNominee: true,
 	}
+	ct.Accounts["oracle1"] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+		IsOracle: true,
+	}
 	ct.Accounts["oracle2"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
-		IsOracleNominee: false,
+		IsOracle: false,
 	}
 	ct.Accounts["oracle3"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
-		IsOracleNominee: false,
+		IsOracle: false,
 	}
 	ct.Accounts["plain"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
@@ -190,6 +213,14 @@ func (ct *CLITester) newWbcliCmd() *CLICmd {
 	return cmd
 }
 
+func (ct *CLITester) newRestRequest() *RestRequest {
+	return &RestRequest{
+		t:       ct.t,
+		cdc:     ct.Cdc,
+		baseUrl: ct.restAddress,
+	}
+}
+
 func (ct *CLITester) newTxRequest() *TxRequest {
 	return &TxRequest{
 		t:              ct.t,
@@ -211,18 +242,6 @@ func (ct *CLITester) newQueryRequest(resultObj interface{}) *QueryRequest {
 }
 
 func (ct *CLITester) initChain() {
-	ethAddresses := []string{
-		"0x82A978B3f5962A5b0957d9ee9eEf472EE55B42F1",
-		"0x7d577a597B2742b498Cb5Cf0C26cDCD726d39E6e",
-		"0xDCEceAF3fc5C0a63d195d69b1A90011B7B19650D",
-		"0x598443F1880Ef585B21f1d7585Bd0577402861E5",
-		"0x13cBB8D99C6C4e0f2728C7d72606e78A29C4E224",
-		"0x77dB2BEBBA79Db42a978F896968f4afCE746ea1F",
-		"0x24143873e0E0815fdCBcfFDbe09C979CbF9Ad013",
-		"0x10A1c1CB95c92EC31D3f22C66Eef1d9f3F258c6B",
-		"0xe0FC04FA2d34a66B779fd5CEe748268032a146c0",
-	}
-
 	// init chain
 	cmd := ct.newWbdCmd().AddArg("", "init").AddArg("", ct.MonikerID).AddArg("chain-id", ct.ChainID)
 	cmd.CheckSuccessfulExecute(nil)
@@ -263,6 +282,9 @@ func (ct *CLITester) initChain() {
 				accValue.Address = output.Address
 				accValue.PubKey = output.PubKey
 				accValue.Mnemonic = output.Mnemonic
+
+				_, err := ct.keyBase.CreateAccount(accName, accValue.Mnemonic, "", ct.AccountPassphrase, 0, 0)
+				require.NoError(ct.t, err, "account %q: keyBase.CreateAccount", accName)
 			}
 
 			// genesis account
@@ -283,16 +305,16 @@ func (ct *CLITester) initChain() {
 
 			// POA validator
 			if accValue.IsPOAValidator {
-				require.True(ct.t, poaValidatorIdx < len(ethAddresses), "add more predefined ethAddresses")
-				accValue.EthAddress = ethAddresses[poaValidatorIdx]
+				require.True(ct.t, poaValidatorIdx < len(EthAddresses), "add more predefined ethAddresses")
+				accValue.EthAddress = EthAddresses[poaValidatorIdx]
 
 				cmd := ct.newWbdCmd().
 					AddArg("", "add-genesis-poa-validator").
 					AddArg("", accValue.Address).
 					AddArg("", accValue.EthAddress)
-				poaValidatorIdx++
-
 				cmd.CheckSuccessfulExecute(nil)
+
+				poaValidatorIdx++
 			}
 
 			// Oracle nominee
@@ -327,7 +349,21 @@ func (ct *CLITester) initChain() {
 			AddArg("", defWriteSetsPath).
 			AddArg("home", ct.RootDir)
 
-		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
+		cmd.CheckSuccessfulExecute(nil)
+	}
+
+	// add Oracle assets
+	{
+		oracles := make([]string, 0)
+		oracles = append(oracles, ct.Accounts["oracle1"].Address)
+		oracles = append(oracles, ct.Accounts["oracle2"].Address)
+
+		cmd := ct.newWbdCmd().
+			AddArg("", "add-oracle-asset-gen").
+			AddArg("", ct.DefAssetCode).
+			AddArg("", strings.Join(oracles, ","))
+
+		cmd.CheckSuccessfulExecute(nil)
 	}
 
 	// change default genesis params
@@ -367,7 +403,7 @@ func (ct *CLITester) initChain() {
 }
 
 func (ct *CLITester) startDemon(waitForStart, printLogs bool) {
-	const startRetries = 100
+	const startTimeout = 30 * time.Second
 
 	require.Nil(ct.t, ct.daemon)
 
@@ -379,21 +415,19 @@ func (ct *CLITester) startDemon(waitForStart, printLogs bool) {
 
 	// wait for the node to start up
 	if waitForStart {
-		i := 0
-		for ; i < startRetries; i++ {
-			time.Sleep(50 * time.Millisecond)
+		timeoutCh := time.NewTimer(startTimeout).C
+		for {
 			blockHeight, err := ct.GetCurrentBlockHeight()
-			if err != nil {
-				continue
-			}
-			if blockHeight < 2 {
-				continue
+			if err == nil && blockHeight > 1 {
+				break
 			}
 
-			break
-		}
-		if i == startRetries {
-			ct.t.Fatalf("wait for the node to start up: failed")
+			select {
+			case <-timeoutCh:
+				ct.t.Fatalf("wait for the node to start up (%v): failed", startTimeout)
+			default:
+				time.Sleep(50 * time.Millisecond)
+			}
 		}
 	}
 
@@ -460,7 +494,7 @@ func (ct *CLITester) DaemonLogsContain(subStr string) bool {
 }
 
 func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
-	const startRetries = 100
+	const startTimeout = 30 * time.Second
 
 	require.Nil(ct.t, ct.restServer)
 
@@ -469,15 +503,17 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	restAddress := "localhost:" + restPort
 	restUrl = "http://" + restAddress
 
-	cmd := ct.newWbcliCmd().
-		AddArg("", "rest-server").
-		AddArg("laddr", "tcp://"+restAddress).
-		AddArg("node", ct.rpcAddress)
+	//cmd := ct.newWbcliCmd().
+	cmd := &CLICmd{t: ct.t, base: ct.wbcliBinary}
+	cmd.AddArg("", "rest-server")
+	cmd.AddArg("laddr", "tcp://"+restAddress)
+	cmd.AddArg("node", ct.rpcAddress)
+	cmd.AddArg("trust-node", "true")
 	cmd.Start(ct.t, printLogs)
 
 	// wait for the server to start up
-	i := 0
-	for ; i < startRetries; i++ {
+	timeoutCh := time.NewTimer(startTimeout).C
+	for {
 		resp, err := http.Get(restUrl + "/node_info")
 		if err == nil && resp.StatusCode == http.StatusOK {
 			break
@@ -486,13 +522,16 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 		if resp != nil && resp.Body != nil {
 			resp.Body.Close()
 		}
-		time.Sleep(50 * time.Millisecond)
-	}
-	if i == startRetries {
-		ct.t.Fatalf("wait for the REST server to start up: failed")
+
+		select {
+		case <-timeoutCh:
+			ct.t.Fatalf("wait for the REST server to start (%v): failed", startTimeout)
+		default:
+			time.Sleep(50 * time.Millisecond)
+		}
 	}
 
-	ct.restServer = cmd
+	ct.restServer, ct.restAddress = cmd, restUrl
 
 	return
 }
@@ -608,7 +647,7 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 	for i := 0; i < requiredVotes-len(call.Votes); i++ {
 		ct.TxMultiSigConfirmCall(validatorAddrs[i], call.Call.MsgID).CheckSucceeded()
 	}
-	ct.WaitForNextBlocks(2)
+	ct.WaitForNextBlocks(1)
 
 	// check call approved
 	{

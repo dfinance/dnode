@@ -11,21 +11,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/OneOfOne/xxhash"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	dnodeConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/oracle"
 	compilerClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
-
-	"github.com/OneOfOne/xxhash"
-)
-
-var (
-	dsServerUrl = "http://host.docker.internal:"
 )
 
 const sendScript = `
@@ -119,7 +114,7 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	input := setupTestInput(false)
 
 	// launch docker
-	client, compiler, vm := launchDocker(dsServerUrl+strconv.Itoa(input.dsPort), t)
+	client, compiler, vm := launchDocker(input.dsPort, t)
 	defer input.vk.CloseConnections()
 	defer stopDocker(t, client, compiler)
 	defer stopDocker(t, client, vm)
@@ -210,7 +205,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 	input := setupTestInput(false)
 
 	// launch docker
-	client, compiler, vm := launchDocker(dsServerUrl+strconv.Itoa(input.dsPort), t)
+	client, compiler, vm := launchDocker(input.dsPort, t)
 	defer stopDocker(t, client, vm)
 	defer stopDocker(t, client, compiler)
 
@@ -311,7 +306,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	input := setupTestInput(false)
 
 	// launch docker
-	client, compiler, vm := launchDocker(dsServerUrl+strconv.Itoa(input.dsPort), t)
+	client, compiler, vm := launchDocker(input.dsPort, t)
 	defer stopDocker(t, client, vm)
 	defer stopDocker(t, client, compiler)
 
