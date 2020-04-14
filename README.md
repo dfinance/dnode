@@ -113,7 +113,7 @@ Now configure cli:
     dncli config indent true
     dncli config trust-node true
     dncli config compiler 127.0.0.1:50053
-    dncli config node 127.0.0.1:26657
+    dncli config node http://127.0.0.1:26657
 
 Time to change denom in PoS configuration.
 So open `~/.dnode/config/genesis.json` and find this stake settings:
