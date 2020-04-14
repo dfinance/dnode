@@ -145,6 +145,14 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 			)
 			return
 		}
+		if len(path) > 0 && path[0] != 0x0  {
+			rest.WriteErrorResponse(
+				w,
+				http.StatusUnprocessableEntity,
+				fmt.Sprintf("path %q: first byte must be 0x0", rawPath),
+			)
+			return
+		}
 
 		bz, err := cliCtx.Codec.MarshalJSON(types.QueryAccessPath{
 			Address: address,
