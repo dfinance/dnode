@@ -3,8 +3,11 @@
 package app
 
 import (
+	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -16,6 +19,7 @@ import (
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/vm"
 )
 
 func Test_CurrencyRest(t *testing.T) {
@@ -393,6 +397,64 @@ func Test_POARest(t *testing.T) {
 
 			require.Contains(t, accs, sdkAddr)
 			require.Equal(t, accs[sdkAddr].EthAddress, ethAddr)
+		}
+	}
+}
+
+func Test_VMRest(t *testing.T) {
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	vmGenState := vm.GenesisState{}
+	// read default writeSets
+	{
+		file, err := os.Open(os.ExpandEnv(cliTester.DefVmWriteSetsPath))
+		require.NoError(t, err, "open default writeSets file")
+
+		jsonContent, err := ioutil.ReadAll(file)
+		require.NoError(t, err, "reading default writeSets file")
+
+		require.NoError(t, ct.Cdc.UnmarshalJSON(jsonContent, &vmGenState), "unmarshal default writeSets file")
+
+		file.Close()
+	}
+
+	// check data endpoint
+	{
+		writeSet := vmGenState.WriteSet[0]
+		req, respMsg := ct.RestQueryVMGetData(writeSet.Address, writeSet.Path)
+		req.CheckSucceeded()
+
+		require.Equal(t, writeSet.Value, respMsg.Value)
+
+		// check invalid inputs
+		{
+			// invalid accAddress
+			{
+				req, _ := ct.RestQueryVMGetData("non-valid-addr", writeSet.Path)
+				req.CheckFailed(http.StatusUnprocessableEntity, nil)
+			}
+
+			// invalid path
+			{
+				req, _ := ct.RestQueryVMGetData(writeSet.Address, "non-valid-path")
+				req.CheckFailed(http.StatusUnprocessableEntity, nil)
+			}
+
+			// restricted path
+			{
+				path := writeSet.Path
+
+				pathBytes, err := hex.DecodeString(path)
+				require.NoError(t, err, "decoding path HEX string")
+
+				pathBytes[0] = 0x1
+				path = hex.EncodeToString(pathBytes)
+
+				req, _ := ct.RestQueryVMGetData(writeSet.Address, path)
+				req.CheckFailed(http.StatusUnprocessableEntity, nil)
+			}
 		}
 	}
 }

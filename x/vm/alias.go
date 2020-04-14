@@ -20,6 +20,7 @@ type (
 	VMServer                     = vm_grpc.VMServiceServer
 	UnimplementedVMServiceServer = vm_grpc.UnimplementedVMServiceServer
 
+	GenesisState    = types.GenesisState
 	QueryAccessPath = types.QueryAccessPath
 	QueryValueResp  = types.QueryValueResp
 )
