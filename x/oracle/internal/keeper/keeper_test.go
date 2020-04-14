@@ -11,6 +11,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
+	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
@@ -236,20 +237,7 @@ func TestKeeper_checkPriceReceivedAtTimestamp(t *testing.T) {
 	// check timestamps outside of +-range
 	{
 		dur := receivedAtDiffDur + 1*time.Second
-		targetErr := types.ErrInvalidReceivedAt(helper.keeper.Codespace(), "")
-
-		{
-			err := helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(dur))
-			require.NotNil(t, err)
-			require.Equal(t, targetErr.Codespace(), err.Codespace())
-			require.Equal(t, targetErr.Code(), err.Code())
-		}
-
-		{
-			err := helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(-dur))
-			require.NotNil(t, err)
-			require.Equal(t, targetErr.Codespace(), err.Codespace())
-			require.Equal(t, targetErr.Code(), err.Code())
-		}
+		tests.CheckExpectedErr(t, types.ErrInvalidReceivedAt, helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(dur)))
+		tests.CheckExpectedErr(t, types.ErrInvalidReceivedAt, helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(-dur)))
 	}
 }

@@ -1,12 +1,12 @@
 package keeper
 
 import (
-	"fmt"
 	"sort"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
 	"github.com/dfinance/dnode/helpers"
@@ -23,8 +23,6 @@ type Keeper struct {
 	cdc *codec.Codec
 	// The reference to the Paramstore to get and set oracle specific params
 	paramstore params.Subspace
-	// Reserved codespace
-	codespace sdk.CodespaceType
 	// Virtual machine keeper
 	vmKeeper common_vm.VMStorage
 }
@@ -36,20 +34,18 @@ func NewKeeper(
 	storeKey sdk.StoreKey,
 	cdc *codec.Codec,
 	paramstore params.Subspace,
-	codespace sdk.CodespaceType,
 	vmKeeper common_vm.VMStorage,
 ) Keeper {
 	return Keeper{
 		paramstore: paramstore.WithKeyTable(types.ParamKeyTable()),
 		storeKey:   storeKey,
 		cdc:        cdc,
-		codespace:  codespace,
 		vmKeeper:   vmKeeper,
 	}
 }
 
 // Check PostPrice's ReceivedAt timestamp (algorithm depends on module params)
-func (k Keeper) CheckPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.Time) sdk.Error {
+func (k Keeper) CheckPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.Time) error {
 	cfg := k.GetPostPriceParams(ctx)
 
 	if cfg.ReceivedAtDiffInS > 0 {
@@ -65,7 +61,7 @@ func (k Keeper) CheckPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.T
 		blockTime := ctx.BlockTime()
 		diffDur := blockTime.Sub(receivedAt)
 		if absDuration(diffDur) > thresholdDur {
-			return types.ErrInvalidReceivedAt(k.codespace, fmt.Sprintf("timestamp difference %v should be less than %v", diffDur, thresholdDur))
+			return sdkErrors.Wrapf(types.ErrInvalidReceivedAt, "timestamp difference %v should be less than %v", diffDur, thresholdDur)
 		}
 	}
 
@@ -78,7 +74,7 @@ func (k Keeper) SetPrice(
 	oracle sdk.AccAddress,
 	assetCode string,
 	price sdk.Int,
-	receivedAt time.Time) (types.PostedPrice, sdk.Error) {
+	receivedAt time.Time) (types.PostedPrice, error) {
 
 	// validate price receivedAt timestamp comparing to the current blockHeight timestamp
 	if err := k.CheckPriceReceivedAtTimestamp(ctx, receivedAt); err != nil {
@@ -118,7 +114,7 @@ func (k Keeper) SetPrice(
 }
 
 // SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs and cleans up previous inputs
-func (k Keeper) SetCurrentPrices(ctx sdk.Context) sdk.Error {
+func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 	store := ctx.KVStore(k.storeKey)
 	assets := k.GetAssetParams(ctx)
 
@@ -208,23 +204,19 @@ func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode string, blockHeight int6
 }
 
 // ValidatePostPrice makes sure the person posting the price is an oracle
-func (k Keeper) ValidatePostPrice(ctx sdk.Context, msg types.MsgPostPrice) sdk.Error {
+func (k Keeper) ValidatePostPrice(ctx sdk.Context, msg types.MsgPostPrice) error {
 	// TODO implement this
 
 	_, assetFound := k.GetAsset(ctx, msg.AssetCode)
 	if !assetFound {
-		return types.ErrInvalidAsset(k.codespace)
+		return sdkErrors.Wrap(types.ErrInvalidAsset, msg.AssetCode)
 	}
 	_, err := k.GetOracle(ctx, msg.AssetCode, msg.From)
 	if err != nil {
-		return types.ErrInvalidOracle(k.codespace)
+		return sdkErrors.Wrap(types.ErrInvalidOracle, msg.From.String())
 	}
 
 	return nil
-}
-
-func (k Keeper) Codespace() sdk.CodespaceType {
-	return k.codespace
 }
 
 func (k Keeper) IsNominee(ctx sdk.Context, nominee string) bool {

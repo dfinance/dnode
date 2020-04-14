@@ -9,6 +9,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
@@ -44,7 +45,7 @@ func Test_CurrencyRest(t *testing.T) {
 			// non-existing issueID
 			{
 				req, _ := ct.RestQueryCurrenciesIssue("non_existing_ID")
-				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongIssueID(""))
+				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongIssueID)
 			}
 		}
 	}
@@ -63,7 +64,7 @@ func Test_CurrencyRest(t *testing.T) {
 			// non-existing symbol
 			{
 				req, _ := ct.RestQueryCurrenciesCurrency("non_existing_symbol")
-				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrNotExistCurrency(""))
+				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrNotExistCurrency)
 			}
 		}
 	}
@@ -221,7 +222,7 @@ func Test_MSRest(t *testing.T) {
 			// non-existing "id"
 			{
 				req, _ := ct.RestQueryMultiSigCall(2)
-				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrWrongCallId(0))
+				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrWrongCallId)
 			}
 		}
 	}
@@ -242,7 +243,7 @@ func Test_MSRest(t *testing.T) {
 			// non-existing "unique"
 			{
 				req, _ := ct.RestQueryMultiSigUnique("non-existing-UNIQUE")
-				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrNotFoundUniqueID(""))
+				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrNotFoundUniqueID)
 			}
 		}
 	}
@@ -344,7 +345,7 @@ func Test_OracleRest(t *testing.T) {
 		// non-existing assetCode
 		{
 			req, _ := ct.RestQueryOracleRawPrices("non_existing_asset", 1)
-			req.CheckFailed(http.StatusNotFound, sdk.ErrUnknownRequest(""))
+			req.CheckFailed(http.StatusNotFound, sdkErrors.ErrUnknownRequest)
 		}
 	}
 
@@ -361,7 +362,7 @@ func Test_OracleRest(t *testing.T) {
 			// non-existing assetCode
 			{
 				req, _ := ct.RestQueryOraclePrice("non_existing_asset")
-				req.CheckFailed(http.StatusNotFound, sdk.ErrUnknownRequest(""))
+				req.CheckFailed(http.StatusNotFound, sdkErrors.ErrUnknownRequest)
 			}
 		}
 	}

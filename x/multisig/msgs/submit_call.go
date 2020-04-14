@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/core"
 	types "github.com/dfinance/dnode/x/multisig/types"
@@ -34,14 +35,14 @@ func (msg MsgSubmitCall) Type() string {
 	return "submit_call"
 }
 
-func (msg MsgSubmitCall) ValidateBasic() sdk.Error {
+func (msg MsgSubmitCall) ValidateBasic() error {
 	err := msg.Msg.ValidateBasic()
 	if err != nil {
 		return err
 	}
 
 	if msg.Sender.Empty() {
-		return sdk.ErrInvalidAddress(msg.Sender.String())
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty sender")
 	}
 
 	return nil

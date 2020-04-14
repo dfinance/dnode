@@ -1,9 +1,8 @@
 package oracle
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/x/oracle/internal/types"
@@ -11,7 +10,7 @@ import (
 
 // NewHandler handles all oracle type messages
 func NewHandler(k Keeper) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
 		case types.MsgPostPrice:
 			return HandleMsgPostPrice(ctx, k, msg)
@@ -24,8 +23,7 @@ func NewHandler(k Keeper) sdk.Handler {
 		case types.MsgAddAsset:
 			return handleMsgAddAsset(ctx, k, msg)
 		default:
-			errMsg := fmt.Sprintf("unrecognized oracle message type: %T", msg)
-			return sdk.ErrUnknownRequest(errMsg).Result()
+			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized oracle message type: %T", msg)
 		}
 	}
 }
@@ -34,103 +32,89 @@ func NewHandler(k Keeper) sdk.Handler {
 // do proposers need to post the round in the message? If not, how do we determine the round?
 
 // HandleMsgPostPrice handles prices posted by oracles
-func HandleMsgPostPrice(
-	ctx sdk.Context,
-	k Keeper,
-	msg types.MsgPostPrice) sdk.Result {
-
+func HandleMsgPostPrice(ctx sdk.Context, k Keeper, msg types.MsgPostPrice) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := k.ValidatePostPrice(ctx, msg); err != nil {
-		return err.Result()
+		return nil, err
 	}
-	_, er := k.GetOracle(ctx, msg.AssetCode, msg.From)
-	if er != nil {
-		return types.ErrInvalidOracle(k.Codespace()).Result()
+
+	if _, err := k.GetOracle(ctx, msg.AssetCode, msg.From); err != nil {
+		return nil, sdkErrors.Wrap(types.ErrInvalidOracle, msg.From.String())
 	}
+
 	if _, err := k.SetPrice(ctx, msg.From, msg.AssetCode, msg.Price, msg.ReceivedAt); err != nil {
-		return err.Result()
+		return nil, err
 	}
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgAddOracle(
-	ctx sdk.Context,
-	k Keeper,
-	msg types.MsgAddOracle) sdk.Result {
-
+func handleMsgAddOracle(ctx sdk.Context, k Keeper, msg types.MsgAddOracle) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
-		return err.Result()
+		return nil, err
 	}
+
 	if _, err := k.GetOracle(ctx, msg.Denom, msg.Oracle); err == nil {
-		return types.ErrInvalidOracle(k.Codespace()).Result()
+		return nil, sdkErrors.Wrap(types.ErrInvalidOracle, msg.Oracle.String())
 	}
+
 	if err := k.AddOracle(ctx, msg.Nominee.String(), msg.Denom, msg.Oracle); err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
+		return nil, sdkErrors.Wrap(types.ErrInternal, err.Error())
 	}
 
-	return sdk.Result{Events: ctx.EventManager().Events()}
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgSetOracles(
-	ctx sdk.Context,
-	k Keeper,
-	msg types.MsgSetOracles) sdk.Result {
-
+func handleMsgSetOracles(ctx sdk.Context, k Keeper, msg types.MsgSetOracles) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
-		return err.Result()
+		return nil, err
 	}
-	_, found := k.GetAsset(ctx, msg.Denom)
-	if !found {
-		return types.ErrInvalidAsset(k.Codespace()).Result()
+
+	if _, found := k.GetAsset(ctx, msg.Denom); !found {
+		return nil, sdkErrors.Wrap(types.ErrInvalidAsset, msg.Denom)
 	}
-	er := k.SetOracles(ctx, msg.Nominee.String(), msg.Denom, msg.Oracles)
-	if er != nil {
-		return sdk.ErrInternal(er.Error()).Result()
+
+	if err := k.SetOracles(ctx, msg.Nominee.String(), msg.Denom, msg.Oracles); err != nil {
+		return nil, sdkErrors.Wrap(types.ErrInternal, err.Error())
 	}
-	return sdk.Result{Events: ctx.EventManager().Events()}
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgSetAsset(
-	ctx sdk.Context,
-	k Keeper,
-	msg types.MsgSetAsset) sdk.Result {
-
+func handleMsgSetAsset(ctx sdk.Context, k Keeper, msg types.MsgSetAsset) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
-		return err.Result()
+		return nil, err
 	}
-	_, found := k.GetAsset(ctx, msg.Denom)
-	if !found {
-		return types.ErrInvalidAsset(k.Codespace()).Result()
+
+	if _, found := k.GetAsset(ctx, msg.Denom); !found {
+		return nil, sdkErrors.Wrap(types.ErrInvalidAsset, msg.Denom)
 	}
-	er := k.SetAsset(ctx, msg.Nominee.String(), msg.Denom, msg.Asset)
-	if er != nil {
-		return sdk.ErrInternal(er.Error()).Result()
+
+	if err := k.SetAsset(ctx, msg.Nominee.String(), msg.Denom, msg.Asset); err != nil {
+		return nil, sdkErrors.Wrap(types.ErrInternal, err.Error())
 	}
-	return sdk.Result{Events: ctx.EventManager().Events()}
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
-func handleMsgAddAsset(
-	ctx sdk.Context,
-	k Keeper,
-	msg types.MsgAddAsset) sdk.Result {
-
+func handleMsgAddAsset(ctx sdk.Context, k Keeper, msg types.MsgAddAsset) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
-		return err.Result()
+		return nil, err
 	}
-	_, found := k.GetAsset(ctx, msg.Denom)
-	if found {
-		return types.ErrExistingAsset(k.Codespace()).Result()
+
+	if _, found := k.GetAsset(ctx, msg.Denom); found {
+		return nil, sdkErrors.Wrap(types.ErrExistingAsset, msg.Denom)
 	}
-	er := k.AddAsset(ctx, msg.Nominee.String(), msg.Denom, msg.Asset)
-	if er != nil {
-		return sdk.ErrInternal(er.Error()).Result()
+
+	if err := k.AddAsset(ctx, msg.Nominee.String(), msg.Denom, msg.Asset); err != nil {
+		return nil, sdkErrors.Wrap(types.ErrInternal, err.Error())
 	}
-	return sdk.Result{Events: ctx.EventManager().Events()}
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 // nolint:errcheck
@@ -143,5 +127,6 @@ func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 	// which occur during a block
 	//TODO use an iterator and update the prices for all assets in the store
 	k.SetCurrentPrices(ctx)
+
 	return []abci.ValidatorUpdate{}
 }

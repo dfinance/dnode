@@ -16,7 +16,6 @@ type (
 	Keeper           = keeper.Keeper
 	MsgDeployModule  = types.MsgDeployModule
 	MsgExecuteScript = types.MsgExecuteScript
-	ErrVMCrashed     = types.ErrVMCrashed
 
 	VMServer                     = vm_grpc.VMServiceServer
 	UnimplementedVMServiceServer = vm_grpc.UnimplementedVMServiceServer
@@ -28,4 +27,6 @@ type (
 var (
 	NewKeeper               = keeper.NewKeeper
 	RegisterVMServiceServer = vm_grpc.RegisterVMServiceServer
+
+	ErrVMCrashed = types.ErrVMCrashed
 )

@@ -44,10 +44,14 @@ func (p PostPriceParams) String() string {
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
 // pairs of oracle module's parameters.
 func (p Params) ParamSetPairs() params.ParamSetPairs {
+	nilPairValidatorFunc := func(value interface{}) error {
+		return nil
+	}
+
 	return params.ParamSetPairs{
-		{Key: KeyAssets, Value: &p.Assets},
-		{Key: KeyNominees, Value: &p.Nominees},
-		{Key: KeyPostPrice, Value: &p.PostPrice},
+		{Key: KeyAssets, Value: &p.Assets, ValidatorFn: nilPairValidatorFunc},
+		{Key: KeyNominees, Value: &p.Nominees, ValidatorFn: nilPairValidatorFunc},
+		{Key: KeyPostPrice, Value: &p.PostPrice, ValidatorFn: nilPairValidatorFunc},
 	}
 }
 

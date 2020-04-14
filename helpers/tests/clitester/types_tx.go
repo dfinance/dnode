@@ -7,6 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/dfinance/dnode/cmd/config"
@@ -56,7 +57,7 @@ func (r *TxRequest) RemoveCmdArg(arg string) *TxRequest {
 }
 
 func (r *TxRequest) Send() (retCode int, retStdout, retStderr []byte) {
-	return r.cmd.Execute(r.accPassphrase)
+	return r.cmd.Execute(r.accPassphrase, r.accPassphrase)
 }
 
 func (r *TxRequest) CheckSucceeded() {
@@ -73,7 +74,10 @@ func (r *TxRequest) CheckSucceeded() {
 	}
 }
 
-func (r *TxRequest) CheckFailedWithSDKError(sdkErr sdk.Error) {
+func (r *TxRequest) CheckFailedWithSDKError(err error) {
+	sdkErr, ok := err.(*sdkErrors.Error)
+	require.True(r.t, ok, "not a SDK error")
+
 	code, stdout, stderr := r.Send()
 	require.NotEqual(r.t, 0, code, "%s: succeeded", r.String())
 	stdout, stderr = trimCliOutput(stdout), trimCliOutput(stderr)
@@ -85,8 +89,8 @@ func (r *TxRequest) CheckFailedWithSDKError(sdkErr sdk.Error) {
 		r.t.Fatalf("%s: unmarshal stdout/stderr: %s / %s", r.String(), string(stdout), string(stderr))
 	}
 
-	require.Equal(r.t, sdkErr.Codespace(), sdk.CodespaceType(txResponse.Codespace), "%s: codespace", r.String())
-	require.Equal(r.t, sdkErr.Code(), sdk.CodeType(txResponse.Code), "%s: code", r.String())
+	require.Equal(r.t, sdkErr.Codespace(), txResponse.Codespace, "%s: codespace", r.String())
+	require.Equal(r.t, sdkErr.ABCICode(), txResponse.Code, "%s: code", r.String())
 }
 
 func (r *TxRequest) CheckFailedWithErrorSubstring(subStr string) (output string) {
@@ -103,7 +107,7 @@ func (r *TxRequest) CheckFailedWithErrorSubstring(subStr string) (output string)
 	if strings.Contains(stdoutStr, subStr) || strings.Contains(stderrErr, subStr) {
 		return
 	}
-	r.t.Fatalf("%s: stdout/stderr doesn't contain %q sub string: %s", r.String(), subStr, stdoutStr)
+	r.t.Fatalf("%s: stdout/stderr doesn't contain %q sub string: %s", r.String(), subStr, output)
 
 	return
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
@@ -38,7 +39,7 @@ func Test_CurrencyHandlerIsMultisigOnly(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
 		issueMsg := ccMsgs.NewMsgIssueCurrency(currency1Symbol, amount, 0, senderAcc.GetAddress(), issue1ID)
 		tx := genTx([]sdk.Msg{issueMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, sdk.ErrUnauthorized(""))
+		CheckDeliverSpecificErrorTx(t, app, tx, sdkErrors.ErrUnauthorized)
 	}
 }
 
@@ -109,7 +110,7 @@ func Test_CurrencyQueries(t *testing.T) {
 
 	// check non-existing currency query
 	{
-		CheckRunQuerySpecificError(t, app, ccTypes.CurrencyReq{Symbol: "non-existing-symbol"}, queryCurrencyGetCurrencyPath, ccTypes.ErrNotExistCurrency(""))
+		CheckRunQuerySpecificError(t, app, ccTypes.CurrencyReq{Symbol: "non-existing-symbol"}, queryCurrencyGetCurrencyPath, ccTypes.ErrNotExistCurrency)
 	}
 }
 
@@ -152,8 +153,8 @@ func Test_CurrencyIssue(t *testing.T) {
 	{
 		msgId, issueId := "3", "issue3"
 
-		res := issueCurrency(t, app, denom, sdk.OneInt(), curDecimals+1, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, ccTypes.ErrIncorrectDecimals(0, 0, ""), res)
+		res, err := issueCurrency(t, app, denom, sdk.OneInt(), curDecimals+1, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		CheckResultError(t, ccTypes.ErrIncorrectDecimals, res, err)
 	}
 
 	// check zero amount currency issue
@@ -161,8 +162,8 @@ func Test_CurrencyIssue(t *testing.T) {
 		msgId, issueId, denom := "non-existing-msgID", "non-existing-issue", "non-existing-denom"
 
 		curAmount, curDecimals := sdk.ZeroInt(), int8(0)
-		res := issueCurrency(t, app, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, ccTypes.ErrWrongAmount(""), res)
+		res, err := issueCurrency(t, app, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		CheckResultError(t, ccTypes.ErrWrongAmount, res, err)
 	}
 
 	// check amount with negative decimals currency issue
@@ -170,42 +171,41 @@ func Test_CurrencyIssue(t *testing.T) {
 		msgId, issueId, denom := "non-existing-msgID", "non-existing-issue", "non-existing-denom"
 
 		curAmount, curDecimals := sdk.OneInt(), int8(-1)
-		res := issueCurrency(t, app, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, ccTypes.ErrWrongDecimals(0), res)
+		res, err := issueCurrency(t, app, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		CheckResultError(t, ccTypes.ErrWrongDecimals, res, err)
 	}
 
 	// check currency issue with wrong symbol
 	{
 		msgId, issueId := "non-existing-msgID", "non-existing-issue"
 
-		res := issueCurrency(t, app, "", amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, ccTypes.ErrWrongSymbol(""), res)
+		res, err := issueCurrency(t, app, "", amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		CheckResultError(t, ccTypes.ErrWrongSymbol, res, err)
 	}
 
 	// check currency issue with the same issueID
 	{
 		msgId, issueId := "non-existing-msgID", "issue1"
 
-		res := issueCurrency(t, app, denom, amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, ccTypes.ErrExistsIssue(""), res)
+		res, err := issueCurrency(t, app, denom, amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		CheckResultError(t, ccTypes.ErrExistsIssue, res, err)
 	}
 
 	// check currency issue with already existing uniqueMsgID
 	{
 		msgId, issueId := "1", "non-existing-issue"
 
-		res := issueCurrency(t, app, denom, amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, msTypes.ErrNotUniqueID(""), res)
+		res, err := issueCurrency(t, app, denom, amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		CheckResultError(t, msTypes.ErrNotUniqueID, res, err)
 	}
 
 	// check currency issue with negative amount
 	{
 		msgId, issueId := "non-existing-msgID", "non-existing-issue"
 
-		res := issueCurrency(t, app, denom, sdk.NewInt(-1), 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		require.Equal(t, sdk.CodespaceRoot, res.Codespace)
-		require.Equal(t, sdk.CodeInternal, res.Code)
-		require.Contains(t, res.Log, "negative coin amount")
+		_, err := issueCurrency(t, app, denom, sdk.NewInt(-1), 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "negative coin amount")
 	}
 
 	// check currency issue with invalid denom
@@ -213,10 +213,9 @@ func Test_CurrencyIssue(t *testing.T) {
 		msgId, issueId := "non-existing-msgID", "non-existing-issue"
 		invalidDenom := "1"
 
-		res := issueCurrency(t, app, invalidDenom, sdk.NewInt(1), 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		require.Equal(t, sdk.CodespaceRoot, res.Codespace)
-		require.Equal(t, sdk.CodeInternal, res.Code)
-		require.Contains(t, res.Log, "invalid denom")
+		_, err := issueCurrency(t, app, invalidDenom, sdk.NewInt(1), 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid denom")
 	}
 }
 
@@ -304,8 +303,8 @@ func Test_CurrencyIssueDecimals(t *testing.T) {
 
 		newAmount, newDecimals := sdk.OneInt(), curDecimals+1
 
-		res := issueCurrency(t, app, denom, newAmount, newDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, ccTypes.ErrIncorrectDecimals(0, 0, ""), res)
+		res, err := issueCurrency(t, app, denom, newAmount, newDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		CheckResultError(t, ccTypes.ErrIncorrectDecimals, res, err)
 	}
 
 	// check amount decrease with decimals currency issue
@@ -322,8 +321,8 @@ func Test_CurrencyIssueDecimals(t *testing.T) {
 	{
 		newAmount := curAmount.Add(sdk.OneInt())
 
-		res := destroyCurrency(t, app, chainID, denom, newAmount, recipientAddr, recipientPrivKey, false)
-		CheckResultError(t, sdk.ErrInsufficientCoins(""), res)
+		res, err := destroyCurrency(t, app, chainID, denom, newAmount, recipientAddr, recipientPrivKey, false)
+		CheckResultError(t, sdkErrors.ErrInsufficientFunds, res, err)
 	}
 }
 
@@ -368,22 +367,22 @@ func Test_CurrencyDestroy(t *testing.T) {
 
 	// check currency destroy over the limit
 	{
-		res := destroyCurrency(t, app, chainID, denom, sdk.OneInt(), recipientAddr, recipientPrivKey, false)
-		CheckResultError(t, sdk.ErrInsufficientCoins(""), res)
+		res, err := destroyCurrency(t, app, chainID, denom, sdk.OneInt(), recipientAddr, recipientPrivKey, false)
+		CheckResultError(t, sdkErrors.ErrInsufficientFunds, res, err)
 	}
 
 	// check currency destroy with denom account doesn't have
 	{
 		wrongDenom := currency2Symbol
 
-		res := destroyCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
-		CheckResultError(t, sdk.ErrInsufficientCoins(""), res)
+		res, err := destroyCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
+		CheckResultError(t, sdkErrors.ErrInsufficientFunds, res, err)
 	}
 }
 
 func issueCurrency(t *testing.T, app *DnServiceApp,
 	ccSymbol string, ccAmount sdk.Int, ccDecimals int8, msgID, issueID string,
-	recipientAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doCheck bool) sdk.Result {
+	recipientAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
 
 	issueMsg := ccMsgs.NewMsgIssueCurrency(ccSymbol, ccAmount, ccDecimals, accs[recipientAccIdx].Address, issueID)
 	return MSMsgSubmitAndVote(t, app, msgID, issueMsg, recipientAccIdx, accs, privKeys, doCheck)
@@ -391,18 +390,18 @@ func issueCurrency(t *testing.T, app *DnServiceApp,
 
 func destroyCurrency(t *testing.T, app *DnServiceApp,
 	chainID, ccSymbol string, ccAmount sdk.Int,
-	recipientAddr sdk.AccAddress, recipientPrivKey crypto.PrivKey, doCheck bool) sdk.Result {
+	recipientAddr sdk.AccAddress, recipientPrivKey crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
 
 	recipientAcc := GetAccountCheckTx(app, recipientAddr)
 	destroyMsg := ccMsgs.NewMsgDestroyCurrency(chainID, ccSymbol, ccAmount, recipientAcc.GetAddress(), recipientAcc.GetAddress().String())
 	tx := genTx([]sdk.Msg{destroyMsg}, []uint64{recipientAcc.GetAccountNumber()}, []uint64{recipientAcc.GetSequence()}, recipientPrivKey)
 
-	res := DeliverTx(app, tx)
+	res, err := DeliverTx(app, tx)
 	if doCheck {
-		require.True(t, res.IsOK())
+		require.NoError(t, err)
 	}
 
-	return res
+	return res, err
 }
 
 func checkCurrencyExists(t *testing.T, app *DnServiceApp, symbol string, supply sdk.Int, decimals int8) {

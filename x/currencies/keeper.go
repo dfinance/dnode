@@ -4,6 +4,7 @@ package currencies
 import (
 	cdcCodec "github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
 	"github.com/dfinance/dnode/x/currencies/types"
@@ -26,9 +27,9 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *cdcCodec.Code
 }
 
 // Destroy currency.
-func (keeper Keeper) DestroyCurrency(ctx sdk.Context, chainID, symbol, recipient string, amount sdk.Int, spender sdk.AccAddress) sdk.Error {
+func (keeper Keeper) DestroyCurrency(ctx sdk.Context, chainID, symbol, recipient string, amount sdk.Int, spender sdk.AccAddress) error {
 	if !keeper.doesCurrencyExists(ctx, symbol) {
-		return sdk.ErrInsufficientCoins("no known coins to destroy")
+		return sdkErrors.Wrap(sdkErrors.ErrInsufficientFunds, "no known coins to destroy")
 	}
 
 	keeper.reduceSupply(ctx, chainID, symbol, recipient, amount, spender)
@@ -41,9 +42,9 @@ func (keeper Keeper) DestroyCurrency(ctx sdk.Context, chainID, symbol, recipient
 }
 
 // Issue currency.
-func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) sdk.Error {
+func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount sdk.Int, decimals int8, recipient sdk.AccAddress, issueID string) error {
 	if keeper.hasIssue(ctx, issueID) {
-		return types.ErrExistsIssue(issueID)
+		return sdkErrors.Wrap(types.ErrExistsIssue, issueID)
 	}
 
 	var isNew bool
@@ -55,7 +56,7 @@ func (keeper Keeper) IssueCurrency(ctx sdk.Context, symbol string, amount sdk.In
 		currency := keeper.getCurrency(ctx, symbol)
 
 		if currency.Decimals != decimals {
-			return types.ErrIncorrectDecimals(currency.Decimals, decimals, symbol)
+			return sdkErrors.Wrapf(types.ErrIncorrectDecimals, "currency %q decimals: %d", symbol, currency.Decimals)
 		}
 
 		keeper.increaseSupply(ctx, symbol, amount)

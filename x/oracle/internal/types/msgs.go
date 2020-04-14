@@ -1,10 +1,10 @@
 package types
 
 import (
-	"fmt"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
@@ -54,18 +54,18 @@ func (msg MsgPostPrice) GetSigners() []sdk.AccAddress {
 }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
-func (msg MsgPostPrice) ValidateBasic() sdk.Error {
+func (msg MsgPostPrice) ValidateBasic() error {
 	if msg.From.Empty() {
-		return sdk.ErrInternal("invalid (empty) oracle address")
+		return sdkErrors.Wrap(ErrInternal, "invalid (empty) oracle address")
 	}
 	if len(msg.AssetCode) == 0 {
-		return sdk.ErrInternal("invalid (empty) asset code")
+		return sdkErrors.Wrap(ErrInternal, "invalid (empty) asset code")
 	}
 	if msg.Price.IsNegative() {
-		return sdk.ErrInternal("invalid (negative) price")
+		return sdkErrors.Wrap(ErrInternal, "invalid (negative) price")
 	}
 	if msg.Price.BigInt().BitLen() > PriceBytesLimit*8 {
-		return sdk.ErrInternal(fmt.Sprintf("out of %d bytes limit for price", PriceBytesLimit))
+		return sdkErrors.Wrapf(ErrInternal, "out of %d bytes limit for price", PriceBytesLimit)
 	}
 	// TODO check coin denoms
 
@@ -111,17 +111,17 @@ func (msg MsgAddOracle) GetSigners() []sdk.AccAddress {
 }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
-func (msg MsgAddOracle) ValidateBasic() sdk.Error {
+func (msg MsgAddOracle) ValidateBasic() error {
 	if msg.Oracle.Empty() {
-		return sdk.ErrInvalidAddress("missing oracle address")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty oracle address")
 	}
 
 	if msg.Denom == "" {
-		return sdk.ErrInvalidCoins("missing denom")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidCoins, "empty denom")
 	}
 
 	if msg.Nominee.Empty() {
-		return sdk.ErrInvalidAddress("missing nominee address")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty nominee")
 	}
 
 	return nil
@@ -165,17 +165,17 @@ func (msg MsgSetOracles) GetSigners() []sdk.AccAddress {
 }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
-func (msg MsgSetOracles) ValidateBasic() sdk.Error {
+func (msg MsgSetOracles) ValidateBasic() error {
 	if len(msg.Oracles) == 0 {
-		return sdk.ErrInvalidAddress("missing oracle address")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty oracle addresses array")
 	}
 
 	if msg.Denom == "" {
-		return sdk.ErrInvalidCoins("missing denom")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidCoins, "empty denom")
 	}
 
 	if msg.Nominee.Empty() {
-		return sdk.ErrInvalidAddress("missing nominee address")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty nominee")
 	}
 	return nil
 }
@@ -218,17 +218,17 @@ func (msg MsgSetAsset) GetSigners() []sdk.AccAddress {
 }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
-func (msg MsgSetAsset) ValidateBasic() sdk.Error {
+func (msg MsgSetAsset) ValidateBasic() error {
 	if err := msg.Asset.ValidateBasic(); err != nil {
 		return err
 	}
 
 	if len(msg.Denom) == 0 {
-		return sdk.ErrInvalidCoins("missing denom")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidCoins, "missing denom")
 	}
 
 	if msg.Nominee.Empty() {
-		return sdk.ErrInvalidAddress("missing nominee address")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty nominee")
 	}
 	return nil
 }
@@ -269,17 +269,17 @@ func (msg MsgAddAsset) GetSigners() []sdk.AccAddress {
 }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
-func (msg MsgAddAsset) ValidateBasic() sdk.Error {
+func (msg MsgAddAsset) ValidateBasic() error {
 	if err := msg.Asset.ValidateBasic(); err != nil {
 		return err
 	}
 
 	if msg.Denom == "" {
-		return sdk.ErrInvalidCoins("missing denom")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidCoins, "empty denom")
 	}
 
 	if msg.Nominee.Empty() {
-		return sdk.ErrInvalidAddress("missing nominee address")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty nominee")
 	}
 	return nil
 }

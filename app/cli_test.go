@@ -10,6 +10,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -19,6 +20,10 @@ import (
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
+)
+
+const (
+	NotFoundErrSubString = "The specified item could not be found in the keyring"
 )
 
 func Test_CurrencyCLI(t *testing.T) {
@@ -52,7 +57,7 @@ func Test_CurrencyCLI(t *testing.T) {
 			// from non-existing account
 			{
 				tx := ct.TxCurrenciesIssue(ccRecipient, nonExistingAddress.String(), ccSymbol, ccCurAmount, ccDecimals, issueID)
-				tx.CheckFailedWithErrorSubstring("not found")
+				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid amount
 			{
@@ -106,7 +111,7 @@ func Test_CurrencyCLI(t *testing.T) {
 			// from non-existing account
 			{
 				tx := ct.TxCurrenciesDestroy(ccRecipient, nonExistingAddress.String(), ccSymbol, sdk.OneInt())
-				tx.CheckFailedWithErrorSubstring("not found")
+				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid amount
 			{
@@ -149,7 +154,7 @@ func Test_CurrencyCLI(t *testing.T) {
 			// non-existing issueID
 			{
 				q, _ := ct.QueryCurrenciesIssue("non_existing")
-				q.CheckFailedWithSDKError(ccTypes.ErrWrongIssueID(""))
+				q.CheckFailedWithSDKError(ccTypes.ErrWrongIssueID)
 			}
 		}
 	}
@@ -498,7 +503,7 @@ func Test_OracleCLI(t *testing.T) {
 			// non-existing assetCode
 			{
 				q, _ := ct.QueryOraclePrice("non_existing_assetCode")
-				q.CheckFailedWithSDKError(sdk.ErrUnknownRequest(""))
+				q.CheckFailedWithSDKError(sdkErrors.ErrUnknownRequest)
 			}
 		}
 	}
@@ -574,7 +579,7 @@ func Test_PoaCLI(t *testing.T) {
 			// non-existing fromAddress
 			{
 				tx := ct.TxPoaAddValidator(nonExistingAddress.String(), newValidatorAcc.Address, newEthAddress, issueID)
-				tx.CheckFailedWithErrorSubstring("not found")
+				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid validator address
 			{
@@ -620,7 +625,7 @@ func Test_PoaCLI(t *testing.T) {
 			// non-existing fromAddress
 			{
 				tx := ct.TxPoaRemoveValidator(nonExistingAddress.String(), newValidatorAcc.Address, issueID)
-				tx.CheckFailedWithErrorSubstring("not found")
+				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid validator address
 			{
@@ -671,7 +676,7 @@ func Test_PoaCLI(t *testing.T) {
 			// non-existing fromAddress
 			{
 				tx := ct.TxPoaReplaceValidator(nonExistingAddress.String(), targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
-				tx.CheckFailedWithErrorSubstring("not found")
+				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid old validator address
 			{
@@ -825,7 +830,7 @@ func Test_MultiSigCLI(t *testing.T) {
 			// non-existing callID
 			{
 				q, _ := ct.QueryMultiSigCall(2)
-				q.CheckFailedWithErrorSubstring("not found")
+				q.CheckFailedWithSDKError(msTypes.ErrWrongCallId)
 			}
 		}
 	}
@@ -848,7 +853,7 @@ func Test_MultiSigCLI(t *testing.T) {
 			// non-existing uniqueID
 			{
 				q, _ := ct.QueryMultiSigUnique("non_existing_uniqueID")
-				q.CheckFailedWithErrorSubstring("not found")
+				q.CheckFailedWithSDKError(msTypes.ErrNotFoundUniqueID)
 			}
 		}
 	}
@@ -888,13 +893,13 @@ func Test_MultiSigCLI(t *testing.T) {
 			// non-existing fromAddress
 			{
 				tx := ct.TxMultiSigConfirmCall(nonExistingAddress.String(), callID)
-				tx.CheckFailedWithErrorSubstring("not found")
+				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid callID
 			{
 				tx := ct.TxMultiSigConfirmCall(ccRecipients[0], callID)
 				tx.ChangeCmdArg(strconv.FormatUint(callID, 10), "not_int")
-				tx.CheckFailedWithErrorSubstring("callId")
+				tx.CheckFailedWithErrorSubstring("not_int")
 			}
 		}
 	}
@@ -905,7 +910,7 @@ func Test_MultiSigCLI(t *testing.T) {
 
 		// check call removed
 		q, _ := ct.QueryMultiSigCall(1)
-		q.CheckFailedWithErrorSubstring("not found")
+		q.CheckFailedWithSDKError(msTypes.ErrWrongCallId)
 
 		// check incorrect inputs
 		{
@@ -918,7 +923,7 @@ func Test_MultiSigCLI(t *testing.T) {
 			// non-existing fromAddress
 			{
 				tx := ct.TxMultiSigRevokeConfirm(nonExistingAddress.String(), 0)
-				tx.CheckFailedWithErrorSubstring("not found")
+				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid callID
 			{

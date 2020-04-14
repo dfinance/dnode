@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 
 	"github.com/dfinance/dnode/helpers"
@@ -14,6 +16,10 @@ import (
 const (
 	resourceKey        = "01fc0e661c5c73d4acaf1c8d0494acec68953a8279674d9e850fc11f36b31302c2"
 	libraAddressLength = 32
+)
+
+var (
+	ErrInternal = sdkErrors.Register(auth.ModuleName, 100, "internal")
 )
 
 type DNCoin struct {

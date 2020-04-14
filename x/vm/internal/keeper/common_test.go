@@ -255,7 +255,7 @@ func setupTestInput(launchMock bool) testInput {
 		config:   config,
 	}
 
-	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams, params.DefaultCodespace)
+	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
 	input.ak = vmauth.NewVMAccountKeeper(
 		input.cdc,
 		input.keyAccount,
@@ -264,7 +264,7 @@ func setupTestInput(launchMock bool) testInput {
 		auth.ProtoBaseAccount,
 	)
 
-	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), oracle.DefaultCodespace, input.vk)
+	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
 
 	input.vk.dsServer = NewDSServer(&input.vk)
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())

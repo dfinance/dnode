@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/core"
 )
@@ -26,17 +27,17 @@ type Call struct {
 }
 
 // Create new call instance.
-func NewCall(id uint64, uniqueID string, msg core.MsMsg, height int64, creator sdk.AccAddress) (Call, sdk.Error) {
+func NewCall(id uint64, uniqueID string, msg core.MsMsg, height int64, creator sdk.AccAddress) (Call, error) {
 	msgRoute := msg.Route()
 
 	if msgRoute == "" {
-		return Call{}, ErrEmptyRoute(id)
+		return Call{}, ErrEmptyRoute
 	}
 
 	msgType := msg.Type()
 
 	if msgType == "" {
-		return Call{}, ErrEmptyType(id)
+		return Call{}, sdkErrors.Wrapf(ErrEmptyType, "%d", id)
 	}
 
 	return Call{

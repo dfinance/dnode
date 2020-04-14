@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/currencies/types"
 )
@@ -40,21 +41,21 @@ func (msg MsgDestroyCurrency) Type() string {
 }
 
 // Validate basic in case of destroy message.
-func (msg MsgDestroyCurrency) ValidateBasic() sdk.Error {
+func (msg MsgDestroyCurrency) ValidateBasic() error {
 	if msg.Spender.Empty() {
-		return sdk.ErrInvalidAddress(msg.Spender.String())
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty spender")
 	}
 
 	if len(msg.Recipient) == 0 {
-		return types.ErrWrongRecipient()
+		return types.ErrWrongRecipient
 	}
 
 	if len(msg.Symbol) == 0 {
-		return types.ErrWrongSymbol(msg.Symbol)
+		return sdkErrors.Wrap(types.ErrWrongSymbol, "empty")
 	}
 
 	if msg.Amount.IsZero() {
-		return types.ErrWrongAmount(msg.Amount.String())
+		return types.ErrWrongAmount
 	}
 
 	// check denom, etc.
@@ -66,7 +67,6 @@ func (msg MsgDestroyCurrency) ValidateBasic() sdk.Error {
 // Get message bytes to sign.
 func (msg MsgDestroyCurrency) GetSignBytes() []byte {
 	b, err := json.Marshal(msg)
-
 	if err != nil {
 		panic(err)
 	}

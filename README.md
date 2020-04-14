@@ -69,6 +69,19 @@ First of all we need to create genesis configuration and name of node:
 
 Where `<moniker>` must be your node name.
 
+Now configure cli:
+
+    dncli config chain-id dn-testnet
+    dncli config output json
+    dncli config indent true
+    dncli config trust-node true
+    dncli config compiler 127.0.0.1:50053
+    dncli config node http://127.0.0.1:26657
+
+If you want to keep your keys in file, instead of keystorage of your os, configure it:
+
+    dncli config keyring-backend file
+
 Then let's create 4 accounts, one to store coins, the rest for PoA validators:
 
     dncli keys add pos
@@ -105,15 +118,6 @@ It should be done before next commands, so see tutorial **[how to initialize gen
     dnode add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
 
 Replace expressions in brackets with correct addresses, include Ethereum addresses.
-
-Now configure cli:
-
-    dncli config chain-id dn-testnet
-    dncli config output json
-    dncli config indent true
-    dncli config trust-node true
-    dncli config compiler 127.0.0.1:50053
-    dncli config node 127.0.0.1:26657
 
 Time to change denom in PoS configuration.
 So open `~/.dnode/config/genesis.json` and find this stake settings:

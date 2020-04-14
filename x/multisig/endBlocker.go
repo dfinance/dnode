@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/x/multisig/types"
@@ -34,7 +35,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Eve
 
 		confirmations, err := keeper.GetConfirmations(ctx, callId)
 		if err != nil {
-			if err.Codespace() == types.DefaultCodespace && err.Code() == types.CodeErrWrongCallId {
+			if sdkErr, ok := err.(*sdkErrors.Error); ok && sdkErr.Is(types.ErrWrongCallId) {
 				continue
 			}
 

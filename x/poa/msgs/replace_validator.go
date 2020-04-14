@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/poa/types"
@@ -44,25 +45,25 @@ func (msg MsgReplaceValidator) Type() string {
 }
 
 // Validate basic 'replace validator' message
-func (msg MsgReplaceValidator) ValidateBasic() sdk.Error {
+func (msg MsgReplaceValidator) ValidateBasic() error {
 	if msg.OldValidator.Empty() {
-		return sdk.ErrInvalidAddress(msg.OldValidator.String())
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress,"empty oldValidator")
 	}
 
 	if msg.NewValidator.Empty() {
-		return sdk.ErrInvalidAddress(msg.NewValidator.String())
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress,"empty newValidator")
 	}
 
 	if len(msg.EthAddress) == 0 {
-		return sdk.ErrUnknownRequest("Wrong Ethereum address for validator")
+		return sdkErrors.Wrap(types.ErrWrongEthereumAddress,"empty")
 	}
 
 	if msg.Sender.Empty() {
-		return sdk.ErrInvalidAddress(msg.Sender.String())
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress,"empty sender")
 	}
 
 	if !helpers.IsEthereumAddress(msg.EthAddress) {
-		return types.ErrWrongEthereumAddress(msg.EthAddress)
+		return sdkErrors.Wrapf(types.ErrWrongEthereumAddress, "%s for %s", msg.EthAddress, msg.NewValidator.String())
 	}
 
 	return nil

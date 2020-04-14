@@ -37,7 +37,7 @@ func Test_MSQueries(t *testing.T) {
 	// check call by non-existing uniqueId query
 	{
 		request := msTypes.UniqueReq{UniqueId: "non-existing-unique-id"}
-		CheckRunQuerySpecificError(t, app, request, queryMsGetUniqueCall, msTypes.ErrNotFoundUniqueID(""))
+		CheckRunQuerySpecificError(t, app, request, queryMsGetUniqueCall, msTypes.ErrNotFoundUniqueID)
 	}
 }
 
@@ -72,7 +72,7 @@ func Test_MSVoting(t *testing.T) {
 		msgID := fmt.Sprintf("addValidator:%s", targetValidator.Address)
 		submitMsg := msMsgs.NewMsgSubmitCall(addMsg, msgID, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrNotValidator(""))
+		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrNotValidator)
 	}
 
 	// submit call (from existing validator)
@@ -133,7 +133,7 @@ func Test_MSVoting(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[1].Address), genPrivKeys[1]
 		confirmMsg := msMsgs.MsgConfirmCall{MsgId: callMsgId, Sender: senderAcc.GetAddress()}
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrCallAlreadyApproved(0, ""))
+		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrCallAlreadyApproved)
 	}
 
 	// vote (from non-existing validator)
@@ -142,7 +142,7 @@ func Test_MSVoting(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, nonExistingValidator.Address), nonExistingValidatorPrivKey
 		confirmMsg := msMsgs.MsgConfirmCall{MsgId: callMsgId, Sender: senderAcc.GetAddress()}
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrNotValidator(""))
+		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrNotValidator)
 	}
 
 	// revoke confirm (from non-existing validator)
@@ -160,7 +160,7 @@ func Test_MSVoting(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[2].Address), genPrivKeys[2]
 		revokeMsg := msMsgs.MsgRevokeConfirm{MsgId: callMsgId, Sender: senderAcc.GetAddress()}
 		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrCallNotApproved(0, ""))
+		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrCallNotApproved)
 	}
 
 	// revoke confirm (existing vote)
@@ -217,8 +217,8 @@ func Test_MSBlockHeight(t *testing.T) {
 		// emit transaction
 		senderAcc := GetAccount(app, senderAddr)
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		res := app.Deliver(tx)
-		require.True(t, res.IsOK(), res.Log)
+		_, res, err := app.Deliver(tx)
+		require.NoError(t, err, ResultErrorMsg(res, err))
 		// commit block
 		app.EndBlock(abci.RequestEndBlock{})
 		app.Commit()
@@ -249,7 +249,7 @@ func Test_MSBlockHeight(t *testing.T) {
 		// emit transaction
 		confirmMsg := msMsgs.NewMsgConfirmCall(msgId, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrAlreadyRejected(0))
+		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrAlreadyRejected)
 	}
 
 	// vote for already confirmed call (vote ended)
@@ -270,7 +270,7 @@ func Test_MSBlockHeight(t *testing.T) {
 			senderAcc, senderPrivKey := GetAccountCheckTx(app, genAddrs[idx]), genPrivKeys[idx]
 			confirmMsg := msMsgs.NewMsgConfirmCall(msgId, senderAcc.GetAddress())
 			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-			CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrAlreadyConfirmed(0))
+			CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrAlreadyConfirmed)
 		}
 	}
 
@@ -282,7 +282,7 @@ func Test_MSBlockHeight(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genAddrs[0]), genPrivKeys[0]
 		revokeMsg := msMsgs.MsgRevokeConfirm{MsgId: msgId, Sender: senderAcc.GetAddress()}
 		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrAlreadyRejected(0))
+		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrAlreadyRejected)
 	}
 
 	// revoke approved call
@@ -293,6 +293,6 @@ func Test_MSBlockHeight(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genAddrs[0]), genPrivKeys[0]
 		revokeMsg := msMsgs.MsgRevokeConfirm{MsgId: msgId, Sender: senderAcc.GetAddress()}
 		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrAlreadyConfirmed(0))
+		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrAlreadyConfirmed)
 	}
 }

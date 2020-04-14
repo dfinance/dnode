@@ -2,58 +2,25 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-const (
-	CodeErrWrongSymbol       = 101
-	CodeErrWrongAmount       = 102
-	CodeErrWrongDecimals     = 103
-	CodeErrWrongIssueID      = 104
-	CodeErrIncorrectDecimals = 105
-	CodeErrExistsIssue       = 106
-	CodeErrNotExistCurrency  = 107
-	CodeErrWrongRecipient    = 108
+var (
+	ErrInternal          = sdkErrors.Register(ModuleName, 100, "internal")
+	// Msg.Symbol is empty.
+	ErrWrongSymbol       = sdkErrors.Register(ModuleName, 101, "wrong symbol")
+	// Msg.Amount is zero.
+	ErrWrongAmount       = sdkErrors.Register(ModuleName, 102, "wrong amount, should be greater that 0")
+	// Msg.Decimals < 0.
+	ErrWrongDecimals     = sdkErrors.Register(ModuleName, 103, "decimals can't be less than 0")
+	// Issue.Recipient is empty / Msg.IssueID is empty.
+	ErrWrongIssueID      = sdkErrors.Register(ModuleName, 104, "wrong issueID")
+	// Currency.Decimals != decimals in request.
+	ErrIncorrectDecimals = sdkErrors.Register(ModuleName, 105, "currency decimals should match")
+	// IssueID already exists in store.
+	ErrExistsIssue       = sdkErrors.Register(ModuleName, 106, "issueID already exists")
+	// Currency.Symbol != requested symbol.
+	ErrNotExistCurrency  = sdkErrors.Register(ModuleName, 107, "currency not found")
+	// Msg.Recipient is empty.
+	ErrWrongRecipient    = sdkErrors.Register(ModuleName, 108, "empty recipient is not allowed")
 )
-
-// Msg.Symbol is empty
-func ErrWrongSymbol(symbol string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrWrongSymbol, "wrong symbol %q", symbol)
-}
-
-// Msg.Amount is zero
-func ErrWrongAmount(amount string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrWrongAmount, "wrong amount %q, should be "+
-		"greater than zero", amount)
-}
-
-// Msg.Decimals < 0
-func ErrWrongDecimals(decimals int8) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrWrongDecimals, "%d decimals can't be less than 0 ", decimals)
-}
-
-// Issue.Recipient is empty / Msg.IssueID is empty
-func ErrWrongIssueID(issueID string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrWrongIssueID, "wrong issueID %q", issueID)
-}
-
-// Currency.Decimals != decimals in request
-func ErrIncorrectDecimals(d1, d2 int8, symbol string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrIncorrectDecimals, "currency %q must have %d "+
-		"decimals instead of %d decimals", symbol, d1, d2)
-}
-
-// IssueID already exists in store
-func ErrExistsIssue(issueID string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrExistsIssue, "issueID %q already exists", issueID)
-}
-
-// Currency.Symbol != requested symbol
-func ErrNotExistCurrency(symbol string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrNotExistCurrency, "currency %q not found", symbol)
-}
-
-// Msg.Recipient is empty
-func ErrWrongRecipient() sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeErrWrongRecipient, "empty recipient is not allowed")
-}

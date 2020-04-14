@@ -81,7 +81,7 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 // Get query commands for CLI.
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueriesCmd(cdc)
+	return cli.GetQueryCmd(cdc)
 }
 
 // VM module.
