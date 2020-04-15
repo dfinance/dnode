@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -60,8 +59,7 @@ func (Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // Execute script.
 func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) error {
-	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutExecute)
-	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
+	connCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	req, sdkErr := NewExecuteRequest(ctx, msg)
@@ -88,8 +86,7 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 
 // Deploy module.
 func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) error {
-	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutDeploy)
-	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
+	connCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	req, sdkErr := NewDeployRequest(ctx, msg)

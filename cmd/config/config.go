@@ -21,29 +21,23 @@ const (
 	Bech32PrefixConsAddr = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus                    // Bech32 prefix for consensus addresses.
 	Bech32PrefixConsPub  = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic // Bech32 prefix for consensus pub keys.
 
-	VMConfigFile            = "vm.toml"         // Default file to store config.
-	ConfigDir               = "config"          // Default directory to store all configurations.
-	DefaultVMAddress        = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
-	DefaultDataListen       = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
-	DefaultVMTimeoutDeploy  = 100               // Default timeout for deploy module request.
-	DefaultVMTimeoutExecute = 100               // Default timeout for execute request.
+	VMConfigFile      = "vm.toml"         // Default file to store config.
+	ConfigDir         = "config"          // Default directory to store all configurations.
+	DefaultVMAddress  = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
+	DefaultDataListen = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
 )
 
 // Virtual machine connection config (see config/vm.toml).
 type VMConfig struct {
-	Address        string `mapstructure:"vm_address"`
-	DataListen     string `mapstructure:"vm_data_listen"`
-	TimeoutDeploy  uint64 `mapstructure:"vm_timeout_deploy"`
-	TimeoutExecute uint64 `mapstructure:"vm_timeout_execute"`
+	Address    string `mapstructure:"vm_address"`
+	DataListen string `mapstructure:"vm_data_listen"`
 }
 
 // Default VM configuration.
 func DefaultVMConfig() *VMConfig {
 	return &VMConfig{
-		Address:        DefaultVMAddress,
-		DataListen:     DefaultDataListen,
-		TimeoutDeploy:  DefaultVMTimeoutDeploy,
-		TimeoutExecute: DefaultVMTimeoutExecute,
+		Address:    DefaultVMAddress,
+		DataListen: DefaultDataListen,
 	}
 }
 

@@ -41,13 +41,10 @@ const (
 	movePath   = "00070b2b1ef472990ed03aa068408da8905c5a176639db1d35dc496d4f70c3c94a"
 	value      = "68656c6c6f2c20776f726c6421"
 
-	DefaultMockVMAddress        = "127.0.0.1:60051" // Default virtual machine address to connect from Cosmos SDK.
-	DefaultMockDataListen       = "127.0.0.1:60052" // Default data server address to listen for connections from VM.
-	DefaultMockVMTimeoutDeploy  = 100               // Default timeout for deploy module request.
-	DefaultMockVMTimeoutExecute = 100               // Default timeout for execute request.
-
-	FlagVMMockAddress = "vm.mock.address"
-	FlagDSMockListen  = "ds.mock.listen"
+	DefaultMockVMAddress  = "127.0.0.1:60051" // Default virtual machine address to connect from Cosmos SDK.
+	DefaultMockDataListen = "127.0.0.1:60052" // Default data server address to listen for connections from VM.
+	FlagVMMockAddress     = "vm.mock.address"
+	FlagDSMockListen      = "ds.mock.listen"
 
 	FlagVMAddress = "vm.address"
 	FlagDSListen  = "ds.listen"
@@ -123,10 +120,8 @@ func init() {
 
 func MockVMConfig() *vmConfig.VMConfig {
 	return &vmConfig.VMConfig{
-		Address:        *vmMockAddress,
-		DataListen:     *dataListenMock,
-		TimeoutDeploy:  DefaultMockVMTimeoutDeploy,
-		TimeoutExecute: DefaultMockVMTimeoutExecute,
+		Address:    *vmMockAddress,
+		DataListen: *dataListenMock,
 	}
 }
 
