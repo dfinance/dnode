@@ -27,6 +27,7 @@ type (
 var (
 	NewKeeper               = keeper.NewKeeper
 	RegisterVMServiceServer = vm_grpc.RegisterVMServiceServer
+	MakePathKey             = types.MakePathKey
 
 	ErrVMCrashed = types.ErrVMCrashed
 )
