@@ -41,7 +41,7 @@ Now let's add genesis account and initiate genesis PoA validators and PoS accoun
 
 Also to have VM correct work, needs to deploy standard lib write operations.
 
-It should be done before next commands, so see tutorial **[how to initialize genesis for VM](#genesis-compilation)**.
+It should be done before next commands, so see tutorial **[how to initialize genesis for VM](/docs/vm.md#genesis-compilation)**.
 
     dnode add-genesis-account [pos-address]  1000000000000000000000000dfi
     dnode add-genesis-account [bank-address] 95000000000000000000000000dfi
