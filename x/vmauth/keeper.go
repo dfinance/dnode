@@ -37,7 +37,7 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 	keeper.AccountKeeper.SetAccount(ctx, acc)
 	// check if account exists in vm
 	accessPath := &vm_grpc.VMAccessPath{
-		Address: AddrToPathAddr(acc.GetAddress()),
+		Address: acc.GetAddress(),
 		Path:    GetResPath(),
 	}
 
@@ -61,7 +61,7 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 
 	// check if account maybe exists in vm storage.
 	bz := keeper.vmKeeper.GetValue(ctx, &vm_grpc.VMAccessPath{
-		Address: AddrToPathAddr(addr),
+		Address: addr,
 		Path:    GetResPath(),
 	})
 
@@ -111,7 +111,7 @@ func (keeper VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Accoun
 
 	// should be remove account from VM storage too
 	keeper.vmKeeper.DelValue(ctx, &vm_grpc.VMAccessPath{
-		Address: AddrToPathAddr(acc.GetAddress()),
+		Address: acc.GetAddress(),
 		Path:    GetResPath(),
 	})
 }

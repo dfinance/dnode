@@ -14,8 +14,7 @@ import (
 
 // Resource key for WBCoins resource from VM stdlib.
 const (
-	resourceKey        = "01fc0e661c5c73d4acaf1c8d0494acec68953a8279674d9e850fc11f36b31302c2"
-	libraAddressLength = 32
+	resourceKey = "01fc0e661c5c73d4acaf1c8d0494acec68953a8279674d9e850fc11f36b31302c2"
 )
 
 var (
@@ -51,20 +50,6 @@ func balancesToCoins(coins []DNCoin) sdk.Coins {
 	return realCoins
 }
 
-// Bytes to libra compability.
-func AddrToPathAddr(addr []byte) []byte {
-	config := sdk.GetConfig()
-	prefix := config.GetBech32AccountAddrPrefix()
-	zeros := make([]byte, libraAddressLength-len(prefix)-len(addr))
-
-	bytes := make([]byte, 0)
-	bytes = append(bytes, []byte(prefix)...)
-	bytes = append(bytes, zeros...)
-	bytes = append(bytes, addr...)
-
-	return bytes
-}
-
 // Get resource path.
 func GetResPath() []byte {
 	data, err := hex.DecodeString(resourceKey)
@@ -79,11 +64,9 @@ func GetResPath() []byte {
 func getGUID(address sdk.AccAddress, counter uint64) []byte {
 	bzCounter := make([]byte, 8)
 
-	addr := AddrToPathAddr(address)
-
 	binary.LittleEndian.PutUint64(bzCounter, counter)
 
-	return append(bzCounter, addr...)
+	return append(bzCounter, address...)
 }
 
 // Convert acc to account resource.

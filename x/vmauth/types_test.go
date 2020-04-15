@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
 )
 
 const (
@@ -55,22 +54,6 @@ func TestBalancesToCoins(t *testing.T) {
 	// check nil.
 	coins = balancesToCoins(nil)
 	require.Empty(t, coins)
-}
-
-func TestAddrToPathAddr(t *testing.T) {
-	addr := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
-	libraAddr := AddrToPathAddr(addr)
-
-	config := sdk.GetConfig()
-	prefix := config.GetBech32AccountAddrPrefix()
-	zeros := make([]byte, libraAddressLength-len(prefix)-len(addr))
-
-	bytes := make([]byte, 0)
-	bytes = append(bytes, []byte(prefix)...)
-	bytes = append(bytes, zeros...)
-	bytes = append(bytes, addr...)
-
-	require.EqualValues(t, bytes, libraAddr)
 }
 
 func TestBytesToAccRes(t *testing.T) {

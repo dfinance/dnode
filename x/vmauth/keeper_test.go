@@ -58,7 +58,7 @@ func TestVMAccountKeeper_SetAccountEventHandler(t *testing.T) {
 	}
 
 	path := &vm_grpc.VMAccessPath{
-		Address: AddrToPathAddr(addr),
+		Address: addr,
 		Path:    GetResPath(),
 	}
 
@@ -99,7 +99,7 @@ func TestVMAccountKeeper_GetAccount(t *testing.T) {
 	require.EqualValues(t, &acc, getter)
 
 	key := &vm_grpc.VMAccessPath{
-		Address: AddrToPathAddr(addr),
+		Address: addr,
 		Path:    GetResPath(),
 	}
 
@@ -124,7 +124,7 @@ func TestVMAccountKeeper_GetAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 	vmKey := &vm_grpc.VMAccessPath{
-		Address: AddrToPathAddr(vmAcc.GetAddress()),
+		Address: vmAcc.GetAddress(),
 		Path:    GetResPath(),
 	}
 
@@ -152,7 +152,7 @@ func TestVMAccountKeeper_RemoveAccount(t *testing.T) {
 	require.Nil(t, getter)
 
 	key := &vm_grpc.VMAccessPath{
-		Address: AddrToPathAddr(addr),
+		Address: addr,
 		Path:    GetResPath(),
 	}
 
