@@ -13,9 +13,9 @@ All REST API returns JSON.
 
 Multisig:
 
-* `/multisig/call/{id}`  - get call by id.
-* `/multisig/calls`      - get array of active calls (that waiting for confirmations)
-* `/multisig/unique/{unique}` - get call by unique id.
+* `/multisig/call/{id}` - Get call by id.
+* `/multisig/calls` - Get array of active calls (that waiting for confirmations)
+* `/multisig/unique/{unique}` - Get call by unique id.
 
 Currencies:
 
@@ -28,3 +28,12 @@ PoA:
 
 * `/poa/validators` - PoA validators list.
 
+Oracle:
+* `/oracle/rawprices` - Post price from Oracle.
+* `/oracle/rawprices/{assetCode}/{blockHeight}` - Get unprocessed prices for assetCode and blockHeight.
+* `/oracle/currentprice/{assetCode}` - Get current price for assetCode.
+* `/oracle/assets` - Get array of assets.
+
+VM:
+* `/vm/compile-script` - Get compiled bytecode for VM script.
+* `/vm/compile-module` - Get compiled bytecode for VM module.

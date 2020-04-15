@@ -86,7 +86,7 @@ To:
 
 By changing this we determine "dfi" as staking currency.
 
-Time to prepare `pos` account:
+Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 
     dnode gentx --name pos --amount 1000000000000000000000000dfi
 

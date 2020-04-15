@@ -30,22 +30,22 @@ To change these parameters during test launch, use next flags after test command
 
 To launch tests **ONLY** related to VM:
 
-     GO111MODULE=on go test dnode/x/vm/internal/keeper
+     GO111MODULE=on go test dnode/x/vm/internal/keeper --tags=integ
 
-## VM tests
+## Integration tests
 
-To launch tests run: 
+To launch tests covering basic logic run: 
 
-    GO111MODULE=on go test ./...
+    GO111MODULE=on go test ./... --tags=unit
     
-To launch VM integration tests (required docker installed and authorization to dvm registry) run:
+To launch VM integration tests (required docker installed, dvm registry authorized and image pulled) run:
 
     export TAG=master # needed tag (master by default)
     export REGISTRY=  # replace of registry contains dvm
     
     docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
     
-    GO111MODULE=on go test ./x/vm/internal/keeper --tags=integ
+    GO111MODULE=on go test ./... --tags=integ
     
 To launch REST API tests run:
 
