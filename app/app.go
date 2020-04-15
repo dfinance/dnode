@@ -144,6 +144,37 @@ func (app *DnServiceApp) InitializeVMDataServer(addr string) {
 	app.Logger().Info("data server is up")
 }
 
+// Wait for vm.
+func (app *DnServiceApp) WaitForVM() {
+	errChann := make(chan error)
+	//conn := vm_grpc.NewVMServiceClient(app.vmConn)
+
+	app.Logger().Info("waiting for VM...")
+	go func(errChan chan error) {
+		// check ready with conn...
+		for {
+			time.Sleep(1 * time.Second)
+			var err error
+			ready := false
+
+			if err != nil {
+				errChann <- err
+				break
+			}
+
+			if ready {
+				errChann <- nil
+				break
+			}
+		}
+	}(errChann)
+
+	err := <-errChann
+	if err != nil {
+		panic(err)
+	}
+}
+
 // MakeCodec generates the necessary codecs for Amino.
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
@@ -368,7 +399,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	dsContext := app.GetDSContext()
 	app.vmKeeper.SetDSContext(dsContext)
 	app.vmKeeper.StartDSServer(dsContext)
-	time.Sleep(1 * time.Second) // need for DS to initialize stdlib, will be removed later.
+
+	app.WaitForVM()
 
 	return app
 }
@@ -395,7 +427,8 @@ func (app *DnServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain)
 	resp := app.mm.InitGenesis(ctx, genesisState)
 	app.vmKeeper.SetDSContext(ctx)
 	app.vmKeeper.StartDSServer(ctx)
-	time.Sleep(1 * time.Second) // need for DS to initialize stdlib, will be removed later.
+
+	app.WaitForVM()
 
 	return resp
 }
