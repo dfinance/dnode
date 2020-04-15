@@ -8,7 +8,7 @@ type QueryAccessPath struct {
 
 // Query response.
 type QueryValueResp struct {
-	Value string `json:"value"`
+	Value string `json:"value" format:"HEX string"`
 }
 
 func (resp QueryValueResp) String() string {

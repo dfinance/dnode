@@ -16,6 +16,7 @@ import (
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/vm"
 )
 
 func (ct *CLITester) newRestTxRequest(accName string, acc *auth.BaseAccount, msg sdk.Msg, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
@@ -167,4 +168,13 @@ func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.
 	msg := oracle.NewMsgPostPrice(acc.Address, assetCode, price, receivedAt)
 
 	return ct.newRestTxRequest(accName, acc, msg, false)
+}
+
+func (ct *CLITester) RestQueryVMGetData(accAddr, path string) (*RestRequest, *vm.QueryValueResp) {
+	reqSubPath := fmt.Sprintf("%s/data/%s/%s", vm.ModuleName, accAddr, path)
+	respMsg := &vm.QueryValueResp{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
 }
