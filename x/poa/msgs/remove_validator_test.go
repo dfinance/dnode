@@ -1,10 +1,15 @@
+// +build unit
+
 package msgs
 
 import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
+
+	"github.com/dfinance/dnode/helpers/tests"
 )
 
 func Test_MsgRemoveValidator(t *testing.T) {
@@ -15,7 +20,7 @@ func Test_MsgRemoveValidator(t *testing.T) {
 	// correct
 	require.Nil(t, NewMsgRemoveValidator(sdkAddress, sdkAddress).ValidateBasic())
 	// invalid sdkAddress
-	checkExpectedErr(t, sdk.ErrInvalidAddress(""), NewMsgRemoveValidator([]byte{}, sdkAddress).ValidateBasic())
+	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgRemoveValidator([]byte{}, sdkAddress).ValidateBasic())
 	// invalid sender
-	checkExpectedErr(t, sdk.ErrInvalidAddress(""), NewMsgRemoveValidator(sdkAddress, []byte{}).ValidateBasic())
+	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgRemoveValidator(sdkAddress, []byte{}).ValidateBasic())
 }

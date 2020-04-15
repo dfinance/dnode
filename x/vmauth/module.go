@@ -114,9 +114,9 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.Va
 
 // module export genesis
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	params := am.accountKeeper.GetParams(ctx)
+	gs := auth.ExportGenesis(ctx, *am.accountKeeper.AccountKeeper)
 
-	return authTypes.ModuleCdc.MustMarshalJSON(auth.NewGenesisState(params))
+	return authTypes.ModuleCdc.MustMarshalJSON(gs)
 }
 
 // module begin-block

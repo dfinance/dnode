@@ -2,46 +2,23 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-const (
-	CodeValidatorExists      sdk.CodeType = 101
-	CodeValidatorDoesntExist sdk.CodeType = 102
-	CodeMaxValidatorsReached sdk.CodeType = 103
-	CodeMinValidatorsReached sdk.CodeType = 104
+var (
+	ErrInternal = sdkErrors.Register(ModuleName, 100, "internal")
+	// Msg.Validator already exists.
+	ErrValidatorExists = sdkErrors.Register(ModuleName, 101, "validator already exists")
+	// Msg.Validator not found.
+	ErrValidatorDoesntExists = sdkErrors.Register(ModuleName, 102, "validator not found")
+	// Validators maximum limit reached (on genesis init / add validator request).
+	ErrMaxValidatorsReached = sdkErrors.Register(ModuleName, 103, "maximum number of validators reached")
+	// Validators minimum limit reached (on genesis init / add validator request).
+	ErrMinValidatorsReached = sdkErrors.Register(ModuleName, 104, "minimum number of validators reached")
 
-	CodeWrongEthereumAddress sdk.CodeType = 201
+	// Validator's ethereum address is invalid (on validator add / replace).
+	ErrWrongEthereumAddress = sdkErrors.Register(ModuleName, 201, "wrong ethereum address for validator")
 
-	CodeNotEnoughValidators sdk.CodeType = 301
+	// Not enough validators to initialize genesis.
+	ErrNotEnoungValidators = sdkErrors.Register(ModuleName, 301, "number of validators is not enough to init genesis")
 )
-
-// Msg.Validator already exists
-func ErrValidatorExists(address string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeValidatorExists, "%q validator already exists", address)
-}
-
-// Msg.Validator not found
-func ErrValidatorDoesntExists(address string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeValidatorDoesntExist, "%q validator not found", address)
-}
-
-// Validators maximum limit reached (on genesis init / add validator request)
-func ErrMaxValidatorsReached(max uint16) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeMaxValidatorsReached, "maximum %d validators reached", max)
-}
-
-// Validators minimum limit reached (on genesis init / add validator request)
-func ErrMinValidatorsReached(min uint16) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeMinValidatorsReached, "minimum %d validators reached", min)
-}
-
-// Validator's ethereum address is invalid (on validator add / replace)
-func ErrWrongEthereumAddress(address string) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeWrongEthereumAddress, "wrong ethereum address %q for validator", address)
-}
-
-// Not enough validators to initialize genesis
-func ErrNotEnoungValidators(actual uint16, min uint16) sdk.Error {
-	return sdk.NewError(DefaultCodespace, CodeNotEnoughValidators, "%d validators is not enough to init genesis, min is %d", actual, min)
-}

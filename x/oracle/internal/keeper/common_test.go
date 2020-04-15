@@ -1,3 +1,5 @@
+// +build unit
+
 package keeper_test
 
 import (
@@ -49,7 +51,7 @@ func getMockApp(t *testing.T, numGenAccs int, genState types.GenesisState, genAc
 	keyPricefeed := sdk.NewKVStoreKey(types.StoreKey)
 
 	pk := mApp.ParamsKeeper
-	keeper := keeper.NewKeeper(keyPricefeed, mApp.Cdc, pk.Subspace(types.DefaultParamspace), types.DefaultCodespace, NewVMStorage())
+	keeper := keeper.NewKeeper(keyPricefeed, mApp.Cdc, pk.Subspace(types.DefaultParamspace), NewVMStorage())
 
 	require.NoError(t, mApp.CompleteSetup(keyPricefeed))
 

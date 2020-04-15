@@ -2,41 +2,42 @@
 package client
 
 import (
-	"github.com/cosmos/cosmos-sdk/client"
+	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 	amino "github.com/tendermint/go-amino"
 
-	cli "github.com/dfinance/dnode/x/multisig/client/cli"
+	"github.com/dfinance/dnode/x/multisig/client/cli"
+	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Returns get commands for this module.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
-	multisigQueryCmd := &cobra.Command{
-		Use:   "multisig",
+	queryCmd := &cobra.Command{
+		Use:   types.ModuleName,
 		Short: "Multisig commands for the validators module",
 	}
 
-	multisigQueryCmd.AddCommand(client.GetCommands(
-		cli.GetLastId("multisig", cdc),
-		cli.GetCall("multisig", cdc),
-		cli.GetCalls("multisig", cdc),
-		cli.GetCallByUniqueID("multisig", cdc),
+	queryCmd.AddCommand(sdkClient.GetCommands(
+		cli.GetLastId(types.ModuleName, cdc),
+		cli.GetCall(types.ModuleName, cdc),
+		cli.GetCalls(types.ModuleName, cdc),
+		cli.GetCallByUniqueID(types.ModuleName, cdc),
 	)...)
 
-	return multisigQueryCmd
+	return queryCmd
 }
 
 // GetTxCmd returns the transaction commands for this module.
 func GetTxCmd(cdc *amino.Codec) *cobra.Command {
-	multisigTxCmd := &cobra.Command{
-		Use:   "multisig",
+	txCmd := &cobra.Command{
+		Use:   types.ModuleName,
 		Short: "Multisig transactions subcommands",
 	}
 
-	multisigTxCmd.AddCommand(client.PostCommands(
+	txCmd.AddCommand(sdkClient.PostCommands(
 		cli.PostConfirmCall(cdc),
 		cli.PostRevokeConfirm(cdc),
 	)...)
 
-	return multisigTxCmd
+	return txCmd
 }

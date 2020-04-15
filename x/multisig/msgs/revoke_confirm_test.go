@@ -1,10 +1,15 @@
+// +build unit
+
 package msgs
 
 import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
+
+	"github.com/dfinance/dnode/helpers/tests"
 )
 
 func Test_RevokeConfirmValidator(t *testing.T) {
@@ -15,5 +20,5 @@ func Test_RevokeConfirmValidator(t *testing.T) {
 	// correct
 	require.Nil(t, NewMsgRevokeConfirm(0, sdkAddress).ValidateBasic())
 	// empty sender sdkAddress
-	checkExpectedErr(t, sdk.ErrInvalidAddress(""), NewMsgRevokeConfirm(0, []byte{}).ValidateBasic())
+	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgRevokeConfirm(0, []byte{}).ValidateBasic())
 }

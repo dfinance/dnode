@@ -6,8 +6,7 @@ import (
 )
 
 const (
-	ModuleName       = types.ModuleName
-	StoreKey         = types.ModuleName
-	DefaultCodespace = types.DefaultCodespace
-	QuerierRoute     = types.ModuleName
+	ModuleName   = types.ModuleName
+	StoreKey     = types.ModuleName
+	QuerierRoute = types.ModuleName
 )

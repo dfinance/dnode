@@ -34,9 +34,13 @@ func NewParams(maxValidators, minValidators uint16) Params {
 }
 
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
+	nilPairValidatorFunc := func(value interface{}) error {
+		return nil
+	}
+
 	return params.ParamSetPairs{
-		{Key: KeyMaxValidators, Value: &p.MaxValidators},
-		{Key: KeyMinValidators, Value: &p.MinValidators},
+		{Key: KeyMaxValidators, Value: &p.MaxValidators, ValidatorFn: nilPairValidatorFunc},
+		{Key: KeyMinValidators, Value: &p.MinValidators, ValidatorFn: nilPairValidatorFunc},
 	}
 }
 

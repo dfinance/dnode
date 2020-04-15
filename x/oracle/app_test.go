@@ -1,3 +1,5 @@
+// +build unit
+
 package oracle_test
 
 import (
@@ -74,7 +76,7 @@ func GenTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 func SignCheckDeliver(
 	t *testing.T, cdc *codec.Codec, app *baseapp.BaseApp, header abci.Header, msgs []sdk.Msg,
 	accNums, seq []uint64, expSimPass, expPass bool, priv ...crypto.PrivKey,
-) sdk.Result {
+) {
 
 	tx := GenTx(msgs, accNums, seq, priv...)
 
@@ -82,28 +84,24 @@ func SignCheckDeliver(
 	require.Nil(t, err)
 
 	// Must simulate now as CheckTx doesn't run Msgs anymore
-	res := app.Simulate(txBytes, tx)
-
+	_, _, err = app.Simulate(txBytes, tx)
 	if expSimPass {
-		require.Equal(t, sdk.CodeOK, res.Code, res.Log)
+		require.NoError(t, err)
 	} else {
-		require.NotEqual(t, sdk.CodeOK, res.Code, res.Log)
+		require.Error(t, err)
 	}
 
 	// Simulate a sending a transaction and committing a block
 	app.BeginBlock(abci.RequestBeginBlock{Header: header})
-	res = app.Deliver(tx)
-
+	_, _, err = app.Deliver(tx)
 	if expPass {
-		require.Equal(t, sdk.CodeOK, res.Code, res.Log)
+		require.NoError(t, err)
 	} else {
-		require.NotEqual(t, sdk.CodeOK, res.Code, res.Log)
+		require.Error(t, err)
 	}
 
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()
-
-	return res
 }
 
 func TestApp_PostPrice(t *testing.T) {
@@ -165,7 +163,7 @@ func setUpMockAppWithoutGenesis() (*mock.App, oracle.Keeper) {
 	keyOracle := sdk.NewKVStoreKey(oracle.StoreKey)
 
 	// initialize vm keeper
-	oracleKeeper := oracle.NewKeeper(keyOracle, mapp.Cdc, mapp.ParamsKeeper.Subspace(oracle.DefaultParamspace), oracle.DefaultCodespace, NewVMStorage())
+	oracleKeeper := oracle.NewKeeper(keyOracle, mapp.Cdc, mapp.ParamsKeeper.Subspace(oracle.DefaultParamspace), NewVMStorage())
 
 	// Register routes
 	mapp.Router().AddRoute("oracle", oracle.NewHandler(oracleKeeper))

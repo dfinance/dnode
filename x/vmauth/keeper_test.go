@@ -1,3 +1,5 @@
+// +build unit
+
 package vmauth
 
 import (
@@ -164,11 +166,11 @@ func TestGetSignerAcc(t *testing.T) {
 	acc := auth.NewBaseAccountWithAddress(addr)
 	input.accountKeeper.SetAccount(input.ctx, &acc)
 
-	getter, res := GetSignerAcc(input.ctx, input.accountKeeper, addr)
+	getter, err := GetSignerAcc(input.ctx, input.accountKeeper, addr)
 	require.EqualValues(t, &acc, getter)
-	require.EqualValues(t, res, types.Result{})
+	require.NoError(t, err)
 
-	getter, res = GetSignerAcc(input.ctx, input.accountKeeper, types.AccAddress("bmp"))
+	getter, err = GetSignerAcc(input.ctx, input.accountKeeper, types.AccAddress("bmp"))
 	require.Nil(t, getter)
-	require.NotNil(t, res)
+	require.Error(t, err)
 }

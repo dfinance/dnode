@@ -30,8 +30,12 @@ func NewParams(intervalToExecute int64) Params {
 }
 
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
+	nilPairValidatorFunc := func(value interface{}) error {
+		return nil
+	}
+
 	return params.ParamSetPairs{
-		{Key: KeyIntervalToExecute, Value: &p.IntervalToExecute},
+		{Key: KeyIntervalToExecute, Value: &p.IntervalToExecute, ValidatorFn: nilPairValidatorFunc},
 	}
 }
 

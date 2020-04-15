@@ -3,26 +3,27 @@ package multisig
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Confirm call.
-func (keeper Keeper) Confirm(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
+func (keeper Keeper) Confirm(ctx sdk.Context, id uint64, address sdk.AccAddress) error {
 	return keeper.storeVote(ctx, id, address)
 }
 
 // Revoke confirmation from call.
-func (keeper Keeper) RevokeConfirmation(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
+func (keeper Keeper) RevokeConfirmation(ctx sdk.Context, id uint64, address sdk.AccAddress) error {
 	return keeper.revokeVote(ctx, id, address)
 }
 
 // Get votes for specific call.
-func (keeper Keeper) GetVotes(ctx sdk.Context, id uint64) (types.Votes, sdk.Error) {
+func (keeper Keeper) GetVotes(ctx sdk.Context, id uint64) (types.Votes, error) {
 	store := ctx.KVStore(keeper.storeKey)
 
 	if !store.Has(types.GetKeyVotesById(id)) {
-		return types.Votes{}, types.ErrWrongCallId(id)
+		return types.Votes{}, sdkErrors.Wrapf(types.ErrWrongCallId, "%d", id)
 	}
 
 	var votes types.Votes
@@ -34,18 +35,18 @@ func (keeper Keeper) GetVotes(ctx sdk.Context, id uint64) (types.Votes, sdk.Erro
 }
 
 // Get message confirmations.
-func (keeper Keeper) GetConfirmations(ctx sdk.Context, id uint64) (uint64, sdk.Error) {
+func (keeper Keeper) GetConfirmations(ctx sdk.Context, id uint64) (uint64, error) {
 	votes, err := keeper.GetVotes(ctx, id)
 
 	return uint64(len(votes)), err
 }
 
 // Check if message confirmed by address.
-func (keeper Keeper) HasVote(ctx sdk.Context, id uint64, address sdk.AccAddress) (bool, sdk.Error) {
+func (keeper Keeper) HasVote(ctx sdk.Context, id uint64, address sdk.AccAddress) (bool, error) {
 	store := ctx.KVStore(keeper.storeKey)
 
 	if !store.Has(types.GetKeyVotesById(id)) {
-		return false, types.ErrNoVotes(id)
+		return false, sdkErrors.Wrapf(types.ErrNoVotes, "%d", id)
 	}
 
 	var votes types.Votes
@@ -63,27 +64,27 @@ func (keeper Keeper) HasVote(ctx sdk.Context, id uint64, address sdk.AccAddress)
 }
 
 // Store vote for message by address.
-func (keeper Keeper) storeVote(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
+func (keeper Keeper) storeVote(ctx sdk.Context, id uint64, address sdk.AccAddress) error {
 	store := ctx.KVStore(keeper.storeKey)
 
 	nextId := keeper.getNextCallId(ctx)
 
 	if id > nextId-1 {
-		return types.ErrWrongCallId(id)
+		return sdkErrors.Wrapf(types.ErrWrongCallId, "%d", id)
 	}
 
 	call := keeper.getCallById(ctx, id)
 
 	if call.Approved {
-		return types.ErrAlreadyConfirmed(id)
+		return sdkErrors.Wrapf(types.ErrAlreadyConfirmed, "%d", id)
 	}
 
 	if call.Rejected {
-		return types.ErrAlreadyRejected(id)
+		return sdkErrors.Wrapf(types.ErrAlreadyRejected, "%d", id)
 	}
 
 	if has, _ := keeper.HasVote(ctx, id, address); has {
-		return types.ErrCallAlreadyApproved(id, address.String())
+		return sdkErrors.Wrapf(types.ErrCallAlreadyApproved, "%d by %s", id, address.String())
 	}
 
 	if !store.Has(types.GetKeyVotesById(id)) {
@@ -105,25 +106,25 @@ func (keeper Keeper) storeVote(ctx sdk.Context, id uint64, address sdk.AccAddres
 }
 
 // Revoke confirmation from message by address.
-func (keeper Keeper) revokeVote(ctx sdk.Context, id uint64, address sdk.AccAddress) sdk.Error {
+func (keeper Keeper) revokeVote(ctx sdk.Context, id uint64, address sdk.AccAddress) error {
 	store := ctx.KVStore(keeper.storeKey)
 
 	if !store.Has(types.GetKeyVotesById(id)) {
-		return types.ErrNoVotes(id)
+		return sdkErrors.Wrapf(types.ErrNoVotes, "%d", id)
 	}
 
 	call := keeper.getCallById(ctx, id)
 
 	if call.Approved {
-		return types.ErrAlreadyConfirmed(id)
+		return sdkErrors.Wrapf(types.ErrAlreadyConfirmed, "%d", id)
 	}
 
 	if call.Rejected {
-		return types.ErrAlreadyRejected(id)
+		return sdkErrors.Wrapf(types.ErrAlreadyRejected, "%d", id)
 	}
 
 	if has, _ := keeper.HasVote(ctx, id, address); !has {
-		return types.ErrCallNotApproved(id, address.String())
+		return sdkErrors.Wrapf(types.ErrCallNotApproved, "%d by %s", id, address.String())
 	}
 
 	var votes types.Votes

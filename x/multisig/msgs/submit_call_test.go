@@ -1,18 +1,24 @@
+// +build unit
+
 package msgs
 
 import (
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
+
+	"github.com/dfinance/dnode/helpers/tests"
 )
 
 type InvalidMsg struct{}
 
 func (InvalidMsg) Route() string { return "" }
 func (InvalidMsg) Type() string  { return "" }
-func (InvalidMsg) ValidateBasic() sdk.Error {
-	return sdk.NewError(sdk.CodespaceType(0), 0, "some error")
+func (InvalidMsg) ValidateBasic() error {
+	return fmt.Errorf("some error")
 }
 
 func Test_SubmitCallValidator(t *testing.T) {
@@ -25,7 +31,7 @@ func Test_SubmitCallValidator(t *testing.T) {
 	// correct
 	require.Nil(t, NewMsgSubmitCall(okMsg, "", sdkAddress).ValidateBasic())
 	// empty sender sdkAddress
-	checkExpectedErr(t, sdk.ErrInvalidAddress(""), NewMsgSubmitCall(okMsg, "", []byte{}).ValidateBasic())
+	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgSubmitCall(okMsg, "", []byte{}).ValidateBasic())
 	// invalid msg
 	require.NotNil(t, NewMsgSubmitCall(invalidMsg, "", []byte{}).ValidateBasic())
 }

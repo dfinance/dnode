@@ -1,3 +1,5 @@
+// +build unit
+
 package app
 
 import (
@@ -105,8 +107,8 @@ func Test_OracleQueries(t *testing.T) {
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-			res := app.Deliver(tx)
-			require.True(t, res.IsOK())
+			_, res, err := app.Deliver(tx)
+			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
 		{
 			senderAcc, senderPrivKey := GetAccount(app, genAddrs[1]), genPrivKeys[1]
@@ -119,8 +121,8 @@ func Test_OracleQueries(t *testing.T) {
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-			res := app.Deliver(tx)
-			require.True(t, res.IsOK(), res.Log)
+			_, res, err := app.Deliver(tx)
+			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
 		{
 			senderAcc, senderPrivKey := GetAccount(app, genAddrs[2]), genPrivKeys[2]
@@ -133,8 +135,8 @@ func Test_OracleQueries(t *testing.T) {
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-			res := app.Deliver(tx)
-			require.True(t, res.IsOK())
+			_, res, err := app.Deliver(tx)
+			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
 
 		// getRawPrices query check (before BlockEnd they shouldn't exist)
@@ -413,7 +415,7 @@ func Test_OracleAddAsset(t *testing.T) {
 	}
 }
 
-func TestOracle_SetAsset(t *testing.T) {
+func Test_OracleSetAsset(t *testing.T) {
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -582,8 +584,8 @@ func Test_OraclePostPrices(t *testing.T) {
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-			res := app.Deliver(tx)
-			require.True(t, res.IsOK())
+			_, res, err := app.Deliver(tx)
+			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
 		{
 			senderAcc, senderPrivKey := GetAccount(app, genAddrs[0]), genPrivKeys[0]
@@ -596,8 +598,8 @@ func Test_OraclePostPrices(t *testing.T) {
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-			res := app.Deliver(tx)
-			require.True(t, res.IsOK())
+			_, res, err := app.Deliver(tx)
+			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
 		app.EndBlock(abci.RequestEndBlock{})
 		app.Commit()
@@ -640,8 +642,8 @@ func Test_OraclePostPrices(t *testing.T) {
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-			res := app.Deliver(tx)
-			require.True(t, res.IsOK())
+			_, res, err := app.Deliver(tx)
+			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
 		{
 			senderAcc, senderPrivKey := GetAccount(app, genAddrs[1]), genPrivKeys[1]
@@ -654,8 +656,8 @@ func Test_OraclePostPrices(t *testing.T) {
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-			res := app.Deliver(tx)
-			require.True(t, res.IsOK(), res.Log)
+			_, res, err := app.Deliver(tx)
+			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
 		{
 			senderAcc, senderPrivKey := GetAccount(app, genAddrs[2]), genPrivKeys[2]
@@ -668,8 +670,8 @@ func Test_OraclePostPrices(t *testing.T) {
 			}
 
 			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-			res := app.Deliver(tx)
-			require.True(t, res.IsOK())
+			_, res, err := app.Deliver(tx)
+			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
 		app.EndBlock(abci.RequestEndBlock{})
 		app.Commit()

@@ -52,8 +52,9 @@ func (c *CLICmd) ChangeArg(oldArg, newArg string) *CLICmd {
 }
 
 func (c *CLICmd) RemoveArg(arg string) *CLICmd {
+	argAlt := "--" + arg
 	for i := 0; i < len(c.args); i++ {
-		if c.args[i] == arg || ("--"+c.args[i]) == arg {
+		if strings.HasPrefix(c.args[i], arg) || strings.HasPrefix(c.args[i], argAlt) {
 			c.args = append(c.args[:i], c.args[i+1:]...)
 			break
 		}
@@ -102,7 +103,7 @@ func (c *CLICmd) Start(t *testing.T, printLogs bool) {
 				}
 				return
 			}
-			logMsg := fmt.Sprintf("%s: %s", pipeName, line)
+			logMsg := fmt.Sprintf("%s->%s: %s", c.base, pipeName, line)
 
 			if printLogs {
 				t.Log(logMsg)
@@ -156,9 +157,11 @@ func (c *CLICmd) WaitForStop(timeout time.Duration) (exitCode *int) {
 	return
 }
 
-func (c *CLICmd) CheckSuccessfulExecute(resultObj interface{}, stdinInput ...string) {
+func (c *CLICmd) CheckSuccessfulExecute(resultObj interface{}, stdinInput ...string) (output string) {
 	code, stdout, stderr := c.Execute(stdinInput...)
 	require.Equal(c.t, 0, code, "%s: stderr: %s", c.String(), string(stderr))
+
+	output = string(stdout) + string(stderr)
 
 	if resultObj != nil {
 		if err := json.Unmarshal(stdout, resultObj); err == nil {
@@ -170,6 +173,8 @@ func (c *CLICmd) CheckSuccessfulExecute(resultObj interface{}, stdinInput ...str
 
 		c.t.Fatalf("%s: stdout/stderr unmarshal to object type %t", c.String(), resultObj)
 	}
+
+	return
 }
 
 func (c *CLICmd) LogsContain(subStr string) bool {

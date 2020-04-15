@@ -1,22 +1,17 @@
 package core
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
-	Codespace sdk.CodespaceType = "core"
-
-	CodeFeeRequired   sdk.CodeType = 101
-	CodeWrongFeeDenom sdk.CodeType = 102
+	Codespace = "core"
 )
 
-// StdTx Fee.Amount is empty
-func ErrFeeRequired() sdk.Error {
-	return sdk.NewError(Codespace, CodeFeeRequired, "tx must contain fees")
-}
-
-// StdTx Fee.Amount wrong denom
-func ErrWrongFeeDenom(denom string) sdk.Error {
-	return sdk.NewError(Codespace, CodeWrongFeeDenom, "tx must contain fees only in %q denom", denom)
-}
+var (
+	ErrInternal = sdkErrors.Register(Codespace, 100, "internal")
+	// StdTx Fee.Amount is empty
+	ErrFeeRequired = sdkErrors.Register(Codespace, 101, "tx must contain fees")
+	// StdTx Fee.Amount wrong denom
+	ErrWrongFeeDenom = sdkErrors.Register(Codespace, 102, "tx must contain fees with a different denom")
+)

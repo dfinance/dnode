@@ -2,9 +2,8 @@
 package poa
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/poa/msgs"
@@ -13,7 +12,7 @@ import (
 
 // New multisignature message handler for PoA module.
 func NewMsHandler(keeper Keeper) core.MsHandler {
-	return func(ctx sdk.Context, msg core.MsMsg) sdk.Error {
+	return func(ctx sdk.Context, msg core.MsMsg) error {
 		switch msg := msg.(type) {
 		case msgs.MsgAddValidator:
 			return handleMsMsgAddValidator(ctx, keeper, msg)
@@ -25,23 +24,22 @@ func NewMsHandler(keeper Keeper) core.MsHandler {
 			return handleMsMsgRemoveValidator(ctx, keeper, msg)
 
 		default:
-			errMsg := fmt.Sprintf("Unrecognized nameservice Msg type: %v", msg.Type())
-			return sdk.ErrUnknownRequest(errMsg)
+			return sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized nameservice Msg type: %v", msg.Type())
 		}
 	}
 }
 
 // Handle MsgAddValidator for add new validator.
-func handleMsMsgAddValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgAddValidator) sdk.Error {
+func handleMsMsgAddValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgAddValidator) error {
 	if keeper.HasValidator(ctx, msg.Address) {
-		return types.ErrValidatorExists(msg.Address.String())
+		return sdkErrors.Wrap(types.ErrValidatorExists, msg.Address.String())
 	}
 
 	maxValidators := keeper.GetMaxValidators(ctx)
 	amount := keeper.GetValidatorAmount(ctx)
 
 	if amount+1 > maxValidators {
-		return types.ErrMaxValidatorsReached(maxValidators)
+		return sdkErrors.Wrapf(types.ErrMaxValidatorsReached, "%d",maxValidators)
 	}
 
 	keeper.AddValidator(ctx, msg.Address, msg.EthAddress)
@@ -49,16 +47,16 @@ func handleMsMsgAddValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgAddVali
 }
 
 // Handle MsgRemoveValidator for remove validator.
-func handleMsMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemoveValidator) sdk.Error {
+func handleMsMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemoveValidator) error {
 	if !keeper.HasValidator(ctx, msg.Address) {
-		return types.ErrValidatorDoesntExists(msg.Address.String())
+		return sdkErrors.Wrap(types.ErrValidatorDoesntExists, msg.Address.String())
 	}
 
 	minValidators := keeper.GetMinValidators(ctx)
 	amount := keeper.GetValidatorAmount(ctx)
 
 	if amount-1 < minValidators {
-		return types.ErrMinValidatorsReached(minValidators)
+		return sdkErrors.Wrapf(types.ErrMinValidatorsReached, "%d", minValidators)
 	}
 
 	keeper.RemoveValidator(ctx, msg.Address)
@@ -67,13 +65,13 @@ func handleMsMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemo
 }
 
 // Handle MsgReplaceValidator for replace validator.
-func handleMsMsgReplaceValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgReplaceValidator) sdk.Error {
+func handleMsMsgReplaceValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgReplaceValidator) error {
 	if !keeper.HasValidator(ctx, msg.OldValidator) {
-		return types.ErrValidatorDoesntExists(msg.OldValidator.String())
+		return sdkErrors.Wrap(types.ErrValidatorDoesntExists, msg.OldValidator.String())
 	}
 
 	if keeper.HasValidator(ctx, msg.NewValidator) {
-		return types.ErrValidatorExists(msg.NewValidator.String())
+		return sdkErrors.Wrap(types.ErrValidatorExists, msg.NewValidator.String())
 	}
 
 	keeper.ReplaceValidator(ctx, msg.OldValidator, msg.NewValidator, msg.EthAddress)

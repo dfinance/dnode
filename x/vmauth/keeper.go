@@ -2,9 +2,8 @@
 package vmauth
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -119,10 +118,10 @@ func (keeper VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Accoun
 
 // GetSignerAcc returns an account for a given address that is expected to sign
 // a transaction.
-func GetSignerAcc(ctx sdk.Context, ak VMAccountKeeper, addr sdk.AccAddress) (exported.Account, sdk.Result) {
+func GetSignerAcc(ctx sdk.Context, ak VMAccountKeeper, addr sdk.AccAddress) (exported.Account, error) {
 	if acc := ak.GetAccount(ctx, addr); acc != nil {
-		return acc, sdk.Result{}
+		return acc, nil
 	}
 
-	return nil, sdk.ErrUnknownAddress(fmt.Sprintf("account %q does not exist", addr)).Result()
+	return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownAddress, "account %q does not exist", addr)
 }

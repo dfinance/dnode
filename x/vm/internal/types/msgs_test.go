@@ -1,3 +1,5 @@
+// +build unit
+
 package types
 
 import (
@@ -5,9 +7,12 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/helpers/tests"
 )
 
 func getMsgSignBytes(t *testing.T, msg sdk.Msg) []byte {
@@ -37,19 +42,11 @@ func TestMsgDeployModule(t *testing.T) {
 
 	msg = NewMsgDeployModule([]byte{}, code)
 	require.Empty(t, msg.Signer)
-
-	err := msg.ValidateBasic()
-	require.Error(t, err)
-	require.Equal(t, err.Code(), sdk.CodeInvalidAddress)
-	require.Equal(t, err.Codespace(), sdk.CodespaceRoot)
+	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, msg.ValidateBasic())
 
 	msg = NewMsgDeployModule(acc, Contract{})
 	require.Empty(t, msg.Module)
-
-	err = msg.ValidateBasic()
-	require.Error(t, err)
-	require.Equal(t, err.Code(), sdk.CodeType(CodeEmptyContractCode))
-	require.Equal(t, err.Codespace(), Codespace)
+	tests.CheckExpectedErr(t, ErrEmptyContract, msg.ValidateBasic())
 }
 
 // Test MsgExecuteScript.
@@ -79,11 +76,7 @@ func TestMsgExecuteScript(t *testing.T) {
 	msg = NewMsgExecuteScript([]byte{}, code, nil)
 	require.Empty(t, msg.Signer)
 	require.Nil(t, msg.Args)
-
-	err := msg.ValidateBasic()
-	require.Error(t, err)
-	require.Equal(t, err.Code(), sdk.CodeInvalidAddress)
-	require.Equal(t, err.Codespace(), sdk.CodespaceRoot)
+	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, msg.ValidateBasic())
 
 	// message without args should be fine
 	msg = NewMsgExecuteScript(acc, code, nil)
@@ -91,10 +84,7 @@ func TestMsgExecuteScript(t *testing.T) {
 
 	// script without code
 	msg = NewMsgExecuteScript(acc, []byte{}, nil)
-	err = msg.ValidateBasic()
-	require.Error(t, err)
-	require.Equal(t, err.Code(), sdk.CodeType(CodeEmptyContractCode))
-	require.Equal(t, err.Codespace(), Codespace)
+	tests.CheckExpectedErr(t, ErrEmptyContract, msg.ValidateBasic())
 }
 
 // Test new argument

@@ -6,12 +6,13 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
+	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/tendermint/go-amino"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
@@ -19,33 +20,30 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// Get query commands for VM module.
-func GetQueriesCmd(cdc *codec.Codec) *cobra.Command {
-	queries := &cobra.Command{
-		Use:   "vm",
-		Short: "VM query commands, include compiler",
+// Returns get commands for this module.
+func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
+	queryCmd := &cobra.Command{
+		Use:   types.ModuleName,
+		Short: "VM query commands, includes compiler",
 	}
 
-	compileCommands := client.GetCommands(
+	compileCommands := sdkClient.GetCommands(
 		CompileScript(cdc),
 		CompileModule(cdc),
 	)
-
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, FlagCompilerUsage)
-		cmd.Flags().String(FlagOutput, "", "--to-file ./compiled.mv")
+		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
+		cmd.Flags().String(vmClient.FlagOutput, "", "--to-file ./compiled.mv")
 	}
 
-	commands := client.GetCommands(
-		GetData("vm", cdc),
+	commands := sdkClient.GetCommands(
+		GetData(types.ModuleName, cdc),
 	)
 	commands = append(commands, compileCommands...)
 
-	queries.AddCommand(
-		commands...,
-	)
+	queryCmd.AddCommand(commands...)
 
-	return queries
+	return queryCmd
 }
 
 // Read mvir file by file path.
@@ -62,7 +60,7 @@ func readMvirFile(filePath string) ([]byte, error) {
 // Save output to stdout or file after compilation.
 func saveOutput(bytecode []byte, cdc *codec.Codec) error {
 	code := hex.EncodeToString(bytecode)
-	output := viper.GetString(FlagOutput)
+	output := viper.GetString(vmClient.FlagOutput)
 
 	mvFile := vmClient.MVFile{Code: code}
 	mvBytes, err := cdc.MarshalJSONIndent(mvFile, "", "    ")

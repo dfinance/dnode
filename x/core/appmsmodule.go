@@ -10,11 +10,11 @@ import (
 type MsMsg interface {
 	Route() string
 	Type() string
-	ValidateBasic() sdk.Error
+	ValidateBasic() error
 }
 
 // Multisignature handler.
-type MsHandler func(ctx sdk.Context, msg MsMsg) sdk.Error
+type MsHandler func(ctx sdk.Context, msg MsMsg) error
 
 // Message handle for multisignature calls
 type AppMsModule interface {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
@@ -37,13 +38,13 @@ func (MsgDeployModule) Type() string {
 	return MsgDeployModuleType
 }
 
-func (msg MsgDeployModule) ValidateBasic() sdk.Error {
+func (msg MsgDeployModule) ValidateBasic() error {
 	if msg.Signer.Empty() {
-		return sdk.ErrInvalidAddress("deployer address is empty")
+		return sdkErrors.Wrapf(sdkErrors.ErrInvalidAddress, "empty deployer address")
 	}
 
 	if len(msg.Module) == 0 {
-		return ErrEmptyContract()
+		return ErrEmptyContract
 	}
 
 	return nil
@@ -99,18 +100,18 @@ func (MsgExecuteScript) Type() string {
 	return MsgExecuteScriptType
 }
 
-func (msg MsgExecuteScript) ValidateBasic() sdk.Error {
+func (msg MsgExecuteScript) ValidateBasic() error {
 	if msg.Signer.Empty() {
-		return sdk.ErrInvalidAddress("deployer address is empty")
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty deployer address")
 	}
 
 	if len(msg.Script) == 0 {
-		return ErrEmptyContract()
+		return ErrEmptyContract
 	}
 
 	for _, val := range msg.Args {
 		if _, err := VMTypeToString(val.Type); err != nil {
-			return ErrWrongArgTypeTag(err)
+			return sdkErrors.Wrap(ErrWrongArgTypeTag, err.Error())
 		}
 	}
 

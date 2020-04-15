@@ -8,6 +8,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/log"
 	"google.golang.org/grpc"
@@ -58,7 +59,7 @@ func (Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // Execute script.
-func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) sdk.Error {
+func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) error {
 	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutExecute)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -71,12 +72,12 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
-		panic(types.NewErrVMCrashed(err))
+		panic(sdkErrors.Wrap(types.ErrVMCrashed, err.Error()))
 	}
 
 	if len(resp.Executions) != 1 {
 		// error because execution amount during such transaction could be only one.
-		return types.ErrWrongExecutionResponse(*resp)
+		return sdkErrors.Wrapf(types.ErrWrongExecutionResponse, "%v", *resp)
 	}
 
 	exec := resp.Executions[0]
@@ -86,7 +87,7 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 }
 
 // Deploy module.
-func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) sdk.Error {
+func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) error {
 	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutDeploy)
 	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -99,12 +100,12 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 	resp, err := keeper.client.ExecuteContracts(connCtx, req)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
-		panic(types.NewErrVMCrashed(err))
+		panic(sdkErrors.Wrap(types.ErrVMCrashed, err.Error()))
 	}
 
 	if len(resp.Executions) != 1 {
 		// error because execution amount during such transaction could be only one.
-		return types.ErrWrongExecutionResponse(*resp)
+		return sdkErrors.Wrapf(types.ErrWrongExecutionResponse, "%v", *resp)
 	}
 
 	exec := resp.Executions[0]

@@ -1,11 +1,15 @@
+// +build unit
+
 package msgs
 
 import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
+	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/poa/types"
 )
 
@@ -17,11 +21,11 @@ func Test_MsgAddValidator(t *testing.T) {
 	// correct
 	require.Nil(t, NewMsgAddValidator(sdkAddress, ethAddress, sdkAddress).ValidateBasic())
 	// empty validator sdkAddress
-	checkExpectedErr(t, sdk.ErrInvalidAddress(""), NewMsgAddValidator([]byte{}, ethAddress, sdkAddress).ValidateBasic())
+	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgAddValidator([]byte{}, ethAddress, sdkAddress).ValidateBasic())
 	// empty sender sdkAddress
-	checkExpectedErr(t, sdk.ErrInvalidAddress(""), NewMsgAddValidator(sdkAddress, ethAddress, []byte{}).ValidateBasic())
+	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgAddValidator(sdkAddress, ethAddress, []byte{}).ValidateBasic())
 	// empty validator ethAddress
-	checkExpectedErr(t, sdk.ErrUnknownRequest(""), NewMsgAddValidator(sdkAddress, "", sdkAddress).ValidateBasic())
+	tests.CheckExpectedErr(t, types.ErrWrongEthereumAddress, NewMsgAddValidator(sdkAddress, "", sdkAddress).ValidateBasic())
 	// invalid validator ethAddress
-	checkExpectedErr(t, types.ErrWrongEthereumAddress(""), NewMsgAddValidator(sdkAddress, "not_empty", sdkAddress).ValidateBasic())
+	tests.CheckExpectedErr(t, types.ErrWrongEthereumAddress, NewMsgAddValidator(sdkAddress, "not_empty", sdkAddress).ValidateBasic())
 }

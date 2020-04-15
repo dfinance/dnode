@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -10,38 +11,39 @@ import (
 	"strings"
 
 	"github.com/OneOfOne/xxhash"
-	"github.com/cosmos/cosmos-sdk/client"
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
+	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	codec "github.com/tendermint/go-amino"
-
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// Return TX commands for CLI.
+// GetTxCmd returns the transaction commands for this module.
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:   types.ModuleName,
 		Short: "VM transactions commands",
 	}
 
-	compileCommands := client.PostCommands(
+	compileCommands := sdkClient.PostCommands(
 		ExecuteScript(cdc),
 	)
-
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, FlagCompilerUsage)
+		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
 		txCmd.AddCommand(cmd)
 	}
 
-	txCmd.AddCommand(client.PostCommands(DeployContract(cdc))...)
+	commands := sdkClient.PostCommands(DeployContract(cdc))
+	commands = append(commands, compileCommands...)
+
+	txCmd.AddCommand(commands...)
 
 	return txCmd
 }
@@ -78,8 +80,9 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
-			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
-			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
@@ -210,8 +213,9 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 		Example: "deploy-module ./my_module.mvir.json",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := cliBldrCtx.NewCLIContext().WithCodec(cdc)
-			txBldr := txBldrCtx.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {

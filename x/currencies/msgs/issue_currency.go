@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/currencies/types"
 )
@@ -41,25 +42,25 @@ func (msg MsgIssueCurrency) Type() string {
 }
 
 // Basic validation, without state.
-func (msg MsgIssueCurrency) ValidateBasic() sdk.Error {
+func (msg MsgIssueCurrency) ValidateBasic() error {
 	if msg.Recipient.Empty() {
-		return sdk.ErrInvalidAddress(msg.Recipient.String())
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty recipient")
 	}
 
 	if len(msg.Symbol) == 0 {
-		return types.ErrWrongSymbol(msg.Symbol)
+		return sdkErrors.Wrap(types.ErrWrongSymbol, "empty")
 	}
 
 	if msg.Decimals < 0 {
-		return types.ErrWrongDecimals(msg.Decimals)
+		return types.ErrWrongDecimals
 	}
 
 	if msg.Amount.IsZero() {
-		return types.ErrWrongAmount(msg.Amount.String())
+		return types.ErrWrongAmount
 	}
 
 	if len(msg.IssueID) == 0 {
-		return types.ErrWrongIssueID(msg.IssueID)
+		return sdkErrors.Wrap(types.ErrWrongIssueID, "empty")
 	}
 
 	// lets try to create coin and validate denom
