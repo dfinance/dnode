@@ -14,6 +14,8 @@ const (
 
 var (
 	// functions aliases
+	NewGenesisAccountRaw        = types.NewGenesisAccountRaw
+	NewGenesisAccountI          = types.NewGenesisAccountI
 	GetGenesisStateFromAppState = types.GetGenesisStateFromAppState
 	SetGenesisStateInAppState   = types.SetGenesisStateInAppState
 	ValidateGenesis             = types.ValidateGenesis
@@ -23,5 +25,7 @@ var (
 )
 
 type (
-	GenesisState = types.GenesisState
+	GenesisAccount  = types.GenesisAccount
+	GenesisAccounts = types.GenesisAccounts
+	GenesisState    = types.GenesisState
 )

@@ -17,6 +17,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/cosmos/cosmos-sdk/x/gov"
+	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -68,6 +70,7 @@ var (
 		currencies.AppModuleBasic{},
 		multisig.AppModuleBasic{},
 		oracle.AppModuleBasic{},
+		gov.AppModuleBasic{},
 		vm.AppModuleBasic{},
 	)
 
@@ -76,6 +79,7 @@ var (
 		distribution.ModuleName:   nil,
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		gov.ModuleName:            {supply.Burner},
 	}
 )
 
@@ -83,8 +87,9 @@ var (
 type DnServiceApp struct {
 	*BaseApp
 
-	cdc      *codec.Codec
-	msRouter core.Router
+	cdc       *codec.Codec
+	msRouter  core.Router
+	govRouter govTypes.Router
 
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
@@ -101,6 +106,7 @@ type DnServiceApp struct {
 	msKeeper       multisig.Keeper
 	vmKeeper       vm.Keeper
 	oracleKeeper   oracle.Keeper
+	govKeeper      gov.Keeper
 
 	mm *core.MsManager
 
@@ -114,7 +120,7 @@ func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1 * time.Second)
+	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1*time.Second)
 	if err != nil {
 		panic(err)
 	}
@@ -169,6 +175,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		multisig.StoreKey,
 		vm.StoreKey,
 		oracle.StoreKey,
+		gov.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -191,8 +198,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// 1 dfi == 1000000000000000000
 	sdk.PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
-	// Initializing vm keeper.
 	var err error
+
+	// Initializing vm keeper.
 	app.vmKeeper = vm.NewKeeper(
 		keys[vm.StoreKey],
 		cdc,
@@ -295,6 +303,19 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.vmKeeper,
 	)
 
+	// The Governance keeper.
+	app.govRouter = gov.NewRouter()
+	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
+
+	app.govKeeper = gov.NewKeeper(
+		cdc,
+		keys[gov.StoreKey],
+		app.paramsKeeper.Subspace(gov.DefaultParamspace).WithKeyTable(gov.ParamKeyTable()),
+		app.supplyKeeper,
+		app.stakingKeeper,
+		app.govRouter,
+	)
+
 	// Initializing multisignature manager.
 	app.mm = core.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
@@ -310,10 +331,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
+		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, oracle.ModuleName)
+	app.mm.SetOrderEndBlockers(gov.ModuleName, staking.ModuleName, multisig.ModuleName, oracle.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -326,6 +348,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
+		gov.ModuleName,
 		supply.ModuleName,
 		poa.ModuleName,
 		currencies.ModuleName,

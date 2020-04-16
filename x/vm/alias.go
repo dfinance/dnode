@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	ModuleName = types.ModuleName
-	StoreKey   = types.StoreKey
+	ModuleName   = types.ModuleName
+	StoreKey     = types.StoreKey
+	GovRouterKey = types.GovRouterKey
 )
 
 type (
@@ -23,6 +24,8 @@ type (
 	GenesisState    = types.GenesisState
 	QueryAccessPath = types.QueryAccessPath
 	QueryValueResp  = types.QueryValueResp
+
+	TestProposal = types.TestProposal
 )
 
 var (
@@ -31,4 +34,6 @@ var (
 	MakePathKey             = types.MakePathKey
 
 	ErrVMCrashed = types.ErrVMCrashed
+
+	NewTestProposal = types.NewTestProposal
 )

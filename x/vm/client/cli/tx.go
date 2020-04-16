@@ -12,10 +12,14 @@ import (
 
 	"github.com/OneOfOne/xxhash"
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/cosmos/cosmos-sdk/x/gov/client/cli"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -25,6 +29,10 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
+const (
+	flagProposalValue = "value"
+)
+
 // GetTxCmd returns the transaction commands for this module.
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
@@ -32,18 +40,21 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		Short: "VM transactions commands",
 	}
 
-	compileCommands := sdkClient.PostCommands(
+	compileCommands := []*cobra.Command{
 		ExecuteScript(cdc),
-	)
+		flags.LineBreak,
+	}
+
 	for _, cmd := range compileCommands {
 		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
 		txCmd.AddCommand(cmd)
 	}
 
-	commands := sdkClient.PostCommands(DeployContract(cdc))
-	commands = append(commands, compileCommands...)
-
-	txCmd.AddCommand(commands...)
+	txCmd.AddCommand(sdkClient.PostCommands(
+		DeployContract(cdc),
+		flags.LineBreak,
+		TestProposal(cdc),
+	)...)
 
 	return txCmd
 }
@@ -242,4 +253,51 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+}
+
+// Send governance test proposal.
+func TestProposal(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "test-proposal [flags]",
+		Args:  cobra.ExactArgs(0),
+		Short: "Submit a test proposal",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
+			from := cliCtx.GetFromAddress()
+
+			depositStr, err := cmd.Flags().GetString(cli.FlagDeposit)
+			if err != nil {
+				return err
+			}
+
+			deposit, err := sdk.ParseCoins(depositStr)
+			if err != nil {
+				return err
+			}
+
+			value, err := cmd.Flags().GetString(flagProposalValue)
+			if err != nil {
+				return err
+			}
+
+			content := types.NewTestProposal(value)
+			if err := content.ValidateBasic(); err != nil {
+				return err
+			}
+
+			msg := gov.NewMsgSubmitProposal(content, deposit, from)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+
+	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
+	cmd.Flags().String(flagProposalValue, "default", "proposal value")
+
+	return cmd
 }

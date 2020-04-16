@@ -13,8 +13,9 @@ import (
 const (
 	ModuleName = "vm"
 
-	StoreKey  = ModuleName
-	RouterKey = ModuleName
+	StoreKey     = ModuleName
+	RouterKey    = ModuleName
+	GovRouterKey = ModuleName
 
 	VmAddressLength = 32
 	VmGasPrice      = 1
