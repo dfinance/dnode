@@ -6,12 +6,10 @@ import (
 	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
 // State to Unmarshal
-type GenesisState []auth.BaseAccount
+type GenesisState GenesisAccounts
 
 // Get the genesis state from the expected app state.
 func GetGenesisStateFromAppState(cdc *codec.Codec, appState map[string]json.RawMessage) GenesisState {
@@ -34,30 +32,19 @@ func SetGenesisStateInAppState(cdc *codec.Codec, appState map[string]json.RawMes
 // Sanitize sorts accounts and coin sets.
 func (gs GenesisState) Sanitize() {
 	sort.Slice(gs, func(i, j int) bool {
-		return gs[i].AccountNumber < gs[j].AccountNumber
+		return gs[i].BaseAccount.AccountNumber < gs[j].BaseAccount.AccountNumber
 	})
 
 	for _, acc := range gs {
-		acc.Coins = acc.Coins.Sort()
+		acc.BaseAccount.Coins = acc.BaseAccount.Coins.Sort()
 	}
-}
-
-// Check if state contains specified address.
-func (gs GenesisState) Contains(addr sdk.AccAddress) bool {
-	for _, acc := range gs {
-		if acc.Address.Equals(addr) {
-			return true
-		}
-	}
-
-	return false
 }
 
 // ValidateGenesis performs validation of genesis accounts, ensures that there are no duplicate accounts.
 func ValidateGenesis(genesisState GenesisState) error {
 	addrMap := make(map[string]bool, len(genesisState))
 	for _, acc := range genesisState {
-		addrStr := acc.Address.String()
+		addrStr := acc.BaseAccount.Address.String()
 
 		// disallow any duplicate accounts
 		if _, ok := addrMap[addrStr]; ok {

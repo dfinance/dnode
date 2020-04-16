@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -112,6 +113,9 @@ func (AppModule) Route() string { return types.RouterKey }
 
 // Create new handler.
 func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.vmKeeper) }
+
+// Create governance handler.
+func (app AppModule) NewGovHandler() gov.Handler { return NewGovHandler(app.vmKeeper) }
 
 // Get route for querier.
 func (AppModule) QuerierRoute() string { return types.RouterKey }

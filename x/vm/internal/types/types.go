@@ -13,8 +13,9 @@ import (
 const (
 	ModuleName = "vm"
 
-	StoreKey  = ModuleName
-	RouterKey = ModuleName
+	StoreKey     = ModuleName
+	RouterKey    = ModuleName
+	GovRouterKey = ModuleName
 
 	VmGasPrice      = 1
 	VmUnknowTagType = -1

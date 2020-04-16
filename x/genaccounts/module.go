@@ -62,8 +62,9 @@ func (AppModuleBasic) IterateGenesisAccounts(cdc *codec.Codec, appGenesis map[st
 	iterateFn func(exported.Account) (stop bool)) {
 
 	genesisState := GetGenesisStateFromAppState(cdc, appGenesis)
-	for _, acc := range genesisState {
-		if iterateFn(&acc) {
+	for _, ga := range genesisState {
+		acc := ga.ToAccount()
+		if iterateFn(acc) {
 			break
 		}
 	}

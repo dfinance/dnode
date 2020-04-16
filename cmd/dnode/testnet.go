@@ -150,7 +150,7 @@ func InitTestnet(cmd *cobra.Command, config *tmConfig.Config, cdc *codec.Codec, 
 
 	// nolint:prealloc
 	var (
-		genAccounts genaccounts.GenesisState
+		genAccounts genaccounts.GenesisAccounts
 		genFiles    []string
 	)
 
@@ -221,7 +221,7 @@ func InitTestnet(cmd *cobra.Command, config *tmConfig.Config, cdc *codec.Codec, 
 			sdk.NewCoin(dnConfig.MainDenom, accStakingTokens),
 		}
 
-		genAccounts = append(genAccounts, *auth.NewBaseAccount(addr, coins.Sort(), nil, 0, 0))
+		genAccounts = append(genAccounts, genaccounts.NewGenesisAccountRaw(addr, coins.Sort(), ""))
 
 		valTokens := sdk.TokensFromConsensusPower(500000)
 		msg := staking.NewMsgCreateValidator(
@@ -279,7 +279,7 @@ func InitTestnet(cmd *cobra.Command, config *tmConfig.Config, cdc *codec.Codec, 
 
 func initGenFiles(
 	cdc *codec.Codec, mbm module.BasicManager, chainID string,
-	genAccounts genaccounts.GenesisState, genFiles []string, numValidators int,
+	genAccounts genaccounts.GenesisAccounts, genFiles []string, numValidators int,
 ) error {
 
 	appGenState := mbm.DefaultGenesis()
@@ -296,11 +296,11 @@ func initGenFiles(
 	oracleDataBz := appGenState[oracle.ModuleName]
 	var oracleGenState oracle.GenesisState
 	cdc.MustUnmarshalJSON(oracleDataBz, &oracleGenState)
-	nomenees := make([]string, len(genAccounts))
-	for i, acc := range genAccounts {
-		nomenees[i] = acc.Address.String()
+	nominees := make([]string, len(genAccounts))
+	for i, ga := range genAccounts {
+		nominees[i] = ga.BaseAccount.Address.String()
 	}
-	oracleGenState.Params.Nominees = nomenees
+	oracleGenState.Params.Nominees = nominees
 	appGenState[oracle.ModuleName] = cdc.MustMarshalJSON(oracleGenState)
 
 	appGenStateJSON, err := codec.MarshalJSONIndent(cdc, appGenState)
