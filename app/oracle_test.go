@@ -22,6 +22,7 @@ const (
 )
 
 func Test_OracleQueries(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -174,6 +175,7 @@ func Test_OracleQueries(t *testing.T) {
 }
 
 func Test_OracleAddOracle(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -258,6 +260,7 @@ func Test_OracleAddOracle(t *testing.T) {
 }
 
 func Test_OracleSetOracles(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -333,6 +336,7 @@ func Test_OracleSetOracles(t *testing.T) {
 }
 
 func Test_OracleAddAsset(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -416,6 +420,7 @@ func Test_OracleAddAsset(t *testing.T) {
 }
 
 func Test_OracleSetAsset(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -487,6 +492,7 @@ func Test_OracleSetAsset(t *testing.T) {
 }
 
 func Test_OraclePostPrices(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
