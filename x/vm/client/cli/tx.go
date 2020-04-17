@@ -22,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov/client/cli"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	codec "github.com/tendermint/go-amino"
 
 	vmClient "github.com/dfinance/dnode/x/vm/client"
@@ -40,17 +39,8 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		Short: "VM transactions commands",
 	}
 
-	compileCommands := []*cobra.Command{
-		ExecuteScript(cdc),
-		flags.LineBreak,
-	}
-
-	for _, cmd := range compileCommands {
-		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
-		txCmd.AddCommand(cmd)
-	}
-
 	txCmd.AddCommand(sdkClient.PostCommands(
+		ExecuteScript(cdc),
 		DeployContract(cdc),
 		flags.LineBreak,
 		TestProposal(cdc),
@@ -83,14 +73,12 @@ func GetMVFromFile(filePath string) (vmClient.MVFile, error) {
 
 // Execute script contract.
 func ExecuteScript(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "execute-script [compileMvir] [arg1,arg2,arg3,...]",
 		Short:   "execute Move script",
 		Example: "execute-script ./script.mvir.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\"",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
-
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
@@ -98,6 +86,11 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return fmt.Errorf("fromAddress: %w", err)
+			}
+
+			compilerAddr, err := cmd.Flags().GetString(vmClient.FlagCompilerAddr)
+			if err != nil {
+				return err
 			}
 
 			mvFile, err := GetMVFromFile(args[0])
@@ -214,6 +207,10 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+
+	cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
+
+	return cmd
 }
 
 // Deploy contract cli TX command.
