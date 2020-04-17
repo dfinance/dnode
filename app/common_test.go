@@ -214,13 +214,21 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	// generate genesis state based on defaults
 	genesisState := ModuleBasics.DefaultGenesis()
 	{
-		accounts := make(genaccounts.GenesisState, 0, len(accs)+1)
+		genAccs := make(genaccounts.GenesisAccounts, 0, len(accs)+1)
 		for _, acc := range accs {
-			accounts = append(accounts, *acc)
+			genAcc, err := genaccounts.NewGenesisAccountI(acc)
+			if err != nil {
+				return nil, err
+			}
+			genAccs = append(genAccs, genAcc)
 		}
-		accounts = append(accounts, *genTxAcc)
+		if genAcc, err := genaccounts.NewGenesisAccountI(genTxAcc); err != nil {
+			return nil, err
+		} else {
+			genAccs = append(genAccs, genAcc)
+		}
 
-		genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, accounts)
+		genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, genAccs)
 
 		validators := make(poaTypes.Validators, len(accs))
 		for idx, acc := range accs {
