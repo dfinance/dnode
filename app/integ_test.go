@@ -26,6 +26,8 @@ main(recipient: address, amount: u128, denom: bytearray) {
     return;
 }
 `
+
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 

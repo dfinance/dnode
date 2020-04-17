@@ -23,6 +23,7 @@ const (
 )
 
 func Test_POAHandlerIsMultisigOnly(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -43,6 +44,7 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 }
 
 func Test_POAQueries(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -83,6 +85,7 @@ func Test_POAQueries(t *testing.T) {
 }
 
 func Test_POAInvalidGenesis(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -111,6 +114,7 @@ func Test_POAInvalidGenesis(t *testing.T) {
 }
 
 func Test_POAValidatorsAdd(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -164,6 +168,7 @@ func Test_POAValidatorsAdd(t *testing.T) {
 }
 
 func Test_POAValidatorsRemove(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -220,6 +225,7 @@ func Test_POAValidatorsRemove(t *testing.T) {
 }
 
 func Test_POAValidatorsReplace(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -252,6 +258,7 @@ func Test_POAValidatorsReplace(t *testing.T) {
 }
 
 func Test_POAValidatorsReplaceExisting(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -280,6 +287,7 @@ func Test_POAValidatorsReplaceExisting(t *testing.T) {
 func Test_POAValidatorsMinMaxRange(t *testing.T) {
 	defMinValidators, defMaxValidators := poaTypes.DefaultMinValidators, poaTypes.DefaultMaxValidators
 
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
