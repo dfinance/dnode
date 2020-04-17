@@ -40,23 +40,24 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		Short: "VM transactions commands",
 	}
 
-	compileCommands := []*cobra.Command{
+	compileCommands := sdkClient.PostCommands(
 		ExecuteScript(cdc),
-		flags.LineBreak,
-	}
-
+	)
 	for _, cmd := range compileCommands {
 		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
 		txCmd.AddCommand(cmd)
 	}
 
-	txCmd.AddCommand(sdkClient.PostCommands(
+	commands := sdkClient.PostCommands(
 		DeployContract(cdc),
 		flags.LineBreak,
 		TestProposal(cdc),
-	)...)
+	)
+	commands = append(commands, compileCommands...)
 
-	return txCmd
+	txCmd.AddCommand(commands...)
+
+	return
 }
 
 // Read Move file contains code in hex.
