@@ -25,6 +25,7 @@ const (
 )
 
 func Test_MSQueries(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -42,6 +43,7 @@ func Test_MSQueries(t *testing.T) {
 }
 
 func Test_MSVoting(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -194,6 +196,7 @@ func Test_MSVoting(t *testing.T) {
 }
 
 func Test_MSBlockHeight(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()

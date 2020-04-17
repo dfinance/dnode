@@ -25,6 +25,7 @@ const (
 )
 
 func Test_CurrencyHandlerIsMultisigOnly(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -44,6 +45,7 @@ func Test_CurrencyHandlerIsMultisigOnly(t *testing.T) {
 }
 
 func Test_CurrencyQueries(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -115,6 +117,7 @@ func Test_CurrencyQueries(t *testing.T) {
 }
 
 func Test_CurrencyIssue(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -220,6 +223,7 @@ func Test_CurrencyIssue(t *testing.T) {
 }
 
 func Test_CurrencyIssueHugeAmount(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -262,6 +266,7 @@ func Test_CurrencyIssueHugeAmount(t *testing.T) {
 }
 
 func Test_CurrencyIssueDecimals(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -327,6 +332,7 @@ func Test_CurrencyIssueDecimals(t *testing.T) {
 }
 
 func Test_CurrencyDestroy(t *testing.T) {
+	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
