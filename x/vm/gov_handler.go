@@ -29,31 +29,35 @@ func NewGovHandler(keeper Keeper) gov.Handler {
 }
 
 func handleUpdateModuleProposalDryRun(ctx sdk.Context, keeper Keeper, p types.ModuleUpdateProposal) error {
-	if err := p.ValidateBasic(); err != nil {
+	logger := keeper.Logger(ctx)
+
+	pProposal := types.NewPlannedProposal(p, ModuleUpdateData{}, p.Plan)
+	if err := pProposal.ValidateBasic(); err != nil {
 		return err
 	}
 
-	execProposal := types.NewExecutableProposal(p.ProposalType(), p)
-	if err := keeper.ScheduleProposal(ctx, execProposal); err != nil {
+	if err := keeper.ScheduleProposal(ctx, pProposal); err != nil {
 		return err
 	}
 
-	ctx.Logger().Info(fmt.Sprintf("proposal scheduled: %s", execProposal.String()))
+	logger.Info(fmt.Sprintf("proposal scheduled: %s", pProposal.String()))
 
 	return nil
 }
 
 func handleTestProposalDryRun(ctx sdk.Context, keeper Keeper, p types.TestProposal) error {
-	if err := p.ValidateBasic(); err != nil {
+	logger := keeper.Logger(ctx)
+
+	pProposal := types.NewPlannedProposal(p, TestData{}, p.Plan)
+	if err := pProposal.ValidateBasic(); err != nil {
 		return err
 	}
 
-	execProposal := types.NewExecutableProposal(p.ProposalType(), p)
-	if err := keeper.ScheduleProposal(ctx, execProposal); err != nil {
+	if err := keeper.ScheduleProposal(ctx, pProposal); err != nil {
 		return err
 	}
 
-	ctx.Logger().Info(fmt.Sprintf("proposal scheduled: %s", execProposal.String()))
+	logger.Info(fmt.Sprintf("proposal scheduled: %s", pProposal.String()))
 
 	return nil
 }

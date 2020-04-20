@@ -20,7 +20,6 @@ func (p ModuleUpdateProposal) GetTitle() string       { return "Module update" }
 func (p ModuleUpdateProposal) GetDescription() string { return "Updates stdlib module" }
 func (p ModuleUpdateProposal) ProposalRoute() string  { return GovRouterKey }
 func (p ModuleUpdateProposal) ProposalType() string   { return ProposalTypeModuleUpdate }
-func (p ModuleUpdateProposal) GetPlan() Plan          { return p.Plan }
 func (p ModuleUpdateProposal) ValidateBasic() error {
 	if err := p.Plan.ValidateBasic(); err != nil {
 		return fmt.Errorf("plan: %w", err)
@@ -36,8 +35,7 @@ func (p ModuleUpdateProposal) String() string {
 	return fmt.Sprintf(`Proposal:
   Title: %s
   Description: %s
-  Plan: %s
-`, p.GetTitle(), p.GetDescription(), p.Plan.String())
+`, p.GetTitle(), p.GetDescription())
 }
 
 func NewModuleUpdateProposal(plan Plan) gov.Content {
@@ -46,46 +44,12 @@ func NewModuleUpdateProposal(plan Plan) gov.Content {
 	}
 }
 
-type TestProposal struct {
-	Plan  Plan   `json:"plan"`
-	Value string `json:"value"`
-}
+type ModuleUpdateData struct{}
 
-func (p TestProposal) GetTitle() string       { return "Test" }
-func (p TestProposal) GetDescription() string { return "Test proposal" }
-func (p TestProposal) ProposalRoute() string  { return GovRouterKey }
-func (p TestProposal) ProposalType() string   { return ProposalTypeTest }
-func (p TestProposal) GetPlan() Plan          { return p.Plan }
-func (p TestProposal) ValidateBasic() error {
-	if err := p.Plan.ValidateBasic(); err != nil {
-		return fmt.Errorf("plan: %w", err)
-	}
-	if p.Value == "" {
-		return fmt.Errorf("value: empty")
-	}
-
-	return nil
-}
-
-func (p TestProposal) String() string {
-	return fmt.Sprintf(`Proposal:
-  Title: %s
-  Description: %s
-  Value: %s
-  Plan: %s
-`, p.GetTitle(), p.GetDescription(), p.Value, p.Plan.String())
-}
-
-func NewTestProposal(plan Plan, value string) gov.Content {
-	return TestProposal{
-		Plan:  plan,
-		Value: value,
-	}
-}
+func (d ModuleUpdateData) IsProposalData() {}
+func (d ModuleUpdateData) String() string  { return "" }
 
 func init() {
 	gov.RegisterProposalType(ProposalTypeModuleUpdate)
 	gov.RegisterProposalTypeCodec(ModuleUpdateProposal{}, ModuleName+"/ModuleUpdateProposal")
-	gov.RegisterProposalType(ProposalTypeTest)
-	gov.RegisterProposalTypeCodec(TestProposal{}, ModuleName+"/TestProposal")
 }

@@ -9,10 +9,12 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgDeployModule{}, ModuleName+"/MsgDeployModule", nil)
 	cdc.RegisterConcrete(MsgExecuteScript{}, ModuleName+"/MsgExecuteScript", nil)
 
-	cdc.RegisterInterface((*PlannedProposal)(nil), nil)
-	cdc.RegisterConcrete(ExecutableProposal{}, ModuleName+"/ExecutableProposal", nil)
+	cdc.RegisterInterface((*ProposalData)(nil), nil)
+	cdc.RegisterConcrete(PlannedProposal{}, ModuleName+"/PlannedProposal", nil)
 	cdc.RegisterConcrete(ModuleUpdateProposal{}, ModuleName+"/ModuleUpdateProposal", nil)
+	cdc.RegisterConcrete(ModuleUpdateData{}, ModuleName+"/ModuleUpdateData", nil)
 	cdc.RegisterConcrete(TestProposal{}, ModuleName+"/TestProposal", nil)
+	cdc.RegisterConcrete(TestData{}, ModuleName+"/TestData", nil)
 }
 
 // module codec
