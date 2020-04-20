@@ -18,7 +18,7 @@ import (
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
-	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/pricefeed"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -258,8 +258,8 @@ func Test_OracleRest(t *testing.T) {
 	defer ct.Close()
 	ct.StartRestServer(false)
 
-	oracleName1, oracleName2 := "oracle1", "oracle2"
-	oracleAddr1, oracleAddr2 := ct.Accounts[oracleName1].Address, ct.Accounts[oracleName2].Address
+	pricefeedName1, pricefeedName2 := "pricefeed1", "pricefeed2"
+	pricefeedAddr1, pricefeedAddr2 := ct.Accounts[pricefeedName1].Address, ct.Accounts[pricefeedName2].Address
 
 	// check getAssets endpoint
 	{
@@ -269,9 +269,9 @@ func Test_OracleRest(t *testing.T) {
 		require.Len(t, *respMsg, 1)
 		asset := (*respMsg)[0]
 		require.Equal(t, ct.DefAssetCode, asset.AssetCode)
-		require.Len(t, asset.Oracles, 2)
-		require.Equal(t, oracleAddr1, asset.Oracles[0].Address.String())
-		require.Equal(t, oracleAddr2, asset.Oracles[1].Address.String())
+		require.Len(t, asset.PriceFeeds, 2)
+		require.Equal(t, pricefeedAddr1, asset.PriceFeeds[0].Address.String())
+		require.Equal(t, pricefeedAddr2, asset.PriceFeeds[1].Address.String())
 		require.True(t, asset.Active)
 	}
 
@@ -288,8 +288,8 @@ func Test_OracleRest(t *testing.T) {
 		{
 			AssetCode:     ct.DefAssetCode,
 			SenderIdx:     0,
-			OracleName:    oracleName1,
-			OracleAddress: oracleAddr1,
+			OracleName:    pricefeedName1,
+			OracleAddress: pricefeedAddr1,
 			Price:         sdk.NewInt(100),
 			ReceivedAt:    now,
 			BlockHeight:   0,
@@ -297,8 +297,8 @@ func Test_OracleRest(t *testing.T) {
 		{
 			AssetCode:     ct.DefAssetCode,
 			SenderIdx:     1,
-			OracleName:    oracleName2,
-			OracleAddress: oracleAddr2,
+			OracleName:    pricefeedName2,
+			OracleAddress: pricefeedAddr2,
 			Price:         sdk.NewInt(200),
 			ReceivedAt:    now.Add(5 * time.Second),
 		},
@@ -316,7 +316,7 @@ func Test_OracleRest(t *testing.T) {
 		curBlockHeight := ct.WaitForNextBlocks(1)
 
 		// rawPrices could be stored in [prevBlockHeight : curBlockHeight], so we need to find them
-		rawPrices := make([]oracle.PostedPrice, 0)
+		rawPrices := make([]pricefeed.PostedPrice, 0)
 		for blockHeight := prevBlockHeight; blockHeight <= curBlockHeight; blockHeight++ {
 			req, respMsg := ct.RestQueryOracleRawPrices(ct.DefAssetCode, blockHeight)
 			req.CheckSucceeded()
@@ -330,7 +330,7 @@ func Test_OracleRest(t *testing.T) {
 		for i, rawPrice := range rawPrices {
 			postPrice := postPrices[i]
 			require.Equal(t, rawPrice.AssetCode, postPrice.AssetCode)
-			require.Equal(t, postPrice.OracleAddress, rawPrice.OracleAddress.String())
+			require.Equal(t, postPrice.OracleAddress, rawPrice.PriceFeedAddress.String())
 			require.True(t, rawPrice.Price.Equal(postPrice.Price))
 			require.True(t, rawPrice.ReceivedAt.Equal(postPrice.ReceivedAt))
 		}

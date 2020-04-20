@@ -18,7 +18,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	dnodeConfig "github.com/dfinance/dnode/cmd/config"
-	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/pricefeed"
 	compilerClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
@@ -317,12 +317,12 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	input.ak.SetAccount(input.ctx, acc1)
 
 	assetCode := "eth_usdt"
-	okInitParams := oracle.Params{
-		Assets: oracle.Assets{
-			oracle.Asset{
+	okInitParams := pricefeed.Params{
+		Assets: pricefeed.Assets{
+			pricefeed.Asset{
 				AssetCode: assetCode,
-				Oracles: oracle.Oracles{
-					oracle.Oracle{
+				PriceFeeds: pricefeed.PriceFeeds{
+					pricefeed.PriceFeed{
 						Address: addr1,
 					},
 				},
@@ -330,7 +330,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 			},
 		},
 		Nominees: []string{addr1.String()},
-		PostPrice: oracle.PostPriceParams{
+		PostPrice: pricefeed.PostPriceParams{
 			ReceivedAtDiffInS: 3600,
 		},
 	}
@@ -365,7 +365,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 		Address: []byte(addr1.String()),
 		Type:    vm_grpc.ContractType_Script,
 	})
-	require.NoErrorf(t, err, "can't get code for oracle script: %v", err)
+	require.NoErrorf(t, err, "can't get code for price feed script: %v", err)
 
 	seed := xxhash.NewS64(0)
 	_, err = seed.WriteString(strings.ToLower(assetCode))

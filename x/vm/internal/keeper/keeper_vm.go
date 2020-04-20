@@ -39,7 +39,7 @@ func (keeper Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 	keeper.delValue(ctx, accessPath)
 }
 
-// Public get path for oracle price.
+// Public get path for pricefeed price.
 func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath {
 	seed := xxhash.NewS64(0)
 	_, err := seed.WriteString(strings.ToLower(assetCode))

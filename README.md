@@ -20,7 +20,7 @@ Current repository contains source code of:
 
 * [DVM](https://github.com/dfinance/dvm) - Move VM and compiler.
 * [PegZone](https://github.com/dfinance/eth-peg-zone) - PegZone smart contracts.
-* [OracleApp](https://github.com/dfinance/oracle-app) - oracle node, that fetch price feed from exchanges.
+* [PriceFeedApp](https://github.com/dfinance/price-feed-app) - price feed node, that fetch price feed from exchanges.
 
 # Docs
 

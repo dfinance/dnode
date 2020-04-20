@@ -151,19 +151,19 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		},
 		IsOracleNominee: true,
 	}
-	ct.Accounts["oracle1"] = &CLIAccount{
+	ct.Accounts["pricefeed1"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
 		IsOracle: true,
 	}
-	ct.Accounts["oracle2"] = &CLIAccount{
+	ct.Accounts["pricefeed2"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
 		IsOracle: false,
 	}
-	ct.Accounts["oracle3"] = &CLIAccount{
+	ct.Accounts["pricefeed3"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
@@ -342,7 +342,7 @@ func (ct *CLITester) initChain() {
 			// Oracle nominee
 			if accValue.IsOracleNominee {
 				cmd := ct.newWbdCmd().
-					AddArg("", "add-oracle-nominees-gen").
+					AddArg("", "add-pricefeed-nominees-gen").
 					AddArg("", accValue.Address)
 
 				cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
@@ -376,14 +376,14 @@ func (ct *CLITester) initChain() {
 
 	// add Oracle assets
 	{
-		oracles := make([]string, 0)
-		oracles = append(oracles, ct.Accounts["oracle1"].Address)
-		oracles = append(oracles, ct.Accounts["oracle2"].Address)
+		pricefeeds := make([]string, 0)
+		pricefeeds = append(pricefeeds, ct.Accounts["pricefeed1"].Address)
+		pricefeeds = append(pricefeeds, ct.Accounts["pricefeed2"].Address)
 
 		cmd := ct.newWbdCmd().
-			AddArg("", "add-oracle-asset-gen").
+			AddArg("", "add-pricefeed-asset-gen").
 			AddArg("", ct.DefAssetCode).
-			AddArg("", strings.Join(oracles, ","))
+			AddArg("", strings.Join(pricefeeds, ","))
 
 		cmd.CheckSuccessfulExecute(nil)
 	}

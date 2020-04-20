@@ -25,8 +25,8 @@ import (
 	"github.com/dfinance/dnode/helpers/logger"
 	"github.com/dfinance/dnode/x/genaccounts"
 	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
-	oracleCli "github.com/dfinance/dnode/x/oracle/client/cli"
 	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
+	pricefeedCli "github.com/dfinance/dnode/x/pricefeed/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
 )
 
@@ -69,8 +69,8 @@ func main() {
 		// Allows user to poa genesis validator
 		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
 		vmCli.GenesisWSFromFile(ctx, cdc),
-		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
-		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		pricefeedCli.AddPriceFeedNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		pricefeedCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 

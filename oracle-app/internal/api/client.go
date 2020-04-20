@@ -18,7 +18,7 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/oracle-app/internal/exchange"
 	"github.com/dfinance/dnode/oracle-app/internal/utils"
-	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/pricefeed"
 )
 
 type Client struct {
@@ -47,7 +47,7 @@ func NewClient(mnemonic string, account, index uint32, gas uint64, chainID strin
 	cdc := codec.New()
 	codec.RegisterCrypto(cdc)
 	sdk.RegisterCodec(cdc)
-	oracle.RegisterCodec(cdc)
+	pricefeed.RegisterCodec(cdc)
 
 	pass, accname := passphrase, accountName
 	var err error
@@ -91,7 +91,7 @@ func (c *Client) PostPrice(t exchange.Ticker) error {
 		WithAccountNumber(acc.AccountNumber).
 		WithSequence(acc.Sequence).
 		WithChainID(c.chainID).
-		BuildAndSign(c.accName, c.passPhrase, []sdk.Msg{oracle.NewMsgPostPrice(acc.Address, t.Asset.Code, t.Price, t.ReceivedAt)})
+		BuildAndSign(c.accName, c.passPhrase, []sdk.Msg{pricefeed.NewMsgPostPrice(acc.Address, t.Asset.Code, t.Price, t.ReceivedAt)})
 	if err != nil {
 		return err
 	}

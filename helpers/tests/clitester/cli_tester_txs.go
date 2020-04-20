@@ -37,15 +37,15 @@ func (ct *CLITester) TxCurrenciesDestroy(recipientAddr, fromAddr, symbol string,
 	return r
 }
 
-func (ct *CLITester) TxOracleAddAsset(nomineeAddress, assetCode string, oracleAddresses ...string) *TxRequest {
+func (ct *CLITester) TxPriceFeedAddAsset(nomineeAddress, assetCode string, pricefeedAddresses ...string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
-		"oracle",
+		"pricefeed",
 		"",
 		"add-asset",
 		nomineeAddress,
 		assetCode,
-		strings.Join(oracleAddresses, ","))
+		strings.Join(pricefeedAddresses, ","))
 
 	return r
 }
@@ -89,49 +89,49 @@ func (ct *CLITester) TxPoaReplaceValidator(fromAddr, targetAddress, address, eth
 	return r
 }
 
-func (ct *CLITester) TxOracleSetAsset(nomineeAddress, assetCode string, oracleAddresses ...string) *TxRequest {
+func (ct *CLITester) TxPriceFeedSetAsset(nomineeAddress, assetCode string, pricefeedAddresses ...string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
-		"oracle",
+		"pricefeed",
 		"",
 		"set-asset",
 		nomineeAddress,
 		assetCode,
-		strings.Join(oracleAddresses, ","))
+		strings.Join(pricefeedAddresses, ","))
 
 	return r
 }
 
-func (ct *CLITester) TxOracleAddOracle(nomineeAddress, assetCode string, oracleAddress string) *TxRequest {
+func (ct *CLITester) TxPriceFeedAddPriceFeed(nomineeAddress, assetCode string, pricefeedAddress string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
-		"oracle",
+		"pricefeed",
 		"",
-		"add-oracle",
+		"add-pricefeed",
 		nomineeAddress,
 		assetCode,
-		oracleAddress)
+		pricefeedAddress)
 
 	return r
 }
 
-func (ct *CLITester) TxOracleSetOracles(nomineeAddress, assetCode string, oracleAddresses ...string) *TxRequest {
+func (ct *CLITester) TxPriceFeedSetPriceFeeds(nomineeAddress, assetCode string, pricefeedAddresses ...string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
-		"oracle",
+		"pricefeed",
 		"",
-		"set-oracles",
+		"set-pricefeeds",
 		nomineeAddress,
 		assetCode,
-		strings.Join(oracleAddresses, ","))
+		strings.Join(pricefeedAddresses, ","))
 
 	return r
 }
 
-func (ct *CLITester) TxOraclePostPrice(nomineeAddress, assetCode string, price sdk.Int, receivedAt time.Time) *TxRequest {
+func (ct *CLITester) TxPriceFeedPostPrice(nomineeAddress, assetCode string, price sdk.Int, receivedAt time.Time) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
-		"oracle",
+		"pricefeed",
 		"",
 		"postprice",
 		nomineeAddress,

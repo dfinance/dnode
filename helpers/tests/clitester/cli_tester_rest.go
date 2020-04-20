@@ -14,8 +14,8 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
-	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/pricefeed"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -131,27 +131,27 @@ func (ct *CLITester) RestQueryPoaValidators() (*RestRequest, *poaTypes.Validator
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOracleAssets() (*RestRequest, *oracle.Assets) {
-	reqSubPath := fmt.Sprintf("%s/assets", oracle.ModuleName)
-	respMsg := &oracle.Assets{}
+func (ct *CLITester) RestQueryOracleAssets() (*RestRequest, *pricefeed.Assets) {
+	reqSubPath := fmt.Sprintf("%s/assets", pricefeed.ModuleName)
+	respMsg := &pricefeed.Assets{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOracleRawPrices(assetCode string, blockHeight int64) (*RestRequest, *[]oracle.PostedPrice) {
-	reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, assetCode, blockHeight)
-	respMsg := &[]oracle.PostedPrice{}
+func (ct *CLITester) RestQueryOracleRawPrices(assetCode string, blockHeight int64) (*RestRequest, *[]pricefeed.PostedPrice) {
+	reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", pricefeed.ModuleName, assetCode, blockHeight)
+	respMsg := &[]pricefeed.PostedPrice{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOraclePrice(assetCode string) (*RestRequest, *oracle.CurrentPrice) {
-	reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, assetCode)
-	respMsg := &oracle.CurrentPrice{}
+func (ct *CLITester) RestQueryOraclePrice(assetCode string) (*RestRequest, *pricefeed.CurrentPrice) {
+	reqSubPath := fmt.Sprintf("%s/currentprice/%s", pricefeed.ModuleName, assetCode)
+	respMsg := &pricefeed.CurrentPrice{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
@@ -165,7 +165,7 @@ func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.
 	accQuery, acc := ct.QueryAccount(accInfo.Address)
 	accQuery.CheckSucceeded()
 
-	msg := oracle.NewMsgPostPrice(acc.Address, assetCode, price, receivedAt)
+	msg := pricefeed.NewMsgPostPrice(acc.Address, assetCode, price, receivedAt)
 
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }

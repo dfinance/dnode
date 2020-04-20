@@ -28,11 +28,11 @@ PoA:
 
 * `/poa/validators` - PoA validators list.
 
-Oracle:
-* `/oracle/rawprices` - Post price from Oracle.
-* `/oracle/rawprices/{assetCode}/{blockHeight}` - Get unprocessed prices for assetCode and blockHeight.
-* `/oracle/currentprice/{assetCode}` - Get current price for assetCode.
-* `/oracle/assets` - Get array of assets.
+PriceFeed:
+* `/pricefeed/rawprices` - Post price from price feed.
+* `/pricefeed/rawprices/{assetCode}/{blockHeight}` - Get unprocessed prices for assetCode and blockHeight.
+* `/pricefeed/currentprice/{assetCode}` - Get current price for assetCode.
+* `/pricefeed/assets` - Get array of assets.
 
 VM:
 * `/vm/compile-script` - Get compiled bytecode for VM script.

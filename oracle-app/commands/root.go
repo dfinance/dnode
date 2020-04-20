@@ -75,12 +75,12 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".oracle-app" (without extension).
+		// Search config in home directory with name ".pricefeed-app" (without extension).
 		viper.SetConfigType("yaml")
-		viper.SetConfigFile(path.Join(home, ".oracle-app", "config.yaml"))
+		viper.SetConfigFile(path.Join(home, ".pricefeed-app", "config.yaml"))
 	}
 
-	viper.SetEnvPrefix("DN_ORACLEAPP")
+	viper.SetEnvPrefix("DN_PRICEFEEDAPP")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	viper.SafeWriteConfig()

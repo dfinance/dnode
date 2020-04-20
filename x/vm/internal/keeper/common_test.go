@@ -30,7 +30,7 @@ import (
 
 	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/tests"
-	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/pricefeed"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 	"github.com/dfinance/dnode/x/vmauth"
 )
@@ -66,7 +66,7 @@ type testInput struct {
 	ak vmauth.VMAccountKeeper
 	pk params.Keeper
 	vk Keeper
-	ok oracle.Keeper
+	ok pricefeed.Keeper
 
 	keyMain    *sdk.KVStoreKey
 	keyAccount *sdk.KVStoreKey
@@ -180,7 +180,7 @@ func setupTestInput(launchMock bool) testInput {
 		keyMain:    sdk.NewKVStoreKey("main"),
 		keyAccount: sdk.NewKVStoreKey("acc"),
 		//keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
-		keyOracle:  sdk.NewKVStoreKey("oracle"),
+		keyOracle:  sdk.NewKVStoreKey("pricefeed"),
 		keyParams:  sdk.NewKVStoreKey("params"),
 		tkeyParams: sdk.NewTransientStoreKey("transient_params"),
 		keyVM:      sdk.NewKVStoreKey("vm"),
@@ -190,7 +190,7 @@ func setupTestInput(launchMock bool) testInput {
 	auth.RegisterCodec(input.cdc)
 	sdk.RegisterCodec(input.cdc)
 	codec.RegisterCrypto(input.cdc)
-	oracle.RegisterCodec(input.cdc)
+	pricefeed.RegisterCodec(input.cdc)
 
 	db := dbm.NewMemDB()
 	mstore := store.NewCommitMultiStore(db)
@@ -264,7 +264,7 @@ func setupTestInput(launchMock bool) testInput {
 		auth.ProtoBaseAccount,
 	)
 
-	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
+	input.ok = pricefeed.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(pricefeed.DefaultParamspace), input.vk)
 
 	input.vk.dsServer = NewDSServer(&input.vk)
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())

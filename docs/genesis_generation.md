@@ -35,7 +35,7 @@ First of all we create `pos` account, this account will be used later as `Proof 
 As you see we create one account calling `bank` where we will be store all generated **dfi** coins for start,
 and then 3 accounts to make them PoA validators, we need at least 3 validators because by default it's a minimum amount of PoA validators to have.
 
-`nominee` is account administrator of oracles system.
+`nominee` is account administrator of price feed system.
 
 Now let's add genesis account and initiate genesis PoA validators and PoS account.
 
@@ -100,12 +100,12 @@ After you have generated a genesis transaction, you will have to input the genTx
 
 If you want to change VM settings, look at [VM section](#configuration).
 
-Also, you can setup an initial oracles, using next command:
+Also, you can setup an initial price feeds, using next command:
 
-    dnode add-oracle-asset-gen [denom] [oracles]
+    dnode add-pricefeed-asset-gen [denom] [pricefeeds]
 
 Where `[denom]` is currency pair, like 'eth_usdt' or 'btc_eth', etc.
-And `[oracles]` could be oracles accounts or nominee account, separated by comma.
+And `[pricefeeds]` could be price feeds accounts, separated by comma.
 
 To make sure that genesis file is correct:
 

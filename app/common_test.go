@@ -33,8 +33,8 @@ import (
 	"github.com/dfinance/dnode/x/genaccounts"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
-	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/pricefeed"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -207,7 +207,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 			Address:       accAddr,
 			Coins:         GenDefCoins(nil),
 			//PubKey:        privValidatorKey.PubKey(),
-			PubKey:        genTxPubKey,
+			PubKey: genTxPubKey,
 		}
 	}
 
@@ -242,23 +242,23 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 		stakingGenesis.Params.BondDenom = dnConfig.MainDenom
 		genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, stakingGenesis)
 
-		oracleGenesis := oracle.GenesisState{
-			Params: oracle.Params{
-				Assets: []oracle.Asset{
+		pricefeedGenesis := pricefeed.GenesisState{
+			Params: pricefeed.Params{
+				Assets: []pricefeed.Asset{
 					{
-						AssetCode: "oracle_rest_asset",
-						Oracles:   []oracle.Oracle{},
-						Active:    true,
+						AssetCode:  "pricefeed_rest_asset",
+						PriceFeeds: []pricefeed.PriceFeed{},
+						Active:     true,
 					},
 				},
 				Nominees: []string{},
 			},
 		}
 		for i := 0; i < len(accs) && i < 2; i++ {
-			oracleGenesis.Params.Assets[0].Oracles = append(oracleGenesis.Params.Assets[0].Oracles, oracle.Oracle{Address: accs[i].Address})
-			oracleGenesis.Params.Nominees = append(oracleGenesis.Params.Nominees, accs[i].Address.String())
+			pricefeedGenesis.Params.Assets[0].PriceFeeds = append(pricefeedGenesis.Params.Assets[0].PriceFeeds, pricefeed.PriceFeed{Address: accs[i].Address})
+			pricefeedGenesis.Params.Nominees = append(pricefeedGenesis.Params.Nominees, accs[i].Address.String())
 		}
-		genesisState[oracle.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, oracleGenesis)
+		genesisState[pricefeed.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, pricefeedGenesis)
 	}
 
 	// generate node validator genTx and update genutil module genesis

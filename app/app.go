@@ -34,9 +34,9 @@ import (
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/multisig"
-	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/poa"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/pricefeed"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
 )
@@ -67,7 +67,7 @@ var (
 		poa.AppModuleBasic{},
 		currencies.AppModuleBasic{},
 		multisig.AppModuleBasic{},
-		oracle.AppModuleBasic{},
+		pricefeed.AppModuleBasic{},
 		vm.AppModuleBasic{},
 	)
 
@@ -89,18 +89,18 @@ type DnServiceApp struct {
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 
-	accountKeeper  vmauth.VMAccountKeeper
-	bankKeeper     bank.Keeper
-	supplyKeeper   supply.Keeper
-	paramsKeeper   params.Keeper
-	stakingKeeper  staking.Keeper
-	distrKeeper    distribution.Keeper
-	slashingKeeper slashing.Keeper
-	poaKeeper      poa.Keeper
-	ccKeeper       currencies.Keeper
-	msKeeper       multisig.Keeper
-	vmKeeper       vm.Keeper
-	oracleKeeper   oracle.Keeper
+	accountKeeper   vmauth.VMAccountKeeper
+	bankKeeper      bank.Keeper
+	supplyKeeper    supply.Keeper
+	paramsKeeper    params.Keeper
+	stakingKeeper   staking.Keeper
+	distrKeeper     distribution.Keeper
+	slashingKeeper  slashing.Keeper
+	poaKeeper       poa.Keeper
+	ccKeeper        currencies.Keeper
+	msKeeper        multisig.Keeper
+	vmKeeper        vm.Keeper
+	pricefeedKeeper pricefeed.Keeper
 
 	mm *core.MsManager
 
@@ -114,7 +114,7 @@ func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1 * time.Second)
+	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1*time.Second)
 	if err != nil {
 		panic(err)
 	}
@@ -168,7 +168,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		currencies.StoreKey,
 		multisig.StoreKey,
 		vm.StoreKey,
-		oracle.StoreKey,
+		pricefeed.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -287,11 +287,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
 	)
 
-	// Initializing oracle module
-	app.oracleKeeper = oracle.NewKeeper(
-		keys[oracle.StoreKey],
+	// Initializing pricefeed module
+	app.pricefeedKeeper = pricefeed.NewKeeper(
+		keys[pricefeed.StoreKey],
 		cdc,
-		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
+		app.paramsKeeper.Subspace(pricefeed.DefaultParamspace),
 		app.vmKeeper,
 	)
 
@@ -308,12 +308,12 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		poa.NewAppMsModule(app.poaKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
-		oracle.NewAppModule(app.oracleKeeper),
+		pricefeed.NewAppModule(app.pricefeedKeeper),
 		vm.NewAppModule(app.vmKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, oracle.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, pricefeed.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -331,7 +331,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		currencies.ModuleName,
 		multisig.ModuleName,
 		vm.ModuleName,
-		oracle.ModuleName,
+		pricefeed.ModuleName,
 		genutil.ModuleName,
 	)
 

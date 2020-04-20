@@ -18,8 +18,8 @@ import (
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
-	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/pricefeed"
 )
 
 const (
@@ -230,11 +230,11 @@ func Test_OracleCLI(t *testing.T) {
 
 	nomineeAddr := ct.Accounts["nominee"].Address
 	assetCode := "eth_dfi"
-	assetOracle1, assetOracle2, assetOracle3 := ct.Accounts["oracle1"].Address, ct.Accounts["oracle2"].Address, ct.Accounts["oracle3"].Address
+	assetPriceFeed1, assetPriceFeed2, assetPriceFeed3 := ct.Accounts["pricefeed1"].Address, ct.Accounts["pricefeed2"].Address, ct.Accounts["pricefeed3"].Address
 
 	// check add asset Tx
 	{
-		ct.TxOracleAddAsset(nomineeAddr, assetCode, assetOracle1).CheckSucceeded()
+		ct.TxPriceFeedAddAsset(nomineeAddr, assetCode, assetPriceFeed1).CheckSucceeded()
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
@@ -242,82 +242,82 @@ func Test_OracleCLI(t *testing.T) {
 		asset := (*assets)[1]
 		require.Equal(t, ct.DefAssetCode, (*assets)[0].AssetCode)
 		require.Equal(t, assetCode, asset.AssetCode)
-		require.Len(t, asset.Oracles, 1)
-		require.Equal(t, assetOracle1, asset.Oracles[0].Address.String())
+		require.Len(t, asset.PriceFeeds, 1)
+		require.Equal(t, assetPriceFeed1, asset.PriceFeeds[0].Address.String())
 		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode, assetOracle1)
+				tx := ct.TxPriceFeedAddAsset(nomineeAddr, assetCode, assetPriceFeed1)
 				tx.RemoveCmdArg(assetCode)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid denom
 			{
-				tx := ct.TxOracleAddAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
+				tx := ct.TxPriceFeedAddAsset(nomineeAddr, "WRONG_ASSET", assetPriceFeed1)
 				tx.CheckFailedWithErrorSubstring("non lower case symbol")
 			}
-			// invalid oracles
+			// invalid price feeds
 			{
-				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode, "123")
+				tx := ct.TxPriceFeedAddAsset(nomineeAddr, assetCode, "123")
 				tx.CheckFailedWithErrorSubstring("")
 			}
 			// empty denom
 			{
-				tx := ct.TxOracleAddAsset(nomineeAddr, "", assetOracle1)
+				tx := ct.TxPriceFeedAddAsset(nomineeAddr, "", assetPriceFeed1)
 				tx.CheckFailedWithErrorSubstring("denom argument")
 			}
-			// empty oracles
+			// empty price feeds
 			{
-				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode)
-				tx.CheckFailedWithErrorSubstring("oracles argument")
+				tx := ct.TxPriceFeedAddAsset(nomineeAddr, assetCode)
+				tx.CheckFailedWithErrorSubstring("price feeds argument")
 			}
 		}
 	}
 
 	// check set asset Tx
 	{
-		ct.TxOracleSetAsset(nomineeAddr, assetCode, assetOracle1, assetOracle2).CheckSucceeded()
+		ct.TxPriceFeedSetAsset(nomineeAddr, assetCode, assetPriceFeed1, assetPriceFeed2).CheckSucceeded()
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
 		require.Len(t, *assets, 2)
 		asset := (*assets)[1]
 		require.Equal(t, assetCode, asset.AssetCode)
-		require.Len(t, asset.Oracles, 2)
-		require.Equal(t, assetOracle1, asset.Oracles[0].Address.String())
-		require.Equal(t, assetOracle2, asset.Oracles[1].Address.String())
+		require.Len(t, asset.PriceFeeds, 2)
+		require.Equal(t, assetPriceFeed1, asset.PriceFeeds[0].Address.String())
+		require.Equal(t, assetPriceFeed2, asset.PriceFeeds[1].Address.String())
 		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxOracleSetAsset(nomineeAddr, assetCode, assetOracle1)
+				tx := ct.TxPriceFeedSetAsset(nomineeAddr, assetCode, assetPriceFeed1)
 				tx.RemoveCmdArg(nomineeAddr)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid denom
 			{
-				tx := ct.TxOracleSetAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
+				tx := ct.TxPriceFeedSetAsset(nomineeAddr, "WRONG_ASSET", assetPriceFeed1)
 				tx.CheckFailedWithErrorSubstring("non lower case symbol")
 			}
-			// invalid oracles
+			// invalid price feeds
 			{
-				tx := ct.TxOracleSetAsset(nomineeAddr, assetCode, "123")
+				tx := ct.TxPriceFeedSetAsset(nomineeAddr, assetCode, "123")
 				tx.CheckFailedWithErrorSubstring("")
 			}
 			// empty denom
 			{
-				tx := ct.TxOracleSetAsset(nomineeAddr, "", assetOracle1)
+				tx := ct.TxPriceFeedSetAsset(nomineeAddr, "", assetPriceFeed1)
 				tx.CheckFailedWithErrorSubstring("denom argument")
 			}
-			// empty oracles
+			// empty price feeds
 			{
-				tx := ct.TxOracleSetAsset(nomineeAddr, assetCode)
-				tx.CheckFailedWithErrorSubstring("oracles argument")
+				tx := ct.TxPriceFeedSetAsset(nomineeAddr, assetCode)
+				tx.CheckFailedWithErrorSubstring("price feeds argument")
 			}
 		}
 	}
@@ -333,13 +333,13 @@ func Test_OracleCLI(t *testing.T) {
 		}{
 			{
 				assetCode:  assetCode,
-				sender:     assetOracle1,
+				sender:     assetPriceFeed1,
 				price:      sdk.NewInt(100),
 				receivedAt: now,
 			},
 			{
 				assetCode:  assetCode,
-				sender:     assetOracle2,
+				sender:     assetPriceFeed2,
 				price:      sdk.NewInt(150),
 				receivedAt: now.Add(1 * time.Second),
 			},
@@ -347,13 +347,13 @@ func Test_OracleCLI(t *testing.T) {
 
 		startBlockHeight := ct.WaitForNextBlocks(1)
 		for _, postPrice := range postPrices {
-			tx := ct.TxOraclePostPrice(postPrice.sender, postPrice.assetCode, postPrice.price, postPrice.receivedAt)
+			tx := ct.TxPriceFeedPostPrice(postPrice.sender, postPrice.assetCode, postPrice.price, postPrice.receivedAt)
 			tx.CheckSucceeded()
 		}
 		endBlockHeight := ct.WaitForNextBlocks(1)
 
 		// price could be posted in block height range [startBlockHeight:endBlockHeight], so we have to query all
-		rawPricesRange := make([]oracle.PostedPrice, 0)
+		rawPricesRange := make([]pricefeed.PostedPrice, 0)
 		for i := startBlockHeight; i <= endBlockHeight; i++ {
 			q, rawPrices := ct.QueryOracleRawPrices(assetCode, i)
 			q.CheckSucceeded()
@@ -365,7 +365,7 @@ func Test_OracleCLI(t *testing.T) {
 		for i, postPrice := range postPrices {
 			rawPrice := rawPricesRange[i]
 			require.Equal(t, postPrice.assetCode, rawPrice.AssetCode)
-			require.Equal(t, postPrice.sender, rawPrice.OracleAddress.String())
+			require.Equal(t, postPrice.sender, rawPrice.PriceFeedAddress.String())
 			require.True(t, postPrice.price.Equal(rawPrice.Price))
 			require.True(t, postPrice.receivedAt.Equal(rawPrice.ReceivedAt))
 		}
@@ -374,88 +374,88 @@ func Test_OracleCLI(t *testing.T) {
 		{
 			// invalid number of args
 			{
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
-				tx.RemoveCmdArg(assetOracle1)
+				tx := ct.TxPriceFeedPostPrice(assetPriceFeed1, assetCode, sdk.OneInt(), time.Now())
+				tx.RemoveCmdArg(assetPriceFeed1)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid price
 			{
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
+				tx := ct.TxPriceFeedPostPrice(assetPriceFeed1, assetCode, sdk.OneInt(), time.Now())
 				tx.ChangeCmdArg(sdk.OneInt().String(), "not_int")
 				tx.CheckFailedWithErrorSubstring("wrong value for price")
 			}
 			// invalid receivedAt
 			{
 				now := time.Now()
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), now)
+				tx := ct.TxPriceFeedPostPrice(assetPriceFeed1, assetCode, sdk.OneInt(), now)
 				tx.ChangeCmdArg(strconv.FormatInt(now.Unix(), 10), "not_time.Time")
 				tx.CheckFailedWithErrorSubstring("wrong value for time")
 			}
 			// MsgPostPrice ValidateBasic
 			{
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewIntWithDecimal(1, 20), time.Now())
+				tx := ct.TxPriceFeedPostPrice(assetPriceFeed1, assetCode, sdk.NewIntWithDecimal(1, 20), time.Now())
 				tx.CheckFailedWithErrorSubstring("bytes limit")
 			}
 		}
 	}
 
-	// check add oracle Tx
+	// check add price feed Tx
 	{
-		ct.TxOracleAddOracle(nomineeAddr, assetCode, assetOracle3).CheckSucceeded()
+		ct.TxPriceFeedAddPriceFeed(nomineeAddr, assetCode, assetPriceFeed3).CheckSucceeded()
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
 		require.Len(t, *assets, 2)
 		asset := (*assets)[1]
 		require.Equal(t, assetCode, asset.AssetCode)
-		require.Len(t, asset.Oracles, 3)
-		require.Equal(t, assetOracle1, asset.Oracles[0].Address.String())
-		require.Equal(t, assetOracle2, asset.Oracles[1].Address.String())
-		require.Equal(t, assetOracle3, asset.Oracles[2].Address.String())
+		require.Len(t, asset.PriceFeeds, 3)
+		require.Equal(t, assetPriceFeed1, asset.PriceFeeds[0].Address.String())
+		require.Equal(t, assetPriceFeed2, asset.PriceFeeds[1].Address.String())
+		require.Equal(t, assetPriceFeed3, asset.PriceFeeds[2].Address.String())
 		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxOracleAddOracle(nomineeAddr, assetCode, "invalid_address")
+				tx := ct.TxPriceFeedAddPriceFeed(nomineeAddr, assetCode, "invalid_address")
 				tx.RemoveCmdArg(nomineeAddr)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
-			// invalid oracleAddress
+			// invalid pricefeedAddress
 			{
-				tx := ct.TxOracleAddOracle(nomineeAddr, assetCode, "invalid_address")
-				tx.CheckFailedWithErrorSubstring("oracle_address")
+				tx := ct.TxPriceFeedAddPriceFeed(nomineeAddr, assetCode, "invalid_address")
+				tx.CheckFailedWithErrorSubstring("pricefeed_address")
 			}
 		}
 	}
 
-	// check set oracle Tx
+	// check set price feed Tx
 	{
-		ct.TxOracleSetOracles(nomineeAddr, assetCode, assetOracle3, assetOracle2, assetOracle1).CheckSucceeded()
+		ct.TxPriceFeedSetPriceFeeds(nomineeAddr, assetCode, assetPriceFeed3, assetPriceFeed2, assetPriceFeed1).CheckSucceeded()
 
 		q, assets := ct.QueryOracleAssets()
 		q.CheckSucceeded()
 		require.Len(t, *assets, 2)
 		asset := (*assets)[1]
 		require.Equal(t, assetCode, asset.AssetCode)
-		require.Len(t, asset.Oracles, 3)
-		require.Equal(t, assetOracle3, asset.Oracles[0].Address.String())
-		require.Equal(t, assetOracle2, asset.Oracles[1].Address.String())
-		require.Equal(t, assetOracle1, asset.Oracles[2].Address.String())
+		require.Len(t, asset.PriceFeeds, 3)
+		require.Equal(t, assetPriceFeed3, asset.PriceFeeds[0].Address.String())
+		require.Equal(t, assetPriceFeed2, asset.PriceFeeds[1].Address.String())
+		require.Equal(t, assetPriceFeed1, asset.PriceFeeds[2].Address.String())
 		require.True(t, asset.Active)
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxOracleSetOracles(nomineeAddr, assetCode, assetOracle3, assetOracle2, assetOracle1)
+				tx := ct.TxPriceFeedSetPriceFeeds(nomineeAddr, assetCode, assetPriceFeed3, assetPriceFeed2, assetPriceFeed1)
 				tx.RemoveCmdArg(nomineeAddr)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
-			// invalid oracles
+			// invalid price feeds
 			{
-				tx := ct.TxOracleSetOracles(nomineeAddr, assetCode, "123")
+				tx := ct.TxPriceFeedSetPriceFeeds(nomineeAddr, assetCode, "123")
 				tx.CheckFailedWithErrorSubstring("")
 			}
 		}
@@ -871,7 +871,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		// add votes for existing call from an other senders
 		callID, callUniqueID := uint64(0), callUniqueId1
 		votes := []string{ccRecipients[0]}
-		for i := 1; i < len(ccRecipients) / 2 + 1; i++ {
+		for i := 1; i < len(ccRecipients)/2+1; i++ {
 			ct.TxMultiSigConfirmCall(ccRecipients[i], callID).CheckSucceeded()
 			votes = append(votes, ccRecipients[i])
 		}

@@ -16,8 +16,8 @@ import (
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/multisig"
-	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/poa"
+	"github.com/dfinance/dnode/x/pricefeed"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -52,6 +52,6 @@ var ModuleBasics = module.NewBasicManager(
 	poa.AppModuleBasic{},
 	currencies.AppModuleBasic{},
 	multisig.AppModuleBasic{},
-	oracle.AppModuleBasic{},
+	pricefeed.AppModuleBasic{},
 	vm.AppModuleBasic{},
 )

@@ -8,8 +8,8 @@ import (
 
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
-	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/pricefeed"
 )
 
 func (ct *CLITester) QueryCurrenciesIssue(issueID string) (*QueryRequest, *ccTypes.Issue) {
@@ -44,19 +44,19 @@ func (ct *CLITester) QueryCurrenciesCurrency(symbol string) (*QueryRequest, *ccT
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOracleAssets() (*QueryRequest, *oracle.Assets) {
-	resObj := &oracle.Assets{}
+func (ct *CLITester) QueryOracleAssets() (*QueryRequest, *pricefeed.Assets) {
+	resObj := &pricefeed.Assets{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("oracle", "assets")
+	q.SetCmd("pricefeed", "assets")
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOracleRawPrices(assetCode string, blockHeight int64) (*QueryRequest, *[]oracle.PostedPrice) {
-	resObj := &[]oracle.PostedPrice{}
+func (ct *CLITester) QueryOracleRawPrices(assetCode string, blockHeight int64) (*QueryRequest, *[]pricefeed.PostedPrice) {
+	resObj := &[]pricefeed.PostedPrice{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd(
-		"oracle",
+		"pricefeed",
 		"rawprices",
 		assetCode,
 		strconv.FormatInt(blockHeight, 10))
@@ -64,11 +64,11 @@ func (ct *CLITester) QueryOracleRawPrices(assetCode string, blockHeight int64) (
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOraclePrice(assetCode string) (*QueryRequest, *oracle.CurrentPrice) {
-	resObj := &oracle.CurrentPrice{}
+func (ct *CLITester) QueryOraclePrice(assetCode string) (*QueryRequest, *pricefeed.CurrentPrice) {
+	resObj := &pricefeed.CurrentPrice{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd(
-		"oracle",
+		"pricefeed",
 		"price",
 		assetCode)
 

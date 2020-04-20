@@ -30,7 +30,7 @@ import (
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/genaccounts"
-	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/pricefeed"
 )
 
 // DONTCOVER
@@ -293,15 +293,15 @@ func initGenFiles(
 	stakingGenState.Params.BondDenom = dnConfig.MainDenom
 	appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
-	oracleDataBz := appGenState[oracle.ModuleName]
-	var oracleGenState oracle.GenesisState
-	cdc.MustUnmarshalJSON(oracleDataBz, &oracleGenState)
+	pricefeedDataBz := appGenState[pricefeed.ModuleName]
+	var pricefeedGenState pricefeed.GenesisState
+	cdc.MustUnmarshalJSON(pricefeedDataBz, &pricefeedGenState)
 	nomenees := make([]string, len(genAccounts))
 	for i, acc := range genAccounts {
 		nomenees[i] = acc.Address.String()
 	}
-	oracleGenState.Params.Nominees = nomenees
-	appGenState[oracle.ModuleName] = cdc.MustMarshalJSON(oracleGenState)
+	pricefeedGenState.Params.Nominees = nomenees
+	appGenState[pricefeed.ModuleName] = cdc.MustMarshalJSON(pricefeedGenState)
 
 	appGenStateJSON, err := codec.MarshalJSONIndent(cdc, appGenState)
 	if err != nil {
