@@ -298,7 +298,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 	require.EqualValues(t, events[1].Attributes[3].Value, "0x"+hex.EncodeToString(uintBz))
 }
 
-// Test oracle price return.
+// Test price feed price return.
 func TestKeeper_ScriptOracle(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)

@@ -7,7 +7,7 @@ import (
 
 // Interface for other keepers to get/set data.
 type VMStorage interface {
-	// Access path for oracle.
+	// Access path for pricefeed.
 	GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath
 
 	// Setters/getters.

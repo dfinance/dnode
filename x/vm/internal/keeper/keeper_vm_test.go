@@ -355,7 +355,7 @@ func TestExecKeepAndError(t *testing.T) {
 	require.EqualValues(t, []byte(errorStatus.Message), events[1].Attributes[3].Value)
 }
 
-// test access path generation for oracles.
+// test access path generation for price feed.
 func Test_KeeperGetOracleAccessPath(t *testing.T) {
 	input := setupTestInput(true)
 	defer closeInput(input)
