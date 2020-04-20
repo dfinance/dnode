@@ -25,7 +25,10 @@ type (
 	QueryAccessPath = types.QueryAccessPath
 	QueryValueResp  = types.QueryValueResp
 
-	TestProposal = types.TestProposal
+	PlannedProposal      = types.PlannedProposal
+	ExecutableProposal   = types.ExecutableProposal
+	ModuleUpdateProposal = types.ModuleUpdateProposal
+	TestProposal         = types.TestProposal
 )
 
 var (
@@ -34,5 +37,7 @@ var (
 
 	ErrVMCrashed = types.ErrVMCrashed
 
-	NewTestProposal = types.NewTestProposal
+	NewPlan                 = types.NewPlan
+	NewModuleUpdateProposal = types.NewModuleUpdateProposal
+	NewTestProposal         = types.NewTestProposal
 )

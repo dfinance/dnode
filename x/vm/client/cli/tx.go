@@ -52,12 +52,12 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		DeployContract(cdc),
 		flags.LineBreak,
 		TestProposal(cdc),
-	)
-	commands = append(commands, compileCommands...)
+		UpdateModuleProposal(cdc),
+	)...)
 
 	txCmd.AddCommand(commands...)
 
-	return
+	return txCmd
 }
 
 // Read Move file contains code in hex.
@@ -259,11 +259,11 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// Send governance test proposal.
-func TestProposal(cdc *codec.Codec) *cobra.Command {
+// Send governance update stdlib VM module proposal.
+func UpdateModuleProposal(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "test-proposal [flags]",
-		Args:  cobra.ExactArgs(0),
+		Use:   "update-module-proposal plannedBlockHeight [flags]",
+		Args:  cobra.ExactArgs(1),
 		Short: "Submit a test proposal",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
@@ -281,12 +281,63 @@ func TestProposal(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
+			plannedBlockHeight, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			content := types.NewModuleUpdateProposal(types.NewPlan(plannedBlockHeight))
+			if err := content.ValidateBasic(); err != nil {
+				return err
+			}
+
+			msg := gov.NewMsgSubmitProposal(content, deposit, from)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+
+	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
+
+	return cmd
+}
+
+// Send governance test proposal.
+func TestProposal(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "test-proposal plannedBlockHeight [flags]",
+		Args:  cobra.ExactArgs(1),
+		Short: "Submit a test proposal",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
+			from := cliCtx.GetFromAddress()
+
+			depositStr, err := cmd.Flags().GetString(cli.FlagDeposit)
+			if err != nil {
+				return err
+			}
+
+			deposit, err := sdk.ParseCoins(depositStr)
+			if err != nil {
+				return err
+			}
+
+			plannedBlockHeight, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+
 			value, err := cmd.Flags().GetString(flagProposalValue)
 			if err != nil {
 				return err
 			}
 
-			content := types.NewTestProposal(value)
+			content := types.NewTestProposal(types.NewPlan(plannedBlockHeight), value)
 			if err := content.ValidateBasic(); err != nil {
 				return err
 			}

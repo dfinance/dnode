@@ -345,7 +345,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 	)
 
-	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
+	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName, vm.ModuleName)
 	app.mm.SetOrderEndBlockers(gov.ModuleName, staking.ModuleName, multisig.ModuleName, oracle.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last

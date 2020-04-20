@@ -7,27 +7,85 @@ import (
 )
 
 const (
-	ProposalTypeTest = "Test"
+	ProposalTypeModuleUpdate = "ModuleUpdate"
+	ProposalTypeTest         = "Test"
 )
 
+type ModuleUpdateProposal struct {
+	Plan Plan            `json:"plan"`
+	Msg  MsgDeployModule `json:"msg"`
+}
+
+func (p ModuleUpdateProposal) GetTitle() string       { return "Module update" }
+func (p ModuleUpdateProposal) GetDescription() string { return "Updates stdlib module" }
+func (p ModuleUpdateProposal) ProposalRoute() string  { return GovRouterKey }
+func (p ModuleUpdateProposal) ProposalType() string   { return ProposalTypeModuleUpdate }
+func (p ModuleUpdateProposal) GetPlan() Plan          { return p.Plan }
+func (p ModuleUpdateProposal) ValidateBasic() error {
+	if err := p.Plan.ValidateBasic(); err != nil {
+		return fmt.Errorf("plan: %w", err)
+	}
+	if err := p.Msg.ValidateBasic(); err != nil {
+		return fmt.Errorf("msg: %w", err)
+	}
+
+	return nil
+}
+
+func (p ModuleUpdateProposal) String() string {
+	return fmt.Sprintf(`Proposal:
+  Title: %s
+  Description: %s
+  Plan: %s
+`, p.GetTitle(), p.GetDescription(), p.Plan.String())
+}
+
+func NewModuleUpdateProposal(plan Plan) gov.Content {
+	return ModuleUpdateProposal{
+		Plan: plan,
+	}
+}
+
 type TestProposal struct {
-	Value string
+	Plan  Plan   `json:"plan"`
+	Value string `json:"value"`
 }
 
-func (c TestProposal) GetTitle() string       { return "Test content title" }
-func (c TestProposal) GetDescription() string { return "Test content description" }
-func (c TestProposal) ProposalRoute() string  { return GovRouterKey }
-func (c TestProposal) ProposalType() string   { return ProposalTypeTest }
-func (c TestProposal) ValidateBasic() error   { return nil }
-func (c TestProposal) String() string {
-	return fmt.Sprintf("%s: %s (%s): %s", c.ProposalType(), c.GetTitle(), c.GetDescription(), c.Value)
+func (p TestProposal) GetTitle() string       { return "Test" }
+func (p TestProposal) GetDescription() string { return "Test proposal" }
+func (p TestProposal) ProposalRoute() string  { return GovRouterKey }
+func (p TestProposal) ProposalType() string   { return ProposalTypeTest }
+func (p TestProposal) GetPlan() Plan          { return p.Plan }
+func (p TestProposal) ValidateBasic() error {
+	if err := p.Plan.ValidateBasic(); err != nil {
+		return fmt.Errorf("plan: %w", err)
+	}
+	if p.Value == "" {
+		return fmt.Errorf("value: empty")
+	}
+
+	return nil
 }
 
-func NewTestProposal(value string) gov.Content {
-	return TestProposal{Value: value}
+func (p TestProposal) String() string {
+	return fmt.Sprintf(`Proposal:
+  Title: %s
+  Description: %s
+  Value: %s
+  Plan: %s
+`, p.GetTitle(), p.GetDescription(), p.Value, p.Plan.String())
+}
+
+func NewTestProposal(plan Plan, value string) gov.Content {
+	return TestProposal{
+		Plan:  plan,
+		Value: value,
+	}
 }
 
 func init() {
+	gov.RegisterProposalType(ProposalTypeModuleUpdate)
+	gov.RegisterProposalTypeCodec(ModuleUpdateProposal{}, ModuleName+"/ModuleUpdateProposal")
 	gov.RegisterProposalType(ProposalTypeTest)
 	gov.RegisterProposalTypeCodec(TestProposal{}, ModuleName+"/TestProposal")
 }

@@ -126,7 +126,9 @@ func (app AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 // Process begin block (abci).
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (app AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	BeginBlocker(ctx, app.vmKeeper, req)
+}
 
 // Process end block (abci).
 func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {

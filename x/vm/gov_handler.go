@@ -6,7 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 // New governance proposal handler for Gov module.
@@ -17,25 +18,42 @@ func NewGovHandler(keeper Keeper) gov.Handler {
 		}
 
 		switch p := c.(type) {
+		case ModuleUpdateProposal:
+			return handleUpdateModuleProposalDryRun(ctx, keeper, p)
 		case TestProposal:
-			ctx.Logger().Info(fmt.Sprintf("got VM proposal: %s", p.String()))
-
-			path := vm_grpc.VMAccessPath{
-				Address: []byte("my_addr"),
-				Path:    []byte("my_path"),
-			}
-
-			value := keeper.GetValue(ctx, &path)
-			if value == nil {
-				ctx.Logger().Info("value not found, setting it")
-				keeper.SetValue(ctx, &path, []byte("tst_value"))
-			} else {
-				ctx.Logger().Info("value found (should not happen)")
-			}
+			return handleTestProposalDryRun(ctx, keeper, p)
 		default:
 			return fmt.Errorf("unsupported proposal content type %q for module %q", c.ProposalType(), ModuleName)
 		}
-
-		return nil
 	}
+}
+
+func handleUpdateModuleProposalDryRun(ctx sdk.Context, keeper Keeper, p types.ModuleUpdateProposal) error {
+	if err := p.ValidateBasic(); err != nil {
+		return err
+	}
+
+	execProposal := types.NewExecutableProposal(p.ProposalType(), p)
+	if err := keeper.ScheduleProposal(ctx, execProposal); err != nil {
+		return err
+	}
+
+	ctx.Logger().Info(fmt.Sprintf("proposal scheduled: %s", execProposal.String()))
+
+	return nil
+}
+
+func handleTestProposalDryRun(ctx sdk.Context, keeper Keeper, p types.TestProposal) error {
+	if err := p.ValidateBasic(); err != nil {
+		return err
+	}
+
+	execProposal := types.NewExecutableProposal(p.ProposalType(), p)
+	if err := keeper.ScheduleProposal(ctx, execProposal); err != nil {
+		return err
+	}
+
+	ctx.Logger().Info(fmt.Sprintf("proposal scheduled: %s", execProposal.String()))
+
+	return nil
 }
