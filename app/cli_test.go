@@ -272,7 +272,7 @@ func Test_OracleCLI(t *testing.T) {
 			// empty price feeds
 			{
 				tx := ct.TxPriceFeedAddAsset(nomineeAddr, assetCode)
-				tx.CheckFailedWithErrorSubstring("price feeds argument")
+				tx.CheckFailedWithErrorSubstring("pricefeed argument")
 			}
 		}
 	}
@@ -317,7 +317,7 @@ func Test_OracleCLI(t *testing.T) {
 			// empty price feeds
 			{
 				tx := ct.TxPriceFeedSetAsset(nomineeAddr, assetCode)
-				tx.CheckFailedWithErrorSubstring("price feeds argument")
+				tx.CheckFailedWithErrorSubstring("pricefeeds argument")
 			}
 		}
 	}
