@@ -31,7 +31,7 @@ func NewGovHandler(keeper Keeper) gov.Handler {
 func handleUpdateModuleProposalDryRun(ctx sdk.Context, keeper Keeper, p types.ModuleUpdateProposal) error {
 	logger := keeper.Logger(ctx)
 
-	pProposal := types.NewPlannedProposal(p, ModuleUpdateData{}, p.Plan)
+	pProposal := types.NewPlannedProposal(p, ProposalData{}, p.Plan)
 	if err := pProposal.ValidateBasic(); err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func handleUpdateModuleProposalDryRun(ctx sdk.Context, keeper Keeper, p types.Mo
 func handleTestProposalDryRun(ctx sdk.Context, keeper Keeper, p types.TestProposal) error {
 	logger := keeper.Logger(ctx)
 
-	pProposal := types.NewPlannedProposal(p, TestData{}, p.Plan)
+	pProposal := types.NewPlannedProposal(p, ProposalData{}, p.Plan)
 	if err := pProposal.ValidateBasic(); err != nil {
 		return err
 	}

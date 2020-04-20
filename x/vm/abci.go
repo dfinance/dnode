@@ -17,17 +17,9 @@ func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
 
 		switch proposal := pProposal.Proposal.(type) {
 		case ModuleUpdateProposal:
-			data, ok := pProposal.Data.(ModuleUpdateData)
-			if !ok {
-				panic(fmt.Errorf("invalid data type for %T: %T", proposal, pProposal.Data))
-			}
-			err = handleModuleUpdateProposalExecution(ctx, keeper, proposal, data)
+			err = handleModuleUpdateProposalExecution(ctx, keeper, proposal, pProposal.Data)
 		case TestProposal:
-			data, ok := pProposal.Data.(TestData)
-			if !ok {
-				panic(fmt.Errorf("invalid data type for %T: %T", proposal, pProposal.Data))
-			}
-			err = handleTestProposalExecution(ctx, keeper, proposal, data)
+			err = handleTestProposalExecution(ctx, keeper, proposal, pProposal.Data)
 		default:
 			panic(fmt.Errorf("unsupported type: %T", pProposal.Proposal))
 		}
@@ -42,7 +34,7 @@ func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
 	})
 }
 
-func handleModuleUpdateProposalExecution(ctx sdk.Context, keeper Keeper, proposal ModuleUpdateProposal, data ModuleUpdateData) error {
+func handleModuleUpdateProposalExecution(ctx sdk.Context, keeper Keeper, proposal ModuleUpdateProposal, data ProposalData) error {
 	logger := keeper.Logger(ctx)
 
 	logger.Info(fmt.Sprintf("abci ModuleUpdateProposal: executing: %s", proposal.String()))
@@ -50,7 +42,7 @@ func handleModuleUpdateProposalExecution(ctx sdk.Context, keeper Keeper, proposa
 	return nil
 }
 
-func handleTestProposalExecution(ctx sdk.Context, keeper Keeper, proposal TestProposal, data TestData) error {
+func handleTestProposalExecution(ctx sdk.Context, keeper Keeper, proposal TestProposal, data ProposalData) error {
 	logger := keeper.Logger(ctx)
 
 	logger.Info(fmt.Sprintf("abci TestProposal: executing: %s", proposal.String()))

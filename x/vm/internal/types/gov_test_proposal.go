@@ -41,11 +41,6 @@ func NewTestProposal(plan Plan, value string) gov.Content {
 	}
 }
 
-type TestData struct{}
-
-func (d TestData) IsProposalData() {}
-func (d TestData) String() string  { return "" }
-
 func init() {
 	gov.RegisterProposalType(ProposalTypeTest)
 	gov.RegisterProposalTypeCodec(TestProposal{}, ModuleName+"/TestProposal")

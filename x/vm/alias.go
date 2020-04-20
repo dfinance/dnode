@@ -26,10 +26,9 @@ type (
 	QueryValueResp  = types.QueryValueResp
 
 	PlannedProposal      = types.PlannedProposal
+	ProposalData         = types.ProposalData
 	ModuleUpdateProposal = types.ModuleUpdateProposal
-	ModuleUpdateData     = types.ModuleUpdateData
 	TestProposal         = types.TestProposal
-	TestData             = types.TestData
 )
 
 var (

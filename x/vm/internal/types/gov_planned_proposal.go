@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
 type PlannedProposal struct {
@@ -14,10 +15,9 @@ type PlannedProposal struct {
 
 func (p PlannedProposal) String() string {
 	return fmt.Sprintf(`PlannedProposal:
-  Proposal: %s
-  Data: %s
-  Plan: %s
-`, p.Proposal.String(), p.Data.String(), p.Plan.String())
+  %s
+  %s
+`, p.Proposal.String(), p.Plan.String())
 }
 
 func (p PlannedProposal) ValidateBasic() error {
@@ -32,9 +32,9 @@ func (p PlannedProposal) ValidateBasic() error {
 	return nil
 }
 
-type ProposalData interface {
-	fmt.Stringer
-	IsProposalData()
+type ProposalData struct {
+	WriteSet []*vm_grpc.VMValue `json:"write_sets"`
+	Events   []*vm_grpc.VMEvent `json:"events"`
 }
 
 func NewPlannedProposal(proposal gov.Content, data ProposalData, plan Plan) PlannedProposal {
