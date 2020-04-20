@@ -9,7 +9,7 @@ require (
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/containerd/containerd v1.3.3 // indirect
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
-	github.com/cosmos/cosmos-sdk v0.38.2
+	github.com/cosmos/cosmos-sdk v0.38.3
 	github.com/dfinance/dvm-proto/go v0.0.0-20200328135315-584972a1a270
 	github.com/fsouza/go-dockerclient v1.6.3
 	github.com/getsentry/sentry-go v0.5.1
@@ -29,7 +29,7 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15
 	github.com/tendermint/go-amino v0.15.1
-	github.com/tendermint/tendermint v0.33.2
+	github.com/tendermint/tendermint v0.33.3
 	github.com/tendermint/tm-db v0.5.0
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect

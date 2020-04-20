@@ -23,6 +23,7 @@ import (
 )
 
 func Test_CurrencyRest(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -163,6 +164,7 @@ func Test_CurrencyRest(t *testing.T) {
 }
 
 func Test_MSRest(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -254,6 +256,7 @@ func Test_MSRest(t *testing.T) {
 }
 
 func Test_OracleRest(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -373,6 +376,7 @@ func Test_OracleRest(t *testing.T) {
 }
 
 func Test_POARest(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -402,6 +406,7 @@ func Test_POARest(t *testing.T) {
 }
 
 func Test_VMRest(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
