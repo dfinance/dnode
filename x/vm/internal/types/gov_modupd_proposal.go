@@ -44,11 +44,6 @@ func NewModuleUpdateProposal(plan Plan) gov.Content {
 	}
 }
 
-type ModuleUpdateData struct{}
-
-func (d ModuleUpdateData) IsProposalData() {}
-func (d ModuleUpdateData) String() string  { return "" }
-
 func init() {
 	gov.RegisterProposalType(ProposalTypeModuleUpdate)
 	gov.RegisterProposalTypeCodec(ModuleUpdateProposal{}, ModuleName+"/ModuleUpdateProposal")

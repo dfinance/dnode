@@ -8,11 +8,13 @@ import (
 )
 
 type Plan struct {
-	Height int64  `json:"height"`
+	Height int64 `json:"height"`
 }
 
 func (p Plan) String() string {
-	return fmt.Sprintf("planned blockHeight %d", p.Height)
+	return fmt.Sprintf(`Plan:
+  blockHeight %d
+`, p.Height)
 }
 
 func (p Plan) ValidateBasic() error {
