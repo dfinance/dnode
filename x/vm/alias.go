@@ -26,9 +26,10 @@ type (
 	QueryValueResp  = types.QueryValueResp
 
 	PlannedProposal      = types.PlannedProposal
-	ExecutableProposal   = types.ExecutableProposal
 	ModuleUpdateProposal = types.ModuleUpdateProposal
+	ModuleUpdateData     = types.ModuleUpdateData
 	TestProposal         = types.TestProposal
+	TestData             = types.TestData
 )
 
 var (
@@ -38,6 +39,7 @@ var (
 	ErrVMCrashed = types.ErrVMCrashed
 
 	NewPlan                 = types.NewPlan
+	NewPlannedProposal      = types.NewPlannedProposal
 	NewModuleUpdateProposal = types.NewModuleUpdateProposal
 	NewTestProposal         = types.NewTestProposal
 )

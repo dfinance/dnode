@@ -6,26 +6,41 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 )
 
-type PlannedProposal interface {
-	gov.Content
-	GetPlan() Plan
+type PlannedProposal struct {
+	Proposal gov.Content  `json:"proposal"`
+	Data     ProposalData `json:"data"`
+	Plan     Plan         `json:"plan"`
 }
 
-type ExecutableProposal struct {
-	Type string          `json:"type"`
-	Data PlannedProposal `json:"proposal"`
-}
-
-func (p ExecutableProposal) String() string {
-	return fmt.Sprintf(`ExecutableProposal:
-  Type: %s
+func (p PlannedProposal) String() string {
+	return fmt.Sprintf(`PlannedProposal:
+  Proposal: %s
   Data: %s
-`, p.Type, p.Data.String())
+  Plan: %s
+`, p.Proposal.String(), p.Data.String(), p.Plan.String())
 }
 
-func NewExecutableProposal(proposalType string, proposalData PlannedProposal) ExecutableProposal {
-	return ExecutableProposal{
-		Type: proposalType,
-		Data: proposalData,
+func (p PlannedProposal) ValidateBasic() error {
+	if err := p.Proposal.ValidateBasic(); err != nil {
+		return fmt.Errorf("proposal: %w", err)
+	}
+
+	if err := p.Plan.ValidateBasic(); err != nil {
+		return fmt.Errorf("plan: %w", err)
+	}
+
+	return nil
+}
+
+type ProposalData interface {
+	fmt.Stringer
+	IsProposalData()
+}
+
+func NewPlannedProposal(proposal gov.Content, data ProposalData, plan Plan) PlannedProposal {
+	return PlannedProposal{
+		Proposal: proposal,
+		Data:     data,
+		Plan:     plan,
 	}
 }

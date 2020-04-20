@@ -5,29 +5,35 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
-	keeper.IterateProposalsQueue(ctx, func(id uint64, p types.ExecutableProposal) bool {
-		if !p.Data.GetPlan().ShouldExecute(ctx) {
+	keeper.IterateProposalsQueue(ctx, func(id uint64, pProposal PlannedProposal) bool {
+		if !pProposal.Plan.ShouldExecute(ctx) {
 			return false
 		}
 
 		var err error
 
-		switch p.Type {
-		case types.ProposalTypeModuleUpdate:
-			err = handleModuleUpdateProposalExecution(ctx, keeper, p.Data)
-		case types.ProposalTypeTest:
-			err = handleTestProposalExecution(ctx, keeper, p.Data)
+		switch proposal := pProposal.Proposal.(type) {
+		case ModuleUpdateProposal:
+			data, ok := pProposal.Data.(ModuleUpdateData)
+			if !ok {
+				panic(fmt.Errorf("invalid data type for %T: %T", proposal, pProposal.Data))
+			}
+			err = handleModuleUpdateProposalExecution(ctx, keeper, proposal, data)
+		case TestProposal:
+			data, ok := pProposal.Data.(TestData)
+			if !ok {
+				panic(fmt.Errorf("invalid data type for %T: %T", proposal, pProposal.Data))
+			}
+			err = handleTestProposalExecution(ctx, keeper, proposal, data)
 		default:
-			panic(fmt.Errorf("unsupported type: %s", p.String()))
+			panic(fmt.Errorf("unsupported type: %T", pProposal.Proposal))
 		}
 
 		if err != nil {
-			panic(fmt.Errorf("execution failed: %s: %v", p.String(), err))
+			panic(fmt.Errorf("execution failed: %s: %v", pProposal.String(), err))
 		}
 
 		keeper.RemoveProposalFromQueue(ctx, id)
@@ -36,26 +42,16 @@ func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
 	})
 }
 
-func handleModuleUpdateProposalExecution(ctx sdk.Context, keeper Keeper, p types.PlannedProposal) error {
+func handleModuleUpdateProposalExecution(ctx sdk.Context, keeper Keeper, proposal ModuleUpdateProposal, data ModuleUpdateData) error {
 	logger := keeper.Logger(ctx)
-
-	proposal, ok := p.(ModuleUpdateProposal)
-	if !ok {
-		logger.Error("abci ModuleUpdateProposal: type assert failed")
-	}
 
 	logger.Info(fmt.Sprintf("abci ModuleUpdateProposal: executing: %s", proposal.String()))
 
 	return nil
 }
 
-func handleTestProposalExecution(ctx sdk.Context, keeper Keeper, p types.PlannedProposal) error {
+func handleTestProposalExecution(ctx sdk.Context, keeper Keeper, proposal TestProposal, data TestData) error {
 	logger := keeper.Logger(ctx)
-
-	proposal, ok := p.(TestProposal)
-	if !ok {
-		logger.Error("abci TestProposal: type assert failed")
-	}
 
 	logger.Info(fmt.Sprintf("abci TestProposal: executing: %s", proposal.String()))
 
