@@ -19,6 +19,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/stretchr/testify/require"
@@ -226,6 +227,7 @@ func setupTestInput(launchMock bool) testInput {
 	sdk.RegisterCodec(input.cdc)
 	codec.RegisterCrypto(input.cdc)
 	oracle.RegisterCodec(input.cdc)
+	gov.RegisterCodec(input.cdc)
 
 	db := dbm.NewMemDB()
 	mstore := store.NewCommitMultiStore(db)
