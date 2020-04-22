@@ -33,8 +33,8 @@ const (
 type VMConfig struct {
 	Address        string `mapstructure:"vm_address"`
 	DataListen     string `mapstructure:"vm_data_listen"`
-	TimeoutDeploy  uint64 `mapstructure:"vm_timeout_deploy"`
-	TimeoutExecute uint64 `mapstructure:"vm_timeout_execute"`
+	TimeoutDeploy  uint64 `mapstructure:"vm_deploy_timeout"`
+	TimeoutExecute uint64 `mapstructure:"vm_execute_timeout"`
 }
 
 // Default VM configuration.
