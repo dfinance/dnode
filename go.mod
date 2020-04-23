@@ -6,6 +6,7 @@ require (
 	github.com/99designs/keyring v1.1.3
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/OneOfOne/xxhash v1.2.7
+	github.com/atlassian/go-sentry-api v0.0.0-20200117001222-a9ccec16c98b
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/containerd/containerd v1.3.3 // indirect
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
