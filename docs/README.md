@@ -12,3 +12,4 @@ to contribute to current repository.
 * [Rest API](/docs/rest_api.md)
 * [Sentry Integration](/docs/sentry.md)
 * [Tests](/docs/tests.md)
+* [Logging](/docs/logging.md)
