@@ -11,11 +11,11 @@ tags = -X github.com/cosmos/cosmos-sdk/version.Name=dfinance \
 build_dir=./.build
 swagger_dir=$(build_dir)/swagger
 cosmos_dir=$(swagger_dir)/cosmos-sdk
-cosmos_version=v0.38.2
+cosmos_version=v0.38.3
 dncli =./cmd/dncli
 
 all: install
-install: go.sum install-dnode install-dncli install-oracleapp
+install: go.sum install-dnode install-dncli install-oracleapp install-dnrelayer
 swagger-ui: swagger-ui-deps swagger-ui-build
 
 install-dnode:
@@ -24,6 +24,8 @@ install-dncli:
 		GO111MODULE=on go install  --ldflags "$(tags)"  -tags "$(build_tags)" ${dncli}
 install-oracleapp:
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/oracle-app
+install-dnrelayer:
+		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/dnrelayer
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"

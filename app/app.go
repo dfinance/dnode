@@ -32,8 +32,10 @@ import (
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/ethbridge"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/multisig"
+	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/poa"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/pricefeed"
@@ -69,6 +71,8 @@ var (
 		multisig.AppModuleBasic{},
 		pricefeed.AppModuleBasic{},
 		vm.AppModuleBasic{},
+		oracle.AppModuleBasic{},
+		ethbridge.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
@@ -76,6 +80,7 @@ var (
 		distribution.ModuleName:   nil,
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		ethbridge.ModuleName:      {supply.Burner, supply.Minter},
 	}
 )
 
@@ -101,6 +106,10 @@ type DnServiceApp struct {
 	msKeeper        multisig.Keeper
 	vmKeeper        vm.Keeper
 	pricefeedKeeper pricefeed.Keeper
+
+	// EthBridge keepers
+	bridgeKeeper ethbridge.Keeper
+	oracleKeeper oracle.Keeper
 
 	mm *core.MsManager
 
@@ -276,6 +285,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
 	)
 
+	app.oracleKeeper = oracle.NewKeeper(app.cdc, keys[oracle.StoreKey],
+		app.stakingKeeper, oracle.DefaultConsensusNeeded,
+	)
+	app.bridgeKeeper = ethbridge.NewKeeper(app.cdc, app.supplyKeeper, app.oracleKeeper)
+
 	// Initializing multisignature router.
 	app.msRouter = core.NewRouter()
 
@@ -309,6 +323,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		currencies.NewAppMsModule(app.ccKeeper),
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 		pricefeed.NewAppModule(app.pricefeedKeeper),
+		oracle.NewAppModule(app.oracleKeeper),
+		ethbridge.NewAppModule(app.oracleKeeper, app.supplyKeeper, app.accountKeeper, app.bridgeKeeper, app.cdc),
 		vm.NewAppModule(app.vmKeeper),
 	)
 
@@ -333,6 +349,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		vm.ModuleName,
 		pricefeed.ModuleName,
 		genutil.ModuleName,
+		ethbridge.ModuleName,
 	)
 
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())

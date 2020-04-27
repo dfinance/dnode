@@ -24,6 +24,7 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	_ "github.com/dfinance/dnode/cmd/dncli/docs/statik"
 	"github.com/dfinance/dnode/helpers/logger"
+	"github.com/dfinance/dnode/x/ethbridge/types"
 	"github.com/dfinance/dnode/x/vmauth"
 )
 
@@ -91,6 +92,9 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 		Short:   "Querying subcommands",
 	}
 
+	queryCmd.PersistentFlags().String(types.FlagEthereumChainID, "", "Ethereum chain ID")
+	queryCmd.PersistentFlags().String(types.FlagTokenContractAddr, "", "Token address representing a unique asset type")
+
 	queryCmd.AddCommand(
 		vmauth.GetAccountCmd(cdc),
 		flags.LineBreak,
@@ -112,6 +116,9 @@ func txCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "tx",
 		Short: "Transactions subcommands",
 	}
+
+	txCmd.PersistentFlags().String(types.FlagEthereumChainID, "", "Ethereum chain ID")
+	txCmd.PersistentFlags().String(types.FlagTokenContractAddr, "", "Token address representing a unique asset type")
 
 	txCmd.AddCommand(
 		bankcmd.SendTxCmd(cdc),
