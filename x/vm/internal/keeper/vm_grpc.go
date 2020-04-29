@@ -9,6 +9,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -20,7 +21,7 @@ func GetFreeGas(ctx sdk.Context) sdk.Gas {
 // Create new contract in grpc format for VM request.
 func NewContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, contractType vm_grpc.ContractType, args []*vm_grpc.VMArgs) (*vm_grpc.VMContract, error) {
 	return &vm_grpc.VMContract{
-		Address:      "0x" + hex.EncodeToString(types.Bech32ToLibra(address)),
+		Address:      "0x" + hex.EncodeToString(common_vm.Bech32ToLibra(address)),
 		MaxGasAmount: maxGas,
 		GasUnitPrice: types.VmGasPrice,
 		Code:         code,
@@ -59,7 +60,7 @@ func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VM
 
 			args[i] = &vm_grpc.VMArgs{
 				Type:  arg.Type,
-				Value: "0x" + hex.EncodeToString(types.Bech32ToLibra(addr)),
+				Value: "0x" + hex.EncodeToString(common_vm.Bech32ToLibra(addr)),
 			}
 		} else {
 			args[i] = &vm_grpc.VMArgs{

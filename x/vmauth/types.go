@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 
 	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 // Resource key for WBCoins resource from VM stdlib.
@@ -66,7 +67,7 @@ func getGUID(address sdk.AccAddress, counter uint64) []byte {
 
 	binary.LittleEndian.PutUint64(bzCounter, counter)
 
-	return append(bzCounter, address...)
+	return append(bzCounter, common_vm.Bech32ToLibra(address)...)
 }
 
 // Convert acc to account resource.

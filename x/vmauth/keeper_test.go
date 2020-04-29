@@ -9,6 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
+
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 func TestVMAccountKeeper_SetAccount(t *testing.T) {
@@ -58,7 +60,7 @@ func TestVMAccountKeeper_SetAccountEventHandler(t *testing.T) {
 	}
 
 	path := &vm_grpc.VMAccessPath{
-		Address: addr,
+		Address: common_vm.Bech32ToLibra(addr),
 		Path:    GetResPath(),
 	}
 
@@ -99,7 +101,7 @@ func TestVMAccountKeeper_GetAccount(t *testing.T) {
 	require.EqualValues(t, &acc, getter)
 
 	key := &vm_grpc.VMAccessPath{
-		Address: addr,
+		Address: common_vm.Bech32ToLibra(addr),
 		Path:    GetResPath(),
 	}
 
@@ -124,7 +126,7 @@ func TestVMAccountKeeper_GetAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 	vmKey := &vm_grpc.VMAccessPath{
-		Address: vmAcc.GetAddress(),
+		Address: common_vm.Bech32ToLibra(vmAcc.GetAddress()),
 		Path:    GetResPath(),
 	}
 
@@ -152,7 +154,7 @@ func TestVMAccountKeeper_RemoveAccount(t *testing.T) {
 	require.Nil(t, getter)
 
 	key := &vm_grpc.VMAccessPath{
-		Address: addr,
+		Address: common_vm.Bech32ToLibra(addr),
 		Path:    GetResPath(),
 	}
 

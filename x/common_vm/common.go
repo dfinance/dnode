@@ -20,6 +20,11 @@ type VMStorage interface {
 	DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 }
 
+// Convert bech32 to libra hex.
+func Bech32ToLibra(addr sdk.AccAddress) []byte {
+	return append(addr, make([]byte, 4)...)
+}
+
 // Make path for storage from VMAccessPath.
 func MakePathKey(path vm_grpc.VMAccessPath) []byte {
 	return bytes.Join(

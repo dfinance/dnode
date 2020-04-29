@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	"github.com/dfinance/dnode/x/common_vm"
@@ -29,11 +28,6 @@ var (
 
 // Type of Move contract (bytes).
 type Contract []byte
-
-// Convert bech32 to libra hex.
-func Bech32ToLibra(addr types.AccAddress) []byte {
-	return append(addr, make([]byte, 4)...)
-}
 
 // Convert VMAccessPath to hex string
 func PathToHex(path vm_grpc.VMAccessPath) string {
