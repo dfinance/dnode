@@ -17,12 +17,9 @@ const (
 	StoreKey  = ModuleName
 	RouterKey = ModuleName
 
-	DefaultParamspace = ModuleName
-
 	VmAddressLength = 32
 	VmGasPrice      = 1
 	VmUnknowTagType = -1
-	zeroBytes       = 12
 )
 
 // VM related variables.
@@ -34,16 +31,8 @@ var (
 type Contract []byte
 
 // Convert bech32 to libra hex.
-func Bech32ToLibra(acc types.AccAddress) string {
-	prefix := types.GetConfig().GetBech32AccountAddrPrefix()
-	zeros := make([]byte, zeroBytes-len(prefix))
-
-	bytes := make([]byte, 0)
-	bytes = append(bytes, []byte(prefix)...)
-	bytes = append(bytes, zeros...)
-	bytes = append(bytes, acc...)
-
-	return hex.EncodeToString(bytes)
+func Bech32ToLibra(addr types.AccAddress) []byte {
+	return append(addr, make([]byte, 4)...)
 }
 
 // Convert VMAccessPath to hex string

@@ -2,6 +2,8 @@
 package keeper
 
 import (
+	"encoding/hex"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
@@ -17,7 +19,7 @@ func GetFreeGas(ctx sdk.Context) sdk.Gas {
 // Create new contract in grpc format for VM request.
 func NewContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, contractType vm_grpc.ContractType, args []*vm_grpc.VMArgs) (*vm_grpc.VMContract, error) {
 	return &vm_grpc.VMContract{
-		Address:      address.String(),
+		Address:      "0x" + hex.EncodeToString(types.Bech32ToLibra(address)),
 		MaxGasAmount: maxGas,
 		GasUnitPrice: types.VmGasPrice,
 		Code:         code,
