@@ -173,13 +173,11 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 
 				case vm_grpc.VMTypeTag_Address:
 					// validate address
-					addrBech, err := sdk.AccAddressFromBech32(arg)
-					if err != nil {
+					if _, err := sdk.AccAddressFromBech32(arg); err != nil {
 						return fmt.Errorf("can't parse address argument %s, check address and try again: %s", arg, err.Error())
 					}
 
-					addr := "0x" + hex.EncodeToString(types.Bech32ToLibra(addrBech))
-					scriptArgs[i] = types.NewScriptArg(addr, extractedArgs[i])
+					scriptArgs[i] = types.NewScriptArg(arg, extractedArgs[i])
 
 				case vm_grpc.VMTypeTag_Bool:
 					if arg != "true" && arg != "false" {

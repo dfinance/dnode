@@ -3,6 +3,7 @@ package keeper
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -50,9 +51,21 @@ func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VM
 	args := make([]*vm_grpc.VMArgs, len(msg.Args))
 
 	for i, arg := range msg.Args {
-		args[i] = &vm_grpc.VMArgs{
-			Type:  arg.Type,
-			Value: arg.Value,
+		if arg.Type == vm_grpc.VMTypeTag_Address {
+			addr, err := sdk.AccAddressFromBech32(arg.Value)
+			if err != nil {
+				return nil, fmt.Errorf("can't parse address argument %s: %v", arg.Value, err)
+			}
+
+			args[i] = &vm_grpc.VMArgs{
+				Type:  arg.Type,
+				Value: "0x" + hex.EncodeToString(types.Bech32ToLibra(addr)),
+			}
+		} else {
+			args[i] = &vm_grpc.VMArgs{
+				Type:  arg.Type,
+				Value: arg.Value,
+			}
 		}
 	}
 
