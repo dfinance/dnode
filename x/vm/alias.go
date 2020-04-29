@@ -20,6 +20,7 @@ type (
 	VMServer                     = vm_grpc.VMServiceServer
 	UnimplementedVMServiceServer = vm_grpc.UnimplementedVMServiceServer
 
+	GenesisState    = types.GenesisState
 	QueryAccessPath = types.QueryAccessPath
 	QueryValueResp  = types.QueryValueResp
 )
@@ -27,6 +28,7 @@ type (
 var (
 	NewKeeper               = keeper.NewKeeper
 	RegisterVMServiceServer = vm_grpc.RegisterVMServiceServer
+	MakePathKey             = types.MakePathKey
 
 	ErrVMCrashed = types.ErrVMCrashed
 )
