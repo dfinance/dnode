@@ -116,7 +116,7 @@ func TestAccResourceFromAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	accRes := AccResFromAccount(&acc, nil)
+	accRes, _ := AccResFromAccount(&acc, nil)
 
 	for i, coin := range acc.Coins {
 		require.EqualValues(t, coin.Denom, accRes.Balances[i].Denom)
@@ -148,7 +148,7 @@ func TestAccResFromSource(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	accRes := AccResFromAccount(&acc, &source)
+	accRes, _ := AccResFromAccount(&acc, &source)
 
 	for i, coin := range acc.Coins {
 		require.EqualValues(t, coin.Denom, accRes.Balances[i].Denom)

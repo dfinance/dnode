@@ -34,7 +34,6 @@ func NewVMAccountKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Su
 
 // Set account in storage.
 func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
-	keeper.AccountKeeper.SetAccount(ctx, acc)
 	// check if account exists in vm
 	accessPath := &vm_grpc.VMAccessPath{
 		Address: common_vm.Bech32ToLibra(acc.GetAddress()),
@@ -46,13 +45,19 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 		// get account from vm and copy event data
 		// now store account to vm storage
 		source := BytesToAccRes(vmBz)
-		accRes := AccResFromAccount(acc, &source)
+		accRes, _ := AccResFromAccount(acc, &source)
 		keeper.vmKeeper.SetValue(ctx, accessPath, AccResToBytes(accRes))
 	} else {
 		// just create new account
-		accRes := AccResFromAccount(acc, nil)
+		accRes, ehGen := AccResFromAccount(acc, nil)
 		keeper.vmKeeper.SetValue(ctx, accessPath, AccResToBytes(accRes))
+		keeper.vmKeeper.SetValue(ctx, &vm_grpc.VMAccessPath{
+			Address: common_vm.Bech32ToLibra(acc.GetAddress()),
+			Path:    GetEHPath(),
+		}, EhToBytes(*ehGen))
 	}
+
+	keeper.AccountKeeper.SetAccount(ctx, acc)
 }
 
 // Get account from storage.

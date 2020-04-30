@@ -127,7 +127,7 @@ func (keeper Keeper) processWriteSet(ctx sdk.Context, writeSet []*vm_grpc.VMValu
 			keeper.setValue(ctx, value.Path, value.Value)
 		} else {
 			// must not happens at all
-			panic(fmt.Sprintf("Unknown write op, couldn't happen: %d", value.Type))
+			panic(fmt.Errorf("unknown write op, couldn't happen: %d", value.Type))
 		}
 	}
 }

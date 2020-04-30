@@ -3,6 +3,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"sync"
@@ -108,6 +109,8 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 	}
 
 	blob = server.keeper.getValue(server.ctx, path)
+
+	server.Logger().Debug(fmt.Sprintf("Return values: %s\n", hex.EncodeToString(blob)))
 
 	return &ds_grpc.DSRawResponse{Blob: blob}, nil
 }

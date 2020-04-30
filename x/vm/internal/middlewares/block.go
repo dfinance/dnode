@@ -6,8 +6,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/lcs"
 
-	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/common_vm"
 )
 
@@ -32,7 +32,7 @@ func NewBlockMiddleware() common_vm.DSDataMiddleware {
 
 	return func(ctx sdk.Context, path *vm_grpc.VMAccessPath) (data []byte, err error) {
 		if bytes.Equal(blockHeaderPath.Address, path.Address) && bytes.Equal(blockHeaderPath.Path, path.Path) {
-			return helpers.Marshal(BlockHeader{Height: uint64(ctx.BlockHeader().Height)})
+			return lcs.Marshal(BlockHeader{Height: uint64(ctx.BlockHeader().Height)})
 		}
 
 		return
