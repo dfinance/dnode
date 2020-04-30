@@ -15,7 +15,7 @@ import (
 
 // Resource key for WBCoins resource from VM stdlib.
 const (
-	resourceKey = "01fc0e661c5c73d4acaf1c8d0494acec68953a8279674d9e850fc11f36b31302c2"
+	resourceKey = "017f0e04d8f92bed6b87baff6145039aad7eb605e8b76e117f523fbd9079253d72"
 )
 
 var (
@@ -29,16 +29,21 @@ type DNCoin struct {
 
 // Event handle for account.
 type EventHandle struct {
-	Count uint64
-	Key   []byte
+	Counter uint64
+	Guid    []byte
 }
 
 // Balances of account in case of standard lib.
 type AccountResource struct {
+	A              uint64
 	Balances       []DNCoin     // coins.
 	WithdrawEvents *EventHandle // receive events handler.
 	DepositEvents  *EventHandle // sent events handler.
-	EventGenerator uint64       // event generator.
+}
+
+type EventGenerator struct {
+	Counter uint64
+	Address []byte
 }
 
 // Convert byte array to coins.
@@ -63,11 +68,24 @@ func GetResPath() []byte {
 
 // Get GUID for events.
 func getGUID(address sdk.AccAddress, counter uint64) []byte {
-	bzCounter := make([]byte, 8)
+	/*
+		let sender_bytes = LCS::to_bytes(&counter.addr);
+		let count_bytes = LCS::to_bytes(&counter.counter);
+		counter.counter = counter.counter + 1;
 
-	binary.LittleEndian.PutUint64(bzCounter, counter)
+		// EventHandleGenerator goes first just in case we want to extend address in the future.
+		Vector::append(&mut count_bytes, sender_bytes);
 
-	return append(bzCounter, common_vm.Bech32ToLibra(address)...)
+		count_bytes
+	*/
+	senderBytes, err := helpers.Marshal(common_vm.Bech32ToLibra(address))
+	if err != nil {
+		panic(err) // should not happen
+	}
+
+	countBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(countBytes, counter)
+	return append(countBytes, senderBytes...)
 }
 
 // Convert acc to account resource.
@@ -88,23 +106,26 @@ func AccResFromAccount(acc exported.Account, source *AccountResource) AccountRes
 	if source != nil {
 		accRes.WithdrawEvents = source.WithdrawEvents
 		accRes.DepositEvents = source.DepositEvents
-		accRes.EventGenerator = source.EventGenerator
+
+		// also recopy event generator
+		//accRes.EventGenerator = source.EventGenerator
 	} else {
 		// just create new event handlers.
-		accRes.EventGenerator = 0
+		var generator uint64 = 0
 
 		accRes.WithdrawEvents = &EventHandle{
-			Count: 0,
-			Key:   getGUID(acc.GetAddress(), accRes.EventGenerator),
+			Counter: 0,
+			Guid:    getGUID(acc.GetAddress(), generator),
 		}
-		accRes.EventGenerator += 1
+		generator += 1
 
 		//  increase event generator for another id.
 		accRes.DepositEvents = &EventHandle{
-			Count: 0,
-			Key:   getGUID(acc.GetAddress(), accRes.EventGenerator),
+			Counter: 0,
+			Guid:    getGUID(acc.GetAddress(), generator),
 		}
-		accRes.EventGenerator += 1
+
+		generator += 1
 	}
 
 	return accRes

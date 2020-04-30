@@ -16,6 +16,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/ds_grpc"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -32,6 +33,8 @@ type DSServer struct {
 	ctx    sdk.Context // should be careful with it, but for now we store default context
 
 	mux sync.Mutex
+
+	dataMiddlewares []common_vm.DSDataMiddleware
 }
 
 // Error when no data found.
@@ -47,10 +50,29 @@ func (server *DSServer) Logger() log.Logger {
 	return server.ctx.Logger().With("module", "vm")
 }
 
+// Register new data middleware.
+func (server *DSServer) RegisterDataMiddleware(md common_vm.DSDataMiddleware) {
+	server.dataMiddlewares = append(server.dataMiddlewares, md)
+}
+
+// Process middlewares.
+func (server DSServer) processMiddlewares(path *vm_grpc.VMAccessPath) (data []byte, err error) {
+	for _, f := range server.dataMiddlewares {
+		data, err = f(server.ctx, path)
+		if err != nil || data != nil {
+			return
+		}
+	}
+
+	return
+}
+
 // Set server context.
 func (server *DSServer) SetContext(ctx sdk.Context) {
 	server.mux.Lock()
+
 	server.ctx = ctx
+
 	server.mux.Unlock()
 }
 
@@ -66,14 +88,26 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 		Path:    req.Path,
 	}
 
+	server.Logger().Info(fmt.Sprintf("Get path: %s", types.PathToHex(path)))
+
+	// here go with middlewares
+	blob, err := server.processMiddlewares(path)
+	if err != nil {
+		server.Logger().Error(fmt.Sprintf("Error processing middlewares for path %s: %v", types.PathToHex(path), err))
+		return ErrNoData(req), nil
+	}
+
+	if blob != nil {
+		return &ds_grpc.DSRawResponse{Blob: blob}, nil
+	}
+
+	// we can move it to middleware too later.
 	if !server.keeper.hasValue(server.ctx, path) {
 		server.Logger().Error(fmt.Sprintf("Can't find path: %s", types.PathToHex(path)))
 		return ErrNoData(req), nil
 	}
 
-	server.Logger().Info(fmt.Sprintf("Get path: %s", types.PathToHex(path)))
-
-	blob := server.keeper.getValue(server.ctx, path)
+	blob = server.keeper.getValue(server.ctx, path)
 
 	return &ds_grpc.DSRawResponse{Blob: blob}, nil
 }

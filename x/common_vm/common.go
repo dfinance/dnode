@@ -12,6 +12,9 @@ var (
 	VMKey        = []byte("vm")
 )
 
+// Data server middleware type.
+type DSDataMiddleware func(ctx sdk.Context, path *vm_grpc.VMAccessPath) ([]byte, error)
+
 // Interface for other keepers to get/set data.
 type VMStorage interface {
 	// Access path for oracle.
@@ -22,11 +25,11 @@ type VMStorage interface {
 	GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte
 
 	// Delete value in VM storage.
-	DelValue(ctx sdk.Context, accessPath * vm_grpc.VMAccessPath)
+	DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 }
 
 // Make path for storage from VMAccessPath.
-func MakePathKey(path vm_grpc.VMAccessPath) []byte {
+func MakePathKey(path *vm_grpc.VMAccessPath) []byte {
 	return bytes.Join(
 		[][]byte{
 			VMKey,
