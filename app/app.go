@@ -31,13 +31,13 @@ import (
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/core"
-	"github.com/dfinance/dnode/x/currencies"
+	//"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/ethbridge"
 	"github.com/dfinance/dnode/x/genaccounts"
-	"github.com/dfinance/dnode/x/multisig"
+	//"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	"github.com/dfinance/dnode/x/poa"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	//"github.com/dfinance/dnode/x/poa"
+	//poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/pricefeed"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
@@ -66,9 +66,9 @@ var (
 		params.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
-		poa.AppModuleBasic{},
-		currencies.AppModuleBasic{},
-		multisig.AppModuleBasic{},
+		//poa.AppModuleBasic{},
+		//currencies.AppModuleBasic{},
+		//multisig.AppModuleBasic{},
 		pricefeed.AppModuleBasic{},
 		vm.AppModuleBasic{},
 		oracle.AppModuleBasic{},
@@ -94,16 +94,16 @@ type DnServiceApp struct {
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 
-	accountKeeper   vmauth.VMAccountKeeper
-	bankKeeper      bank.Keeper
-	supplyKeeper    supply.Keeper
-	paramsKeeper    params.Keeper
-	stakingKeeper   staking.Keeper
-	distrKeeper     distribution.Keeper
-	slashingKeeper  slashing.Keeper
-	poaKeeper       poa.Keeper
-	ccKeeper        currencies.Keeper
-	msKeeper        multisig.Keeper
+	accountKeeper  vmauth.VMAccountKeeper
+	bankKeeper     bank.Keeper
+	supplyKeeper   supply.Keeper
+	paramsKeeper   params.Keeper
+	stakingKeeper  staking.Keeper
+	distrKeeper    distribution.Keeper
+	slashingKeeper slashing.Keeper
+	//poaKeeper       poa.Keeper
+	//ccKeeper        currencies.Keeper
+	//msKeeper        multisig.Keeper
 	vmKeeper        vm.Keeper
 	pricefeedKeeper pricefeed.Keeper
 
@@ -111,7 +111,7 @@ type DnServiceApp struct {
 	bridgeKeeper ethbridge.Keeper
 	oracleKeeper oracle.Keeper
 
-	mm *core.MsManager
+	mm *module.Manager
 
 	// vm connection
 	vmConn     *grpc.ClientConn
@@ -173,9 +173,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		staking.StoreKey,
 		distribution.StoreKey,
 		slashing.StoreKey,
-		poa.StoreKey,
-		currencies.StoreKey,
-		multisig.StoreKey,
+		//poa.StoreKey,
+		//currencies.StoreKey,
+		//multisig.StoreKey,
 		vm.StoreKey,
 		pricefeed.StoreKey,
 	)
@@ -245,11 +245,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	// Initialize currency keeper.
-	app.ccKeeper = currencies.NewKeeper(
-		app.bankKeeper,
-		keys[currencies.StoreKey],
-		cdc,
-	)
+	// app.ccKeeper = currencies.NewKeeper(
+	// 	app.bankKeeper,
+	// 	keys[currencies.StoreKey],
+	// 	cdc,
+	// )
 
 	// Initializing distribution keeper.
 	app.distrKeeper = distribution.NewKeeper(
@@ -279,11 +279,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	// Initializing validators module.
-	app.poaKeeper = poa.NewKeeper(
-		keys[poa.StoreKey],
-		cdc,
-		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
-	)
+	// app.poaKeeper = poa.NewKeeper(
+	// 	keys[poa.StoreKey],
+	// 	cdc,
+	// 	app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
+	// )
 
 	app.oracleKeeper = oracle.NewKeeper(app.cdc, keys[oracle.StoreKey],
 		app.stakingKeeper, oracle.DefaultConsensusNeeded,
@@ -294,12 +294,12 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.msRouter = core.NewRouter()
 
 	// Initializing multisignature router.
-	app.msKeeper = multisig.NewKeeper(
-		keys[multisig.StoreKey],
-		cdc,
-		app.msRouter,
-		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
-	)
+	// app.msKeeper = multisig.NewKeeper(
+	// 	keys[multisig.StoreKey],
+	// 	cdc,
+	// 	app.msRouter,
+	// 	app.paramsKeeper.Subspace(multisig.DefaultParamspace),
+	// )
 
 	// Initializing pricefeed module
 	app.pricefeedKeeper = pricefeed.NewKeeper(
@@ -310,7 +310,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	// Initializing multisignature manager.
-	app.mm = core.NewMsManager(
+	app.mm = module.NewManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		vmauth.NewAppModule(app.accountKeeper),
@@ -319,9 +319,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
-		poa.NewAppMsModule(app.poaKeeper),
-		currencies.NewAppMsModule(app.ccKeeper),
-		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
+		//poa.NewAppMsModule(app.poaKeeper),
+		//currencies.NewAppMsModule(app.ccKeeper),
+		//multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 		pricefeed.NewAppModule(app.pricefeedKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		ethbridge.NewAppModule(app.oracleKeeper, app.supplyKeeper, app.accountKeeper, app.bridgeKeeper, app.cdc),
@@ -329,7 +329,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, pricefeed.ModuleName)
+	//app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, pricefeed.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, pricefeed.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -343,9 +344,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		bank.ModuleName,
 		slashing.ModuleName,
 		supply.ModuleName,
-		poa.ModuleName,
-		currencies.ModuleName,
-		multisig.ModuleName,
+		//poa.ModuleName,
+		//currencies.ModuleName,
+		//multisig.ModuleName,
 		vm.ModuleName,
 		pricefeed.ModuleName,
 		genutil.ModuleName,
@@ -353,7 +354,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
-	app.mm.RegisterMsRoutes(app.msRouter)
+	//app.mm.RegisterMsRoutes(app.msRouter)
 
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)

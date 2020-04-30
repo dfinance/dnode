@@ -25,7 +25,7 @@ import (
 	"github.com/dfinance/dnode/helpers/logger"
 	"github.com/dfinance/dnode/x/genaccounts"
 	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
-	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
+	// poaCli "github.com/dfinance/dnode/x/poa/client/cli"
 	pricefeedCli "github.com/dfinance/dnode/x/pricefeed/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
 )
@@ -67,7 +67,7 @@ func main() {
 		// AddGenesisAccountCmd allows users to add accounts to the genesis file
 		genaccsCli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		// Allows user to poa genesis validator
-		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
+		//poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
 		vmCli.GenesisWSFromFile(ctx, cdc),
 		pricefeedCli.AddPriceFeedNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		pricefeedCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
