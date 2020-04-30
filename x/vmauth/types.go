@@ -43,7 +43,6 @@ type EventHandle struct {
 
 // Balances of account in case of standard lib.
 type AccountResource struct {
-	A              uint64
 	Balances       []DNCoin     // coins.
 	WithdrawEvents *EventHandle // receive events handler.
 	DepositEvents  *EventHandle // sent events handler.
@@ -85,74 +84,63 @@ func GetEHPath() []byte {
 
 // Get GUID for events.
 func getGUID(address sdk.AccAddress, counter uint64) []byte {
-	/*
-		let sender_bytes = LCS::to_bytes(&counter.addr);
-		let count_bytes = LCS::to_bytes(&counter.counter);
-		counter.counter = counter.counter + 1;
-
-		// EventHandleGenerator goes first just in case we want to extend address in the future.
-		Vector::append(&mut count_bytes, sender_bytes);
-
-		count_bytes
-	*/
 	countBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(countBytes, counter)
 	return append(countBytes, common_vm.Bech32ToLibra(address)...)
 }
 
-// Convert acc to account resource.
-func AccResFromAccount(acc exported.Account, source *AccountResource) (AccountResource, *EventHandleGenerator) {
-	accCoins := acc.GetCoins()
-	balances := make([]DNCoin, len(accCoins))
-	for i, coin := range accCoins {
+// Convert sdk.Coins to resources.
+func convertCoins(coins sdk.Coins) []DNCoin {
+	balances := make([]DNCoin, len(coins))
+	for i, coin := range coins {
 		balances[i] = DNCoin{
 			Denom: []byte(coin.Denom),
 			Value: coin.Amount.BigInt(),
 		}
 	}
 
-	accRes := AccountResource{
-		A:        acc.GetSequence(),
-		Balances: balances,
-	}
+	return balances
+}
 
-	if source != nil {
-		accRes.WithdrawEvents = source.WithdrawEvents
-		accRes.DepositEvents = source.DepositEvents
-
-		// event generator could be created only when account created, so it's not related to already created account
-		// with vm.
-		return accRes, nil
-	} else {
-		ehGen := &EventHandleGenerator{
-			Counter: 0,
-			Addr:    common_vm.Bech32ToLibra(acc.GetAddress()),
-		}
-
-		// just create new event handlers.
-		accRes.WithdrawEvents = &EventHandle{
-			Counter: 0,
-			Guid:    getGUID(acc.GetAddress(), ehGen.Counter),
-		}
-
-		//fmt.Printf("Guid: %s\n", hex.EncodeToString(accRes.WithdrawEvents.Guid))
-
-		ehGen.Counter += 1
-
-		//  increase event generator for another id.
-		accRes.DepositEvents = &EventHandle{
-			Counter: 0,
-			Guid:    getGUID(acc.GetAddress(), ehGen.Counter),
-		}
-
-		ehGen.Counter += 1
-
-		return accRes, ehGen
+// Merging exported.Account with VM account (resource), returns new AccountResource contains merged events handlers.
+func MergeVMAccountEvents(acc exported.Account, source AccountResource) AccountResource {
+	return AccountResource{
+		Balances:       convertCoins(acc.GetCoins()),
+		WithdrawEvents: source.WithdrawEvents,
+		DepositEvents:  source.DepositEvents,
 	}
 }
 
+// Creating new VM account and EventHandleGenerator.
+func CreateVMAccount(acc exported.Account) (vmAcc AccountResource, eventHandleGen EventHandleGenerator) {
+	vmAcc = AccountResource{
+		Balances: convertCoins(acc.GetCoins()),
+	}
+
+	eventHandleGen = EventHandleGenerator{
+		Counter: 0,
+		Addr:    common_vm.Bech32ToLibra(acc.GetAddress()),
+	}
+
+	// just create new event handlers.
+	vmAcc.WithdrawEvents = &EventHandle{
+		Counter: 0,
+		Guid:    getGUID(acc.GetAddress(), eventHandleGen.Counter),
+	}
+
+	eventHandleGen.Counter += 1
+
+	vmAcc.DepositEvents = &EventHandle{
+		Counter: 0,
+		Guid:    getGUID(acc.GetAddress(), eventHandleGen.Counter),
+	}
+
+	eventHandleGen.Counter += 1
+	return
+}
+
 // Event generator to bytes.
-func EhToBytes(eh EventHandleGenerator) []byte {
+func EventHandlerGenToBytes(eh EventHandleGenerator) []byte {
 	bytes, err := lcs.Marshal(eh)
 	if err != nil {
 		panic(err)

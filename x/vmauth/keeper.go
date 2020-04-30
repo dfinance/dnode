@@ -2,6 +2,9 @@
 package vmauth
 
 import (
+	"encoding/hex"
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -32,29 +35,60 @@ func NewVMAccountKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Su
 	}
 }
 
-// Set account in storage.
-func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
-	// check if account exists in vm
+// Get account from VM storage.
+// If no account found, second return parameter is false.
+func (keeper VMAccountKeeper) getVMAccount(ctx sdk.Context, address sdk.AccAddress) (AccountResource, bool) {
 	accessPath := &vm_grpc.VMAccessPath{
-		Address: common_vm.Bech32ToLibra(acc.GetAddress()),
+		Address: common_vm.Bech32ToLibra(address),
 		Path:    GetResPath(),
 	}
 
-	vmBz := keeper.vmKeeper.GetValue(ctx, accessPath)
-	if vmBz != nil {
-		// get account from vm and copy event data
-		// now store account to vm storage
-		source := BytesToAccRes(vmBz)
-		accRes, _ := AccResFromAccount(acc, &source)
-		keeper.vmKeeper.SetValue(ctx, accessPath, AccResToBytes(accRes))
+	val := keeper.vmKeeper.GetValue(ctx, accessPath)
+	if val == nil {
+		return AccountResource{}, false
+	}
+
+	return BytesToAccRes(val), true
+}
+
+// Set account for VM.
+func (keeper VMAccountKeeper) setVMAccount(ctx sdk.Context, address sdk.AccAddress, vmAccount AccountResource) {
+	accessPath := &vm_grpc.VMAccessPath{
+		Address: common_vm.Bech32ToLibra(address),
+		Path:    GetResPath(),
+	}
+
+	keeper.vmKeeper.SetValue(ctx, accessPath, AccResToBytes(vmAccount))
+}
+
+// Save new VM account.
+func (keeper VMAccountKeeper) saveNewVMAccount(ctx sdk.Context, address sdk.AccAddress, vmAccount AccountResource, eventHandleGen EventHandleGenerator) {
+	vmAddr := common_vm.Bech32ToLibra(address)
+	accessPath := &vm_grpc.VMAccessPath{
+		Address: vmAddr,
+		Path:    GetResPath(),
+	}
+
+	bz := AccResToBytes(vmAccount)
+	keeper.vmKeeper.SetValue(ctx, accessPath, bz)
+	fmt.Printf("Bytes: %s\n", hex.EncodeToString(bz))
+	keeper.vmKeeper.SetValue(ctx, &vm_grpc.VMAccessPath{
+		Address: vmAddr,
+		Path:    GetEHPath(),
+	}, EventHandlerGenToBytes(eventHandleGen))
+}
+
+// Set account in storage.
+func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
+	addr := acc.GetAddress()
+	source, isExists := keeper.getVMAccount(ctx, addr)
+
+	if isExists {
+		mergedVMAccount := MergeVMAccountEvents(acc, source)
+		keeper.setVMAccount(ctx, addr, mergedVMAccount)
 	} else {
-		// just create new account
-		accRes, ehGen := AccResFromAccount(acc, nil)
-		keeper.vmKeeper.SetValue(ctx, accessPath, AccResToBytes(accRes))
-		keeper.vmKeeper.SetValue(ctx, &vm_grpc.VMAccessPath{
-			Address: common_vm.Bech32ToLibra(acc.GetAddress()),
-			Path:    GetEHPath(),
-		}, EhToBytes(*ehGen))
+		vmAccount, eventHandleGen := CreateVMAccount(acc)
+		keeper.saveNewVMAccount(ctx, addr, vmAccount, eventHandleGen)
 	}
 
 	keeper.AccountKeeper.SetAccount(ctx, acc)
@@ -64,20 +98,11 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) exported.Account {
 	account := keeper.AccountKeeper.GetAccount(ctx, addr)
 
-	// check if account maybe exists in vm storage.
-	bz := keeper.vmKeeper.GetValue(ctx, &vm_grpc.VMAccessPath{
-		Address: common_vm.Bech32ToLibra(addr),
-		Path:    GetResPath(),
-	})
+	vmAccount, isExists := keeper.getVMAccount(ctx, addr)
 
-	// if account exists in vm.
-	if bz != nil {
-		accRes := BytesToAccRes(bz)
-		realCoins := balancesToCoins(accRes.Balances)
+	if isExists {
+		realCoins := balancesToCoins(vmAccount.Balances)
 
-		// load vm account from storage.
-		// check if account exists in vm but not exists in our storage - if so, save account and return.
-		// check if account has differences - balances, something else, and if so - save account and return.
 		if account != nil {
 			if !realCoins.IsEqual(account.GetCoins()) { // also check coins
 				if err := account.SetCoins(realCoins); err != nil {
@@ -87,7 +112,6 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 				keeper.SetAccount(ctx, account)
 			}
 		} else {
-			// if account is not exists - so create it.
 			account = keeper.NewAccountWithAddress(ctx, addr)
 			if err := account.SetCoins(realCoins); err != nil {
 				panic(err) // should never happen
