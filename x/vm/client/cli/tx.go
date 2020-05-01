@@ -119,10 +119,10 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 					_, err := hex.DecodeString(arg)
 					if err != nil {
 						// if not success, just convert string to hex.
-						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("b\"%s\"", hex.EncodeToString([]byte(arg))), extractedArgs[i])
+						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("x\"%s\"", hex.EncodeToString([]byte(arg))), extractedArgs[i])
 					} else {
 						// otherwise just use hex.
-						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("b\"%s\"", arg), extractedArgs[i])
+						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("x\"%s\"", arg), extractedArgs[i])
 					}
 
 				case vm_grpc.VMTypeTag_Struct:
