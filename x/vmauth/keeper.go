@@ -2,9 +2,6 @@
 package vmauth
 
 import (
-	"encoding/hex"
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -71,11 +68,34 @@ func (keeper VMAccountKeeper) saveNewVMAccount(ctx sdk.Context, address sdk.AccA
 
 	bz := AccResToBytes(vmAccount)
 	keeper.vmKeeper.SetValue(ctx, accessPath, bz)
-	fmt.Printf("Bytes: %s\n", hex.EncodeToString(bz))
 	keeper.vmKeeper.SetValue(ctx, &vm_grpc.VMAccessPath{
 		Address: vmAddr,
 		Path:    GetEHPath(),
 	}, EventHandlerGenToBytes(eventHandleGen))
+}
+
+// Save balances in VM keeper.
+func (keeper VMAccountKeeper) saveBalances(ctx sdk.Context, balances Balances) {
+	for _, balance := range balances {
+		keeper.vmKeeper.SetValue(ctx, balance.accessPath, BalanceToBytes(balance.balance))
+	}
+}
+
+// Load balances from VM storage.
+func (keeper VMAccountKeeper) loadBalances(ctx sdk.Context, addr sdk.AccAddress) Balances {
+	balances := loadAccessPaths(addr)
+	realBalances := make([]Balance, 0)
+
+	for _, balance := range balances {
+		bz := keeper.vmKeeper.GetValue(ctx, balance.accessPath)
+		if bz != nil {
+			balanceRes := BytesToBalance(bz)
+			balance.balance = balanceRes
+			realBalances = append(realBalances, balance)
+		}
+	}
+
+	return realBalances
 }
 
 // Set account in storage.
@@ -91,6 +111,10 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 		keeper.saveNewVMAccount(ctx, addr, vmAccount, eventHandleGen)
 	}
 
+	// update balances extracted from coins
+	balances := coinsToBalances(acc)
+	keeper.saveBalances(ctx, balances)
+
 	keeper.AccountKeeper.SetAccount(ctx, acc)
 }
 
@@ -98,15 +122,14 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) exported.Account {
 	account := keeper.AccountKeeper.GetAccount(ctx, addr)
 
-	vmAccount, isExists := keeper.getVMAccount(ctx, addr)
-
-	if isExists {
-		realCoins := balancesToCoins(vmAccount.Balances)
+	balances := keeper.loadBalances(ctx, addr)
+	if len(balances) > 0 {
+		realCoins := balancesToCoins(balances)
 
 		if account != nil {
-			if !realCoins.IsEqual(account.GetCoins()) { // also check coins
+			if !realCoins.IsEqual(account.GetCoins()) {
 				if err := account.SetCoins(realCoins); err != nil {
-					panic(err) // should never happen
+					panic(err) // must never happen
 				}
 
 				keeper.SetAccount(ctx, account)
