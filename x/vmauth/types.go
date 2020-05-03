@@ -250,8 +250,6 @@ func AccResToBytes(acc AccountResource) []byte {
 		panic(err)
 	}
 
-	//fmt.Printf("Write to path: %s\n", hex.EncodeToString(bytes))
-
 	return bytes
 }
 
