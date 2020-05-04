@@ -104,14 +104,13 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 	source, isExists := keeper.getVMAccount(ctx, addr)
 
 	if isExists {
-		mergedVMAccount := MergeVMAccountEvents(acc, source)
-		keeper.setVMAccount(ctx, addr, mergedVMAccount)
+		keeper.setVMAccount(ctx, addr, source)
 	} else {
 		vmAccount, eventHandleGen := CreateVMAccount(acc)
 		keeper.saveNewVMAccount(ctx, addr, vmAccount, eventHandleGen)
 	}
 
-	// update balances extracted from coins
+	// Update balances extracted from coins.
 	balances := coinsToBalances(acc)
 	keeper.saveBalances(ctx, balances)
 
@@ -160,12 +159,25 @@ func (keeper VMAccountKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account
 // NOTE: this will cause supply invariant violation if called
 func (keeper VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Account) {
 	keeper.AccountKeeper.RemoveAccount(ctx, acc)
+	vmAddr := common_vm.Bech32ToLibra(acc.GetAddress())
 
-	// should be remove account from VM storage too
+	// Should be remove account from VM storage too
 	keeper.vmKeeper.DelValue(ctx, &vm_grpc.VMAccessPath{
-		Address: common_vm.Bech32ToLibra(acc.GetAddress()),
+		Address: vmAddr,
 		Path:    GetResPath(),
 	})
+
+	// Should remove event generator.
+	keeper.vmKeeper.DelValue(ctx, &vm_grpc.VMAccessPath{
+		Address: vmAddr,
+		Path:    GetEHPath(),
+	})
+
+	// Should remove all balances.
+	balances := loadAccessPaths(acc.GetAddress())
+	for _, b := range balances {
+		keeper.vmKeeper.DelValue(ctx, b.accessPath)
+	}
 }
 
 // GetSignerAcc returns an account for a given address that is expected to sign

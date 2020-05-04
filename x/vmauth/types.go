@@ -31,18 +31,23 @@ var (
 
 // initialize denoms.
 func init() {
-	denomPaths = make(map[string][]byte, 2)
+	denomPaths = make(map[string][]byte)
 
+	err := AddDenomPath("dfi", "01bb36bccfc660b96e9bf1b7fb4c9bf3798a84510ef4a96eb6e2b4efb5931ae2b7")
+	if err != nil {
+		panic(err)
+	}
+
+	err = AddDenomPath("eth", "01c50bc39dc9c560b1954bd7a46286d7d53ca54cf4bb62a387815f5fce6a09e524")
+	if err != nil {
+		panic(err)
+	}
+}
+
+func AddDenomPath(denom string, path string) error {
 	var err error
-	denomPaths["dfi"], err = hex.DecodeString("01bb36bccfc660b96e9bf1b7fb4c9bf3798a84510ef4a96eb6e2b4efb5931ae2b7")
-	if err != nil {
-		panic(err)
-	}
-
-	denomPaths["eth"], err = hex.DecodeString("01c50bc39dc9c560b1954bd7a46286d7d53ca54cf4bb62a387815f5fce6a09e524")
-	if err != nil {
-		panic(err)
-	}
+	denomPaths[denom], err = hex.DecodeString(path)
+	return err
 }
 
 // Event generator for address.
@@ -104,7 +109,7 @@ func loadAccessPaths(addr sdk.AccAddress) Balances {
 func coinToBalance(addr sdk.AccAddress, coin sdk.Coin) (Balance, error) {
 	path, ok := denomPaths[coin.Denom]
 	if !ok {
-		return Balance{}, fmt.Errorf("123")
+		return Balance{}, fmt.Errorf("cant find path for denom %s", coin.Denom)
 	}
 
 	return Balance{
@@ -178,14 +183,6 @@ func getGUID(address sdk.AccAddress, counter uint64) []byte {
 	return append(countBytes, common_vm.Bech32ToLibra(address)...)
 }
 
-// Merging exported.Account with VM account (resource), returns new AccountResource contains merged events handlers.
-func MergeVMAccountEvents(acc exported.Account, source AccountResource) AccountResource {
-	return AccountResource{
-		SentEvents:     source.SentEvents,
-		ReceivedEvents: source.ReceivedEvents,
-	}
-}
-
 // Creating new VM account and EventHandleGenerator.
 func CreateVMAccount(acc exported.Account) (vmAcc AccountResource, eventHandleGen EventHandleGenerator) {
 	vmAcc = AccountResource{}
@@ -212,7 +209,17 @@ func CreateVMAccount(acc exported.Account) (vmAcc AccountResource, eventHandleGe
 	return
 }
 
-// Event generator to bytes.
+// Convert bytes to event handler generator.
+func BytesToEventHandlerGen(bz []byte) EventHandleGenerator {
+	var eventHandleGen EventHandleGenerator
+
+	if err := lcs.Unmarshal(bz, &eventHandleGen); err != nil {
+		panic(err)
+	}
+	return eventHandleGen
+}
+
+// Event handler generator to bytes.
 func EventHandlerGenToBytes(eh EventHandleGenerator) []byte {
 	bytes, err := lcs.Marshal(eh)
 	if err != nil {
