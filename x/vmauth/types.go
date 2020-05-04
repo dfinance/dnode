@@ -125,9 +125,11 @@ func coinToBalance(addr sdk.AccAddress, coin sdk.Coin) (Balance, error) {
 }
 
 // Convert coins to balances resources.
-func coinsToBalances(acc exported.Account) Balances {
+// Returns two kind of balances - to write and to delete.
+func coinsToBalances(acc exported.Account) (Balances, Balances) {
 	coins := acc.GetCoins()
 	balances := make(Balances, len(coins))
+	found := make(map[string]bool)
 
 	for i, coin := range coins {
 		var err error
@@ -135,9 +137,21 @@ func coinsToBalances(acc exported.Account) Balances {
 		if err != nil {
 			panic(err)
 		}
+		found[coin.Denom] = true
 	}
 
-	return balances
+	toDelete := make(Balances, 0)
+	for k := range denomPaths {
+		if !found[k] {
+			balance, err := coinToBalance(acc.GetAddress(), sdk.NewCoin(k, sdk.ZeroInt()))
+			if err != nil {
+				panic(err)
+			}
+			toDelete = append(toDelete, balance)
+		}
+	}
+
+	return balances, toDelete
 }
 
 // Convert balance to sdk.Coin.

@@ -165,14 +165,14 @@ func TestVMAccount_GetExistsAccount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	balances := coinsToBalances(&acc)
+	balances, toDelete := coinsToBalances(&acc)
 
 	require.Len(t, balances, len(coins), "balances length doesnt match coins")
 
 	accRes, eventGen := CreateVMAccount(&acc)
 
 	input.accountKeeper.saveNewVMAccount(input.ctx, addr, accRes, eventGen)
-	input.accountKeeper.saveBalances(input.ctx, balances)
+	input.accountKeeper.saveBalances(input.ctx, balances, toDelete)
 
 	getter := input.accountKeeper.GetAccount(input.ctx, addr)
 	realCoins := balancesToCoins(balances)
@@ -253,9 +253,9 @@ func TestVMAccount_loadBalances(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	balances := coinsToBalances(&acc)
+	balances, toDelete := coinsToBalances(&acc)
 
-	input.accountKeeper.saveBalances(input.ctx, balances)
+	input.accountKeeper.saveBalances(input.ctx, balances, toDelete)
 
 	loadedBalances := input.accountKeeper.loadBalances(input.ctx, addr)
 	realBalances := balancesToCoins(loadedBalances)

@@ -75,9 +75,13 @@ func (keeper VMAccountKeeper) saveNewVMAccount(ctx sdk.Context, address sdk.AccA
 }
 
 // Save balances in VM keeper.
-func (keeper VMAccountKeeper) saveBalances(ctx sdk.Context, balances Balances) {
+func (keeper VMAccountKeeper) saveBalances(ctx sdk.Context, balances Balances, toDelete Balances) {
 	for _, balance := range balances {
 		keeper.vmKeeper.SetValue(ctx, balance.accessPath, BalanceToBytes(balance.balance))
+	}
+
+	for _, toDel := range toDelete {
+		keeper.vmKeeper.DelValue(ctx, toDel.accessPath)
 	}
 }
 
@@ -111,8 +115,8 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 	}
 
 	// Update balances extracted from coins.
-	balances := coinsToBalances(acc)
-	keeper.saveBalances(ctx, balances)
+	balances, toDelete := coinsToBalances(acc)
+	keeper.saveBalances(ctx, balances, toDelete)
 
 	keeper.AccountKeeper.SetAccount(ctx, acc)
 }

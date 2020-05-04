@@ -111,7 +111,7 @@ func TestCoinsToBalances(t *testing.T) {
 	err := acc.SetCoins(coins)
 	require.NoError(t, err)
 
-	balances := coinsToBalances(&acc)
+	balances, _ := coinsToBalances(&acc)
 	require.Len(t, balances, len(coins))
 
 	for i := range coins {
