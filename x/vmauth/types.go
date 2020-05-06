@@ -50,6 +50,10 @@ func AddDenomPath(denom string, path string) error {
 	return err
 }
 
+func RemoveDenomPath(denom string) {
+	delete(denomPaths, denom)
+}
+
 // Event generator for address.
 type EventHandleGenerator struct {
 	Counter uint64
@@ -161,10 +165,13 @@ func balanceToCoin(balance Balance) sdk.Coin {
 
 // Convert balances to sdk.Coins.
 func balancesToCoins(balances Balances) sdk.Coins {
-	coins := make(sdk.Coins, len(balances))
+	coins := make(sdk.Coins, 0)
 
-	for i, balance := range balances {
-		coins[i] = balanceToCoin(balance)
+	// if zero ignore return
+	for _, balance := range balances {
+		if balance.balance.Value.Cmp(sdk.ZeroInt().BigInt()) != 0 {
+			coins = append(coins, balanceToCoin(balance))
+		}
 	}
 
 	return coins

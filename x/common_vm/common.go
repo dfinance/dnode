@@ -26,6 +26,9 @@ type VMStorage interface {
 
 	// Delete value in VM storage.
 	DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
+
+	// Has value in VM storage.
+	HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool
 }
 
 // Make path for storage from VMAccessPath.

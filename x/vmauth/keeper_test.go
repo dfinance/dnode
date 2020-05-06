@@ -4,6 +4,7 @@ package vmauth
 
 import (
 	"bytes"
+	"math/big"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/types"
@@ -52,6 +53,40 @@ func TestVMAccountKeeper_SetAccount(t *testing.T) {
 	require.Len(t, balances, 1, "balances length not equal to 1 (saved one)")
 	vmCoins := balancesToCoins(balances)
 	require.True(t, getter.GetCoins().IsEqual(vmCoins), "coins are not match after set account")
+
+	// add new resource in vm.
+	balances, toDelete := coinsToBalances(getter)
+	require.Len(t, toDelete, 1) // contains only eth.
+	require.False(t, input.vmStorage.HasValue(input.ctx, toDelete[0].accessPath))
+
+	balances = append(balances, toDelete...)
+	input.accountKeeper.saveBalances(input.ctx, balances, nil)
+	require.True(t, input.vmStorage.HasValue(input.ctx, toDelete[0].accessPath)) // resource now should exists.
+
+	getter = input.accountKeeper.GetAccount(input.ctx, addr)
+	require.Len(t, getter.GetCoins(), 1) // but still doesn't contains eth as it zero value.
+
+	err := AddDenomPath("test1", "00")
+	require.NoError(t, err)
+	defer RemoveDenomPath("test1")
+
+	balances, toDelete = coinsToBalances(getter)
+	require.Len(t, toDelete, 2) // contains 2 - eth and test1
+
+	for i := range toDelete {
+		if toDelete[i].denom == "test1" {
+			toDelete[i].balance.Value = big.NewInt(100)
+			balances = append(balances, toDelete[i])
+			break
+		}
+	}
+
+	input.accountKeeper.saveBalances(input.ctx, balances, nil)
+	getter = input.accountKeeper.GetAccount(input.ctx, addr)
+	require.Len(t, getter.GetCoins(), 2) // but still doesn't contains eth as it zero value.
+	realCoins := balancesToCoins(balances)
+
+	require.True(t, realCoins.IsEqual(getter.GetCoins()))
 }
 
 // Test event handler generator creation if account not exists yet in VM storage.
@@ -166,6 +201,7 @@ func TestVMAccount_GetExistsAccount(t *testing.T) {
 	}
 
 	balances, toDelete := coinsToBalances(&acc)
+	require.Empty(t, toDelete)
 
 	require.Len(t, balances, len(coins), "balances length doesnt match coins")
 
@@ -254,6 +290,7 @@ func TestVMAccount_loadBalances(t *testing.T) {
 	}
 
 	balances, toDelete := coinsToBalances(&acc)
+	require.Empty(t, toDelete)
 
 	input.accountKeeper.saveBalances(input.ctx, balances, toDelete)
 
@@ -294,7 +331,7 @@ func TestVMAccountKeeper_RemoveAccount(t *testing.T) {
 }
 
 // Test get signer acc.
-func TestGetSignerAcc(t *testing.T) {
+func TestVMAccountKeeper_GetSignerAcc(t *testing.T) {
 	input := newTestInput(t)
 	addr := secp256k1.GenPrivKey().PubKey().Address().Bytes()
 	acc := auth.NewBaseAccountWithAddress(addr)
@@ -307,4 +344,199 @@ func TestGetSignerAcc(t *testing.T) {
 	getter, err = GetSignerAcc(input.ctx, input.accountKeeper, types.AccAddress("bmp"))
 	require.Nil(t, getter)
 	require.Error(t, err)
+}
+
+// Test balances with toDelete inside SetAccount.
+func TestVMAccountKeeper_SetBalancesWithDelete(t *testing.T) {
+	input := newTestInput(t)
+	addr := secp256k1.GenPrivKey().PubKey().Address().Bytes()
+	acc := auth.NewBaseAccountWithAddress(addr)
+
+	err := AddDenomPath("test1", "00")
+	require.NoError(t, err)
+
+	err = AddDenomPath("test2", "01")
+	require.NoError(t, err)
+
+	defer RemoveDenomPath("test1")
+	defer RemoveDenomPath("test2")
+
+	coins := types.Coins{
+		types.NewCoin("dfi", types.NewInt(100100)),
+		types.NewCoin("eth", types.NewInt(100200)),
+		types.NewCoin("test1", types.NewInt(100300)),
+		types.NewCoin("test2", types.NewInt(100400)),
+	}
+
+	err = acc.SetCoins(coins)
+	require.NoError(t, err)
+
+	// just check that there is no toDelete
+	_, toDelete := coinsToBalances(&acc)
+	require.Empty(t, toDelete)
+
+	input.accountKeeper.SetAccount(input.ctx, &acc)
+
+	coins = types.Coins{
+		types.NewCoin("dfi", types.NewInt(100)),
+		types.NewCoin("eth", types.NewInt(200)),
+	}
+
+	getter := input.accountKeeper.GetAccount(input.ctx, addr)
+	require.NotNil(t, getter)
+	err = getter.SetCoins(coins)
+	require.NoError(t, err)
+
+	input.accountKeeper.SetAccount(input.ctx, getter)
+	getter = input.accountKeeper.GetAccount(input.ctx, addr)
+
+	require.True(t, coins.IsEqual(getter.GetCoins()))
+}
+
+// Test when remove balance resource from VM.
+func TestVMAccountKeeper_RemoveBalance(t *testing.T) {
+	input := newTestInput(t)
+	addr := secp256k1.GenPrivKey().PubKey().Address().Bytes()
+	acc := auth.NewBaseAccountWithAddress(addr)
+
+	coins := types.Coins{
+		types.NewCoin("dfi", types.NewInt(100100)),
+		types.NewCoin("eth", types.NewInt(100200)),
+	}
+
+	err := acc.SetCoins(coins)
+	require.NoError(t, err)
+
+	input.accountKeeper.SetAccount(input.ctx, &acc)
+	balances := input.accountKeeper.loadBalances(input.ctx, addr)
+
+	// let's say resources for eth removed in the vm.
+	for i := range balances {
+		if balances[i].denom == "eth" {
+			input.vmStorage.DelValue(input.ctx, balances[i].accessPath)
+
+			break
+		}
+	}
+
+	// get account now and see that account doesn't contains eth anymore.
+	getter := input.accountKeeper.GetAccount(input.ctx, addr)
+	for _, coin := range getter.GetCoins() {
+		require.NotEqual(t, coin.Denom, "eth")
+	}
+}
+
+// Set ETH balance to zero (like it happened in VM).
+func TestVMAccountKeeper_BalanceToZero(t *testing.T) {
+	input := newTestInput(t)
+	addr := secp256k1.GenPrivKey().PubKey().Address().Bytes()
+	acc := auth.NewBaseAccountWithAddress(addr)
+
+	coins := types.Coins{
+		types.NewCoin("dfi", types.NewInt(100100)),
+		types.NewCoin("eth", types.NewInt(100200)),
+	}
+
+	err := acc.SetCoins(coins)
+	require.NoError(t, err)
+
+	input.accountKeeper.SetAccount(input.ctx, &acc)
+	balances := input.accountKeeper.loadBalances(input.ctx, addr)
+
+	// just remove eth.
+	var ethBalance Balance
+	for i, _ := range balances {
+		if balances[i].denom == "eth" {
+			balances[i].balance.Value = types.NewInt(0).BigInt()
+			ethBalance = balances[i]
+			break
+		}
+	}
+
+	input.accountKeeper.saveBalances(input.ctx, balances, nil)
+
+	getter := input.accountKeeper.GetAccount(input.ctx, addr)
+	for _, balance := range balances {
+		t.Logf("%s %s\n", balance.denom, balance.balance.Value.String())
+	}
+	realCoins := balancesToCoins(balances)
+
+	for _, coin := range realCoins {
+		t.Logf("real coins: %s\n", coin.String())
+	}
+
+	require.True(t, getter.GetCoins().IsEqual(realCoins))
+
+	// check that eth resource still exists.
+	require.True(t, input.vmStorage.HasValue(input.ctx, ethBalance.accessPath))
+}
+
+// Bank keeper tests.
+
+// Test send bank keeper.
+func TestVMAccountKeeper_SendBankKeeper(t *testing.T) {
+	input := newTestInput(t)
+
+	addr := secp256k1.GenPrivKey().PubKey().Address().Bytes()
+	recipient := secp256k1.GenPrivKey().PubKey().Address().Bytes()
+
+	acc := auth.NewBaseAccountWithAddress(addr)
+
+	ethValue := types.NewInt(100)
+	part := ethValue.QuoRaw(2)
+
+	dfiPart := types.NewCoin("dfi", types.NewInt(100100))
+	coins := types.Coins{
+		dfiPart,
+		types.NewCoin("eth", ethValue),
+	}
+
+	err := acc.SetCoins(coins)
+	require.NoError(t, err)
+
+	input.accountKeeper.SetAccount(input.ctx, &acc)
+	_, toDelete := coinsToBalances(&acc)
+	require.Empty(t, toDelete)
+
+	getter := input.accountKeeper.GetAccount(input.ctx, addr)
+	require.True(t, getter.GetCoins().IsEqual(coins))
+
+	toSubstract := types.Coins{types.NewCoin("eth", part)}
+
+	// Withdraw eth from sender.
+	{
+		senderCoins, err := input.bankKeeper.SubtractCoins(input.ctx, addr, toSubstract)
+		require.NoError(t, err)
+
+		// deposit eth to recipient.
+		recipientCoins, err := input.bankKeeper.AddCoins(input.ctx, recipient, toSubstract)
+		require.NoError(t, err)
+
+		getter = input.accountKeeper.GetAccount(input.ctx, addr)
+		require.True(t, senderCoins.IsEqual(coins.Sub(toSubstract)))
+		require.True(t, recipientCoins.IsEqual(toSubstract))
+	}
+
+	// Withdraw and deposit rest.
+	{
+		senderCoins, err := input.bankKeeper.SubtractCoins(input.ctx, addr, toSubstract)
+		require.NoError(t, err)
+
+		recipientCoins, err := input.bankKeeper.AddCoins(input.ctx, recipient, toSubstract)
+		require.NoError(t, err)
+
+		getter = input.accountKeeper.GetAccount(input.ctx, addr)
+		require.True(t, senderCoins.IsEqual(types.Coins{dfiPart}))
+		require.True(t, recipientCoins.AmountOf("eth").Equal(ethValue))
+	}
+
+	// Check that ETH resources still exists.
+	{
+		balances := input.accountKeeper.loadBalances(input.ctx, addr)
+		require.Len(t, balances, 2)
+		require.Equal(t, balances[0].denom, "dfi")
+		require.Equal(t, balances[0].balance.Value.String(), "100100")
+		require.Equal(t, balances[1].denom, "eth")
+		require.Equal(t, balances[1].balance.Value.String(), "0")
+	}
 }

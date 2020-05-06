@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -36,6 +37,7 @@ type testInput struct {
 
 	paramsKeeper  params.Keeper
 	accountKeeper VMAccountKeeper
+	bankKeeper    bank.BaseKeeper
 	vmStorage     common_vm.VMStorage
 }
 
@@ -64,6 +66,11 @@ func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAcc
 func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 	store := ctx.KVStore(storage.storeKey)
 	store.Delete(common_vm.MakePathKey(accessPath))
+}
+
+func (storage VMStorageImpl) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
+	store := ctx.KVStore(storage.storeKey)
+	return store.Has(common_vm.MakePathKey(accessPath))
 }
 
 func newTestInput(t *testing.T) testInput {
@@ -102,6 +109,12 @@ func newTestInput(t *testing.T) testInput {
 		input.paramsKeeper.Subspace(auth.DefaultParamspace),
 		input.vmStorage,
 		auth.ProtoBaseAccount,
+	)
+
+	input.bankKeeper = bank.NewBaseKeeper(
+		input.accountKeeper,
+		input.paramsKeeper.Subspace(bank.DefaultParamspace),
+		make(map[string]bool),
 	)
 
 	// Setup context.

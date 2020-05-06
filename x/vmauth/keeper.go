@@ -81,7 +81,9 @@ func (keeper VMAccountKeeper) saveBalances(ctx sdk.Context, balances Balances, t
 	}
 
 	for _, toDel := range toDelete {
-		keeper.vmKeeper.DelValue(ctx, toDel.accessPath)
+		if keeper.vmKeeper.HasValue(ctx, toDel.accessPath) {
+			keeper.vmKeeper.SetValue(ctx, toDel.accessPath, BalanceToBytes(toDel.balance))
+		}
 	}
 }
 
