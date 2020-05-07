@@ -74,15 +74,15 @@ func NewAppModule(keeper Keeper) AppModule {
 }
 
 // Name module name
-func (AppModule) Name() string {
+func (am AppModule) Name() string {
 	return ModuleName
 }
 
 // RegisterInvariants register module invariants
-func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Route module message route name
-func (AppModule) Route() string {
+func (am AppModule) Route() string {
 	return ModuleName
 }
 
@@ -92,7 +92,7 @@ func (am AppModule) NewHandler() sdk.Handler {
 }
 
 // QuerierRoute module querier route name
-func (AppModule) QuerierRoute() string {
+func (am AppModule) QuerierRoute() string {
 	return ModuleName
 }
 
@@ -112,10 +112,10 @@ func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 }
 
 // BeginBlock performs a no-op.
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
 // EndBlock returns the end blocker for the bank module. It returns no validator
 // updates.
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return []abci.ValidatorUpdate{}
+	return EndBlocker(ctx, am.keeper)
 }

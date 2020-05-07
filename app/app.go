@@ -338,7 +338,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, oracle.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, oracle.ModuleName, order.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
