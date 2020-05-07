@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -18,12 +17,12 @@ import (
 )
 
 const (
-	flagClientHome   = "home-client"
+	flagClientHome = "home-client"
+	flagModuleName = "module-name"
 )
 
 // AddGenesisAccountCmd returns add-genesis-account cobra Command.
-func AddGenesisAccountCmd(ctx *server.Context, cdc *codec.Codec,
-	defaultNodeHome, defaultClientHome string) *cobra.Command {
+func AddGenesisAccountCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-genesis-account [address_or_key_name] [coin][,[coin]]",
 		Short: "Add genesis base account to genesis.json",
@@ -52,7 +51,9 @@ func AddGenesisAccountCmd(ctx *server.Context, cdc *codec.Codec,
 				return err
 			}
 
-			genAcc := auth.NewBaseAccount(addr, coins, nil, 0, 0)
+			moduleName := viper.GetString(flagModuleName)
+
+			genAcc := genaccounts.NewGenesisAccountRaw(addr, coins, moduleName)
 			if err := genAcc.Validate(); err != nil {
 				return err
 			}
@@ -65,13 +66,13 @@ func AddGenesisAccountCmd(ctx *server.Context, cdc *codec.Codec,
 			}
 
 			// add genesis account to the app state
-			genesisAccounts := genaccounts.GenesisState{}
+			genesisAccounts := genaccounts.GenesisAccounts{}
 			cdc.MustUnmarshalJSON(appState[genaccounts.ModuleName], &genesisAccounts)
 
 			if genesisAccounts.Contains(addr) {
 				return fmt.Errorf("cannot add account at existing address %v", addr)
 			}
-			genesisAccounts = append(genesisAccounts, *genAcc)
+			genesisAccounts = append(genesisAccounts, genAcc)
 
 			genesisStateBz := cdc.MustMarshalJSON(genaccounts.GenesisState(genesisAccounts))
 			appState[genaccounts.ModuleName] = genesisStateBz
@@ -90,6 +91,7 @@ func AddGenesisAccountCmd(ctx *server.Context, cdc *codec.Codec,
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(flagClientHome, defaultClientHome, "client's home directory")
+	cmd.Flags().String(flagModuleName, "", "module name for module account")
 
 	return cmd
 }
