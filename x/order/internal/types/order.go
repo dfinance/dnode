@@ -25,7 +25,7 @@ type Order struct {
 	CreatedAt time.Time      `json:"created_at"`
 }
 
-func (o Order) QuoteAssetCoin() (retCoin sdk.Coin, retErr error) {
+func (o Order) LockCoin() (retCoin sdk.Coin, retErr error) {
 	coinDenom, coinQuantity := "", sdk.Int{}
 
 	switch o.Direction {

@@ -313,6 +313,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.orderKeeper = order.NewKeeper(
 		keys[order.StoreKey],
 		cdc,
+		app.bankKeeper,
 		app.supplyKeeper,
 		app.marketKeeper,
 	)

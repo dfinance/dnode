@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -17,14 +18,16 @@ import (
 type Keeper struct {
 	cdc          *codec.Codec
 	storeKey     sdk.StoreKey
+	bankKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
 	marketKeeper market.Keeper
 }
 
-func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, sk supply.Keeper, mk market.Keeper) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, bk bank.Keeper, sk supply.Keeper, mk market.Keeper) Keeper {
 	return Keeper{
 		cdc:          cdc,
 		storeKey:     storeKey,
+		bankKeeper:   bk,
 		supplyKeeper: sk,
 		marketKeeper: mk,
 	}
