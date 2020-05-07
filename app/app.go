@@ -33,8 +33,10 @@ import (
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/genaccounts"
+	"github.com/dfinance/dnode/x/market"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/order"
 	"github.com/dfinance/dnode/x/poa"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
@@ -69,6 +71,8 @@ var (
 		multisig.AppModuleBasic{},
 		oracle.AppModuleBasic{},
 		vm.AppModuleBasic{},
+		market.AppModuleBasic{},
+		order.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
@@ -76,6 +80,7 @@ var (
 		distribution.ModuleName:   nil,
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		order.ModuleName: {supply.Burner},
 	}
 )
 
@@ -101,6 +106,8 @@ type DnServiceApp struct {
 	msKeeper       multisig.Keeper
 	vmKeeper       vm.Keeper
 	oracleKeeper   oracle.Keeper
+	marketKeeper   market.Keeper
+	orderKeeper    order.Keeper
 
 	mm *core.MsManager
 
@@ -114,7 +121,7 @@ func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
 	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1 * time.Second)
+	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1*time.Second)
 	if err != nil {
 		panic(err)
 	}
@@ -169,6 +176,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		multisig.StoreKey,
 		vm.StoreKey,
 		oracle.StoreKey,
+		order.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -287,12 +295,26 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
 	)
 
-	// Initializing oracle module
+	// Initializing oracle module.
 	app.oracleKeeper = oracle.NewKeeper(
 		keys[oracle.StoreKey],
 		cdc,
 		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
 		app.vmKeeper,
+	)
+
+	// Initializing market module.
+	app.marketKeeper = market.NewKeeper(
+		cdc,
+		app.paramsKeeper.Subspace(market.DefaultParamspace),
+	)
+
+	// Initializing order module.
+	app.orderKeeper = order.NewKeeper(
+		keys[order.StoreKey],
+		cdc,
+		app.supplyKeeper,
+		app.marketKeeper,
 	)
 
 	// Initializing multisignature manager.
@@ -310,6 +332,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
+		market.NewAppModule(app.marketKeeper),
+		order.NewAppModule(app.orderKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
@@ -332,6 +356,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		multisig.ModuleName,
 		vm.ModuleName,
 		oracle.ModuleName,
+		market.ModuleName,
+		order.ModuleName,
 		genutil.ModuleName,
 	)
 
