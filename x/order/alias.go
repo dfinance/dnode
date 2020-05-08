@@ -6,14 +6,19 @@ import (
 )
 
 type (
-	Keeper = keeper.Keeper
-	Order  = types.Order
-	Orders = types.Orders
+	Keeper     = keeper.Keeper
+	Order      = types.Order
+	Orders     = types.Orders
+	OrderFill  = types.OrderFill
+	OrderFills = types.OrderFills
+	Direction  = types.Direction
 )
 
 const (
-	ModuleName = types.ModuleName
-	StoreKey   = types.StoreKey
+	ModuleName   = types.ModuleName
+	StoreKey     = types.StoreKey
+	BidDirection = types.Bid
+	AskDirection = types.Ask
 )
 
 var (

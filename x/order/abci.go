@@ -16,13 +16,11 @@ func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 
 	for ; iterator.Valid(); iterator.Next() {
 		order := types.Order{}
-		if err := types.ModuleCdc.UnmarshalBinaryLengthPrefixed(iterator.Value(), &order); err != nil {
-			panic(fmt.Errorf("order unmarshal: %w", err))
-		}
+		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &order)
 
 		if now.Sub(order.CreatedAt) >= order.Ttl {
 			k.GetLogger(ctx).Info(fmt.Sprintf("order canceled by TTL: %s", order.ID.String()))
-			k.CancelOrder(ctx, order.ID)
+			k.RevokeOrder(ctx, order.ID)
 		}
 	}
 

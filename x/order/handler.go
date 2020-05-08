@@ -15,7 +15,7 @@ func NewHandler(k Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case types.MsgPostOrder:
 			return HandleMsgPostOrder(ctx, k, msg)
-		case types.MsgCancelOrder:
+		case types.MsgRevokeOrder:
 			return HandleMsgCancelOrder(ctx, k, msg)
 		default:
 			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized order message type: %T", msg)
@@ -40,7 +40,7 @@ func HandleMsgPostOrder(ctx sdk.Context, k Keeper, msg types.MsgPostOrder) (*sdk
 	}, nil
 }
 
-func HandleMsgCancelOrder(ctx sdk.Context, k Keeper, msg types.MsgCancelOrder) (*sdk.Result, error) {
+func HandleMsgCancelOrder(ctx sdk.Context, k Keeper, msg types.MsgRevokeOrder) (*sdk.Result, error) {
 	order, err := k.Get(ctx, msg.OrderID)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func HandleMsgCancelOrder(ctx sdk.Context, k Keeper, msg types.MsgCancelOrder) (
 		return nil, sdkErrors.Wrap(types.ErrWrongOwner, "order owner mismatch")
 	}
 
-	if err := k.CancelOrder(ctx, msg.OrderID); err != nil {
+	if err := k.RevokeOrder(ctx, msg.OrderID); err != nil {
 		return nil, err
 	}
 

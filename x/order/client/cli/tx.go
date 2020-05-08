@@ -65,11 +65,11 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-func GetCmdCancelOrder(cdc *codec.Codec) *cobra.Command {
+func GetCmdRevokeOrder(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "cancel [order-id]",
-		Short: "Cancel an order",
-		Example: "dncli order cancel 0 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
+		Use:   "revoke [order-id]",
+		Short: "Revoke an order",
+		Example: "dncli order revoke 0 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
@@ -83,7 +83,7 @@ func GetCmdCancelOrder(cdc *codec.Codec) *cobra.Command {
 
 			orderID := dnTypes.NewIDFromString(args[0])
 
-			msg := types.NewMsgCancelOrder(cliCtx.GetFromAddress(), orderID)
+			msg := types.NewMsgRevokeOrder(cliCtx.GetFromAddress(), orderID)
 
 			cliCtx.WithOutput(os.Stdout)
 

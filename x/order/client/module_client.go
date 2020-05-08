@@ -36,7 +36,7 @@ func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 
 	txCmd.AddCommand(sdkClient.PostCommands(
 		cli.GetCmdPostOrder(cdc),
-		cli.GetCmdCancelOrder(cdc),
+		cli.GetCmdRevokeOrder(cdc),
 	)...,
 	)
 

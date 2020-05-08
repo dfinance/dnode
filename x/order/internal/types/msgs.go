@@ -9,7 +9,7 @@ import (
 
 var (
 	_ sdk.Msg = MsgPostOrder{}
-	_ sdk.Msg = MsgCancelOrder{}
+	_ sdk.Msg = MsgRevokeOrder{}
 )
 
 type MsgPostOrder struct {
@@ -71,27 +71,27 @@ func (msg MsgPostOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
 
-type MsgCancelOrder struct {
+type MsgRevokeOrder struct {
 	Owner   sdk.AccAddress `json:"owner" yaml:"owner"`
 	OrderID dnTypes.ID     `json:"order_id" yaml:"order_id"`
 }
 
-func NewMsgCancelOrder(owner sdk.AccAddress, id dnTypes.ID) MsgCancelOrder {
-	return MsgCancelOrder{
+func NewMsgRevokeOrder(owner sdk.AccAddress, id dnTypes.ID) MsgRevokeOrder {
+	return MsgRevokeOrder{
 		Owner:   owner,
 		OrderID: id,
 	}
 }
 
-func (msg MsgCancelOrder) Route() string {
+func (msg MsgRevokeOrder) Route() string {
 	return "order"
 }
 
-func (msg MsgCancelOrder) Type() string {
+func (msg MsgRevokeOrder) Type() string {
 	return "cancel"
 }
 
-func (msg MsgCancelOrder) ValidateBasic() error {
+func (msg MsgRevokeOrder) ValidateBasic() error {
 	if msg.Owner.Empty() {
 		return ErrWrongOwner
 	}
@@ -99,10 +99,10 @@ func (msg MsgCancelOrder) ValidateBasic() error {
 	return nil
 }
 
-func (msg MsgCancelOrder) GetSignBytes() []byte {
+func (msg MsgRevokeOrder) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
-func (msg MsgCancelOrder) GetSigners() []sdk.AccAddress {
+func (msg MsgRevokeOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }

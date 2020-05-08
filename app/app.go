@@ -37,6 +37,7 @@ import (
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/order"
+	"github.com/dfinance/dnode/x/orderbook"
 	"github.com/dfinance/dnode/x/poa"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
@@ -73,6 +74,7 @@ var (
 		vm.AppModuleBasic{},
 		market.AppModuleBasic{},
 		order.AppModuleBasic{},
+		orderbook.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
@@ -80,7 +82,7 @@ var (
 		distribution.ModuleName:   nil,
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		order.ModuleName: {supply.Burner},
+		order.ModuleName:          {supply.Burner},
 	}
 )
 
@@ -94,20 +96,21 @@ type DnServiceApp struct {
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 
-	accountKeeper  vmauth.VMAccountKeeper
-	bankKeeper     bank.Keeper
-	supplyKeeper   supply.Keeper
-	paramsKeeper   params.Keeper
-	stakingKeeper  staking.Keeper
-	distrKeeper    distribution.Keeper
-	slashingKeeper slashing.Keeper
-	poaKeeper      poa.Keeper
-	ccKeeper       currencies.Keeper
-	msKeeper       multisig.Keeper
-	vmKeeper       vm.Keeper
-	oracleKeeper   oracle.Keeper
-	marketKeeper   market.Keeper
-	orderKeeper    order.Keeper
+	accountKeeper   vmauth.VMAccountKeeper
+	bankKeeper      bank.Keeper
+	supplyKeeper    supply.Keeper
+	paramsKeeper    params.Keeper
+	stakingKeeper   staking.Keeper
+	distrKeeper     distribution.Keeper
+	slashingKeeper  slashing.Keeper
+	poaKeeper       poa.Keeper
+	ccKeeper        currencies.Keeper
+	msKeeper        multisig.Keeper
+	vmKeeper        vm.Keeper
+	oracleKeeper    oracle.Keeper
+	marketKeeper    market.Keeper
+	orderKeeper     order.Keeper
+	orderBookKeeper orderbook.Keeper
 
 	mm *core.MsManager
 
@@ -318,6 +321,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.marketKeeper,
 	)
 
+	app.orderBookKeeper = orderbook.NewKeeper(
+		cdc,
+		app.orderKeeper,
+	)
+
 	// Initializing multisignature manager.
 	app.mm = core.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
@@ -335,10 +343,20 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		vm.NewAppModule(app.vmKeeper),
 		market.NewAppModule(app.marketKeeper),
 		order.NewAppModule(app.orderKeeper),
+		orderbook.NewAppModule(app.orderBookKeeper),
 	)
 
-	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, multisig.ModuleName, oracle.ModuleName, order.ModuleName)
+	app.mm.SetOrderBeginBlockers(
+		distribution.ModuleName,
+		slashing.ModuleName,
+	)
+	app.mm.SetOrderEndBlockers(
+		staking.ModuleName,
+		multisig.ModuleName,
+		oracle.ModuleName,
+		order.ModuleName,
+		orderbook.ModuleName,
+	)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -359,6 +377,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		oracle.ModuleName,
 		market.ModuleName,
 		order.ModuleName,
+		orderbook.ModuleName,
 		genutil.ModuleName,
 	)
 

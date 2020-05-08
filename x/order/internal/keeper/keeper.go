@@ -59,7 +59,7 @@ func (k Keeper) PostOrder(
 	return order, nil
 }
 
-func (k Keeper) CancelOrder(ctx sdk.Context, id dnTypes.ID) error {
+func (k Keeper) RevokeOrder(ctx sdk.Context, id dnTypes.ID) error {
 	order, err := k.Get(ctx, id)
 	if err != nil {
 		return sdkErrors.Wrap(types.ErrWrongOrderID, "not found")

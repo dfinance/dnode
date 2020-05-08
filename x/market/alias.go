@@ -21,4 +21,5 @@ var (
 	ModuleCdc = types.ModuleCdc
 	// function aliases
 	NewKeeper = keeper.NewKeeper
+	NewMarket = types.NewMarket
 )
