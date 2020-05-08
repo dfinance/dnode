@@ -42,6 +42,16 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	err = AddDenomPath("usdt", "018732c3c1c97e74991015236f986b86f880dc15d1e53e5a87c43eb6e815a1bba4")
+	if err != nil {
+		panic(err)
+	}
+
+	err = AddDenomPath("btc", "0149af652c6d26dedd044d8562f4a788bce2790e587b3441d6eea00f2ff76b80a3")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func AddDenomPath(denom string, path string) error {

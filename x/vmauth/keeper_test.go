@@ -40,8 +40,9 @@ func TestVMAccountKeeper_SetAccount(t *testing.T) {
 	acc := auth.NewBaseAccountWithAddress(addr)
 
 	coin := types.NewCoin("dfi", types.NewInt(1))
+	coins := types.Coins{coin}
 
-	if err := acc.SetCoins(types.Coins{coin}); err != nil {
+	if err := acc.SetCoins(coins); err != nil {
 		t.Fatal(err)
 	}
 
@@ -56,8 +57,11 @@ func TestVMAccountKeeper_SetAccount(t *testing.T) {
 
 	// add new resource in vm.
 	balances, toDelete := coinsToBalances(getter)
-	require.Len(t, toDelete, 1) // contains only eth.
-	require.False(t, input.vmStorage.HasValue(input.ctx, toDelete[0].accessPath))
+	require.Len(t, toDelete, len(denomPaths)-len(coins)) // contains rest (exclude dfi)
+
+	for _, toDel := range toDelete {
+		require.False(t, input.vmStorage.HasValue(input.ctx, toDel.accessPath))
+	}
 
 	balances = append(balances, toDelete...)
 	input.accountKeeper.saveBalances(input.ctx, balances, nil)
@@ -71,7 +75,7 @@ func TestVMAccountKeeper_SetAccount(t *testing.T) {
 	defer RemoveDenomPath("test1")
 
 	balances, toDelete = coinsToBalances(getter)
-	require.Len(t, toDelete, 2) // contains 2 - eth and test1
+	require.Len(t, toDelete, len(denomPaths)-len(coins)) // contains 2 - eth and test1
 
 	for i := range toDelete {
 		if toDelete[i].denom == "test1" {
@@ -201,7 +205,7 @@ func TestVMAccount_GetExistsAccount(t *testing.T) {
 	}
 
 	balances, toDelete := coinsToBalances(&acc)
-	require.Empty(t, toDelete)
+	require.Len(t, toDelete, len(denomPaths)-len(coins))
 
 	require.Len(t, balances, len(coins), "balances length doesnt match coins")
 
@@ -290,7 +294,7 @@ func TestVMAccount_loadBalances(t *testing.T) {
 	}
 
 	balances, toDelete := coinsToBalances(&acc)
-	require.Empty(t, toDelete)
+	require.Len(t, toDelete, len(denomPaths)-len(coins))
 
 	input.accountKeeper.saveBalances(input.ctx, balances, toDelete)
 
@@ -364,6 +368,8 @@ func TestVMAccountKeeper_SetBalancesWithDelete(t *testing.T) {
 	coins := types.Coins{
 		types.NewCoin("dfi", types.NewInt(100100)),
 		types.NewCoin("eth", types.NewInt(100200)),
+		types.NewCoin("btc", types.NewInt(1000)),
+		types.NewCoin("usdt", types.NewInt(10)),
 		types.NewCoin("test1", types.NewInt(100300)),
 		types.NewCoin("test2", types.NewInt(100400)),
 	}
@@ -496,7 +502,7 @@ func TestVMAccountKeeper_SendBankKeeper(t *testing.T) {
 
 	input.accountKeeper.SetAccount(input.ctx, &acc)
 	_, toDelete := coinsToBalances(&acc)
-	require.Empty(t, toDelete)
+	require.Len(t, toDelete, len(denomPaths)-len(coins))
 
 	getter := input.accountKeeper.GetAccount(input.ctx, addr)
 	require.True(t, getter.GetCoins().IsEqual(coins))
