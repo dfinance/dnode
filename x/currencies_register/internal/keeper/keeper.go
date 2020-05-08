@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/errors"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/dfinance/lcs"
 	"github.com/tendermint/go-amino"
@@ -38,7 +38,7 @@ func (keeper Keeper) AddCurrencyInfo(ctx sdk.Context, denom string, decimals uin
 	// Return error if currency already registered.
 	if store.Has(keyPath) {
 		// Return error.
-		return errors.Wrap(types.ErrExists, fmt.Sprintf("denom %s", denom))
+		return sdkErrors.Wrap(types.ErrExists, fmt.Sprintf("denom %s", denom))
 	}
 
 	// Save currency.
@@ -54,12 +54,12 @@ func (keeper Keeper) AddCurrencyInfo(ctx sdk.Context, denom string, decimals uin
 	// Now save currency info to vm storage under owner account.
 	currencyInfo, err := types.NewCurrencyInfo([]byte(denom), decimals, isToken, owner, totalSupply.BigInt())
 	if err != nil {
-		return errors.Wrap(types.ErrWrongAddressLen, fmt.Sprintf("can't create new currency info, denom %s: %v", denom, err))
+		return sdkErrors.Wrap(types.ErrWrongAddressLen, fmt.Sprintf("can't create new currency info, denom %s: %v", denom, err))
 	}
 
 	bz, err = lcs.Marshal(currencyInfo)
 	if err != nil {
-		return errors.Wrap(types.ErrLcsMarshal, fmt.Sprintf("can't marshall currency info %s: %v", denom, err))
+		return sdkErrors.Wrap(types.ErrLcsMarshal, fmt.Sprintf("can't marshall currency info %s: %v", denom, err))
 	}
 
 	accessPath := vm_grpc.VMAccessPath{
@@ -87,7 +87,7 @@ func (keeper Keeper) GetCurrencyInfo(ctx sdk.Context, denom string) (types.Curre
 
 	// Return error if currency already registered.
 	if !store.Has(keyPath) {
-		return types.CurrencyInfo{}, errors.Wrap(types.ErrNotFound, fmt.Sprintf("not found info with denom %s", denom))
+		return types.CurrencyInfo{}, sdkErrors.Wrap(types.ErrNotFound, fmt.Sprintf("not found info with denom %s", denom))
 	}
 
 	// load path
@@ -105,7 +105,7 @@ func (keeper Keeper) GetCurrencyInfo(ctx sdk.Context, denom string) (types.Curre
 	var currInfo types.CurrencyInfo
 	err := lcs.Unmarshal(bz, &currInfo)
 	if err != nil {
-		return types.CurrencyInfo{}, errors.Wrap(types.ErrLcsUnmarshal, fmt.Sprintf("can't unmarshal currency , denom %s: %v", denom, err))
+		return types.CurrencyInfo{}, sdkErrors.Wrap(types.ErrLcsUnmarshal, fmt.Sprintf("can't unmarshal currency , denom %s: %v", denom, err))
 	}
 
 	return currInfo, nil
