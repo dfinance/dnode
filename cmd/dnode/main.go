@@ -23,6 +23,7 @@ import (
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/logger"
+	currencyInfoCli "github.com/dfinance/dnode/x/currencies_register/cli"
 	"github.com/dfinance/dnode/x/genaccounts"
 	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
 	oracleCli "github.com/dfinance/dnode/x/oracle/client/cli"
@@ -71,6 +72,7 @@ func main() {
 		vmCli.GenesisWSFromFile(ctx, cdc),
 		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		currencyInfoCli.AddGenesisCurrencyInfo(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 
