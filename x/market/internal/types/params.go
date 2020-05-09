@@ -6,16 +6,19 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params/subspace"
 )
 
+// Storage keys.
 var (
 	KeyMarkets  = []byte("marketMarkets")
 	KeyNominees = []byte("marketNominees")
 )
 
+// Keeper params type.
 type Params struct {
 	Markets  Markets
 	Nominees []string
 }
 
+// Implements subspace.ParamSet.
 func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	nilPairValidatorFunc := func(value interface{}) error {
 		return nil
@@ -27,6 +30,7 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 	}
 }
 
+// Validate validates keeper params.
 func (p Params) Validate() error {
 	for i, m := range p.Markets {
 		if err := m.Valid(); err != nil {
@@ -43,6 +47,7 @@ func (p Params) Validate() error {
 	return nil
 }
 
+// NewParams creates a new keeper params object.
 func NewParams(markets []Market, nominees []string) Params {
 	return Params{
 		Markets:  markets,
@@ -50,10 +55,12 @@ func NewParams(markets []Market, nominees []string) Params {
 	}
 }
 
+// DefaultParams returns default keeper params.
 func DefaultParams() Params {
 	return NewParams(Markets{}, []string{})
 }
 
+// ParamKeyTable creates keeper params KeyTable.
 func ParamKeyTable() subspace.KeyTable {
 	return subspace.NewKeyTable().RegisterParamSet(&Params{})
 }

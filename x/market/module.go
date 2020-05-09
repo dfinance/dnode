@@ -1,3 +1,5 @@
+// Market module is used to store Base-Quote pairs with specific settings.
+// Orders can't be posted without a corresponding market object.
 package market
 
 import (
@@ -21,27 +23,27 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
-// AppModuleBasic app module basics object
+// AppModuleBasic app module basics object.
 type AppModuleBasic struct{}
 
 var _ module.AppModuleBasic = AppModuleBasic{}
 
-// Name get module name
+// Name gets module name.
 func (AppModuleBasic) Name() string {
 	return ModuleName
 }
 
-// RegisterCodec register module codec
+// RegisterCodec registers module codec.
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 	types.RegisterCodec(cdc)
 }
 
-// DefaultGenesis default genesis state
+// DefaultGenesis gets default module genesis state.
 func (AppModuleBasic) DefaultGenesis() json.RawMessage {
 	return types.ModuleCdc.MustMarshalJSON(types.DefaultGenesisState())
 }
 
-// ValidateGenesis module validate genesis
+// ValidateGenesis validates module genesis state.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	var data types.GenesisState
 	if err := types.ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
@@ -51,26 +53,26 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	return types.ValidateGenesis(data)
 }
 
-// RegisterRESTRoutes registers the REST routes for the bank module.
+// RegisterRESTRoutes registers module REST routes.
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {}
 
-// GetTxCmd returns the root tx command for the bank module.
+// GetTxCmd returns module root tx command.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return client.GetTxCmd(cdc)
 }
 
-// GetQueryCmd returns no root query command for the bank module.
+// GetQueryCmd returns module root query command.
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 	return client.GetQueryCmd(cdc)
 }
 
-// AppModule app module type
+// AppModule is a app module type.
 type AppModule struct {
 	AppModuleBasic
 	keeper Keeper
 }
 
-// NewAppModule creates a new AppModule object
+// NewAppModule creates new AppModule object.
 func NewAppModule(keeper Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -78,35 +80,35 @@ func NewAppModule(keeper Keeper) AppModule {
 	}
 }
 
-// Name module name
+// Name gets module name.
 func (am AppModule) Name() string {
 	return ModuleName
 }
 
-// RegisterInvariants register module invariants
+// RegisterInvariants registers module invariants.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Route module message route name
+// Route returns module messages route.
 func (am AppModule) Route() string {
 	return ModuleName
 }
 
-// NewHandler module handler
+// NewHandler returns module messages handler.
 func (am AppModule) NewHandler() sdk.Handler {
 	return NewHandler(am.keeper)
 }
 
-// QuerierRoute module querier route name
+// QuerierRoute returns module querier route.
 func (am AppModule) QuerierRoute() string {
 	return ModuleName
 }
 
-// NewQuerierHandler module querier
+// NewQuerierHandler creates module querier
 func (am AppModule) NewQuerierHandler() sdk.Querier {
 	return keeper.NewQuerier(am.keeper)
 }
 
-// InitGenesis module init-genesis
+// InitGenesis inits module-genesis state.
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
 	genesis := types.GenesisState{}
 	types.ModuleCdc.MustUnmarshalJSON(data, &genesis)
@@ -115,7 +117,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.Va
 	return []abci.ValidatorUpdate{}
 }
 
-// ExportGenesis module export genesis
+// ExportGenesis export module genesis state.
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	params := am.keeper.GetParams(ctx)
 	genesis := types.NewGenesisState(params)
@@ -123,11 +125,11 @@ func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	return types.ModuleCdc.MustMarshalJSON(genesis)
 }
 
-// BeginBlock performs a no-op.
+// BeginBlock performs module actions at a block start.
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
-// EndBlock returns the end blocker for the bank module. It returns no validator
-// updates.
+// EndBlock performs module actions at a block end.
+// It returns no validator updates.
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }

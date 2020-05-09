@@ -15,6 +15,7 @@ import (
 	"github.com/dfinance/dnode/x/market/internal/types"
 )
 
+// AddMarketNomineesCmd return genesis tx command which adds nominees to genesis state.
 func AddMarketNomineesCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-market-nominees-gen [address1,address2...]",
@@ -38,7 +39,7 @@ func AddMarketNomineesCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome
 				return err
 			}
 
-			// add genesis account to the app state
+			// add nominee account to the app state
 			var genesisMarket types.GenesisState
 
 			cdc.MustUnmarshalJSON(appState[types.ModuleName], &genesisMarket)
@@ -59,15 +60,15 @@ func AddMarketNomineesCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome
 
 			genesisMarket.Params.Nominees = nominees
 
+			// update the app state
 			genesisStateBz := cdc.MustMarshalJSON(genesisMarket)
 			appState[types.ModuleName] = genesisStateBz
 
+			// export app state
 			appStateJSON, err := cdc.MarshalJSON(appState)
 			if err != nil {
 				return err
 			}
-
-			// export app state
 			genDoc.AppState = appStateJSON
 
 			return genutil.ExportGenesisFile(genDoc, genFile)

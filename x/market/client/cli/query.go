@@ -11,6 +11,7 @@ import (
 	"github.com/dfinance/dnode/x/market/internal/types"
 )
 
+// GetCmdListMarkets returns query command that lists all market objects.
 func GetCmdListMarkets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",

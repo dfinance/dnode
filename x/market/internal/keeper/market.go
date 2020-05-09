@@ -10,12 +10,14 @@ import (
 	"github.com/dfinance/dnode/x/market/internal/types"
 )
 
+// Has check if market object with ID exists.
 func (k Keeper) Has(ctx sdk.Context, id dnTypes.ID) bool {
 	_, err := k.Get(ctx, id)
 
 	return err == nil
 }
 
+// Get gets market object by ID.
 func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Market, error) {
 	params := k.GetParams(ctx)
 	nextID := k.nextID(params)
@@ -32,6 +34,8 @@ func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Market, error) {
 	return market, nil
 }
 
+// Add creates a new market object.
+// Action is only allowed to nominee accounts.
 func (k Keeper) Add(ctx sdk.Context, nominee, baseAsset, quoteAsset string, baseDecimals uint8) (types.Market, error) {
 	if !k.isNominee(ctx, nominee) {
 		return types.Market{}, sdkErrors.Wrap(types.ErrWrongNominee, nominee)

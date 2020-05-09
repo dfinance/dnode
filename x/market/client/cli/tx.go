@@ -15,6 +15,7 @@ import (
 	"github.com/dfinance/dnode/x/market/internal/types"
 )
 
+// GetCmdAddMarket return tx command which adds a market object.
 func GetCmdAddMarket(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "add [base_denom] [quote_denom] [base_decimals]",
@@ -26,11 +27,13 @@ func GetCmdAddMarket(cdc *codec.Codec) *cobra.Command {
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 
+			// inputs parsing
 			baseDecimals, err := strconv.ParseUint(args[2], 10, 8)
 			if err != nil {
 				return fmt.Errorf("%s argument %q: parsing uint: %w", "base_decimals", args[2], err)
 			}
 
+			// message send
 			msg := types.NewMsgCreateMarket(cliCtx.GetFromAddress(), args[0], args[1], uint8(baseDecimals))
 
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})

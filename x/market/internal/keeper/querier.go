@@ -15,6 +15,7 @@ const (
 	QueryList = "list"
 )
 
+// NewQuerier return keeper querier.
 func NewQuerier(k Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err error) {
 		switch path[0] {
@@ -26,6 +27,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 	}
 }
 
+// queryList handles list query which return all market objects.
 func queryList(ctx sdk.Context, k Keeper) ([]byte, error) {
 	markets := types.Markets{}
 	markets = append(markets, k.GetParams(ctx).Markets...)
