@@ -9,12 +9,14 @@ import (
 	"github.com/dfinance/dnode/x/order/internal/types"
 )
 
+// Has check if order object with ID exists.
 func (k Keeper) Has(ctx sdk.Context, id dnTypes.ID) bool {
 	store := ctx.KVStore(k.storeKey)
 
 	return store.Has(types.GetOrderKey(id))
 }
 
+// Get gets order object by ID.
 func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Order, error) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetOrderKey(id))
@@ -30,6 +32,7 @@ func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Order, error) {
 	return order, nil
 }
 
+// Set creates / overwrites order object.
 func (k Keeper) Set(ctx sdk.Context, order types.Order) {
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetOrderKey(order.ID)
@@ -37,18 +40,21 @@ func (k Keeper) Set(ctx sdk.Context, order types.Order) {
 	store.Set(key, bz)
 }
 
+// Del removes order object.
 func (k Keeper) Del(ctx sdk.Context, id dnTypes.ID) {
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetOrderKey(id)
 	store.Delete(key)
 }
 
+// GetIterator return order object iterator (direct order).
 func (k Keeper) GetIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 
 	return sdk.KVStorePrefixIterator(store, types.OrderKeyPrefix)
 }
 
+// GetIterator return order object iterator (reverse order).
 func (k Keeper) GetReverseIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 

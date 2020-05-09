@@ -1,5 +1,6 @@
 package types
 
+// Enum type to define bid/ask order type.
 type Direction string
 
 const (

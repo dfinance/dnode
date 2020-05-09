@@ -15,7 +15,7 @@ import (
 	"github.com/dfinance/dnode/x/market/internal/types"
 )
 
-// GetCmdAddMarket return tx command which adds a market object.
+// GetCmdAddMarket returns tx command which adds a market object.
 func GetCmdAddMarket(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "add [base_denom] [quote_denom] [base_decimals]",

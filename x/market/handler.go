@@ -9,7 +9,7 @@ import (
 	"github.com/dfinance/dnode/x/market/internal/types"
 )
 
-// NewHandler handles all market type messages.
+// NewHandler creates market type messages handler.
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {

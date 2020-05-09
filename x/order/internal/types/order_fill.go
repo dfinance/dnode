@@ -10,6 +10,8 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+// OrderBook module market order processing (matching) result type.
+// Defines whether order should be fully/partially executed and stores some extra meta.
 type OrderFill struct {
 	Order            Order
 	ClearancePrice   sdk.Uint
@@ -17,6 +19,8 @@ type OrderFill struct {
 	QuantityUnfilled sdk.Uint
 }
 
+// FillCoin returns Coin that should be filled (transferred from Bank to Account).
+// Coin denom and quantity is Market and Order type specific.
 func (f OrderFill) FillCoin() (retCoin sdk.Coin, retErr error) {
 	coinDenom, coinQuantity := "", sdk.Int{}
 
@@ -40,6 +44,10 @@ func (f OrderFill) FillCoin() (retCoin sdk.Coin, retErr error) {
 	return
 }
 
+// RefundCoin returns Coin that should be refunded (transferred from Bank to Account).
+// Coin denom and quantity is Market and Order type specific.
+//   (doRefund: true, retCoin: not nil) - refund should be done and a proper refund coin was generated;
+//   (doRefund: true, retCoin: nil) - refund should be done, but refund coin can't be generated (retErr contains why);
 func (f OrderFill) RefundCoin() (doRefund bool, retCoin *sdk.Coin, retErr error) {
 	switch f.Order.Direction {
 	case Bid:
@@ -62,6 +70,7 @@ func (f OrderFill) RefundCoin() (doRefund bool, retCoin *sdk.Coin, retErr error)
 	return
 }
 
+// Strings returns multi-line text object representation.
 func (f OrderFill) String() string {
 	b := strings.Builder{}
 	b.WriteString("OrderFill:\n")
@@ -73,6 +82,7 @@ func (f OrderFill) String() string {
 	return b.String()
 }
 
+// TableHeaders returns table headers for multi-line text table object representation.
 func (f OrderFill) TableHeaders() []string {
 	h := []string{
 		"F.ClearancePrice",
@@ -83,6 +93,7 @@ func (f OrderFill) TableHeaders() []string {
 	return append(h, f.Order.TableHeaders()...)
 }
 
+// TableHeaders returns table rows for multi-line text table object representation.
 func (f OrderFill) TableValues() []string {
 	v := []string{
 		f.ClearancePrice.String(),
@@ -93,8 +104,10 @@ func (f OrderFill) TableValues() []string {
 	return append(v, f.Order.TableValues()...)
 }
 
+// OrderFill slice type.
 type OrderFills []OrderFill
 
+// Strings returns multi-line text object representation.
 func (f OrderFills) String() string {
 	var buf bytes.Buffer
 

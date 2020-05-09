@@ -18,6 +18,7 @@ import (
 	"github.com/dfinance/dnode/x/order/internal/types"
 )
 
+// GetCmdPostOrder returns tx command which post a new order.
 func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "post [market_id] [direction] [price] [quantity] [TTL_in_sec]",
@@ -30,6 +31,7 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 			accGetter := auth.NewAccountRetriever(cliCtx)
 
+			// parse and check inputs
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return fmt.Errorf("fromAddress: %w", err)
 			}
@@ -56,6 +58,7 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("argument %q: parsing uint: %w", "TTL_in_sec", err)
 			}
 
+			// prepare and send message
 			msg := types.NewMsgPost(cliCtx.GetFromAddress(), marketID, direction, price, quantity, ttlInSec)
 
 			cliCtx.WithOutput(os.Stdout)
@@ -65,6 +68,7 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// GetCmdRevokeOrder returns tx command which revokes an order.
 func GetCmdRevokeOrder(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "revoke [order-id]",
@@ -77,12 +81,14 @@ func GetCmdRevokeOrder(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 			accGetter := auth.NewAccountRetriever(cliCtx)
 
+			// parse and check inputs
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return fmt.Errorf("fromAddress: %w", err)
 			}
 
 			orderID := dnTypes.NewIDFromString(args[0])
 
+			// prepare and send message
 			msg := types.NewMsgRevokeOrder(cliCtx.GetFromAddress(), orderID)
 
 			cliCtx.WithOutput(os.Stdout)

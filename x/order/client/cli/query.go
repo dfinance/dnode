@@ -11,6 +11,7 @@ import (
 	"github.com/dfinance/dnode/x/order/internal/types"
 )
 
+// GetCmdListOrders returns query command that lists all order objects.
 func GetCmdListOrders(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",

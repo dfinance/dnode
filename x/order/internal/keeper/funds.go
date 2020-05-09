@@ -9,6 +9,8 @@ import (
 	"github.com/dfinance/dnode/x/order/internal/types"
 )
 
+// LockOrderCoins locks account funds defined by order on order posting.
+// Coins transfer from Account to Module.
 func (k Keeper) LockOrderCoins(ctx sdk.Context, order types.Order) error {
 	coin, err := order.LockCoin()
 	if err != nil {
@@ -22,6 +24,8 @@ func (k Keeper) LockOrderCoins(ctx sdk.Context, order types.Order) error {
 	return nil
 }
 
+// LockOrderCoins locks account funds defined by order on order canceling.
+// Coins transfer from Module to Account.
 func (k Keeper) UnlockOrderCoins(ctx sdk.Context, order types.Order) error {
 	coin, err := order.LockCoin()
 	if err != nil {
@@ -35,6 +39,10 @@ func (k Keeper) UnlockOrderCoins(ctx sdk.Context, order types.Order) error {
 	return nil
 }
 
+// ExecuteOrderFills processes orderFills transfers fund on full / partial order execution.
+// Refunding is done for bid order if clearancePrice is less that order target price.
+// Order is removed from the store on full order fill.
+// Order stays active on partial order fill (order quantity is reduced).
 func (k Keeper) ExecuteOrderFills(ctx sdk.Context, orderFills types.OrderFills) {
 	for _, orderFill := range orderFills {
 		fillCoin, err := orderFill.FillCoin()

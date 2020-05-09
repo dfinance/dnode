@@ -9,21 +9,22 @@ import (
 	"github.com/dfinance/dnode/x/order/internal/types"
 )
 
-// NewHandler handles all order type messages.
+// NewHandler creates order type messages handler.
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
 		case types.MsgPostOrder:
-			return HandleMsgPostOrder(ctx, k, msg)
+			return handleMsgPostOrder(ctx, k, msg)
 		case types.MsgRevokeOrder:
-			return HandleMsgCancelOrder(ctx, k, msg)
+			return handleMsgCancelOrder(ctx, k, msg)
 		default:
 			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized order message type: %T", msg)
 		}
 	}
 }
 
-func HandleMsgPostOrder(ctx sdk.Context, k Keeper, msg types.MsgPostOrder) (*sdk.Result, error) {
+// handleMsgPostOrder handles MsgPostOrder message which creates a new order.
+func handleMsgPostOrder(ctx sdk.Context, k Keeper, msg types.MsgPostOrder) (*sdk.Result, error) {
 	order, err := k.PostOrder(ctx, msg.Owner, msg.MarketID, msg.Direction, msg.Price, msg.Quantity, msg.TtlInSec)
 	if err != nil {
 		return nil, err
@@ -40,7 +41,8 @@ func HandleMsgPostOrder(ctx sdk.Context, k Keeper, msg types.MsgPostOrder) (*sdk
 	}, nil
 }
 
-func HandleMsgCancelOrder(ctx sdk.Context, k Keeper, msg types.MsgRevokeOrder) (*sdk.Result, error) {
+// handleMsgCancelOrder handles MsgRevokeOrder message which deletes a new order.
+func handleMsgCancelOrder(ctx sdk.Context, k Keeper, msg types.MsgRevokeOrder) (*sdk.Result, error) {
 	order, err := k.Get(ctx, msg.OrderID)
 	if err != nil {
 		return nil, err

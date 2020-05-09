@@ -1,3 +1,5 @@
+// Order module keeper creates, stores and removes order objects.
+// Keeper locks, unlock, transfers account funds on order posting, canceling, executing.
 package keeper
 
 import (
@@ -15,6 +17,7 @@ import (
 	"github.com/dfinance/dnode/x/order/internal/types"
 )
 
+// Module keeper object.
 type Keeper struct {
 	cdc          *codec.Codec
 	storeKey     sdk.StoreKey
@@ -23,6 +26,7 @@ type Keeper struct {
 	marketKeeper market.Keeper
 }
 
+// NewKeeper creates keeper object.
 func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, bk bank.Keeper, sk supply.Keeper, mk market.Keeper) Keeper {
 	return Keeper{
 		cdc:          cdc,
@@ -33,6 +37,7 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, bk bank.Keeper, sk suppl
 	}
 }
 
+// PostOrder creates a new order object and locks account funds (coins).
 func (k Keeper) PostOrder(
 	ctx sdk.Context,
 	owner sdk.AccAddress,
@@ -59,6 +64,7 @@ func (k Keeper) PostOrder(
 	return order, nil
 }
 
+// RevokeOrder removes an order object and unlocks account funds (coins).
 func (k Keeper) RevokeOrder(ctx sdk.Context, id dnTypes.ID) error {
 	order, err := k.Get(ctx, id)
 	if err != nil {
@@ -73,11 +79,12 @@ func (k Keeper) RevokeOrder(ctx sdk.Context, id dnTypes.ID) error {
 	return nil
 }
 
-// Get logger for keeper.
+// GetLogger gets logger with keeper context.
 func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/" + types.ModuleName)
 }
 
+// nextID return next unique order object ID.
 func (k Keeper) nextID(ctx sdk.Context) dnTypes.ID {
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has(types.LastOrderIDKey) {
@@ -93,6 +100,7 @@ func (k Keeper) nextID(ctx sdk.Context) dnTypes.ID {
 	return id.Incr()
 }
 
+// setID sets last unique order object ID.
 func (k Keeper) setID(ctx sdk.Context, id dnTypes.ID) {
 	store := ctx.KVStore(k.storeKey)
 

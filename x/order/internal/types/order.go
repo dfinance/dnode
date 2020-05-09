@@ -14,17 +14,28 @@ import (
 	"github.com/dfinance/dnode/x/market"
 )
 
+// Market order object type.
 type Order struct {
+	// Order unique ID
 	ID        dnTypes.ID     `json:"id"`
+	// Order owner account address
 	Owner     sdk.AccAddress `json:"owner"`
+	// Market order belong to
 	Market    market.Market  `json:"market"`
+	// Order type (bid/ask)
 	Direction Direction      `json:"direction"`
+	// Order target price
 	Price     sdk.Uint       `json:"price"`
+	// Order target quantity
 	Quantity  sdk.Uint       `json:"quantity"`
+	// TimeToLive order auto-cancel period
 	Ttl       time.Duration  `json:"ttl_dur"`
+	// Created timestamp
 	CreatedAt time.Time      `json:"created_at"`
 }
 
+// LockCoin return Coin that should be locked (transferred from account to the module).
+// Coin denom and quantity are Marked and Order type specific.
 func (o Order) LockCoin() (retCoin sdk.Coin, retErr error) {
 	coinDenom, coinQuantity := "", sdk.Int{}
 
@@ -48,6 +59,7 @@ func (o Order) LockCoin() (retCoin sdk.Coin, retErr error) {
 	return
 }
 
+// Strings returns multi-line text object representation.
 func (o Order) String() string {
 	b := strings.Builder{}
 	b.WriteString("Order:\n")
@@ -63,6 +75,7 @@ func (o Order) String() string {
 	return b.String()
 }
 
+// TableHeaders returns table headers for multi-line text table object representation.
 func (o Order) TableHeaders() []string {
 	h := []string{
 		"O.ID",
@@ -77,6 +90,7 @@ func (o Order) TableHeaders() []string {
 	return append(h, o.Market.TableHeaders()...)
 }
 
+// TableHeaders returns table rows for multi-line text table object representation.
 func (o Order) TableValues() []string {
 	v := []string{
 		o.ID.String(),
@@ -91,6 +105,7 @@ func (o Order) TableValues() []string {
 	return append(v, o.Market.TableValues()...)
 }
 
+// NewOrder creates a new order object.
 func NewOrder(ctx sdk.Context, id dnTypes.ID, owner sdk.AccAddress, market market.Market, direction Direction, price sdk.Uint, quantity sdk.Uint, ttlInSec uint64) Order {
 	return Order{
 		ID:        id,
@@ -104,8 +119,10 @@ func NewOrder(ctx sdk.Context, id dnTypes.ID, owner sdk.AccAddress, market marke
 	}
 }
 
+// Order slice type.
 type Orders []Order
 
+// Strings returns multi-line text object representation.
 func (l Orders) String() string {
 	var buf bytes.Buffer
 

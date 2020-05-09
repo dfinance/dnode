@@ -117,7 +117,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.Va
 	return []abci.ValidatorUpdate{}
 }
 
-// ExportGenesis export module genesis state.
+// ExportGenesis exports module genesis state.
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	params := am.keeper.GetParams(ctx)
 	genesis := types.NewGenesisState(params)
