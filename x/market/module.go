@@ -103,7 +103,7 @@ func (am AppModule) QuerierRoute() string {
 	return ModuleName
 }
 
-// NewQuerierHandler creates module querier
+// NewQuerierHandler creates module querier.
 func (am AppModule) NewQuerierHandler() sdk.Querier {
 	return keeper.NewQuerier(am.keeper)
 }

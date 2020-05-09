@@ -10,11 +10,13 @@ import (
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
 )
 
+// MatcherPool objects stores matchers for market IDs.
 type MatcherPool struct {
 	logger log.Logger
 	pool map[dnTypes.ID]*Matcher
 }
 
+// AddOrder adds order to the corresponding matcher (by marketID).
 func (mp *MatcherPool) AddOrder(order orderTypes.Order) error {
 	marketID := order.Market.ID
 	matcher, ok := mp.pool[marketID]
@@ -26,6 +28,8 @@ func (mp *MatcherPool) AddOrder(order orderTypes.Order) error {
 	return matcher.AddOrder(&order)
 }
 
+// Process executes every pool matcher and combines the results.
+// Panics on internal errors, otherwise just logs.
 func (mp *MatcherPool) Process() types.MatcherResults {
 	results := make(types.MatcherResults, 0, len(mp.pool))
 
@@ -48,6 +52,7 @@ func (mp *MatcherPool) Process() types.MatcherResults {
 	return results
 }
 
+// NewMatcherPool creates a new MatcherPool object.
 func NewMatcherPool(logger log.Logger) MatcherPool {
 	return MatcherPool{
 		logger: logger,

@@ -9,13 +9,19 @@ import (
 	orderTypes "github.com/dfinance/dnode/x/order"
 )
 
+// MatcherResult stores matcher results.
 type MatcherResult struct {
-	ClearanceState   ClearanceState
+	// PQCurve crossing point data
+	ClearanceState ClearanceState
+	// Sum of matched bid orders volume
 	MatchedBidVolume sdk.Dec
+	// Sum of matched ask orders volume
 	MatchedAskVolume sdk.Dec
-	OrderFills       orderTypes.OrderFills
+	// Fully / partially filled orders with some meta
+	OrderFills orderTypes.OrderFills
 }
 
+// Strings returns multi-line text object representation.
 func (r MatcherResult) String() string {
 	b := strings.Builder{}
 	b.WriteString("MatcherResult:\n")
@@ -28,4 +34,5 @@ func (r MatcherResult) String() string {
 	return b.String()
 }
 
+// MatcherResult slice type.
 type MatcherResults []MatcherResult

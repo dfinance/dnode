@@ -9,13 +9,17 @@ import (
 	orderTypes "github.com/dfinance/dnode/x/order"
 )
 
+// OrderAggregate type stores aggregated quantity (relative to price) for bid/ask orders.
+// Bid/ask aggregates are combined to build PQCurve.
 type OrderAggregate struct {
 	Price    sdk.Uint
 	Quantity sdk.Uint
 }
 
+// OrderAggregate sort.Interface.
 type OrderAggregates []OrderAggregate
 
+// Strings returns multi-line text object representation.
 func (a *OrderAggregates) String() string {
 	var buf bytes.Buffer
 
@@ -36,6 +40,9 @@ func (a *OrderAggregates) String() string {
 	return string(buf.Bytes())
 }
 
+// NewBidOrderAggregates groups bid orders by price summing quantities.
+// Contract: orders must be price sorted (ASC).
+// Result is price sorted (ASC).
 func NewBidOrderAggregates(orders orderTypes.Orders) OrderAggregates {
 	aggs := make(OrderAggregates, 0, len(orders))
 	lastIdx := len(orders) - 1
@@ -43,6 +50,7 @@ func NewBidOrderAggregates(orders orderTypes.Orders) OrderAggregates {
 		return aggs
 	}
 
+	// add the first element with the highest price
 	aggs = append(aggs, OrderAggregate{
 		Price:    orders[lastIdx].Price,
 		Quantity: orders[lastIdx].Quantity},
@@ -50,11 +58,13 @@ func NewBidOrderAggregates(orders orderTypes.Orders) OrderAggregates {
 	for i := len(orders) - 2; i >= 0; i-- {
 		order := &orders[i]
 
+		// increase the aggregate quantity is price already exists
 		if aggs[0].Price.Equal(order.Price) {
 			aggs[0].Quantity = aggs[0].Quantity.Add(order.Quantity)
 			continue
 		}
 
+		// prepend the aggregate if price wasn't not found
 		aggs = append(OrderAggregates{{
 			Price:    order.Price,
 			Quantity: aggs[0].Quantity.Add(order.Quantity),
@@ -64,12 +74,16 @@ func NewBidOrderAggregates(orders orderTypes.Orders) OrderAggregates {
 	return aggs
 }
 
+// NewAskOrderAggregates groups ask orders by price summing quantities.
+// Contract: orders must be price sorted (ASC).
+// Result is price sorted (ASC).
 func NewAskOrderAggregates(orders orderTypes.Orders) OrderAggregates {
 	aggs := make(OrderAggregates, 0, len(orders))
 	if len(orders) < 1 {
 		return aggs
 	}
 
+	// add the first element with the lowest price
 	aggs = append(aggs, OrderAggregate{
 		Price:    orders[0].Price,
 		Quantity: orders[0].Quantity},
@@ -78,11 +92,13 @@ func NewAskOrderAggregates(orders orderTypes.Orders) OrderAggregates {
 		order := &orders[i]
 		lastIdx := len(aggs) - 1
 
+		// increase the aggregate quantity is price already exists
 		if aggs[lastIdx].Price.Equal(order.Price) {
 			aggs[lastIdx].Quantity = aggs[lastIdx].Quantity.Add(order.Quantity)
 			continue
 		}
 
+		// append the aggregate if price wasn't not found
 		aggs = append(aggs, OrderAggregate{
 			Price:    order.Price,
 			Quantity: aggs[lastIdx].Quantity.Add(order.Quantity),

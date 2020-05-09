@@ -9,6 +9,7 @@ import (
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
 )
 
+// EndBlocker iterates over Order module orders, processes them and returns back to the Order module.
 func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 	iterator := k.GetOrderIterator(ctx)
 	defer iterator.Close()

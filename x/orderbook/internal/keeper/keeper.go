@@ -1,3 +1,4 @@
+// Module keeper used to integrate with other keepers.
 package keeper
 
 import (
@@ -9,11 +10,13 @@ import (
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
 )
 
+// Module keeper object.
 type Keeper struct {
 	cdc         *codec.Codec
 	orderKeeper orderTypes.Keeper
 }
 
+// NewKeeper creates keeper object.
 func NewKeeper(cdc *codec.Codec, ok orderTypes.Keeper) Keeper {
 	return Keeper{
 		cdc:         cdc,
@@ -21,15 +24,17 @@ func NewKeeper(cdc *codec.Codec, ok orderTypes.Keeper) Keeper {
 	}
 }
 
-// Get logger for keeper.
+// GetLogger gets logger with keeper context.
 func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/" + types.ModuleName)
 }
 
+// GetOrderIterator returns order module iterator (over orders).
 func (k Keeper) GetOrderIterator(ctx sdk.Context) sdk.Iterator {
 	return k.orderKeeper.GetIterator(ctx)
 }
 
+// ProcessOrderFills passes order fills to the order module.
 func (k Keeper) ProcessOrderFills(ctx sdk.Context, orderFills orderTypes.OrderFills) {
 	k.orderKeeper.ExecuteOrderFills(ctx, orderFills)
 }

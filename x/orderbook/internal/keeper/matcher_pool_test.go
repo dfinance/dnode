@@ -5,6 +5,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/dfinance/dnode/helpers/logger"
@@ -16,9 +17,9 @@ import (
 func Test(t *testing.T) {
 	inputs := []struct {
 		Direction orderTypes.Direction
-		ID       uint64
-		Price    uint64
-		Quantity uint64
+		ID        uint64
+		Price     uint64
+		Quantity  uint64
 	}{
 		{orderTypes.BidDirection, 5, 12, 100},
 		{orderTypes.AskDirection, 6, 10, 50},
@@ -54,5 +55,31 @@ func Test(t *testing.T) {
 		}
 	}
 
-	matcherPool.Process()
+	results := matcherPool.Process()
+
+	require.Len(t, results, 1)
+	require.Len(t, results[0].OrderFills, 7)
+
+	outputs := []struct {
+		Direction        orderTypes.Direction
+		ID               uint64
+		FilledQuantity   uint64
+		UnfilledQuantity uint64
+	}{
+		{orderTypes.BidDirection, 7, 50, 0},
+		{orderTypes.BidDirection, 3, 100, 0},
+		{orderTypes.BidDirection, 5, 100, 0},
+		{orderTypes.AskDirection, 2, 84, 16},
+		{orderTypes.AskDirection, 4, 42, 8},
+		{orderTypes.AskDirection, 6, 42, 8},
+		{orderTypes.AskDirection, 8, 82, 18},
+	}
+
+	for i, o := range outputs {
+		result := results[0].OrderFills[i]
+		require.Equal(t, result.Order.ID.UInt64(), o.ID, "output: %d", i)
+		require.Equal(t, result.Order.Direction.String(), o.Direction.String(), "output: %d", i)
+		require.Equal(t, result.QuantityFilled.Uint64(), o.FilledQuantity, "output: %d", i)
+		require.Equal(t, result.QuantityUnfilled.Uint64(), o.UnfilledQuantity, "output: %d", i)
+	}
 }

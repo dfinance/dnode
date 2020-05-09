@@ -9,6 +9,7 @@ import (
 	"github.com/dfinance/dnode/x/order/internal/types"
 )
 
+// EndBlocker iterates over active orders and cancels them by TTL timeout condition.
 func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 	now := ctx.BlockTime()
 	iterator := k.GetIterator(ctx)

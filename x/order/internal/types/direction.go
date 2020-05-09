@@ -8,6 +8,7 @@ const (
 	Ask Direction = "ask"
 )
 
+// IsValid validates enum.
 func (d Direction) IsValid() bool {
 	if d == Bid || d == Ask {
 		return true
@@ -16,6 +17,7 @@ func (d Direction) IsValid() bool {
 	return false
 }
 
+// String returns string enum representation.
 func (d Direction) String() string {
 	return string(d)
 }
