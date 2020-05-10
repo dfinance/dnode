@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/currencies_register/internal/types"
 )
 
@@ -29,7 +30,7 @@ func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) error {
 			return err
 		}
 
-		err = keeper.AddCurrencyInfo(ctx, genCurr.Denom, genCurr.Decimals, false, types.DefaultOwner, genCurr.TotalSupply, bzPath)
+		err = keeper.AddCurrencyInfo(ctx, genCurr.Denom, genCurr.Decimals, false, common_vm.ZeroAddress, genCurr.TotalSupply, bzPath)
 		if err != nil {
 			return err
 		}

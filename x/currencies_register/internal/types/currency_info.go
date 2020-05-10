@@ -4,11 +4,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-)
 
-const (
-	// Owner address length.
-	OwnerMaxLength = 24
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 // Contains currency info.
@@ -22,8 +19,8 @@ type CurrencyInfo struct {
 
 // New currency.
 func NewCurrencyInfo(denom []byte, decimals uint8, isToken bool, owner []byte, totalSupply *big.Int) (CurrencyInfo, error) {
-	if len(owner) > OwnerMaxLength {
-		return CurrencyInfo{}, fmt.Errorf("length of owner address is great then max: %d / %d", len(owner), OwnerMaxLength)
+	if len(owner) != common_vm.VMAddressLength {
+		return CurrencyInfo{}, fmt.Errorf("length of owner address is not equal to address length: %d / %d", len(owner), common_vm.VMAddressLength)
 	}
 
 	return CurrencyInfo{

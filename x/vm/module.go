@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/client/cli"
 	"github.com/dfinance/dnode/x/vm/client/rest"
 	types "github.com/dfinance/dnode/x/vm/internal/types"
@@ -48,8 +49,8 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 		}
 
 		// address length
-		if len(bzAddr) != types.VmAddressLength {
-			return fmt.Errorf("incorrect address %q length, should be %d bytes length", genWriteOp.Address, types.VmAddressLength)
+		if len(bzAddr) != common_vm.VMAddressLength {
+			return fmt.Errorf("incorrect address %q length, should be %d bytes length", genWriteOp.Address, common_vm.VMAddressLength)
 		}
 
 		if _, err := hex.DecodeString(genWriteOp.Path); err != nil {
