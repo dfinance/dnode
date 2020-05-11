@@ -7,13 +7,9 @@ import (
 const (
 	ModuleName = "currencies_register"
 	StoreKey   = ModuleName
-	RouterKey  = "curencyinfo"
 )
 
-var (
-	DefaultOwner = make([]byte, 24)
-)
-
+// Get currency path key.
 func GetCurrencyPathKey(denom string) []byte {
 	return []byte(fmt.Sprintf("currency_path:%s", denom))
 }

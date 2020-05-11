@@ -2,6 +2,7 @@ package types
 
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
+// Genesis state for currencies register.
 type GenesisCurrency struct {
 	Path        string  `json:"path"`
 	Denom       string  `json:"denom"`

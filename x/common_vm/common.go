@@ -7,9 +7,15 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
+const (
+	// Default address length.
+	VMAddressLength = 24
+)
+
 var (
 	KeyDelimiter = []byte(":")
 	VMKey        = []byte("vm")
+	ZeroAddress  = make([]byte, VMAddressLength)
 )
 
 // Data server middleware type.
