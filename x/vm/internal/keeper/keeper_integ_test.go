@@ -170,7 +170,7 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 		Type:  vm_grpc.VMTypeTag_U128,
 	}
 	args[2] = types.ScriptArg{
-		Value: fmt.Sprintf("b\"%s\"", hex.EncodeToString([]byte("dfi"))),
+		Value: fmt.Sprintf("x\"%s\"", hex.EncodeToString([]byte("dfi"))),
 		Type:  vm_grpc.VMTypeTag_ByteArray,
 	}
 

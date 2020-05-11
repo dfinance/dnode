@@ -16,7 +16,6 @@ const (
 	StoreKey  = ModuleName
 	RouterKey = ModuleName
 
-	VmAddressLength = 24
 	VmGasPrice      = 1
 	VmUnknowTagType = -1
 )

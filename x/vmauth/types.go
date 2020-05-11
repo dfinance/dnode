@@ -3,12 +3,14 @@ package vmauth
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	"github.com/dfinance/dnode/x/common_vm"
 
@@ -22,18 +24,66 @@ const (
 )
 
 var (
+	// Errors.
 	ErrInternal = sdkErrors.Register(auth.ModuleName, 100, "internal")
+	denomPaths  map[string][]byte // path to denom.
 )
 
+// initialize denoms.
+func init() {
+	denomPaths = make(map[string][]byte)
+
+	err := AddDenomPath("dfi", "01bb36bccfc660b96e9bf1b7fb4c9bf3798a84510ef4a96eb6e2b4efb5931ae2b7")
+	if err != nil {
+		panic(err)
+	}
+
+	err = AddDenomPath("eth", "01c50bc39dc9c560b1954bd7a46286d7d53ca54cf4bb62a387815f5fce6a09e524")
+	if err != nil {
+		panic(err)
+	}
+
+	err = AddDenomPath("usdt", "018732c3c1c97e74991015236f986b86f880dc15d1e53e5a87c43eb6e815a1bba4")
+	if err != nil {
+		panic(err)
+	}
+
+	err = AddDenomPath("btc", "0149af652c6d26dedd044d8562f4a788bce2790e587b3441d6eea00f2ff76b80a3")
+	if err != nil {
+		panic(err)
+	}
+}
+
+func AddDenomPath(denom string, path string) error {
+	var err error
+	denomPaths[denom], err = hex.DecodeString(path)
+	return err
+}
+
+func RemoveDenomPath(denom string) {
+	delete(denomPaths, denom)
+}
+
+// Event generator for address.
 type EventHandleGenerator struct {
 	Counter uint64
 	Addr    []byte `lcs:"len=24"`
 }
 
-type DNCoin struct {
-	Denom []byte   // coin denom
-	Value *big.Int // coin value
+// Balance.
+type BalanceResource struct {
+	Value *big.Int
 }
+
+// All balance resources.
+type Balance struct {
+	accessPath *vm_grpc.VMAccessPath
+	denom      string
+	balance    BalanceResource
+}
+
+// Balances type (contains several balances).
+type Balances []Balance
 
 // Event handle for account.
 type EventHandle struct {
@@ -43,24 +93,98 @@ type EventHandle struct {
 
 // Balances of account in case of standard lib.
 type AccountResource struct {
-	Balances       []DNCoin     // coins.
-	WithdrawEvents *EventHandle // receive events handler.
-	DepositEvents  *EventHandle // sent events handler.
+	SentEvents     *EventHandle // sent events handler.
+	ReceivedEvents *EventHandle // received events handler.
 }
 
-type EventGenerator struct {
-	Counter uint64
-	Address []byte
-}
+// Load access paths for balances.
+func loadAccessPaths(addr sdk.AccAddress) Balances {
+	balances := make(Balances, len(denomPaths))
 
-// Convert byte array to coins.
-func balancesToCoins(coins []DNCoin) sdk.Coins {
-	realCoins := make(sdk.Coins, len(coins))
-	for i, coin := range coins {
-		realCoins[i] = sdk.NewCoin(string(coin.Denom), sdk.NewIntFromBigInt(coin.Value))
+	i := 0
+	for key, value := range denomPaths {
+		accessPath := &vm_grpc.VMAccessPath{
+			Address: common_vm.Bech32ToLibra(addr),
+			Path:    value,
+		}
+
+		balances[i] = Balance{
+			accessPath: accessPath,
+			denom:      key,
+		}
+
+		i++
 	}
 
-	return realCoins
+	return balances
+}
+
+// Convert sdk.Coin to balance.
+func coinToBalance(addr sdk.AccAddress, coin sdk.Coin) (Balance, error) {
+	path, ok := denomPaths[coin.Denom]
+	if !ok {
+		return Balance{}, fmt.Errorf("cant find path for denom %s", coin.Denom)
+	}
+
+	return Balance{
+		accessPath: &vm_grpc.VMAccessPath{
+			Address: common_vm.Bech32ToLibra(addr),
+			Path:    path,
+		},
+		denom: coin.Denom,
+		balance: BalanceResource{
+			Value: coin.Amount.BigInt(),
+		},
+	}, nil
+}
+
+// Convert coins to balances resources.
+// Returns two kind of balances - to write and to delete.
+func coinsToBalances(acc exported.Account) (Balances, Balances) {
+	coins := acc.GetCoins()
+	balances := make(Balances, len(coins))
+	found := make(map[string]bool)
+
+	for i, coin := range coins {
+		var err error
+		balances[i], err = coinToBalance(acc.GetAddress(), coin)
+		if err != nil {
+			panic(err)
+		}
+		found[coin.Denom] = true
+	}
+
+	toDelete := make(Balances, 0)
+	for k := range denomPaths {
+		if !found[k] {
+			balance, err := coinToBalance(acc.GetAddress(), sdk.NewCoin(k, sdk.ZeroInt()))
+			if err != nil {
+				panic(err)
+			}
+			toDelete = append(toDelete, balance)
+		}
+	}
+
+	return balances, toDelete
+}
+
+// Convert balance to sdk.Coin.
+func balanceToCoin(balance Balance) sdk.Coin {
+	return sdk.NewCoin(balance.denom, sdk.NewIntFromBigInt(balance.balance.Value))
+}
+
+// Convert balances to sdk.Coins.
+func balancesToCoins(balances Balances) sdk.Coins {
+	coins := make(sdk.Coins, 0)
+
+	// if zero ignore return
+	for _, balance := range balances {
+		if balance.balance.Value.Cmp(sdk.ZeroInt().BigInt()) != 0 {
+			coins = append(coins, balanceToCoin(balance))
+		}
+	}
+
+	return coins
 }
 
 // Get resource path.
@@ -73,6 +197,7 @@ func GetResPath() []byte {
 	return data
 }
 
+// Get event handler generator resource path.
 func GetEHPath() []byte {
 	data, err := hex.DecodeString(ehResourceKey)
 	if err != nil {
@@ -89,33 +214,9 @@ func getGUID(address sdk.AccAddress, counter uint64) []byte {
 	return append(countBytes, common_vm.Bech32ToLibra(address)...)
 }
 
-// Convert sdk.Coins to resources.
-func convertCoins(coins sdk.Coins) []DNCoin {
-	balances := make([]DNCoin, len(coins))
-	for i, coin := range coins {
-		balances[i] = DNCoin{
-			Denom: []byte(coin.Denom),
-			Value: coin.Amount.BigInt(),
-		}
-	}
-
-	return balances
-}
-
-// Merging exported.Account with VM account (resource), returns new AccountResource contains merged events handlers.
-func MergeVMAccountEvents(acc exported.Account, source AccountResource) AccountResource {
-	return AccountResource{
-		Balances:       convertCoins(acc.GetCoins()),
-		WithdrawEvents: source.WithdrawEvents,
-		DepositEvents:  source.DepositEvents,
-	}
-}
-
 // Creating new VM account and EventHandleGenerator.
 func CreateVMAccount(acc exported.Account) (vmAcc AccountResource, eventHandleGen EventHandleGenerator) {
-	vmAcc = AccountResource{
-		Balances: convertCoins(acc.GetCoins()),
-	}
+	vmAcc = AccountResource{}
 
 	eventHandleGen = EventHandleGenerator{
 		Counter: 0,
@@ -123,14 +224,14 @@ func CreateVMAccount(acc exported.Account) (vmAcc AccountResource, eventHandleGe
 	}
 
 	// just create new event handlers.
-	vmAcc.WithdrawEvents = &EventHandle{
+	vmAcc.SentEvents = &EventHandle{
 		Counter: 0,
 		Guid:    getGUID(acc.GetAddress(), eventHandleGen.Counter),
 	}
 
 	eventHandleGen.Counter += 1
 
-	vmAcc.DepositEvents = &EventHandle{
+	vmAcc.ReceivedEvents = &EventHandle{
 		Counter: 0,
 		Guid:    getGUID(acc.GetAddress(), eventHandleGen.Counter),
 	}
@@ -139,7 +240,17 @@ func CreateVMAccount(acc exported.Account) (vmAcc AccountResource, eventHandleGe
 	return
 }
 
-// Event generator to bytes.
+// Convert bytes to event handler generator.
+func BytesToEventHandlerGen(bz []byte) EventHandleGenerator {
+	var eventHandleGen EventHandleGenerator
+
+	if err := lcs.Unmarshal(bz, &eventHandleGen); err != nil {
+		panic(err)
+	}
+	return eventHandleGen
+}
+
+// Event handler generator to bytes.
 func EventHandlerGenToBytes(eh EventHandleGenerator) []byte {
 	bytes, err := lcs.Marshal(eh)
 	if err != nil {
@@ -149,14 +260,33 @@ func EventHandlerGenToBytes(eh EventHandleGenerator) []byte {
 	return bytes
 }
 
+// Convert balance resource to bytes.
+func BalanceToBytes(balance BalanceResource) []byte {
+	bytes, err := lcs.Marshal(balance)
+	if err != nil {
+		panic(err)
+	}
+
+	return bytes
+}
+
+// Convert bytes to balances.
+func BytesToBalance(bz []byte) BalanceResource {
+	var balance BalanceResource
+	err := lcs.Unmarshal(bz, &balance)
+	if err != nil {
+		panic(err)
+	}
+
+	return balance
+}
+
 // Convert account resource to bytes.
 func AccResToBytes(acc AccountResource) []byte {
 	bytes, err := lcs.Marshal(acc)
 	if err != nil {
 		panic(err)
 	}
-
-	//fmt.Printf("Write to path: %s\n", hex.EncodeToString(bytes))
 
 	return bytes
 }

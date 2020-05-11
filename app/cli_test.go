@@ -31,7 +31,7 @@ func Test_CurrencyCLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	ccSymbol, ccCurAmount, ccDecimals, ccRecipient := "testcc", sdk.NewInt(1000), int8(1), ct.Accounts["validator1"].Address
+	ccSymbol, ccCurAmount, ccDecimals, ccRecipient := "btc", sdk.NewInt(1000), int8(1), ct.Accounts["validator1"].Address
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 	issueID := "issue1"
 
@@ -764,7 +764,7 @@ func Test_MultiSigCLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	ccSymbol1, ccSymbol2 := "cc1", "cc2"
+	ccSymbol1, ccSymbol2 := "btc", "usdt"
 	ccCurAmount, ccDecimals := sdk.NewInt(1000), int8(1)
 	callUniqueId1, callUniqueId2 := "issue1", "issue2"
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
@@ -779,7 +779,7 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	// create calls
 	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
-	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).SetGas(300000).CheckSucceeded()
 
 	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))
@@ -875,7 +875,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		// add votes for existing call from an other senders
 		callID, callUniqueID := uint64(0), callUniqueId1
 		votes := []string{ccRecipients[0]}
-		for i := 1; i < len(ccRecipients) / 2 + 1; i++ {
+		for i := 1; i < len(ccRecipients)/2+1; i++ {
 			ct.TxMultiSigConfirmCall(ccRecipients[i], callID).CheckSucceeded()
 			votes = append(votes, ccRecipients[i])
 		}

@@ -2,9 +2,6 @@
 package vmauth
 
 import (
-	"encoding/hex"
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -71,11 +68,40 @@ func (keeper VMAccountKeeper) saveNewVMAccount(ctx sdk.Context, address sdk.AccA
 
 	bz := AccResToBytes(vmAccount)
 	keeper.vmKeeper.SetValue(ctx, accessPath, bz)
-	fmt.Printf("Bytes: %s\n", hex.EncodeToString(bz))
 	keeper.vmKeeper.SetValue(ctx, &vm_grpc.VMAccessPath{
 		Address: vmAddr,
 		Path:    GetEHPath(),
 	}, EventHandlerGenToBytes(eventHandleGen))
+}
+
+// Save balances in VM keeper.
+func (keeper VMAccountKeeper) saveBalances(ctx sdk.Context, balances Balances, toDelete Balances) {
+	for _, balance := range balances {
+		keeper.vmKeeper.SetValue(ctx, balance.accessPath, BalanceToBytes(balance.balance))
+	}
+
+	for _, toDel := range toDelete {
+		if keeper.vmKeeper.HasValue(ctx, toDel.accessPath) {
+			keeper.vmKeeper.SetValue(ctx, toDel.accessPath, BalanceToBytes(toDel.balance))
+		}
+	}
+}
+
+// Load balances from VM storage.
+func (keeper VMAccountKeeper) loadBalances(ctx sdk.Context, addr sdk.AccAddress) Balances {
+	balances := loadAccessPaths(addr)
+	realBalances := make([]Balance, 0)
+
+	for _, balance := range balances {
+		bz := keeper.vmKeeper.GetValue(ctx, balance.accessPath)
+		if bz != nil {
+			balanceRes := BytesToBalance(bz)
+			balance.balance = balanceRes
+			realBalances = append(realBalances, balance)
+		}
+	}
+
+	return realBalances
 }
 
 // Set account in storage.
@@ -84,12 +110,15 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 	source, isExists := keeper.getVMAccount(ctx, addr)
 
 	if isExists {
-		mergedVMAccount := MergeVMAccountEvents(acc, source)
-		keeper.setVMAccount(ctx, addr, mergedVMAccount)
+		keeper.setVMAccount(ctx, addr, source)
 	} else {
 		vmAccount, eventHandleGen := CreateVMAccount(acc)
 		keeper.saveNewVMAccount(ctx, addr, vmAccount, eventHandleGen)
 	}
+
+	// Update balances extracted from coins.
+	balances, toDelete := coinsToBalances(acc)
+	keeper.saveBalances(ctx, balances, toDelete)
 
 	keeper.AccountKeeper.SetAccount(ctx, acc)
 }
@@ -98,15 +127,14 @@ func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) 
 func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) exported.Account {
 	account := keeper.AccountKeeper.GetAccount(ctx, addr)
 
-	vmAccount, isExists := keeper.getVMAccount(ctx, addr)
-
-	if isExists {
-		realCoins := balancesToCoins(vmAccount.Balances)
+	balances := keeper.loadBalances(ctx, addr)
+	if len(balances) > 0 {
+		realCoins := balancesToCoins(balances)
 
 		if account != nil {
-			if !realCoins.IsEqual(account.GetCoins()) { // also check coins
+			if !realCoins.IsEqual(account.GetCoins()) {
 				if err := account.SetCoins(realCoins); err != nil {
-					panic(err) // should never happen
+					panic(err) // must never happen
 				}
 
 				keeper.SetAccount(ctx, account)
@@ -137,12 +165,25 @@ func (keeper VMAccountKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account
 // NOTE: this will cause supply invariant violation if called
 func (keeper VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Account) {
 	keeper.AccountKeeper.RemoveAccount(ctx, acc)
+	vmAddr := common_vm.Bech32ToLibra(acc.GetAddress())
 
-	// should be remove account from VM storage too
+	// Should be remove account from VM storage too
 	keeper.vmKeeper.DelValue(ctx, &vm_grpc.VMAccessPath{
-		Address: common_vm.Bech32ToLibra(acc.GetAddress()),
+		Address: vmAddr,
 		Path:    GetResPath(),
 	})
+
+	// Should remove event generator.
+	keeper.vmKeeper.DelValue(ctx, &vm_grpc.VMAccessPath{
+		Address: vmAddr,
+		Path:    GetEHPath(),
+	})
+
+	// Should remove all balances.
+	balances := loadAccessPaths(acc.GetAddress())
+	for _, b := range balances {
+		keeper.vmKeeper.DelValue(ctx, b.accessPath)
+	}
 }
 
 // GetSignerAcc returns an account for a given address that is expected to sign

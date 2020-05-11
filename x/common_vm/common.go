@@ -7,9 +7,15 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
+const (
+	// Default address length.
+	VMAddressLength = 24
+)
+
 var (
 	KeyDelimiter = []byte(":")
 	VMKey        = []byte("vm")
+	ZeroAddress  = make([]byte, VMAddressLength)
 )
 
 // Data server middleware type.
@@ -26,6 +32,9 @@ type VMStorage interface {
 
 	// Delete value in VM storage.
 	DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
+
+	// Has value in VM storage.
+	HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool
 }
 
 // Make path for storage from VMAccessPath.

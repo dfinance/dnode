@@ -26,7 +26,7 @@ func NewTimeMiddleware() common_vm.DSDataMiddleware {
 	}
 
 	timeHeaderPath := vm_grpc.VMAccessPath{
-		Address: defaultAddr,
+		Address: common_vm.ZeroAddress,
 		Path:    bzPath,
 	}
 

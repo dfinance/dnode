@@ -2,6 +2,7 @@ package clitester
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -21,9 +22,14 @@ import (
 	"github.com/dfinance/dnode/x/vm"
 )
 
-const (
-	DefVmWriteSetsPath = "${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json"
-)
+var DefVmWriteSetsPath = "${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json"
+
+func init() {
+	vmWriteSetPath := os.Getenv("VMWSPATH")
+	if vmWriteSetPath != "" {
+		DefVmWriteSetsPath = vmWriteSetPath
+	}
+}
 
 var EthAddresses = []string{
 	"0x82A978B3f5962A5b0957d9ee9eEf472EE55B42F1",

@@ -25,6 +25,11 @@ func (keeper Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath,
 	store.Set(key, value)
 }
 
+// Check if VM storage has value by access path.
+func (keeper Keeper) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
+	return keeper.hasValue(ctx, accessPath)
+}
+
 // Public get value by path.
 func (keeper Keeper) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	return keeper.getValue(ctx, accessPath)
@@ -62,9 +67,17 @@ func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath
 	path := hash.Sum(tag)
 
 	return &vm_grpc.VMAccessPath{
-		Address: make([]byte, types.VmAddressLength),
+		Address: make([]byte, common_vm.VMAddressLength),
 		Path:    path,
 	}
+}
+
+// Check if vm storage contains key.
+func (keeper Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
+	store := ctx.KVStore(keeper.storeKey)
+	key := common_vm.MakePathKey(accessPath)
+
+	return store.Has(key)
 }
 
 // Get value from storage by access path.
@@ -73,14 +86,6 @@ func (keeper Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 	key := common_vm.MakePathKey(accessPath)
 
 	return store.Get(key)
-}
-
-// Check if storage has value by access path.
-func (keeper Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
-	store := ctx.KVStore(keeper.storeKey)
-	key := common_vm.MakePathKey(accessPath)
-
-	return store.Has(key)
 }
 
 // Delete key in storage by access path.
