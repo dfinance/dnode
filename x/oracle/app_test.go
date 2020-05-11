@@ -40,6 +40,10 @@ func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAcc
 	return nil
 }
 
+func (storage VMStorageImpl) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
+	return false
+}
+
 func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 }
 

@@ -29,7 +29,7 @@ func Test_CurrencyRest(t *testing.T) {
 	ct.StartRestServer(false)
 
 	recipientAddr := ct.Accounts["validator1"].Address
-	curAmount, curDecimals, denom, issueId := sdk.NewInt(100), int8(0), "tstdnm", "issue1"
+	curAmount, curDecimals, denom, issueId := sdk.NewInt(100), int8(0), "btc", "issue1"
 	destroyAmounts := make([]sdk.Int, 0)
 
 	// issue currency

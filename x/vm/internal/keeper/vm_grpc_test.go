@@ -10,11 +10,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -134,7 +136,7 @@ func TestNewContract(t *testing.T) {
 
 // Create new deploy request.
 func TestNewDeployRequest(t *testing.T) {
-	addr := sdk.AccAddress(randomValue(20))
+	addr := secp256k1.GenPrivKey().PubKey().Address().Bytes()
 	code := randomValue(1024)
 
 	var gasLimit uint64 = 10000000
@@ -162,6 +164,6 @@ func TestNewDeployRequest(t *testing.T) {
 	require.EqualValues(t, 0, req.Options)
 	require.EqualValues(t, gasLimit, req.Contracts[0].MaxGasAmount)
 	require.EqualValues(t, code, req.Contracts[0].Code)
-	require.EqualValues(t, addr.String(), req.Contracts[0].Address)
+	require.EqualValues(t, "0x"+hex.EncodeToString(common_vm.Bech32ToLibra(addr)), req.Contracts[0].Address)
 	require.Equal(t, 1, len(req.Contracts))
 }

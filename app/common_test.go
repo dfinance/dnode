@@ -36,13 +36,14 @@ import (
 	"github.com/dfinance/dnode/x/oracle"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
 var (
 	chainID         = ""
-	currency1Symbol = "testcoin1"
-	currency2Symbol = "testcoin2"
-	currency3Symbol = "testcoin3"
+	currency1Symbol = "testa"
+	currency2Symbol = "testb"
+	currency3Symbol = "testc"
 	issue1ID        = "issue1"
 	issue2ID        = "issue2"
 	issue3ID        = "issue3"
@@ -162,6 +163,18 @@ func init() {
 	if flag.Lookup(FlagDSMockListen) == nil {
 		dataListenMock = flag.String(FlagDSMockListen, DefaultMockDataListen, "address of mocked data server to launch/connect")
 	}
+
+	if err := vmauth.AddDenomPath(currency1Symbol, "00"); err != nil {
+		panic(err)
+	}
+
+	if err := vmauth.AddDenomPath(currency2Symbol, "01"); err != nil {
+		panic(err)
+	}
+
+	if err := vmauth.AddDenomPath(currency3Symbol, "11"); err != nil {
+		panic(err)
+	}
 }
 
 type VMServer struct {
@@ -207,7 +220,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 			Address:       accAddr,
 			Coins:         GenDefCoins(nil),
 			//PubKey:        privValidatorKey.PubKey(),
-			PubKey:        genTxPubKey,
+			PubKey: genTxPubKey,
 		}
 	}
 
@@ -279,7 +292,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 
 		txFee := auth.StdFee{
 			Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
-			Gas:    200000,
+			Gas:    300000,
 		}
 		txMemo := "testmemo"
 
@@ -336,7 +349,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 
 	fee := auth.StdFee{
 		Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
-		Gas:    200000,
+		Gas:    250000,
 	}
 
 	for i, p := range priv {
