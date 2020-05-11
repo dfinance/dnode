@@ -21,6 +21,10 @@ import (
 	"github.com/dfinance/dnode/x/vm"
 )
 
+const (
+	DefVmWriteSetsPath = "${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json"
+)
+
 var EthAddresses = []string{
 	"0x82A978B3f5962A5b0957d9ee9eEf472EE55B42F1",
 	"0x7d577a597B2742b498Cb5Cf0C26cDCD726d39E6e",

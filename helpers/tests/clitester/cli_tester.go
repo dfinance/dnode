@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -25,6 +26,10 @@ import (
 	"github.com/dfinance/dnode/cmd/config"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/tests"
+)
+
+var (
+	cfgMtx sync.Mutex
 )
 
 type CLITester struct {
@@ -262,6 +267,9 @@ func (ct *CLITester) initChain() {
 
 	// adjust tendermint config (make blocks generation faster)
 	{
+		cfgMtx.Lock()
+		defer cfgMtx.Unlock()
+
 		cfgFile := path.Join(ct.RootDir, "config", "config.toml")
 		_, err := os.Stat(cfgFile)
 		require.NoError(ct.t, err, "reading config.toml file")
@@ -364,8 +372,7 @@ func (ct *CLITester) initChain() {
 
 	// VM default write sets
 	{
-		defWriteSetsPath := "${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json"
-		defWriteSetsPath = os.ExpandEnv(defWriteSetsPath)
+		defWriteSetsPath := os.ExpandEnv(DefVmWriteSetsPath)
 
 		cmd := ct.newWbdCmd().
 			AddArg("", "read-genesis-write-set").

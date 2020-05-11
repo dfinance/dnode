@@ -11,7 +11,7 @@ tags = -X github.com/cosmos/cosmos-sdk/version.Name=dfinance \
 build_dir=./.build
 swagger_dir=$(build_dir)/swagger
 cosmos_dir=$(swagger_dir)/cosmos-sdk
-cosmos_version=v0.37.4
+cosmos_version=v0.38.2
 dncli =./cmd/dncli
 
 all: install
@@ -51,7 +51,8 @@ swagger-ui-build:
 	@echo "--> Building Swagger API specificaion, merging it to Cosmos SDK"
 
 	@echo "-> Build swagger.yaml (that takes time)"
-	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
+	#swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
+	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go
 	cp $(swagger_dir)/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/dn-swagger.yaml
 
 	@echo "-> Build statik FS"

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/gorilla/mux"
@@ -13,6 +14,11 @@ import (
 
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
+)
+
+const (
+	accountAddrName = "accountAddr"
+	vmPathName      = "vmPath"
 )
 
 type compileReq struct {
@@ -24,6 +30,7 @@ type compileReq struct {
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/compile-script", types.ModuleName), compileScript(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/compile-module", types.ModuleName), compileModule(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/data/{%s}/{%s}", types.ModuleName, accountAddrName, vmPathName), getData(cliCtx)).Methods("GET")
 }
 
 // GetCompiledScript godoc
@@ -82,6 +89,95 @@ func commonCompileHandler(cliCtx context.CLIContext, compileType vm_grpc.Contrac
 		resp := vmClient.MVFile{
 			Code: hex.EncodeToString(byteCode),
 		}
+		rest.PostProcessResponse(w, cliCtx, resp)
+	}
+}
+
+// GetCompiledModule godoc
+// @Tags vm
+// @Summary Get data from data source
+// @Description Get data from data source by accountAddr and path
+// @ID vmGetData
+// @Accept  json
+// @Produce json
+// @Param accountAddr path string true "account address (Libra HEX  Bech32)"
+// @Param vmPath path string true "VM path (HEX string)"
+// @Success 200 {object} VmData
+// @Failure 422 {object} rest.ErrorResponse "Returned if the request doesn't have valid path params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /vm/data/{accountAddr}/{vmPath} [get]
+func getData(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		rawAddress := vars[accountAddrName]
+		rawPath := vars[vmPathName]
+
+		var address sdk.AccAddress
+		address, err := hex.DecodeString(rawAddress)
+		if err != nil {
+			address, err = sdk.AccAddressFromBech32(rawAddress)
+			if err != nil {
+				rest.WriteErrorResponse(
+					w,
+					http.StatusUnprocessableEntity,
+					fmt.Sprintf("can't parse address %q (should be libra hex or bech32): %v", rawAddress, err),
+				)
+				return
+			}
+
+			address, err = hex.DecodeString(types.Bech32ToLibra(address))
+			if err != nil {
+				rest.WriteErrorResponse(
+					w,
+					http.StatusUnprocessableEntity,
+					fmt.Sprintf("can't parse address %q (should be libra hex or bech32): %v", rawAddress, err),
+				)
+				return
+			}
+		}
+
+		path, err := hex.DecodeString(rawPath)
+		if err != nil {
+			rest.WriteErrorResponse(
+				w,
+				http.StatusUnprocessableEntity,
+				fmt.Sprintf("can't parse path %q: %v", rawPath, err),
+			)
+			return
+		}
+		if len(path) > 0 && path[0] != 0x0  {
+			rest.WriteErrorResponse(
+				w,
+				http.StatusUnprocessableEntity,
+				fmt.Sprintf("path %q: first byte must be 0x0", rawPath),
+			)
+			return
+		}
+
+		bz, err := cliCtx.Codec.MarshalJSON(types.QueryAccessPath{
+			Address: address,
+			Path:    path,
+		})
+		if err != nil {
+			rest.WriteErrorResponse(
+				w,
+				http.StatusInternalServerError,
+				fmt.Sprintf("can't marshal query: %v", err),
+			)
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/value", types.ModuleName), bz)
+		if err != nil {
+			rest.WriteErrorResponse(
+				w,
+				http.StatusInternalServerError,
+				fmt.Sprintf("processing query: %v", err),
+			)
+			return
+		}
+		resp := types.QueryValueResp{Value: hex.EncodeToString(res)}
+
 		rest.PostProcessResponse(w, cliCtx, resp)
 	}
 }

@@ -27,6 +27,7 @@ const (
 )
 
 func Test_CurrencyCLI(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -225,6 +226,7 @@ func Test_CurrencyCLI(t *testing.T) {
 }
 
 func Test_OracleCLI(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -510,6 +512,7 @@ func Test_OracleCLI(t *testing.T) {
 }
 
 func Test_PoaCLI(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -757,6 +760,7 @@ func Test_PoaCLI(t *testing.T) {
 }
 
 func Test_MultiSigCLI(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -936,6 +940,7 @@ func Test_MultiSigCLI(t *testing.T) {
 }
 
 func Test_RestServer(t *testing.T) {
+	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
