@@ -24,7 +24,7 @@ const defaultConfigTemplate = `# This is a TOML config file to configurate conne
 vm_address = "{{ .Address }}"
 
 # VM data server listen address.
-vm_data_listen = "{{ .DataListen }}
+vm_data_listen = "{{ .DataListen }}"
 
 # VM retry settings.
 
@@ -41,6 +41,6 @@ vm_retry_initial_backoff = {{ .InitialBackoff }}
 vm_retry_max_backoff = {{ .MaxBackoff }}
 
 ## Backoff multiplier.
-## Default 
+## Default is 0.1 
 vm_retry_backoff_multiplier = {{ .BackoffMultiplier }}
 `
