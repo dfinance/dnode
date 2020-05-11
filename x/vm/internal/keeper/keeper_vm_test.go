@@ -14,6 +14,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
