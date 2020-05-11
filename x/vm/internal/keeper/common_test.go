@@ -120,8 +120,12 @@ func init() {
 
 func MockVMConfig() *vmConfig.VMConfig {
 	return &vmConfig.VMConfig{
-		Address:    *vmMockAddress,
-		DataListen: *dataListenMock,
+		Address:           *vmMockAddress,
+		DataListen:        *dataListenMock,
+		MaxAttempts:       vmConfig.DefaultMaxAttempts,
+		InitialBackoff:    vmConfig.DefaultInitialBackoff,
+		MaxBackoff:        vmConfig.DefaultMaxBackoff,
+		BackoffMultiplier: vmConfig.DefaultBackoffMultiplier,
 	}
 }
 
