@@ -137,7 +137,6 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 							return fmt.Errorf("incorrect format for xxHash argument (prefixed #) %q", arg)
 						}
 
-						fmt.Printf("Result: %s\n", strings.ToLower(arg[1:]))
 						_, err := seed.WriteString(strings.ToLower(arg[1:]))
 						if err != nil {
 							return fmt.Errorf("can't format to xxHash argument %q (format happens because of '#' prefix)", arg)

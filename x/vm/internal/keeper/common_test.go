@@ -30,6 +30,7 @@ import (
 
 	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 	"github.com/dfinance/dnode/x/vmauth"
@@ -49,6 +50,35 @@ const (
 	FlagVMAddress = "vm.address"
 	FlagDSListen  = "ds.listen"
 	FlagCompiler  = "vm.compiler"
+
+	CoinsInfo = `{ 
+		"currencies": [
+			{
+				"path": "018bfc024222e94fbed60ff0c9c1cf48c5b2809d83c82f513b2c385e21ba8a2d35",
+          		"denom": "dfi",
+          		"decimals": 18,
+          		"totalSupply": "100000000000000000000000000"
+        	},
+        	{
+          		"path": "01f8799f504905a182aff8d5fc102da1d73b8bec199147bb5512af6e99006baeb6",
+          		"denom": "eth",
+          		"decimals": 18,
+          		"totalSupply": "100000000000000000000000000"
+        	},
+        	{
+          		"path": "01fe7c965b1c008c5974c7750959fa10189e803225d5057207563553922a09f906",
+          		"denom": "btc",
+          		"decimals": 8,
+          		"totalSupply": "100000000000000"
+			},
+        	{
+          		"path": "0136cb3312422fa6991412077ee93dd9db6cb5b3fcf55750fe2cc739d1d399673b",
+          		"denom": "usdt",
+          		"decimals": 6,
+          		"totalSupply": "10000000000000"
+        	}
+		]
+	}`
 )
 
 type VMServer struct {
@@ -64,13 +94,15 @@ type testInput struct {
 	pk params.Keeper
 	vk Keeper
 	ok oracle.Keeper
+	cr currencies_register.Keeper
 
-	keyMain    *sdk.KVStoreKey
-	keyAccount *sdk.KVStoreKey
-	keyOracle  *sdk.KVStoreKey
-	keyParams  *sdk.KVStoreKey
-	tkeyParams *sdk.TransientStoreKey
-	keyVM      *sdk.KVStoreKey
+	keyMain      *sdk.KVStoreKey
+	keyAccount   *sdk.KVStoreKey
+	keyOracle    *sdk.KVStoreKey
+	keyCRegister *sdk.KVStoreKey
+	keyParams    *sdk.KVStoreKey
+	tkeyParams   *sdk.TransientStoreKey
+	keyVM        *sdk.KVStoreKey
 
 	pathBytes    []byte
 	codeBytes    []byte
@@ -179,10 +211,11 @@ func setupTestInput(launchMock bool) testInput {
 		keyMain:    sdk.NewKVStoreKey("main"),
 		keyAccount: sdk.NewKVStoreKey("acc"),
 		//keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
-		keyOracle:  sdk.NewKVStoreKey("oracle"),
-		keyParams:  sdk.NewKVStoreKey("params"),
-		tkeyParams: sdk.NewTransientStoreKey("transient_params"),
-		keyVM:      sdk.NewKVStoreKey("vm"),
+		keyOracle:    sdk.NewKVStoreKey("oracle"),
+		keyParams:    sdk.NewKVStoreKey("params"),
+		keyCRegister: sdk.NewKVStoreKey("coins_register"),
+		tkeyParams:   sdk.NewTransientStoreKey("transient_params"),
+		keyVM:        sdk.NewKVStoreKey("vm"),
 	}
 
 	types.RegisterCodec(input.cdc)
@@ -197,6 +230,7 @@ func setupTestInput(launchMock bool) testInput {
 	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyOracle, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyCRegister, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
 	mstore.MountStoreWithDB(input.keyVM, sdk.StoreTypeIAVL, db)
 	err := mstore.LoadLatestVersion()
@@ -254,6 +288,9 @@ func setupTestInput(launchMock bool) testInput {
 		config:   config,
 	}
 
+	//cdc *amino.Codec, storeKey sdk.StoreKey, vmStorage common_vm.VMStorage
+	input.cr = currencies_register.NewKeeper(input.cdc, input.keyCRegister, input.vk)
+
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
 	input.ak = vmauth.NewVMAccountKeeper(
 		input.cdc,
@@ -267,6 +304,11 @@ func setupTestInput(launchMock bool) testInput {
 
 	input.vk.dsServer = NewDSServer(&input.vk)
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())
+
+	err = input.cr.InitGenesis(input.ctx, []byte(CoinsInfo))
+	if err != nil {
+		panic(err)
+	}
 
 	input.addressBytes, err = hex.DecodeString(accountHex)
 	if err != nil {
