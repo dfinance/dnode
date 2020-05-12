@@ -52,6 +52,7 @@ type CLITester struct {
 	vmConnectAddress  string
 	vmListenAddress   string
 	vmCompilerAddress string
+	vmMaxAttempts     int
 	restAddress       string
 	daemon            *CLICmd
 	restServer        *CLICmd
@@ -100,6 +101,7 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		vmConnectAddress:  fmt.Sprintf("127.0.0.1:%s", vmConnectPort),
 		VmListenPort:      vmListenPort,
 		vmListenAddress:   fmt.Sprintf("127.0.0.1:%s", vmListenPort),
+		vmMaxAttempts:     1, // TODO: later we probably need to pass it somehow
 		vmCompilerAddress: "",
 		Accounts:          make(map[string]*CLIAccount, 0),
 	}
@@ -428,6 +430,7 @@ func (ct *CLITester) initChain() {
 	{
 		vmConfig := dnConfig.DefaultVMConfig()
 		vmConfig.Address, vmConfig.DataListen = ct.vmConnectAddress, ct.vmListenAddress
+		vmConfig.MaxAttempts = ct.vmMaxAttempts
 		dnConfig.WriteVMConfig(ct.RootDir, vmConfig)
 	}
 }
@@ -569,6 +572,10 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 func (ct *CLITester) SetVMCompilerAddress(address string) {
 	ct.vmCompilerAddress = address
 	require.NoError(ct.t, tests.PingTcpAddress(address), "VM compiler address")
+}
+
+func (ct *CLITester) SetVMMaxAttempts(maxAttempts int) {
+	ct.vmMaxAttempts = maxAttempts
 }
 
 func (ct *CLITester) UpdateAccountsBalance() {
