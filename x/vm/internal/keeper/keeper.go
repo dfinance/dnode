@@ -2,10 +2,8 @@
 package keeper
 
 import (
-	"context"
 	"fmt"
 	"net"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -60,16 +58,12 @@ func (Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // Execute script.
 func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) error {
-	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutExecute)
-	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
 	req, sdkErr := NewExecuteRequest(ctx, msg)
 	if sdkErr != nil {
 		return sdkErr
 	}
 
-	resp, err := keeper.client.ExecuteContracts(connCtx, req)
+	resp, err := keeper.sendExecuteReq(ctx, req)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(sdkErrors.Wrap(types.ErrVMCrashed, err.Error()))
@@ -88,16 +82,12 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 
 // Deploy module.
 func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) error {
-	timeout := time.Millisecond * time.Duration(keeper.config.TimeoutDeploy)
-	connCtx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
 	req, sdkErr := NewDeployRequest(ctx, msg)
 	if sdkErr != nil {
 		return sdkErr
 	}
 
-	resp, err := keeper.client.ExecuteContracts(connCtx, req)
+	resp, err := keeper.sendExecuteReq(ctx, req)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(sdkErrors.Wrap(types.ErrVMCrashed, err.Error()))

@@ -21,29 +21,42 @@ const (
 	Bech32PrefixConsAddr = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus                    // Bech32 prefix for consensus addresses.
 	Bech32PrefixConsPub  = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic // Bech32 prefix for consensus pub keys.
 
-	VMConfigFile            = "vm.toml"         // Default file to store config.
-	ConfigDir               = "config"          // Default directory to store all configurations.
-	DefaultVMAddress        = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
-	DefaultDataListen       = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
-	DefaultVMTimeoutDeploy  = 100               // Default timeout for deploy module request.
-	DefaultVMTimeoutExecute = 100               // Default timeout for execute request.
+	VMConfigFile = "vm.toml" // Default file to store config.
+	ConfigDir    = "config"  // Default directory to store all configurations.
+
+	// VM configs.
+	DefaultVMAddress  = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
+	DefaultDataListen = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
+
+	// Default retry configs.
+	DefaultMaxAttempts       = 0   // Default VM retry attempts.
+	DefaultInitialBackoff    = 100 // Default VM 100 milliseconds for retry attempts.
+	DefaultMaxBackoff        = 150 // Default VM max backoff.
+	DefaultBackoffMultiplier = 0.1 // Default backoff multiplayer (10
 )
 
 // Virtual machine connection config (see config/vm.toml).
 type VMConfig struct {
-	Address        string `mapstructure:"vm_address"`
-	DataListen     string `mapstructure:"vm_data_listen"`
-	TimeoutDeploy  uint64 `mapstructure:"vm_deploy_timeout"`
-	TimeoutExecute uint64 `mapstructure:"vm_execute_timeout"`
+	Address    string `mapstructure:"vm_address"`     // address of virtual machine.
+	DataListen string `mapstructure:"vm_data_listen"` // data listen.
+
+	// Retry policy.
+	// Example how backoff works - https://stackoverflow.com/questions/43224683/what-does-backoffmultiplier-mean-in-defaultretrypolicy.
+	MaxAttempts       int     `mapstructure:"vm_retry_max_attempts"`       // maximum attempts for retry, for infinity retry - use 0.
+	InitialBackoff    int     `mapstructure:"vm_retry_initial_backoff"`    // initial back off in ms.
+	MaxBackoff        int     `mapstructure:"vm_retry_max_backoff"`        // max backoff in ms.
+	BackoffMultiplier float64 `mapstructure:"vm_retry_backoff_multiplier"` // backoff multiplier.
 }
 
 // Default VM configuration.
 func DefaultVMConfig() *VMConfig {
 	return &VMConfig{
-		Address:        DefaultVMAddress,
-		DataListen:     DefaultDataListen,
-		TimeoutDeploy:  DefaultVMTimeoutDeploy,
-		TimeoutExecute: DefaultVMTimeoutExecute,
+		Address:           DefaultVMAddress,
+		DataListen:        DefaultDataListen,
+		MaxAttempts:       DefaultMaxAttempts,
+		InitialBackoff:    DefaultInitialBackoff,
+		MaxBackoff:        DefaultMaxBackoff,
+		BackoffMultiplier: DefaultBackoffMultiplier,
 	}
 }
 
