@@ -77,7 +77,7 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (*vm_grpc.V
 			time.Sleep(1 * time.Millisecond)
 			continue
 		}
-		keeper.Logger(ctx).Info(fmt.Sprintf("successfully connected to VM with %d ms timeout", req.CurrentTimeout))
+		keeper.Logger(ctx).Info(fmt.Sprintf("Successfully connected to VM with %d ms timeout", req.CurrentTimeout))
 
 		return resp, nil
 	}
