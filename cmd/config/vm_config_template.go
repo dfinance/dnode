@@ -29,7 +29,7 @@ vm_data_listen = "{{ .DataListen }}"
 # VM retry settings.
 
 ## Retry max attempts.
-## Default is 0 - infinity attempts, -1 - to desable.
+## Default is 0 - infinity attempts, -1 - to disable.
 vm_retry_max_attempts = {{ .MaxAttempts }}
 
 ## Initial backoff in ms.

@@ -52,17 +52,14 @@ func (keeper Keeper) CloseConnections() {
 // Send request with retry mechanism and wait for connection and execution or return error.
 func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (*vm_grpc.VMExecuteResponses, error) {
 	for {
-		connCtx, cancel := context.WithTimeout(context.Background(), time.Duration(req.CurrentTimeout)*time.Millisecond)
-		defer cancel()
+		connCtx, _ := context.WithTimeout(context.Background(), time.Duration(req.CurrentTimeout)*time.Millisecond)
 
 		resp, err := keeper.client.ExecuteContracts(connCtx, req.Raw)
-
 		if err != nil {
-			// Write to sentry.
 			if req.Attempt == 0 {
-				keeper.Logger(ctx).Error(fmt.Sprintf("can't get answer from vm in %d ms, will try to reconnect in %s attempts", req.CurrentTimeout, GetMaxAttemptsStr(req.MaxAttempts)))
+				// write to Sentry (if enabled)
+				keeper.Logger(ctx).Error(fmt.Sprintf("can't get answer from VM in %d ms, will try to reconnect in %s attempts", req.CurrentTimeout, GetMaxAttemptsStr(req.MaxAttempts)))
 			}
-
 			req.Attempt += 1
 
 			if req.MaxAttempts != 0 && req.Attempt == req.MaxAttempts {
@@ -73,7 +70,6 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (*vm_grpc.V
 			}
 
 			req.CurrentTimeout += int(math.Round(float64(req.CurrentTimeout) * keeper.config.BackoffMultiplier))
-
 			if req.CurrentTimeout > keeper.config.MaxBackoff {
 				req.CurrentTimeout = keeper.config.MaxBackoff
 			}
@@ -81,8 +77,8 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (*vm_grpc.V
 			time.Sleep(1 * time.Millisecond)
 			continue
 		}
+		keeper.Logger(ctx).Info(fmt.Sprintf("successfully connected to VM with %d ms timeout", req.CurrentTimeout))
 
-		keeper.Logger(ctx).Info(fmt.Sprintf("successful connected to vm with %d ms timeout", req.CurrentTimeout))
 		return resp, nil
 	}
 }
@@ -98,10 +94,9 @@ func (keeper Keeper) sendExecuteReq(ctx sdk.Context, req *vm_grpc.VMExecuteReque
 	if keeper.config.MaxAttempts < 0 {
 		// just send, in case of error - return error and panic.
 		retryReq.MaxAttempts = 1
-		return keeper.retryExecReq(ctx, retryReq)
-	} else {
-		return keeper.retryExecReq(ctx, retryReq)
 	}
+
+	return keeper.retryExecReq(ctx, retryReq)
 }
 
 // Convert max attempts amount to string representation.
