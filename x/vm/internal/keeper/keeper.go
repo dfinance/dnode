@@ -55,7 +55,7 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 
 // VM keeper logger.
 func (Keeper) Logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", "vm")
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
 // Execute script.

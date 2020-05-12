@@ -113,13 +113,13 @@ type DnServiceApp struct {
 func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
-	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
+	app.Logger().Info(fmt.Sprintf("Waiting for VM connection, address: %s", addr))
 	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1 * time.Second)
 	if err != nil {
 		panic(err)
 	}
 
-	app.Logger().Info(fmt.Sprintf("successful connected to vm, connection status is %d", app.vmConn.GetState()))
+	app.Logger().Info(fmt.Sprintf("Successful connected to VM, connection status: %d", app.vmConn.GetState()))
 }
 
 // Close VM connection and DS server stops.
@@ -131,13 +131,13 @@ func (app DnServiceApp) CloseConnections() {
 func (app *DnServiceApp) InitializeVMDataServer(addr string) {
 	var err error
 
-	app.Logger().Info(fmt.Sprintf("up data server listen server %s", addr))
+	app.Logger().Info(fmt.Sprintf("Starting VM data server listener, address: %s", addr))
 	app.vmListener, err = helpers.GetGRpcNetListener(addr)
 	if err != nil {
 		panic(err)
 	}
 
-	app.Logger().Info("data server is up")
+	app.Logger().Info("VM data server is running")
 }
 
 // MakeCodec generates the necessary codecs for Amino.

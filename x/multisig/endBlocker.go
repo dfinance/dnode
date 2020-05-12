@@ -14,7 +14,7 @@ import (
 
 // Implements end blocker to process active calls and their confirmations.
 func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Event {
-	logger := keeper.getLogger(ctx)
+	logger := keeper.Logger(ctx)
 	resEvents := sdk.NewEventManager()
 
 	start := ctx.BlockHeight() - keeper.GetIntervalToExecute(ctx)
@@ -61,19 +61,14 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Eve
 
 				resEvents.EmitEvent(sdk.NewEvent("failed", sdk.Attribute{Key: "callId", Value: fmt.Sprintf("%d", callId)}))
 
-				logger.Info(
-					fmt.Sprintf("Failed execution of %d call, error: %s, marked as failed",
-						callId, err.Error()),
-				)
+				logger.Info(fmt.Sprintf("Failed execution of %d call, error: %s, marked as failed", callId, err.Error()))
 			} else {
 				call.Executed = true
 				writeCache()
 
 				resEvents.EmitEvent(sdk.NewEvent("executed", sdk.Attribute{Key: "callId", Value: fmt.Sprintf("%d", callId)}))
 
-				logger.Info(
-					fmt.Sprintf("Call %d executed completed", callId),
-				)
+				logger.Info(fmt.Sprintf("Call %d executed completed", callId))
 			}
 
 			// save call as executed
@@ -106,9 +101,7 @@ func EndBlocker(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper) []abci.Eve
 			keeper.removeCallFromQueue(ctx, callId, call.Height)
 
 			resEvents.EmitEvent(sdk.NewEvent("reject-call", sdk.Attribute{Key: "callId", Value: fmt.Sprintf("%d", start)}))
-			logger.Info(
-				fmt.Sprintf("Removing %d call as not approved in time", callId),
-			)
+			logger.Info(fmt.Sprintf("Removing %d call as not approved in time", callId))
 		}
 	}
 
