@@ -48,7 +48,7 @@ func ErrNoData(path *ds_grpc.DSAccessPath) *ds_grpc.DSRawResponse {
 
 // Server logger.
 func (server *DSServer) Logger() log.Logger {
-	return server.ctx.Logger().With("module", "vm")
+	return server.ctx.Logger().With("module", fmt.Sprintf("x/%s/dsserver", types.ModuleName))
 }
 
 // Register new data middleware.
@@ -104,12 +104,12 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 
 	// we can move it to middleware too later.
 	if !server.keeper.hasValue(server.ctx, path) {
-		server.Logger().Error(fmt.Sprintf("Can't find path: %s", types.PathToHex(path)))
+		server.Logger().Debug(fmt.Sprintf("Can't find path: %s", types.PathToHex(path)))
 		return ErrNoData(req), nil
 	}
 
-	blob = server.keeper.getValue(server.ctx, path)
-
+	server.Logger().Debug(fmt.Sprintf("Get path: %s", types.PathToHex(path)))
+  blob = server.keeper.getValue(server.ctx, path)
 	server.Logger().Debug(fmt.Sprintf("Return values: %s\n", hex.EncodeToString(blob)))
 
 	return &ds_grpc.DSRawResponse{Blob: blob}, nil
