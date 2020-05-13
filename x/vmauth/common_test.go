@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -16,7 +17,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/vm"
 )
 
 // VM storage.
@@ -37,6 +37,7 @@ type testInput struct {
 
 	paramsKeeper  params.Keeper
 	accountKeeper VMAccountKeeper
+	bankKeeper    bank.BaseKeeper
 	vmStorage     common_vm.VMStorage
 }
 
@@ -54,17 +55,22 @@ func (storage VMStorageImpl) GetOracleAccessPath(_ string) *vm_grpc.VMAccessPath
 
 func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 	store := ctx.KVStore(storage.storeKey)
-	store.Set(vm.MakePathKey(accessPath), value)
+	store.Set(common_vm.MakePathKey(accessPath), value)
 }
 
 func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	store := ctx.KVStore(storage.storeKey)
-	return store.Get(vm.MakePathKey(accessPath))
+	return store.Get(common_vm.MakePathKey(accessPath))
 }
 
 func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 	store := ctx.KVStore(storage.storeKey)
-	store.Delete(vm.MakePathKey(accessPath))
+	store.Delete(common_vm.MakePathKey(accessPath))
+}
+
+func (storage VMStorageImpl) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
+	store := ctx.KVStore(storage.storeKey)
+	return store.Has(common_vm.MakePathKey(accessPath))
 }
 
 func newTestInput(t *testing.T) testInput {
@@ -103,6 +109,12 @@ func newTestInput(t *testing.T) testInput {
 		input.paramsKeeper.Subspace(auth.DefaultParamspace),
 		input.vmStorage,
 		auth.ProtoBaseAccount,
+	)
+
+	input.bankKeeper = bank.NewBaseKeeper(
+		input.accountKeeper,
+		input.paramsKeeper.Subspace(bank.DefaultParamspace),
+		make(map[string]bool),
 	)
 
 	// Setup context.

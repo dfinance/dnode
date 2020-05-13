@@ -26,9 +26,21 @@ vm_address = "{{ .Address }}"
 # VM data server listen address.
 vm_data_listen = "{{ .DataListen }}"
 
-# VM deploy request timeout in milliseconds.
-vm_deploy_timeout = {{ .TimeoutDeploy }}
+# VM retry settings.
 
-# VM execute contract request timeout in milliseconds.
-vm_execute_timeout = {{ .TimeoutExecute }}
+## Retry max attempts.
+## Default is 0 - infinity attempts, -1 - to disable.
+vm_retry_max_attempts = {{ .MaxAttempts }}
+
+## Initial backoff in ms.
+## Default is 100ms.
+vm_retry_initial_backoff = {{ .InitialBackoff }}
+
+## Max backoff in ms.
+## Default is 150ms.
+vm_retry_max_backoff = {{ .MaxBackoff }}
+
+## Backoff multiplier.
+## Default is 0.1 
+vm_retry_backoff_multiplier = {{ .BackoffMultiplier }}
 `

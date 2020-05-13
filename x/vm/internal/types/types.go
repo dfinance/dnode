@@ -2,12 +2,12 @@
 package types
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 const (
@@ -16,53 +16,24 @@ const (
 	StoreKey  = ModuleName
 	RouterKey = ModuleName
 
-	VmAddressLength = 32
 	VmGasPrice      = 1
 	VmUnknowTagType = -1
-	zeroBytes       = 12
 )
 
 // VM related variables.
 var (
-	KeyGenesis   = []byte("gen") // used to save genesis
-	KeyDelimiter = []byte(":")
-	VMKey        = []byte("vm")
+	KeyGenesis = []byte("gen") // used to save genesis
 )
 
 // Type of Move contract (bytes).
 type Contract []byte
-
-// Make path for storage from VMAccessPath.
-func MakePathKey(path *vm_grpc.VMAccessPath) []byte {
-	return bytes.Join(
-		[][]byte{
-			VMKey,
-			path.Address,
-			path.Path,
-		},
-		KeyDelimiter,
-	)
-}
-
-// Convert bech32 to libra hex.
-func Bech32ToLibra(acc types.AccAddress) string {
-	prefix := types.GetConfig().GetBech32AccountAddrPrefix()
-	zeros := make([]byte, zeroBytes-len(prefix))
-
-	bytes := make([]byte, 0)
-	bytes = append(bytes, []byte(prefix)...)
-	bytes = append(bytes, zeros...)
-	bytes = append(bytes, acc...)
-
-	return hex.EncodeToString(bytes)
-}
 
 // Convert VMAccessPath to hex string
 func PathToHex(path *vm_grpc.VMAccessPath) string {
 	return fmt.Sprintf("Access path: \n"+
 		"\tAddress: %s\n"+
 		"\tPath:    %s\n"+
-		"\tKey:     %s\n", hex.EncodeToString(path.Address), hex.EncodeToString(path.Path), hex.EncodeToString(MakePathKey(path)))
+		"\tKey:     %s\n", hex.EncodeToString(path.Address), hex.EncodeToString(path.Path), hex.EncodeToString(common_vm.MakePathKey(path)))
 }
 
 // Get TypeTag by string TypeTag representation.

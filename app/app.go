@@ -32,6 +32,7 @@ import (
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/market"
 	"github.com/dfinance/dnode/x/multisig"
@@ -69,6 +70,7 @@ var (
 		supply.AppModuleBasic{},
 		poa.AppModuleBasic{},
 		currencies.AppModuleBasic{},
+		currencies_register.AppModuleBasic{},
 		multisig.AppModuleBasic{},
 		oracle.AppModuleBasic{},
 		vm.AppModuleBasic{},
@@ -106,6 +108,7 @@ type DnServiceApp struct {
 	poaKeeper       poa.Keeper
 	ccKeeper        currencies.Keeper
 	msKeeper        multisig.Keeper
+	crKeeper        currencies_register.Keeper
 	vmKeeper        vm.Keeper
 	oracleKeeper    oracle.Keeper
 	marketKeeper    market.Keeper
@@ -123,13 +126,13 @@ type DnServiceApp struct {
 func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
-	app.Logger().Info(fmt.Sprintf("waiting for connection to VM by %s address", addr))
-	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1*time.Second)
+	app.Logger().Info(fmt.Sprintf("Waiting for VM connection, address: %s", addr))
+	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1 * time.Second)
 	if err != nil {
 		panic(err)
 	}
 
-	app.Logger().Info(fmt.Sprintf("successful connected to vm, connection status is %d", app.vmConn.GetState()))
+	app.Logger().Info(fmt.Sprintf("Successful connected to VM, connection status: %d", app.vmConn.GetState()))
 }
 
 // Close VM connection and DS server stops.
@@ -141,13 +144,13 @@ func (app DnServiceApp) CloseConnections() {
 func (app *DnServiceApp) InitializeVMDataServer(addr string) {
 	var err error
 
-	app.Logger().Info(fmt.Sprintf("up data server listen server %s", addr))
+	app.Logger().Info(fmt.Sprintf("Starting VM data server listener, address: %s", addr))
 	app.vmListener, err = helpers.GetGRpcNetListener(addr)
 	if err != nil {
 		panic(err)
 	}
 
-	app.Logger().Info("data server is up")
+	app.Logger().Info("VM data server is running")
 }
 
 // MakeCodec generates the necessary codecs for Amino.
@@ -176,6 +179,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		slashing.StoreKey,
 		poa.StoreKey,
 		currencies.StoreKey,
+		currencies_register.StoreKey,
 		multisig.StoreKey,
 		vm.StoreKey,
 		oracle.StoreKey,
@@ -253,6 +257,13 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		cdc,
 	)
 
+	// Initialize currency_register keeper.
+	app.crKeeper = currencies_register.NewKeeper(
+		app.cdc,
+		keys[currencies_register.StoreKey],
+		app.vmKeeper,
+	)
+
 	// Initializing distribution keeper.
 	app.distrKeeper = distribution.NewKeeper(
 		cdc,
@@ -321,6 +332,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.marketKeeper,
 	)
 
+	// Initializing order_bool module.
 	app.orderBookKeeper = orderbook.NewKeeper(
 		cdc,
 		app.orderKeeper,
@@ -338,6 +350,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
+		currencies_register.NewAppModule(app.crKeeper),
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
@@ -375,6 +388,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		multisig.ModuleName,
 		vm.ModuleName,
 		oracle.ModuleName,
+		currencies_register.ModuleName,
 		market.ModuleName,
 		order.ModuleName,
 		orderbook.ModuleName,

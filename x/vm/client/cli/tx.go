@@ -119,10 +119,10 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 					_, err := hex.DecodeString(arg)
 					if err != nil {
 						// if not success, just convert string to hex.
-						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("b\"%s\"", hex.EncodeToString([]byte(arg))), extractedArgs[i])
+						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("x\"%s\"", hex.EncodeToString([]byte(arg))), extractedArgs[i])
 					} else {
 						// otherwise just use hex.
-						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("b\"%s\"", arg), extractedArgs[i])
+						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("x\"%s\"", arg), extractedArgs[i])
 					}
 
 				case vm_grpc.VMTypeTag_Struct:
@@ -137,7 +137,6 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 							return fmt.Errorf("incorrect format for xxHash argument (prefixed #) %q", arg)
 						}
 
-						fmt.Printf("Result: %s\n", strings.ToLower(arg[1:]))
 						_, err := seed.WriteString(strings.ToLower(arg[1:]))
 						if err != nil {
 							return fmt.Errorf("can't format to xxHash argument %q (format happens because of '#' prefix)", arg)
@@ -176,6 +175,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 					if _, err := sdk.AccAddressFromBech32(arg); err != nil {
 						return fmt.Errorf("can't parse address argument %s, check address and try again: %s", arg, err.Error())
 					}
+
 					scriptArgs[i] = types.NewScriptArg(arg, extractedArgs[i])
 
 				case vm_grpc.VMTypeTag_Bool:

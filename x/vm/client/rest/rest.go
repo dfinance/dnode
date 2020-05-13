@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
@@ -125,15 +126,7 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 				return
 			}
 
-			address, err = hex.DecodeString(types.Bech32ToLibra(address))
-			if err != nil {
-				rest.WriteErrorResponse(
-					w,
-					http.StatusUnprocessableEntity,
-					fmt.Sprintf("can't parse address %q (should be libra hex or bech32): %v", rawAddress, err),
-				)
-				return
-			}
+			address = common_vm.Bech32ToLibra(address)
 		}
 
 		path, err := hex.DecodeString(rawPath)
@@ -145,7 +138,7 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 			)
 			return
 		}
-		if len(path) > 0 && path[0] != 0x0  {
+		if len(path) > 0 && path[0] != 0x0 {
 			rest.WriteErrorResponse(
 				w,
 				http.StatusUnprocessableEntity,

@@ -2,6 +2,7 @@ package clitester
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -36,6 +37,11 @@ func (r *TxRequest) SetCmd(module, fromAddress string, args ...string) {
 	r.cmd.AddArg("node", r.nodeRpcAddress)
 	r.cmd.AddArg("fees", "1"+config.MainDenom)
 	r.cmd.AddArg("", "--yes")
+}
+
+func (r *TxRequest) SetGas(amount uint64) *TxRequest {
+	r.cmd.AddArg("gas", strconv.FormatUint(amount, 10))
+	return r
 }
 
 func (r *TxRequest) DisableBroadcastMode() *TxRequest {

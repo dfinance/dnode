@@ -2,6 +2,8 @@
 package multisig
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -31,6 +33,6 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, router core.Router, para
 }
 
 // Get logger for keeper.
-func (keeper Keeper) getLogger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", "x/multisig")
+func (keeper Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", ModuleName))
 }
