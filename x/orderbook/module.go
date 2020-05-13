@@ -80,7 +80,7 @@ func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Route returns module messages route.
 func (am AppModule) Route() string {
-	return ModuleName
+	return ""
 }
 
 // NewHandler returns module messages handler.

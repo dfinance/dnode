@@ -26,14 +26,14 @@ func (f OrderFill) FillCoin() (retCoin sdk.Coin, retErr error) {
 
 	switch f.Order.Direction {
 	case Bid:
-		coinDenom, coinQuantity = f.Order.Market.BaseAssetDenom, sdk.NewIntFromBigInt(f.QuantityFilled.BigInt())
+		coinDenom, coinQuantity = f.Order.Market.BaseDenom(), sdk.NewIntFromBigInt(f.QuantityFilled.BigInt())
 	case Ask:
 		quantity, err := f.Order.Market.BaseToQuoteQuantity(f.ClearancePrice, f.QuantityFilled)
 		if err != nil {
 			retErr = err
 			return
 		}
-		coinDenom, coinQuantity = f.Order.Market.QuoteAssetDenom, sdk.NewIntFromBigInt(quantity.BigInt())
+		coinDenom, coinQuantity = f.Order.Market.QuoteDenom(), sdk.NewIntFromBigInt(quantity.BigInt())
 	default:
 		retErr = sdkErrors.Wrap(ErrWrongDirection, f.Order.Direction.String())
 		return
@@ -57,7 +57,7 @@ func (f OrderFill) RefundCoin() (doRefund bool, retCoin *sdk.Coin, retErr error)
 			priceDiff := f.Order.Price.Sub(f.ClearancePrice)
 			quantity, err := f.Order.Market.BaseToQuoteQuantity(priceDiff, f.QuantityFilled)
 			if err == nil {
-				coin := sdk.NewCoin(f.Order.Market.QuoteAssetDenom, sdk.NewIntFromBigInt(quantity.BigInt()))
+				coin := sdk.NewCoin(f.Order.Market.QuoteDenom(), sdk.NewIntFromBigInt(quantity.BigInt()))
 				retCoin = &coin
 			}
 		}

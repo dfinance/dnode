@@ -10,6 +10,7 @@ import (
 
 	"github.com/dfinance/dnode/helpers/logger"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
+	crTypes "github.com/dfinance/dnode/x/currencies_register"
 	marketTypes "github.com/dfinance/dnode/x/market"
 	orderTypes "github.com/dfinance/dnode/x/order"
 )
@@ -32,7 +33,10 @@ func Test(t *testing.T) {
 		{orderTypes.BidDirection, 1, 10, 100},
 	}
 
-	market := marketTypes.NewMarket(dnTypes.NewIDFromUint64(0), "baseDenom", "quoteDenom", 0)
+	baseCurrency := crTypes.CurrencyInfo{Denom: []byte("btc"), Decimals: 0, IsToken: false, Owner: nil, TotalSupply: nil }
+	quoteCurrency := crTypes.CurrencyInfo{Denom: []byte("dfi"), Decimals: 0, IsToken: false, Owner: nil, TotalSupply: nil }
+	market := marketTypes.NewMarket(dnTypes.NewIDFromUint64(0), string(baseCurrency.Denom), string(quoteCurrency.Denom))
+	marketExt := marketTypes.NewMarketExtended(market, baseCurrency, quoteCurrency)
 
 	testLogger := logger.NewDNLogger()
 	testLogger = log.NewFilter(testLogger, log.AllowAll())
@@ -42,7 +46,7 @@ func Test(t *testing.T) {
 		order := orderTypes.Order{
 			ID:        dnTypes.NewIDFromUint64(i.ID),
 			Owner:     nil,
-			Market:    market,
+			Market:    marketExt,
 			Direction: i.Direction,
 			Price:     sdk.NewUint(i.Price),
 			Quantity:  sdk.NewUint(i.Quantity),

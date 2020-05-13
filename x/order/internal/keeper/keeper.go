@@ -47,7 +47,7 @@ func (k Keeper) PostOrder(
 	quantity sdk.Uint,
 	ttlInSec uint64) (types.Order, error) {
 
-	market, err := k.marketKeeper.Get(ctx, marketID)
+	market, err := k.marketKeeper.GetExtended(ctx, marketID)
 	if err != nil {
 		return types.Order{}, sdkErrors.Wrap(types.ErrWrongMarketID, "not found")
 	}

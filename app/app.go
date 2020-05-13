@@ -321,6 +321,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.marketKeeper = market.NewKeeper(
 		cdc,
 		app.paramsKeeper.Subspace(market.DefaultParamspace),
+		app.crKeeper,
 	)
 
 	// Initializing order module.
