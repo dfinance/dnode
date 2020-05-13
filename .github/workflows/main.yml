@@ -39,14 +39,6 @@ jobs:
         cd go/src/github.com/${{ github.repository }}
         make
 
-    - name: Run Sentry INTEG tests
-      run: |
-        cd go/src/github.com/${{ github.repository }}
-        go test ./... --tags=integ_sentry
-      env:
-        DN_SENTRY_DSN: ${{ secrets.SENTRY_TEST_DSN }}
-        DN_SENTRY_TEST_TOKEN: ${{ secrets.DN_SENTRY_TEST_TOKEN }}
-
     - name: Run UNIT tests
       run: |
         cd go/src/github.com/${{ github.repository }}
@@ -74,6 +66,14 @@ jobs:
         REGISTRY: ${{ secrets.OWN_REGISTRY }}
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
         OWN_REGISTRY_PWD: ${{ secrets.OWN_REGISTRY_PWD }}
+
+    - name: Run Sentry INTEG tests
+      run: |
+        cd go/src/github.com/${{ github.repository }}
+        go test ./... --tags=integ_sentry
+      env:
+        DN_SENTRY_DSN: ${{ secrets.SENTRY_TEST_DSN }}
+        DN_SENTRY_TEST_TOKEN: ${{ secrets.DN_SENTRY_TEST_TOKEN }}
 
     - name: Make binaries crossbuild
       run: |
