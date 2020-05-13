@@ -59,7 +59,7 @@ jobs:
         docker login -u ${OWN_REGISTRY_USR} --password-stdin ${REGISTRY} <<< ${OWN_REGISTRY_PWD}
         docker image pull ${REGISTRY}/dfinance/dvm:${DVM_TAG}
         cd go/src/github.com/${{ github.repository }}
-        go test ./... --tags=integ
+        go test ./... --tags=integ,integ_sentry
         docker logout
       env:
         DVM_TAG: ${{ secrets.DVM_TAG }}
