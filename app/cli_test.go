@@ -875,7 +875,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		// add votes for existing call from an other senders
 		callID, callUniqueID := uint64(0), callUniqueId1
 		votes := []string{ccRecipients[0]}
-		for i := 1; i < len(ccRecipients) / 2 + 1; i++ {
+		for i := 1; i < len(ccRecipients)/2+1; i++ {
 			ct.TxMultiSigConfirmCall(ccRecipients[i], callID).CheckSucceeded()
 			votes = append(votes, ccRecipients[i])
 		}

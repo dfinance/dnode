@@ -17,14 +17,12 @@ import (
 
 func Test_ConsensusFailure(t *testing.T) {
 	const script = `
-import 0x0.Account;
-import 0x0.Coins;
-main(recipient: address, amount: u128, denom: bytearray) {
-    let coin: Coins.Coin;
-    coin = Account.withdraw_from_sender(move(amount), move(denom));
-    Account.deposit(move(recipient), move(coin));
-    return;
-}
+		use 0x0::Account;
+		use 0x0::DFI;
+		
+		fun main(recipient: address, amount: u128) {
+			Account::pay_from_sender<DFI::T>(recipient, amount);
+		}
 `
 
 	t.Parallel()
@@ -57,7 +55,7 @@ main(recipient: address, amount: u128, denom: bytearray) {
 
 	// Execute .json script file
 	// Should panic as there is no local VM running
-	ct.TxVmExecuteScript(senderAddr, compiledPath, senderAddr, "100", "dfi").DisableBroadcastMode().CheckSucceeded()
+	ct.TxVmExecuteScript(senderAddr, compiledPath, senderAddr, "100").DisableBroadcastMode().CheckSucceeded()
 
 	// Check CONSENSUS FAILURE did occur
 	{

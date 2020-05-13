@@ -16,6 +16,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
@@ -103,10 +104,7 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 					return fmt.Errorf("can't parse address: %s\n, check address format, it could be libra hex or bech32", rawAddress)
 				}
 
-				address, err = hex.DecodeString(types.Bech32ToLibra(address))
-				if err != nil {
-					return fmt.Errorf("can't parse address: %s\n, check address format, it could be libra hex or bech32", rawAddress)
-				}
+				address = common_vm.Bech32ToLibra(address)
 			}
 
 			path, err := hex.DecodeString(args[1])
@@ -153,10 +151,15 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("error during reading mvir file %q: %v", args[0], err)
 			}
 
+			addr, err := sdk.AccAddressFromBech32(args[1])
+			if err != nil {
+				return fmt.Errorf("error during parsing address %s: %v", args[1], err)
+			}
+
 			// Mvir file
 			sourceFile := &vm_grpc.MvIrSourceFile{
 				Text:    string(mvirContent),
-				Address: []byte(args[1]),
+				Address: common_vm.Bech32ToLibra(addr),
 				Type:    vm_grpc.ContractType_Script,
 			}
 
@@ -193,10 +196,15 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("error during reading mvir file %q: %v", args[0], err)
 			}
 
+			addr, err := sdk.AccAddressFromBech32(args[1])
+			if err != nil {
+				return fmt.Errorf("error during parsing address %s: %v", args[1], err)
+			}
+
 			// Mvir file
 			sourceFile := &vm_grpc.MvIrSourceFile{
 				Text:    string(mvirContent),
-				Address: []byte(args[1]),
+				Address: common_vm.Bech32ToLibra(addr),
 				Type:    vm_grpc.ContractType_Module,
 			}
 

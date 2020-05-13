@@ -5,7 +5,6 @@ package keeper
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,64 +17,56 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	dnodeConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/oracle"
 	compilerClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 const sendScript = `
-import 0x0.Account;
-import 0x0.Coins;
+use 0x0::Account;
+use 0x0::Coins;
+use 0x0::DFI;
 
-main(recipient: address, amount: u128, denom: bytearray) {
-    let coin: Coins.Coin;
-    coin = Account.withdraw_from_sender(move(amount), move(denom));
-
-    Account.deposit(move(recipient), move(coin));
-    return;
+fun main(recipient: address, amount: u128) {
+    Account::pay_from_sender<DFI::T>(recipient, amount);
+    Account::pay_from_sender<Coins::ETH>(recipient, amount);
+    Account::pay_from_sender<Coins::BTC>(recipient, amount);
+    Account::pay_from_sender<Coins::USDT>(recipient, amount);
 }
 `
 
 const mathModule = `
 module Math {
-    public add(a: u64, b: u64): u64 {
-        return move(a) + move(b);
+    public fun add(a: u64, b: u64): u64 {
+		a + b
     }
 }
 `
 
 const mathScript = `
-import 0x0.Account;
-import {{sender}}.Math;
+use 0x0::Event;
+use {{sender}}::Math;
 
-main(a: u64, b: u64) {
-	let c: u64;
-	let handle: Account.EventHandle<u64>;
+fun main(a: u64, b: u64) {
+	let c = Math::add(a, b);
 
-	c = Math.add(move(a), move(b));
-
-    handle = Account.new_event_handle<u64>();
-    Account.emit_event<u64>(&mut handle, move(c));
-    Account.destroy_handle<u64>(move(handle));
-
-	return;
+	let event_handle = Event::new_event_handle<u64>();
+	Event::emit_event(&mut event_handle, c);
+	Event::destroy_handle(event_handle);
 }
 `
 
 const oraclePriceScript = `
-import 0x0.Account;
-import 0x0.Oracle;
+use 0x0::Event;
+use 0x0::Oracle;
 
-main(ticket: u64) {
-    let price: u64;
-    let handle: Account.EventHandle<u64>;
+fun main(ticket: u64) {
+    let price = Oracle::get_price(ticket);
 
-    price = Oracle.get_price(move(ticket));
-
-    handle = Account.new_event_handle<u64>();
-    Account.emit_event<u64>(&mut handle, move(price));
-    Account.destroy_handle<u64>(move(handle));
-    return;
+    let event_handle = Event::new_event_handle<u64>();
+	Event::emit_event(&mut event_handle, price);
+	Event::destroy_handle(event_handle);
 }
 `
 
@@ -122,7 +113,17 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	// create accounts.
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
-	acc1.SetCoins(sdk.NewCoins(sdk.NewCoin("dfi", sdk.NewInt(100))))
+
+	baseAmount := sdk.NewInt(1000)
+	toSend := sdk.NewInt(100)
+	putCoins := sdk.NewCoins(
+		sdk.NewCoin("dfi", baseAmount),
+		sdk.NewCoin("eth", baseAmount),
+		sdk.NewCoin("btc", baseAmount),
+		sdk.NewCoin("usdt", baseAmount),
+	)
+
+	acc1.SetCoins(putCoins)
 
 	addr2 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	acc2 := input.ak.NewAccountWithAddress(input.ctx, addr2)
@@ -154,24 +155,20 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 
 	bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    sendScript,
-		Address: []byte(addr1.String()),
+		Address: common_vm.Bech32ToLibra(addr1),
 		Type:    vm_grpc.ContractType_Script,
 	})
 	require.NoErrorf(t, err, "can't get code for send script: %v", err)
 
 	// execute contract.
-	args := make([]types.ScriptArg, 3)
+	args := make([]types.ScriptArg, 2)
 	args[0] = types.ScriptArg{
 		Value: addr2.String(),
 		Type:  vm_grpc.VMTypeTag_Address,
 	}
 	args[1] = types.ScriptArg{
-		Value: "100",
+		Value: toSend.String(),
 		Type:  vm_grpc.VMTypeTag_U128,
-	}
-	args[2] = types.ScriptArg{
-		Value: fmt.Sprintf("b\"%s\"", hex.EncodeToString([]byte("dfi"))),
-		Type:  vm_grpc.VMTypeTag_ByteArray,
 	}
 
 	msgScript := types.NewMsgExecuteScript(addr1, bytecode, args)
@@ -185,16 +182,18 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 
 	// check balance changes
 	sender := input.ak.GetAccount(input.ctx, addr1)
-	coins := sender.GetCoins()
+	getCoins := sender.GetCoins()
 
-	for _, coin := range coins {
-		if coin.Denom == "dfi" {
-			require.Zero(t, coin.Amount.Int64())
-		}
+	for _, got := range getCoins {
+		require.Equal(t, baseAmount.Sub(toSend).String(), got.Amount.String())
 	}
 
 	recipient := input.ak.GetAccount(input.ctx, addr2)
-	require.Contains(t, recipient.GetCoins(), sdk.NewCoin("dfi", sdk.NewInt(100)))
+	recpCoins := recipient.GetCoins()
+
+	for _, got := range recpCoins {
+		require.Equal(t, toSend.String(), got.Amount.String())
+	}
 }
 
 // Test deploy module and use it.
@@ -238,7 +237,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 
 	bytecodeModule, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    mathModule,
-		Address: []byte(addr1.String()),
+		Address: common_vm.Bech32ToLibra(addr1),
 		Type:    vm_grpc.ContractType_Module,
 	})
 	require.NoErrorf(t, err, "can't get code for math module: %v", err)
@@ -258,7 +257,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 
 	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    strings.Replace(mathScript, "{{sender}}", addr1.String(), 1),
-		Address: []byte(addr1.String()),
+		Address: common_vm.Bech32ToLibra(addr1),
 		Type:    vm_grpc.ContractType_Script,
 	})
 	require.NoErrorf(t, err, "can't compiler script for math module: %v", err)
@@ -362,7 +361,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 
 	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    oraclePriceScript,
-		Address: []byte(addr1.String()),
+		Address: common_vm.Bech32ToLibra(addr1),
 		Type:    vm_grpc.ContractType_Script,
 	})
 	require.NoErrorf(t, err, "can't get code for oracle script: %v", err)

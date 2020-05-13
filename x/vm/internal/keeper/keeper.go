@@ -15,6 +15,7 @@ import (
 
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/common_vm"
+	"github.com/dfinance/dnode/x/vm/internal/middlewares"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -48,6 +49,9 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 	}
 
 	keeper.dsServer = NewDSServer(&keeper)
+	keeper.dsServer.RegisterDataMiddleware(middlewares.NewBlockMiddleware())
+	keeper.dsServer.RegisterDataMiddleware(middlewares.NewTimeMiddleware())
+
 	return
 }
 

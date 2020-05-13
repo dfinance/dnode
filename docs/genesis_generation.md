@@ -44,17 +44,24 @@ Also to have VM correct work, needs to deploy standard lib write operations.
 It should be done before next commands, so see tutorial **[how to initialize genesis for VM](/docs/vm.md#genesis-compilation)**.
 
     dnode add-genesis-account [pos-address]  1000000000000000000000000dfi
-    dnode add-genesis-account [bank-address] 95000000000000000000000000dfi
+    dnode add-genesis-account [bank-address] 95000000000000000000000000dfi,100000000000000btc,10000000000000usdt
     dnode add-genesis-account [nominee]      1000000000000000000000000dfi
-    dnode add-genesis-account [validator-1-address]  1000000000000000000000000dfi
-    dnode add-genesis-account [validator-2-address]  1000000000000000000000000dfi
-    dnode add-genesis-account [validator-3-address]  1000000000000000000000000dfi
+    dnode add-genesis-account [validator-1-address] 1000000000000000000000000dfi
+    dnode add-genesis-account [validator-2-address] 1000000000000000000000000dfi
+    dnode add-genesis-account [validator-3-address] 1000000000000000000000000dfi
 
     dnode add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
     dnode add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
     dnode add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
 
 Replace expressions in brackets with correct addresses, include Ethereum addresses.
+
+Now let's register information about added coins in `genesis.json`:
+
+    dnode add-currency-info dfi  18 100000000000000000000000000  018bfc024222e94fbed60ff0c9c1cf48c5b2809d83c82f513b2c385e21ba8a2d35
+    dnode add-currency-info eth  18 100000000000000000000000000 01f8799f504905a182aff8d5fc102da1d73b8bec199147bb5512af6e99006baeb6
+    dnode add-currency-info btc  8  100000000000000 01fe7c965b1c008c5974c7750959fa10189e803225d5057207563553922a09f906
+    dnode add-currency-info usdt 6  10000000000000 0136cb3312422fa6991412077ee93dd9db6cb5b3fcf55750fe2cc739d1d399673b
 
 Time to change denom in PoS configuration.
 So open `~/.dnode/config/genesis.json` and find this stake settings:

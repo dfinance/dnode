@@ -14,6 +14,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -362,6 +363,6 @@ func Test_KeeperGetOracleAccessPath(t *testing.T) {
 
 	assetCode := "eth_usdt"
 	path := input.vk.GetOracleAccessPath(assetCode)
-	require.Equal(t, make([]byte, types.VmAddressLength), path.Address)
+	require.Equal(t, make([]byte, common_vm.VMAddressLength), path.Address)
 	require.Equal(t, "ffe300b84cc0315d7a963b504ca77202c8c38cd28bad5bce7bbe0301c806666200", hex.EncodeToString(path.Path))
 }
