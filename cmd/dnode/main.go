@@ -26,7 +26,6 @@ import (
 	currencyInfoCli "github.com/dfinance/dnode/x/currencies_register/cli"
 	"github.com/dfinance/dnode/x/genaccounts"
 	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
-	marketCli "github.com/dfinance/dnode/x/market/client/cli"
 	oracleCli "github.com/dfinance/dnode/x/oracle/client/cli"
 	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
@@ -74,7 +73,6 @@ func main() {
 		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		currencyInfoCli.AddGenesisCurrencyInfo(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
-		marketCli.AddMarketNomineesCmd(ctx, cdc, app.DefaultNodeHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 

@@ -37,15 +37,3 @@ func (k Keeper) nextID(params types.Params) dnTypes.ID {
 	marketsLen := uint64(len(params.Markets))
 	return dnTypes.NewIDFromUint64(marketsLen)
 }
-
-// isNominee checks if account as a nominee account.
-func (k Keeper) isNominee(ctx sdk.Context, nominee string) bool {
-	params := k.GetParams(ctx)
-	for _, v := range params.Nominees {
-		if v == nominee {
-			return true
-		}
-	}
-
-	return false
-}

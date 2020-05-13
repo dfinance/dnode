@@ -36,11 +36,7 @@ func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Market, error) {
 
 // Add creates a new market object.
 // Action is only allowed to nominee accounts.
-func (k Keeper) Add(ctx sdk.Context, nominee, baseAsset, quoteAsset string, baseDecimals uint8) (types.Market, error) {
-	if !k.isNominee(ctx, nominee) {
-		return types.Market{}, sdkErrors.Wrap(types.ErrWrongNominee, nominee)
-	}
-
+func (k Keeper) Add(ctx sdk.Context, baseAsset, quoteAsset string, baseDecimals uint8) (types.Market, error) {
 	params := k.GetParams(ctx)
 	for _, m := range params.Markets {
 		if m.BaseAssetDenom == baseAsset && m.QuoteAssetDenom == quoteAsset {

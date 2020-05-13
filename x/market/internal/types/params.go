@@ -8,14 +8,12 @@ import (
 
 // Storage keys.
 var (
-	KeyMarkets  = []byte("marketMarkets")
-	KeyNominees = []byte("marketNominees")
+	KeyMarkets = []byte("marketMarkets")
 )
 
 // Keeper params type.
 type Params struct {
-	Markets  Markets
-	Nominees []string
+	Markets Markets
 }
 
 // Implements subspace.ParamSet.
@@ -26,7 +24,6 @@ func (p *Params) ParamSetPairs() subspace.ParamSetPairs {
 
 	return subspace.ParamSetPairs{
 		subspace.NewParamSetPair(KeyMarkets, &p.Markets, nilPairValidatorFunc),
-		subspace.NewParamSetPair(KeyNominees, &p.Nominees, nilPairValidatorFunc),
 	}
 }
 
@@ -38,20 +35,13 @@ func (p Params) Validate() error {
 		}
 	}
 
-	for i, n := range p.Nominees {
-		if n == "" {
-			return fmt.Errorf("nominee [%d]: empty", i)
-		}
-	}
-
 	return nil
 }
 
 // NewParams creates a new keeper params object.
 func NewParams(markets []Market, nominees []string) Params {
 	return Params{
-		Markets:  markets,
-		Nominees: nominees,
+		Markets: markets,
 	}
 }
 

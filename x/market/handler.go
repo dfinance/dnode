@@ -24,7 +24,7 @@ func NewHandler(k Keeper) sdk.Handler {
 // HandleMsgCreateMarket handles HandleMsgCreateMarket message type.
 // Creates and stores new market object.
 func HandleMsgCreateMarket(ctx sdk.Context, k Keeper, msg types.MsgCreateMarket) (*sdk.Result, error) {
-	market, err := k.Add(ctx, msg.Nominee.String(), msg.BaseAssetDenom, msg.QuoteAssetDenom, msg.BaseAssetDecimals)
+	market, err := k.Add(ctx, msg.BaseAssetDenom, msg.QuoteAssetDenom, msg.BaseAssetDecimals)
 	if err != nil {
 		return nil, err
 	}
