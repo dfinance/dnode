@@ -7,6 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 // Asset struct that represents an asset in the oracle
@@ -31,7 +33,7 @@ func NewAsset(
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
 func (a Asset) ValidateBasic() error {
-	if err := assetCodeFilter(a.AssetCode); err != nil {
+	if err := dnTypes.ValidateDenom(a.AssetCode); err != nil {
 		return sdkErrors.Wrapf(ErrInternal, "invalid assetCode: value (%s), error (%v)", a.AssetCode, err)
 	}
 

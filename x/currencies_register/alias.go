@@ -14,6 +14,7 @@ type (
 	Keeper          = keeper.Keeper
 	GenesisState    = types.GenesisState
 	GenesisCurrency = types.GenesisCurrency
+	CurrencyInfo    = types.CurrencyInfo
 )
 
 var (

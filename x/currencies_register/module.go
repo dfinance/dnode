@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/currencies_register/internal/types"
 )
 
@@ -40,7 +41,7 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 
 	for _, genCurr := range state.Currencies {
 		denom := genCurr.Denom
-		if err := sdk.ValidateDenom(denom); err != nil {
+		if err := dnTypes.ValidateDenom(denom); err != nil {
 			return fmt.Errorf("can't validate denom %q: %v", denom, err)
 		}
 
