@@ -24,7 +24,7 @@ type Order struct {
 	Market market.MarketExtended `json:"market"`
 	// Order type (bid/ask)
 	Direction Direction `json:"direction"`
-	// Order target price
+	// Order target price (in quote asset denom)
 	Price sdk.Uint `json:"price"`
 	// Order target quantity
 	Quantity sdk.Uint `json:"quantity"`
@@ -32,6 +32,8 @@ type Order struct {
 	Ttl time.Duration `json:"ttl_dur"`
 	// Created timestamp
 	CreatedAt time.Time `json:"created_at"`
+	// Updated timestamp
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // LockCoin return Coin that should be locked (transferred from account to the module).
@@ -67,9 +69,14 @@ func (o Order) String() string {
 	b.WriteString(fmt.Sprintf("  Owner:     %s\n", o.Owner.String()))
 	b.WriteString(fmt.Sprintf("  Direction: %s\n", o.Direction.String()))
 	b.WriteString(fmt.Sprintf("  Price:     %s\n", o.Price.String()))
-	b.WriteString(fmt.Sprintf("  Quantity:  %s\n", o.Market.QuantityToDecimal(o.Quantity).String()))
+	if o.Direction == Bid {
+		b.WriteString(fmt.Sprintf("  QQuantity: %s\n", o.Market.QuoteCurrency.UintToDec(o.Quantity).String()))
+	} else {
+		b.WriteString(fmt.Sprintf("  BQuantity: %s\n", o.Market.BaseCurrency.UintToDec(o.Quantity).String()))
+	}
 	b.WriteString(fmt.Sprintf("  Ttl:       %s\n", o.Ttl.String()))
 	b.WriteString(fmt.Sprintf("  CreatedAt: %s\n", o.CreatedAt.String()))
+	b.WriteString(fmt.Sprintf("  UpdatedAt: %s\n", o.UpdatedAt.String()))
 	b.WriteString(o.Market.String())
 
 	return b.String()
@@ -82,9 +89,10 @@ func (o Order) TableHeaders() []string {
 		"O.Owner",
 		"O.Direction",
 		"O.Price",
-		"O.Quantity",
+		"O.QBQuantity",
 		"O.TTL",
 		"O.CreatedAt",
+		"O.UpdatedAt",
 	}
 
 	return append(h, o.Market.TableHeaders()...)
@@ -97,10 +105,15 @@ func (o Order) TableValues() []string {
 		o.Owner.String(),
 		o.Direction.String(),
 		o.Price.String(),
-		o.Market.QuantityToDecimal(o.Quantity).String(),
-		o.Ttl.String(),
-		o.CreatedAt.String(),
 	}
+	if o.Direction == Bid {
+		v = append(v, o.Market.QuoteCurrency.UintToDec(o.Quantity).String())
+	} else {
+		v = append(v, o.Market.BaseCurrency.UintToDec(o.Quantity).String())
+	}
+	v = append(v, o.Ttl.String())
+	v = append(v, o.CreatedAt.String())
+	v = append(v, o.UpdatedAt.String())
 
 	return append(v, o.Market.TableValues()...)
 }
@@ -125,6 +138,7 @@ func NewOrder(
 		Quantity:  quantity,
 		Ttl:       time.Duration(ttlInSec) * time.Second,
 		CreatedAt: ctx.BlockTime(),
+		UpdatedAt: ctx.BlockTime(),
 	}
 }
 

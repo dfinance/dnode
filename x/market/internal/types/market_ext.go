@@ -23,25 +23,27 @@ type MarketExtended struct {
 	QuoteCurrency currencies_register.CurrencyInfo
 }
 
-// QuantityToDecimal converts quantity to sdk.Dec with currency specifics.
-func (m MarketExtended) QuantityToDecimal(quantity sdk.Uint) sdk.Dec {
-	return sdk.NewDecFromIntWithPrec(sdk.Int(quantity), int64(m.BaseCurrency.Decimals))
-}
-
 // BaseToQuoteQuantity converts base asset price and quantity to quote asset quantity.
 // Function normalizes quantity to be used later by OrderBook module, that way quantity for bid and ask
 // orders are casted to the same base (base quantity).
 func (m MarketExtended) BaseToQuoteQuantity(basePrice sdk.Uint, baseQuantity sdk.Uint) (sdk.Uint, error) {
-	pDec := sdk.NewDecFromBigInt(basePrice.BigInt())
-	qDec := m.QuantityToDecimal(baseQuantity)
+	// convert basePrice (in QuoteAsset denom) to sdk.Dec
+	basePriceDec := m.QuoteCurrency.UintToDec(basePrice)
+	// convert baseQuantity (amount for BaseAsset) to sdk.Dec
+	baseQuantityDec := m.BaseCurrency.UintToDec(baseQuantity)
 
-	resDec := pDec.Mul(qDec)
-	if resDec.IsZero() {
+	// get QuoteAsset quantity in sdk.Dec
+	quoteQuantityDec := basePriceDec.Mul(baseQuantityDec)
+
+	// check if result is lower than the lowest quote volume
+	if quoteQuantityDec.LT(m.QuoteCurrency.MinDecimal()) {
 		return sdk.Uint{}, sdkErrors.Wrap(ErrInvalidQuantity, "quantity is too small")
 	}
-	resUint := sdk.NewUintFromBigInt(resDec.TruncateInt().BigInt())
 
-	return resUint, nil
+	// convert result to sdk.Uint (remove decimal part)
+	quoteQuantity := m.QuoteCurrency.DecToUint(quoteQuantityDec)
+
+	return quoteQuantity, nil
 }
 
 // BaseDenom return string base asset denom representation.

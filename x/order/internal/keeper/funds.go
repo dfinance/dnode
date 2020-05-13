@@ -80,6 +80,7 @@ func (k Keeper) ExecuteOrderFills(ctx sdk.Context, orderFills types.OrderFills) 
 		} else {
 			k.GetLogger(ctx).Info(fmt.Sprintf("order partially filled: %s", orderFill.Order.ID))
 			orderFill.Order.Quantity = orderFill.QuantityUnfilled
+			orderFill.Order.UpdatedAt = ctx.BlockTime()
 			k.Set(ctx, orderFill.Order)
 		}
 	}
