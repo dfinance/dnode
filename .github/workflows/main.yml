@@ -66,6 +66,7 @@ jobs:
         REGISTRY: ${{ secrets.OWN_REGISTRY }}
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
         OWN_REGISTRY_PWD: ${{ secrets.OWN_REGISTRY_PWD }}
+        DN_SENTRY_TEST_TOKEN: ${{ secrets.DN_SENTRY_TEST_TOKEN }}
 
     - name: Run Sentry INTEG tests
       run: |
