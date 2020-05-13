@@ -73,7 +73,7 @@ jobs:
         go test ./... --tags=integ_sentry
       env:
         DN_SENTRY_DSN: ${{ secrets.SENTRY_TEST_DSN }}
-        DN_SENTRY_TEST_TOKEN: ${{ secrets.SENTRY_TEST_TOKEN }}
+        DN_SENTRY_TEST_TOKEN: ${{ secrets.DN_SENTRY_TEST_TOKEN }}
 
     - name: Make binaries crossbuild
       run: |
