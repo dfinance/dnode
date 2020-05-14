@@ -2,6 +2,7 @@ package tests
 
 import (
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,6 +11,11 @@ import (
 )
 
 func PingTcpAddress(address string) error {
+	// remove scheme prefix
+	if i := strings.Index(address, "://"); i != -1 {
+		address = address[i + 3:]
+	}
+
 	conn, err := net.DialTimeout("tcp", address, 500*time.Millisecond)
 	if err != nil {
 		return err

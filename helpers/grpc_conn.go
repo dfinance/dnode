@@ -82,5 +82,5 @@ func GetGRpcClientConnection(addr string, keepAlivePeriod time.Duration) (*grpc.
 		dialOptions = append(dialOptions, grpc.WithKeepaliveParams(kpParams))
 	}
 
-	return grpc.Dial(addr, dialOptions...)
+	return grpc.Dial("", dialOptions...)
 }
