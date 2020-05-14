@@ -38,7 +38,7 @@ func Test_ConsensusFailure(t *testing.T) {
 	require.NoError(t, compilerContainer.Start(5*time.Second), "compiler container creation")
 	defer compilerContainer.Stop()
 
-	ct.SetVMCompilerAddress("127.0.0.1:" + compilerPort)
+	ct.SetVMCompilerAddress("tcp://127.0.0.1:" + compilerPort)
 
 	senderAddr := ct.Accounts["validator1"].Address
 	mvirPath := path.Join(ct.RootDir, "script.mvir")

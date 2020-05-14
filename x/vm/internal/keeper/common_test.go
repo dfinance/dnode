@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,6 +31,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/oracle"
@@ -274,7 +277,7 @@ func setupTestInput(launchMock bool) testInput {
 			panic(err)
 		}
 	} else {
-		clientConn, err = grpc.Dial(config.Address, grpc.WithInsecure())
+		clientConn, err = helpers.GetGRpcClientConnection(config.Address, 1*time.Second)
 		if err != nil {
 			panic(err)
 		}
@@ -544,9 +547,18 @@ func waitStarted(client *docker.Client, id string, maxWait time.Duration) error 
 
 // waitReachable waits for hostport to became reachable for the maxWait time.
 func waitReachable(hostport string, maxWait time.Duration) error {
+	if !strings.Contains(hostport, "://") {
+		hostport = "tcp://" + hostport
+	}
+
 	done := time.Now().Add(maxWait)
+	u, err := url.Parse(hostport)
+	if err != nil {
+		return err
+	}
+
 	for time.Now().Before(done) {
-		c, err := net.Dial("tcp", hostport)
+		c, err := net.Dial(u.Scheme, u.Host+u.Path)
 		if err == nil {
 			c.Close()
 			return nil
