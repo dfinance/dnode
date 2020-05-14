@@ -52,32 +52,33 @@ func (keeper Keeper) CloseConnections() {
 // Send request with retry mechanism and wait for connection and execution or return error.
 func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (*vm_grpc.VMExecuteResponses, error) {
 	for {
-		connCtx, _ := context.WithTimeout(context.Background(), time.Duration(req.CurrentTimeout)*time.Millisecond)
+		curTimeout := time.Duration(req.CurrentTimeout)*time.Millisecond
+		connCtx, _ := context.WithTimeout(context.Background(), curTimeout)
 
 		resp, err := keeper.client.ExecuteContracts(connCtx, req.Raw)
 		if err != nil {
 			if req.Attempt == 0 {
 				// write to Sentry (if enabled)
-				keeper.Logger(ctx).Error(fmt.Sprintf("can't get answer from VM in %d ms, will try to reconnect in %s attempts", req.CurrentTimeout, GetMaxAttemptsStr(req.MaxAttempts)))
+				keeper.Logger(ctx).Error(fmt.Sprintf("Can't get answer from VM in %v, will try to reconnect in %s attempts: %v", req.CurrentTimeout, GetMaxAttemptsStr(req.MaxAttempts), err))
 			}
 			req.Attempt += 1
 
 			if req.MaxAttempts != 0 && req.Attempt == req.MaxAttempts {
 				// return error because of max attempts.
-				err := fmt.Errorf("max %d attemps reached, can't get answer from VM", req.Attempt)
-				keeper.Logger(ctx).Error(err.Error())
-				return nil, err
+				logErr := fmt.Errorf("max %d attemps reached, can't get answer from VM: %v", req.Attempt, err)
+				keeper.Logger(ctx).Error(logErr.Error())
+				return nil, logErr
 			}
+			time.Sleep(curTimeout)
 
 			req.CurrentTimeout += int(math.Round(float64(req.CurrentTimeout) * keeper.config.BackoffMultiplier))
 			if req.CurrentTimeout > keeper.config.MaxBackoff {
 				req.CurrentTimeout = keeper.config.MaxBackoff
 			}
 
-			time.Sleep(1 * time.Millisecond)
 			continue
 		}
-		keeper.Logger(ctx).Info(fmt.Sprintf("Successfully connected to VM with %d ms timeout", req.CurrentTimeout))
+		keeper.Logger(ctx).Info(fmt.Sprintf("Successfully connected to VM with %v timeout in %d attempts", req.CurrentTimeout, req.Attempt))
 
 		return resp, nil
 	}

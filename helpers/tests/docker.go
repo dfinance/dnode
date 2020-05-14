@@ -226,6 +226,32 @@ func NewVMCompilerContainer(dsServerPort string) (retContainer *DockerContainer,
 	return
 }
 
+func NewVMExecutorContainer(connectPort, dsServerPort string) (retContainer *DockerContainer, retErr error) {
+	tag := os.Getenv("TAG")
+	if tag == "" {
+		tag = "master"
+	}
+
+	registry := os.Getenv("REGISTRY")
+	if registry == "" {
+		retErr = fmt.Errorf("REGISTRY env var: not found")
+		return
+	}
+
+	hostUrl, _, _ := HostMachineDockerUrl()
+	dsServerAddress := fmt.Sprintf("%s:%s", hostUrl, dsServerPort)
+	cmdArgs := []string{"./dvm", "0.0.0.0:" + connectPort, dsServerAddress}
+
+	retContainer, retErr = NewDockerContainer(
+		WithCreds(registry, "dfinance/dvm", tag),
+		WithCmdArgs(cmdArgs),
+		WithTcpPorts([]string{connectPort}),
+		WithHostNetwork(),
+	)
+
+	return
+}
+
 func HostMachineDockerUrl() (hostUrl, hostNetworkMode string, err error) {
 	switch runtime.GOOS {
 	case "darwin", "windows":
