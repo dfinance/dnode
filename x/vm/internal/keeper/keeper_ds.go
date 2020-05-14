@@ -55,7 +55,9 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (*vm_grpc.V
 		curTimeout := time.Duration(req.CurrentTimeout)*time.Millisecond
 		connCtx, _ := context.WithTimeout(context.Background(), curTimeout)
 
+		connStartedAt := time.Now()
 		resp, err := keeper.client.ExecuteContracts(connCtx, req.Raw)
+		connDuration := time.Now().Sub(connStartedAt)
 		if err != nil {
 			if req.Attempt == 0 {
 				// write to Sentry (if enabled)
@@ -69,7 +71,10 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (*vm_grpc.V
 				keeper.Logger(ctx).Error(logErr.Error())
 				return nil, logErr
 			}
-			time.Sleep(curTimeout)
+
+			if curTimeout > connDuration {
+				time.Sleep(curTimeout - connDuration)
+			}
 
 			req.CurrentTimeout += int(math.Round(float64(req.CurrentTimeout) * keeper.config.BackoffMultiplier))
 			if req.CurrentTimeout > keeper.config.MaxBackoff {

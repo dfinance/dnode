@@ -214,7 +214,7 @@ func NewVMCompilerContainer(dsServerPort string) (retContainer *DockerContainer,
 
 	hostUrl, _, _ := HostMachineDockerUrl()
 	dsServerAddress := fmt.Sprintf("%s:%s", hostUrl, dsServerPort)
-	cmdArgs := []string{"./compiler", "0.0.0.0:" + port, dsServerAddress}
+	cmdArgs := []string{"./compiler", "http://0.0.0.0:" + port, dsServerAddress}
 
 	retContainer, retErr = NewDockerContainer(
 		WithCreds(registry, "dfinance/dvm", tag),
@@ -240,7 +240,7 @@ func NewVMExecutorContainer(connectPort, dsServerPort string) (retContainer *Doc
 
 	hostUrl, _, _ := HostMachineDockerUrl()
 	dsServerAddress := fmt.Sprintf("%s:%s", hostUrl, dsServerPort)
-	cmdArgs := []string{"./dvm", "0.0.0.0:" + connectPort, dsServerAddress}
+	cmdArgs := []string{"./dvm", "http://0.0.0.0:" + connectPort, dsServerAddress}
 
 	retContainer, retErr = NewDockerContainer(
 		WithCreds(registry, "dfinance/dvm", tag),

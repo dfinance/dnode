@@ -427,7 +427,7 @@ func createVMOptions(registry, dsServerUrl, tag string) docker.CreateContainerOp
 			ExposedPorts: ports,
 			Cmd: []string{
 				"./dvm",
-				"0.0.0.0:50051",
+				"http://0.0.0.0:50051",
 				dsServerUrl,
 			},
 		},
@@ -455,7 +455,7 @@ func createCompilerOptions(registry, dsServerUrl, tag string) docker.CreateConta
 			ExposedPorts: ports,
 			Cmd: []string{
 				"./compiler",
-				"0.0.0.0:50053",
+				"http://0.0.0.0:50053",
 				dsServerUrl,
 			},
 		},
