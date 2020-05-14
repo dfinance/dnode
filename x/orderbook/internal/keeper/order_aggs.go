@@ -46,7 +46,7 @@ func (a *OrderAggregates) String() string {
 func NewBidOrderAggregates(orders orderTypes.Orders) OrderAggregates {
 	aggs := make(OrderAggregates, 0, len(orders))
 	lastIdx := len(orders) - 1
-	if lastIdx <= 0 {
+	if lastIdx < 0 {
 		return aggs
 	}
 

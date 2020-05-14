@@ -7,8 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/dfinance/dnode/x/order/internal/types"
 )
 
 const (
@@ -29,16 +27,9 @@ func NewQuerier(k Keeper) sdk.Querier {
 
 // queryList handles list query which return all active order objects.
 func queryList(ctx sdk.Context, k Keeper) ([]byte, error) {
-	iterator := k.GetIterator(ctx)
-	defer iterator.Close()
-
-	orders := types.Orders{}
-	for ; iterator.Valid(); iterator.Next() {
-		order := types.Order{}
-		if err := k.cdc.UnmarshalBinaryLengthPrefixed(iterator.Value(), &order); err != nil {
-			return nil, fmt.Errorf("order unmarshal: %w", err)
-		}
-		orders = append(orders, order)
+	orders, err := k.List(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	res, err := codec.MarshalJSONIndent(k.cdc, orders)

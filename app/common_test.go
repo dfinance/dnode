@@ -17,10 +17,10 @@ import (
 	authExported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
@@ -34,6 +34,7 @@ import (
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/order"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
@@ -200,40 +201,71 @@ func newTestDnApp() (*DnServiceApp, *grpc.Server) {
 	return NewDnServiceApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app"), dbm.NewMemDB(), config), server
 }
 
-func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseAccount, privValidatorKey *ed25519.PrivKeyEd25519) ([]byte, error) {
+func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseAccount) ([]byte, error) {
 	// generate node validator account
-	var genTxAcc *auth.BaseAccount
-	var genTxPubKey crypto.PubKey
-	var genTxPrivKey secp256k1.PrivKeySecp256k1
+	var nodeAcc *auth.BaseAccount
+	var nodeAccPubKey crypto.PubKey
+	var nodeAccPrivKey secp256k1.PrivKeySecp256k1
 	{
-		//if privValidatorKey == nil {
-		//	k := ed25519.GenPrivKey()
-		//	privValidatorKey = &k
-		//}
+		nodeAccPrivKey = secp256k1.GenPrivKey()
+		nodeAccPubKey = nodeAccPrivKey.PubKey()
 
-		genTxPrivKey = secp256k1.GenPrivKey()
-		genTxPubKey = genTxPrivKey.PubKey()
-
-		accAddr := sdk.AccAddress(genTxPubKey.Address())
-		genTxAcc = &auth.BaseAccount{
+		accAddr := sdk.AccAddress(nodeAccPubKey.Address())
+		nodeAcc = &auth.BaseAccount{
 			AccountNumber: uint64(len(accs)),
 			Address:       accAddr,
 			Coins:         GenDefCoins(nil),
-			//PubKey:        privValidatorKey.PubKey(),
-			PubKey: genTxPubKey,
+			PubKey:        nodeAccPubKey,
+		}
+	}
+
+	moduleAccs := make([]*supply.ModuleAccount, 0)
+	// generate module acconts
+	{
+		// order module
+		{
+			privKey := secp256k1.GenPrivKey()
+			pubKey := privKey.PubKey()
+			addr := sdk.AccAddress(pubKey.Address())
+
+			acc := &auth.BaseAccount{
+				AccountNumber: nodeAcc.AccountNumber + 1,
+				Address:       addr,
+				Coins:         GenDefCoins(nil),
+				PubKey:        pubKey,
+			}
+			moduleAccs = append(moduleAccs, supply.NewModuleAccount(acc, order.ModuleName, supply.Burner))
 		}
 	}
 
 	// generate genesis state based on defaults
 	genesisState := ModuleBasics.DefaultGenesis()
 	{
-		accounts := make(genaccounts.GenesisState, 0, len(accs)+1)
-		for _, acc := range accs {
-			accounts = append(accounts, *acc)
-		}
-		accounts = append(accounts, *genTxAcc)
+		genAccounts := make(genaccounts.GenesisState, 0)
 
-		genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, accounts)
+		for _, acc := range accs {
+			if genAcc, err := genaccounts.NewGenesisAccountI(acc); err != nil {
+				return nil, fmt.Errorf("genAcc build for %q (validator): %w", acc.Address.String(), err)
+			} else {
+				genAccounts = append(genAccounts, genAcc)
+			}
+		}
+
+		if genAcc, err := genaccounts.NewGenesisAccountI(nodeAcc); err != nil {
+			return nil, fmt.Errorf("genAcc build for %q (node): %w", nodeAcc.Address.String(), err)
+		} else {
+			genAccounts = append(genAccounts, genAcc)
+		}
+
+		for _, acc := range moduleAccs {
+			if genAcc, err := genaccounts.NewGenesisAccountI(acc); err != nil {
+				return nil, fmt.Errorf("genAcc build for %q (module): %w", acc.Address.String(), err)
+			} else {
+				genAccounts = append(genAccounts, genAcc)
+			}
+		}
+
+		genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, genAccounts)
 
 		validators := make(poaTypes.Validators, len(accs))
 		for idx, acc := range accs {
@@ -282,8 +314,8 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 		tokenAmount := sdk.TokensFromConsensusPower(1)
 
 		msg := staking.NewMsgCreateValidator(
-			genTxAcc.Address.Bytes(),
-			genTxAcc.PubKey,
+			nodeAcc.Address.Bytes(),
+			nodeAcc.PubKey,
 			sdk.NewCoin(dnConfig.MainDenom, tokenAmount),
 			staking.NewDescription(monikerID, "", "", "", ""),
 			staking.NewCommissionRates(commissionRate, commissionMaxRate, commissionChangeRate),
@@ -296,13 +328,13 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 		}
 		txMemo := "testmemo"
 
-		signature, err := genTxPrivKey.Sign(auth.StdSignBytes(chainID, 0, 0, txFee, []sdk.Msg{msg}, txMemo))
+		signature, err := nodeAccPrivKey.Sign(auth.StdSignBytes(chainID, 0, 0, txFee, []sdk.Msg{msg}, txMemo))
 		if err != nil {
 			return nil, err
 		}
 
 		stdSig := auth.StdSignature{
-			PubKey:    genTxPubKey,
+			PubKey:    nodeAccPubKey,
 			Signature: signature,
 		}
 
@@ -326,7 +358,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 func setGenesis(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) (sdk.Context, error) {
 	ctx := app.NewContext(true, abci.Header{})
 
-	stateBytes, err := getGenesis(app, "", "testMoniker", accs, nil)
+	stateBytes, err := getGenesis(app, "", "testMoniker", accs)
 	if err != nil {
 		return ctx, err
 	}
@@ -349,7 +381,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 
 	fee := auth.StdFee{
 		Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
-		Gas:    250000,
+		Gas:    500000,
 	}
 
 	for i, p := range priv {

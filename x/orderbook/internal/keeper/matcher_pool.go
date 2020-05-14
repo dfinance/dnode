@@ -5,7 +5,6 @@ import (
 
 	"github.com/tendermint/tendermint/libs/log"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	orderTypes "github.com/dfinance/dnode/x/order"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
 )
@@ -13,16 +12,16 @@ import (
 // MatcherPool objects stores matchers for market IDs.
 type MatcherPool struct {
 	logger log.Logger
-	pool map[dnTypes.ID]*Matcher
+	pool map[string]*Matcher
 }
 
 // AddOrder adds order to the corresponding matcher (by marketID).
 func (mp *MatcherPool) AddOrder(order orderTypes.Order) error {
 	marketID := order.Market.ID
-	matcher, ok := mp.pool[marketID]
+	matcher, ok := mp.pool[marketID.String()]
 	if !ok {
 		matcher = NewMatcher(marketID, mp.logger)
-		mp.pool[marketID] = matcher
+		mp.pool[marketID.String()] = matcher
 	}
 
 	return matcher.AddOrder(&order)
@@ -36,7 +35,7 @@ func (mp *MatcherPool) Process() types.MatcherResults {
 	for marketID, matcher := range mp.pool {
 		result, err := matcher.Match()
 		if err != nil {
-			errMsg := fmt.Sprintf("matcher for marketID %s: %v", marketID.String(), err)
+			errMsg := fmt.Sprintf("matcher for marketID %s: %v", marketID, err)
 			if types.ErrInternal.Is(err) {
 				panic(errMsg)
 			} else {
@@ -56,6 +55,6 @@ func (mp *MatcherPool) Process() types.MatcherResults {
 func NewMatcherPool(logger log.Logger) MatcherPool {
 	return MatcherPool{
 		logger: logger,
-		pool:   make(map[dnTypes.ID]*Matcher, 0),
+		pool:   make(map[string]*Matcher, 0),
 	}
 }

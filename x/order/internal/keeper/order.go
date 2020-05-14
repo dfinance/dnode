@@ -47,6 +47,23 @@ func (k Keeper) Del(ctx sdk.Context, id dnTypes.ID) {
 	store.Delete(key)
 }
 
+// List return all active orders.
+func (k Keeper) List(ctx sdk.Context) (retOrders types.Orders, retErr error) {
+	iterator := k.GetIterator(ctx)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		order := types.Order{}
+		if err := k.cdc.UnmarshalBinaryLengthPrefixed(iterator.Value(), &order); err != nil {
+			retErr = fmt.Errorf("order unmarshal: %w", err)
+			return
+		}
+		retOrders = append(retOrders, order)
+	}
+
+	return
+}
+
 // GetIterator return order object iterator (direct order).
 func (k Keeper) GetIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
