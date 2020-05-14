@@ -25,7 +25,7 @@ func Test_ConsensusFailure(t *testing.T) {
 		}
 `
 
-	t.Parallel()
+	//t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -93,7 +93,7 @@ func Test_VMExecuteScript(t *testing.T) {
 		}
 `
 
-	t.Parallel()
+	//t.Parallel()
 	ct := cliTester.New(
 		t,
 		true,
