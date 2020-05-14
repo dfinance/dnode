@@ -10,8 +10,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/order"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
 // Matcher object defined for every market.

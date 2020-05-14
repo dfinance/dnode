@@ -11,8 +11,8 @@ import (
 	"github.com/dfinance/dnode/helpers/logger"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	crTypes "github.com/dfinance/dnode/x/currencies_register"
-	marketTypes "github.com/dfinance/dnode/x/market"
-	orderTypes "github.com/dfinance/dnode/x/order"
+	marketTypes "github.com/dfinance/dnode/x/markets"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
 func Test(t *testing.T) {

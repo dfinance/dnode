@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/olekukonko/tablewriter"
 
-	orderTypes "github.com/dfinance/dnode/x/order"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
 // OrderAggregate type stores aggregated quantity (relative to price) for bid/ask orders.

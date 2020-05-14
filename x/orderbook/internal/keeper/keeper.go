@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	orderTypes "github.com/dfinance/dnode/x/order"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
 // Module keeper object.
@@ -26,15 +26,15 @@ func NewKeeper(cdc *codec.Codec, ok orderTypes.Keeper) Keeper {
 
 // GetLogger gets logger with keeper context.
 func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", "x/" + types.ModuleName)
+	return ctx.Logger().With("module", "x/"+types.ModuleName)
 }
 
-// GetOrderIterator returns order module iterator (over orders).
+// GetOrderIterator returns orders module iterator (over orders).
 func (k Keeper) GetOrderIterator(ctx sdk.Context) sdk.Iterator {
 	return k.orderKeeper.GetIterator(ctx)
 }
 
-// ProcessOrderFills passes order fills to the order module.
+// ProcessOrderFills passes order fills to the orders module.
 func (k Keeper) ProcessOrderFills(ctx sdk.Context, orderFills orderTypes.OrderFills) {
 	k.orderKeeper.ExecuteOrderFills(ctx, orderFills)
 }

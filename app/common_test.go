@@ -34,7 +34,7 @@ import (
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
-	"github.com/dfinance/dnode/x/order"
+	"github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
@@ -222,7 +222,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	moduleAccs := make([]*supply.ModuleAccount, 0)
 	// generate module acconts
 	{
-		// order module
+		// orders module
 		{
 			privKey := secp256k1.GenPrivKey()
 			pubKey := privKey.PubKey()
@@ -234,7 +234,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 				Coins:         GenDefCoins(nil),
 				PubKey:        pubKey,
 			}
-			moduleAccs = append(moduleAccs, supply.NewModuleAccount(acc, order.ModuleName, supply.Burner))
+			moduleAccs = append(moduleAccs, supply.NewModuleAccount(acc, orders.ModuleName, supply.Burner))
 		}
 	}
 

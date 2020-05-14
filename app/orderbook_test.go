@@ -14,14 +14,14 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/currencies_register"
-	marketTypes "github.com/dfinance/dnode/x/market"
-	orderTypes "github.com/dfinance/dnode/x/order"
+	marketTypes "github.com/dfinance/dnode/x/markets"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/vmauth"
 )
 
 const (
-	queryMarketListPath = "/custom/market/list"
-	queryOrderListPath  = "/custom/order/list"
+	queryMarketsListPath = "/custom/markets/list"
+	queryOrdersListPath  = "/custom/orders/list"
 )
 
 type OrderBookTester struct {

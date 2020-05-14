@@ -4,12 +4,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	orderTypes "github.com/dfinance/dnode/x/order"
 	"github.com/dfinance/dnode/x/orderbook/internal/keeper"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
-// EndBlocker iterates over Order module orders, processes them and returns back to the Order module.
+// EndBlocker iterates over Orders module orders, processes them and returns back to the Order module.
 func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 	iterator := k.GetOrderIterator(ctx)
 	defer iterator.Close()

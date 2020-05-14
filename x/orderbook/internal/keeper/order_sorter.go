@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	orderTypes "github.com/dfinance/dnode/x/order"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
 // ByPriceAscIDDesc is a type wrapper used to sort orders slice by Price ASC (1st priority) and ID DESC (2nd priority).

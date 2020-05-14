@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	orderTypes "github.com/dfinance/dnode/x/order"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
 // MatcherResult stores matcher results.

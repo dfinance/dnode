@@ -5,14 +5,14 @@ import (
 
 	"github.com/tendermint/tendermint/libs/log"
 
-	orderTypes "github.com/dfinance/dnode/x/order"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
 // MatcherPool objects stores matchers for market IDs.
 type MatcherPool struct {
 	logger log.Logger
-	pool map[string]*Matcher
+	pool   map[string]*Matcher
 }
 
 // AddOrder adds order to the corresponding matcher (by marketID).

@@ -1,7 +1,6 @@
-// OrderBook module matches bid market orders to ask orders using supply-demand curves and finding the clearance price.
-// Order can be fully/partially filled using ProRata coefficient.
-// Module passes the matching results (OrderFills) to the Order module to execute them (funds transfer).
-package orderbook
+// Markets module is used to store Base-Quote pairs with specific settings.
+// Order can't be posted without a corresponding market object.
+package markets
 
 import (
 	"encoding/json"
@@ -14,7 +13,9 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/x/orderbook/internal/types"
+	"github.com/dfinance/dnode/x/markets/client"
+	"github.com/dfinance/dnode/x/markets/internal/keeper"
+	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
 var (
@@ -39,22 +40,31 @@ func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 
 // DefaultGenesis gets default module genesis state.
 func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return nil
+	return types.ModuleCdc.MustMarshalJSON(types.DefaultGenesisState())
 }
 
 // ValidateGenesis validates module genesis state.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	return nil
+	var data types.GenesisState
+	if err := types.ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
+		return err
+	}
+
+	return types.ValidateGenesis(data)
 }
 
 // RegisterRESTRoutes registers module REST routes.
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {}
 
 // GetTxCmd returns module root tx command.
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command { return nil }
+func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
+	return client.GetTxCmd(cdc)
+}
 
 // GetQueryCmd returns module root query command.
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command { return nil }
+func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return client.GetQueryCmd(cdc)
+}
 
 // AppModule is a app module type.
 type AppModule struct {
@@ -80,11 +90,13 @@ func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Route returns module messages route.
 func (am AppModule) Route() string {
-	return ""
+	return ModuleName
 }
 
 // NewHandler returns module messages handler.
-func (am AppModule) NewHandler() sdk.Handler { return nil }
+func (am AppModule) NewHandler() sdk.Handler {
+	return NewHandler(am.keeper)
+}
 
 // QuerierRoute returns module querier route.
 func (am AppModule) QuerierRoute() string {
@@ -92,22 +104,32 @@ func (am AppModule) QuerierRoute() string {
 }
 
 // NewQuerierHandler creates module querier.
-func (am AppModule) NewQuerierHandler() sdk.Querier { return nil }
+func (am AppModule) NewQuerierHandler() sdk.Querier {
+	return keeper.NewQuerier(am.keeper)
+}
 
 // InitGenesis inits module-genesis state.
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	genesis := types.GenesisState{}
+	types.ModuleCdc.MustUnmarshalJSON(data, &genesis)
+	am.keeper.SetParams(ctx, genesis.Params)
+
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports module genesis state.
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return nil
+	params := am.keeper.GetParams(ctx)
+	genesis := types.NewGenesisState(params)
+
+	return types.ModuleCdc.MustMarshalJSON(genesis)
 }
 
 // BeginBlock performs module actions at a block start.
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
 // EndBlock performs module actions at a block end.
+// It returns no validator updates.
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, am.keeper)
+	return []abci.ValidatorUpdate{}
 }

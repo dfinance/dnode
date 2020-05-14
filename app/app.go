@@ -34,10 +34,10 @@ import (
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/genaccounts"
-	"github.com/dfinance/dnode/x/market"
+	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	"github.com/dfinance/dnode/x/order"
+	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/orderbook"
 	"github.com/dfinance/dnode/x/poa"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
@@ -74,8 +74,8 @@ var (
 		multisig.AppModuleBasic{},
 		oracle.AppModuleBasic{},
 		vm.AppModuleBasic{},
-		market.AppModuleBasic{},
-		order.AppModuleBasic{},
+		markets.AppModuleBasic{},
+		orders.AppModuleBasic{},
 		orderbook.AppModuleBasic{},
 	)
 
@@ -84,7 +84,7 @@ var (
 		distribution.ModuleName:   nil,
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		order.ModuleName:          {supply.Burner},
+		orders.ModuleName:         {supply.Burner},
 	}
 )
 
@@ -111,8 +111,8 @@ type DnServiceApp struct {
 	crKeeper        currencies_register.Keeper
 	vmKeeper        vm.Keeper
 	oracleKeeper    oracle.Keeper
-	marketKeeper    market.Keeper
-	orderKeeper     order.Keeper
+	marketKeeper    markets.Keeper
+	orderKeeper     orders.Keeper
 	orderBookKeeper orderbook.Keeper
 
 	mm *core.MsManager
@@ -183,7 +183,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		multisig.StoreKey,
 		vm.StoreKey,
 		oracle.StoreKey,
-		order.StoreKey,
+		orders.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -317,16 +317,16 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.vmKeeper,
 	)
 
-	// Initializing market module.
-	app.marketKeeper = market.NewKeeper(
+	// Initializing markets module.
+	app.marketKeeper = markets.NewKeeper(
 		cdc,
-		app.paramsKeeper.Subspace(market.DefaultParamspace),
+		app.paramsKeeper.Subspace(markets.DefaultParamspace),
 		app.crKeeper,
 	)
 
-	// Initializing order module.
-	app.orderKeeper = order.NewKeeper(
-		keys[order.StoreKey],
+	// Initializing orders module.
+	app.orderKeeper = orders.NewKeeper(
+		keys[orders.StoreKey],
 		cdc,
 		app.bankKeeper,
 		app.supplyKeeper,
@@ -355,8 +355,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
-		market.NewAppModule(app.marketKeeper),
-		order.NewAppModule(app.orderKeeper),
+		markets.NewAppModule(app.marketKeeper),
+		orders.NewAppModule(app.orderKeeper),
 		orderbook.NewAppModule(app.orderBookKeeper),
 	)
 
@@ -368,7 +368,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		staking.ModuleName,
 		multisig.ModuleName,
 		oracle.ModuleName,
-		order.ModuleName,
+		orders.ModuleName,
 		orderbook.ModuleName,
 	)
 
@@ -390,8 +390,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		vm.ModuleName,
 		oracle.ModuleName,
 		currencies_register.ModuleName,
-		market.ModuleName,
-		order.ModuleName,
+		markets.ModuleName,
+		orders.ModuleName,
 		orderbook.ModuleName,
 		genutil.ModuleName,
 	)

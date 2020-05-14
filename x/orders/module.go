@@ -1,7 +1,5 @@
-// OrderBook module matches bid market orders to ask orders using supply-demand curves and finding the clearance price.
-// Order can be fully/partially filled using ProRata coefficient.
-// Module passes the matching results (OrderFills) to the Order module to execute them (funds transfer).
-package orderbook
+// Orders module is used to store / post (create) / revoke (delete) / process (execute) market orders.
+package orders
 
 import (
 	"encoding/json"
@@ -14,7 +12,9 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/x/orderbook/internal/types"
+	"github.com/dfinance/dnode/x/orders/client"
+	"github.com/dfinance/dnode/x/orders/internal/keeper"
+	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
 var (
@@ -51,10 +51,14 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {}
 
 // GetTxCmd returns module root tx command.
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command { return nil }
+func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
+	return client.GetTxCmd(cdc)
+}
 
 // GetQueryCmd returns module root query command.
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command { return nil }
+func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return client.GetQueryCmd(cdc)
+}
 
 // AppModule is a app module type.
 type AppModule struct {
@@ -80,11 +84,13 @@ func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Route returns module messages route.
 func (am AppModule) Route() string {
-	return ""
+	return ModuleName
 }
 
 // NewHandler returns module messages handler.
-func (am AppModule) NewHandler() sdk.Handler { return nil }
+func (am AppModule) NewHandler() sdk.Handler {
+	return NewHandler(am.keeper)
+}
 
 // QuerierRoute returns module querier route.
 func (am AppModule) QuerierRoute() string {
@@ -92,7 +98,9 @@ func (am AppModule) QuerierRoute() string {
 }
 
 // NewQuerierHandler creates module querier.
-func (am AppModule) NewQuerierHandler() sdk.Querier { return nil }
+func (am AppModule) NewQuerierHandler() sdk.Querier {
+	return keeper.NewQuerier(am.keeper)
+}
 
 // InitGenesis inits module-genesis state.
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
