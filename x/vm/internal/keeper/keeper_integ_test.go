@@ -199,14 +199,14 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	getCoins := sender.GetCoins()
 
 	for _, got := range getCoins {
-		require.Equal(t, baseAmount.Sub(toSend[got.Denom]).String(), got.Amount.String())
+		require.Equalf(t, baseAmount.Sub(toSend[got.Denom]).String(), got.Amount.String(), "not equal for sender %s", got.Denom)
 	}
 
 	recipient := input.ak.GetAccount(input.ctx, addr2)
 	recpCoins := recipient.GetCoins()
 
 	for _, got := range recpCoins {
-		require.Equal(t, toSend[got.Denom].String(), got.Amount.String())
+		require.Equalf(t, toSend[got.Denom].String(), got.Amount.String(), "not equal for recipient %s", got.Denom)
 	}
 }
 
