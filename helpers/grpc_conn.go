@@ -55,14 +55,14 @@ func GetGRpcNetListener(addr string) (net.Listener, error) {
 // Get gRPC client connection for UNIX/TCP address string.
 // Keep alive option is not added if {keepAlivePeriod} == 0.
 func GetGRpcClientConnection(addr string, keepAlivePeriod time.Duration) (*grpc.ClientConn, error) {
+	schema, address, err := parseGRpcAddress(addr)
+	if err != nil {
+		return nil, err
+	}
+
 	dialOptions := []grpc.DialOption{
 		grpc.WithInsecure(),
-		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
-			schema, address, err := parseGRpcAddress(addr)
-			if err != nil {
-				return nil, err
-			}
-
+		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
 			timeout := time.Duration(0)
 			if deadline, ok := ctx.Deadline(); ok {
 				timeout = time.Until(deadline)
@@ -82,5 +82,5 @@ func GetGRpcClientConnection(addr string, keepAlivePeriod time.Duration) (*grpc.
 		dialOptions = append(dialOptions, grpc.WithKeepaliveParams(kpParams))
 	}
 
-	return grpc.Dial(addr, dialOptions...)
+	return grpc.Dial(address, dialOptions...)
 }

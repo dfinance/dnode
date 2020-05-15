@@ -25,8 +25,8 @@ const (
 	ConfigDir    = "config"  // Default directory to store all configurations.
 
 	// VM configs.
-	DefaultVMAddress  = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
-	DefaultDataListen = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
+	DefaultVMAddress  = "tcp://127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
+	DefaultDataListen = "tcp://127.0.0.1:50052" // Default data server address to listen for connections from VM.
 
 	// Default retry configs.
 	DefaultMaxAttempts       = 0   // Default VM retry attempts.

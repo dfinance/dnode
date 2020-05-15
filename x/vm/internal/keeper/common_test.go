@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,6 +31,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/oracle"
@@ -54,25 +57,25 @@ const (
 	CoinsInfo = `{ 
 		"currencies": [
 			{
-				"path": "018bfc024222e94fbed60ff0c9c1cf48c5b2809d83c82f513b2c385e21ba8a2d35",
+				"path": "011c53cd211c8dd6f27b977dbcf497d6650944f764d15cebf75dcc17f8e2bfa5f4",
           		"denom": "dfi",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
         	{
-          		"path": "01f8799f504905a182aff8d5fc102da1d73b8bec199147bb5512af6e99006baeb6",
+          		"path": "01b7c72e9510f8bd1bfb20b45f5de59d9289798b6413722cb341aa7c0db02b52bb",
           		"denom": "eth",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
         	{
-          		"path": "01fe7c965b1c008c5974c7750959fa10189e803225d5057207563553922a09f906",
+          		"path": "018640c82fe545f74fe72e54cc655c43b3eb465d8ce9f902a61b4d3a0ab99aab33",
           		"denom": "btc",
           		"decimals": 8,
           		"totalSupply": "100000000000000"
 			},
         	{
-          		"path": "0136cb3312422fa6991412077ee93dd9db6cb5b3fcf55750fe2cc739d1d399673b",
+          		"path": "016f04631b2df14f2199ad915ae7f620c58c12ac8f6728356c543dbfb719e283cc",
           		"denom": "usdt",
           		"decimals": 6,
           		"totalSupply": "10000000000000"
@@ -274,7 +277,7 @@ func setupTestInput(launchMock bool) testInput {
 			panic(err)
 		}
 	} else {
-		clientConn, err = grpc.Dial(config.Address, grpc.WithInsecure())
+		clientConn, err = helpers.GetGRpcClientConnection(config.Address, 1*time.Second)
 		if err != nil {
 			panic(err)
 		}
@@ -427,7 +430,7 @@ func createVMOptions(registry, dsServerUrl, tag string) docker.CreateContainerOp
 			ExposedPorts: ports,
 			Cmd: []string{
 				"./dvm",
-				"0.0.0.0:50051",
+				"http://0.0.0.0:50051",
 				dsServerUrl,
 			},
 		},
@@ -455,7 +458,7 @@ func createCompilerOptions(registry, dsServerUrl, tag string) docker.CreateConta
 			ExposedPorts: ports,
 			Cmd: []string{
 				"./compiler",
-				"0.0.0.0:50053",
+				"http://0.0.0.0:50053",
 				dsServerUrl,
 			},
 		},
@@ -544,9 +547,18 @@ func waitStarted(client *docker.Client, id string, maxWait time.Duration) error 
 
 // waitReachable waits for hostport to became reachable for the maxWait time.
 func waitReachable(hostport string, maxWait time.Duration) error {
+	if !strings.Contains(hostport, "://") {
+		hostport = "tcp://" + hostport
+	}
+
 	done := time.Now().Add(maxWait)
+	u, err := url.Parse(hostport)
+	if err != nil {
+		return err
+	}
+
 	for time.Now().Before(done) {
-		c, err := net.Dial("tcp", hostport)
+		c, err := net.Dial(u.Scheme, u.Host+u.Path)
 		if err == nil {
 			c.Close()
 			return nil

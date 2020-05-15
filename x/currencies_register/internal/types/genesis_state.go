@@ -22,7 +22,7 @@ func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		Currencies: []GenesisCurrency{
 			{
-				Path:        "018bfc024222e94fbed60ff0c9c1cf48c5b2809d83c82f513b2c385e21ba8a2d35",
+				Path:        "011c53cd211c8dd6f27b977dbcf497d6650944f764d15cebf75dcc17f8e2bfa5f4",
 				Denom:       "dfi",
 				Decimals:    18,
 				TotalSupply: dfiVal,
