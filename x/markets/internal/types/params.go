@@ -33,6 +33,10 @@ func (p Params) Validate() error {
 		if err := m.Valid(); err != nil {
 			return fmt.Errorf("market [%d] %s: %v", i, m.String(), err)
 		}
+
+		if m.ID.UInt64() != uint64(i) {
+			return fmt.Errorf("market [%d] %s: invalid ID (params order mismatch)", i, m.String())
+		}
 	}
 
 	return nil

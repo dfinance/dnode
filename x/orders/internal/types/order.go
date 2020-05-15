@@ -17,23 +17,41 @@ import (
 // Market order object type.
 type Order struct {
 	// Order unique ID
-	ID dnTypes.ID `json:"id"`
+	ID dnTypes.ID `json:"id" swaggertype:"string" example:"0"`
 	// Order owner account address
-	Owner sdk.AccAddress `json:"owner"`
+	Owner sdk.AccAddress `json:"owner" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Market order belong to
 	Market markets.MarketExtended `json:"market"`
 	// Order type (bid/ask)
-	Direction Direction `json:"direction"`
+	Direction Direction `json:"direction" swaggertype:"string" example:"bid"`
 	// Order target price (in quote asset denom)
-	Price sdk.Uint `json:"price"`
+	Price sdk.Uint `json:"price" swaggertype:"string" example:"100"`
 	// Order target quantity
-	Quantity sdk.Uint `json:"quantity"`
+	Quantity sdk.Uint `json:"quantity" swaggertype:"string" example:"50"`
 	// TimeToLive order auto-cancel period
-	Ttl time.Duration `json:"ttl_dur"`
+	Ttl time.Duration `json:"ttl_dur" swaggertype:"integer" example:"60"`
 	// Created timestamp
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"created_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 	// Updated timestamp
-	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedAt time.Time `json:"updated_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
+}
+
+// ValidatePriceQuantity compares price and quantity to min currency values.
+func (o Order) ValidatePriceQuantity() error {
+	minQuotePrice := o.Market.QuoteCurrency.MinDecimal()
+	quotePrice := o.Market.QuoteCurrency.UintToDec(o.Price)
+
+	minBaseQuantity := o.Market.BaseCurrency.MinDecimal()
+	baseQuantity := o.Market.BaseCurrency.UintToDec(o.Quantity)
+
+	if quotePrice.LT(minQuotePrice) {
+		return sdkErrors.Wrapf(ErrWrongPrice, "should be GTE than %s", minQuotePrice.String())
+	}
+	if baseQuantity.LT(minBaseQuantity) {
+		return sdkErrors.Wrapf(ErrWrongQuantity, "should be GTE than %s", minBaseQuantity.String())
+	}
+
+	return nil
 }
 
 // LockCoin return Coin that should be locked (transferred from account to the module).

@@ -12,10 +12,10 @@ import (
 
 // Contains currency info.
 type CurrencyInfo struct {
-	Denom       []byte   `json:"denom"`
+	Denom       []byte   `json:"denom" swaggertype:"string" example:"dfi"`
 	Decimals    uint8    `json:"decimals"`
 	IsToken     bool     `json:"isToken"`
-	Owner       []byte   `json:"owner" lcs:"len=24"`
+	Owner       []byte   `json:"owner" lcs:"len=24" swaggertype:"string" example:"dfi"`
 	TotalSupply *big.Int `json:"totalSupply"`
 }
 

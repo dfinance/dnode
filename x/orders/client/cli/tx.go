@@ -31,12 +31,15 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 			accGetter := auth.NewAccountRetriever(cliCtx)
 
-			// parse and check inputs
+			// parse inputs
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return fmt.Errorf("fromAddress: %w", err)
 			}
 
-			marketID := dnTypes.NewIDFromString(args[0])
+			marketID, err := dnTypes.NewIDFromString(args[0])
+			if err != nil {
+				return fmt.Errorf("%s argument %q parse error: %w", "market_id", args[0], err)
+			}
 
 			direction := types.Direction(strings.ToLower(args[1]))
 			if !direction.IsValid() {
@@ -81,12 +84,15 @@ func GetCmdRevokeOrder(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 			accGetter := auth.NewAccountRetriever(cliCtx)
 
-			// parse and check inputs
+			// parse inputs
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
 				return fmt.Errorf("fromAddress: %w", err)
 			}
 
-			orderID := dnTypes.NewIDFromString(args[0])
+			orderID, err := dnTypes.NewIDFromString(args[0])
+			if err != nil {
+				return fmt.Errorf("%s argument %q parse error: %w", "order", args[0], err)
+			}
 
 			// prepare and send message
 			msg := types.NewMsgRevokeOrder(cliCtx.GetFromAddress(), orderID)

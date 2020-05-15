@@ -75,6 +75,10 @@ func NewIDFromUint64(id uint64) ID {
 	return ID(sdk.NewUint(id))
 }
 
-func NewIDFromString(str string) ID {
-	return ID(sdk.NewUintFromString(str))
+func NewIDFromString(str string) (ID, error) {
+	if str == "" {
+		return ID{}, fmt.Errorf("empty")
+	}
+
+	return ID(sdk.NewUintFromString(str)), nil
 }

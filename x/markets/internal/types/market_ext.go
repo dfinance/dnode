@@ -16,7 +16,7 @@ import (
 // Object is used by orders module.
 type MarketExtended struct {
 	// Market unique ID
-	ID dnTypes.ID `json:"id" yaml:"id"`
+	ID dnTypes.ID `json:"id" yaml:"id" swaggertype:"string" example:"0"`
 	// Base asset currency (for ex. btc)
 	BaseCurrency currencies_register.CurrencyInfo
 	// Quote asset currency (for ex. dfi)

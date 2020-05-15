@@ -19,6 +19,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 
 	queryCmd.AddCommand(sdkClient.GetCommands(
 		cli.GetCmdListMarkets(types.ModuleName, cdc),
+		cli.GetCmdMarket(types.ModuleName, cdc),
 	)...)
 
 	return queryCmd

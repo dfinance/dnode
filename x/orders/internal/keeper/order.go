@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
@@ -47,8 +48,8 @@ func (k Keeper) Del(ctx sdk.Context, id dnTypes.ID) {
 	store.Delete(key)
 }
 
-// List return all active orders.
-func (k Keeper) List(ctx sdk.Context) (retOrders types.Orders, retErr error) {
+// GetList return all active orders.
+func (k Keeper) GetList(ctx sdk.Context) (retOrders types.Orders, retErr error) {
 	iterator := k.GetIterator(ctx)
 	defer iterator.Close()
 
@@ -62,6 +63,41 @@ func (k Keeper) List(ctx sdk.Context) (retOrders types.Orders, retErr error) {
 	}
 
 	return
+}
+
+// GetListFiltered returns order objects filtered by params.
+func (k Keeper) GetListFiltered(ctx sdk.Context, params types.OrdersReq) (types.Orders, error) {
+	orders, err := k.GetList(ctx)
+	if err != nil {
+		return types.Orders{}, err
+	}
+
+	paramsMarketID, _ := dnTypes.NewIDFromString(params.MarketID)
+	filteredOrders := make(types.Orders, 0, len(orders))
+	for _, o := range orders {
+		match := true
+
+		if params.OwnerFilter() && !o.Owner.Equals(params.Owner) {
+			match = false
+		}
+		if params.MarketIDFilter() && !o.Market.ID.Equal(paramsMarketID) {
+			match = false
+		}
+		if params.DirectionFilter() && !o.Direction.Equal(params.Direction) {
+			match = false
+		}
+
+		if match {
+			filteredOrders = append(filteredOrders, o)
+		}
+	}
+
+	start, end := client.Paginate(len(filteredOrders), params.Page, params.Limit, 100)
+	if start < 0 || end < 0 {
+		return types.Orders{}, nil
+	}
+
+	return filteredOrders[start:end], nil
 }
 
 // GetIterator return order object iterator (direct sort order).

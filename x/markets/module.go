@@ -14,6 +14,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/x/markets/client"
+	"github.com/dfinance/dnode/x/markets/client/rest"
 	"github.com/dfinance/dnode/x/markets/internal/keeper"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
@@ -54,7 +55,9 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 }
 
 // RegisterRESTRoutes registers module REST routes.
-func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {}
+func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
+	rest.RegisterRoutes(ctx, rtr)
+}
 
 // GetTxCmd returns module root tx command.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {

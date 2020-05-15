@@ -54,6 +54,9 @@ func (k Keeper) PostOrder(
 
 	id := k.nextID(ctx)
 	order := types.NewOrder(ctx, id, owner, market, direction, price, quantity, ttlInSec)
+	if err := order.ValidatePriceQuantity(); err != nil {
+		return types.Order{}, err
+	}
 
 	if err := k.LockOrderCoins(ctx, order); err != nil {
 		return types.Order{}, err

@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -79,4 +80,37 @@ func (k Keeper) Add(ctx sdk.Context, baseAsset, quoteAsset string) (types.Market
 	k.SetParams(ctx, params)
 
 	return market, nil
+}
+
+// GetList returns all market objects.
+func (k Keeper) GetList(ctx sdk.Context) types.Markets {
+	return k.GetParams(ctx).Markets
+}
+
+// GetListFiltered returns market objects filtered by params.
+func (k Keeper) GetListFiltered(ctx sdk.Context, params types.MarketsReq) types.Markets {
+	markets := k.GetList(ctx)
+	filteredMarkets := make(types.Markets, 0, len(markets))
+
+	for _, m := range markets {
+		add := true
+
+		if params.BaseDenomFilter() && m.BaseAssetDenom != params.BaseAssetDenom {
+			add = false
+		}
+		if params.QuoteDenomFilter() && m.QuoteAssetDenom != params.QuoteAssetDenom {
+			add = false
+		}
+
+		if add {
+			filteredMarkets = append(filteredMarkets, m)
+		}
+	}
+
+	start, end := client.Paginate(len(filteredMarkets), params.Page, params.Limit, 100)
+	if start < 0 || end < 0 {
+		return types.Markets{}
+	}
+
+	return filteredMarkets[start:end]
 }
