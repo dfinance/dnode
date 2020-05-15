@@ -17,11 +17,13 @@ import (
 
 func Test_ConsensusFailure(t *testing.T) {
 	const script = `
-		use 0x0::Account;
-		use 0x0::DFI;
-		
-		fun main(recipient: address, amount: u128) {
-			Account::pay_from_sender<DFI::T>(recipient, amount);
+		script {
+			use 0x0::Account;
+			use 0x0::DFI;
+			
+			fun main(recipient: address, amount: u128) {
+				Account::pay_from_sender<DFI::T>(recipient, amount);
+			}
 		}
 `
 
@@ -84,13 +86,15 @@ func Test_ConsensusFailure(t *testing.T) {
 
 func Test_VMExecuteScript(t *testing.T) {
 	const script = `
-		use 0x0::Account;
-		use 0x0::Transaction;
-		use 0x0::DFI;
+		script {
+			use 0x0::Account;
+			use 0x0::Transaction;
+			use 0x0::DFI;
 
-		fun main() {
-			Account::can_accept<DFI::T>(Transaction::sender());
-		}
+			fun main() {
+				Account::can_accept<DFI::T>(Transaction::sender());
+			}
+	}
 `
 
 	//t.Parallel()

@@ -24,15 +24,17 @@ import (
 )
 
 const sendScript = `
-use 0x0::Account;
-use 0x0::Coins;
-use 0x0::DFI;
-
-fun main(recipient: address, amount: u128) {
-    Account::pay_from_sender<DFI::T>(recipient, amount);
-    Account::pay_from_sender<Coins::ETH>(recipient, amount);
-    Account::pay_from_sender<Coins::BTC>(recipient, amount);
-    Account::pay_from_sender<Coins::USDT>(recipient, amount);
+script {
+	use 0x0::Account;
+	use 0x0::Coins;
+	use 0x0::DFI;
+	
+	fun main(recipient: address, dfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
+		Account::pay_from_sender<DFI::T>(recipient, dfi_amount);
+		Account::pay_from_sender<Coins::ETH>(recipient, eth_amount);
+		Account::pay_from_sender<Coins::BTC>(recipient, btc_amount);
+		Account::pay_from_sender<Coins::USDT>(recipient, usdt_amount);
+	}
 }
 `
 
@@ -45,28 +47,32 @@ module Math {
 `
 
 const mathScript = `
-use 0x0::Event;
-use {{sender}}::Math;
-
-fun main(a: u64, b: u64) {
-	let c = Math::add(a, b);
-
-	let event_handle = Event::new_event_handle<u64>();
-	Event::emit_event(&mut event_handle, c);
-	Event::destroy_handle(event_handle);
+script {
+	use 0x0::Event;
+	use {{sender}}::Math;
+	
+	fun main(a: u64, b: u64) {
+		let c = Math::add(a, b);
+	
+		let event_handle = Event::new_event_handle<u64>();
+		Event::emit_event(&mut event_handle, c);
+		Event::destroy_handle(event_handle);
+	}
 }
 `
 
 const oraclePriceScript = `
-use 0x0::Event;
-use 0x0::Oracle;
-
-fun main(ticket: u64) {
-    let price = Oracle::get_price(ticket);
-
-    let event_handle = Event::new_event_handle<u64>();
-	Event::emit_event(&mut event_handle, price);
-	Event::destroy_handle(event_handle);
+script {
+	use 0x0::Event;
+	use 0x0::Oracle;
+	
+	fun main(ticket: u64) {
+		let price = Oracle::get_price(ticket);
+	
+		let event_handle = Event::new_event_handle<u64>();
+		Event::emit_event(&mut event_handle, price);
+		Event::destroy_handle(event_handle);
+	}
 }
 `
 
@@ -115,13 +121,18 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
 
 	baseAmount := sdk.NewInt(1000)
-	toSend := sdk.NewInt(100)
 	putCoins := sdk.NewCoins(
 		sdk.NewCoin("dfi", baseAmount),
 		sdk.NewCoin("eth", baseAmount),
 		sdk.NewCoin("btc", baseAmount),
 		sdk.NewCoin("usdt", baseAmount),
 	)
+
+	toSend := make(map[string]sdk.Int, 4)
+	toSend["dfi"] = sdk.NewInt(100)
+	toSend["eth"] = sdk.NewInt(90)
+	toSend["btc"] = sdk.NewInt(80)
+	toSend["usdt"] = sdk.NewInt(70)
 
 	acc1.SetCoins(putCoins)
 
@@ -161,14 +172,17 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	require.NoErrorf(t, err, "can't get code for send script: %v", err)
 
 	// execute contract.
-	args := make([]types.ScriptArg, 2)
+	args := make([]types.ScriptArg, 1)
 	args[0] = types.ScriptArg{
 		Value: addr2.String(),
 		Type:  vm_grpc.VMTypeTag_Address,
 	}
-	args[1] = types.ScriptArg{
-		Value: toSend.String(),
-		Type:  vm_grpc.VMTypeTag_U128,
+
+	for _, value := range toSend {
+		args = append(args, types.ScriptArg{
+			Value: value.String(),
+			Type:  vm_grpc.VMTypeTag_U128,
+		})
 	}
 
 	msgScript := types.NewMsgExecuteScript(addr1, bytecode, args)
@@ -185,14 +199,14 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	getCoins := sender.GetCoins()
 
 	for _, got := range getCoins {
-		require.Equal(t, baseAmount.Sub(toSend).String(), got.Amount.String())
+		require.Equal(t, baseAmount.Sub(toSend[got.Denom]).String(), got.Amount.String())
 	}
 
 	recipient := input.ak.GetAccount(input.ctx, addr2)
 	recpCoins := recipient.GetCoins()
 
 	for _, got := range recpCoins {
-		require.Equal(t, toSend.String(), got.Amount.String())
+		require.Equal(t, toSend[got.Denom].String(), got.Amount.String())
 	}
 }
 
