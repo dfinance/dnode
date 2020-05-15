@@ -540,9 +540,20 @@ func TestVMAccountKeeper_SendBankKeeper(t *testing.T) {
 	{
 		balances := input.accountKeeper.loadBalances(input.ctx, addr)
 		require.Len(t, balances, 2)
-		require.Equal(t, balances[0].denom, "dfi")
-		require.Equal(t, balances[0].balance.Value.String(), "100100")
-		require.Equal(t, balances[1].denom, "eth")
-		require.Equal(t, balances[1].balance.Value.String(), "0")
+
+		for _, b := range balances {
+			switch b.denom {
+			case "dfi":
+				require.Equal(t, b.balance.Value.String(), "100100")
+				break
+
+			case "eth":
+				require.Equal(t, b.balance.Value.String(), "0")
+				break
+
+			default:
+				t.Fatalf("unknown denom %s", b.denom)
+			}
+		}
 	}
 }
