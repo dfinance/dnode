@@ -182,7 +182,7 @@ type VMServer struct {
 	vm.UnimplementedVMServiceServer
 }
 
-func newTestDnApp() (*DnServiceApp, *grpc.Server) {
+func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
 	config := MockVMConfig()
 
 	vmListener := bufconn.Listen(bufferSize)
@@ -198,7 +198,13 @@ func newTestDnApp() (*DnServiceApp, *grpc.Server) {
 		}
 	}()
 
-	return NewDnServiceApp(log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app"), dbm.NewMemDB(), config), server
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
+	if len(logOpts) == 0 {
+		logOpts = append(logOpts, log.AllowAll())
+	}
+	logger = log.NewFilter(logger, logOpts...)
+
+	return NewDnServiceApp(logger, dbm.NewMemDB(), config), server
 }
 
 func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseAccount) ([]byte, error) {

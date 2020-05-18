@@ -6,11 +6,14 @@ import (
 )
 
 type (
-	Keeper = keeper.Keeper
+	Keeper       = keeper.Keeper
+	HistoryItem  = types.HistoryItem
+	HistoryItems = types.HistoryItems
 )
 
 const (
-	ModuleName   = types.ModuleName
+	ModuleName = types.ModuleName
+	StoreKey   = types.StoreKey
 )
 
 var (

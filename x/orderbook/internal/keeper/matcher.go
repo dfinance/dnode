@@ -117,25 +117,28 @@ func (m *Matcher) Match() (result types.MatcherResult, retErr error) {
 
 	// build the result
 	result = types.MatcherResult{
+		MarketID:         m.marketID,
 		ClearanceState:   clearanceState,
+		BidOrdersCount:   len(m.orders.bid),
+		AskOrdersCount:   len(m.orders.ask),
 		MatchedBidVolume: bidMatchedVolume,
 		MatchedAskVolume: askMatchedVolume,
 		OrderFills:       append(bidFills, askFills...),
 	}
 
 	// TODO: should be removed later as even having debug log level off, building strings takes time
-	m.logger.Debug(fmt.Sprintf("Matcher results for marketID %s:", m.marketID.String()))
-	m.logger.Debug("Bid orders:")
-	m.logger.Debug("\n" + m.orders.bid.String())
-	m.logger.Debug("Bid aggregates:")
-	m.logger.Debug("\n" + m.aggregates.bid.String())
-	m.logger.Debug("Ask orders:")
-	m.logger.Debug("\n" + m.orders.ask.String())
-	m.logger.Debug("Ask aggregates:")
-	m.logger.Debug("\n" + m.aggregates.ask.String())
-	m.logger.Debug("PQ curves:")
-	m.logger.Debug("\n" + sdCurves.String())
-	m.logger.Debug("\n" + result.String())
+	// m.logger.Debug(fmt.Sprintf("Matcher results for marketID %s:", m.marketID.String()))
+	// m.logger.Debug("Bid orders:")
+	// m.logger.Debug("\n" + m.orders.bid.String())
+	// m.logger.Debug("Bid aggregates:")
+	// m.logger.Debug("\n" + m.aggregates.bid.String())
+	// m.logger.Debug("Ask orders:")
+	// m.logger.Debug("\n" + m.orders.ask.String())
+	// m.logger.Debug("Ask aggregates:")
+	// m.logger.Debug("\n" + m.aggregates.ask.String())
+	// m.logger.Debug("PQ curves:")
+	// m.logger.Debug("\n" + sdCurves.String())
+	// m.logger.Debug("\n" + result.String())
 
 	return
 }

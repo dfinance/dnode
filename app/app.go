@@ -37,8 +37,8 @@ import (
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/orderbook"
+	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/poa"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
@@ -127,7 +127,7 @@ func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
 	app.Logger().Info(fmt.Sprintf("Waiting for VM connection, address: %s", addr))
-	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1 * time.Second)
+	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1*time.Second)
 	if err != nil {
 		panic(err)
 	}
@@ -184,6 +184,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		vm.StoreKey,
 		oracle.StoreKey,
 		orders.StoreKey,
+		orderbook.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -335,6 +336,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	// Initializing order_bool module.
 	app.orderBookKeeper = orderbook.NewKeeper(
+		keys[orderbook.StoreKey],
 		cdc,
 		app.orderKeeper,
 	)

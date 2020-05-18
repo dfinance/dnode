@@ -26,6 +26,7 @@ func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 
 	for _, result := range matcherPool.Process() {
 		k.ProcessOrderFills(ctx, result.OrderFills)
+		k.SetHistoryItem(ctx, types.NewHistoryItem(ctx, result))
 	}
 
 	return []abci.ValidatorUpdate{}

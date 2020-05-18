@@ -1,4 +1,4 @@
-// Module keeper used to integrate with other keepers.
+// Module keeper used to integrate with other keepers and preserve clearanceState results.
 package keeper
 
 import (
@@ -13,13 +13,15 @@ import (
 // Module keeper object.
 type Keeper struct {
 	cdc         *codec.Codec
+	storeKey    sdk.StoreKey
 	orderKeeper orderTypes.Keeper
 }
 
 // NewKeeper creates keeper object.
-func NewKeeper(cdc *codec.Codec, ok orderTypes.Keeper) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, ok orderTypes.Keeper) Keeper {
 	return Keeper{
 		cdc:         cdc,
+		storeKey:    storeKey,
 		orderKeeper: ok,
 	}
 }
