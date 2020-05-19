@@ -139,3 +139,70 @@ func Test_VMExecuteScript(t *testing.T) {
 	// Execute .json script file
 	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
 }
+
+func Test_VMCommunicationUDS(t *testing.T) {
+	const (
+		dsSocket         = "ds.sock"
+		vmCompilerSocket = "compiler.sock"
+		vmRuntimeSocket  = "runtime.sock"
+	)
+
+	const script = `
+		script {
+			use 0x0::Account;
+			use 0x0::Transaction;
+			use 0x0::DFI;
+
+			fun main() {
+				Account::can_accept<DFI::T>(Transaction::sender());
+			}
+	}
+`
+
+	t.Parallel()
+	ct := cliTester.New(
+		t,
+		false,
+		cliTester.VMConnectionSettings(50, 1000, 100),
+		cliTester.VMCommunicationBaseAddressUDS(dsSocket, vmRuntimeSocket),
+	)
+	defer ct.Close()
+
+	vmCompilerSocketPath := path.Join(ct.UDSDir, vmCompilerSocket)
+	vmRuntimeSocketPath := path.Join(ct.UDSDir, vmRuntimeSocket)
+	dsSocketPath := path.Join(ct.UDSDir, dsSocket)
+
+	// Start VM compiler (sub-process)
+	compilerCmd := cliTester.NewCLICmd(t, "compiler", "ipc:/"+vmCompilerSocketPath, "ipc:/"+dsSocketPath)
+	compilerCmd.Start(t, false)
+	defer compilerCmd.Stop()
+
+	// Wait for compiler to start up and register compiler socket address
+	require.NoError(t, cliTester.WaitForFileExists(vmCompilerSocketPath, 10*time.Second), "VM compiler gRPC client start")
+	ct.SetVMCompilerAddressUDS(vmCompilerSocketPath)
+
+	// Start VM runtime (sub-process)
+	runtimeCmd := cliTester.NewCLICmd(t, "dvm", "ipc:/"+vmRuntimeSocketPath, "ipc:/"+dsSocketPath)
+	runtimeCmd.Start(t, false)
+	defer runtimeCmd.Stop()
+
+	// Wait for runtime to start up
+	require.NoError(t, cliTester.WaitForFileExists(vmRuntimeSocketPath, 10*time.Second), "VM runtime gRPC client start")
+
+	senderAddr := ct.Accounts["validator1"].Address
+	mvirPath := path.Join(ct.RootDir, "script.mvir")
+	compiledPath := path.Join(ct.RootDir, "script.json")
+
+	// Create .mvir script file
+	mvirFile, err := os.Create(mvirPath)
+	require.NoError(t, err, "creating script file")
+	_, err = mvirFile.WriteString(script)
+	require.NoError(t, err, "write script file")
+	require.NoError(t, mvirFile.Close(), "close script file")
+
+	// Compile .mvir script file
+	ct.QueryVmCompileScript(mvirPath, compiledPath, senderAddr).CheckSucceeded()
+
+	// Execute .json script file
+	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
+}
