@@ -48,34 +48,34 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return txCmd
 }
 
-// Read MVir file contains code in hex.
-func GetMVFromFile(filePath string) (vmClient.MVFile, error) {
-	var mvir vmClient.MVFile
+// Read Move file contains code in hex.
+func GetMVFromFile(filePath string) (vmClient.MoveFile, error) {
+	var move vmClient.MoveFile
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return mvir, err
+		return move, err
 	}
 	defer file.Close()
 
 	jsonContent, err := ioutil.ReadAll(file)
 	if err != nil {
-		return mvir, err
+		return move, err
 	}
 
-	if err := json.Unmarshal(jsonContent, &mvir); err != nil {
-		return mvir, err
+	if err := json.Unmarshal(jsonContent, &move); err != nil {
+		return move, err
 	}
 
-	return mvir, nil
+	return move, nil
 }
 
 // Execute script contract.
 func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "execute-script [compileMvir] [arg1,arg2,arg3,...]",
+		Use:     "execute-script [compileMove] [arg1,arg2,arg3,...]",
 		Short:   "execute Move script",
-		Example: "execute-script ./script.mvir.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\"",
+		Example: "execute-script ./script.move.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\"",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
@@ -210,7 +210,7 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "deploy-module [mvFile]",
 		Short:   "deploy Move contract",
-		Example: "deploy-module ./my_module.mvir.json",
+		Example: "deploy-module ./my_module.move.json",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
