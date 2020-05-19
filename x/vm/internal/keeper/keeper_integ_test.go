@@ -128,11 +128,17 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 		sdk.NewCoin("usdt", baseAmount),
 	)
 
+	denoms := make([]string, 4)
+	denoms[0] = "dfi"
+	denoms[1] = "eth"
+	denoms[2] = "btc"
+	denoms[3] = "usdt"
+
 	toSend := make(map[string]sdk.Int, 4)
-	toSend["dfi"] = sdk.NewInt(100)
-	toSend["eth"] = sdk.NewInt(90)
-	toSend["btc"] = sdk.NewInt(80)
-	toSend["usdt"] = sdk.NewInt(70)
+
+	for i := 0; i < len(denoms); i++ {
+		toSend[denoms[i]] = sdk.NewInt(100 - int64(i)*10)
+	}
 
 	acc1.SetCoins(putCoins)
 
@@ -178,9 +184,9 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 		Type:  vm_grpc.VMTypeTag_Address,
 	}
 
-	for _, value := range toSend {
+	for _, d := range denoms {
 		args = append(args, types.ScriptArg{
-			Value: value.String(),
+			Value: toSend[d].String(),
 			Type:  vm_grpc.VMTypeTag_U128,
 		})
 	}
