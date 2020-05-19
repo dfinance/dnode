@@ -35,6 +35,7 @@ var (
 type CLITester struct {
 	RootDir  string
 	DncliDir string
+	UDSDir   string
 	//
 	ChainID   string
 	MonikerID string
@@ -207,6 +208,9 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 	ct.RootDir = rootDir
 	ct.DncliDir = path.Join(rootDir, "dncli")
 
+	ct.UDSDir = path.Join(ct.RootDir, "sockets")
+	require.NoError(t, os.Mkdir(ct.UDSDir, 0777), "creating sockets dir")
+
 	for _, option := range options {
 		require.NoError(ct.t, option(&ct), "option failed")
 	}
@@ -283,6 +287,7 @@ func (ct *CLITester) initChain() {
 	cmd := ct.newWbdCmd().AddArg("", "init").AddArg("", ct.MonikerID).AddArg("chain-id", ct.ChainID)
 	cmd.CheckSuccessfulExecute(nil)
 
+	// configure dncli
 	{
 		cmd := ct.newWbcliCmd().
 			AddArg("", "config").
@@ -595,9 +600,15 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	return
 }
 
-func (ct *CLITester) SetVMCompilerAddress(address string) {
+func (ct *CLITester) SetVMCompilerAddressNet(address string) {
 	ct.vmCompilerAddress = address
-	require.NoError(ct.t, tests.PingTcpAddress(address), "VM compiler address")
+	require.NoError(ct.t, tests.PingTcpAddress(address), "VM compiler address (net)")
+}
+
+func (ct *CLITester) SetVMCompilerAddressUDS(path string) {
+	_, err := os.Stat(path)
+	require.NoError(ct.t, err, "VM compiler address (UDS)")
+	ct.vmCompilerAddress = "unix://" + path
 }
 
 func (ct *CLITester) UpdateAccountsBalance() {

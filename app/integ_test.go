@@ -31,16 +31,16 @@ func Test_ConsensusFailure(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	//ct.SetVMCompilerAddress("rpc.demo.wings.toys:50053")
+	//ct.SetVMCompilerAddressNet("rpc.demo.wings.toys:50053")
 
 	// Start VM compiler
-	compilerContainer, compilerPort, err := tests.NewVMCompilerContainer(ct.VmListenPort)
+	compilerContainer, compilerPort, err := tests.NewVMCompilerContainerWithNetTransport(ct.VmListenPort)
 	require.NoError(t, err, "compiler container creation")
 
 	require.NoError(t, compilerContainer.Start(5*time.Second), "compiler container creation")
 	defer compilerContainer.Stop()
 
-	ct.SetVMCompilerAddress("tcp://127.0.0.1:" + compilerPort)
+	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:" + compilerPort)
 
 	senderAddr := ct.Accounts["validator1"].Address
 	mvirPath := path.Join(ct.RootDir, "script.mvir")
@@ -102,21 +102,21 @@ func Test_VMExecuteScript(t *testing.T) {
 		t,
 		true,
 		cliTester.VMConnectionSettings(50, 1000, 100),
-		cliTester.VMCommunicationBaseAddress("tcp://127.0.0.1"),
+		cliTester.VMCommunicationBaseAddressNet("tcp://127.0.0.1"),
 	)
 	defer ct.Close()
 
 	// Start VM compiler
-	compilerContainer, compilerPort, err := tests.NewVMCompilerContainer(ct.VmListenPort)
+	compilerContainer, compilerPort, err := tests.NewVMCompilerContainerWithNetTransport(ct.VmListenPort)
 	require.NoError(t, err, "VM compiler container creation")
 
 	require.NoError(t, compilerContainer.Start(5*time.Second), "VM compiler container start")
 	defer compilerContainer.Stop()
 
-	ct.SetVMCompilerAddress("tcp://127.0.0.1:" + compilerPort)
+	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:" + compilerPort)
 
 	// Start VM executor
-	executorContainer, err := tests.NewVMExecutorContainer(ct.VmConnectPort, ct.VmListenPort)
+	executorContainer, err := tests.NewVMExecutorContainerWithNetTransport(ct.VmConnectPort, ct.VmListenPort)
 	require.NoError(t, err, "VM executor container creation")
 
 	require.NoError(t, executorContainer.Start(5*time.Second), "VM executor container start")
