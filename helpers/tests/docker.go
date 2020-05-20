@@ -99,6 +99,22 @@ func WithHostNetwork() DockerContainerOption {
 	}
 }
 
+func WithUser() DockerContainerOption {
+	return func(c *DockerContainer) error {
+		userUid, userGid := os.Getuid(), os.Getgid()
+		if userUid < 0 {
+			return fmt.Errorf("invalid user UID: %d", userUid)
+		}
+		if userGid < 0 {
+			return fmt.Errorf("invalid user GID: %d", userGid)
+		}
+
+		c.dOptions.Config.User = fmt.Sprintf("%d:%d", userUid, userGid)
+
+		return nil
+	}
+}
+
 func (c *DockerContainer) String() string {
 	return c.dOptions.Config.Image
 }
@@ -239,7 +255,7 @@ func NewVMCompilerContainerWithNetTransport(dsServerPort string) (retContainer *
 	return
 }
 
-func NewVMExecutorContainerWithNetTransport(connectPort, dsServerPort string) (retContainer *DockerContainer, retErr error) {
+func NewVMRuntimeContainerWithNetTransport(connectPort, dsServerPort string) (retContainer *DockerContainer, retErr error) {
 	tag := os.Getenv("TAG")
 	if tag == "" {
 		tag = "master"
@@ -289,6 +305,37 @@ func NewVMCompilerContainerWithUDSTransport(volumePath, dsFileName, vmFileName s
 		WithCreds(registry, "dfinance/dvm", tag),
 		WithCmdArgs(cmdArgs),
 		WithVolume(volumePath, defVolumePath),
+		WithUser(),
+	)
+
+	return
+}
+
+func NewVMRuntimeContainerWithUDSTransport(volumePath, dsFileName, vmFileName string) (retContainer *DockerContainer, retErr error) {
+	const defVolumePath = "/tmp/dn-uds"
+
+	tag := os.Getenv("TAG")
+	if tag == "" {
+		tag = "master"
+	}
+
+	registry := os.Getenv("REGISTRY")
+	if registry == "" {
+		retErr = fmt.Errorf("REGISTRY env var: not found")
+		return
+	}
+
+	dsFilePath := path.Join(defVolumePath, dsFileName)
+	vmFilePath := path.Join(defVolumePath, vmFileName)
+
+	// one '/' is omitted on purpose
+	cmdArgs := []string{"./dvm", "-v", "ipc:/" + vmFilePath, "ipc:/" + dsFilePath}
+
+	retContainer, retErr = NewDockerContainer(
+		WithCreds(registry, "dfinance/dvm", tag),
+		WithCmdArgs(cmdArgs),
+		WithVolume(volumePath, defVolumePath),
+		WithUser(),
 	)
 
 	return

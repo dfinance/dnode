@@ -35,9 +35,9 @@ func Test_ConsensusFailure(t *testing.T) {
 
 	// Start VM compiler
 	compilerContainer, compilerPort, err := tests.NewVMCompilerContainerWithNetTransport(ct.VmListenPort)
-	require.NoError(t, err, "compiler container creation")
+	require.NoError(t, err, "creating VM compiler container")
 
-	require.NoError(t, compilerContainer.Start(5*time.Second), "compiler container creation")
+	require.NoError(t, compilerContainer.Start(5*time.Second), "staring VM compiler container")
 	defer compilerContainer.Stop()
 
 	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:" + compilerPort)
@@ -108,19 +108,19 @@ func Test_VMExecuteScript(t *testing.T) {
 
 	// Start VM compiler
 	compilerContainer, compilerPort, err := tests.NewVMCompilerContainerWithNetTransport(ct.VmListenPort)
-	require.NoError(t, err, "VM compiler container creation")
+	require.NoError(t, err, "creating VM compiler container")
 
-	require.NoError(t, compilerContainer.Start(5*time.Second), "VM compiler container start")
+	require.NoError(t, compilerContainer.Start(5*time.Second), "staring VM compiler container")
 	defer compilerContainer.Stop()
 
 	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:" + compilerPort)
 
-	// Start VM executor
-	executorContainer, err := tests.NewVMExecutorContainerWithNetTransport(ct.VmConnectPort, ct.VmListenPort)
-	require.NoError(t, err, "VM executor container creation")
+	// Start VM runtime
+	runtimeContainer, err := tests.NewVMRuntimeContainerWithNetTransport(ct.VmConnectPort, ct.VmListenPort)
+	require.NoError(t, err, "creating VM runtime container")
 
-	require.NoError(t, executorContainer.Start(5*time.Second), "VM executor container start")
-	defer executorContainer.Stop()
+	require.NoError(t, runtimeContainer.Start(5*time.Second), "staring VM runtime container")
+	defer runtimeContainer.Stop()
 
 	senderAddr := ct.Accounts["validator1"].Address
 	mvirPath := path.Join(ct.RootDir, "script.mvir")
@@ -140,7 +140,10 @@ func Test_VMExecuteScript(t *testing.T) {
 	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
 }
 
-func Test_VMCommunicationUDS(t *testing.T) {
+// Test is skipped as it should be used for dnode <-> dvm communication over UDS debug locally (with DVM binaries).
+func Test_VMCommunicationUDSOverBinary(t *testing.T) {
+	t.Skip()
+
 	const (
 		dsSocket         = "ds.sock"
 		vmCompilerSocket = "compiler.sock"
@@ -178,7 +181,7 @@ func Test_VMCommunicationUDS(t *testing.T) {
 	defer compilerCmd.Stop()
 
 	// Wait for compiler to start up and register compiler socket address
-	require.NoError(t, cliTester.WaitForFileExists(vmCompilerSocketPath, 10*time.Second), "VM compiler gRPC client start")
+	require.NoError(t, cliTester.WaitForFileExists(vmCompilerSocketPath, 10*time.Second), "VM compiler gRPC server start")
 	ct.SetVMCompilerAddressUDS(vmCompilerSocketPath)
 
 	// Start VM runtime (sub-process)
@@ -187,7 +190,7 @@ func Test_VMCommunicationUDS(t *testing.T) {
 	defer runtimeCmd.Stop()
 
 	// Wait for runtime to start up
-	require.NoError(t, cliTester.WaitForFileExists(vmRuntimeSocketPath, 10*time.Second), "VM runtime gRPC client start")
+	require.NoError(t, cliTester.WaitForFileExists(vmRuntimeSocketPath, 10*time.Second), "VM runtime gRPC server start")
 
 	senderAddr := ct.Accounts["validator1"].Address
 	mvirPath := path.Join(ct.RootDir, "script.mvir")

@@ -62,7 +62,7 @@ jobs:
         go test ./... --tags=integ
         docker logout
       env:
-        DVM_TAG: ${{ secrets.DVM_TAG }}
+        DVM_TAG: release-v0.3
         REGISTRY: ${{ secrets.OWN_REGISTRY }}
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
         OWN_REGISTRY_PWD: ${{ secrets.OWN_REGISTRY_PWD }}
