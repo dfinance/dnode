@@ -302,7 +302,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 
 	checkNoErrors(events, t)
 
-	require.Equal(t, events[1].Type, types.EventTypeMvirEvent, "script after execution doesn't contain event with amount")
+	require.Equal(t, events[1].Type, types.EventTypeMoveEvent, "script after execution doesn't contain event with amount")
 
 	require.Len(t, events[1].Attributes, 4)
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeySequenceNumber)

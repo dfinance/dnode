@@ -47,8 +47,8 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	return queryCmd
 }
 
-// Read mvir file by file path.
-func readMvirFile(filePath string) ([]byte, error) {
+// Read move file by file path.
+func readMoveFile(filePath string) ([]byte, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func saveOutput(bytecode []byte, cdc *codec.Codec) error {
 	code := hex.EncodeToString(bytecode)
 	output := viper.GetString(vmClient.FlagOutput)
 
-	mvFile := vmClient.MVFile{Code: code}
+	mvFile := vmClient.MoveFile{Code: code}
 	mvBytes, err := cdc.MarshalJSONIndent(mvFile, "", "    ")
 	if err != nil {
 		return err
@@ -135,20 +135,20 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// Compile Mvir script.
+// Compile Move script.
 func CompileScript(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "compile-script [mvirFile] [account]",
-		Short:   "compile script using source code from mvir file",
-		Example: "compile-script script.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file script.mvir.json",
+		Use:     "compile-script [moveFile] [account]",
+		Short:   "compile script using source code from Move file",
+		Example: "compile-script script.move wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file script.move.json",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
 			// read provided file
-			mvirContent, err := readMvirFile(args[0])
+			moveContent, err := readMoveFile(args[0])
 			if err != nil {
-				return fmt.Errorf("error during reading mvir file %q: %v", args[0], err)
+				return fmt.Errorf("error during reading Move file %q: %v", args[0], err)
 			}
 
 			addr, err := sdk.AccAddressFromBech32(args[1])
@@ -156,14 +156,14 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("error during parsing address %s: %v", args[1], err)
 			}
 
-			// Mvir file
+			// Move file
 			sourceFile := &vm_grpc.MvIrSourceFile{
-				Text:    string(mvirContent),
+				Text:    string(moveContent),
 				Address: common_vm.Bech32ToLibra(addr),
 				Type:    vm_grpc.ContractType_Script,
 			}
 
-			// compile mvir file
+			// compile Move file
 			bytecode, err := vmClient.Compile(compilerAddr, sourceFile)
 			if err != nil {
 				return err
@@ -180,20 +180,20 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// Compile Mvir module.
+// Compile Move module.
 func CompileModule(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "compile-module [mvirFile] [account]",
-		Short:   "compile module connected to account, using source code from mvir file",
-		Example: "compile-module module.mvir wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file module.mvir.json",
+		Use:     "compile-module [moveFile] [account]",
+		Short:   "compile module connected to account, using source code from Move file",
+		Example: "compile-module module.move wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file module.move.json",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
 
 			// read provided file
-			mvirContent, err := readMvirFile(args[0])
+			moveContent, err := readMoveFile(args[0])
 			if err != nil {
-				return fmt.Errorf("error during reading mvir file %q: %v", args[0], err)
+				return fmt.Errorf("error during reading Move file %q: %v", args[0], err)
 			}
 
 			addr, err := sdk.AccAddressFromBech32(args[1])
@@ -201,14 +201,14 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("error during parsing address %s: %v", args[1], err)
 			}
 
-			// Mvir file
+			// Move file
 			sourceFile := &vm_grpc.MvIrSourceFile{
-				Text:    string(mvirContent),
+				Text:    string(moveContent),
 				Address: common_vm.Bech32ToLibra(addr),
 				Type:    vm_grpc.ContractType_Module,
 			}
 
-			// compile mvir file
+			// compile Move file
 			bytecode, err := vmClient.Compile(compilerAddr, sourceFile)
 			if err != nil {
 				return err

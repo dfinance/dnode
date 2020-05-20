@@ -87,7 +87,7 @@ func commonCompileHandler(cliCtx context.CLIContext, compileType vm_grpc.Contrac
 			return
 		}
 
-		resp := vmClient.MVFile{
+		resp := vmClient.MoveFile{
 			Code: hex.EncodeToString(byteCode),
 		}
 		rest.PostProcessResponse(w, cliCtx, resp)

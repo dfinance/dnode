@@ -19,7 +19,7 @@ const (
 )
 
 // MVFile struct contains code from file in hex.
-type MVFile struct {
+type MoveFile struct {
 	Code string `json:"code"`
 }
 
