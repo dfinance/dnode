@@ -73,9 +73,9 @@ func GetMVFromFile(filePath string) (vmClient.MoveFile, error) {
 // Execute script contract.
 func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "execute-script [compileMove] [arg1,arg2,arg3,...]",
+		Use:     "execute-script [compiledMoveFile] [arg1,arg2,arg3,...] --from [account] --fees [dfiFee] --gas [gas]",
 		Short:   "execute Move script",
-		Example: "execute-script ./script.move.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\"",
+		Example: "execute-script ./script.move.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\" --from my_account --fees 1dfi --gas 500000",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
@@ -86,7 +86,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
+				return fmt.Errorf("provide correct parameter for --from flag: %v", err)
 			}
 
 			mvFile, err := GetMVFromFile(args[0])
@@ -107,9 +107,12 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			if len(extractedArgs) != len(parsedArgs) {
-				// error not enough args
-				return fmt.Errorf("arguments amount is not enough to call script, some arguments missed")
+			if len(extractedArgs) < len(parsedArgs) {
+				return fmt.Errorf("arguments amount is not enough to call script, too many arguments, expected %d", len(extractedArgs))
+			}
+
+			if len(extractedArgs) > len(parsedArgs) {
+				return fmt.Errorf("arguments amount is not enough to call script, too few arguments, expected %d", len(extractedArgs))
 			}
 
 			for i, arg := range parsedArgs {
@@ -208,9 +211,9 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 // Deploy contract cli TX command.
 func DeployContract(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "deploy-module [mvFile]",
-		Short:   "deploy Move contract",
-		Example: "deploy-module ./my_module.move.json",
+		Use:     "deploy-module [compiledMoveFile] --from [account] --fees [dfiFee] --gas [gas]",
+		Short:   "deploy Move module",
+		Example: "deploy-module ./my_module.move.json --from my_account --fees 1dfi --gas 500000",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
@@ -219,7 +222,7 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
 
 			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
+				return fmt.Errorf("provide correct parameter for --from flag: %v", err)
 			}
 
 			mvFile, err := GetMVFromFile(args[0])
