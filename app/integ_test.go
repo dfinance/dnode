@@ -43,18 +43,18 @@ func Test_ConsensusFailure(t *testing.T) {
 	ct.SetVMCompilerAddress("tcp://127.0.0.1:" + compilerPort)
 
 	senderAddr := ct.Accounts["validator1"].Address
-	mvirPath := path.Join(ct.RootDir, "script.mvir")
-	compiledPath := path.Join(ct.RootDir, "script.json")
+	movePath := path.Join(ct.RootDir, "script.move")
+	compiledPath := path.Join(ct.RootDir, "script.move.json")
 
-	// Create .mvir script file
-	mvirFile, err := os.Create(mvirPath)
+	// Create .move script file
+	moveFile, err := os.Create(movePath)
 	require.NoError(t, err, "creating script file")
-	_, err = mvirFile.WriteString(script)
+	_, err = moveFile.WriteString(script)
 	require.NoError(t, err, "write script file")
-	require.NoError(t, mvirFile.Close(), "close script file")
+	require.NoError(t, moveFile.Close(), "close script file")
 
-	// Compile .mvir script file
-	ct.QueryVmCompileScript(mvirPath, compiledPath, senderAddr).CheckSucceeded()
+	// Compile .move script file
+	ct.QueryVmCompileScript(movePath, compiledPath, senderAddr).CheckSucceeded()
 
 	// Execute .json script file
 	// Should panic as there is no local VM running
@@ -123,18 +123,18 @@ func Test_VMExecuteScript(t *testing.T) {
 	defer executorContainer.Stop()
 
 	senderAddr := ct.Accounts["validator1"].Address
-	mvirPath := path.Join(ct.RootDir, "script.mvir")
-	compiledPath := path.Join(ct.RootDir, "script.json")
+	movePath := path.Join(ct.RootDir, "script.move")
+	compiledPath := path.Join(ct.RootDir, "script.move.json")
 
-	// Create .mvir script file
-	mvirFile, err := os.Create(mvirPath)
+	// Create .move script file
+	moveFile, err := os.Create(movePath)
 	require.NoError(t, err, "creating script file")
-	_, err = mvirFile.WriteString(script)
+	_, err = moveFile.WriteString(script)
 	require.NoError(t, err, "write script file")
-	require.NoError(t, mvirFile.Close(), "close script file")
+	require.NoError(t, moveFile.Close(), "close script file")
 
-	// Compile .mvir script file
-	ct.QueryVmCompileScript(mvirPath, compiledPath, senderAddr).CheckSucceeded()
+	// Compile .move script file
+	ct.QueryVmCompileScript(movePath, compiledPath, senderAddr).CheckSucceeded()
 
 	// Execute .json script file
 	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
