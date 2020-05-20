@@ -80,7 +80,7 @@ func TestNewEventFromVM(t *testing.T) {
 	}
 
 	event := NewEventFromVM(&vmEvent)
-	require.Equal(t, EventTypeMvirEvent, event.Type)
+	require.Equal(t, EventTypeMoveEvent, event.Type)
 	require.Len(t, event.Attributes, 4)
 
 	require.EqualValues(t, AttrKeyGuid, event.Attributes[0].Key)

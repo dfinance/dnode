@@ -61,7 +61,7 @@ into storage.
 
 So, first of all, go to VM folder, and run:
 
-    cargo run --bin stdlib-builder stdlib/mvir mvir -po ../genesis-ws.json
+    cargo run --bin stdlib-builder lang/stdlib -po ./genesis-ws.json
 
 After this, go into DN folder and run:
 
@@ -75,14 +75,14 @@ Launch compiler server, and DN.
 
 Then use commands to compile modules/scripts:
 
-    dncli query vm compile-script [mvirFile] [address] --to-file <script.mv> --compiler 127.0.0.1:50053
-    dncli query vm compile-module [mvirFile] [address] --to-file <module.mv> --compiler 127.0.0.1:50053    
+    dncli query vm compile-script [moveFile] [address] --to-file <script.move.json>
+    dncli query vm compile-module [moveFile] [address] --to-file <module.move.json>  
 
 Where:
- * `mvirFile` - file contains MVir code.
+ * `moveFile` - file contains Move code.
  * `address` - address of account who will use compiled code.
  * `--to-file` - allows to output result to file, otherwise it will be printed in console.
- * `--compiler` - address of compiler, could be ignored, default is `127.0.0.1:50053`.
+ * `--compiler` - address of compiler, could be ignored, default is `tcp://127.0.0.1:50053`.
 
 ## Configuration
 
@@ -99,16 +99,28 @@ later it will be changed for stability), `vm.toml` contains such default paramet
 ##### main base config options #####
 
 # VM network address to connect.
-vm_address = "127.0.0.1:50051"
+vm_address = "tcp://127.0.0.1:50051"
 
 # VM data server listen address.
-vm_data_listen = "127.0.0.1:50052"
+vm_data_listen = "tpc://127.0.0.1:50052
 
-# VM deploy request timeout in milliseconds.
-vm_deploy_timeout = 100
+# VM retry settings.
 
-# VM execute contract request timeout in milliseconds.
-vm_execute_timeout = 100
+## Retry max attempts.
+## Default is 0 - infinity attempts, -1 - to desable.
+vm_retry_max_attempts = 0
+
+## Initial backoff in ms.
+## Default is 100ms.
+vm_retry_initial_backoff = 100
+
+## Max backoff in ms.
+## Default is 150ms.
+vm_retry_max_backoff = 150
+
+## Backoff multiplier.
+## Default 
+vm_retry_backoff_multiplier = 0.1
 ```
 
 Where:
@@ -116,7 +128,7 @@ Where:
 * `vm_address` - address of GRPC VM node contains Move VM, using to deploy/execute modules.
 * `vm_data_listen` - address to listen for GRPC Data Source server (part of DN), using to share data between DN and VM.
 
-The rest parameters are timeouts, don't recommend to change it.
+The rest parameters are timeouts and retry mechanism, don't recommend to change it.
 
 ## Get storage data
 
