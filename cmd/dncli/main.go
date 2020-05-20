@@ -27,11 +27,19 @@ import (
 	"github.com/dfinance/dnode/x/vmauth"
 )
 
+const (
+	// Default gas for CLI.
+	DefaultGas = 500000
+)
+
 // Entry function for DN CLI.
 func main() {
 	config := sdk.GetConfig()
 	dnConfig.InitBechPrefixes(config)
 	config.Seal()
+
+	// Set default gas.
+	flags.GasFlagVar = flags.GasSetting{Gas: DefaultGas}
 
 	cobra.EnableCommandSorting = false
 	cdc := app.MakeCodec()
