@@ -65,18 +65,18 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	require.NoError(t, cliTester.WaitForFileExists(vmRuntimeSocketPath, 10*time.Second), "VM runtime gRPC server start")
 
 	senderAddr := ct.Accounts["validator1"].Address
-	mvirPath := path.Join(ct.RootDir, "script.mvir")
+	movePath := path.Join(ct.RootDir, "script.move")
 	compiledPath := path.Join(ct.RootDir, "script.json")
 
-	// Create .mvir script file
-	mvirFile, err := os.Create(mvirPath)
+	// Create .move script file
+	moveFile, err := os.Create(movePath)
 	require.NoError(t, err, "creating script file")
-	_, err = mvirFile.WriteString(script)
+	_, err = moveFile.WriteString(script)
 	require.NoError(t, err, "write script file")
-	require.NoError(t, mvirFile.Close(), "close script file")
+	require.NoError(t, moveFile.Close(), "close script file")
 
-	// Compile .mvir script file
-	ct.QueryVmCompileScript(mvirPath, compiledPath, senderAddr).CheckSucceeded()
+	// Compile .move script file
+	ct.QueryVmCompileScript(movePath, compiledPath, senderAddr).CheckSucceeded()
 
 	// Execute .json script file
 	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
