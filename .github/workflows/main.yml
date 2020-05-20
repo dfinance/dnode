@@ -57,12 +57,12 @@ jobs:
     - name: Run INTEG tests
       run: |
         docker login -u ${OWN_REGISTRY_USR} --password-stdin ${REGISTRY} <<< ${OWN_REGISTRY_PWD}
-        docker image pull ${REGISTRY}/dfinance/dvm:${DVM_TAG}
+        docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
         cd go/src/github.com/${{ github.repository }}
         go test -v ./... --tags=integ
         docker logout
       env:
-        DVM_TAG: release-v0.3
+        TAG: release-v0.3
         REGISTRY: ${{ secrets.OWN_REGISTRY }}
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
         OWN_REGISTRY_PWD: ${{ secrets.OWN_REGISTRY_PWD }}
