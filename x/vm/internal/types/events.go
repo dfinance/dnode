@@ -12,7 +12,7 @@ import (
 const (
 	// Event types.
 	EventTypeContractStatus = "contract_status"
-	EventTypeMvirEvent      = "contract_events"
+	EventTypeMoveEvent      = "contract_events"
 
 	// Attributes keys
 	AttrKeyStatus         = "status"
@@ -68,7 +68,7 @@ func NewEventDiscard(errorStatus *vm_grpc.VMStatus) sdk.Event {
 // In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
 func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
 	return sdk.NewEvent(
-		EventTypeMvirEvent,
+		EventTypeMoveEvent,
 		sdk.NewAttribute(AttrKeyGuid, "0x"+hex.EncodeToString(event.Key)),
 		sdk.NewAttribute(AttrKeySequenceNumber, strconv.FormatUint(event.SequenceNumber, 10)),
 		sdk.NewAttribute(AttrKeyType, VMTypeToStringPanic(event.Type.Tag)),
