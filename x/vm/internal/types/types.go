@@ -23,7 +23,8 @@ const (
 
 // VM related variables.
 var (
-	KeyGenesis = []byte("gen") // used to save genesis
+	KeyGenesis   = []byte("gen") // used to save genesis
+	KeyDelimiter = []byte(":")
 )
 
 // Type of Move contract (bytes).

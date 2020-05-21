@@ -53,7 +53,8 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		flags.LineBreak,
 		TestProposal(cdc),
 		UpdateModuleProposal(cdc),
-	)...)
+	)
+	commands = append(commands, compileCommands...)
 
 	txCmd.AddCommand(commands...)
 

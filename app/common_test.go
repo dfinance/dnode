@@ -39,6 +39,10 @@ import (
 	"github.com/dfinance/dnode/x/vmauth"
 )
 
+const (
+	defGasAmount = 300000
+)
+
 var (
 	chainID         = ""
 	currency1Symbol = "testa"
@@ -300,7 +304,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 
 		txFee := auth.StdFee{
 			Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
-			Gas:    300000,
+			Gas:    defGasAmount,
 		}
 		txMemo := "testmemo"
 
@@ -357,7 +361,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 
 	fee := auth.StdFee{
 		Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
-		Gas:    250000,
+		Gas:    defGasAmount,
 	}
 
 	for i, p := range priv {
