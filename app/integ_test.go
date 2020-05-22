@@ -100,7 +100,7 @@ func Test_VMExecuteScript(t *testing.T) {
 	//t.Parallel()
 	ct := cliTester.New(
 		t,
-		true,
+		false,
 		cliTester.VMConnectionSettings(50, 1000, 100),
 		cliTester.VMCommunicationBaseAddress("tcp://127.0.0.1"),
 	)
