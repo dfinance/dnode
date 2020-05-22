@@ -66,7 +66,7 @@ func NewClient(mnemonic string, account, index uint32, gas uint64, chainID strin
 	}
 
 	kb := keys.NewInMemory()
-	ki, err := kb.CreateAccount(accname, mnemonic, "", pass, "", keys.Secp256k1)
+	ki, err := kb.CreateAccount(accname, mnemonic, "", pass, fmt.Sprintf("44'/118'/0'/%d/%d", account, index), keys.Secp256k1)
 	if err != nil {
 		return nil, err
 	}
