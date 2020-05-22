@@ -131,9 +131,9 @@ func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *msTypes.LastIdRes) {
 	return q, resObj
 }
 
-func (ct *CLITester) QueryVmCompileScript(mvirFilePath, savePath, accountAddress string) *QueryRequest {
+func (ct *CLITester) QueryVmCompileScript(moveFilePath, savePath, accountAddress string) *QueryRequest {
 	q := ct.newQueryRequest(nil)
-	q.SetCmd("vm", "compile-script", mvirFilePath, accountAddress)
+	q.SetCmd("vm", "compile-script", moveFilePath, accountAddress)
 	q.cmd.AddArg("compiler", ct.vmCompilerAddress)
 	q.cmd.AddArg("to-file", savePath)
 

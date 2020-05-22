@@ -3,6 +3,7 @@ package tests
 import (
 	"fmt"
 	"os"
+	"path"
 	"runtime"
 	"strings"
 	"time"
@@ -50,6 +51,18 @@ func WithCmdArgs(cmdArgs []string) DockerContainerOption {
 	}
 }
 
+func WithVolume(hostPath, containerPath string) DockerContainerOption {
+	return func(c *DockerContainer) error {
+		c.dOptions.HostConfig.VolumeDriver = "bind"
+		c.dOptions.HostConfig.Binds = append(
+			c.dOptions.HostConfig.Binds,
+			fmt.Sprintf("%s:%s", hostPath, containerPath),
+		)
+
+		return nil
+	}
+}
+
 func WithTcpPorts(tcpPorts []string) DockerContainerOption {
 	return func(c *DockerContainer) error {
 		ports := make(map[docker.Port]struct{}, len(tcpPorts))
@@ -81,6 +94,22 @@ func WithHostNetwork() DockerContainerOption {
 		}
 
 		c.dOptions.HostConfig.NetworkMode = mode
+
+		return nil
+	}
+}
+
+func WithUser() DockerContainerOption {
+	return func(c *DockerContainer) error {
+		userUid, userGid := os.Getuid(), os.Getgid()
+		if userUid < 0 {
+			return fmt.Errorf("invalid user UID: %d", userUid)
+		}
+		if userGid < 0 {
+			return fmt.Errorf("invalid user GID: %d", userGid)
+		}
+
+		c.dOptions.Config.User = fmt.Sprintf("%d:%d", userUid, userGid)
 
 		return nil
 	}
@@ -193,7 +222,7 @@ func (c *DockerContainer) Stop() error {
 	return nil
 }
 
-func NewVMCompilerContainer(dsServerPort string) (retContainer *DockerContainer, retPort string, retErr error) {
+func NewVMCompilerContainerWithNetTransport(dsServerPort string) (retContainer *DockerContainer, retPort string, retErr error) {
 	_, port, err := server.FreeTCPAddr()
 	if err != nil {
 		retErr = fmt.Errorf("FreeTCPAddr (VMCompiler): %w", err)
@@ -214,13 +243,99 @@ func NewVMCompilerContainer(dsServerPort string) (retContainer *DockerContainer,
 
 	hostUrl, _, _ := HostMachineDockerUrl()
 	dsServerAddress := fmt.Sprintf("%s:%s", hostUrl, dsServerPort)
-	cmdArgs := []string{"./compiler", "0.0.0.0:" + port, dsServerAddress}
+	cmdArgs := []string{"./compiler", "http://0.0.0.0:" + port, dsServerAddress}
 
 	retContainer, retErr = NewDockerContainer(
 		WithCreds(registry, "dfinance/dvm", tag),
 		WithCmdArgs(cmdArgs),
 		WithTcpPorts([]string{port}),
 		WithHostNetwork(),
+	)
+
+	return
+}
+
+func NewVMRuntimeContainerWithNetTransport(connectPort, dsServerPort string) (retContainer *DockerContainer, retErr error) {
+	tag := os.Getenv("TAG")
+	if tag == "" {
+		tag = "master"
+	}
+
+	registry := os.Getenv("REGISTRY")
+	if registry == "" {
+		retErr = fmt.Errorf("REGISTRY env var: not found")
+		return
+	}
+
+	hostUrl, _, _ := HostMachineDockerUrl()
+	dsServerAddress := fmt.Sprintf("%s:%s", hostUrl, dsServerPort)
+	cmdArgs := []string{"./dvm", "http://0.0.0.0:" + connectPort, dsServerAddress}
+
+	retContainer, retErr = NewDockerContainer(
+		WithCreds(registry, "dfinance/dvm", tag),
+		WithCmdArgs(cmdArgs),
+		WithTcpPorts([]string{connectPort}),
+		WithHostNetwork(),
+	)
+
+	return
+}
+
+func NewVMCompilerContainerWithUDSTransport(volumePath, dsFileName, vmFileName string) (retContainer *DockerContainer, retErr error) {
+	const defVolumePath = "/tmp/dn-uds"
+
+	tag := os.Getenv("TAG")
+	if tag == "" {
+		tag = "master"
+	}
+
+	registry := os.Getenv("REGISTRY")
+	if registry == "" {
+		retErr = fmt.Errorf("REGISTRY env var: not found")
+		return
+	}
+
+	dsFilePath := path.Join(defVolumePath, dsFileName)
+	vmFilePath := path.Join(defVolumePath, vmFileName)
+
+	// one '/' is omitted on purpose
+	cmdArgs := []string{"./compiler", "-v", "ipc:/" + vmFilePath, "ipc:/" + dsFilePath}
+
+	retContainer, retErr = NewDockerContainer(
+		WithCreds(registry, "dfinance/dvm", tag),
+		WithCmdArgs(cmdArgs),
+		WithVolume(volumePath, defVolumePath),
+		WithUser(),
+	)
+
+	return
+}
+
+func NewVMRuntimeContainerWithUDSTransport(volumePath, dsFileName, vmFileName string) (retContainer *DockerContainer, retErr error) {
+	const defVolumePath = "/tmp/dn-uds"
+
+	tag := os.Getenv("TAG")
+	if tag == "" {
+		tag = "master"
+	}
+
+	registry := os.Getenv("REGISTRY")
+	if registry == "" {
+		retErr = fmt.Errorf("REGISTRY env var: not found")
+		return
+	}
+
+	dsFilePath := path.Join(defVolumePath, dsFileName)
+	vmFilePath := path.Join(defVolumePath, vmFileName)
+
+	// one '/' is omitted on purpose
+	cmdArgs := []string{"./dvm", "-v", "ipc:/" + vmFilePath, "ipc:/" + dsFilePath}
+
+	retContainer, retErr = NewDockerContainer(
+		WithCreds(registry, "dfinance/dvm", tag),
+		WithCmdArgs(cmdArgs),
+		WithVolume(volumePath, defVolumePath),
+		WithUser(),
 	)
 
 	return

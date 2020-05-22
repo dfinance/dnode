@@ -33,30 +33,44 @@ var (
 )
 
 type CLITester struct {
-	RootDir           string
-	DncliDir          string
-	ChainID           string
-	MonikerID         string
+	RootDir  string
+	DncliDir string
+	UDSDir   string
+	//
+	ChainID   string
+	MonikerID string
+	//
 	AccountPassphrase string
 	Accounts          map[string]*CLIAccount
-	Cdc               *codec.Codec
-	VmListenPort      string
-	DefAssetCode      string
-	t                 *testing.T
-	keyBase           sdkKeys.Keybase
-	wbdBinary         string
-	wbcliBinary       string
-	rpcAddress        string
-	rpcPort           string
-	p2pAddress        string
+	//
+	Cdc          *codec.Codec
+	DefAssetCode string
+	//
+	VmListenPort  string
+	VmConnectPort string
+	//
+	//
+	t           *testing.T
+	keyBase     sdkKeys.Keybase
+	wbdBinary   string
+	wbcliBinary string
+	//
+	rpcAddress string
+	rpcPort    string
+	p2pAddress string
+	//
+	vmBaseAddress     string
 	vmConnectAddress  string
 	vmListenAddress   string
 	vmCompilerAddress string
-	vmMaxAttempts     int
-	restAddress       string
-	daemon            *CLICmd
-	restServer        *CLICmd
-	keyringBackend    keyring.BackendType
+	vmComMinBackoffMs int
+	vmComMaxBackoffMs int
+	vmComMaxAttempts  int
+	//
+	restAddress    string
+	daemon         *CLICmd
+	restServer     *CLICmd
+	keyringBackend keyring.BackendType
 }
 
 type CLIAccount struct {
@@ -71,7 +85,7 @@ type CLIAccount struct {
 	IsOracle        bool
 }
 
-func New(t *testing.T, printDaemonLogs bool) *CLITester {
+func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITester {
 	sdkConfig := sdk.GetConfig()
 	dnConfig.InitBechPrefixes(sdkConfig)
 
@@ -95,16 +109,23 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 		AccountPassphrase: "passphrase",
 		DefAssetCode:      "tst",
 		keyringBackend:    keyring.FileBackend,
-		rpcAddress:        srvAddr,
-		rpcPort:           srvPort,
-		p2pAddress:        p2pAddr,
-		vmConnectAddress:  fmt.Sprintf("127.0.0.1:%s", vmConnectPort),
+		//
+		rpcAddress: srvAddr,
+		rpcPort:    srvPort,
+		p2pAddress: p2pAddr,
+		//
+		VmConnectPort:     vmConnectPort,
 		VmListenPort:      vmListenPort,
-		vmListenAddress:   fmt.Sprintf("127.0.0.1:%s", vmListenPort),
-		vmMaxAttempts:     1, // TODO: later we probably need to pass it somehow
+		vmBaseAddress:     "127.0.0.1",
+		vmComMinBackoffMs: 100,
+		vmComMaxBackoffMs: 150,
+		vmComMaxAttempts:  1,
 		vmCompilerAddress: "",
-		Accounts:          make(map[string]*CLIAccount, 0),
+		//
+		Accounts: make(map[string]*CLIAccount, 0),
 	}
+	ct.vmConnectAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmConnectPort)
+	ct.vmListenAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmListenPort)
 
 	smallAmount, ok := sdk.NewIntFromString("1000000000000000000000")
 	require.True(t, ok, "NewInt for smallAmount")
@@ -187,6 +208,13 @@ func New(t *testing.T, printDaemonLogs bool) *CLITester {
 	ct.RootDir = rootDir
 	ct.DncliDir = path.Join(rootDir, "dncli")
 
+	ct.UDSDir = path.Join(ct.RootDir, "sockets")
+	require.NoError(t, os.Mkdir(ct.UDSDir, 0777), "creating sockets dir")
+
+	for _, option := range options {
+		require.NoError(ct.t, option(&ct), "option failed")
+	}
+
 	ct.initChain()
 
 	ct.startDemon(true, printDaemonLogs)
@@ -259,6 +287,7 @@ func (ct *CLITester) initChain() {
 	cmd := ct.newWbdCmd().AddArg("", "init").AddArg("", ct.MonikerID).AddArg("chain-id", ct.ChainID)
 	cmd.CheckSuccessfulExecute(nil)
 
+	// configure dncli
 	{
 		cmd := ct.newWbcliCmd().
 			AddArg("", "config").
@@ -430,7 +459,9 @@ func (ct *CLITester) initChain() {
 	{
 		vmConfig := dnConfig.DefaultVMConfig()
 		vmConfig.Address, vmConfig.DataListen = ct.vmConnectAddress, ct.vmListenAddress
-		vmConfig.MaxAttempts = ct.vmMaxAttempts
+		vmConfig.InitialBackoff = ct.vmComMinBackoffMs
+		vmConfig.MaxBackoff = ct.vmComMaxBackoffMs
+		vmConfig.MaxAttempts = ct.vmComMaxAttempts
 		dnConfig.WriteVMConfig(ct.RootDir, vmConfig)
 	}
 }
@@ -569,13 +600,15 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	return
 }
 
-func (ct *CLITester) SetVMCompilerAddress(address string) {
+func (ct *CLITester) SetVMCompilerAddressNet(address string) {
 	ct.vmCompilerAddress = address
-	require.NoError(ct.t, tests.PingTcpAddress(address), "VM compiler address")
+	require.NoError(ct.t, tests.PingTcpAddress(address), "VM compiler address (net)")
 }
 
-func (ct *CLITester) SetVMMaxAttempts(maxAttempts int) {
-	ct.vmMaxAttempts = maxAttempts
+func (ct *CLITester) SetVMCompilerAddressUDS(path string) {
+	_, err := os.Stat(path)
+	require.NoError(ct.t, err, "VM compiler address (UDS)")
+	ct.vmCompilerAddress = "unix://" + path
 }
 
 func (ct *CLITester) UpdateAccountsBalance() {
