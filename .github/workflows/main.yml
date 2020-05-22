@@ -42,27 +42,40 @@ jobs:
     - name: Run UNIT tests
       run: |
         cd go/src/github.com/${{ github.repository }}
-        go test ./... --tags=unit
+        go test -v ./... --tags=unit
 
     - name: Run CLI tests
       run: |
         cd go/src/github.com/${{ github.repository }}
-        go test ./... --tags=cli
+        go test -v ./... --tags=cli
 
     - name: Run REST tests
       run: |
         cd go/src/github.com/${{ github.repository }}
-        go test ./... --tags=rest
+        go test -v ./... --tags=rest
 
     - name: Run INTEG tests
       run: |
+        # Build DVM Docker tag used for integ tests
+        export TAG=${DEFAULT_TAG}
+
+        export REPO_TAG="${GITHUB_REF##*/}"
+        echo "REPO_TAG: ${REPO_TAG}"
+        if [[ "${REPO_TAG}" =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]]; then
+            export TAG="release-${REPO_TAG%.*}"
+        elif [[ "${REPO_TAG}" =~ ^release-v[0-9]+.[0-9]+$ ]]; then
+            export TAG="${REPO_TAG}"
+        fi
+        echo "TAG: ${TAG}"
+        #
+
         docker login -u ${OWN_REGISTRY_USR} --password-stdin ${REGISTRY} <<< ${OWN_REGISTRY_PWD}
-        docker image pull ${REGISTRY}/dfinance/dvm:${DVM_TAG}
+        docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
         cd go/src/github.com/${{ github.repository }}
-        go test ./... --tags=integ
+        go test -v ./... --tags=integ
         docker logout
       env:
-        DVM_TAG: ${{ secrets.DVM_TAG }}
+        DEFAULT_TAG: release-v0.3
         REGISTRY: ${{ secrets.OWN_REGISTRY }}
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
         OWN_REGISTRY_PWD: ${{ secrets.OWN_REGISTRY_PWD }}
@@ -70,7 +83,7 @@ jobs:
     - name: Run Sentry INTEG tests
       run: |
         cd go/src/github.com/${{ github.repository }}
-        go test ./... --tags=integ_sentry
+        go test -v ./... --tags=integ_sentry
       env:
         DN_SENTRY_DSN: ${{ secrets.SENTRY_TEST_DSN }}
         DN_SENTRY_TEST_TOKEN: ${{ secrets.DN_SENTRY_TEST_TOKEN }}

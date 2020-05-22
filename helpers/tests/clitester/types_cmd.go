@@ -189,3 +189,11 @@ func (c *CLICmd) LogsContain(subStr string) bool {
 
 	return false
 }
+
+func NewCLICmd(t *testing.T, cmd string, args ...string) *CLICmd {
+	return &CLICmd{
+		t:    t,
+		base: cmd,
+		args: args,
+	}
+}

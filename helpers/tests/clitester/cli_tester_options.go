@@ -1,6 +1,8 @@
 package clitester
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type CLITesterOption func(ct *CLITester) error
 
@@ -14,11 +16,21 @@ func VMConnectionSettings(minBackoffMs, maxBackoffMs, maxAttempts int) CLITester
 	}
 }
 
-func VMCommunicationBaseAddress(baseAddr string) CLITesterOption {
+func VMCommunicationBaseAddressNet(baseAddr string) CLITesterOption {
 	return func(ct *CLITester) error {
 		ct.vmBaseAddress = baseAddr
 		ct.vmConnectAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmConnectPort)
 		ct.vmListenAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmListenPort)
+
+		return nil
+	}
+}
+
+func VMCommunicationBaseAddressUDS(listenFileName, vmFileName string) CLITesterOption {
+	return func(ct *CLITester) error {
+		ct.vmBaseAddress = "unix://" + ct.UDSDir
+		ct.vmConnectAddress = fmt.Sprintf("%s/%s", ct.vmBaseAddress, vmFileName)
+		ct.vmListenAddress = fmt.Sprintf("%s/%s", ct.vmBaseAddress, listenFileName)
 
 		return nil
 	}
