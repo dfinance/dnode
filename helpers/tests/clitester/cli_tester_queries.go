@@ -6,9 +6,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
@@ -154,6 +157,66 @@ func (ct *CLITester) QueryAuthAccount(address string) (*QueryRequest, *auth.Base
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("auth", "account", address)
 	q.cmd.AddArg("node", ct.rpcAddress)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryOrdersOrder(id dnTypes.ID) (*QueryRequest, *orderTypes.Order) {
+	resObj := &orderTypes.Order{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("orders", "order", id.String())
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orderTypes.Direction) (*QueryRequest, *orderTypes.Orders) {
+	resObj := &orderTypes.Orders{}
+
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("orders", "list")
+
+	if page > 0 {
+		q.cmd.AddArg("page", strconv.FormatInt(int64(page), 10))
+	}
+	if limit > 0 {
+		q.cmd.AddArg("limit", strconv.FormatInt(int64(limit), 10))
+	}
+	if marketIDFilter != nil {
+		q.cmd.AddArg("market-id", marketIDFilter.String())
+	}
+	if directionFilter != nil {
+		q.cmd.AddArg("direction", directionFilter.String())
+	}
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryMarketsMarket(id dnTypes.ID) (*QueryRequest, *marketTypes.Market) {
+	resObj := &marketTypes.Market{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("markets", "market", id.String())
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryMarketsList(page, limit int, baseDenom, quoteDenom *string) (*QueryRequest, *marketTypes.Markets) {
+	resObj := &marketTypes.Markets{}
+
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("markets", "list")
+
+	if page > 0 {
+		q.cmd.AddArg("page", strconv.FormatInt(int64(page), 10))
+	}
+	if limit > 0 {
+		q.cmd.AddArg("limit", strconv.FormatInt(int64(limit), 10))
+	}
+	if baseDenom != nil {
+		q.cmd.AddArg("base-asset-denom", *baseDenom)
+	}
+	if quoteDenom != nil {
+		q.cmd.AddArg("quote-asset-denom", *quoteDenom)
+	}
 
 	return q, resObj
 }

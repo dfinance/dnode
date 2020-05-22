@@ -26,7 +26,7 @@ func GetCmdAddMarket(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
 
 			// message send
-			msg := types.NewMsgCreateMarket(args[0], args[1])
+			msg := types.NewMsgCreateMarket(cliCtx.GetFromAddress(), args[0], args[1])
 
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},

@@ -6,6 +6,9 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
 func (ct *CLITester) TxCurrenciesIssue(recipientAddr, fromAddr, symbol string, amount sdk.Int, decimals int8, issueID string) *TxRequest {
@@ -176,6 +179,41 @@ func (ct *CLITester) TxVmExecuteScript(fromAddress, filePath string, args ...str
 		fromAddress,
 		cmdArgs...)
 	r.cmd.AddArg("compiler", ct.vmCompilerAddress)
+
+	return r
+}
+
+func (ct *CLITester) TxOrdersPost(ownerAddress string, marketID dnTypes.ID, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec int) *TxRequest {
+	cmdArgs := []string{
+		"post",
+		marketID.String(),
+		direction.String(),
+		price.String(),
+		quantity.String(),
+		strconv.FormatInt(int64(ttlInSec), 10),
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"orders",
+		ownerAddress,
+		cmdArgs...)
+
+	return r
+}
+
+func (ct *CLITester) TxMarketsAdd(fromAddress string, baseDenom, quoteDenom string) *TxRequest {
+	cmdArgs := []string{
+		"add",
+		baseDenom,
+		quoteDenom,
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"markets",
+		fromAddress,
+		cmdArgs...)
 
 	return r
 }

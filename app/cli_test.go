@@ -17,8 +17,10 @@ import (
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
 
@@ -936,6 +938,53 @@ func Test_MultiSigCLI(t *testing.T) {
 				tx.CheckFailedWithErrorSubstring("callId")
 			}
 		}
+	}
+}
+
+func Test_OrdersCLI(t *testing.T) {
+	t.Parallel()
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+
+	ownerAddr := ct.Accounts["validator1"].Address
+
+	// add btc - dfi market
+	{
+		ct.TxMarketsAdd(ownerAddr, cliTester.DenomBTC, cliTester.DenomDFI).CheckSucceeded()
+	}
+
+	// check market added
+	market := marketTypes.Market{}
+	{
+		q, markets := ct.QueryMarketsList(-1, -1, nil, nil)
+		q.CheckSucceeded()
+
+		require.Len(t, *markets, 1, "market not found")
+		market = (*markets)[0]
+		require.Equal(t, market.BaseAssetDenom, cliTester.DenomBTC)
+		require.Equal(t, market.QuoteAssetDenom, cliTester.DenomDFI)
+	}
+
+	// add order
+	orderDir := orderTypes.BidDirection
+	orderPrice, orderQuantity := sdk.NewUint(10000000000), sdk.OneUint()
+	orderTtlInSec := 60
+	{
+		ct.TxOrdersPost(ownerAddr, market.ID, orderDir, orderPrice, orderQuantity, orderTtlInSec).CheckSucceeded()
+	}
+
+	// check order added
+	{
+		q, orders := ct.QueryOrdersList(-1, -1, nil, nil)
+		q.CheckSucceeded()
+
+		require.Len(t, *orders, 1, "order not found")
+		order := (*orders)[0]
+		require.Equal(t, ownerAddr, order.Owner.String())
+		require.Equal(t, orderDir.String(), order.Direction.String())
+		require.True(t, orderPrice.Equal(order.Price))
+		require.True(t, orderQuantity.Equal(order.Quantity))
+		require.Equal(t, time.Duration(orderTtlInSec) * time.Second, order.Ttl)
 	}
 }
 

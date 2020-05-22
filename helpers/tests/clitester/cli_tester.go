@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -39,6 +40,8 @@ type CLITester struct {
 	//
 	ChainID   string
 	MonikerID string
+	//
+	Currencies map[string]CurrencyInfo
 	//
 	AccountPassphrase string
 	Accounts          map[string]*CLIAccount
@@ -85,6 +88,12 @@ type CLIAccount struct {
 	IsOracle        bool
 }
 
+type CurrencyInfo struct {
+	Decimals int8
+	Path     string
+	Supply   sdk.Int
+}
+
 func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITester {
 	sdkConfig := sdk.GetConfig()
 	dnConfig.InitBechPrefixes(sdkConfig)
@@ -109,10 +118,9 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 		AccountPassphrase: "passphrase",
 		DefAssetCode:      "tst",
 		keyringBackend:    keyring.FileBackend,
-		//
-		rpcAddress: srvAddr,
-		rpcPort:    srvPort,
-		p2pAddress: p2pAddr,
+		rpcAddress:        srvAddr,
+		rpcPort:           srvPort,
+		p2pAddress:        p2pAddr,
 		//
 		VmConnectPort:     vmConnectPort,
 		VmListenPort:      vmListenPort,
@@ -122,10 +130,36 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 		vmComMaxAttempts:  1,
 		vmCompilerAddress: "",
 		//
-		Accounts: make(map[string]*CLIAccount, 0),
+		Accounts:   make(map[string]*CLIAccount, 0),
+		Currencies: make(map[string]CurrencyInfo, 0),
 	}
 	ct.vmConnectAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmConnectPort)
 	ct.vmListenAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmListenPort)
+
+	dfiSupply, _ := sdk.NewIntFromString("100000000000000000000000000")
+	ethSupply, _ := sdk.NewIntFromString("100000000000000000000000000")
+	btcSupply, _ := sdk.NewIntFromString("100000000000000")
+	usdtSupply, _ := sdk.NewIntFromString("10000000000000")
+	ct.Currencies[DenomDFI] = CurrencyInfo{
+		Decimals: 18,
+		Supply:   dfiSupply,
+		Path:     "018bfc024222e94fbed60ff0c9c1cf48c5b2809d83c82f513b2c385e21ba8a2d35",
+	}
+	ct.Currencies[DenomETH] = CurrencyInfo{
+		Decimals: 18,
+		Supply:   ethSupply,
+		Path:     "01f8799f504905a182aff8d5fc102da1d73b8bec199147bb5512af6e99006baeb6",
+	}
+	ct.Currencies[DenomBTC] = CurrencyInfo{
+		Decimals: 8,
+		Supply:   btcSupply,
+		Path:     "01fe7c965b1c008c5974c7750959fa10189e803225d5057207563553922a09f906",
+	}
+	ct.Currencies[DenomUSDT] = CurrencyInfo{
+		Decimals: 6,
+		Supply:   usdtSupply,
+		Path:     "0136cb3312422fa6991412077ee93dd9db6cb5b3fcf55750fe2cc739d1d399673b",
+	}
 
 	smallAmount, ok := sdk.NewIntFromString("1000000000000000000000")
 	require.True(t, ok, "NewInt for smallAmount")
@@ -269,6 +303,7 @@ func (ct *CLITester) newTxRequest() *TxRequest {
 		cmd:            ct.newWbcliCmd(),
 		nodeRpcAddress: ct.rpcAddress,
 		accPassphrase:  ct.AccountPassphrase,
+		gas:            300000,
 	}
 }
 
@@ -425,6 +460,20 @@ func (ct *CLITester) initChain() {
 			AddArg("", strings.Join(oracles, ","))
 
 		cmd.CheckSuccessfulExecute(nil)
+	}
+
+	// register currencies
+	{
+		for denom, info := range ct.Currencies {
+			cmd := ct.newWbdCmd().
+				AddArg("", "add-currency-info").
+				AddArg("", denom).
+				AddArg("", strconv.FormatInt(int64(info.Decimals), 10)).
+				AddArg("", info.Supply.String()).
+				AddArg("", info.Path)
+
+			cmd.CheckSuccessfulExecute(nil)
+		}
 	}
 
 	// change default genesis params

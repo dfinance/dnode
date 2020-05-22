@@ -20,6 +20,7 @@ type TxRequest struct {
 	cmd            *CLICmd
 	accPassphrase  string
 	nodeRpcAddress string
+	gas            uint64
 }
 
 func (r *TxRequest) SetCmd(module, fromAddress string, args ...string) {
@@ -36,6 +37,7 @@ func (r *TxRequest) SetCmd(module, fromAddress string, args ...string) {
 	r.cmd.AddArg("broadcast-mode", "block")
 	r.cmd.AddArg("node", r.nodeRpcAddress)
 	r.cmd.AddArg("fees", "1"+config.MainDenom)
+	r.cmd.AddArg("gas", strconv.FormatUint(r.gas, 10))
 	r.cmd.AddArg("", "--yes")
 }
 

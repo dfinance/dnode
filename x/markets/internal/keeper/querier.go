@@ -44,7 +44,7 @@ func queryList(ctx sdk.Context, k Keeper, req abci.RequestQuery) ([]byte, error)
 		return nil, fmt.Errorf("markets marshal: %w", err)
 	}
 
-	k.GetLogger(ctx).Debug(fmt.Sprintf("Markets table:\n%s", markets.String()))
+	//k.GetLogger(ctx).Debug(fmt.Sprintf("Markets table:\n%s", markets.String()))
 
 	return res, nil
 }

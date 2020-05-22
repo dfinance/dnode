@@ -47,7 +47,7 @@ func queryList(ctx sdk.Context, k Keeper, req abci.RequestQuery) ([]byte, error)
 		return nil, fmt.Errorf("orders marshal: %w", err)
 	}
 
-	k.GetLogger(ctx).Debug(fmt.Sprintf("Orders table:\n%s", orders.String()))
+	//k.GetLogger(ctx).Debug(fmt.Sprintf("Orders table:\n%s", orders.String()))
 
 	return res, nil
 }

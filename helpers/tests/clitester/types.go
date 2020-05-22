@@ -22,6 +22,13 @@ import (
 	"github.com/dfinance/dnode/x/vm"
 )
 
+const (
+	DenomDFI  = "dfi"
+	DenomETH  = "eth"
+	DenomBTC  = "btc"
+	DenomUSDT = "usdt"
+)
+
 var DefVmWriteSetsPath = "${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json"
 
 func init() {

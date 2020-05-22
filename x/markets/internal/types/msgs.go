@@ -11,8 +11,9 @@ var (
 
 // Client message to create a market object.
 type MsgCreateMarket struct {
-	BaseAssetDenom  string `json:"base_asset_denom" yaml:"base_asset_denom"`
-	QuoteAssetDenom string `json:"quote_asset_denom" yaml:"quote_asset_denom"`
+	From            sdk.AccAddress `json:"from" yaml:"from"`
+	BaseAssetDenom  string         `json:"base_asset_denom" yaml:"base_asset_denom"`
+	QuoteAssetDenom string         `json:"quote_asset_denom" yaml:"quote_asset_denom"`
 }
 
 // Implements sdk.Msg interface.
@@ -44,12 +45,13 @@ func (msg MsgCreateMarket) GetSignBytes() []byte {
 
 // Implements sdk.Msg interface.
 func (msg MsgCreateMarket) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{}
+	return []sdk.AccAddress{msg.From}
 }
 
 // NewMsgCreateMarket creates MsgCreateMarket message object.
-func NewMsgCreateMarket(baseAsset string, quoteAsset string) MsgCreateMarket {
+func NewMsgCreateMarket(fromAddress sdk.AccAddress, baseAsset string, quoteAsset string) MsgCreateMarket {
 	return MsgCreateMarket{
+		From:            fromAddress,
 		BaseAssetDenom:  baseAsset,
 		QuoteAssetDenom: quoteAsset,
 	}
