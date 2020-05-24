@@ -64,6 +64,8 @@ func (k Keeper) PostOrder(
 	k.Set(ctx, order)
 	k.setID(ctx, id)
 
+	ctx.EventManager().EmitEvent(types.NewOrderPostedEvent(owner, market.ID, id))
+
 	return order, nil
 }
 
@@ -78,6 +80,8 @@ func (k Keeper) RevokeOrder(ctx sdk.Context, id dnTypes.ID) error {
 		return err
 	}
 	k.Del(ctx, id)
+
+	ctx.EventManager().EmitEvent(types.NewOrderCanceledEvent(order.Owner, order.Market.ID, order.ID))
 
 	return nil
 }

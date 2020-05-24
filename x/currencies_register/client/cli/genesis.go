@@ -14,7 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 
-	"github.com/dfinance/dnode/x/currencies_register"
+	"github.com/dfinance/dnode/x/currencies_register/internal/types"
 )
 
 const (
@@ -59,8 +59,8 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec,
 				return err
 			}
 
-			genesisState := currencies_register.GenesisState{}
-			cdc.MustUnmarshalJSON(appState[currencies_register.ModuleName], &genesisState)
+			genesisState := types.GenesisState{}
+			cdc.MustUnmarshalJSON(appState[types.ModuleName], &genesisState)
 			// find dublicated
 			found := -1
 			for i, genCurr := range genesisState.Currencies {
@@ -75,7 +75,7 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec,
 				genesisState.Currencies[found].TotalSupply = totalSupply
 				genesisState.Currencies[found].Decimals = uint8(decimals)
 			} else {
-				genesisState.Currencies = append(genesisState.Currencies, currencies_register.GenesisCurrency{
+				genesisState.Currencies = append(genesisState.Currencies, types.GenesisCurrency{
 					Path:        hex.EncodeToString(path),
 					Denom:       denom,
 					Decimals:    uint8(decimals),
@@ -84,7 +84,7 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec,
 			}
 
 			genesisStateBz := cdc.MustMarshalJSON(genesisState)
-			appState[currencies_register.ModuleName] = genesisStateBz
+			appState[types.ModuleName] = genesisStateBz
 
 			appStateJSON, err := cdc.MarshalJSON(appState)
 			if err != nil {

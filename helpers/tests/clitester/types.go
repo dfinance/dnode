@@ -29,6 +29,11 @@ const (
 	DenomUSDT = "usdt"
 )
 
+type StringPair struct {
+	Key   string
+	Value string
+}
+
 var DefVmWriteSetsPath = "${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json"
 
 func init() {

@@ -7,25 +7,51 @@ import (
 )
 
 const (
-	EventTypeFullyFilledOrder = ModuleName + "/fully_filled"
-	EventAttributeKeyOwner    = "owner"
-	EventAttributeKeyOrderID  = "order_id"
-	EventAttributeKeyQuantity = "quantity"
+	EventTypeOrderPost            = ModuleName + ".post"
+	EventTypeOrderCancel          = ModuleName + ".cancel"
+	EventTypeFullyFilledOrder     = ModuleName + ".full_fill"
+	EventTypePartiallyFilledOrder = ModuleName + ".partial_fill"
+	EventAttributeKeyOwner        = "owner"
+	EventAttributeKeyOrderID      = "order_id"
+	EventAttributeKeyMarketID     = "market_id"
 )
 
-func NewFullyFilledOrderEvent(owner sdk.AccAddress, orderID dnTypes.ID) sdk.Event {
+func NewOrderPostedEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID) sdk.Event {
 	return sdk.NewEvent(
-		EventTypeFullyFilledOrder,
+		EventTypeOrderPost,
+		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
 		sdk.NewAttribute(EventAttributeKeyOwner, owner.String()),
+		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
 		sdk.NewAttribute(EventAttributeKeyOrderID, orderID.String()),
 	)
 }
 
-func NewPartiallyFilledOrderEvent(owner sdk.AccAddress, orderID dnTypes.ID, quantity sdk.Uint) sdk.Event {
+func NewOrderCanceledEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID) sdk.Event {
+	return sdk.NewEvent(
+		EventTypeOrderCancel,
+		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
+		sdk.NewAttribute(EventAttributeKeyOwner, owner.String()),
+		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
+		sdk.NewAttribute(EventAttributeKeyOrderID, orderID.String()),
+	)
+}
+
+func NewFullyFilledOrderEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeFullyFilledOrder,
+		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
 		sdk.NewAttribute(EventAttributeKeyOwner, owner.String()),
+		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
 		sdk.NewAttribute(EventAttributeKeyOrderID, orderID.String()),
-		sdk.NewAttribute(EventAttributeKeyQuantity, quantity.String()),
+	)
+}
+
+func NewPartiallyFilledOrderEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID) sdk.Event {
+	return sdk.NewEvent(
+		EventTypePartiallyFilledOrder,
+		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
+		sdk.NewAttribute(EventAttributeKeyOwner, owner.String()),
+		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
+		sdk.NewAttribute(EventAttributeKeyOrderID, orderID.String()),
 	)
 }

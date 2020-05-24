@@ -78,13 +78,13 @@ func (k Keeper) ExecuteOrderFills(ctx sdk.Context, orderFills types.OrderFills) 
 		if orderFill.QuantityUnfilled.IsZero() {
 			k.GetLogger(ctx).Info(fmt.Sprintf("order completely filled: %s", orderFill.Order.ID))
 			k.Del(ctx, orderFill.Order.ID)
-			eventManager.EmitEvent(types.NewFullyFilledOrderEvent(orderFill.Order.Owner, orderFill.Order.ID))
+			eventManager.EmitEvent(types.NewFullyFilledOrderEvent(orderFill.Order.Owner, orderFill.Order.Market.ID, orderFill.Order.ID))
 		} else {
 			k.GetLogger(ctx).Info(fmt.Sprintf("order partially filled: %s", orderFill.Order.ID))
 			orderFill.Order.Quantity = orderFill.QuantityUnfilled
 			orderFill.Order.UpdatedAt = ctx.BlockTime()
 			k.Set(ctx, orderFill.Order)
-			eventManager.EmitEvent(types.NewPartiallyFilledOrderEvent(orderFill.Order.Owner, orderFill.Order.ID, orderFill.Order.Quantity))
+			eventManager.EmitEvent(types.NewPartiallyFilledOrderEvent(orderFill.Order.Owner, orderFill.Order.Market.ID, orderFill.Order.ID))
 		}
 	}
 

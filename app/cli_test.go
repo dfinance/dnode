@@ -3,6 +3,7 @@
 package app
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -943,10 +944,26 @@ func Test_MultiSigCLI(t *testing.T) {
 
 func Test_OrdersCLI(t *testing.T) {
 	t.Parallel()
-	ct := cliTester.New(t, false)
+	ct := cliTester.New(t, true)
 	defer ct.Close()
 
 	ownerAddr := ct.Accounts["validator1"].Address
+
+	wsPostQuery := fmt.Sprintf("orders.post.owner='%s'", ownerAddr)
+	wsStop, wsChan := ct.CreateWSConnection(false, "Test_OrdersCLI", wsPostQuery, 10)
+	defer wsStop()
+
+	go func() {
+		for {
+			event, ok := <-wsChan
+			if !ok {
+				return
+			}
+
+			t.Logf("Got event: query: %s", event.Query)
+			t.Logf("Got event: events: %v", event.Events)
+		}
+	}()
 
 	// add btc - dfi market
 	{

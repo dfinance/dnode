@@ -70,10 +70,12 @@ type CLITester struct {
 	vmComMaxBackoffMs int
 	vmComMaxAttempts  int
 	//
-	restAddress    string
-	daemon         *CLICmd
-	restServer     *CLICmd
-	keyringBackend keyring.BackendType
+	defaultConsensusTimeouts bool
+	restAddress              string
+	daemonLogLvl             string
+	daemon                   *CLICmd
+	restServer               *CLICmd
+	keyringBackend           keyring.BackendType
 }
 
 type CLIAccount struct {
@@ -82,6 +84,7 @@ type CLIAccount struct {
 	EthAddress      string
 	PubKey          string
 	Mnemonic        string
+	Number          uint64
 	Coins           map[string]sdk.Coin
 	IsPOAValidator  bool
 	IsOracleNominee bool
@@ -333,24 +336,26 @@ func (ct *CLITester) initChain() {
 
 	// adjust tendermint config (make blocks generation faster)
 	{
-		cfgMtx.Lock()
-		defer cfgMtx.Unlock()
+		if !ct.defaultConsensusTimeouts {
+			cfgMtx.Lock()
+			defer cfgMtx.Unlock()
 
-		cfgFile := path.Join(ct.RootDir, "config", "config.toml")
-		_, err := os.Stat(cfgFile)
-		require.NoError(ct.t, err, "reading config.toml file")
-		viper.SetConfigFile(cfgFile)
-		require.NoError(ct.t, viper.ReadInConfig())
+			cfgFile := path.Join(ct.RootDir, "config", "config.toml")
+			_, err := os.Stat(cfgFile)
+			require.NoError(ct.t, err, "reading config.toml file")
+			viper.SetConfigFile(cfgFile)
+			require.NoError(ct.t, viper.ReadInConfig())
 
-		viper.Set("consensus.timeout_propose", "250ms")
-		viper.Set("consensus.timeout_propose_delta", "250ms")
-		viper.Set("consensus.timeout_prevote", "250ms")
-		viper.Set("consensus.timeout_prevote_delta", "250ms")
-		viper.Set("consensus.timeout_precommit", "250ms")
-		viper.Set("consensus.timeout_precommit_delta", "250ms")
-		viper.Set("consensus.timeout_commit", "250ms")
+			viper.Set("consensus.timeout_propose", "250ms")
+			viper.Set("consensus.timeout_propose_delta", "250ms")
+			viper.Set("consensus.timeout_prevote", "250ms")
+			viper.Set("consensus.timeout_prevote_delta", "250ms")
+			viper.Set("consensus.timeout_precommit", "250ms")
+			viper.Set("consensus.timeout_precommit_delta", "250ms")
+			viper.Set("consensus.timeout_commit", "250ms")
 
-		require.NoError(ct.t, viper.WriteConfig(), "saving config.toml file")
+			require.NoError(ct.t, viper.WriteConfig(), "saving config.toml file")
+		}
 	}
 
 	// configure accounts
@@ -524,6 +529,9 @@ func (ct *CLITester) startDemon(waitForStart, printLogs bool) {
 		AddArg("", "start").
 		AddArg("rpc.laddr", ct.rpcAddress).
 		AddArg("p2p.laddr", ct.p2pAddress)
+	if ct.daemonLogLvl != "" {
+		cmd.AddArg("log_level", ct.daemonLogLvl)
+	}
 	cmd.Start(ct.t, printLogs)
 
 	// wait for the node to start up
@@ -660,11 +668,25 @@ func (ct *CLITester) SetVMCompilerAddressUDS(path string) {
 	ct.vmCompilerAddress = "unix://" + path
 }
 
+func (ct *CLITester) UpdateAccountBalance(name string) {
+	account, ok := ct.Accounts[name]
+	require.True(ct.t, ok, "account %q: not found", name)
+
+	q, acc := ct.QueryAccount(account.Address)
+	q.CheckSucceeded()
+
+	account.Number = acc.AccountNumber
+	for _, coin := range acc.Coins {
+		account.Coins[coin.Denom] = coin
+	}
+}
+
 func (ct *CLITester) UpdateAccountsBalance() {
 	for accName, prevAcc := range ct.Accounts {
 		q, curAcc := ct.QueryAccount(prevAcc.Address)
 		q.CheckSucceeded()
 
+		prevAcc.Number = curAcc.AccountNumber
 		for _, curCoin := range curAcc.Coins {
 			doUpdate := false
 			prevCoin, ok := prevAcc.Coins[curCoin.Denom]
@@ -775,4 +797,44 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 		require.Equal(ct.t, uniqueID, call.Call.UniqueID)
 		require.True(ct.t, call.Call.Approved)
 	}
+}
+
+func (ct *CLITester) CreateAccount(name string, balances ...StringPair) {
+	account := &CLIAccount{Coins: make(map[string]sdk.Coin, 0)}
+
+	// create key
+	{
+		cmd := ct.newWbcliCmd().
+			AddArg("", "keys").
+			AddArg("", "add").
+			AddArg("", name)
+		output := sdkKeys.KeyOutput{}
+		cmd.CheckSuccessfulExecute(&output, ct.AccountPassphrase, ct.AccountPassphrase)
+
+		account.Name = name
+		account.Address = output.Address
+		account.PubKey = output.PubKey
+		account.Mnemonic = output.Mnemonic
+	}
+
+	// issue coins
+	for _, balance := range balances {
+		denom, amountStr := balance.Key, balance.Value
+		issueID := fmt.Sprintf("%s_%s", name, denom)
+
+		amount, ok := sdk.NewIntFromString(amountStr)
+		require.True(ct.t, ok, "invalid amount: %s", amountStr)
+
+		currency, ok := ct.Currencies[denom]
+		require.True(ct.t, ok, "currency with %q denom: not found", denom)
+
+		validator1Address := ct.Accounts["validator1"].Address
+		ct.TxCurrenciesIssue(account.Address, validator1Address, denom, amount, currency.Decimals, issueID).CheckSucceeded()
+
+		ct.ConfirmCall(issueID)
+	}
+
+	// store and update balances
+	ct.Accounts[name] = account
+	ct.UpdateAccountBalance(name)
 }

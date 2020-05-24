@@ -5,15 +5,34 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	"github.com/dfinance/dnode/x/currencies_register"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
+
+func (ct *CLITester) QueryTx(txHash string) (*QueryRequest, *sdk.TxResponse) {
+	resObj := &sdk.TxResponse{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("tx", txHash)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryStatus() (*QueryRequest, *ctypes.ResultStatus) {
+	resObj := &ctypes.ResultStatus{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("status")
+	q.RemoveCmdArg("query")
+
+	return q, resObj
+}
 
 func (ct *CLITester) QueryCurrenciesIssue(issueID string) (*QueryRequest, *ccTypes.Issue) {
 	resObj := &ccTypes.Issue{}
@@ -217,6 +236,14 @@ func (ct *CLITester) QueryMarketsList(page, limit int, baseDenom, quoteDenom *st
 	if quoteDenom != nil {
 		q.cmd.AddArg("quote-asset-denom", *quoteDenom)
 	}
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryCurrencyInfo(denom string) (*QueryRequest, *currencies_register.CurrencyInfo) {
+	resObj := &currencies_register.CurrencyInfo{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("currencies_register", "info", denom)
 
 	return q, resObj
 }

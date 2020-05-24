@@ -35,3 +35,19 @@ func VMCommunicationBaseAddressUDS(listenFileName, vmFileName string) CLITesterO
 		return nil
 	}
 }
+
+func LogLevel(logLevel string) CLITesterOption {
+	return func(ct *CLITester) error {
+		ct.daemonLogLvl = logLevel
+
+		return nil
+	}
+}
+
+func DefaultConsensusTimings() CLITesterOption {
+	return func(ct *CLITester) error {
+		ct.defaultConsensusTimeouts = true
+
+		return nil
+	}
+}

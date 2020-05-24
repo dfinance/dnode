@@ -6,6 +6,7 @@ import (
 
 const (
 	ModuleName = "currencies_register"
+	RouterKey  = "currenciesregister"
 	StoreKey   = ModuleName
 )
 

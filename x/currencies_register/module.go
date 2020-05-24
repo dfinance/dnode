@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/dfinance/dnode/x/currencies_register/client"
+	"github.com/dfinance/dnode/x/currencies_register/internal/keeper"
 	"github.com/dfinance/dnode/x/currencies_register/internal/types"
 )
 
@@ -28,8 +30,7 @@ func (AppModuleBasic) Name() string {
 }
 
 // Registering codecs (empty for now).
-func (module AppModuleBasic) RegisterCodec(_ *codec.Codec) {
-}
+func (module AppModuleBasic) RegisterCodec(_ *codec.Codec) {}
 
 // Validate exists genesis.
 func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
@@ -68,8 +69,8 @@ func (AppModuleBasic) GetTxCmd(_ *codec.Codec) *cobra.Command {
 }
 
 // Get query commands for CLI.
-func (AppModuleBasic) GetQueryCmd(_ *codec.Codec) *cobra.Command {
-	return nil
+func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return client.GetQueryCmd(cdc)
 }
 
 // VM module.
@@ -104,12 +105,12 @@ func (app AppModule) NewHandler() sdk.Handler {
 
 // Get route for querier.
 func (AppModule) QuerierRoute() string {
-	return ""
+	return RouterKey
 }
 
 // Get new querier for VM module.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return nil
+	return keeper.NewQuerier(app.keeper)
 }
 
 // Process begin block (abci).

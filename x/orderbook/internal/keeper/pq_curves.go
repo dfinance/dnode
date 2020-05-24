@@ -82,7 +82,7 @@ func NewSDCurves(askAggs, bidAggs OrderAggregates) (SDCurves, error) {
 
 	// check if clearance price can be found
 	if bidAggs[len(bidAggs)-1].Price.LT(askAggs[0].Price) {
-		return SDCurves{}, sdkErrors.Wrap(types.ErrInternal, "highest bid price is lower than lowest ask price")
+		return SDCurves{}, fmt.Errorf("highest bid price is lower than lowest ask price")
 	}
 
 	// merge bid/ask aggregates inputs
@@ -169,8 +169,8 @@ func (c *SDCurves) getCrossPoint() SDItem {
 		// the crossing point was found
 		curItem, prevItem := &(*c)[crossPointIdx], &(*c)[crossPointIdx-1]
 
-		if !prevItem.Supply.IsZero() {
-			// case 1a: orders on the left are not bid orders (with no supply)
+		if !curItem.Supply.IsZero() && !curItem.Demand.IsZero() {
+			// case 1a: crossing point has volumes
 			return SDItem{
 				Price:  clearancePrice,
 				Supply: curItem.Supply,
@@ -178,8 +178,22 @@ func (c *SDCurves) getCrossPoint() SDItem {
 			}
 		}
 
+		if !prevItem.Supply.IsZero() && !prevItem.Demand.IsZero() {
+			// case 1b: prev to the crossing point has volumes
+			return SDItem{
+				Price:  prevItem.Price,
+				Supply: prevItem.Supply,
+				Demand: prevItem.Demand,
+			}
+		}
+	}
+
+	// the crossing point wasn't found
+	// case 2: find first point with non-zero Supply and Demand
+	// Supply / Demand can't be zero as it would cause "div 0" error
+	for i := 1; i < cLen; i++ {
+		curItem := &(*c)[i]
 		if !curItem.Supply.IsZero() && !curItem.Demand.IsZero() {
-			// case 1b: crossing point has volumes
 			return SDItem{
 				Price:  curItem.Price,
 				Supply: curItem.Supply,
@@ -188,23 +202,11 @@ func (c *SDCurves) getCrossPoint() SDItem {
 		}
 	}
 
-	// the crossing point wasn't found
-	if cLen > 1 {
-		// case 2a: pick the rightmost point if there are more than one point
-		lastItem := &(*c)[cLen-1]
-		return SDItem{
-			Price:  lastItem.Price,
-			Supply: lastItem.Supply,
-			Demand: lastItem.Demand,
-		}
-	}
-
-	// case 2b: pick the first point (the only point we have)
-	firstItem := &(*c)[0]
+	// case 3: can't happen if the lowest ask price is higher then the highest bid price
 	return SDItem{
-		Price:  firstItem.Price,
-		Supply: firstItem.Supply,
-		Demand: firstItem.Demand,
+		Price:  sdk.ZeroUint(),
+		Supply: sdk.ZeroUint(),
+		Demand: sdk.ZeroUint(),
 	}
 }
 
@@ -231,7 +233,7 @@ func (c *SDCurves) addBidOrders(aggs OrderAggregates) {
 			return (*c)[i].Price.GTE(agg.Price)
 		})
 
-		if (*c)[gtePriceIdx].Price.Equal(agg.Price) {
+		if gtePriceIdx != len(*c) && (*c)[gtePriceIdx].Price.Equal(agg.Price) {
 			(*c)[gtePriceIdx].Demand = agg.Quantity
 			continue
 		}

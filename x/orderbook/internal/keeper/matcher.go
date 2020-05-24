@@ -107,6 +107,15 @@ func (m *Matcher) Match() (result types.MatcherResult, retErr error) {
 	// get clearance price, max volumes for the next steps
 	clearanceState, err := sdCurves.GetClearanceState()
 	if err != nil {
+		// this should not happen
+		// if SDCurve was build with no error, crossing point (any quality) must be found
+		m.logger.Debug(fmt.Sprintf("Matcher intermediate results for marketID %s:", m.marketID.String()))
+		m.logger.Debug("Bid orders:")
+		m.logger.Debug("\n" + m.orders.bid.String())
+		m.logger.Debug("Ask orders:")
+		m.logger.Debug("\n" + m.orders.ask.String())
+		m.logger.Debug("PQ curves:")
+		m.logger.Debug("\n" + sdCurves.String())
 		retErr = err
 		return
 	}
