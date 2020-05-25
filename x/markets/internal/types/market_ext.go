@@ -37,7 +37,16 @@ func (m MarketExtended) BaseToQuoteQuantity(basePrice sdk.Uint, baseQuantity sdk
 
 	// check if result is lower than the lowest quote volume
 	if quoteQuantityDec.LT(m.QuoteCurrency.MinDecimal()) {
-		return sdk.Uint{}, sdkErrors.Wrapf(ErrInvalidQuantity, "quantity is too small (%s LT %s)", quoteQuantityDec.String(), m.QuoteCurrency.MinDecimal().String())
+		return sdk.Uint{}, sdkErrors.Wrapf(
+			ErrInvalidQuantity,
+			"quantity is too small (basePrice: %s -> %s, baseQuantity: %s -> %s): %s LT %s",
+			basePrice,
+			basePriceDec,
+			baseQuantity,
+			baseQuantityDec,
+			quoteQuantityDec,
+			m.QuoteCurrency.MinDecimal(),
+		)
 	}
 
 	// convert result to sdk.Uint (remove decimal part)

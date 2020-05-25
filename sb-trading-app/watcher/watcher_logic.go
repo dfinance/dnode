@@ -6,9 +6,7 @@ import (
 )
 
 func (w *Watcher) Work() {
-	subsStopFunc := w.subscribe()
-
-	w.cfg.Tester.WaitForNextBlocks(1)
+	w.subscribe()
 
 	workDur := time.Duration(w.cfg.WorkDurtInSec) * time.Second
 	w.logger.Info(fmt.Sprintf("starting for %v", workDur))
@@ -24,19 +22,19 @@ func (w *Watcher) Work() {
 	for working := true; working; {
 		select {
 		case <-tickCh:
-			for _, market := range w.marketStates {
-				balances := make(HistoryBalances, 0, len(market.bots))
-				for _, bot := range market.bots {
-					baseBalance, quoteBalance := bot.Balances()
-					balances = append(balances, HistoryBalance{
-						Name:  bot.Name(),
-						Base:  baseBalance,
-						Quote: quoteBalance,
-					})
-				}
-
-				w.history.SetCurBalances(market.id.String(), balances)
-			}
+			//for _, market := range w.marketStates {
+			//	balances := make(HistoryBalances, 0, len(market.bots))
+			//	for _, bot := range market.bots {
+			//		baseBalance, quoteBalance := bot.Balances()
+			//		balances = append(balances, HistoryBalance{
+			//			Name:  bot.Name(),
+			//			Base:  baseBalance,
+			//			Quote: quoteBalance,
+			//		})
+			//	}
+			//
+			//	w.history.SetCurBalances(market.id.String(), balances)
+			//}
 
 			w.history.ResetCurItem()
 		case <-stopCh:
@@ -45,8 +43,6 @@ func (w *Watcher) Work() {
 
 			close(w.stopCh)
 			w.wg.Wait()
-
-			subsStopFunc()
 
 			w.logger.Info(fmt.Sprintf("results:\n%s", w.history.String(true, true)))
 		}

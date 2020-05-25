@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
 	"sync"
 	"testing"
 
@@ -16,9 +15,13 @@ import (
 
 type History struct {
 	sync.RWMutex
-	t             *testing.T
-	curMarketItem map[string]*HistoryItem
-	MarketItems   map[string]HistoryItems
+	t                   *testing.T
+	curMarketItem       map[string]*HistoryItem
+	MarketItems         map[string]HistoryItems
+	CountedPostOrders   map[string]bool            // key: orderID
+	CountedCancelOrders map[string]bool            // key: orderID
+	CountedFFillOrders  map[string]bool            // key: orderID
+	CountedPFillOrders  map[string]map[string]bool // key1: orderID, key2: quantity
 }
 
 type HistoryItem struct {
@@ -104,50 +107,90 @@ func (h *History) String(stats, balances bool) string {
 }
 
 func (h *History) HandleOrderPostEvent(event coreTypes.ResultEvent) {
-	marketIDCount, ok := countEventAttrMarketIDOrders(event)
-	require.True(h.t, ok, "market_id not found: %v", event)
+	marketOrders := findEventAttrMarketIDOrders("orders.post.", event)
+	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
 	h.Lock()
 	defer h.Unlock()
 
-	for marketID, count := range marketIDCount {
-		h.curMarketItem[marketID].PostedOrders += uint64(count)
+	for marketID, orderIDs := range marketOrders {
+		for _, orderID := range orderIDs {
+			if _, ok := h.CountedPostOrders[orderID]; !ok {
+				h.curMarketItem[marketID].PostedOrders++
+				h.CountedPostOrders[orderID] = true
+			}
+		}
 	}
 }
 
 func (h *History) HandleOrderCancelEvent(event coreTypes.ResultEvent) {
-	marketIDCount, ok := countEventAttrMarketIDOrders(event)
-	require.True(h.t, ok, "market_id not found: %v", event)
+	marketOrders := findEventAttrMarketIDOrders("orders.cancel.", event)
+	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
 	h.Lock()
 	defer h.Unlock()
 
-	for marketID, count := range marketIDCount {
-		h.curMarketItem[marketID].CanceledOrders += uint64(count)
+	for marketID, orderIDs := range marketOrders {
+		for _, orderID := range orderIDs {
+			if _, ok := h.CountedCancelOrders[orderID]; !ok {
+				h.curMarketItem[marketID].CanceledOrders++
+				h.CountedCancelOrders[orderID] = true
+			}
+
+			if _, ok := h.CountedPostOrders[orderID]; !ok {
+				h.curMarketItem[marketID].PostedOrders++
+				h.CountedPostOrders[orderID] = true
+			}
+		}
 	}
 }
 
 func (h *History) HandleOrderFullFillEvent(event coreTypes.ResultEvent) {
-	marketIDCount, ok := countEventAttrMarketIDOrders(event)
-	require.True(h.t, ok, "market_id not found: %v", event)
+	marketOrders := findEventAttrMarketIDOrders("orders.full_fill.", event)
+	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
 	h.Lock()
 	defer h.Unlock()
 
-	for marketID, count := range marketIDCount {
-		h.curMarketItem[marketID].FullyFilledOrders += uint64(count)
+	for marketID, orderIDs := range marketOrders {
+		for _, orderID := range orderIDs {
+			if _, ok := h.CountedFFillOrders[orderID]; !ok {
+				h.curMarketItem[marketID].FullyFilledOrders++
+				h.CountedFFillOrders[orderID] = true
+			}
+
+			if _, ok := h.CountedPostOrders[orderID]; !ok {
+				h.curMarketItem[marketID].PostedOrders++
+				h.CountedPostOrders[orderID] = true
+			}
+		}
 	}
 }
 
 func (h *History) HandleOrderPartialFillEvent(event coreTypes.ResultEvent) {
-	marketIDCount, ok := countEventAttrMarketIDOrders(event)
-	require.True(h.t, ok, "market_id not found: %v", event)
+	marketOrders, ordersQuantity := findEventAttrMarketIDOrdersQuantity("orders.partial_fill.", event)
+	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
 	h.Lock()
 	defer h.Unlock()
 
-	for marketID, count := range marketIDCount {
-		h.curMarketItem[marketID].PartiallyFilledOrders += uint64(count)
+	for marketID, orderIDs := range marketOrders {
+		for _, orderID := range orderIDs {
+			if _, ok := h.CountedPFillOrders[orderID]; !ok {
+				h.CountedPFillOrders[orderID] = make(map[string]bool, 0)
+			}
+
+			quantity := ordersQuantity[orderID]
+			if _, ok := h.CountedPFillOrders[orderID][quantity.String()]; !ok {
+				h.curMarketItem[marketID].PartiallyFilledOrders++
+				h.CountedPFillOrders[orderID][quantity.String()] = true
+			}
+
+			if _, ok := h.CountedPostOrders[orderID]; !ok {
+				h.curMarketItem[marketID].PostedOrders++
+				h.CountedPostOrders[orderID] = true
+			}
+		}
 	}
 }
 
@@ -163,21 +206,55 @@ func (h *History) HandleOrderBookClearanceEvent(event coreTypes.ResultEvent) {
 	}
 }
 
-func countEventAttrMarketIDOrders(event coreTypes.ResultEvent) (marketCounts map[string]int, ok bool) {
-	ok = true
-	marketCounts = make(map[string]int, 0)
+func findEventAttrMarketIDOrders(prefix string, event coreTypes.ResultEvent) (marketOrders map[string][]string) {
+	marketOrders = make(map[string][]string, 0)
 
-	for eventType, eventValues := range event.Events {
-		if strings.Contains(eventType, "market_id") {
-			for _, marketID := range eventValues {
-				marketCounts[marketID] = marketCounts[marketID] + 1
-			}
-			break
-		}
-	}
-	if len(marketCounts) == 0 {
-		ok = false
+	eventTypeMarketQuery := prefix + "market_id"
+	eventTypeOrderQuery := prefix + "order_id"
+	marketValues := event.Events[eventTypeMarketQuery]
+	orderValues := event.Events[eventTypeOrderQuery]
+
+	if len(marketValues) == 0 || len(orderValues) == 0 {
 		return
+	}
+	if len(marketValues) != len(orderValues) {
+		return
+	}
+
+	for i := 0; i < len(marketValues); i++ {
+		marketID := marketValues[i]
+		orderID := orderValues[i]
+		marketOrders[marketID] = append(marketOrders[marketID], orderID)
+	}
+
+	return
+}
+
+func findEventAttrMarketIDOrdersQuantity(prefix string, event coreTypes.ResultEvent) (marketOrders map[string][]string, ordersQuantity map[string]sdk.Uint) {
+	marketOrders = make(map[string][]string, 0)
+	ordersQuantity = make(map[string]sdk.Uint, 0)
+
+	eventTypeMarketQuery := prefix + "market_id"
+	eventTypeOrderQuery := prefix + "order_id"
+	eventTypeQuantityQuery := prefix + "quantity"
+	marketValues := event.Events[eventTypeMarketQuery]
+	orderValues := event.Events[eventTypeOrderQuery]
+	quantityValues := event.Events[eventTypeQuantityQuery]
+
+	if len(marketValues) == 0 || len(orderValues) == 0 || len(quantityValues) == 0 {
+		return
+	}
+	if len(marketValues) != len(orderValues) && len(marketValues) != len(quantityValues) {
+		return
+	}
+
+	for i := 0; i < len(marketValues); i++ {
+		marketID := marketValues[i]
+		orderID := orderValues[i]
+		quantity := sdk.NewUintFromString(quantityValues[i])
+
+		marketOrders[marketID] = append(marketOrders[marketID], orderID)
+		ordersQuantity[orderID] = quantity
 	}
 
 	return
@@ -265,8 +342,12 @@ func (i HistoryItem) TableValues(id int64) []string {
 
 func NewHistory(t *testing.T, marketIDs []string) *History {
 	h := &History{
-		t:           t,
-		MarketItems: make(map[string]HistoryItems, len(marketIDs)),
+		t:                   t,
+		MarketItems:         make(map[string]HistoryItems, len(marketIDs)),
+		CountedPostOrders:   make(map[string]bool, 0),
+		CountedCancelOrders: make(map[string]bool, 0),
+		CountedFFillOrders:  make(map[string]bool, 0),
+		CountedPFillOrders:  make(map[string]map[string]bool, 0),
 	}
 
 	for _, id := range marketIDs {

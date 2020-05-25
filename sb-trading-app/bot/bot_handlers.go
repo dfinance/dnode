@@ -68,7 +68,7 @@ func (b *Bot) handleOrderPost(event coreTypes.ResultEvent) {
 
 		b.Lock()
 		b.orders[order.ID.String()] = *order
-		b.logger.Info(fmt.Sprintf("event: %q order (%s): posted: %s -> %s", order.ID, order.Direction, order.Price, order.Quantity))
+		b.logger.Debug(fmt.Sprintf("event: %q order (%s): posted: %s -> %s", order.ID, order.Direction, order.Price, order.Quantity))
 		b.Unlock()
 	}
 }
@@ -80,12 +80,12 @@ func (b *Bot) handleOrderCancel(event coreTypes.ResultEvent) {
 	for _, orderID := range orderIDs {
 		b.Lock()
 		order := b.orders[orderID.String()]
-		b.logger.Info(fmt.Sprintf("event: %q order (%s): canceled", order.ID, order.Direction))
+		b.logger.Debug(fmt.Sprintf("event: %q order (%s): canceled", order.ID, order.Direction))
 		delete(b.orders, orderID.String())
 		b.Unlock()
-
-		b.newOrder()
 	}
+
+	b.onOrderCloseMarketMakeMaking("order(s) cancel event")
 }
 
 func (b *Bot) handleOrderFullFill(event coreTypes.ResultEvent) {
@@ -95,12 +95,12 @@ func (b *Bot) handleOrderFullFill(event coreTypes.ResultEvent) {
 	for _, orderID := range orderIDs {
 		b.Lock()
 		order := b.orders[orderID.String()]
-		b.logger.Info(fmt.Sprintf("event: %q order (%s): fully filled", order.ID, order.Direction))
+		b.logger.Debug(fmt.Sprintf("event: %q order (%s): fully filled", order.ID, order.Direction))
 		delete(b.orders, orderID.String())
 		b.Unlock()
-
-		b.newOrder()
 	}
+
+	b.onOrderCloseMarketMakeMaking("order(s) full fill event")
 }
 
 func (b *Bot) handleOrderPartialFill(event coreTypes.ResultEvent) {
@@ -121,11 +121,11 @@ func (b *Bot) handleOrderPartialFill(event coreTypes.ResultEvent) {
 		b.Lock()
 		prevOrder := b.orders[order.ID.String()]
 		b.orders[order.ID.String()] = *order
-		b.logger.Info(fmt.Sprintf("event: %q order (%s): partially filled (%s / %s)", order.ID, order.Direction, order.Quantity, prevOrder.Quantity))
+		b.logger.Debug(fmt.Sprintf("event: %q order (%s): partially filled (%s / %s)", order.ID, order.Direction, order.Quantity, prevOrder.Quantity))
 		b.Unlock()
-
-		b.newOrder()
 	}
+
+	b.onOrderCloseMarketMakeMaking("order(s) partially fill event")
 }
 
 func (b *Bot) handleOrderBookClearance(event coreTypes.ResultEvent) {
@@ -134,6 +134,8 @@ func (b *Bot) handleOrderBookClearance(event coreTypes.ResultEvent) {
 
 	b.Lock()
 	b.marketPrice = price
-	b.logger.Info(fmt.Sprintf("event: marketPrice updated: %s", price))
+	b.logger.Debug(fmt.Sprintf("event: marketPrice updated: %s", price))
 	b.Unlock()
+
+	b.onMarketPriceChangeMarketMaking()
 }

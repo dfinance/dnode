@@ -10,7 +10,7 @@ require (
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/containerd/containerd v1.3.3 // indirect
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
-	github.com/cosmos/cosmos-sdk v0.38.3
+	github.com/cosmos/cosmos-sdk v0.38.4
 	github.com/dfinance/dvm-proto/go v0.0.0-20200328135315-584972a1a270
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3

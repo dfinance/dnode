@@ -21,11 +21,11 @@ type Bot struct {
 	quoteBalance       sdk.Uint
 	marketPrice        sdk.Uint
 	orders             map[string]orderTypes.Order
-	subs               []subscribeState
 	blockHeight        int64
 	sequence           uint64
 	lastPostedAskPrice sdk.Uint
 	lastPostedBidPrice sdk.Uint
+	stopCh             chan bool
 }
 
 type subscribeState struct {
@@ -41,9 +41,10 @@ type Config struct {
 	BaseCurrency           crTypes.CurrencyInfo
 	QuoteCurrency          crTypes.CurrencyInfo
 	MarketID               dnTypes.ID
-	InitMinPrice           sdk.Uint
-	InitMaxPrice           sdk.Uint
-	InitOrders             uint64
+	MMakingMinPrice        sdk.Uint
+	MMakingMaxPrice        sdk.Uint
+	MMakingInitOrders      uint64
+	MMakingMinBaseVolume   uint64
 	OrderTtlInSec          int
 	NewOrderDampingPercent float64
 }
@@ -60,15 +61,6 @@ func (b *Bot) Balances() (baseBalance, quoteBalance sdk.Uint) {
 	quoteBalance = b.quoteBalance
 
 	return
-}
-
-func (b *Bot) close() {
-	b.Lock()
-	defer b.Unlock()
-
-	for _, f := range b.subs {
-		f.stopFunc()
-	}
 }
 
 func New(logger log.Logger, cfg Config) *Bot {

@@ -66,6 +66,8 @@ func (k Keeper) PostOrder(
 
 	ctx.EventManager().EmitEvent(types.NewOrderPostedEvent(owner, market.ID, id))
 
+	k.GetLogger(ctx).Debug(fmt.Sprintf("order %s from %s: posted", id, owner))
+
 	return order, nil
 }
 

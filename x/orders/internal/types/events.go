@@ -14,6 +14,7 @@ const (
 	EventAttributeKeyOwner        = "owner"
 	EventAttributeKeyOrderID      = "order_id"
 	EventAttributeKeyMarketID     = "market_id"
+	EventAttributeKeyQuantity     = "quantity"
 )
 
 func NewOrderPostedEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID) sdk.Event {
@@ -46,12 +47,13 @@ func NewFullyFilledOrderEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID
 	)
 }
 
-func NewPartiallyFilledOrderEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID) sdk.Event {
+func NewPartiallyFilledOrderEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID, quantity sdk.Uint) sdk.Event {
 	return sdk.NewEvent(
 		EventTypePartiallyFilledOrder,
 		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
 		sdk.NewAttribute(EventAttributeKeyOwner, owner.String()),
 		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
 		sdk.NewAttribute(EventAttributeKeyOrderID, orderID.String()),
+		sdk.NewAttribute(EventAttributeKeyQuantity, quantity.String()),
 	)
 }

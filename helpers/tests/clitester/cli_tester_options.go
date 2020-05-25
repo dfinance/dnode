@@ -2,7 +2,14 @@ package clitester
 
 import (
 	"fmt"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
+
+type AccountOption struct {
+	Name     string
+	Balances []StringPair
+}
 
 type CLITesterOption func(ct *CLITester) error
 
@@ -47,6 +54,30 @@ func LogLevel(logLevel string) CLITesterOption {
 func DefaultConsensusTimings() CLITesterOption {
 	return func(ct *CLITester) error {
 		ct.defaultConsensusTimeouts = true
+
+		return nil
+	}
+}
+
+func Accounts(accOpts ...AccountOption) CLITesterOption {
+	return func(ct *CLITester) error {
+		for _, opt := range accOpts {
+
+			account := &CLIAccount{
+				Name:  opt.Name,
+				Coins: make(map[string]sdk.Coin, len(opt.Balances)),
+			}
+			for _, balance := range opt.Balances {
+				amount, ok := sdk.NewIntFromString(balance.Value)
+				if !ok {
+					return fmt.Errorf("sdk.NewIntFromString for %q: failed", balance.Value)
+				}
+
+				account.Coins[balance.Key] = sdk.NewCoin(balance.Key, amount)
+			}
+
+			ct.Accounts[opt.Name] = account
+		}
 
 		return nil
 	}

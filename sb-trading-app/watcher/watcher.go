@@ -34,15 +34,16 @@ type Config struct {
 }
 
 type Market struct {
-	BaseDenom           string
-	QuoteDenom          string
-	InitMinPrice        sdk.Uint
-	InitMaxPrice        sdk.Uint
-	InitOrders          uint64
-	BaseSupply          sdk.Uint
-	QuoteSupply         sdk.Uint
-	OrderTtlInSec       int
-	PriceDampingPercent float64
+	BaseDenom            string
+	QuoteDenom           string
+	BaseSupply           sdk.Uint
+	QuoteSupply          sdk.Uint
+	OrderTtlInSec        int
+	PriceDampingPercent  float64
+	MMakingMinPrice      sdk.Uint
+	MMakingMaxPrice      sdk.Uint
+	MMakingInitOrders    uint64
+	MMakingMinBaseVolume uint64
 }
 
 type MarketState struct {
@@ -86,21 +87,10 @@ func New(logger log.Logger, cfg Config) *Watcher {
 		q.CheckSucceeded()
 		marketState.quoteCurrency = *quoteInfo
 
-		for i := uint(0); i < w.cfg.MinBots; i++ {
-			clientName := fmt.Sprintf("%s_%s_client_%d", marketState.BaseDenom, marketState.QuoteDenom, i)
-			w.cfg.Tester.CreateAccount(
-				clientName,
-				cliTester.StringPair{
-					Key:   marketState.BaseDenom,
-					Value: marketState.BaseSupply.String(),
-				},
-				cliTester.StringPair{
-					Key:   marketState.QuoteDenom,
-					Value: marketState.QuoteSupply.String(),
-				},
-			)
-
-			account := w.cfg.Tester.Accounts[clientName]
+		for i := uint(0); i < w.cfg.MaxBots; i++ {
+			clientName := NewClientName(int(i), marketState.Market)
+			account, ok := w.cfg.Tester.Accounts[clientName]
+			require.True(w.cfg.T, ok, "account not found in CLITester: %s", clientName)
 
 			botObj := bot.New(logger, bot.Config{
 				T:                      w.cfg.T,
@@ -111,9 +101,10 @@ func New(logger log.Logger, cfg Config) *Watcher {
 				BaseCurrency:           marketState.baseCurrency,
 				QuoteCurrency:          marketState.quoteCurrency,
 				MarketID:               marketState.id,
-				InitMinPrice:           marketState.InitMinPrice,
-				InitMaxPrice:           marketState.InitMaxPrice,
-				InitOrders:             marketState.InitOrders,
+				MMakingMinPrice:        marketState.MMakingMinPrice,
+				MMakingMaxPrice:        marketState.MMakingMaxPrice,
+				MMakingInitOrders:      marketState.MMakingInitOrders,
+				MMakingMinBaseVolume:   marketState.MMakingMinBaseVolume,
 				OrderTtlInSec:          marketState.OrderTtlInSec,
 				NewOrderDampingPercent: marketState.PriceDampingPercent,
 			})
@@ -128,4 +119,8 @@ func New(logger log.Logger, cfg Config) *Watcher {
 	w.history = NewHistory(w.cfg.T, marketIDs)
 
 	return w
+}
+
+func NewClientName(clientIdx int, marketCfg Market) string {
+	return fmt.Sprintf("%s_%s_client_%d", marketCfg.BaseDenom, marketCfg.QuoteDenom, clientIdx)
 }

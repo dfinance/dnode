@@ -189,15 +189,31 @@ func (c *SDCurves) getCrossPoint() SDItem {
 	}
 
 	// the crossing point wasn't found
-	// case 2: find first point with non-zero Supply and Demand
+	// case 2: find first point with non-zero Supply and Demand (search from the middle)
 	// Supply / Demand can't be zero as it would cause "div 0" error
-	for i := 1; i < cLen; i++ {
-		curItem := &(*c)[i]
-		if !curItem.Supply.IsZero() && !curItem.Demand.IsZero() {
+	middleIdx := cLen / 2
+	for rightIdx := middleIdx; rightIdx < cLen; rightIdx++ {
+		rightItem := &(*c)[rightIdx]
+
+		var leftItem *SDItem
+		leftIdx := middleIdx - (rightIdx - middleIdx)
+		if leftIdx >= 0 {
+			leftItem = &(*c)[leftIdx]
+		}
+
+		if !rightItem.Supply.IsZero() && !rightItem.Demand.IsZero() {
 			return SDItem{
-				Price:  curItem.Price,
-				Supply: curItem.Supply,
-				Demand: curItem.Demand,
+				Price:  rightItem.Price,
+				Supply: rightItem.Supply,
+				Demand: rightItem.Demand,
+			}
+		}
+
+		if leftItem != nil && !leftItem.Supply.IsZero() && !leftItem.Demand.IsZero() {
+			return SDItem{
+				Price:  leftItem.Price,
+				Supply: leftItem.Supply,
+				Demand: leftItem.Demand,
 			}
 		}
 	}
