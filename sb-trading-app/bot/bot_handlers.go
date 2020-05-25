@@ -53,7 +53,7 @@ func findEventAttrClearancePrice(event coreTypes.ResultEvent) (sdk.Uint, bool) {
 
 func (b *Bot) handleOrderPost(event coreTypes.ResultEvent) {
 	orderIDs, ok := findEventAttrOrderID("orders.post.", event)
- 	require.True(b.cfg.T, ok, "order_id not found: %v", event)
+	require.True(b.cfg.T, ok, "order_id not found: %v", event)
 
 	for _, orderID := range orderIDs {
 		q, order := b.cfg.Tester.QueryOrdersOrder(orderID)
@@ -68,7 +68,12 @@ func (b *Bot) handleOrderPost(event coreTypes.ResultEvent) {
 
 		b.Lock()
 		b.orders[order.ID.String()] = *order
-		b.logger.Debug(fmt.Sprintf("event: %q order (%s): posted: %s -> %s", order.ID, order.Direction, order.Price, order.Quantity))
+		b.logger.Debug(fmt.Sprintf("event: %q order [%s]: posted: %s -> %s",
+			order.ID,
+			order.Direction,
+			b.cfg.QuoteCurrency.UintToDec(order.Price),
+			b.cfg.BaseCurrency.UintToDec(order.Quantity),
+		))
 		b.Unlock()
 	}
 }
@@ -119,9 +124,12 @@ func (b *Bot) handleOrderPartialFill(event coreTypes.ResultEvent) {
 		}
 
 		b.Lock()
-		prevOrder := b.orders[order.ID.String()]
 		b.orders[order.ID.String()] = *order
-		b.logger.Debug(fmt.Sprintf("event: %q order (%s): partially filled (%s / %s)", order.ID, order.Direction, order.Quantity, prevOrder.Quantity))
+		b.logger.Debug(fmt.Sprintf("event: %q order (%s): partially filled (%s)",
+			order.ID,
+			order.Direction,
+			b.cfg.BaseCurrency.UintToDec(order.Quantity),
+		))
 		b.Unlock()
 	}
 
@@ -134,7 +142,7 @@ func (b *Bot) handleOrderBookClearance(event coreTypes.ResultEvent) {
 
 	b.Lock()
 	b.marketPrice = price
-	b.logger.Debug(fmt.Sprintf("event: marketPrice updated: %s", price))
+	b.logger.Debug(fmt.Sprintf("event: marketPrice updated: %s", b.cfg.QuoteCurrency.UintToDec(price)))
 	b.Unlock()
 
 	b.onMarketPriceChangeMarketMaking()

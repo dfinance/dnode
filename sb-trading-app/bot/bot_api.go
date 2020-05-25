@@ -57,7 +57,13 @@ func (b *Bot) postOrder(price, quantity sdk.Uint, direction orderTypes.Direction
 	txHash := ""
 	defer func() {
 		if txHash != "" {
-			b.logger.Debug(fmt.Sprintf("order posted (seq: %d) ([%s] %s -> %s): %s", b.sequence, direction, price, quantity, txHash))
+			b.logger.Debug(fmt.Sprintf("order posted (seq: %d) ([%s] %s -> %s): %s",
+				b.sequence,
+				direction,
+				b.cfg.QuoteCurrency.UintToDec(price),
+				b.cfg.BaseCurrency.UintToDec(quantity),
+				txHash,
+			))
 			b.sequence++
 			posted = true
 		}

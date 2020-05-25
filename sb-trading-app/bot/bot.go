@@ -44,9 +44,9 @@ type Config struct {
 	MMakingMinPrice        sdk.Uint
 	MMakingMaxPrice        sdk.Uint
 	MMakingInitOrders      uint64
-	MMakingMinBaseVolume   uint64
+	MMakingMinBaseVolume   sdk.Uint
 	OrderTtlInSec          int
-	NewOrderDampingPercent float64
+	NewOrderDampingPercent uint64
 }
 
 func (b *Bot) Name() string {

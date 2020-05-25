@@ -13,25 +13,32 @@ import (
 	"github.com/dfinance/dnode/sb-trading-app/watcher"
 )
 
+const (
+	DecimalsDFI = "1000000000000000000"
+	DecimalsBTC = "100000000"
+)
+
 func Test_SB_Trading(t *testing.T) {
 	const (
-		minClientsPerMarket = 10
-		maxClientsPerMarket = 10
-		workDurInSec        = 200
+		minClientsPerMarket = 5
+		maxClientsPerMarket = 6
+		workDurInSec        = 90
 	)
 
+	oneDfi := sdk.NewUintFromString(DecimalsDFI)
+	oneBtc := sdk.NewUintFromString(DecimalsBTC)
 	markets := []watcher.Market{
 		watcher.Market{
 			BaseDenom:            "btc",
 			QuoteDenom:           "dfi",
 			OrderTtlInSec:        60,
-			BaseSupply:           sdk.NewUint(1000 * 100000000),
-			QuoteSupply:          sdk.NewUint(10000 * 100000000),
-			MMakingMinPrice:      sdk.NewUint(10),
-			MMakingMaxPrice:      sdk.NewUint(1000),
+			MMakingMinPrice:      sdk.NewUint(10). Mul(oneDfi),
+			MMakingMaxPrice:      sdk.NewUint(1000).Mul(oneDfi),
+			MMakingMinBaseVolume: sdk.NewUint(1).Mul(oneBtc),
+			BaseSupply:           sdk.NewUint(1000).Mul(oneBtc),
+			QuoteSupply:          sdk.NewUint(10000000).Mul(oneDfi),
 			MMakingInitOrders:    20,
-			MMakingMinBaseVolume: 10,
-			PriceDampingPercent:  5.0,
+			PriceDampingPercent:  5,
 		},
 	}
 

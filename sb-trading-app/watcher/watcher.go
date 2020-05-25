@@ -20,6 +20,7 @@ type Watcher struct {
 	cfg          Config
 	marketStates []*MarketState
 	history      *History
+	curBots      uint
 	wg           *sync.WaitGroup
 	stopCh       chan bool
 }
@@ -39,11 +40,11 @@ type Market struct {
 	BaseSupply           sdk.Uint
 	QuoteSupply          sdk.Uint
 	OrderTtlInSec        int
-	PriceDampingPercent  float64
+	PriceDampingPercent  uint64
 	MMakingMinPrice      sdk.Uint
 	MMakingMaxPrice      sdk.Uint
+	MMakingMinBaseVolume sdk.Uint
 	MMakingInitOrders    uint64
-	MMakingMinBaseVolume uint64
 }
 
 type MarketState struct {
@@ -67,7 +68,7 @@ func New(logger log.Logger, cfg Config) *Watcher {
 	w.logger.Info(q.String())
 
 	marketCreator := w.cfg.Tester.Accounts["validator1"].Address
-	marketIDs := make([]string, 0, len(cfg.Markets))
+	marketInfos := make(map[string]MarketInfo, len(cfg.Markets))
 	for _, marketCfg := range cfg.Markets {
 		marketState := &MarketState{Market: marketCfg}
 
@@ -113,10 +114,14 @@ func New(logger log.Logger, cfg Config) *Watcher {
 		}
 
 		w.marketStates = append(w.marketStates, marketState)
-		marketIDs = append(marketIDs, marketState.id.String())
+		marketInfos[marketState.id.String()] = MarketInfo{
+			BaseCurrency:  marketState.baseCurrency,
+			QuoteCurrency: marketState.quoteCurrency,
+		}
 	}
 
-	w.history = NewHistory(w.cfg.T, marketIDs)
+	w.curBots = w.cfg.MinBots
+	w.history = NewHistory(w.cfg.T, marketInfos, w.curBots)
 
 	return w
 }

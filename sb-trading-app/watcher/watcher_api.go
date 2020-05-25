@@ -59,4 +59,11 @@ func (w *Watcher) subscribe() {
 		stopFunc, ch := w.cfg.Tester.CreateWSConnection(false, "watcher", query, 1)
 		go commonHandler(stopFunc, ch, w.history.HandleOrderBookClearanceEvent)
 	}
+
+	// block events
+	{
+		query := "tm.event='NewBlock'"
+		stopFunc, ch := w.cfg.Tester.CreateWSConnection(false, "watcher", query, 1)
+		go commonHandler(stopFunc, ch, w.history.HandleNewBlockEvent)
+	}
 }

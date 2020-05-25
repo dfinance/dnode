@@ -9,19 +9,21 @@ func (w *Watcher) Work() {
 	w.subscribe()
 
 	workDur := time.Duration(w.cfg.WorkDurtInSec) * time.Second
-	w.logger.Info(fmt.Sprintf("starting for %v", workDur))
+	w.logger.Info(fmt.Sprintf("starting for %v with %d clients", workDur, w.curBots))
 	for _, m := range w.marketStates {
-		for _, b := range m.bots {
+		for i := uint(0); i < w.curBots; i++ {
+			b := m.bots[i]
 			w.wg.Add(1)
 			go b.Start(w.wg, w.stopCh)
 		}
 	}
 
 	stopCh := time.After(workDur)
-	tickCh := time.Tick(10 * time.Second)
+	botAddTickCh := time.Tick(workDur / time.Duration(w.cfg.MaxBots-w.cfg.MinBots+1))
+	historyTickCh := time.Tick(10 * time.Second)
 	for working := true; working; {
 		select {
-		case <-tickCh:
+		case <-historyTickCh:
 			//for _, market := range w.marketStates {
 			//	balances := make(HistoryBalances, 0, len(market.bots))
 			//	for _, bot := range market.bots {
@@ -35,16 +37,26 @@ func (w *Watcher) Work() {
 			//
 			//	w.history.SetCurBalances(market.id.String(), balances)
 			//}
-
 			w.history.ResetCurItem()
+		case <-botAddTickCh:
+			if botsDiff := w.cfg.MaxBots - w.curBots; botsDiff > 0 {
+				w.logger.Info(fmt.Sprintf("adding client: %d left", botsDiff - 1))
+				for _, m := range w.marketStates {
+					w.wg.Add(1)
+					go m.bots[w.curBots].Start(w.wg, w.stopCh)
+				}
+				w.curBots++
+				w.history.SetCurBots(w.curBots)
+			}
 		case <-stopCh:
 			w.logger.Info("stopping")
 			working = false
 
 			close(w.stopCh)
 			w.wg.Wait()
+			time.Sleep(500 * time.Millisecond)
 
-			w.logger.Info(fmt.Sprintf("results:\n%s", w.history.String(true, true)))
+			w.logger.Info(fmt.Sprintf("results:\n%s", w.history.String(true, false, true)))
 		}
 	}
 }

@@ -6,29 +6,26 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (b *Bot) randomDampingPercent() float64 {
-	return float64(rand.Int63n(int64(b.cfg.NewOrderDampingPercent*100.0) + 1)) / 100.0
+func (b *Bot) randomDampingPercent() uint64 {
+	return rand.Uint64() % (b.cfg.NewOrderDampingPercent + 1)
 }
 
-func (b *Bot) percentOfPrice(price sdk.Uint, percent float64) sdk.Uint {
-	priceFloat := float64(price.Uint64())
-	resultFloat := priceFloat / 100.0 * percent
-
-	return sdk.NewUint(uint64(resultFloat))
+func (b *Bot) percentOfPrice(price sdk.Uint, percent uint64) sdk.Uint {
+	return price.QuoUint64(100).MulUint64(percent)
 }
 
-func (b *Bot) dampPriceUp(price sdk.Uint) sdk.Uint {
-	return price.Add(b.percentOfPrice(price, b.randomDampingPercent()))
+func (b *Bot) dampPriceUp(price, randomBase sdk.Uint) sdk.Uint {
+	return price.Add(b.percentOfPrice(randomBase, b.randomDampingPercent()))
 }
 
-func (b *Bot) dampPriceDown(price sdk.Uint) sdk.Uint {
-	return price.Sub(b.percentOfPrice(price, b.randomDampingPercent()))
+func (b *Bot) dampPriceDown(price, randomBase sdk.Uint) sdk.Uint {
+	return price.Sub(b.percentOfPrice(randomBase, b.randomDampingPercent()))
 }
 
-func(b *Bot) dampPriceRandom(price sdk.Uint) sdk.Uint {
+func(b *Bot) dampPriceRandom(price, randomBase sdk.Uint) sdk.Uint {
 	if rand.Uint64() % 2 == 0 {
-		return b.dampPriceUp(price)
+		return b.dampPriceUp(price, randomBase)
 	}
 
-	return b.dampPriceDown(price)
+	return b.dampPriceDown(price, randomBase)
 }

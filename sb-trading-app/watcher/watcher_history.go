@@ -6,31 +6,51 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/olekukonko/tablewriter"
 	"github.com/stretchr/testify/require"
 	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
+
+	"github.com/dfinance/dnode/x/currencies_register"
 )
 
 type History struct {
 	sync.RWMutex
 	t                   *testing.T
 	curMarketItem       map[string]*HistoryItem
-	MarketItems         map[string]HistoryItems
+	prevBlockTS         time.Time
+	curBots             uint
+	MarketInfos         map[string]MarketInfo      // key: marketID
+	MarketItems         map[string]HistoryItems    // key: marketID
 	CountedPostOrders   map[string]bool            // key: orderID
 	CountedCancelOrders map[string]bool            // key: orderID
 	CountedFFillOrders  map[string]bool            // key: orderID
 	CountedPFillOrders  map[string]map[string]bool // key1: orderID, key2: quantity
+	BlockInfos          []BlockInfo
+}
+
+type BlockInfo struct {
+	Clients  uint
+	Duration time.Duration
+}
+
+type MarketInfo struct {
+	BaseCurrency  currencies_register.CurrencyInfo
+	QuoteCurrency currencies_register.CurrencyInfo
 }
 
 type HistoryItem struct {
+	Clients               uint
 	ClearancePrice        sdk.Uint
 	PostedOrders          uint64
 	CanceledOrders        uint64
 	FullyFilledOrders     uint64
 	PartiallyFilledOrders uint64
 	AccountBalances       HistoryBalances
+	Timestamp             time.Time
+	PriceToDec            func(price sdk.Uint) sdk.Dec
 }
 
 type HistoryItems []HistoryItem
@@ -42,6 +62,13 @@ type HistoryBalance struct {
 }
 
 type HistoryBalances []HistoryBalance
+
+func (h *History) SetCurBots(count uint) {
+	h.Lock()
+	defer h.Unlock()
+
+	h.curBots = count
+}
 
 func (h *History) SetCurBalances(marketID string, balances HistoryBalances) {
 	h.Lock()
@@ -60,19 +87,23 @@ func (h *History) ResetCurItem() {
 
 	if h.curMarketItem != nil {
 		for marketID, item := range h.curMarketItem {
+			item.Clients = h.curBots
 			h.MarketItems[marketID] = append(h.MarketItems[marketID], *item)
 		}
 	}
 
+	now := time.Now()
 	h.curMarketItem = make(map[string]*HistoryItem, len(h.MarketItems))
 	for marketID := range h.MarketItems {
 		h.curMarketItem[marketID] = &HistoryItem{
+			Timestamp:      now,
 			ClearancePrice: sdk.ZeroUint(),
+			PriceToDec:     h.MarketInfos[marketID].QuoteCurrency.UintToDec,
 		}
 	}
 }
 
-func (h *History) String(stats, balances bool) string {
+func (h *History) String(stats, balances, blockDurations bool) string {
 	var buf bytes.Buffer
 
 	for marketID, items := range h.MarketItems {
@@ -101,6 +132,25 @@ func (h *History) String(stats, balances bool) string {
 			}
 			t.Render()
 		}
+	}
+
+	if blockDurations {
+		buf.WriteString("Block durations:\n")
+
+		t := tablewriter.NewWriter(&buf)
+		t.SetHeader([]string{
+			"#",
+			"Clients",
+			"Duration",
+		})
+		for i, info := range h.BlockInfos {
+			t.Append([]string{
+				strconv.FormatInt(int64(i), 10),
+				strconv.FormatUint(uint64(info.Clients), 10),
+				info.Duration.String(),
+			})
+		}
+		t.Render()
 	}
 
 	return buf.String()
@@ -204,6 +254,22 @@ func (h *History) HandleOrderBookClearanceEvent(event coreTypes.ResultEvent) {
 	for marketID, price := range marketPrices {
 		h.curMarketItem[marketID].ClearancePrice = price
 	}
+}
+
+func (h *History) HandleNewBlockEvent(event coreTypes.ResultEvent) {
+	curBlockTS := time.Now()
+
+	h.Lock()
+	defer h.Unlock()
+
+	if !h.prevBlockTS.IsZero() {
+		h.BlockInfos = append(h.BlockInfos, BlockInfo{
+			Clients:  h.curBots,
+			Duration: curBlockTS.Sub(h.prevBlockTS),
+		})
+	}
+
+	h.prevBlockTS = curBlockTS
 }
 
 func findEventAttrMarketIDOrders(prefix string, event coreTypes.ResultEvent) (marketOrders map[string][]string) {
@@ -317,6 +383,8 @@ func (b HistoryBalance) TableValues(id int64) []string {
 func (i HistoryItem) TableHeaders() []string {
 	h := []string{
 		"ID",
+		"StartedAt",
+		"Clients",
 		"Price",
 		"Posts",
 		"Cancels",
@@ -330,7 +398,9 @@ func (i HistoryItem) TableHeaders() []string {
 func (i HistoryItem) TableValues(id int64) []string {
 	v := []string{
 		strconv.FormatInt(id, 10),
-		i.ClearancePrice.String(),
+		i.Timestamp.UTC().String(),
+		strconv.FormatUint(uint64(i.Clients), 10),
+		i.PriceToDec(i.ClearancePrice).String(),
 		strconv.FormatUint(i.PostedOrders, 10),
 		strconv.FormatUint(i.CanceledOrders, 10),
 		strconv.FormatUint(i.FullyFilledOrders, 10),
@@ -340,17 +410,20 @@ func (i HistoryItem) TableValues(id int64) []string {
 	return v
 }
 
-func NewHistory(t *testing.T, marketIDs []string) *History {
+func NewHistory(t *testing.T, markets map[string]MarketInfo, startBots uint) *History {
 	h := &History{
 		t:                   t,
-		MarketItems:         make(map[string]HistoryItems, len(marketIDs)),
+		curBots:             startBots,
+		MarketInfos:         make(map[string]MarketInfo, len(markets)),
+		MarketItems:         make(map[string]HistoryItems, len(markets)),
 		CountedPostOrders:   make(map[string]bool, 0),
 		CountedCancelOrders: make(map[string]bool, 0),
 		CountedFFillOrders:  make(map[string]bool, 0),
 		CountedPFillOrders:  make(map[string]map[string]bool, 0),
 	}
 
-	for _, id := range marketIDs {
+	for id, info := range markets {
+		h.MarketInfos[id] = info
 		h.MarketItems[id] = make(HistoryItems, 0)
 	}
 
