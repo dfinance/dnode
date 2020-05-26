@@ -109,9 +109,10 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 
 		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
 			ctx.EventManager().EmitEvent(types.NewEventError(exec.StatusStruct))
+			types.PrintVMStackTrace(keeper.Logger(ctx), exec)
+			return
 		}
 
-		// processing write set.
 		keeper.processWriteSet(ctx, exec.WriteSet)
 
 		for _, vmEvent := range exec.Events {
