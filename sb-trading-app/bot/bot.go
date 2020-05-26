@@ -21,10 +21,9 @@ type Bot struct {
 	quoteBalance       sdk.Uint
 	marketPrice        sdk.Uint
 	orders             map[string]orderTypes.Order
-	blockHeight        int64
-	sequence           uint64
 	lastPostedAskPrice sdk.Uint
 	lastPostedBidPrice sdk.Uint
+	api                Api
 	stopCh             chan bool
 }
 
@@ -64,7 +63,7 @@ func (b *Bot) Balances() (baseBalance, quoteBalance sdk.Uint) {
 }
 
 func New(logger log.Logger, cfg Config) *Bot {
-	return &Bot{
+	b := &Bot{
 		logger:             logger.With("client", cfg.Name, "address", cfg.Address),
 		cfg:                cfg,
 		baseBalance:        sdk.ZeroUint(),
@@ -74,4 +73,9 @@ func New(logger log.Logger, cfg Config) *Bot {
 		lastPostedAskPrice: sdk.ZeroUint(),
 		lastPostedBidPrice: sdk.ZeroUint(),
 	}
+
+	//b.api = NewApiCli(b.cfg.Tester, b.cfg.Number, b.cfg.Address, b.cfg.MarketID, string(b.cfg.BaseCurrency.Denom), string(b.cfg.QuoteCurrency.Denom), b.cfg.OrderTtlInSec)
+	b.api = NewApiRest(b.cfg.Tester, b.cfg.Number, b.cfg.Name, b.cfg.Address, b.cfg.MarketID, string(b.cfg.BaseCurrency.Denom), string(b.cfg.QuoteCurrency.Denom), b.cfg.OrderTtlInSec)
+
+	return b
 }

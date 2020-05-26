@@ -16,8 +16,11 @@ import (
 
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/genaccounts"
+	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/orderbook"
+	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
@@ -27,6 +30,8 @@ const (
 	DenomETH  = "eth"
 	DenomBTC  = "btc"
 	DenomUSDT = "usdt"
+	//
+	DefaultGas = 300000
 )
 
 type StringPair struct {
@@ -72,4 +77,7 @@ var ModuleBasics = module.NewBasicManager(
 	multisig.AppModuleBasic{},
 	oracle.AppModuleBasic{},
 	vm.AppModuleBasic{},
+	orders.AppModuleBasic{},
+	markets.AppModuleBasic{},
+	orderbook.AppModuleBasic{},
 )

@@ -21,8 +21,8 @@ const (
 func Test_SB_Trading(t *testing.T) {
 	const (
 		minClientsPerMarket = 5
-		maxClientsPerMarket = 6
-		workDurInSec        = 90
+		maxClientsPerMarket = 10
+		workDurInSec        = 300
 	)
 
 	oneDfi := sdk.NewUintFromString(DecimalsDFI)
@@ -37,7 +37,7 @@ func Test_SB_Trading(t *testing.T) {
 			MMakingMinBaseVolume: sdk.NewUint(1).Mul(oneBtc),
 			BaseSupply:           sdk.NewUint(1000).Mul(oneBtc),
 			QuoteSupply:          sdk.NewUint(10000000).Mul(oneDfi),
-			MMakingInitOrders:    20,
+			MMakingInitOrders:    30,
 			PriceDampingPercent:  5,
 		},
 	}
@@ -70,6 +70,7 @@ func Test_SB_Trading(t *testing.T) {
 		cliTester.Accounts(accountOpts...),
 
 	)
+	ct.StartRestServer(false)
 	defer ct.Close()
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))

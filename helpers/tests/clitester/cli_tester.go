@@ -258,6 +258,8 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 
 	ct.UpdateAccountsBalance()
 
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
+
 	return &ct
 }
 
@@ -296,6 +298,7 @@ func (ct *CLITester) newRestRequest() *RestRequest {
 		t:       ct.t,
 		cdc:     ct.Cdc,
 		baseUrl: ct.restAddress,
+		gas:     DefaultGas,
 	}
 }
 
@@ -306,7 +309,7 @@ func (ct *CLITester) newTxRequest() *TxRequest {
 		cmd:            ct.newWbcliCmd(),
 		nodeRpcAddress: ct.rpcAddress,
 		accPassphrase:  ct.AccountPassphrase,
-		gas:            300000,
+		gas:            DefaultGas,
 	}
 }
 

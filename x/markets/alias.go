@@ -6,10 +6,12 @@ import (
 )
 
 type (
-	Keeper         = keeper.Keeper
-	Market         = types.Market
-	Markets        = types.Markets
-	MarketExtended = types.MarketExtended
+	Keeper          = keeper.Keeper
+	Market          = types.Market
+	Markets         = types.Markets
+	MarketExtended  = types.MarketExtended
+	MsgCreateMarket = types.MsgCreateMarket
+	GenesisState    = types.GenesisState
 )
 
 const (
@@ -21,7 +23,12 @@ var (
 	// variable aliases
 	ModuleCdc = types.ModuleCdc
 	// function aliases
-	NewKeeper         = keeper.NewKeeper
-	NewMarket         = types.NewMarket
-	NewMarketExtended = types.NewMarketExtended
+	RegisterCodec       = types.RegisterCodec
+	NewGenesisState     = types.NewGenesisState
+	DefaultGenesisState = types.DefaultGenesisState
+	ValidateGenesis     = types.ValidateGenesis
+	NewMarket           = types.NewMarket
+	NewMarketExtended   = types.NewMarketExtended
+	NewKeeper           = keeper.NewKeeper
+	NewQuerier          = keeper.NewQuerier
 )

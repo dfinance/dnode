@@ -14,8 +14,6 @@ import (
 
 	"github.com/dfinance/dnode/x/orders/client"
 	"github.com/dfinance/dnode/x/orders/client/rest"
-	"github.com/dfinance/dnode/x/orders/internal/keeper"
-	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
 var (
@@ -35,7 +33,7 @@ func (AppModuleBasic) Name() string {
 
 // RegisterCodec registers module codec.
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
+	RegisterCodec(cdc)
 }
 
 // DefaultGenesis gets default module genesis state.
@@ -102,7 +100,7 @@ func (am AppModule) QuerierRoute() string {
 
 // NewQuerierHandler creates module querier.
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return keeper.NewQuerier(am.keeper)
+	return NewQuerier(am.keeper)
 }
 
 // InitGenesis inits module-genesis state.

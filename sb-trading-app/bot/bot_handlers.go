@@ -2,7 +2,6 @@ package bot
 
 import (
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -56,14 +55,11 @@ func (b *Bot) handleOrderPost(event coreTypes.ResultEvent) {
 	require.True(b.cfg.T, ok, "order_id not found: %v", event)
 
 	for _, orderID := range orderIDs {
-		q, order := b.cfg.Tester.QueryOrdersOrder(orderID)
-		err := executeQuery(q)
-		if err != nil {
-			if strings.Contains(err.Error(), "wrong orderID") {
-				continue
-			}
+		order, err := b.api.GetOrder(orderID)
+		require.NoError(b.cfg.T, err)
 
-			require.NoError(b.cfg.T, executeQuery(q), "OrdersOrder on handleOrderPost")
+		if order == nil {
+			continue
 		}
 
 		b.Lock()
@@ -113,14 +109,11 @@ func (b *Bot) handleOrderPartialFill(event coreTypes.ResultEvent) {
 	require.True(b.cfg.T, ok, "order_id not found: %v", event)
 
 	for _, orderID := range orderIDs {
-		q, order := b.cfg.Tester.QueryOrdersOrder(orderID)
-		err := executeQuery(q)
-		if err != nil {
-			if strings.Contains(err.Error(), "wrong orderID") {
-				continue
-			}
+		order, err := b.api.GetOrder(orderID)
+		require.NoError(b.cfg.T, err)
 
-			require.NoError(b.cfg.T, executeQuery(q), "OrdersOrder on handleOrderPartialFill")
+		if order == nil {
+			continue
 		}
 
 		b.Lock()

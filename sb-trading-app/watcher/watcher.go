@@ -65,6 +65,7 @@ func New(logger log.Logger, cfg Config) *Watcher {
 	}
 
 	q, _ := w.cfg.Tester.QueryStatus()
+	q.RemoveCmdArg("status")
 	w.logger.Info(q.String())
 
 	marketCreator := w.cfg.Tester.Accounts["validator1"].Address

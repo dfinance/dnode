@@ -26,6 +26,7 @@ type RestRequest struct {
 	urlValues     url.Values
 	requestValue  interface{}
 	responseValue interface{}
+	gas           uint64
 }
 
 // REST endpoint error object
@@ -94,6 +95,40 @@ func (r *RestRequest) Request() (retCode int, retBody []byte) {
 	retCode, retBody = resp.StatusCode, bodyBytes
 
 	return
+}
+
+func (r *RestRequest) Execute() error {
+	respCode, respBody := r.Request()
+	if respCode != http.StatusOK {
+		return fmt.Errorf("%s: HTTP code %d: %s", r.String(), respCode, string(respBody))
+	}
+
+	// parse Tx response or Query response
+	if r.responseValue != nil {
+		if _, ok := r.responseValue.(*sdk.TxResponse); !ok {
+			respMsg := sdkRest.ResponseWithHeight{}
+			if err := r.cdc.UnmarshalJSON(respBody, &respMsg); err != nil {
+				return fmt.Errorf("%s: unmarshal ResponseWithHeight: %s", r.String(), string(respBody))
+			}
+
+			if respMsg.Result != nil {
+				if err := r.cdc.UnmarshalJSON(respMsg.Result, r.responseValue); err != nil {
+					return fmt.Errorf("%s: unmarshal responseValue: %s", r.String(), string(respBody))
+				}
+			}
+		} else {
+			if err := r.cdc.UnmarshalJSON(respBody, r.responseValue); err != nil {
+				return fmt.Errorf("%s: unmarshal txResponseValue: %s", r.String(), string(respBody))
+			}
+
+			txResp := r.responseValue.(*sdk.TxResponse)
+			if txResp.Code != 0 {
+				return fmt.Errorf("%s: tx code %d: %s", r.String(), txResp.Code, txResp.RawLog)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (r *RestRequest) CheckSucceeded() {

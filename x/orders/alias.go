@@ -6,12 +6,14 @@ import (
 )
 
 type (
-	Keeper     = keeper.Keeper
-	Order      = types.Order
-	Orders     = types.Orders
-	OrderFill  = types.OrderFill
-	OrderFills = types.OrderFills
-	Direction  = types.Direction
+	Keeper         = keeper.Keeper
+	Order          = types.Order
+	Orders         = types.Orders
+	OrderFill      = types.OrderFill
+	OrderFills     = types.OrderFills
+	Direction      = types.Direction
+	MsgPostOrder   = types.MsgPostOrder
+	MsgRevokeOrder = types.MsgRevokeOrder
 )
 
 const (
@@ -25,5 +27,9 @@ var (
 	// variable aliases
 	ModuleCdc = types.ModuleCdc
 	// function aliases
-	NewKeeper = keeper.NewKeeper
+	RegisterCodec = types.RegisterCodec
+	NewKeeper     = keeper.NewKeeper
+	NewQuerier    = keeper.NewQuerier
+	// error aliases
+	ErrWrongOwner = types.ErrWrongOwner
 )

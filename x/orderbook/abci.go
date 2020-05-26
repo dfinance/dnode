@@ -4,8 +4,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/x/orderbook/internal/keeper"
-	"github.com/dfinance/dnode/x/orderbook/internal/types"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
@@ -14,10 +12,10 @@ func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 	iterator := k.GetOrderIterator(ctx)
 	defer iterator.Close()
 
-	matcherPool := keeper.NewMatcherPool(k.GetLogger(ctx))
+	matcherPool := NewMatcherPool(k.GetLogger(ctx))
 	for ; iterator.Valid(); iterator.Next() {
 		order := orderTypes.Order{}
-		types.ModuleCdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &order)
+		ModuleCdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &order)
 
 		if err := matcherPool.AddOrder(order); err != nil {
 			panic(err)
@@ -26,9 +24,9 @@ func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 
 	for _, result := range matcherPool.Process() {
 		k.ProcessOrderFills(ctx, result.OrderFills)
-		k.SetHistoryItem(ctx, types.NewHistoryItem(ctx, result))
+		k.SetHistoryItem(ctx, NewHistoryItem(ctx, result))
 
-		ctx.EventManager().EmitEvent(types.NewClearanceEvent(result.MarketID, result.ClearanceState.Price))
+		ctx.EventManager().EmitEvent(NewClearanceEvent(result.MarketID, result.ClearanceState.Price))
 	}
 
 	return []abci.ValidatorUpdate{}

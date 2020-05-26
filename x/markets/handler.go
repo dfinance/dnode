@@ -5,15 +5,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
 // NewHandler creates markets type messages handler.
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
-		case types.MsgCreateMarket:
+		case MsgCreateMarket:
 			return HandleMsgCreateMarket(ctx, k, msg)
 		default:
 			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized markets message type: %T", msg)
@@ -23,7 +21,7 @@ func NewHandler(k Keeper) sdk.Handler {
 
 // HandleMsgCreateMarket handles HandleMsgCreateMarket message type.
 // Creates and stores new market object.
-func HandleMsgCreateMarket(ctx sdk.Context, k Keeper, msg types.MsgCreateMarket) (*sdk.Result, error) {
+func HandleMsgCreateMarket(ctx sdk.Context, k Keeper, msg MsgCreateMarket) (*sdk.Result, error) {
 	market, err := k.Add(ctx, msg.BaseAssetDenom, msg.QuoteAssetDenom)
 	if err != nil {
 		return nil, err

@@ -12,22 +12,28 @@ import (
 	"github.com/stretchr/testify/require"
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
 )
 
 func (ct *CLITester) newRestTxRequest(accName string, acc *auth.BaseAccount, msg sdk.Msg, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
+	return ct.newRestTxRequestRaw(accName, acc.GetAccountNumber(), acc.GetSequence(), msg, isSync)
+}
+
+func (ct *CLITester) newRestTxRequestRaw(accName string, accNumber, accSequence uint64, msg sdk.Msg, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
 	// build broadcast Tx request
 	txFee := auth.StdFee{
 		Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
-		Gas:    200000,
+		Gas:    DefaultGas,
 	}
 	txMemo := "restTxMemo"
 
-	signBytes := auth.StdSignBytes(ct.ChainID, acc.GetAccountNumber(), acc.GetSequence(), txFee, []sdk.Msg{msg}, txMemo)
+	signBytes := auth.StdSignBytes(ct.ChainID, accNumber, accSequence, txFee, []sdk.Msg{msg}, txMemo)
 
 	signature, pubKey, err := ct.keyBase.Sign(accName, ct.AccountPassphrase, signBytes)
 	require.NoError(ct.t, err, "signing Tx")
@@ -158,6 +164,33 @@ func (ct *CLITester) RestQueryOraclePrice(assetCode string) (*RestRequest, *orac
 	return r, respMsg
 }
 
+func (ct *CLITester) RestQueryVMGetData(accAddr, path string) (*RestRequest, *vm.QueryValueResp) {
+	reqSubPath := fmt.Sprintf("%s/data/%s/%s", vm.ModuleName, accAddr, path)
+	respMsg := &vm.QueryValueResp{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryAuthAccount(address string) (*RestRequest, *auth.BaseAccount) {
+	reqSubPath := fmt.Sprintf("auth/accounts/%s", address)
+	respMsg := &auth.BaseAccount{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOrder(id dnTypes.ID) (*RestRequest, *orderTypes.Order) {
+	reqSubPath := fmt.Sprintf("%s/%s", orderTypes.ModuleName, id.String())
+	respMsg := &orderTypes.Order{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
 func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.Int, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
 	accInfo := ct.Accounts[accName]
 	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
@@ -170,11 +203,15 @@ func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }
 
-func (ct *CLITester) RestQueryVMGetData(accAddr, path string) (*RestRequest, *vm.QueryValueResp) {
-	reqSubPath := fmt.Sprintf("%s/data/%s/%s", vm.ModuleName, accAddr, path)
-	respMsg := &vm.QueryValueResp{}
+func (ct *CLITester) RestTxOrdersPostOrder(accName string, accAddress sdk.AccAddress, accNumber, accSequence uint64, marketID dnTypes.ID, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
+	msg := orderTypes.MsgPostOrder{
+		Owner:     accAddress,
+		MarketID:  marketID,
+		Direction: direction,
+		Price:     price,
+		Quantity:  quantity,
+		TtlInSec:  ttlInSec,
+	}
 
-	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
-
-	return r, respMsg
+	return ct.newRestTxRequestRaw(accName, accNumber, accSequence, msg, true)
 }

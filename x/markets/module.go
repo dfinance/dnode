@@ -15,8 +15,6 @@ import (
 
 	"github.com/dfinance/dnode/x/markets/client"
 	"github.com/dfinance/dnode/x/markets/client/rest"
-	"github.com/dfinance/dnode/x/markets/internal/keeper"
-	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
 var (
@@ -36,22 +34,22 @@ func (AppModuleBasic) Name() string {
 
 // RegisterCodec registers module codec.
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
+	RegisterCodec(cdc)
 }
 
 // DefaultGenesis gets default module genesis state.
 func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return types.ModuleCdc.MustMarshalJSON(types.DefaultGenesisState())
+	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
 }
 
 // ValidateGenesis validates module genesis state.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	var data types.GenesisState
-	if err := types.ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
+	var data GenesisState
+	if err := ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
 		return err
 	}
 
-	return types.ValidateGenesis(data)
+	return ValidateGenesis(data)
 }
 
 // RegisterRESTRoutes registers module REST routes.
@@ -108,13 +106,13 @@ func (am AppModule) QuerierRoute() string {
 
 // NewQuerierHandler creates module querier.
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return keeper.NewQuerier(am.keeper)
+	return NewQuerier(am.keeper)
 }
 
 // InitGenesis inits module-genesis state.
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	genesis := types.GenesisState{}
-	types.ModuleCdc.MustUnmarshalJSON(data, &genesis)
+	genesis := GenesisState{}
+	ModuleCdc.MustUnmarshalJSON(data, &genesis)
 	am.keeper.SetParams(ctx, genesis.Params)
 
 	return []abci.ValidatorUpdate{}
@@ -123,9 +121,9 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.Va
 // ExportGenesis exports module genesis state.
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	params := am.keeper.GetParams(ctx)
-	genesis := types.NewGenesisState(params)
+	genesis := NewGenesisState(params)
 
-	return types.ModuleCdc.MustMarshalJSON(genesis)
+	return ModuleCdc.MustMarshalJSON(genesis)
 }
 
 // BeginBlock performs module actions at a block start.

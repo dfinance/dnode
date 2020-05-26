@@ -20,5 +20,9 @@ var (
 	// variable aliases
 	ModuleCdc = types.ModuleCdc
 	// function aliases
-	NewKeeper = keeper.NewKeeper
+	RegisterCodec     = types.RegisterCodec
+	NewHistoryItem    = types.NewHistoryItem
+	NewClearanceEvent = types.NewClearanceEvent
+	NewKeeper         = keeper.NewKeeper
+	NewMatcherPool    = keeper.NewMatcherPool
 )

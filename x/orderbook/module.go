@@ -13,8 +13,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/dfinance/dnode/x/orderbook/internal/types"
 )
 
 var (
@@ -34,7 +32,7 @@ func (AppModuleBasic) Name() string {
 
 // RegisterCodec registers module codec.
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
+	RegisterCodec(cdc)
 }
 
 // DefaultGenesis gets default module genesis state.
