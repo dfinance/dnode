@@ -950,7 +950,7 @@ func Test_OrdersCLI(t *testing.T) {
 	ownerAddr := ct.Accounts["validator1"].Address
 
 	wsPostQuery := fmt.Sprintf("orders.post.owner='%s'", ownerAddr)
-	wsStop, wsChan := ct.CreateWSConnection(false, "Test_OrdersCLI", wsPostQuery, 10)
+	wsStop, wsChan := ct.CheckWSSubscribed(false, "Test_OrdersCLI", wsPostQuery, 10)
 	defer wsStop()
 
 	go func() {

@@ -14,6 +14,7 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
@@ -214,4 +215,20 @@ func (ct *CLITester) RestTxOrdersPostOrder(accName string, accAddress sdk.AccAdd
 	}
 
 	return ct.newRestTxRequestRaw(accName, accNumber, accSequence, msg, true)
+}
+
+func (ct *CLITester) RestTxMarketsAdd(accName, baseDenom, quoteDenom string) (*RestRequest, *sdk.TxResponse) {
+	accInfo := ct.Accounts[accName]
+	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
+
+	accQuery, acc := ct.QueryAccount(accInfo.Address)
+	accQuery.CheckSucceeded()
+
+	msg := marketTypes.MsgCreateMarket{
+		From:            acc.Address,
+		BaseAssetDenom:  baseDenom,
+		QuoteAssetDenom: quoteDenom,
+	}
+
+	return ct.newRestTxRequest(accName, acc, msg, true)
 }

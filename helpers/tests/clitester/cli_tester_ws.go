@@ -2,6 +2,7 @@ package clitester
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/stretchr/testify/require"
@@ -10,23 +11,41 @@ import (
 	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-func (ct *CLITester) CreateWSConnection(printLogs bool, subscriber, query string, chCap int) (func(), <-chan coreTypes.ResultEvent) {
+func (ct *CLITester) CheckWSSubscribed(printLogs bool, subscriber, query string, chCap int) (func(), <-chan coreTypes.ResultEvent) {
+	stopFunc, ch, err := ct.CreateWSConnection(printLogs, subscriber, query, chCap)
+	require.NoError(ct.t, err, "WebSocket for %q query", query)
+
+	return stopFunc, ch
+}
+
+func (ct *CLITester) CreateWSConnection(printLogs bool, subscriber, query string, chCap int) (retStopFunc func(), retCh <-chan coreTypes.ResultEvent, retErr error) {
 	logger := log.NewNopLogger()
 	if printLogs {
 		logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	}
 
 	client, err := tmClient.NewHTTP(ct.rpcAddress, "/websocket")
-	require.NoError(ct.t, err, "creating WebSocket client")
+	if err != nil {
+		retErr = fmt.Errorf("creating WebSocket client: %w", err)
+		return
+	}
 	client.SetLogger(logger)
-	require.NoError(ct.t, client.Start(), "starting WebSocket client")
 
-	out, err := client.Subscribe(context.Background(), subscriber, query, chCap)
-	require.NoError(ct.t, err, "WebSocket subscribe")
-
-	stopFunc := func() {
-		client.Stop()
+	if err := client.Start(); err != nil {
+		retErr = fmt.Errorf("starting WebSocket client: %w", err)
+		return
 	}
 
-	return stopFunc, out
+	ch, err := client.Subscribe(context.Background(), subscriber, query, chCap)
+	if err != nil {
+		retErr = fmt.Errorf("WebSocket subscribe: %w", err)
+		return
+	}
+
+	retStopFunc = func() {
+		client.Stop()
+	}
+	retCh = ch
+
+	return
 }

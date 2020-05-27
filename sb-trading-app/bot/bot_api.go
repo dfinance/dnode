@@ -2,13 +2,12 @@ package bot
 
 import (
 	"fmt"
-	"math/rand"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/sb-trading-app/utils"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
@@ -71,40 +70,21 @@ func (b *Bot) subscribeToOrderEvents() {
 	b.Lock()
 	defer b.Unlock()
 
-	genClientID := func() string {
-		return fmt.Sprintf("%d", rand.Uint32())
-	}
-
-	commonHandler := func(query string, handlerFunc func(coreTypes.ResultEvent)) {
-		stopFunc, ch := b.cfg.Tester.CreateWSConnection(false, genClientID(), query, 100)
-		defer stopFunc()
-
-		for {
-			select {
-			case <-b.stopCh:
-				return
-			case event, ok := <-ch:
-				if !ok {
-					b.logger.Error(fmt.Sprintf("subscriber crashed: %s", query))
-					return
-				}
-				handlerFunc(event)
-			}
-		}
-	}
-
 	// post events
-	go commonHandler(fmt.Sprintf("orders.post.owner='%s'", b.cfg.Address), b.handleOrderPost)
+	//go commonHandler(fmt.Sprintf("orders.post.owner='%s'", b.cfg.Address), b.handleOrderPost)
 
 	// cancel events
-	go commonHandler(fmt.Sprintf("orders.cancel.owner='%s'", b.cfg.Address), b.handleOrderCancel)
+	//go commonHandler(fmt.Sprintf("orders.cancel.owner='%s'", b.cfg.Address), b.handleOrderCancel)
 
 	// fullyFilled events
-	go commonHandler(fmt.Sprintf("orders.full_fill.owner='%s'", b.cfg.Address), b.handleOrderFullFill)
+	//go commonHandler(fmt.Sprintf("orders.full_fill.owner='%s'", b.cfg.Address), b.handleOrderFullFill)
 
 	// partiallyFilled events
-	go commonHandler(fmt.Sprintf("orders.partial_fill.owner='%s'", b.cfg.Address), b.handleOrderPartialFill)
+	//go commonHandler(fmt.Sprintf("orders.partial_fill.owner='%s'", b.cfg.Address), b.handleOrderPartialFill)
 
 	// clearance events
-	go commonHandler(fmt.Sprintf("orderbook.clearance.market_id='%s'", b.cfg.MarketID.String()), b.handleOrderBookClearance)
+	go utils.EventsWorker(b.logger, b.cfg.Tester, b.stopCh,
+		fmt.Sprintf("orderbook.clearance.market_id='%s'", b.cfg.MarketID.String()),
+		b.handleOrderBookClearance,
+	)
 }
