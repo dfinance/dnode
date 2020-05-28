@@ -1,3 +1,5 @@
+// +build debug
+
 package app
 
 import (
@@ -66,9 +68,9 @@ func Test_SB_Trading(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		true,
-		cliTester.LogLevel("main:error,state:error,x/orders:error,x/orderbook:error"),
-		cliTester.DefaultConsensusTimings(),
-		cliTester.Accounts(accountOpts...),
+		cliTester.DaemonLogLevelOption("main:error,state:error,x/orders:error,x/orderbook:error"),
+		cliTester.DefaultConsensusTimingsOption(),
+		cliTester.AccountsOption(accountOpts...),
 
 	)
 	ct.StartRestServer(false)

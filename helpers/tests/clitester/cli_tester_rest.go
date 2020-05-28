@@ -34,7 +34,7 @@ func (ct *CLITester) newRestTxRequestRaw(accName string, accNumber, accSequence 
 	}
 	txMemo := "restTxMemo"
 
-	signBytes := auth.StdSignBytes(ct.ChainID, accNumber, accSequence, txFee, []sdk.Msg{msg}, txMemo)
+	signBytes := auth.StdSignBytes(ct.IDs.ChainID, accNumber, accSequence, txFee, []sdk.Msg{msg}, txMemo)
 
 	signature, pubKey, err := ct.keyBase.Sign(accName, ct.AccountPassphrase, signBytes)
 	require.NoError(ct.t, err, "signing Tx")

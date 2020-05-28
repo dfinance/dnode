@@ -156,7 +156,7 @@ func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *msTypes.LastIdRes) {
 func (ct *CLITester) QueryVmCompileScript(moveFilePath, savePath, accountAddress string) *QueryRequest {
 	q := ct.newQueryRequest(nil)
 	q.SetCmd("vm", "compile-script", moveFilePath, accountAddress)
-	q.cmd.AddArg("compiler", ct.vmCompilerAddress)
+	q.cmd.AddArg("compiler", ct.VMConnection.CompilerAddress)
 	q.cmd.AddArg("to-file", savePath)
 
 	return q
@@ -166,7 +166,7 @@ func (ct *CLITester) QueryAccount(address string) (*QueryRequest, *auth.BaseAcco
 	resObj := &auth.BaseAccount{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("account", address)
-	q.cmd.AddArg("node", ct.rpcAddress)
+	q.cmd.AddArg("node", ct.NodePorts.RPCAddress)
 
 	return q, resObj
 }
@@ -175,7 +175,7 @@ func (ct *CLITester) QueryAuthAccount(address string) (*QueryRequest, *auth.Base
 	resObj := &auth.BaseAccount{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("auth", "account", address)
-	q.cmd.AddArg("node", ct.rpcAddress)
+	q.cmd.AddArg("node", ct.NodePorts.RPCAddress)
 
 	return q, resObj
 }

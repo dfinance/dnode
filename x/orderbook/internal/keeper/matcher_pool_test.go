@@ -1,3 +1,5 @@
+// +build unit
+
 package keeper
 
 import (
@@ -86,4 +88,53 @@ func Test(t *testing.T) {
 		require.Equal(t, result.QuantityFilled.Uint64(), o.FilledQuantity, "output: %d", i)
 		require.Equal(t, result.QuantityUnfilled.Uint64(), o.UnfilledQuantity, "output: %d", i)
 	}
+}
+
+func TestNotionExample(t *testing.T) {
+	inputs := []struct {
+		Direction orderTypes.Direction
+		ID        uint64
+		Price     uint64
+		Quantity  uint64
+	}{
+		{orderTypes.AskDirection, 1, 50, 150},
+		{orderTypes.AskDirection, 2, 40, 90},
+		{orderTypes.BidDirection, 3, 55, 80},
+		{orderTypes.BidDirection, 4, 70, 50},
+		{orderTypes.BidDirection, 5, 30, 150},
+		{orderTypes.AskDirection, 6, 70, 200},
+		{orderTypes.BidDirection, 7, 55, 100},
+		{orderTypes.AskDirection, 8, 40, 100},
+		{orderTypes.BidDirection, 9, 20, 200},
+	}
+
+	baseCurrency := crTypes.CurrencyInfo{Denom: []byte("base"), Decimals: 0, IsToken: false, Owner: nil, TotalSupply: nil }
+	quoteCurrency := crTypes.CurrencyInfo{Denom: []byte("quote"), Decimals: 0, IsToken: false, Owner: nil, TotalSupply: nil }
+	market := marketTypes.NewMarket(dnTypes.NewIDFromUint64(0), string(baseCurrency.Denom), string(quoteCurrency.Denom))
+	marketExt := marketTypes.NewMarketExtended(market, baseCurrency, quoteCurrency)
+
+	testLogger := logger.NewDNLogger()
+	testLogger = log.NewFilter(testLogger, log.AllowAll())
+	matcherPool := NewMatcherPool(testLogger)
+
+	for _, i := range inputs {
+		order := orderTypes.Order{
+			ID:        dnTypes.NewIDFromUint64(i.ID),
+			Owner:     nil,
+			Market:    marketExt,
+			Direction: i.Direction,
+			Price:     sdk.NewUint(i.Price),
+			Quantity:  sdk.NewUint(i.Quantity),
+			Ttl:       time.Duration(i.Price),
+			CreatedAt: time.Time{},
+		}
+
+		if err := matcherPool.AddOrder(order); err != nil {
+			t.Fatalf("AddOrder: %v", err)
+		}
+	}
+
+	results := matcherPool.Process()
+
+	require.Len(t, results, 1)
 }

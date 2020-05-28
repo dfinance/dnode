@@ -24,7 +24,7 @@ func (ct *CLITester) CreateWSConnection(printLogs bool, subscriber, query string
 		logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	}
 
-	client, err := tmClient.NewHTTP(ct.rpcAddress, "/websocket")
+	client, err := tmClient.NewHTTP(ct.NodePorts.RPCAddress, "/websocket")
 	if err != nil {
 		retErr = fmt.Errorf("creating WebSocket client: %w", err)
 		return

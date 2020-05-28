@@ -94,7 +94,7 @@ func Test_CurrencyRest(t *testing.T) {
 		req.CheckSucceeded()
 
 		require.Equal(t, int64(0), respMsg.ID.Int64())
-		require.Equal(t, ct.ChainID, respMsg.ChainID)
+		require.Equal(t, ct.IDs.ChainID, respMsg.ChainID)
 		require.Equal(t, denom, respMsg.Symbol)
 		require.True(t, respMsg.Amount.Equal(newAmount))
 		require.Equal(t, recipientAddr, respMsg.Spender.String())
@@ -136,7 +136,7 @@ func Test_CurrencyRest(t *testing.T) {
 		for i, amount := range destroyAmounts {
 			destroy := (*respMsg)[i]
 			require.Equal(t, int64(i), destroy.ID.Int64())
-			require.Equal(t, ct.ChainID, destroy.ChainID)
+			require.Equal(t, ct.IDs.ChainID, destroy.ChainID)
 			require.Equal(t, denom, destroy.Symbol)
 			require.True(t, destroy.Amount.Equal(amount))
 			require.Equal(t, recipientAddr, destroy.Spender.String())

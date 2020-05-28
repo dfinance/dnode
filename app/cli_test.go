@@ -99,7 +99,7 @@ func Test_CurrencyCLI(t *testing.T) {
 		q.CheckSucceeded()
 		require.True(t, sdk.ZeroInt().Equal(destroy.ID))
 		require.Equal(t, ccSymbol, destroy.Symbol)
-		require.Equal(t, ct.ChainID, destroy.ChainID)
+		require.Equal(t, ct.IDs.ChainID, destroy.ChainID)
 		require.Equal(t, ccRecipient, destroy.Recipient)
 		require.Equal(t, ccRecipient, destroy.Spender.String())
 		require.True(t, destroyAmount.Equal(destroy.Amount))
@@ -1027,7 +1027,7 @@ func Test_RestServer(t *testing.T) {
 		require.NoError(t, ct.Cdc.UnmarshalJSON(body, &resultBlock), "body unmarshal")
 
 		require.NotNil(t, resultBlock.Block, "result block")
-		require.Equal(t, ct.ChainID, resultBlock.Block.ChainID)
+		require.Equal(t, ct.IDs.ChainID, resultBlock.Block.ChainID)
 		require.GreaterOrEqual(t, resultBlock.Block.Height, int64(1))
 	}
 }

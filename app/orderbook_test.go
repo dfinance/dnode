@@ -206,6 +206,7 @@ func Test_OB_ManyOrders(t *testing.T) {
 	// add and process orders
 	processingDur := time.Duration(0)
 	{
+		processingStart := time.Now()
 		tester.BeginBlock()
 
 		for i := uint(0); i < inputOrdersCount; i++ {
@@ -220,7 +221,6 @@ func Test_OB_ManyOrders(t *testing.T) {
 		t.Logf("Bid orders [first]: P -> Q: %s -> %s", bidPrices[0], bidQuantities[0])
 		t.Logf("Bid orders [last]: P -> Q: %s -> %s", bidPrices[len(bidPrices)-1], bidQuantities[len(bidQuantities)-1])
 
-		processingStart := time.Now()
 		tester.EndBlock()
 		processingDur = time.Now().Sub(processingStart)
 	}

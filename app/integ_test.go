@@ -34,7 +34,7 @@ func Test_ConsensusFailure(t *testing.T) {
 	//ct.SetVMCompilerAddressNet("rpc.demo.wings.toys:50053")
 
 	// Start VM compiler
-	compilerContainer, compilerPort, err := tests.NewVMCompilerContainerWithNetTransport(ct.VmListenPort)
+	compilerContainer, compilerPort, err := tests.NewVMCompilerContainerWithNetTransport(ct.VMConnection.ListenPort)
 	require.NoError(t, err, "creating VM compiler container")
 
 	require.NoError(t, compilerContainer.Start(5*time.Second), "staring VM compiler container")
@@ -43,8 +43,8 @@ func Test_ConsensusFailure(t *testing.T) {
 	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:" + compilerPort)
 
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.move.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.move.json")
 
 	// Create .move script file
 	moveFile, err := os.Create(movePath)
@@ -101,13 +101,13 @@ func Test_VMExecuteScript(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		true,
-		cliTester.VMConnectionSettings(50, 1000, 100),
-		cliTester.VMCommunicationBaseAddressNet("tcp://127.0.0.1"),
+		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
 	)
 	defer ct.Close()
 
 	// Start VM compiler
-	compilerContainer, compilerPort, err := tests.NewVMCompilerContainerWithNetTransport(ct.VmListenPort)
+	compilerContainer, compilerPort, err := tests.NewVMCompilerContainerWithNetTransport(ct.VMConnection.ListenPort)
 	require.NoError(t, err, "creating VM compiler container")
 
 	require.NoError(t, compilerContainer.Start(5*time.Second), "staring VM compiler container")
@@ -116,15 +116,15 @@ func Test_VMExecuteScript(t *testing.T) {
 	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:" + compilerPort)
 
 	// Start VM runtime
-	runtimeContainer, err := tests.NewVMRuntimeContainerWithNetTransport(ct.VmConnectPort, ct.VmListenPort)
+	runtimeContainer, err := tests.NewVMRuntimeContainerWithNetTransport(ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort)
 	require.NoError(t, err, "creating VM runtime container")
 
 	require.NoError(t, runtimeContainer.Start(5*time.Second), "staring VM runtime container")
 	defer runtimeContainer.Stop()
 
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.json")
 
 	// Create .moe script file
 	moveFile, err := os.Create(movePath)
@@ -166,14 +166,14 @@ func Test_VMCommunicationUDSOverBinary(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMConnectionSettings(50, 1000, 100),
-		cliTester.VMCommunicationBaseAddressUDS(dsSocket, vmRuntimeSocket),
+		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationBaseAddressUDSOption(dsSocket, vmRuntimeSocket),
 	)
 	defer ct.Close()
 
-	vmCompilerSocketPath := path.Join(ct.UDSDir, vmCompilerSocket)
-	vmRuntimeSocketPath := path.Join(ct.UDSDir, vmRuntimeSocket)
-	dsSocketPath := path.Join(ct.UDSDir, dsSocket)
+	vmCompilerSocketPath := path.Join(ct.Dirs.UDSDir, vmCompilerSocket)
+	vmRuntimeSocketPath := path.Join(ct.Dirs.UDSDir, vmRuntimeSocket)
+	dsSocketPath := path.Join(ct.Dirs.UDSDir, dsSocket)
 
 	// Start VM compiler (sub-process)
 	compilerCmd := cliTester.NewCLICmd(t, "compiler", "ipc:/"+vmCompilerSocketPath, "ipc:/"+dsSocketPath)
@@ -193,8 +193,8 @@ func Test_VMCommunicationUDSOverBinary(t *testing.T) {
 	require.NoError(t, cliTester.WaitForFileExists(vmRuntimeSocketPath, 10*time.Second), "VM runtime gRPC server start")
 
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.move.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.move.json")
 
 	// Create .move script file
 	moveFile, err := os.Create(movePath)

@@ -32,7 +32,7 @@ func (ct *CLITester) TxCurrenciesDestroy(recipientAddr, fromAddr, symbol string,
 		"currencies",
 		fromAddr,
 		"destroy-currency",
-		ct.ChainID,
+		ct.IDs.ChainID,
 		symbol,
 		amount.String(),
 		recipientAddr)
@@ -178,7 +178,7 @@ func (ct *CLITester) TxVmExecuteScript(fromAddress, filePath string, args ...str
 		"vm",
 		fromAddress,
 		cmdArgs...)
-	r.cmd.AddArg("compiler", ct.vmCompilerAddress)
+	r.cmd.AddArg("compiler", ct.VMConnection.CompilerAddress)
 
 	return r
 }

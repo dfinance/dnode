@@ -92,7 +92,7 @@ func NewAskOrderAggregates(orders orderTypes.Orders) OrderAggregates {
 		order := &orders[i]
 		lastIdx := len(aggs) - 1
 
-		// increase the aggregate quantity is price already exists
+		// increase the aggregate quantity if price already exists
 		if aggs[lastIdx].Price.Equal(order.Price) {
 			aggs[lastIdx].Quantity = aggs[lastIdx].Quantity.Add(order.Quantity)
 			continue

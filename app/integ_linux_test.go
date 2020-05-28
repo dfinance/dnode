@@ -37,8 +37,8 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMConnectionSettings(50, 1000, 100),
-		cliTester.VMCommunicationBaseAddressUDS(dsSocket, vmRuntimeSocket),
+		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationBaseAddressUDSOption(dsSocket, vmRuntimeSocket),
 	)
 	defer ct.Close()
 
