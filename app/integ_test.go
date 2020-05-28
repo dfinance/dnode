@@ -3,17 +3,83 @@
 package app
 
 import (
+	"context"
+	"io/ioutil"
+	"net"
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	grpcStatus "google.golang.org/grpc/status"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/tests"
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 )
+
+type MockDVM struct {
+	server        *grpc.Server
+	failExecution bool
+	failResponse  bool
+	execDelay     time.Duration
+}
+
+func (s *MockDVM) SetExecutionFail() { s.failExecution = true }
+func (s *MockDVM) SetExecutionOK()   { s.failExecution = false }
+func (s *MockDVM) SetResponseFail()  { s.failResponse = true }
+func (s *MockDVM) SetResponseOK()    { s.failResponse = false }
+func (s *MockDVM) SetExecutionDelay(dur time.Duration) {
+	s.execDelay = dur
+}
+func (s *MockDVM) Stop() {
+	if s.server != nil {
+		s.server.Stop()
+	}
+}
+
+func (s *MockDVM) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExecuteRequest) (*vm_grpc.VMExecuteResponses, error) {
+	if s.failExecution {
+		return nil, grpcStatus.Errorf(codes.Internal, "failing gRPC execution")
+	}
+
+	resp := &vm_grpc.VMExecuteResponses{}
+	if !s.failResponse {
+		resp.Executions = []*vm_grpc.VMExecuteResponse{
+			{
+				WriteSet:     nil,
+				Events:       nil,
+				GasUsed:      1,
+				Status:       vm_grpc.ContractStatus_Discard,
+				StatusStruct: nil,
+			},
+		}
+	}
+
+	return resp, nil
+}
+
+func StartMockDVMService(listener net.Listener) *MockDVM {
+	s := &MockDVM{
+		execDelay: 100 * time.Millisecond,
+	}
+
+	server := grpc.NewServer()
+	vm_grpc.RegisterVMServiceServer(server, s)
+
+	go func() {
+		server.Serve(listener)
+	}()
+	s.server = server
+
+	return s
+}
 
 func Test_ConsensusFailure(t *testing.T) {
 	const script = `
@@ -138,6 +204,84 @@ func Test_VMExecuteScript(t *testing.T) {
 
 	// Execute .json script file
 	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
+}
+
+func Test_VMRequestRetry(t *testing.T) {
+	const (
+		dsSocket      = "ds.sock"
+		mockDVMSocket = "mock_dvm.sock"
+	)
+
+	ct := cliTester.New(
+		t,
+		true,
+		cliTester.VMConnectionSettings(100, 500, 10),
+		cliTester.VMCommunicationBaseAddressUDS(dsSocket, mockDVMSocket),
+	)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	mockDVMSocketPath := path.Join(ct.UDSDir, mockDVMSocket)
+	mockDVMListener, err := helpers.GetGRpcNetListener("unix://" + mockDVMSocketPath)
+	require.NoError(t, err, "creating MockDVM listener")
+
+	mockDvm := StartMockDVMService(mockDVMListener)
+	defer mockDvm.Stop()
+	require.NoError(t, cliTester.WaitForFileExists(mockDVMSocketPath, 1*time.Second), "MockDVM start failed")
+
+	// Create fake .mov file
+	modulePath := path.Join(ct.RootDir, "fake.json")
+	moduleContent := []byte("{ \"code\": \"00\" }")
+	require.NoError(t, ioutil.WriteFile(modulePath, moduleContent, 0644), "creating fake script file")
+
+	wg := sync.WaitGroup{}
+	vmDeployDoneCh := make(chan bool)
+
+	// Spam REST requests while dnode is stucked on VM request
+	// Stop only once VM is done, that ensures routines were parallel
+	{
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			t.Logf("RestRequest: start")
+			for {
+				req, _ := ct.RestQueryOracleAssets()
+				req.SetTimeout(1000 * time.Millisecond)
+				req.CheckSucceeded()
+				t.Logf("RestRequest: ok")
+
+				select {
+				case <-vmDeployDoneCh:
+					t.Logf("RestRequest: stop")
+					return
+				default:
+					time.Sleep(100 * time.Millisecond)
+				}
+			}
+		}()
+	}
+
+	// Execute .json module file
+	// That should take some time and when "done" we close the channel to stop the first routine
+	{
+		mockDvm.SetExecutionDelay(3 * time.Second)
+		senderAddr := ct.Accounts["validator1"].Address
+
+		wg.Add(1)
+		go func() {
+			defer func() {
+				close(vmDeployDoneCh)
+				wg.Done()
+			}()
+
+			t.Logf("VMDeploy: start")
+			ct.TxVmDeployModule(senderAddr, modulePath).CheckSucceeded()
+			t.Logf("VMDeploy: done")
+		}()
+	}
+
+	wg.Wait()
 }
 
 // Test is skipped as it should be used for dnode <-> dvm communication over UDS debug locally (with DVM binaries).
