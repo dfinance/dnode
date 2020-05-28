@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/dfinance/dnode/x/common_vm"
 )
@@ -61,4 +62,70 @@ func VMTypeToStringPanic(tag vm_grpc.VMTypeTag) string {
 	} else {
 		return val
 	}
+}
+
+// VMWriteOp to string.
+func VMWriteOpToString(wOp vm_grpc.VmWriteOp) string {
+	switch wOp {
+	case vm_grpc.VmWriteOp_Value:
+		return "write"
+
+	case vm_grpc.VmWriteOp_Deletion:
+		return "del"
+
+	default:
+		return "unknown"
+	}
+}
+
+// Stake trace.
+
+// Writeset to string.
+func WriteSetToString(value *vm_grpc.VMValue) string {
+	return fmt.Sprintf("%s: \n"+
+		"\tAddress: %s\n"+
+		"\tPath: %s\n"+
+		"\tValue: %s\n",
+		VMWriteOpToString(value.Type), hex.EncodeToString(value.Path.Address),
+		hex.EncodeToString(value.Path.Path), hex.EncodeToString(value.Value),
+	)
+}
+
+// Contract status.
+func ExecStatusToString(status vm_grpc.ContractStatus, sstruct *vm_grpc.VMStatus) string {
+	return fmt.Sprintf("Status %s: \n"+
+		"\tMajor code: %d\n"+
+		"\tSub status: %d\n"+
+		"\tMesage: %s\n", status.String(), sstruct.MajorStatus, sstruct.SubStatus, sstruct.Message)
+}
+
+// Event to string.
+func EventToString(event *vm_grpc.VMEvent) string {
+	return fmt.Sprintf("Type: %s\n"+
+		"\tKey: %s\n"+
+		"\tSequence number: %d\n"+
+		"\tValue: %s\n",
+		VMTypeToStringPanic(event.Type.Tag), hex.EncodeToString(event.Key),
+		event.SequenceNumber, hex.EncodeToString(event.EventData))
+}
+
+// Print VM stack trace if contract is not executed successful.
+func PrintVMStackTrace(log log.Logger, exec *vm_grpc.VMExecuteResponse) {
+	stackTrace := "Stack trace: \n"
+
+	// print common status
+	stackTrace += ExecStatusToString(exec.Status, exec.StatusStruct)
+	stackTrace += "Events\n"
+
+	for _, event := range exec.Events {
+		stackTrace += EventToString(event)
+	}
+
+	// print all write sets
+	stackTrace += "Write set: \n"
+	for _, ws := range exec.WriteSet {
+		stackTrace += WriteSetToString(ws)
+	}
+
+	log.Debug(stackTrace)
 }
