@@ -179,3 +179,18 @@ func (ct *CLITester) TxVmExecuteScript(fromAddress, filePath string, args ...str
 
 	return r
 }
+
+func (ct *CLITester) TxVmDeployModule(fromAddress, filePath string) *TxRequest {
+	cmdArgs := []string{
+		"deploy-module",
+		filePath,
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"vm",
+		fromAddress,
+		cmdArgs...)
+
+	return r
+}

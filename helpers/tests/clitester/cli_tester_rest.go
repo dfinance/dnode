@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/stretchr/testify/require"
+	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
@@ -173,6 +174,15 @@ func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.
 func (ct *CLITester) RestQueryVMGetData(accAddr, path string) (*RestRequest, *vm.QueryValueResp) {
 	reqSubPath := fmt.Sprintf("%s/data/%s/%s", vm.ModuleName, accAddr, path)
 	respMsg := &vm.QueryValueResp{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestLatestBlock() (*RestRequest, *coreTypes.ResultBlock) {
+	reqSubPath := "blocks/latest"
+	respMsg := &coreTypes.ResultBlock{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
