@@ -28,6 +28,9 @@ func (msg MsgCreateMarket) Type() string {
 
 // Implements sdk.Msg interface.
 func (msg MsgCreateMarket) ValidateBasic() error {
+	if msg.From.Empty() {
+		return ErrWrongFrom
+	}
 	if msg.BaseAssetDenom == "" {
 		return sdkErrors.Wrap(ErrWrongAssetDenom, "BaseAsset")
 	}

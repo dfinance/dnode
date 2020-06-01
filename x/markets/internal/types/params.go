@@ -43,7 +43,7 @@ func (p Params) Validate() error {
 }
 
 // NewParams creates a new keeper params object.
-func NewParams(markets []Market, nominees []string) Params {
+func NewParams(markets []Market) Params {
 	return Params{
 		Markets: markets,
 	}
@@ -51,7 +51,7 @@ func NewParams(markets []Market, nominees []string) Params {
 
 // DefaultParams returns default keeper params.
 func DefaultParams() Params {
-	return NewParams(Markets{}, []string{})
+	return NewParams(Markets{})
 }
 
 // ParamKeyTable creates keeper params KeyTable.

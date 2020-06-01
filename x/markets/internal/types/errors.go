@@ -12,4 +12,6 @@ var (
 	ErrMarketExists = sdkErrors.Register(ModuleName, 103, "market exists")
 	// Base to Quote asset quantity convert failed.
 	ErrInvalidQuantity = sdkErrors.Register(ModuleName, 104, "base to quote asset quantity normalization failed")
+	// MsgCreateMarket.From is empty.
+	ErrWrongFrom = sdkErrors.Register(ModuleName, 105, "wrong from address, should not be empty")
 )

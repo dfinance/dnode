@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"reflect"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -17,7 +18,8 @@ func (id ID) UInt64() uint64 {
 }
 
 func (id ID) Valid() error {
-	if id.uint().BigInt() == nil {
+	nilID := ID(sdk.Uint{})
+	if reflect.DeepEqual(id, nilID) {
 		return fmt.Errorf("nil")
 	}
 
