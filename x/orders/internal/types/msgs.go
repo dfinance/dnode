@@ -99,6 +99,9 @@ func (msg MsgRevokeOrder) ValidateBasic() error {
 	if msg.Owner.Empty() {
 		return ErrWrongOwner
 	}
+	if err := msg.OrderID.Valid(); err != nil {
+		return sdkErrors.Wrap(ErrWrongOrderID, err.Error())
+	}
 
 	return nil
 }

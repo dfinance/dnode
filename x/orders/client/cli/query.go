@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/viper"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/orders/internal/keeper"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
@@ -62,7 +61,7 @@ func GetCmdListOrders(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			// query and parse the result
-			res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryList), bz)
+			res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryList), bz)
 			if err != nil {
 				return err
 			}
@@ -109,7 +108,7 @@ func GetCmdOrder(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			// query and parse the result
-			res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryOrder), bz)
+			res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryOrder), bz)
 			if err != nil {
 				return err
 			}

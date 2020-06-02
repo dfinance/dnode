@@ -14,6 +14,7 @@ type (
 	Direction      = types.Direction
 	MsgPostOrder   = types.MsgPostOrder
 	MsgRevokeOrder = types.MsgRevokeOrder
+	OrdersReq      = types.OrdersReq
 )
 
 const (

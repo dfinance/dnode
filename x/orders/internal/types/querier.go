@@ -6,6 +6,11 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
+const (
+	QueryList  = "list"
+	QueryOrder = "order"
+)
+
 // Client request for order.
 type OrderReq struct {
 	ID dnTypes.ID `json:"id" yaml:"id"`

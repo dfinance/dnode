@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/viper"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/markets/internal/keeper"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
@@ -49,7 +48,7 @@ func GetCmdListMarkets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			// query and parse the result
-			res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryList), bz)
+			res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryList), bz)
 			if err != nil {
 				return err
 			}
@@ -95,7 +94,7 @@ func GetCmdMarket(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			// query and parse the result
-			res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, keeper.QueryMarket), bz)
+			res, _, err := ctx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryMarket), bz)
 			if err != nil {
 				return err
 			}

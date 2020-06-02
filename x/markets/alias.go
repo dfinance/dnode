@@ -27,6 +27,7 @@ var (
 	NewGenesisState     = types.NewGenesisState
 	DefaultGenesisState = types.DefaultGenesisState
 	ValidateGenesis     = types.ValidateGenesis
+	DefaultParams       = types.DefaultParams
 	NewMarket           = types.NewMarket
 	NewMarketExtended   = types.NewMarketExtended
 	NewKeeper           = keeper.NewKeeper

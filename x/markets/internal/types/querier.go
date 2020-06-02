@@ -4,6 +4,11 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
+const (
+	QueryList   = "list"
+	QueryMarket = "market"
+)
+
 // Client request for market.
 type MarketReq struct {
 	ID dnTypes.ID `json:"id" yaml:"id"`

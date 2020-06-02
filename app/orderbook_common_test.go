@@ -24,7 +24,6 @@ import (
 
 const (
 	queryMarketsListPath = "/custom/markets/list"
-	queryOrdersListPath  = "/custom/orders/list"
 	//
 	ascDistribution  = 1
 	descDistribution = 2
@@ -96,6 +95,17 @@ func (tester *OrderBookTester) BeginBlock() {
 		Header: abci.Header{
 			ChainID: chainID,
 			Height:  tester.app.LastBlockHeight() + 1,
+		},
+	})
+}
+
+// Start a new block with custom block time.
+func (tester *OrderBookTester) BeginBlockWithDuration(dur time.Duration) {
+	tester.app.BeginBlock(abci.RequestBeginBlock{
+		Header: abci.Header{
+			ChainID: chainID,
+			Height:  tester.app.LastBlockHeight() + 1,
+			Time:    time.Time{}.Add(dur),
 		},
 	})
 }
@@ -212,14 +222,14 @@ func (tester *OrderBookTester) SetClientOutputCoin(clientAddr sdk.AccAddress, de
 }
 
 // Add a bid order for client.
-func (tester *OrderBookTester) AddBuyOrder(clientAddr sdk.AccAddress, marketID dnTypes.ID, price, quantity sdk.Uint) (orderID dnTypes.ID) {
-	orderState := tester.addOrder(clientAddr, orderTypes.BidDirection, marketID, price, quantity)
+func (tester *OrderBookTester) AddBuyOrder(clientAddr sdk.AccAddress, marketID dnTypes.ID, price, quantity sdk.Uint, ttlInSec uint64) (orderID dnTypes.ID) {
+	orderState := tester.addOrder(clientAddr, orderTypes.BidDirection, marketID, price, quantity, ttlInSec)
 	return orderState.ID
 }
 
 // Add an ask order for client.
-func (tester *OrderBookTester) AddSellOrder(clientAddr sdk.AccAddress, marketID dnTypes.ID, price, quantity sdk.Uint) (orderID dnTypes.ID) {
-	orderState := tester.addOrder(clientAddr, orderTypes.AskDirection, marketID, price, quantity)
+func (tester *OrderBookTester) AddSellOrder(clientAddr sdk.AccAddress, marketID dnTypes.ID, price, quantity sdk.Uint, ttlInSec uint64) (orderID dnTypes.ID) {
+	orderState := tester.addOrder(clientAddr, orderTypes.AskDirection, marketID, price, quantity, ttlInSec)
 	return orderState.ID
 }
 
@@ -410,7 +420,7 @@ func (tester *OrderBookTester) checkOrder(clientSt *ClientTestState, market mark
 	}
 }
 
-func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orderTypes.Direction, mID dnTypes.ID, p, q sdk.Uint) (orderState *OrderTestState) {
+func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orderTypes.Direction, mID dnTypes.ID, p, q sdk.Uint, ttlInSec uint64) (orderState *OrderTestState) {
 	ctx := GetContext(tester.app, false)
 
 	clientState := tester.findClient(owner)
@@ -427,7 +437,7 @@ func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orderTypes.Dir
 			dir,
 			p,
 			q,
-			60,
+			ttlInSec,
 		)
 		require.NoError(tester.t, err, "posting order")
 		orderID = order.ID
@@ -442,7 +452,7 @@ func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orderTypes.Dir
 		require.Equal(tester.t, dir.String(), order.Direction.String())
 		require.True(tester.t, p.Equal(order.Price))
 		require.True(tester.t, q.Equal(order.Quantity))
-		require.Equal(tester.t, time.Duration(60)*time.Second, order.Ttl)
+		require.Equal(tester.t, time.Duration(ttlInSec)*time.Second, order.Ttl)
 		require.True(tester.t, order.CreatedAt.Equal(order.UpdatedAt))
 
 		orderState = &OrderTestState{

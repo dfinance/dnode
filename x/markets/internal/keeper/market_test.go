@@ -131,3 +131,18 @@ func Test_Market_List(t *testing.T) {
 		}
 	}
 }
+
+func Test_Market_AddDuplicate(t *testing.T) {
+	input := NewTestInput(t)
+
+	market1, err := input.keeper.Add(input.ctx, input.baseBtcDenom, input.quoteDenom)
+	require.NoError(t, err)
+	require.Equal(t, market1.ID.UInt64(), uint64(0))
+
+	market2, err := input.keeper.Add(input.ctx, input.baseEthDenom, input.quoteDenom)
+	require.NoError(t, err)
+	require.Equal(t, market2.ID.UInt64(), uint64(1))
+
+	_, err = input.keeper.Add(input.ctx, input.baseBtcDenom, input.quoteDenom)
+	require.Error(t, err)
+}
