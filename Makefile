@@ -11,6 +11,9 @@ tags = -X github.com/cosmos/cosmos-sdk/version.Name=dfinance \
 build_dir=./.build
 swagger_dir=$(build_dir)/swagger
 cosmos_dir=$(swagger_dir)/cosmos-sdk
+dnode = ./cmd/dnode
+dncli =./cmd/dncli
+
 cosmos_version=v0.38.2
 dvm_version=release-v0.3
 
@@ -20,9 +23,9 @@ swagger-ui: swagger-ui-deps swagger-ui-build
 test: test-unit test-cli test-rest test-integ
 
 install-dnode:
-	GO111MODULE=on go install -ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dnode
+	GO111MODULE=on go install -ldflags "$(tags)"  -tags "$(build_tags)" $(dnode)
 install-dncli:
-	GO111MODULE=on go install -ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dncli
+	GO111MODULE=on go install -ldflags "$(tags)"  -tags "$(build_tags)" $(dncli)
 
 lint:
 	@echo "--> Running Golang linter (unused variable / function warning are skipped)"
