@@ -39,7 +39,7 @@ test-rest: install
 	go test ./... -tags=rest -count=1
 test-integ: install
 	@echo "--> Testing: dnode <-> dvm integration tests (using Docker runtime)"
-	REGISTRY=registry.wings.toys TAG=$(dvm_version) go test ./... -tags=integ -count=1
+	REGISTRY=registry.wings.toys TAG=$(dvm_version) go test ./... -v -tags=integ -count=1
 
 go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"

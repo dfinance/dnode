@@ -42,11 +42,11 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	)
 	defer ct.Close()
 
-	vmCompilerSocketPath := path.Join(ct.UDSDir, vmCompilerSocket)
-	vmRuntimeSocketPath := path.Join(ct.UDSDir, vmRuntimeSocket)
+	vmCompilerSocketPath := path.Join(ct.Dirs.UDSDir, vmCompilerSocket)
+	vmRuntimeSocketPath := path.Join(ct.Dirs.UDSDir, vmRuntimeSocket)
 
 	// Start VM compiler (docker)
-	compilerContainer, err := tests.NewVMCompilerContainerWithUDSTransport(ct.UDSDir, dsSocket, vmCompilerSocket)
+	compilerContainer, err := tests.NewVMCompilerContainerWithUDSTransport(ct.Dirs.UDSDir, dsSocket, vmCompilerSocket)
 	require.NoError(t, err, "creating VM compiler container")
 	require.NoError(t, compilerContainer.Start(5*time.Second), "staring VM compiler container")
 	defer compilerContainer.Stop()
@@ -56,7 +56,7 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	ct.SetVMCompilerAddressUDS(vmCompilerSocketPath)
 
 	// Start VM runtime
-	runtimeContainer, err := tests.NewVMRuntimeContainerWithUDSTransport(ct.UDSDir, dsSocket, vmRuntimeSocket)
+	runtimeContainer, err := tests.NewVMRuntimeContainerWithUDSTransport(ct.Dirs.UDSDir, dsSocket, vmRuntimeSocket)
 	require.NoError(t, err, "creating VM runtime container")
 	require.NoError(t, runtimeContainer.Start(5*time.Second), "staring VM runtime container")
 	defer runtimeContainer.Stop()
@@ -65,8 +65,8 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	require.NoError(t, cliTester.WaitForFileExists(vmRuntimeSocketPath, 10*time.Second), "VM runtime gRPC server start")
 
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.json")
 
 	// Create .move script file
 	moveFile, err := os.Create(movePath)
