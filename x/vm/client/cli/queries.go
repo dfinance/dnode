@@ -40,7 +40,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 
 	commands := sdkClient.GetCommands(
 		GetData(types.ModuleName, cdc),
-		GetTransactioVMError(cdc),
+		GetTxVMStatus(cdc),
 	)
 	commands = append(commands, compileCommands...)
 
@@ -228,10 +228,10 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 }
 
 // Get transaction VM errors if contains it.
-func GetTransactioVMError(cdc *codec.Codec) *cobra.Command {
+func GetTxVMStatus(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "tx [hash]",
-		Short:   "query tx vm error by hash",
+		Short:   "query tx vm status by hash",
 		Example: "query tx 6D5A4D889BCDB4C71C6AE5836CD8BC1FD8E0703F1580B9812990431D1796CE34",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -246,13 +246,9 @@ func GetTransactioVMError(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("no transaction found with hash %s", args[0])
 			}
 
-			isFound, errResp := types.NewVMErrorFromABCILogs(output)
+			status := types.NewVMStatusFromABCILogs(output)
 
-			if !isFound {
-				return fmt.Errorf("transaction %s doesn't contain vm errors", args[0])
-			}
-
-			return cliCtx.PrintOutput(errResp)
+			return cliCtx.PrintOutput(status)
 		},
 	}
 }

@@ -221,17 +221,23 @@ func GetStrCode(majorCode string) string {
 }
 
 // VM error response.
-type VMErrorResp struct {
-	Status    string `json:"status"`     // Status of error: error/discard.
-	MajorCode string `json:"major_code"` // Major code.
-	SubCode   string `json:"sub_code"`   // Sub code.
-	StrCode   string `json:"str_code"`   // Detailed exaplantion of code.
-	Message   string `json:"message"`    // Message.
+type VMStatus struct {
+	Status    string `json:"status"`               // Status of error: error/discard.
+	MajorCode string `json:"major_code,omitempty"` // Major code.
+	SubCode   string `json:"sub_code,omitempty"`   // Sub code.
+	StrCode   string `json:"str_code,omitempty"`   // Detailed exaplantion of code.
+	Message   string `json:"message,omitempty"`    // Message.
 }
 
 // Create new vm error.
-func NewVMError(status, majorCode, subCode, message, strCode string) VMErrorResp {
-	return VMErrorResp{
+func NewVMStatus(status, majorCode, subCode, message string) VMStatus {
+	strCode := ""
+
+	if status != StatusKeep {
+		strCode = GetStrCode(majorCode)
+	}
+
+	return VMStatus{
 		Status:    status,
 		MajorCode: majorCode,
 		SubCode:   subCode,
@@ -241,57 +247,57 @@ func NewVMError(status, majorCode, subCode, message, strCode string) VMErrorResp
 }
 
 // VM error as string.
-func (err VMErrorResp) String() string {
-	return fmt.Sprintf("VM Error:"+
+func (status VMStatus) String() string {
+	return fmt.Sprintf("VM status:"+
 		"\tStatus: %s\n"+
 		"\tMajor code: %s\n"+
 		"\tString code: %s\n"+
 		"\tSub code: %s\n"+
 		"\tMessage:  %s\n",
-		err.Status, err.MajorCode, err.StrCode,
-		err.SubCode, err.Message,
+		status.Status, status.MajorCode, status.StrCode,
+		status.SubCode, status.Message,
 	)
 }
 
 // VM error responses.
-type VMErrorResps []VMErrorResp
+type VMStatuses []VMStatus
 
 // VM error responses to string.
-func (resps VMErrorResps) String() string {
+func (statuses VMStatuses) String() string {
 	s := ""
 
-	for _, resp := range resps {
-		s += resp.String()
+	for _, status := range statuses {
+		s += status.String()
 	}
 
 	return s
 }
 
 // Response contains tx hash with vm errors.
-type TxVMResponse struct {
-	Hash     string       `json:"hash"`
-	VMErrors VMErrorResps `json:"vm_errors"`
+type TxVMStatus struct {
+	Hash       string     `json:"hash"`
+	VMStatuses VMStatuses `json:"vm_status"`
 }
 
 // New Tx VM response.
-func NewTxVMResponse(hash string, resps VMErrorResps) TxVMResponse {
-	return TxVMResponse{
-		Hash:     hash,
-		VMErrors: resps,
+func NewTxVMStatus(hash string, statuses VMStatuses) TxVMStatus {
+	return TxVMStatus{
+		Hash:       hash,
+		VMStatuses: statuses,
 	}
 }
 
 // TxVMResponse to string.
-func (tx TxVMResponse) String() string {
+func (tx TxVMStatus) String() string {
 	return fmt.Sprintf("Tx:"+
 		"\tHash: %s\n"+
-		"\tErrors: %s\n",
-		tx.Hash, tx.VMErrors.String())
+		"\tStatuses: %s\n",
+		tx.Hash, tx.VMStatuses.String())
 }
 
 // New VM error from events.
-func NewVMErrorFromABCILogs(tx types.TxResponse) (bool, TxVMResponse) {
-	resps := make(VMErrorResps, 0)
+func NewVMStatusFromABCILogs(tx types.TxResponse) TxVMStatus {
+	statuses := make(VMStatuses, 0)
 
 	for _, log := range tx.Logs {
 		for _, event := range log.Events {
@@ -299,22 +305,24 @@ func NewVMErrorFromABCILogs(tx types.TxResponse) (bool, TxVMResponse) {
 
 			if event.Type == EventTypeContractStatus {
 				status := ""
+				majorCode := ""
+				subCode := ""
+				message := ""
 
 				for _, attr := range event.Attributes {
 					// find that it's event contains contract status.
-					if attr.Key == AttrKeyStatus && (attr.Value == StatusDiscard || attr.Value == StatusError) {
+					if attr.Key == AttrKeyStatus {
 						status = attr.Value
-						isFound = true
-						break
+
+						if status == StatusDiscard || status == StatusError {
+							isFound = true
+							break
+						}
 					}
 				}
 
 				// event found.
 				if isFound {
-					majorCode := ""
-					subCode := ""
-					message := ""
-
 					for _, attr := range event.Attributes {
 						switch attr.Key {
 						case AttrKeyMajorStatus:
@@ -327,12 +335,12 @@ func NewVMErrorFromABCILogs(tx types.TxResponse) (bool, TxVMResponse) {
 							message = attr.Value
 						}
 					}
-
-					resps = append(resps, NewVMError(status, majorCode, subCode, message, GetStrCode(majorCode)))
 				}
+
+				statuses = append(statuses, NewVMStatus(status, majorCode, subCode, message))
 			}
 		}
 	}
 
-	return len(resps) > 0, NewTxVMResponse(tx.TxHash, resps)
+	return NewTxVMStatus(tx.TxHash, statuses)
 }
