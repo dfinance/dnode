@@ -53,7 +53,6 @@ type MarketState struct {
 	baseCurrency  currencies_register.CurrencyInfo
 	quoteCurrency currencies_register.CurrencyInfo
 	bots          []*bot.Bot
-	subs          []func()
 }
 
 func New(logger log.Logger, cfg Config) *Watcher {

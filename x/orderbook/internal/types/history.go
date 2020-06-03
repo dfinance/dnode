@@ -122,5 +122,5 @@ func (hi HistoryItems) String() string {
 	}
 	t.Render()
 
-	return string(buf.Bytes())
+	return buf.String()
 }

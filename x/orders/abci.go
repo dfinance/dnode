@@ -19,7 +19,9 @@ func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 
 		if now.Sub(order.CreatedAt) >= order.Ttl {
 			k.GetLogger(ctx).Info(fmt.Sprintf("order canceled by TTL: %s", order.ID.String()))
-			k.RevokeOrder(ctx, order.ID)
+			if err := k.RevokeOrder(ctx, order.ID); err != nil {
+				k.GetLogger(ctx).Error(fmt.Sprintf("Revoking order %q by TTL: %v", order.ID, err))
+			}
 		}
 	}
 

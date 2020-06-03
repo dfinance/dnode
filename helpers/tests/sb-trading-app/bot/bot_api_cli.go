@@ -163,26 +163,6 @@ func (a *ApiCli) executeQuery(req *cliTester.QueryRequest) error {
 	return fmt.Errorf("retry failed: %v", lastErr)
 }
 
-func (a *ApiCli) executeTx(req *cliTester.TxRequest) (string, error) {
-	var lastErr error
-	for i := 0; i < 10; i++ {
-		txResp, err := req.Execute()
-		if err == nil {
-			return txResp.TxHash, nil
-		}
-
-		lastErr = err
-		if strings.Contains(txResp.RawLog, "signature verification failed") {
-			time.Sleep(500 * time.Millisecond)
-			continue
-		}
-
-		return "", err
-	}
-
-	return "", fmt.Errorf("retry failed: %v", lastErr)
-}
-
 func NewApiCli(tester *cliTester.CLITester, accNumber uint64, accAddress string, marketID dnTypes.ID, baseDenom, quoteDenom string, orderTtlInSec int) *ApiCli {
 	return &ApiCli{
 		tester:         tester,

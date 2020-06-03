@@ -54,7 +54,7 @@ func (c *SDCurves) String() string {
 	}
 	t.Render()
 
-	return string(buf.Bytes())
+	return buf.String()
 }
 
 // NewSDCurves creates a new SDCurves object mergind ask/bid aggregates.

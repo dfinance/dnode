@@ -129,8 +129,8 @@ func exportAppStateAndTMValidators(
 }
 
 // Init cmd together with VM configruation.
-func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
-	defaultNodeHome string) *cobra.Command { // nolint: golint
+// nolint
+func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager, defaultNodeHome string) *cobra.Command {
 	cmd := genutilCli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
 
 	cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {

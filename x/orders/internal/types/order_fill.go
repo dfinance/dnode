@@ -22,7 +22,8 @@ type OrderFill struct {
 // FillCoin returns Coin that should be filled (transferred from Bank to Account).
 // Coin denom and quantity is Market and Order type specific.
 func (f OrderFill) FillCoin() (retCoin sdk.Coin, retErr error) {
-	coinDenom, coinQuantity := "", sdk.Int{}
+	var coinDenom string
+	var coinQuantity sdk.Int
 
 	switch f.Order.Direction {
 	case Bid:
@@ -119,5 +120,5 @@ func (f OrderFills) String() string {
 	}
 	t.Render()
 
-	return string(buf.Bytes())
+	return buf.String()
 }

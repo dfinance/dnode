@@ -71,7 +71,7 @@ type CurrencyInfo struct {
 }
 
 func NewCurrencyMap() map[string]CurrencyInfo {
-	currencies := make(map[string]CurrencyInfo, 0)
+	currencies := make(map[string]CurrencyInfo)
 
 	dfiSupply, _ := sdk.NewIntFromString("100000000000000000000000000")
 	ethSupply, _ := sdk.NewIntFromString("100000000000000000000000000")
@@ -115,7 +115,7 @@ type CLIAccount struct {
 }
 
 func NewAccountMap() (accounts map[string]*CLIAccount, retErr error) {
-	accounts = make(map[string]*CLIAccount, 0)
+	accounts = make(map[string]*CLIAccount)
 
 	smallAmount, ok := sdk.NewIntFromString("1000000000000000000000")
 	if !ok {

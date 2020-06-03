@@ -15,7 +15,6 @@ import (
 // Module keeper object.
 type Keeper struct {
 	cdc              *codec.Codec
-	storeKey         sdk.StoreKey
 	paramSubspace    subspace.Subspace
 	ccRegisterKeeper currencies_register.Keeper
 }

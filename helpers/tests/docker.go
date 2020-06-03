@@ -158,7 +158,7 @@ func (c *DockerContainer) Start(startTimeout time.Duration) error {
 	}
 
 	// wait for all TCP port to be reachable
-	portReports := make(map[docker.Port]string, 0)
+	portReports := make(map[docker.Port]string)
 	for p := range c.dOptions.Config.ExposedPorts {
 		portReports[p] = "not checked"
 	}

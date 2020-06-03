@@ -96,6 +96,4 @@ func (k Keeper) ExecuteOrderFills(ctx sdk.Context, orderFills types.OrderFills) 
 			))
 		}
 	}
-
-	return
 }

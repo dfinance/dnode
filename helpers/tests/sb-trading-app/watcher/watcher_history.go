@@ -227,7 +227,7 @@ func (h *History) HandleOrderPartialFillEvent(event coreTypes.ResultEvent) {
 	for marketID, orderIDs := range marketOrders {
 		for _, orderID := range orderIDs {
 			if _, ok := h.CountedPFillOrders[orderID]; !ok {
-				h.CountedPFillOrders[orderID] = make(map[string]bool, 0)
+				h.CountedPFillOrders[orderID] = make(map[string]bool)
 			}
 
 			quantity := ordersQuantity[orderID]
@@ -273,7 +273,7 @@ func (h *History) HandleNewBlockEvent(event coreTypes.ResultEvent) {
 }
 
 func findEventAttrMarketIDOrders(prefix string, event coreTypes.ResultEvent) (marketOrders map[string][]string) {
-	marketOrders = make(map[string][]string, 0)
+	marketOrders = make(map[string][]string)
 
 	eventTypeMarketQuery := prefix + "market_id"
 	eventTypeOrderQuery := prefix + "order_id"
@@ -297,8 +297,8 @@ func findEventAttrMarketIDOrders(prefix string, event coreTypes.ResultEvent) (ma
 }
 
 func findEventAttrMarketIDOrdersQuantity(prefix string, event coreTypes.ResultEvent) (marketOrders map[string][]string, ordersQuantity map[string]sdk.Uint) {
-	marketOrders = make(map[string][]string, 0)
-	ordersQuantity = make(map[string]sdk.Uint, 0)
+	marketOrders = make(map[string][]string)
+	ordersQuantity = make(map[string]sdk.Uint)
 
 	eventTypeMarketQuery := prefix + "market_id"
 	eventTypeOrderQuery := prefix + "order_id"
@@ -416,10 +416,10 @@ func NewHistory(t *testing.T, markets map[string]MarketInfo, startBots uint) *Hi
 		curBots:             startBots,
 		MarketInfos:         make(map[string]MarketInfo, len(markets)),
 		MarketItems:         make(map[string]HistoryItems, len(markets)),
-		CountedPostOrders:   make(map[string]bool, 0),
-		CountedCancelOrders: make(map[string]bool, 0),
-		CountedFFillOrders:  make(map[string]bool, 0),
-		CountedPFillOrders:  make(map[string]map[string]bool, 0),
+		CountedPostOrders:   make(map[string]bool),
+		CountedCancelOrders: make(map[string]bool),
+		CountedFFillOrders:  make(map[string]bool),
+		CountedPFillOrders:  make(map[string]map[string]bool),
 	}
 
 	for id, info := range markets {

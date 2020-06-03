@@ -37,7 +37,7 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 	var state types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(data, &state)
 
-	denoms := make(map[string]bool, 0)
+	denoms := make(map[string]bool)
 
 	for _, genCurr := range state.Currencies {
 		denom := genCurr.Denom

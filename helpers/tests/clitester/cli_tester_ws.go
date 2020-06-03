@@ -43,7 +43,9 @@ func (ct *CLITester) CreateWSConnection(printLogs bool, subscriber, query string
 	}
 
 	retStopFunc = func() {
-		client.Stop()
+		if err := client.Stop(); err != nil {
+			logger.Error(fmt.Sprintf("stopping WSClient: %v", err))
+		}
 	}
 	retCh = ch
 

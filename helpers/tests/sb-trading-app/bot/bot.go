@@ -27,10 +27,6 @@ type Bot struct {
 	stopCh             chan bool
 }
 
-type subscribeState struct {
-	stopFunc func()
-}
-
 type Config struct {
 	T                      *testing.T
 	Tester                 *cliTester.CLITester
@@ -69,7 +65,7 @@ func New(logger log.Logger, cfg Config) *Bot {
 		baseBalance:        sdk.ZeroUint(),
 		quoteBalance:       sdk.ZeroUint(),
 		marketPrice:        sdk.ZeroUint(),
-		orders:             make(map[string]orderTypes.Order, 0),
+		orders:             make(map[string]orderTypes.Order),
 		lastPostedAskPrice: sdk.ZeroUint(),
 		lastPostedBidPrice: sdk.ZeroUint(),
 	}

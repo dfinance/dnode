@@ -431,7 +431,7 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 }
 
 func (ct *CLITester) CreateAccount(name string, balances ...StringPair) {
-	account := &CLIAccount{Coins: make(map[string]sdk.Coin, 0)}
+	account := &CLIAccount{Coins: make(map[string]sdk.Coin)}
 
 	// create key
 	{

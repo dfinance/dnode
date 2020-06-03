@@ -34,9 +34,7 @@ func GetAccountCmd(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(
-				fmt.Sprintf("custom/acc/account"),
-				bz)
+			res, _, err := cliCtx.QueryWithData("custom/acc/account", bz)
 
 			if err != nil {
 				return err

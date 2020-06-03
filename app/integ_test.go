@@ -265,7 +265,7 @@ func Test_VMRequestRetry(t *testing.T) {
 	// Execute .json module file
 	// That should take some time and when "done" we close the channel to stop the first routine
 	{
-		mockDvm.SetExecutionDelay(3 * time.Second)
+		mockDvm.SetExecutionDelay(2 * time.Second)
 		senderAddr := ct.Accounts["validator1"].Address
 
 		wg.Add(1)

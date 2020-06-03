@@ -37,7 +37,7 @@ func (a *OrderAggregates) String() string {
 	}
 	t.Render()
 
-	return string(buf.Bytes())
+	return buf.String()
 }
 
 // NewBidOrderAggregates groups bid orders by price summing quantities.

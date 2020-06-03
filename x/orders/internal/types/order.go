@@ -57,7 +57,8 @@ func (o Order) ValidatePriceQuantity() error {
 // LockCoin return Coin that should be locked (transferred from account to the module).
 // Coin denom and quantity are Marked and Order type specific.
 func (o Order) LockCoin() (retCoin sdk.Coin, retErr error) {
-	coinDenom, coinQuantity := "", sdk.Int{}
+	var coinDenom string
+	var coinQuantity sdk.Int
 
 	switch o.Direction {
 	case Bid:
@@ -175,5 +176,5 @@ func (l Orders) String() string {
 	}
 	t.Render()
 
-	return string(buf.Bytes())
+	return buf.String()
 }

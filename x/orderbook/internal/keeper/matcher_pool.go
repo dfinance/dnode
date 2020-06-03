@@ -55,6 +55,6 @@ func (mp *MatcherPool) Process() types.MatcherResults {
 func NewMatcherPool(logger log.Logger) MatcherPool {
 	return MatcherPool{
 		logger: logger,
-		pool:   make(map[string]*Matcher, 0),
+		pool:   make(map[string]*Matcher),
 	}
 }
