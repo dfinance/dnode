@@ -9,12 +9,14 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkRest "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/stretchr/testify/require"
+	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type RestRequest struct {
@@ -26,6 +28,7 @@ type RestRequest struct {
 	urlValues     url.Values
 	requestValue  interface{}
 	responseValue interface{}
+	timeout       time.Duration
 	gas           uint64
 }
 
@@ -63,6 +66,10 @@ func (r *RestRequest) ModifyUrlValues(targetKey, newValue string) *RestRequest {
 	return r
 }
 
+func (r *RestRequest) SetTimeout(dur time.Duration) {
+	r.timeout = dur
+}
+
 func (r *RestRequest) Request() (retCode int, retBody []byte) {
 	u, _ := url.Parse(r.baseUrl)
 	u.Path = path.Join(u.Path, r.endPointUrl)
@@ -84,7 +91,12 @@ func (r *RestRequest) Request() (retCode int, retBody []byte) {
 	require.NoError(r.t, err, "%s: NewRequest", r.String())
 	req.Header.Set("Content-type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	client := http.Client{}
+	if r.timeout > 0 {
+		client.Timeout = r.timeout
+	}
+
+	resp, err := client.Do(req)
 	require.NoError(r.t, err, "%s: HTTP request", r.String())
 	require.NotNil(r.t, resp, "%s: HTTP response", r.String())
 	defer resp.Body.Close()
@@ -137,17 +149,23 @@ func (r *RestRequest) CheckSucceeded() {
 
 	// parse Tx response or Query response
 	if r.responseValue != nil {
-		if _, ok := r.responseValue.(*sdk.TxResponse); !ok {
-			respMsg := sdkRest.ResponseWithHeight{}
-			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, &respMsg), "%s: unmarshal ResponseWithHeight: %s", r.String(), string(respBody))
-			if respMsg.Result != nil {
-				require.NoError(r.t, r.cdc.UnmarshalJSON(respMsg.Result, r.responseValue), "%s: unmarshal responseValue: %s", r.String(), string(respBody))
-			}
-		} else {
-			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, r.responseValue), "%s: unmarshal txResponseValue: %s", r.String(), string(respBody))
+		if _, ok := r.responseValue.(*sdk.TxResponse); ok {
+			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, r.responseValue), "%s: unmarshal sdk.TxResponse: %s", r.String(), string(respBody))
 
 			txResp := r.responseValue.(*sdk.TxResponse)
 			require.Equal(r.t, uint32(0), txResp.Code, "%s: tx code %d: %s", r.String(), txResp.Code, txResp.RawLog)
+			return
+		}
+
+		if _, ok := r.responseValue.(*coreTypes.ResultBlock); ok {
+			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, r.responseValue), "%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
+			return
+		}
+
+		respMsg := sdkRest.ResponseWithHeight{}
+		require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, &respMsg), "%s: unmarshal ResponseWithHeight: %s", r.String(), string(respBody))
+		if respMsg.Result != nil {
+			require.NoError(r.t, r.cdc.UnmarshalJSON(respMsg.Result, r.responseValue), "%s: unmarshal responseValue: %s", r.String(), string(respBody))
 		}
 	}
 }

@@ -217,3 +217,18 @@ func (ct *CLITester) TxMarketsAdd(fromAddress string, baseDenom, quoteDenom stri
 
 	return r
 }
+
+func (ct *CLITester) TxVmDeployModule(fromAddress, filePath string) *TxRequest {
+	cmdArgs := []string{
+		"deploy-module",
+		filePath,
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"vm",
+		fromAddress,
+		cmdArgs...)
+
+	return r
+}

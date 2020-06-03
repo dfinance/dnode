@@ -76,6 +76,31 @@ script {
 }
 `
 
+const errorScript = `
+script {
+	use 0x0::Account;
+	use 0x0::DFI;
+	use 0x0::Transaction;
+	use 0x0::Coins;
+	use 0x0::Event;
+
+	fun main(c: u64) {
+		let a = Account::withdraw_from_sender<DFI::T>(523);
+		let b = Account::withdraw_from_sender<Coins::BTC>(1);
+	
+	
+		let event_handle = Event::new_event_handle<u64>();
+		Event::emit_event(&mut event_handle, 10);
+		Event::destroy_handle(event_handle);
+	
+		Transaction::assert(c == 1000, 122);
+		Account::deposit_to_sender(a);
+		Account::deposit_to_sender(b);
+	}
+}
+`
+
+// print events.
 func printEvent(event sdk.Event, t *testing.T) {
 	t.Logf("Event: %s\n", event.Type)
 	for _, attr := range event.Attributes {
@@ -83,6 +108,27 @@ func printEvent(event sdk.Event, t *testing.T) {
 	}
 }
 
+// check that sub status exists.
+func checkSubStatus(events sdk.Events, subStatus uint64, t *testing.T) {
+	found := false
+
+	for _, event := range events {
+		if event.Type == types.EventTypeContractStatus {
+			// find error
+			for _, attr := range event.Attributes {
+				if string(attr.Key) == types.AttrKeySubStatus {
+					require.EqualValues(t, attr.Value, []byte(strconv.FormatUint(subStatus, 10)), "wrong value for sub status")
+
+					found = true
+				}
+			}
+		}
+	}
+
+	require.True(t, found, "sub status not found")
+}
+
+// check script doesn't contains errors.
 func checkNoErrors(events sdk.Events, t *testing.T) {
 	for _, event := range events {
 		if event.Type == types.EventTypeContractStatus {
@@ -417,4 +463,80 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	require.EqualValues(t, events[1].Attributes[3].Value, "0x"+hex.EncodeToString(bz))
 
 	checkNoErrors(events, t)
+}
+
+// Test oracle price return.
+func TestKeeper_ErrorScript(t *testing.T) {
+	config := sdk.GetConfig()
+	dnodeConfig.InitBechPrefixes(config)
+
+	input := setupTestInput(false)
+
+	// launch docker
+	client, compiler, vm := launchDocker(input.dsPort, t)
+	defer stopDocker(t, client, vm)
+	defer stopDocker(t, client, compiler)
+
+	// create accounts.
+	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
+	coins := sdk.NewCoins(
+		sdk.NewCoin("dfi", sdk.NewInt(1000000000000000)),
+		sdk.NewCoin("btc", sdk.NewInt(1)),
+	)
+
+	acc1.SetCoins(coins)
+	input.ak.SetAccount(input.ctx, acc1)
+
+	gs := getGenesis(t)
+	input.vk.InitGenesis(input.ctx, gs)
+	input.vk.SetDSContext(input.ctx)
+	input.vk.StartDSServer(input.ctx)
+	time.Sleep(2 * time.Second)
+
+	// wait for compiler
+	err := waitStarted(client, compiler.ID, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to docker compiler: %v", err)
+
+	err = waitStarted(client, vm.ID, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to docker vm: %v", err)
+
+	// wait reachable compiler
+	err = waitReachable(*vmCompiler, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to compiler server: %v", err)
+
+	// wait reachable vm
+	err = waitReachable(*vmAddress, 5*time.Second)
+	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
+
+	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		Text:    errorScript,
+		Address: common_vm.Bech32ToLibra(addr1),
+		Type:    vm_grpc.ContractType_Script,
+	})
+	require.NoErrorf(t, err, "can't get code for error script: %v", err)
+
+	args := make([]types.ScriptArg, 1)
+	args[0] = types.ScriptArg{
+		Value: strconv.FormatUint(10, 10),
+		Type:  vm_grpc.VMTypeTag_U64,
+	}
+
+	msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript, args)
+	err = input.vk.ExecuteScript(input.ctx, msgScript)
+	require.NoError(t, err)
+
+	events := input.ctx.EventManager().Events()
+	require.Contains(t, events, types.NewEventKeep())
+	for _, e := range events {
+		printEvent(e, t)
+	}
+	checkSubStatus(events, 122, t)
+
+	// first of all - check balance
+	// then check that error still there
+	// then check that no events there only error and keep status
+	getAcc := input.ak.GetAccount(input.ctx, addr1)
+	require.True(t, getAcc.GetCoins().IsEqual(coins))
+	require.Len(t, events, 2)
 }

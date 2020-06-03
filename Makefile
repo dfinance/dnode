@@ -15,15 +15,13 @@ cosmos_version=v0.38.2
 dncli =./cmd/dncli
 
 all: install
-install: go.sum install-dnode install-dncli install-oracleapp
+install: go.sum install-dnode install-dncli
 swagger-ui: swagger-ui-deps swagger-ui-build
 
 install-dnode:
 		GO111MODULE=on go install --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dnode
 install-dncli:
 		GO111MODULE=on go install  --ldflags "$(tags)"  -tags "$(build_tags)" ${dncli}
-install-oracleapp:
-		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/oracle-app
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"

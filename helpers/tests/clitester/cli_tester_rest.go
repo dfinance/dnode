@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/stretchr/testify/require"
+	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
@@ -231,4 +232,13 @@ func (ct *CLITester) RestTxMarketsAdd(accName, baseDenom, quoteDenom string) (*R
 	}
 
 	return ct.newRestTxRequest(accName, acc, msg, true)
+}
+
+func (ct *CLITester) RestLatestBlock() (*RestRequest, *coreTypes.ResultBlock) {
+	reqSubPath := "blocks/latest"
+	respMsg := &coreTypes.ResultBlock{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
 }
