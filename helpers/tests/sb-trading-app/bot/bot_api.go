@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/dfinance/dnode/helpers/tests/sb-trading-app/utils"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/sb-trading-app/utils"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 

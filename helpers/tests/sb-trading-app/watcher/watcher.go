@@ -10,8 +10,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
+	"github.com/dfinance/dnode/helpers/tests/sb-trading-app/bot"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/sb-trading-app/bot"
 	"github.com/dfinance/dnode/x/currencies_register"
 )
 

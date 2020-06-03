@@ -12,7 +12,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
-	"github.com/dfinance/dnode/sb-trading-app/watcher"
+	"github.com/dfinance/dnode/helpers/tests/sb-trading-app/watcher"
 )
 
 const (

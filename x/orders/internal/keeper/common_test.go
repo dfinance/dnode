@@ -23,7 +23,6 @@ import (
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/markets"
-	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 

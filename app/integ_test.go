@@ -215,13 +215,13 @@ func Test_VMRequestRetry(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		true,
-		cliTester.VMConnectionSettings(100, 500, 10),
-		cliTester.VMCommunicationBaseAddressUDS(dsSocket, mockDVMSocket),
+		cliTester.VMCommunicationOption(100, 500, 10),
+		cliTester.VMCommunicationBaseAddressUDSOption(dsSocket, mockDVMSocket),
 	)
 	defer ct.Close()
 	ct.StartRestServer(false)
 
-	mockDVMSocketPath := path.Join(ct.UDSDir, mockDVMSocket)
+	mockDVMSocketPath := path.Join(ct.Dirs.UDSDir, mockDVMSocket)
 	mockDVMListener, err := helpers.GetGRpcNetListener("unix://" + mockDVMSocketPath)
 	require.NoError(t, err, "creating MockDVM listener")
 
@@ -230,7 +230,7 @@ func Test_VMRequestRetry(t *testing.T) {
 	require.NoError(t, cliTester.WaitForFileExists(mockDVMSocketPath, 1*time.Second), "MockDVM start failed")
 
 	// Create fake .mov file
-	modulePath := path.Join(ct.RootDir, "fake.json")
+	modulePath := path.Join(ct.Dirs.RootDir, "fake.json")
 	moduleContent := []byte("{ \"code\": \"00\" }")
 	require.NoError(t, ioutil.WriteFile(modulePath, moduleContent, 0644), "creating fake script file")
 

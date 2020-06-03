@@ -117,18 +117,7 @@ func (r *RestRequest) Execute() error {
 
 	// parse Tx response or Query response
 	if r.responseValue != nil {
-		if _, ok := r.responseValue.(*sdk.TxResponse); !ok {
-			respMsg := sdkRest.ResponseWithHeight{}
-			if err := r.cdc.UnmarshalJSON(respBody, &respMsg); err != nil {
-				return fmt.Errorf("%s: unmarshal ResponseWithHeight: %s", r.String(), string(respBody))
-			}
-
-			if respMsg.Result != nil {
-				if err := r.cdc.UnmarshalJSON(respMsg.Result, r.responseValue); err != nil {
-					return fmt.Errorf("%s: unmarshal responseValue: %s", r.String(), string(respBody))
-				}
-			}
-		} else {
+		if _, ok := r.responseValue.(*sdk.TxResponse); ok {
 			if err := r.cdc.UnmarshalJSON(respBody, r.responseValue); err != nil {
 				return fmt.Errorf("%s: unmarshal txResponseValue: %s", r.String(), string(respBody))
 			}
@@ -137,6 +126,27 @@ func (r *RestRequest) Execute() error {
 			if txResp.Code != 0 {
 				return fmt.Errorf("%s: tx code %d: %s", r.String(), txResp.Code, txResp.RawLog)
 			}
+
+			return nil
+		}
+
+		if _, ok := r.responseValue.(*coreTypes.ResultBlock); ok {
+			if err := r.cdc.UnmarshalJSON(respBody, r.responseValue); err != nil {
+				return fmt.Errorf("%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
+			}
+
+			return nil
+		}
+
+		respMsg := sdkRest.ResponseWithHeight{}
+		if err := r.cdc.UnmarshalJSON(respBody, &respMsg); err != nil {
+			return fmt.Errorf("%s: unmarshal ResponseWithHeight: %s", r.String(), string(respBody))
+		}
+
+		if respMsg.Result != nil {
+			if err := r.cdc.UnmarshalJSON(respMsg.Result, r.responseValue); err != nil {
+				return fmt.Errorf("%s: unmarshal responseValue: %s", r.String(), string(respBody))
+			}
 		}
 	}
 
@@ -144,30 +154,7 @@ func (r *RestRequest) Execute() error {
 }
 
 func (r *RestRequest) CheckSucceeded() {
-	respCode, respBody := r.Request()
-	require.Equal(r.t, respCode, http.StatusOK, "%s: HTTP code %d: %s", r.String(), respCode, string(respBody))
-
-	// parse Tx response or Query response
-	if r.responseValue != nil {
-		if _, ok := r.responseValue.(*sdk.TxResponse); ok {
-			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, r.responseValue), "%s: unmarshal sdk.TxResponse: %s", r.String(), string(respBody))
-
-			txResp := r.responseValue.(*sdk.TxResponse)
-			require.Equal(r.t, uint32(0), txResp.Code, "%s: tx code %d: %s", r.String(), txResp.Code, txResp.RawLog)
-			return
-		}
-
-		if _, ok := r.responseValue.(*coreTypes.ResultBlock); ok {
-			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, r.responseValue), "%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
-			return
-		}
-
-		respMsg := sdkRest.ResponseWithHeight{}
-		require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, &respMsg), "%s: unmarshal ResponseWithHeight: %s", r.String(), string(respBody))
-		if respMsg.Result != nil {
-			require.NoError(r.t, r.cdc.UnmarshalJSON(respMsg.Result, r.responseValue), "%s: unmarshal responseValue: %s", r.String(), string(respBody))
-		}
-	}
+	require.NoError(r.t, r.Execute())
 }
 
 func (r *RestRequest) CheckFailed(expectedCode int, expectedErr error) {

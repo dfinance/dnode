@@ -3,8 +3,8 @@ package watcher
 import (
 	"fmt"
 
+	"github.com/dfinance/dnode/helpers/tests/sb-trading-app/utils"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/sb-trading-app/utils"
 )
 
 func (w *Watcher) subscribe() {
