@@ -45,7 +45,7 @@ func (k Keeper) SetHistoryItem(ctx sdk.Context, item types.HistoryItem) {
 func (k Keeper) GetHistoryItemsInBlockHeightRange(ctx sdk.Context, marketID dnTypes.ID, startHeight, endHeight int64) (types.HistoryItems, error) {
 	store := ctx.KVStore(k.storeKey)
 	startKey := types.GetHistoryItemKey(marketID, startHeight)
-	endKey := types.GetHistoryItemKey(marketID, endHeight)
+	endKey := types.GetHistoryItemKey(marketID, endHeight+1)
 
 	iterator := store.Iterator(startKey, endKey)
 	defer iterator.Close()

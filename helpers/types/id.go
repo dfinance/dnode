@@ -34,8 +34,16 @@ func (id ID) LT(id2 ID) bool {
 	return id.uint().LT(id2.uint())
 }
 
+func (id ID) LTE(id2 ID) bool {
+	return id.uint().LTE(id2.uint())
+}
+
 func (id ID) GT(id2 ID) bool {
 	return id.uint().GT(id2.uint())
+}
+
+func (id ID) GTE(id2 ID) bool {
+	return id.uint().GTE(id2.uint())
 }
 
 func (id ID) Incr() ID {

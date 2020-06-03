@@ -17,7 +17,7 @@ import (
 	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
-func Test(t *testing.T) {
+func Test_Matching_XARExample(t *testing.T) {
 	inputs := []struct {
 		Direction orderTypes.Direction
 		ID        uint64
@@ -90,7 +90,7 @@ func Test(t *testing.T) {
 	}
 }
 
-func TestNotionExample(t *testing.T) {
+func Test_Matching_NotionExample(t *testing.T) {
 	inputs := []struct {
 		Direction orderTypes.Direction
 		ID        uint64

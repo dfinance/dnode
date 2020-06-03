@@ -3,8 +3,8 @@
 package keeper
 
 import (
+	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -23,8 +23,8 @@ import (
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/markets"
-	"github.com/dfinance/dnode/x/markets"
-	"github.com/dfinance/dnode/x/orders/internal/types"
+	"github.com/dfinance/dnode/x/orderbook/internal/types"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 var (
@@ -90,6 +90,7 @@ type TestInput struct {
 	keyAuth      *sdk.KVStoreKey
 	keySupply    *sdk.KVStoreKey
 	keyOrders    *sdk.KVStoreKey
+	keyOB        *sdk.KVStoreKey
 	tKeyParams   *sdk.TransientStoreKey
 	//
 	baseBtcDenom    string
@@ -106,6 +107,7 @@ type TestInput struct {
 	accountKeeper auth.AccountKeeper
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
+	orderKeeper   orders.Keeper
 	keeper        Keeper
 }
 
@@ -118,6 +120,7 @@ func NewTestInput(t *testing.T) TestInput {
 		keyAuth:      sdk.NewKVStoreKey("key_auth"),
 		keySupply:    sdk.NewKVStoreKey("key_supply"),
 		keyOrders:    sdk.NewKVStoreKey("key_orders"),
+		keyOB:        sdk.NewKVStoreKey("key_order_book"),
 		tKeyParams:   sdk.NewTransientStoreKey("tkey_params"),
 		//
 		baseBtcDenom:    "btc",
@@ -135,6 +138,7 @@ func NewTestInput(t *testing.T) TestInput {
 	auth.RegisterCodec(input.cdc)
 	bank.RegisterCodec(input.cdc)
 	supply.RegisterCodec(input.cdc)
+	orders.RegisterCodec(input.cdc)
 	types.RegisterCodec(input.cdc)
 
 	// init in-memory DB
@@ -146,6 +150,7 @@ func NewTestInput(t *testing.T) TestInput {
 	mstore.MountStoreWithDB(input.keyAuth, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyOrders, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyOB, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tKeyParams, sdk.StoreTypeTransient, db)
 	require.NoError(t, mstore.LoadLatestVersion(), "in-memory DB init")
 
@@ -157,7 +162,8 @@ func NewTestInput(t *testing.T) TestInput {
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAuth, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), ModuleAccountAddrs())
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, maccPerms)
-	input.keeper = NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
+	input.orderKeeper = orders.NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
+	input.keeper = NewKeeper(input.keyOB, input.cdc, input.orderKeeper)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
@@ -206,91 +212,17 @@ func NewTestInput(t *testing.T) TestInput {
 	return input
 }
 
-func (i *TestInput) GetAccountBalance(address sdk.AccAddress, baseDenom string) (baseBalance, quoteBalance sdk.Int) {
-	acc := i.accountKeeper.GetAccount(i.ctx, address)
-	for _, coin := range acc.GetCoins() {
-		if coin.Denom == baseDenom {
-			baseBalance = coin.Amount
-		}
-		if coin.Denom == i.quoteDenom {
-			quoteBalance = coin.Amount
-		}
+func NewMockHistoryItem(marketID dnTypes.ID, blockHeight int64) types.HistoryItem {
+	return types.HistoryItem{
+		MarketID:         marketID,
+		ClearancePrice:   sdk.NewUint(rand.Uint64()),
+		BidOrdersCount:   rand.Int(),
+		AskOrdersCount:   rand.Int(),
+		BidVolume:        sdk.NewUint(rand.Uint64()),
+		AskVolume:        sdk.NewUint(rand.Uint64()),
+		MatchedBidVolume: sdk.NewUint(rand.Uint64()),
+		MatchedAskVolume: sdk.NewUint(rand.Uint64()),
+		Timestamp:        rand.Int63(),
+		BlockHeight:      blockHeight,
 	}
-
-	return
-}
-
-func NewBtcDfiMockOrder(direction types.Direction) types.Order {
-	now := time.Now()
-
-	return types.Order{
-		ID:    dnTypes.NewIDFromUint64(0),
-		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"),
-		Market: markets.MarketExtended{
-			ID: dnTypes.NewIDFromUint64(0),
-			BaseCurrency: currencies_register.CurrencyInfo{
-				Denom:    []byte("btc"),
-				Decimals: 8,
-			},
-			QuoteCurrency: currencies_register.CurrencyInfo{
-				Denom:    []byte("dfi"),
-				Decimals: 18,
-			},
-		},
-		Direction: direction,
-		Price:     sdk.NewUintFromString("1000000000000000000"),
-		Quantity:  sdk.NewUintFromString("100000000"),
-		Ttl:       60,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-}
-
-func NewEthDfiMockOrder(direction types.Direction) types.Order {
-	now := time.Now()
-
-	return types.Order{
-		ID:    dnTypes.NewIDFromUint64(1),
-		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07i"),
-		Market: markets.MarketExtended{
-			ID: dnTypes.NewIDFromUint64(1),
-			BaseCurrency: currencies_register.CurrencyInfo{
-				Denom:    []byte("eth"),
-				Decimals: 18,
-			},
-			QuoteCurrency: currencies_register.CurrencyInfo{
-				Denom:    []byte("dfi"),
-				Decimals: 18,
-			},
-		},
-		Direction: direction,
-		Price:     sdk.NewUintFromString("1000000000000000000"),
-		Quantity:  sdk.NewUintFromString("1000000000000000000"),
-		Ttl:       120,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-}
-
-func CompareOrders(t *testing.T, order1, order2 types.Order) {
-	compareCurrency := func(logMsg string, c1, c2 currencies_register.CurrencyInfo) {
-		require.Equal(t, c1.Owner, c2.Owner, "%s: Owner", logMsg)
-		require.Equal(t, c1.Denom, c2.Denom, "%s: Denom", logMsg)
-		require.Equal(t, c1.Decimals, c2.Decimals, "%s: Decimals", logMsg)
-		//require.Equal(t, c1.TotalSupply.String(), c2.TotalSupply.String(), "%s: TotalSupply", logMsg)
-		require.Equal(t, c1.IsToken, c2.IsToken, "%s: IsToken", logMsg)
-	}
-
-	require.True(t, order1.ID.Equal(order2.ID), "ID")
-	require.True(t, order1.Price.Equal(order2.Price), "Price")
-	require.True(t, order1.Quantity.Equal(order2.Quantity), "Quantity")
-	require.True(t, order1.Direction.Equal(order2.Direction), "Direction")
-	require.Equal(t, order1.Owner.String(), order2.Owner.String(), "Owner")
-	require.Equal(t, order1.Ttl, order2.Ttl, "Ttl")
-	require.True(t, order1.CreatedAt.Equal(order2.CreatedAt), "CreatedAt")
-	require.True(t, order1.UpdatedAt.Equal(order2.UpdatedAt), "UpdatedAt")
-	//
-	require.True(t, order1.Market.ID.Equal(order2.Market.ID), "Market.ID")
-	compareCurrency("baseAsset", order1.Market.BaseCurrency, order2.Market.BaseCurrency)
-	compareCurrency("quoteAsset", order1.Market.QuoteCurrency, order2.Market.QuoteCurrency)
 }
