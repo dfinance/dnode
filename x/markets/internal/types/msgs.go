@@ -32,10 +32,10 @@ func (msg MsgCreateMarket) ValidateBasic() error {
 		return ErrWrongFrom
 	}
 	if msg.BaseAssetDenom == "" {
-		return sdkErrors.Wrap(ErrWrongAssetDenom, "BaseAsset")
+		return sdkErrors.Wrap(ErrWrongAssetDenom, "BaseAsset is empty")
 	}
 	if msg.QuoteAssetDenom == "" {
-		return sdkErrors.Wrap(ErrWrongAssetDenom, "QuoteAsset")
+		return sdkErrors.Wrap(ErrWrongAssetDenom, "QuoteAsset is empty")
 	}
 
 	return nil

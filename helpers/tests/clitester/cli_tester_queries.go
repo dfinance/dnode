@@ -188,7 +188,7 @@ func (ct *CLITester) QueryOrdersOrder(id dnTypes.ID) (*QueryRequest, *orderTypes
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orderTypes.Direction) (*QueryRequest, *orderTypes.Orders) {
+func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orderTypes.Direction, ownerFilter *string) (*QueryRequest, *orderTypes.Orders) {
 	resObj := &orderTypes.Orders{}
 
 	q := ct.newQueryRequest(resObj)
@@ -205,6 +205,9 @@ func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID
 	}
 	if directionFilter != nil {
 		q.cmd.AddArg("direction", directionFilter.String())
+	}
+	if ownerFilter != nil {
+		q.cmd.AddArg("owner", *ownerFilter)
 	}
 
 	return q, resObj

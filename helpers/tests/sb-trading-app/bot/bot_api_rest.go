@@ -67,7 +67,7 @@ func (a *ApiRest) PostOrder(price, quantity sdk.Uint, direction orderTypes.Direc
 	}()
 
 	sendTx := func() (verificationFailed, stop bool, unhandledErr error) {
-		req, tx := a.tester.RestTxOrdersPostOrder(
+		req, tx := a.tester.RestTxOrdersPostOrderRaw(
 			a.accountName,
 			a.accountAddress,
 			a.accountNumber,

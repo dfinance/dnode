@@ -32,4 +32,10 @@ var (
 	NewMarketExtended   = types.NewMarketExtended
 	NewKeeper           = keeper.NewKeeper
 	NewQuerier          = keeper.NewQuerier
+	// error aliases
+	ErrWrongID         = types.ErrWrongID
+	ErrWrongAssetDenom = types.ErrWrongAssetDenom
+	ErrMarketExists    = types.ErrMarketExists
+	ErrInvalidQuantity = types.ErrInvalidQuantity
+	ErrWrongFrom       = types.ErrWrongFrom
 )

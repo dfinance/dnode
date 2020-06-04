@@ -202,6 +202,21 @@ func (ct *CLITester) TxOrdersPost(ownerAddress string, marketID dnTypes.ID, dire
 	return r
 }
 
+func (ct *CLITester) TxOrdersRevoke(ownerAddress string, orderID dnTypes.ID) *TxRequest {
+	cmdArgs := []string{
+		"revoke",
+		orderID.String(),
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"orders",
+		ownerAddress,
+		cmdArgs...)
+
+	return r
+}
+
 func (ct *CLITester) TxMarketsAdd(fromAddress string, baseDenom, quoteDenom string) *TxRequest {
 	cmdArgs := []string{
 		"add",

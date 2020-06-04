@@ -16,9 +16,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -460,6 +463,411 @@ func Test_VMRest(t *testing.T) {
 				req, _ := ct.RestQueryVMGetData(writeSet.Address, path)
 				req.CheckFailed(http.StatusUnprocessableEntity, nil)
 			}
+		}
+	}
+}
+
+func Test_MarketsREST(t *testing.T) {
+	t.Parallel()
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	ownerName := "validator1"
+
+	// add markets
+	{
+		r1, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, cliTester.DenomDFI)
+		r1.CheckSucceeded()
+		r2, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomETH, cliTester.DenomDFI)
+		r2.CheckSucceeded()
+	}
+
+	// check addMarket Tx
+	{
+		// non-existing currency
+		{
+			r, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, "atom")
+			r.CheckFailed(http.StatusOK, marketTypes.ErrWrongAssetDenom)
+		}
+
+		// already existing market
+		{
+			r, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, cliTester.DenomDFI)
+			r.CheckFailed(http.StatusOK, marketTypes.ErrMarketExists)
+		}
+	}
+
+	// check market query
+	{
+		// non-existing marketID
+		{
+			r, _ := ct.RestQueryMarket(dnTypes.NewIDFromUint64(10))
+			r.CheckFailed(http.StatusInternalServerError, marketTypes.ErrWrongID)
+		}
+
+		// existing marketID (btc-dfi)
+		{
+			r, market := ct.RestQueryMarket(dnTypes.NewIDFromUint64(0))
+			r.CheckSucceeded()
+
+			require.Equal(t, market.ID.UInt64(), uint64(0))
+			require.Equal(t, market.BaseAssetDenom, cliTester.DenomBTC)
+			require.Equal(t, market.QuoteAssetDenom, cliTester.DenomDFI)
+		}
+	}
+
+	// check list query
+	{
+		// all markets
+		{
+			r, markets := ct.RestQueryMarkets(-1, -1, nil, nil)
+			r.CheckSucceeded()
+
+			require.Len(t, *markets, 2)
+			require.Equal(t, (*markets)[0].ID.UInt64(), uint64(0))
+			require.Equal(t, (*markets)[0].BaseAssetDenom, cliTester.DenomBTC)
+			require.Equal(t, (*markets)[1].ID.UInt64(), uint64(1))
+			require.Equal(t, (*markets)[1].BaseAssetDenom, cliTester.DenomETH)
+		}
+
+		// check page / limit parameters
+		{
+			// page 1, limit 1
+			rP1L1, marketsP1L1 := ct.RestQueryMarkets(1, 1, nil, nil)
+			rP1L1.CheckSucceeded()
+
+			require.Len(t, *marketsP1L1, 1)
+
+			// page 2, limit 1
+			rP2L1, marketsP2L1 := ct.RestQueryMarkets(1, 1, nil, nil)
+			rP2L1.CheckSucceeded()
+
+			require.Len(t, *marketsP2L1, 1)
+
+			// page 2, limit 10 (no markets)
+			rP2L10, marketsP2L10 := ct.RestQueryMarkets(2, 10, nil, nil)
+			rP2L10.CheckSucceeded()
+
+			require.Empty(t, *marketsP2L10)
+		}
+
+		// check baseDenom filter
+		{
+			baseDenom := cliTester.DenomETH
+			r, markets := ct.RestQueryMarkets(-1, -1, &baseDenom, nil)
+			r.CheckSucceeded()
+
+			require.Len(t, *markets, 1)
+			require.Equal(t, (*markets)[0].BaseAssetDenom, baseDenom)
+		}
+
+		// check quoteDenom filter
+		{
+			quoteDenom := cliTester.DenomDFI
+			r, markets := ct.RestQueryMarkets(-1, -1, nil, &quoteDenom)
+			r.CheckSucceeded()
+
+			require.Len(t, *markets, 2)
+			require.Equal(t, (*markets)[0].QuoteAssetDenom, quoteDenom)
+			require.Equal(t, (*markets)[1].QuoteAssetDenom, quoteDenom)
+		}
+
+		// check multiple filters
+		{
+			baseDeno := cliTester.DenomBTC
+			quoteDenom := cliTester.DenomDFI
+			r, markets := ct.RestQueryMarkets(-1, -1, &baseDeno, &quoteDenom)
+			r.CheckSucceeded()
+
+			require.Len(t, *markets, 1)
+		}
+	}
+}
+
+func Test_OrdersREST(t *testing.T) {
+	const (
+		DecimalsDFI = "1000000000000000000"
+		DecimalsETH = "1000000000000000000"
+		DecimalsBTC = "100000000"
+	)
+
+	oneDfi := sdk.NewUintFromString(DecimalsDFI)
+	oneBtc := sdk.NewUintFromString(DecimalsBTC)
+	oneEth := sdk.NewUintFromString(DecimalsETH)
+	accountBalances := []cliTester.StringPair{
+		{
+			Key:   cliTester.DenomBTC,
+			Value: sdk.NewUint(10000).Mul(oneBtc).String(),
+		},
+		{
+			Key:   cliTester.DenomETH,
+			Value: sdk.NewUint(100000000).Mul(oneEth).String(),
+		},
+		{
+			Key:   cliTester.DenomDFI,
+			Value: sdk.NewUint(100000000).Mul(oneDfi).String(),
+		},
+	}
+	accountOpts := []cliTester.AccountOption{
+		{Name: "client1", Balances: accountBalances},
+		{Name: "client2", Balances: accountBalances},
+	}
+
+	t.Parallel()
+	ct := cliTester.New(
+		t,
+		false,
+		cliTester.AccountsOption(accountOpts...),
+	)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	ownerName1, ownerName2 := accountOpts[0].Name, accountOpts[1].Name
+	ownerAddr1, ownerAddr2 := ct.Accounts[ownerName1].Address, ct.Accounts[ownerName2].Address
+	marketID0, marketID1 := dnTypes.NewIDFromUint64(0), dnTypes.NewIDFromUint64(1)
+
+	// add market
+	{
+		r1, _ := ct.RestTxMarketsAdd(ownerName1, cliTester.DenomBTC, cliTester.DenomDFI)
+		r1.CheckSucceeded()
+		r2, _ := ct.RestTxMarketsAdd(ownerName1, cliTester.DenomETH, cliTester.DenomDFI)
+		r2.CheckSucceeded()
+	}
+
+	// check AddOrder Tx
+	{
+		// invalid marketID
+		{
+			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.NewIDFromUint64(2), orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongMarketID)
+		}
+	}
+
+	// add orders
+	inputOrders := []struct {
+		MarketID     dnTypes.ID
+		OwnerName    string
+		OwnerAddress string
+		Direction    orderTypes.Direction
+		Price        sdk.Uint
+		Quantity     sdk.Uint
+		TtlInSec     uint64
+	}{
+		{
+			MarketID:     marketID0,
+			OwnerName:    ownerName1,
+			OwnerAddress: ownerAddr1,
+			Direction:    orderTypes.BidDirection,
+			Price:        sdk.NewUintFromString("10000000000000000000"),
+			Quantity:     sdk.NewUintFromString("100000000"),
+			TtlInSec:     60,
+		},
+		{
+			MarketID:     marketID0,
+			OwnerName:    ownerName2,
+			OwnerAddress: ownerAddr2,
+			Direction:    orderTypes.BidDirection,
+			Price:        sdk.NewUintFromString("20000000000000000000"),
+			Quantity:     sdk.NewUintFromString("200000000"),
+			TtlInSec:     90,
+		},
+		{
+			MarketID:     marketID0,
+			OwnerName:    ownerName1,
+			OwnerAddress: ownerAddr1,
+			Direction:    orderTypes.AskDirection,
+			Price:        sdk.NewUintFromString("50000000000000000000"),
+			Quantity:     sdk.NewUintFromString("500000000"),
+			TtlInSec:     60,
+		},
+		{
+			MarketID:     marketID0,
+			OwnerName:    ownerName2,
+			OwnerAddress: ownerAddr2,
+			Direction:    orderTypes.AskDirection,
+			Price:        sdk.NewUintFromString("60000000000000000000"),
+			Quantity:     sdk.NewUintFromString("600000000"),
+			TtlInSec:     90,
+		},
+		{
+			MarketID:     marketID1,
+			OwnerName:    ownerName1,
+			OwnerAddress: ownerAddr1,
+			Direction:    orderTypes.AskDirection,
+			Price:        sdk.NewUintFromString("10000000000000000000"),
+			Quantity:     sdk.NewUintFromString("100000000"),
+			TtlInSec:     30,
+		},
+	}
+	for _, input := range inputOrders {
+		r, _ := ct.RestTxOrdersPostOrder(input.OwnerName, input.MarketID, input.Direction, input.Price, input.Quantity, input.TtlInSec)
+		r.CheckSucceeded()
+	}
+
+	// check orders added
+	{
+		for i, input := range inputOrders {
+			orderID := dnTypes.NewIDFromUint64(uint64(i))
+			q, order := ct.RestQueryOrder(orderID)
+			q.CheckSucceeded()
+
+			require.True(t, order.ID.Equal(orderID), "order %d: ID", i)
+			require.True(t, order.Market.ID.Equal(input.MarketID), "order %d: MarketID", i)
+			require.Equal(t, order.Owner.String(), input.OwnerAddress, "order %d: Owner", i)
+			require.True(t, order.Direction.Equal(input.Direction), "order %d: Direction", i)
+			require.True(t, order.Price.Equal(input.Price), "order %d: Price", i)
+			require.True(t, order.Quantity.Equal(input.Quantity), "order %d: Quantity", i)
+			require.Equal(t, order.Ttl, time.Duration(input.TtlInSec)*time.Second, "order %d: Ttl", i)
+		}
+	}
+
+	// check list query
+	{
+		// request all
+		{
+			q, orders := ct.RestQueryOrders(-1, -1, nil, nil, nil)
+			q.CheckSucceeded()
+
+			require.Len(t, *orders, len(inputOrders))
+		}
+
+		// check page / limit parameters
+		{
+			// page 1, limit 1
+			qP1L1, ordersP1L1 := ct.RestQueryOrders(1, 1, nil, nil, nil)
+			qP1L1.CheckSucceeded()
+
+			require.Len(t, *ordersP1L1, 1)
+
+			// page 2, limit 1
+			qP2L1, ordersP2L1 := ct.RestQueryOrders(1, 1, nil, nil, nil)
+			qP2L1.CheckSucceeded()
+
+			require.Len(t, *ordersP2L1, 1)
+
+			// page 2, limit 10 (no orders)
+			qP2L10, ordersP2L10 := ct.RestQueryOrders(2, 10, nil, nil, nil)
+			qP2L10.CheckSucceeded()
+
+			require.Empty(t, *ordersP2L10)
+		}
+
+		// check marketID filter
+		{
+			market0Count, market1Count := 0, 0
+			for _, input := range inputOrders {
+				if input.MarketID.UInt64() == 0 {
+					market0Count++
+				}
+				if input.MarketID.UInt64() == 1 {
+					market1Count++
+				}
+			}
+
+			q0, orders0 := ct.RestQueryOrders(-1, -1, &marketID0, nil, nil)
+			q0.CheckSucceeded()
+
+			require.Len(t, *orders0, market0Count)
+
+			q1, orders1 := ct.RestQueryOrders(-1, -1, &marketID1, nil, nil)
+			q1.CheckSucceeded()
+
+			require.Len(t, *orders1, market1Count)
+		}
+
+		// check direction filter
+		{
+			askCount, bidCount := 0, 0
+			for _, input := range inputOrders {
+				if input.Direction.Equal(orderTypes.AskDirection) {
+					askCount++
+				}
+				if input.Direction.Equal(orderTypes.BidDirection) {
+					bidCount++
+				}
+			}
+
+			askDirection := orderTypes.AskDirection
+			qAsk, ordersAsk := ct.RestQueryOrders(-1, -1, nil, &askDirection, nil)
+			qAsk.CheckSucceeded()
+
+			require.Len(t, *ordersAsk, askCount)
+
+			bidDirection := orderTypes.BidDirection
+			qBid, ordersBid := ct.RestQueryOrders(-1, -1, nil, &bidDirection, nil)
+			qBid.CheckSucceeded()
+
+			require.Len(t, *ordersBid, bidCount)
+		}
+
+		// check owner filter
+		{
+			client1Count, client2Count := 0, 0
+			for _, input := range inputOrders {
+				if input.OwnerAddress == ownerAddr1 {
+					client1Count++
+				}
+				if input.OwnerAddress == ownerAddr2 {
+					client2Count++
+				}
+			}
+
+			q1, orders1 := ct.RestQueryOrders(-1, -1, nil, nil, &ownerAddr1)
+			q1.CheckSucceeded()
+
+			require.Len(t, *orders1, client1Count)
+
+			q2, orders2 := ct.RestQueryOrders(-1, -1, nil, nil, &ownerAddr2)
+			q2.CheckSucceeded()
+
+			require.Len(t, *orders2, client2Count)
+		}
+
+		// check multiple filters
+		{
+			marketID := marketID0
+			owner := ownerAddr1
+			direction := orderTypes.AskDirection
+			count := 0
+			for _, input := range inputOrders {
+				if input.MarketID.Equal(marketID) && input.OwnerAddress == owner && input.Direction == direction {
+					count++
+				}
+			}
+
+			q, orders := ct.RestQueryOrders(-1, -1, &marketID, &direction, &owner)
+			q.CheckSucceeded()
+
+			require.Len(t, *orders, count)
+		}
+	}
+
+	// revoke order
+	{
+		orderIdx := len(inputOrders) - 1
+		orderID := dnTypes.NewIDFromUint64(uint64(orderIdx))
+		inputOrder := inputOrders[orderIdx]
+		r, _ := ct.RestTxOrdersRevokeOrder(inputOrder.OwnerName, orderID)
+		r.CheckSucceeded()
+
+		q, _ := ct.RestQueryOrder(orderID)
+		q.CheckFailed(http.StatusInternalServerError, orderTypes.ErrWrongOrderID)
+		inputOrders = inputOrders[:len(inputOrders)-2]
+	}
+
+	// check RevokeOrder Tx
+	{
+		// non-existing orderID
+		{
+			r, _ := ct.RestTxOrdersRevokeOrder(ownerName1, dnTypes.NewIDFromUint64(10))
+			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongOrderID)
+		}
+
+		// wrong owner (not an order owner)
+		{
+			r, _ := ct.RestTxOrdersRevokeOrder("validator1", dnTypes.NewIDFromUint64(0))
+			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongOwner)
 		}
 	}
 }

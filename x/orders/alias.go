@@ -32,5 +32,11 @@ var (
 	NewKeeper     = keeper.NewKeeper
 	NewQuerier    = keeper.NewQuerier
 	// error aliases
-	ErrWrongOwner = types.ErrWrongOwner
+	ErrWrongMarketID  = types.ErrWrongMarketID
+	ErrWrongOwner     = types.ErrWrongOwner
+	ErrWrongPrice     = types.ErrWrongPrice
+	ErrWrongQuantity  = types.ErrWrongQuantity
+	ErrWrongTtl       = types.ErrWrongTtl
+	ErrWrongDirection = types.ErrWrongDirection
+	ErrWrongOrderID   = types.ErrWrongOrderID
 )

@@ -29,10 +29,10 @@ func (m Market) Valid() error {
 		return sdkErrors.Wrap(ErrWrongID, err.Error())
 	}
 	if err := sdk.ValidateDenom(m.BaseAssetDenom); err != nil {
-		return sdkErrors.Wrap(ErrWrongAssetDenom, "BaseAsset")
+		return sdkErrors.Wrap(ErrWrongAssetDenom, "BaseAsset is invalid")
 	}
 	if err := sdk.ValidateDenom(m.QuoteAssetDenom); err != nil {
-		return sdkErrors.Wrap(ErrWrongAssetDenom, "QuoteAsset")
+		return sdkErrors.Wrap(ErrWrongAssetDenom, "QuoteAsset is invalid")
 	}
 
 	return nil

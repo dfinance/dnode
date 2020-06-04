@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,10 +32,10 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // @Summary Get orders
 // @Description Get array of Order objects with pagination and filters
 // @ID ordersGetOrdersWithParams
-// @Accept  multipart/form-data
+// @Accept  json
 // @Produce json
-// @Param page formData int false "page number (first page: 1)"
-// @Param limit formData int false "items per page (default: 100)"
+// @Param page query int false "page number (first page: 1)"
+// @Param limit query int false "items per page (default: 100)"
 // @Param owner query string false "owner filter"
 // @Param direction query string false "direction filter (bid/ask)"
 // @Param marketID query string false "marketID filter (bid/ask)"
@@ -45,9 +46,23 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 func getOrdersWithParams(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs
-		_, page, limit, err := rest.ParseHTTPArgsWithLimit(r, 0)
+		page := r.URL.Query().Get("page")
+		if page == "" {
+			page = "1"
+		}
+		parsedPage, err := strconv.ParseInt(page, 10, 32)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("%q query param: %v", "page", err))
+			return
+		}
+
+		limit := r.URL.Query().Get("limit")
+		if limit == "" {
+			limit = "100"
+		}
+		parsedLimit, err := strconv.ParseInt(limit, 10, 32)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("%q query param: %v", "limit", err))
 			return
 		}
 
@@ -67,8 +82,8 @@ func getOrdersWithParams(cliCtx context.CLIContext) http.HandlerFunc {
 
 		// prepare request
 		req := types.OrdersReq{
-			Page:      page,
-			Limit:     limit,
+			Page:      int(parsedPage),
+			Limit:     int(parsedLimit),
 			Owner:     ownerFilter,
 			Direction: types.NewDirectionRaw(directionFilterStr),
 			MarketID:  marketIDFitler,

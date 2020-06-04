@@ -184,6 +184,64 @@ func (ct *CLITester) RestQueryAuthAccount(address string) (*RestRequest, *auth.B
 	return r, respMsg
 }
 
+func (ct *CLITester) RestQueryMarket(id dnTypes.ID) (*RestRequest, *marketTypes.Market) {
+	reqSubPath := fmt.Sprintf("markets/%s", id.String())
+	respMsg := &marketTypes.Market{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryMarkets(page, limit int, baseDenom, quoteDenom *string) (*RestRequest, *marketTypes.Markets) {
+	reqSubPath := "markets"
+	respMsg := &marketTypes.Markets{}
+
+	reqValues := url.Values{}
+	if page != -1 {
+		reqValues.Set("page", strconv.Itoa(page))
+	}
+	if limit != -1 {
+		reqValues.Set("limit", strconv.Itoa(limit))
+	}
+	if baseDenom != nil {
+		reqValues.Set("baseAssetDenom", *baseDenom)
+	}
+	if quoteDenom != nil {
+		reqValues.Set("quoteAssetDenom", *quoteDenom)
+	}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, reqValues, nil, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOrders(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orderTypes.Direction, ownerFilter *string) (*RestRequest, *orderTypes.Orders) {
+	reqSubPath := "orders"
+	respMsg := &orderTypes.Orders{}
+
+	reqValues := url.Values{}
+	if page != -1 {
+		reqValues.Set("page", strconv.Itoa(page))
+	}
+	if limit != -1 {
+		reqValues.Set("limit", strconv.Itoa(limit))
+	}
+	if marketIDFilter != nil {
+		reqValues.Set("marketID", marketIDFilter.String())
+	}
+	if directionFilter != nil {
+		reqValues.Set("direction", directionFilter.String())
+	}
+	if ownerFilter != nil {
+		reqValues.Set("owner", *ownerFilter)
+	}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, reqValues, nil, respMsg)
+
+	return r, respMsg
+}
+
 func (ct *CLITester) RestQueryOrder(id dnTypes.ID) (*RestRequest, *orderTypes.Order) {
 	reqSubPath := fmt.Sprintf("%s/%s", orderTypes.ModuleName, id.String())
 	respMsg := &orderTypes.Order{}
@@ -205,7 +263,41 @@ func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }
 
-func (ct *CLITester) RestTxOrdersPostOrder(accName string, accAddress sdk.AccAddress, accNumber, accSequence uint64, marketID dnTypes.ID, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
+func (ct *CLITester) RestTxOrdersPostOrder(accName string, marketID dnTypes.ID, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
+	accInfo := ct.Accounts[accName]
+	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
+
+	accQuery, acc := ct.QueryAccount(accInfo.Address)
+	accQuery.CheckSucceeded()
+
+	msg := orderTypes.MsgPostOrder{
+		Owner:     acc.Address,
+		MarketID:  marketID,
+		Direction: direction,
+		Price:     price,
+		Quantity:  quantity,
+		TtlInSec:  ttlInSec,
+	}
+
+	return ct.newRestTxRequest(accName, acc, msg, false)
+}
+
+func (ct *CLITester) RestTxOrdersRevokeOrder(accName string, id dnTypes.ID) (*RestRequest, *sdk.TxResponse) {
+	accInfo := ct.Accounts[accName]
+	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
+
+	accQuery, acc := ct.QueryAccount(accInfo.Address)
+	accQuery.CheckSucceeded()
+
+	msg := orderTypes.MsgRevokeOrder{
+		Owner:   acc.Address,
+		OrderID: id,
+	}
+
+	return ct.newRestTxRequest(accName, acc, msg, false)
+}
+
+func (ct *CLITester) RestTxOrdersPostOrderRaw(accName string, accAddress sdk.AccAddress, accNumber, accSequence uint64, marketID dnTypes.ID, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
 	msg := orderTypes.MsgPostOrder{
 		Owner:     accAddress,
 		MarketID:  marketID,
@@ -231,7 +323,7 @@ func (ct *CLITester) RestTxMarketsAdd(accName, baseDenom, quoteDenom string) (*R
 		QuoteAssetDenom: quoteDenom,
 	}
 
-	return ct.newRestTxRequest(accName, acc, msg, true)
+	return ct.newRestTxRequest(accName, acc, msg, false)
 }
 
 func (ct *CLITester) RestLatestBlock() (*RestRequest, *coreTypes.ResultBlock) {
