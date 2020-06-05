@@ -139,6 +139,18 @@ func (c *SDCurves) getCrossPoint() SDItem {
 	crossPointIdx, clearancePrice := -1, sdk.ZeroUint()
 	cLen := len(*c)
 
+	// edge-case 0: first point has non-zero equal Supply and Demand
+	// it's a crossing point, but left SupplyDemandBalance can't be calculated (idx == -1)
+	if firstItem := &(*c)[0]; firstItem.Supply.Equal(firstItem.Demand) {
+		if !firstItem.Supply.IsZero() && !firstItem.Demand.IsZero() {
+			return SDItem{
+				Price:  firstItem.Price,
+				Supply: firstItem.Supply,
+				Demand: firstItem.Demand,
+			}
+		}
+	}
+
 	for i := 1; i < cLen; i++ {
 		curItem, prevItem := &(*c)[i], &(*c)[i-1]
 
@@ -164,13 +176,12 @@ func (c *SDCurves) getCrossPoint() SDItem {
 		}
 	}
 
-	/* edge cases */
 	if crossPointIdx != -1 {
 		// the crossing point was found
 		curItem, prevItem := &(*c)[crossPointIdx], &(*c)[crossPointIdx-1]
 
 		if !curItem.Supply.IsZero() && !curItem.Demand.IsZero() {
-			// case 1a: crossing point has volumes
+			// edge-case 1a: crossing point has volumes
 			return SDItem{
 				Price:  clearancePrice,
 				Supply: curItem.Supply,
@@ -179,7 +190,7 @@ func (c *SDCurves) getCrossPoint() SDItem {
 		}
 
 		if !prevItem.Supply.IsZero() && !prevItem.Demand.IsZero() {
-			// case 1b: prev to the crossing point has volumes
+			// edge-case 1b: prev to the crossing point has volumes
 			return SDItem{
 				Price:  prevItem.Price,
 				Supply: prevItem.Supply,
@@ -189,36 +200,69 @@ func (c *SDCurves) getCrossPoint() SDItem {
 	}
 
 	// the crossing point wasn't found
-	// case 2: find first point with non-zero Supply and Demand (search from the middle)
+
+	// edge-case 2 (option a): find point with the minimal |Supply - Demand| diff and non-zero Supply and Demand
 	// Supply / Demand can't be zero as it would cause "div 0" error
-	middleIdx := cLen / 2
-	for rightIdx := middleIdx; rightIdx < cLen; rightIdx++ {
-		rightItem := &(*c)[rightIdx]
+	cSorted := make(SDCurves, cLen, cLen)
+	copy(cSorted, *c)
+	sort.Slice(cSorted, func(i, j int) bool {
+		leftItem, rightItem := &cSorted[i], &cSorted[j]
 
-		var leftItem *SDItem
-		leftIdx := middleIdx - (rightIdx - middleIdx)
-		if leftIdx >= 0 {
-			leftItem = &(*c)[leftIdx]
+		var leftDiff, rightDiff sdk.Uint
+		if leftItem.Supply.GT(leftItem.Demand) {
+			leftDiff = leftItem.Supply.Sub(leftItem.Demand)
+		} else {
+			leftDiff = leftItem.Demand.Sub(leftItem.Supply)
+		}
+		if rightItem.Supply.GT(rightItem.Demand) {
+			rightDiff = rightItem.Supply.Sub(rightItem.Demand)
+		} else {
+			rightDiff = rightItem.Demand.Sub(rightItem.Supply)
 		}
 
-		if !rightItem.Supply.IsZero() && !rightItem.Demand.IsZero() {
+		return leftDiff.LT(rightDiff)
+	})
+	for i := 0; i < len(cSorted); i++ {
+		item := &cSorted[i]
+		if !item.Supply.IsZero() && !item.Demand.IsZero() {
 			return SDItem{
-				Price:  rightItem.Price,
-				Supply: rightItem.Supply,
-				Demand: rightItem.Demand,
-			}
-		}
-
-		if leftItem != nil && !leftItem.Supply.IsZero() && !leftItem.Demand.IsZero() {
-			return SDItem{
-				Price:  leftItem.Price,
-				Supply: leftItem.Supply,
-				Demand: leftItem.Demand,
+				Price:  item.Price,
+				Supply: item.Supply,
+				Demand: item.Demand,
 			}
 		}
 	}
 
-	// case 3: can't happen if the lowest ask price is higher then the highest bid price
+	// edge-case 2 (option b): find first point with non-zero Supply and Demand (search from the middle)
+	// Supply / Demand can't be zero as it would cause "div 0" error
+	//middleIdx := cLen / 2
+	//for rightIdx := middleIdx; rightIdx < cLen; rightIdx++ {
+	//	rightItem := &(*c)[rightIdx]
+	//
+	//	var leftItem *SDItem
+	//	leftIdx := middleIdx - (rightIdx - middleIdx)
+	//	if leftIdx >= 0 {
+	//		leftItem = &(*c)[leftIdx]
+	//	}
+	//
+	//	if !rightItem.Supply.IsZero() && !rightItem.Demand.IsZero() {
+	//		return SDItem{
+	//			Price:  rightItem.Price,
+	//			Supply: rightItem.Supply,
+	//			Demand: rightItem.Demand,
+	//		}
+	//	}
+	//
+	//	if leftItem != nil && !leftItem.Supply.IsZero() && !leftItem.Demand.IsZero() {
+	//		return SDItem{
+	//			Price:  leftItem.Price,
+	//			Supply: leftItem.Supply,
+	//			Demand: leftItem.Demand,
+	//		}
+	//	}
+	//}
+
+	// edge-case 3: can't happen if the lowest ask price is higher then the highest bid price
 	return SDItem{
 		Price:  sdk.ZeroUint(),
 		Supply: sdk.ZeroUint(),

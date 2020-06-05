@@ -353,3 +353,27 @@ func Test_Matching_FillPriority(t *testing.T) {
 	inputs.PrintResults(results)
 	inputs.PrintCurves(&matcherPool)
 }
+
+func Test_Matching_TwoOrders(t *testing.T) {
+	// Two orders, no crossing check.
+	// Aggregates will "draw" two parallel lines (with the same Quantity) and CP would be found by min diff (left).
+	inputs := MatchingPoolInput{
+		Markets: []MatchingPoolMarketInput{
+			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
+		},
+		Orders: []MatchingPoolOrderInput{
+			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 0, Price: 50, InQuantity: 50, OutQuantity: 50},
+			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 1, Price: 100, InQuantity: 50, OutQuantity: 50},
+		},
+	}
+
+	testLogger := logger.NewDNLogger()
+	testLogger = log.NewFilter(testLogger, log.AllowAll())
+	matcherPool := NewMatcherPool(testLogger)
+
+	inputs.PostOrders(t, &matcherPool)
+	results := matcherPool.Process()
+	inputs.Check(t, results)
+	inputs.PrintResults(results)
+	inputs.PrintCurves(&matcherPool)
+}

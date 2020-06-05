@@ -39,11 +39,15 @@ func (c *SDCurves) Graph() string {
 				yDemandTickFound = true
 			}
 		}
-		if !ySupplyTickFound {
+		if !ySupplyTickFound && !yDemandTickFound && item.Supply.Equal(item.Demand) {
 			yAxis = append(yAxis, item.Supply)
-		}
-		if !yDemandTickFound {
-			yAxis = append(yAxis, item.Demand)
+		} else {
+			if !ySupplyTickFound {
+				yAxis = append(yAxis, item.Supply)
+			}
+			if !yDemandTickFound {
+				yAxis = append(yAxis, item.Demand)
+			}
 		}
 	}
 	sort.Slice(yAxis, func(i, j int) bool {
@@ -117,7 +121,7 @@ func (c *SDCurves) Graph() string {
 	}
 
 	// Separator + X axis
-	for i := 0; i < len(xAxis) + 1; i++ {
+	for i := 0; i < len(xAxis)+1; i++ {
 		graph.WriteString(dashStr)
 	}
 	graph.WriteString("\n")

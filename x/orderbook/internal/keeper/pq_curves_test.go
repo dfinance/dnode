@@ -3,6 +3,7 @@
 package keeper
 
 import (
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -165,7 +166,7 @@ type ClearanceStateInput struct {
 	IsOk           bool
 }
 
-func (input ClearanceStateInput) Check(t *testing.T) {
+func (input ClearanceStateInput) Check(t *testing.T, caseName string) {
 	sdCurves := make(SDCurves, 0, len(input.Curves))
 	for _, item := range input.Curves {
 		sdCurves = append(sdCurves, SDItem{
@@ -174,6 +175,8 @@ func (input ClearanceStateInput) Check(t *testing.T) {
 			Demand: sdk.NewUint(item.D),
 		})
 	}
+
+	fmt.Printf("Case %q:\n%s\n", caseName, sdCurves.Graph())
 
 	state, err := sdCurves.GetClearanceState()
 	if !input.IsOk {
@@ -192,7 +195,7 @@ func (input ClearanceStateInput) Check(t *testing.T) {
 	maxBidVolume := sdk.NewDecFromInt(demandVolumeDec.Mul(proRata).RoundInt())
 	MaxAskVolume := sdk.NewDecFromInt(supplyVolumeDec.Mul(proRataInvert).RoundInt())
 
-	require.True(t, state.Price.Equal(price), "State: Price (expected / received): %s / %s", input.ClearancePrice, state.Price)
+	require.True(t, state.Price.Equal(price), "State: Price (expected / received): %d / %s", input.ClearancePrice, state.Price)
 	require.True(t, state.MaxAskVolume.Equal(MaxAskVolume), "State: MaxAskVolume (expected / received): %s / %s", MaxAskVolume, state.MaxAskVolume)
 	require.True(t, state.MaxBidVolume.Equal(maxBidVolume), "State: MaxBidVolume (expected / received): %s / %s", maxBidVolume, state.MaxBidVolume)
 	require.True(t, state.ProRata.Equal(proRata), "State: ProRata")
@@ -206,7 +209,7 @@ func Test_SDCurves_State(t *testing.T) {
 			IsOk:   false,
 			Curves: nil,
 		}
-		input.Check(t)
+		input.Check(t, "Empty curves")
 	}
 
 	// classic case (one cross)
@@ -224,10 +227,10 @@ func Test_SDCurves_State(t *testing.T) {
 			ClearancePrice: 250,
 			ClearanceIdx:   4,
 		}
-		input.Check(t)
+		input.Check(t, "One cross")
 	}
 
-	// classic case (tunnel)
+	// classic case (tunnel with length 2)
 	{
 		input := ClearanceStateInput{
 			IsOk: true,
@@ -243,6 +246,98 @@ func Test_SDCurves_State(t *testing.T) {
 			ClearancePrice: 275,
 			ClearanceIdx:   4,
 		}
-		input.Check(t)
+		input.Check(t, "Tunnel 2")
+	}
+
+	// classic case (tunnel with length 3)
+	{
+		input := ClearanceStateInput{
+			IsOk: true,
+			Curves: []SDOutputItem{
+				{P: 50, S: 0, D: 100},
+				{P: 100, S: 20, D: 90},
+				{P: 150, S: 50, D: 80},
+				{P: 200, S: 60, D: 70},
+				{P: 250, S: 80, D: 10}, // [4] tunnel start
+				{P: 300, S: 80, D: 10},
+				{P: 350, S: 80, D: 10}, // [6] tunnel end
+				{P: 400, S: 100, D: 0},
+			},
+			ClearancePrice: 300,
+			ClearanceIdx:   4,
+		}
+		input.Check(t, "Tunnel 3")
+	}
+
+	// edge case: no crossing point 1 (min diff)
+	{
+		input := ClearanceStateInput{
+			IsOk: true,
+			Curves: []SDOutputItem{
+				{P: 50, S: 60, D: 50},
+				{P: 100, S: 65, D: 50},
+				{P: 150, S: 65, D: 45},
+				{P: 200, S: 70, D: 30},
+				{P: 250, S: 80, D: 20},
+				{P: 300, S: 100, D: 5},
+			},
+			ClearancePrice: 50,
+			ClearanceIdx:   0,
+		}
+		input.Check(t, "No cross 1: min diff")
+	}
+
+	// edge case: no crossing point 2 (zero min diff)
+	{
+		input := ClearanceStateInput{
+			IsOk: true,
+			Curves: []SDOutputItem{
+				{P: 50, S: 50, D: 50},
+				{P: 100, S: 65, D: 50},
+				{P: 150, S: 65, D: 45},
+				{P: 200, S: 70, D: 30},
+				{P: 250, S: 80, D: 20},
+				{P: 300, S: 100, D: 5},
+			},
+			ClearancePrice: 50,
+			ClearanceIdx:   0,
+		}
+		input.Check(t, "No cross 2: zero min diff")
+	}
+
+	// edge case: no crossing point 3 (equal min diffs)
+	{
+		input := ClearanceStateInput{
+			IsOk: true,
+			Curves: []SDOutputItem{
+				{P: 50, S: 100, D: 5},
+				{P: 100, S: 80, D: 20},
+				{P: 150, S: 60, D: 50},
+				{P: 200, S: 60, D: 50},
+				{P: 250, S: 80, D: 20},
+				{P: 300, S: 100, D: 5},
+			},
+			ClearancePrice: 150,
+			ClearanceIdx:   2,
+		}
+		input.Check(t, "No cross 3: equal min diffs")
+	}
+
+	// edge case: no crossing point 4 (sorting check)
+	{
+		input := ClearanceStateInput{
+			IsOk: true,
+			Curves: []SDOutputItem{
+				{P: 50, S: 100, D: 5},
+				{P: 100, S: 80, D: 20},
+				{P: 150, S: 60, D: 50},
+				{P: 200, S: 60, D: 55},
+				{P: 250, S: 80, D: 20},
+				{P: 300, S: 100, D: 5},
+			},
+			ClearancePrice: 200,
+			ClearanceIdx:   3,
+		}
+		input.Check(t, "No cross 4: sorting check")
 	}
 }
