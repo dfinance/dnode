@@ -5,6 +5,7 @@ import (
 
 	"github.com/tendermint/tendermint/libs/log"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 )
@@ -49,6 +50,16 @@ func (mp *MatcherPool) Process() types.MatcherResults {
 	}
 
 	return results
+}
+
+// GetSDCurves returns matcher's SDCurver (for debug use only).
+func (mp *MatcherPool) GetSDCurves(marketID dnTypes.ID) SDCurves {
+	matcher, ok := mp.pool[marketID.String()]
+	if !ok {
+		return nil
+	}
+
+	return matcher.GetSDCurves()
 }
 
 // NewMatcherPool creates a new MatcherPool object.

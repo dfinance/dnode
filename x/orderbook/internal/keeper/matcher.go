@@ -21,6 +21,7 @@ type Matcher struct {
 	logger     log.Logger
 	orders     MatcherOrders
 	aggregates MatcherAggregates
+	sdCurves   SDCurves
 }
 
 // MatcherOrders stores bid/ask orders in sorted slices.
@@ -103,6 +104,7 @@ func (m *Matcher) Match() (result types.MatcherResult, retErr error) {
 		retErr = err
 		return
 	}
+	m.sdCurves = sdCurves
 
 	// get clearance price, max volumes for the next steps
 	clearanceState, err := sdCurves.GetClearanceState()
@@ -238,6 +240,11 @@ func (m *Matcher) getAskOrderFills(clearanceState types.ClearanceState) (fills o
 	}
 
 	return
+}
+
+// GetSDCurves returns SDCurves (for debug use only).
+func (m *Matcher) GetSDCurves() SDCurves {
+	return m.sdCurves
 }
 
 // NewMatcher creates a new Matcher object.
