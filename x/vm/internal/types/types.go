@@ -82,10 +82,10 @@ func VMWriteOpToString(wOp vm_grpc.VmWriteOp) string {
 
 // Writeset to string.
 func WriteSetToString(value *vm_grpc.VMValue) string {
-	return fmt.Sprintf("%s: \n"+
-		"\tAddress: %s\n"+
-		"\tPath: %s\n"+
-		"\tValue: %s\n",
+	return fmt.Sprintf("\t%s: \n"+
+		"\t\tAddress: %s\n"+
+		"\t\tPath: %s\n"+
+		"\t\tValue: %s\n",
 		VMWriteOpToString(value.Type), hex.EncodeToString(value.Path.Address),
 		hex.EncodeToString(value.Path.Path), hex.EncodeToString(value.Value),
 	)
@@ -101,21 +101,25 @@ func ExecStatusToString(status vm_grpc.ContractStatus, sstruct *vm_grpc.VMStatus
 
 // Event to string.
 func EventToString(event *vm_grpc.VMEvent) string {
-	return fmt.Sprintf("Type: %s\n"+
-		"\tKey: %s\n"+
-		"\tSequence number: %d\n"+
-		"\tValue: %s\n",
+	return fmt.Sprintf("\tType: %s\n"+
+		"\t\tKey: %s\n"+
+		"\t\tSequence number: %d\n"+
+		"\t\tValue: %s\n",
 		VMTypeToStringPanic(event.Type.Tag), hex.EncodeToString(event.Key),
 		event.SequenceNumber, hex.EncodeToString(event.EventData))
 }
 
 // Print VM stack trace if contract is not executed successful.
-func PrintVMStackTrace(log log.Logger, exec *vm_grpc.VMExecuteResponse) {
-	stackTrace := "Stack trace: \n"
+func PrintVMStackTrace(txId []byte, log log.Logger, exec *vm_grpc.VMExecuteResponse) {
+	stackTrace := fmt.Sprintf("Stack trace %X: \n", txId)
 
 	// print common status
 	stackTrace += ExecStatusToString(exec.Status, exec.StatusStruct)
-	stackTrace += "Events\n"
+	stackTrace += "Events: \n"
+
+	if len(exec.Events) == 0 {
+		stackTrace += "\tno events\n"
+	}
 
 	for _, event := range exec.Events {
 		stackTrace += EventToString(event)
@@ -123,6 +127,11 @@ func PrintVMStackTrace(log log.Logger, exec *vm_grpc.VMExecuteResponse) {
 
 	// print all write sets
 	stackTrace += "Write set: \n"
+
+	if len(exec.WriteSet) == 0 {
+		stackTrace += "\tempty writeset\n"
+	}
+
 	for _, ws := range exec.WriteSet {
 		stackTrace += WriteSetToString(ws)
 	}
