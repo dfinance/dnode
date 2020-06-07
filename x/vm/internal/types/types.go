@@ -4,6 +4,7 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/tendermint/tendermint/libs/log"
@@ -95,8 +96,9 @@ func WriteSetToString(value *vm_grpc.VMValue) string {
 func ExecStatusToString(status vm_grpc.ContractStatus, sstruct *vm_grpc.VMStatus) string {
 	return fmt.Sprintf("Status %s: \n"+
 		"\tMajor code: %d\n"+
+		"\tStr status: %s\n"+
 		"\tSub status: %d\n"+
-		"\tMesage: %s\n", status.String(), sstruct.MajorStatus, sstruct.SubStatus, sstruct.Message)
+		"\tMesage: %s\n", status.String(), sstruct.MajorStatus, GetStrCode(strconv.FormatUint(sstruct.MajorStatus, 10)), sstruct.SubStatus, sstruct.Message)
 }
 
 // Event to string.
