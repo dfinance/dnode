@@ -10,6 +10,7 @@ import (
 	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -39,6 +40,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 
 	commands := sdkClient.GetCommands(
 		GetData(types.ModuleName, cdc),
+		GetTxVMStatus(cdc),
 	)
 	commands = append(commands, compileCommands...)
 
@@ -221,6 +223,32 @@ func CompileModule(cdc *codec.Codec) *cobra.Command {
 			fmt.Println("Compilation successful done.")
 
 			return nil
+		},
+	}
+}
+
+// Get transaction VM errors if contains it.
+func GetTxVMStatus(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:     "tx [hash]",
+		Short:   "query tx vm status by hash",
+		Example: "query tx 6D5A4D889BCDB4C71C6AE5836CD8BC1FD8E0703F1580B9812990431D1796CE34",
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			output, err := utils.QueryTx(cliCtx, args[0])
+			if err != nil {
+				return err
+			}
+
+			if output.Empty() {
+				return fmt.Errorf("no transaction found with hash %s", args[0])
+			}
+
+			status := types.NewVMStatusFromABCILogs(output)
+
+			return cliCtx.PrintOutput(status)
 		},
 	}
 }
