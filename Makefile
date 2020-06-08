@@ -11,7 +11,7 @@ tags = -X github.com/cosmos/cosmos-sdk/version.Name=dfinance \
 build_dir=./.build
 swagger_dir=$(build_dir)/swagger
 cosmos_dir=$(swagger_dir)/cosmos-sdk
-cosmos_version=v0.38.2
+cosmos_version=v0.38.4
 dncli =./cmd/dncli
 
 all: install

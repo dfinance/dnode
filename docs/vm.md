@@ -19,6 +19,10 @@ To get execution results (gas spent, events) just query the transaction:
 
     dncli query tx [transactionId]
 
+To get detailed explanation about VM error (if the transaction contains the error), just query the transaction with `vm` module:
+
+    dncli query vm tx [transactionId]
+
 Output will contain all events collected from script execution / module deploy.
 
 Events have status:

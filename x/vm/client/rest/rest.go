@@ -4,10 +4,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
@@ -20,6 +22,7 @@ import (
 const (
 	accountAddrName = "accountAddr"
 	vmPathName      = "vmPath"
+	txHash          = "txHash"
 )
 
 type compileReq struct {
@@ -32,6 +35,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/compile-script", types.ModuleName), compileScript(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/compile-module", types.ModuleName), compileModule(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/data/{%s}/{%s}", types.ModuleName, accountAddrName, vmPathName), getData(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", types.ModuleName, txHash), getTxVMStatus(cliCtx)).Methods("GET")
 }
 
 // GetCompiledScript godoc
@@ -94,7 +98,7 @@ func commonCompileHandler(cliCtx context.CLIContext, compileType vm_grpc.Contrac
 	}
 }
 
-// GetCompiledModule godoc
+// GetData godoc
 // @Tags vm
 // @Summary Get data from data source
 // @Description Get data from data source by accountAddr and path
@@ -171,6 +175,48 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 		resp := types.QueryValueResp{Value: hex.EncodeToString(res)}
 
+		rest.PostProcessResponse(w, cliCtx, resp)
+	}
+}
+
+// GetTxVMStatus godoc
+// @Tags vm
+// @Summary Get tx VM execution status
+// @Description Get tx VM execution status by tx hash
+// @ID vmTxStatus
+// @Accept  json
+// @Produce json
+// @Param txHash path string true "transaction hash"
+// @Success 200 {object} VmData
+// @Failure 422 {object} rest.ErrorResponse "Returned if the request doesn't have valid path params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /vm/tx/{txHash} [get]
+func getTxVMStatus(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		txHash := vars[txHash]
+
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
+		output, err := utils.QueryTx(cliCtx, txHash)
+		if err != nil {
+			if strings.Contains(err.Error(), txHash) {
+				rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+				return
+			}
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if output.Empty() {
+			rest.WriteErrorResponse(w, http.StatusNotFound, fmt.Sprintf("no transaction found with hash %s", txHash))
+			return
+		}
+
+		resp := types.NewVMStatusFromABCILogs(output)
 		rest.PostProcessResponse(w, cliCtx, resp)
 	}
 }
