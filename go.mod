@@ -21,6 +21,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/pelletier/go-toml v1.6.0
+	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
