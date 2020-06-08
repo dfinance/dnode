@@ -207,6 +207,9 @@ func Test_VMExecuteScript(t *testing.T) {
 }
 
 func Test_VMRequestRetry(t *testing.T) {
+	// TODO: Test should be rewritten as its success / failure is Moon phase dependant (not repeatable)
+	t.Skip()
+
 	const (
 		dsSocket      = "ds.sock"
 		mockDVMSocket = "mock_dvm.sock"

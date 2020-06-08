@@ -67,7 +67,7 @@ func RemoveDenomPath(denom string) {
 // Event generator for address.
 type EventHandleGenerator struct {
 	Counter uint64
-	Addr    []byte `lcs:"len=24"`
+	Addr    []byte `lcs:"len=20"`
 }
 
 // Balance.
