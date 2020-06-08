@@ -16,4 +16,9 @@ type (
 		Height int64                `json:"height"`
 		Result types.QueryValueResp `json:"result" format:"HEX string"`
 	}
+
+	VmTxStatus struct {
+		Height int64            `json:"height"`
+		Result types.TxVMStatus `json:"result"`
+	}
 )

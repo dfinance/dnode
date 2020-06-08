@@ -186,8 +186,8 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 // @ID vmTxStatus
 // @Accept  json
 // @Produce json
-// @Param txHash transaction hash
-// @Success 200 {object} VmData
+// @Param txHash path string true "transaction hash"
+// @Success 200 {object} VmTxStatus
 // @Failure 422 {object} rest.ErrorResponse "Returned if the request doesn't have valid path params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /vm/tx/{txHash} [get]
@@ -216,7 +216,7 @@ func getTxVMStatus(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		txVmStatus := types.NewVMStatusFromABCILogs(output)
-		rest.PostProcessResponse(w, cliCtx, txVmStatus)
+		resp := types.NewVMStatusFromABCILogs(output)
+		rest.PostProcessResponse(w, cliCtx, resp)
 	}
 }
