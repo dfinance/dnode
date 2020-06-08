@@ -197,17 +197,9 @@ var (
 // Load VM errors.
 func init() {
 	// File with errors.
-	rawErrors := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(jsonErrorCodes), &rawErrors); err != nil {
+	errorCodes = make(map[string]string)
+	if err := json.Unmarshal([]byte(jsonErrorCodes), &errorCodes); err != nil {
 		panic(err)
-	}
-
-	errorCodes = make(map[string]string, len(rawErrors))
-
-	for i := range rawErrors {
-		if value, ok := rawErrors[i].(string); ok {
-			errorCodes[i] = value
-		}
 	}
 }
 
@@ -215,9 +207,9 @@ func init() {
 func GetStrCode(majorCode string) string {
 	if v, ok := errorCodes[majorCode]; ok {
 		return v
-	} else {
-		return VMErrUnknown
 	}
+
+	return VMErrUnknown
 }
 
 // VM error response.
