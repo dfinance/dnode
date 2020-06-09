@@ -13,7 +13,7 @@ type CurrencyInfo struct {
 	Denom       []byte   `json:"denom"`
 	Decimals    uint8    `json:"decimals"`
 	IsToken     bool     `json:"isToken"`
-	Owner       []byte   `json:"owner" lcs:"len=24"`
+	Owner       []byte   `json:"owner" lcs:"len=20"`
 	TotalSupply *big.Int `json:"totalSupply"`
 }
 

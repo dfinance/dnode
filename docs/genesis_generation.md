@@ -58,10 +58,10 @@ Replace expressions in brackets with correct addresses, include Ethereum address
 
 Now let's register information about added coins in `genesis.json`:
 
-    dnode add-currency-info dfi  18 100000000000000000000000000  011c53cd211c8dd6f27b977dbcf497d6650944f764d15cebf75dcc17f8e2bfa5f4
-    dnode add-currency-info eth  18 100000000000000000000000000 01b7c72e9510f8bd1bfb20b45f5de59d9289798b6413722cb341aa7c0db02b52bb
-    dnode add-currency-info btc  8  100000000000000 018640c82fe545f74fe72e54cc655c43b3eb465d8ce9f902a61b4d3a0ab99aab33
-    dnode add-currency-info usdt 6  10000000000000 016f04631b2df14f2199ad915ae7f620c58c12ac8f6728356c543dbfb719e283cc
+    dnode add-currency-info dfi  18 100000000000000000000000000 01d24136b8144bf1669f04b59f88edcb845d9eaf62c2440509c4945f4bc2213494
+    dnode add-currency-info eth  18 100000000000000000000000000 01faa7d704551494b9195f5389b76d558304d0cf7fe1174add70d906b7cc9733b7
+    dnode add-currency-info btc  8  100000000000000 019f5f20b472d146d3d4294c842972cf499787c0e974e3ab219f2b33b29ea6eb8d
+    dnode add-currency-info usdt 6  10000000000000 01b38df80edee9fbb71f9249afbd1e8c9b593a4523a66afd11b9087781fc228f1e
 
 Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 
