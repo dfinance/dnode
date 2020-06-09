@@ -129,7 +129,8 @@ func exportAppStateAndTMValidators(
 // Init cmd together with VM configruation.
 func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 	defaultNodeHome string) *cobra.Command { // nolint: golint
-	cmd := genutilCli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
+	//cmd := genutilCli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
+	cmd := dnConfig.InitCmd(ctx, cdc, mbm, defaultNodeHome)
 
 	cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {
 		dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))

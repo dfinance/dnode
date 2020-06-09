@@ -63,36 +63,6 @@ Now let's register information about added coins in `genesis.json`:
     dnode add-currency-info btc  8  100000000000000 018640c82fe545f74fe72e54cc655c43b3eb465d8ce9f902a61b4d3a0ab99aab33
     dnode add-currency-info usdt 6  10000000000000 016f04631b2df14f2199ad915ae7f620c58c12ac8f6728356c543dbfb719e283cc
 
-Time to change denom in PoS configuration.
-So open `~/.dnode/config/genesis.json` and find this stake settings:
-
-```json
-"staking": {
-  "params": {
-    "unbonding_time": "1814400000000000",
-    "max_validators": 100,
-    "max_entries": 7,
-    "bond_denom": "stake"
-  },
-  "last_total_power": "0",
-  "last_validator_powers": null,
-  "validators": null,
-  "delegations": null,
-  "unbonding_delegations": null,
-  "redelegations": null,
-  "exported": false
-}
-```
-
-Change line:
-
-    "bond_denom": "stake"
-To:
-
-    "bond_denom": "dfi"
-
-By changing this we determine "dfi" as staking currency.
-
 Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 
     dnode gentx --name pos --amount 1000000000000000000000000dfi
