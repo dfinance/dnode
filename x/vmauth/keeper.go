@@ -61,17 +61,17 @@ func (keeper VMAccountKeeper) setVMAccount(ctx sdk.Context, address sdk.AccAddre
 // Save new VM account.
 func (keeper VMAccountKeeper) saveNewVMAccount(ctx sdk.Context, address sdk.AccAddress, vmAccount AccountResource, eventHandleGen EventHandleGenerator) {
 	vmAddr := common_vm.Bech32ToLibra(address)
-	accessPath := &vm_grpc.VMAccessPath{
+	accountResourcePath := &vm_grpc.VMAccessPath{
 		Address: vmAddr,
 		Path:    GetResPath(),
 	}
-
-	bz := AccResToBytes(vmAccount)
-	keeper.vmKeeper.SetValue(ctx, accessPath, bz)
-	keeper.vmKeeper.SetValue(ctx, &vm_grpc.VMAccessPath{
+	eventHandlerPath := &vm_grpc.VMAccessPath{
 		Address: vmAddr,
 		Path:    GetEHPath(),
-	}, EventHandlerGenToBytes(eventHandleGen))
+	}
+
+	keeper.vmKeeper.SetValue(ctx, accountResourcePath, AccResToBytes(vmAccount))
+	keeper.vmKeeper.SetValue(ctx, eventHandlerPath, EventHandlerGenToBytes(eventHandleGen))
 }
 
 // Save balances in VM keeper.

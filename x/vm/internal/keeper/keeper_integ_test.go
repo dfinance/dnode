@@ -5,6 +5,7 @@ package keeper
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -216,6 +217,7 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	err = waitReachable(*vmAddress, 5*time.Second)
 	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
+	t.Logf("Compile send script")
 	bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    sendScript,
 		Address: common_vm.Bech32ToLibra(addr1),
@@ -237,6 +239,7 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 		})
 	}
 
+	t.Logf("Execute send script")
 	msgScript := types.NewMsgExecuteScript(addr1, bytecode, args)
 	err = input.vk.ExecuteScript(input.ctx, msgScript)
 	require.NoError(t, err)
@@ -539,4 +542,434 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	getAcc := input.ak.GetAccount(input.ctx, addr1)
 	require.True(t, getAcc.GetCoins().IsEqual(coins))
 	require.Len(t, events, 2)
+}
+
+// Test that all hardcoded VM Path are correct.
+// If something goes wrong, check the DataSource logs for requested Path and fix.
+func TestKeeper_Path(t *testing.T) {
+	config := sdk.GetConfig()
+	dnodeConfig.InitBechPrefixes(config)
+
+	input := setupTestInput(false)
+
+	// Create account
+	baseAmount := sdk.NewInt(1000)
+	accCoins := sdk.NewCoins(
+		sdk.NewCoin("dfi", baseAmount),
+		sdk.NewCoin("eth", baseAmount),
+		sdk.NewCoin("btc", baseAmount),
+		sdk.NewCoin("usdt", baseAmount),
+	)
+
+	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
+	acc1.SetCoins(accCoins)
+	input.ak.SetAccount(input.ctx, acc1)
+
+	// Init genesis and start DS
+	gs := getGenesis(t)
+	input.vk.InitGenesis(input.ctx, gs)
+	input.vk.SetDSContext(input.ctx)
+	input.vk.StartDSServer(input.ctx)
+	time.Sleep(2 * time.Second)
+
+	// Launch DVM compiler and runtime
+	client, compiler, vm := launchDocker(input.dsPort, t)
+	defer input.vk.CloseConnections()
+	defer stopDocker(t, client, compiler)
+	defer stopDocker(t, client, vm)
+
+	require.NoError(t, waitStarted(client, compiler.ID, 5*time.Second), "DVM compiler: start")
+	require.NoError(t, waitStarted(client, vm.ID, 5*time.Second), "DVM runtime: start")
+	require.NoError(t, waitReachable(*vmCompiler, 5*time.Second), "DVM compiler: wait to be reachable")
+	require.NoError(t, waitReachable(*vmAddress, 5*time.Second), "DVM runtime: wait to be reachable")
+
+	// Check middleware path: Block
+	testID := "Middleware Block"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+				use 0x0::Block;
+    			fun main() {
+        			let _ = Block::get_current_block_height();
+    			}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check middleware path: Time
+	testID = "middleware Time"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+    			use 0x0::Time;
+			    fun main() {
+        			let _ = Time::now();
+    			}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check vmauth module path: DFI
+	testID = "VMAuth DFI"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+    			use 0x0::Account;
+				use 0x0::DFI;
+				fun main() {
+					let _ = Account::balance<DFI::T>();
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check vmauth module path: ETH
+	testID = "VMAuth ETH"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+    			use 0x0::Account;
+				use 0x0::Coins;
+				fun main() {
+					let _ = Account::balance<Coins::ETH>();
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check vmauth module path: USDT
+	testID = "VMAuth USDT"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+    			use 0x0::Account;
+				use 0x0::Coins;
+				fun main() {
+					let _ = Account::balance<Coins::USDT>();
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check vmauth module path: BTC
+	testID = "VMAuth BTC"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+    			use 0x0::Account;
+				use 0x0::Coins;
+				fun main() {
+					let _ = Account::balance<Coins::BTC>();
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check currencies_register module path: DFI
+	testID = "CurrencyInfo DFI"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+				use 0x0::Dfinance;
+				use 0x0::DFI;
+				fun main() {
+					let _ = Dfinance::denom<DFI::T>();
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check currencies_register module path: ETH
+	testID = "CurrencyInfo ETH"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+				use 0x0::Dfinance;
+				use 0x0::Coins;
+				fun main() {
+					let _ = Dfinance::denom<Coins::ETH>();
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check currencies_register module path: USDT
+	testID = "CurrencyInfo USDT"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+				use 0x0::Dfinance;
+				use 0x0::Coins;
+				fun main() {
+					let _ = Dfinance::denom<Coins::USDT>();
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check currencies_register module path: BTC
+	testID = "CurrencyInfo BTC"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+				use 0x0::Dfinance;
+				use 0x0::Coins;
+				fun main() {
+					let _ = Dfinance::denom<Coins::BTC>();
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check VMAuth module path: Account eventHandler
+	testID = "VMAuth eventHandler"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := `
+			script {
+				use 0x0::Event;
+				fun main() {
+					let event_handle = Event::new_event_handle<u64>();
+					Event::emit_event(&mut event_handle, 1);
+					Event::destroy_handle(event_handle);
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Check VMAuth module path: Account resource
+	testID = "VMAuth accResource"
+	{
+		t.Logf("%s: script compile", testID)
+		scriptSrc := 	`
+			script {
+				use 0x0::Account;
+				use 0x0::DFI;
+				fun main() {
+					let dfi = Account::withdraw_from_sender<DFI::T>(1);
+					Account::deposit_to_sender<DFI::T>(dfi);
+				}
+			}
+		`
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
+
+	// Create module and use it in script (doesn't check VM path)
+	testID = "Account module"
+	{
+		t.Logf("%s: module compile", testID)
+		moduleSrc := `
+			module Dummy {
+			    public fun one_u64(): u64 {
+					1
+			    }
+			}
+		`
+		moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    moduleSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Module,
+		})
+		require.NoErrorf(t, err, "%s: module compile error", testID)
+
+		t.Logf("%s: module deploy", testID)
+		moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+		require.NoErrorf(t, moduleMsg.ValidateBasic(), "%s: module deploy message validation failed", testID)
+		ctx, writeCtx := input.ctx.CacheContext()
+		require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "%s: module deploy error", testID)
+
+		t.Logf("%s: checking module events", testID)
+		checkNoErrors(ctx.EventManager().Events(), t)
+		writeCtx()
+
+		t.Logf("%s: script compile", testID)
+		scriptSrcFmt := `
+			script {
+				use %s::Dummy;
+    			fun main() {
+       			let _ = Dummy::one_u64();
+    			}
+			}
+		`
+		scriptSrc := fmt.Sprintf(scriptSrcFmt, addr1)
+		scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+			Type:    vm_grpc.ContractType_Script,
+		})
+		require.NoErrorf(t, err, "%s: script compile error", testID)
+
+		t.Logf("%s: script execute", testID)
+		scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
+
+		t.Logf("%s: checking script events", testID)
+		checkNoErrors(input.ctx.EventManager().Events(), t)
+	}
 }
