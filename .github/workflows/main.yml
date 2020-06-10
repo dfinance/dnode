@@ -3,11 +3,23 @@ name: Tests & CrossBuild & DockerBuild
 on: [push]
 
 jobs:
+  golangci:
+    name: Linter checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v1
+        with:
+          version: v1.26
+          args: --exclude 'unused'
+
   test-build:
     name: Tests & CrossBuild
     runs-on: ubuntu-18.04
     steps:
-
     - name: Set GOPATH
       run: |
         echo "::set-env name=GOPATH::${{ github.workspace }}/go"
