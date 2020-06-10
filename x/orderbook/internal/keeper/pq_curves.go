@@ -203,7 +203,7 @@ func (c *SDCurves) getCrossPoint() SDItem {
 
 	// edge-case 2 (option a): find point with the minimal |Supply - Demand| diff and non-zero Supply and Demand
 	// Supply / Demand can't be zero as it would cause "div 0" error
-	cSorted := make(SDCurves, cLen, cLen)
+	cSorted := make(SDCurves, cLen)
 	copy(cSorted, *c)
 	sort.Slice(cSorted, func(i, j int) bool {
 		leftItem, rightItem := &cSorted[i], &cSorted[j]

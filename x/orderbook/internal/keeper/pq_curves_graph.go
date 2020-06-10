@@ -57,7 +57,7 @@ func (c *SDCurves) Graph() string {
 	// build values matrix
 	matrix := make([]SDGraphValues, 0, len(xAxis))
 	for _, item := range *c {
-		yItems := make(SDGraphValues, len(yAxis), len(yAxis))
+		yItems := make(SDGraphValues, len(yAxis))
 
 		for i := 0; i < len(yAxis); i++ {
 			yTick := yAxis[i]

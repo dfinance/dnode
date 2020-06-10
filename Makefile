@@ -15,7 +15,7 @@ dnode = ./cmd/dnode
 dncli =./cmd/dncli
 
 cosmos_version=v0.38.4
-dvm_version=release-v0.3
+dvm_version=master
 
 all: install
 install: go.sum install-dnode install-dncli
