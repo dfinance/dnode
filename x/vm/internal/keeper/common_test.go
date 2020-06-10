@@ -23,6 +23,8 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
+	cfg "github.com/tendermint/tendermint/config"
+	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
@@ -57,29 +59,29 @@ const (
 	CoinsInfo = `{ 
 		"currencies": [
 			{
-				"path": "011c53cd211c8dd6f27b977dbcf497d6650944f764d15cebf75dcc17f8e2bfa5f4",
+				"path": "01d24136b8144bf1669f04b59f88edcb845d9eaf62c2440509c4945f4bc2213494",
           		"denom": "dfi",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
         	{
-          		"path": "01b7c72e9510f8bd1bfb20b45f5de59d9289798b6413722cb341aa7c0db02b52bb",
+          		"path": "01faa7d704551494b9195f5389b76d558304d0cf7fe1174add70d906b7cc9733b7",
           		"denom": "eth",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
-        	{
-          		"path": "018640c82fe545f74fe72e54cc655c43b3eb465d8ce9f902a61b4d3a0ab99aab33",
-          		"denom": "btc",
-          		"decimals": 8,
-          		"totalSupply": "100000000000000"
-			},
-        	{
-          		"path": "016f04631b2df14f2199ad915ae7f620c58c12ac8f6728356c543dbfb719e283cc",
+			{
+          		"path": "01b38df80edee9fbb71f9249afbd1e8c9b593a4523a66afd11b9087781fc228f1e",
           		"denom": "usdt",
           		"decimals": 6,
           		"totalSupply": "10000000000000"
-        	}
+        	},
+        	{
+          		"path": "019f5f20b472d146d3d4294c842972cf499787c0e974e3ab219f2b33b29ea6eb8d",
+          		"denom": "btc",
+          		"decimals": 8,
+          		"totalSupply": "100000000000000"
+			}
 		]
 	}`
 )
@@ -92,7 +94,6 @@ type testInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
 
-	k  Keeper
 	ak vmauth.VMAccountKeeper
 	pk params.Keeper
 	vk Keeper
@@ -247,7 +248,6 @@ func setupTestInput(launchMock bool) testInput {
 	}
 
 	var config *vmConfig.VMConfig
-
 	if launchMock {
 		config = MockVMConfig()
 	} else {
@@ -269,7 +269,6 @@ func setupTestInput(launchMock bool) testInput {
 
 	// no blocking, so we can launch part of tests even without vm
 	var clientConn *grpc.ClientConn
-
 	if launchMock {
 		ctx := context.TODO()
 		clientConn, err = grpc.DialContext(ctx, "", grpc.WithContextDialer(GetBufDialer(vmListener)), grpc.WithInsecure())
@@ -283,30 +282,18 @@ func setupTestInput(launchMock bool) testInput {
 		}
 	}
 
-	input.vk = Keeper{
-		cdc:      input.cdc,
-		storeKey: input.keyVM,
-		client:   vm_grpc.NewVMServiceClient(clientConn),
-		listener: listener,
-		config:   config,
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	logger, err = tmflags.ParseLogLevel("x/vm:info,x/vm/dsserver:info", logger, cfg.DefaultLogLevel())
+	if err != nil {
+		panic(err)
 	}
+	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, logger)
 
-	//cdc *amino.Codec, storeKey sdk.StoreKey, vmStorage common_vm.VMStorage
+	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
 	input.cr = currencies_register.NewKeeper(input.cdc, input.keyCRegister, input.vk)
-
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
-	input.ak = vmauth.NewVMAccountKeeper(
-		input.cdc,
-		input.keyAccount,
-		input.pk.Subspace(auth.DefaultParamspace),
-		input.vk,
-		auth.ProtoBaseAccount,
-	)
-
+	input.ak = vmauth.NewVMAccountKeeper(input.cdc, input.keyAccount, input.pk.Subspace(auth.DefaultParamspace), input.vk, auth.ProtoBaseAccount)
 	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
-
-	input.vk.dsServer = NewDSServer(&input.vk)
-	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())
 
 	err = input.cr.InitGenesis(input.ctx, []byte(CoinsInfo))
 	if err != nil {

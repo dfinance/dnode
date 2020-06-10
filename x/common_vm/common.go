@@ -9,7 +9,7 @@ import (
 
 const (
 	// Default address length.
-	VMAddressLength = 24
+	VMAddressLength = 20
 )
 
 var (
@@ -51,5 +51,5 @@ func MakePathKey(path *vm_grpc.VMAccessPath) []byte {
 
 // Convert bech32 to libra hex.
 func Bech32ToLibra(addr sdk.AccAddress) []byte {
-	return append(addr, make([]byte, 4)...)
+	return addr.Bytes()
 }

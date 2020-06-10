@@ -75,7 +75,7 @@ jobs:
         go test -v ./... --tags=integ
         docker logout
       env:
-        DEFAULT_TAG: release-v0.3
+        DEFAULT_TAG: master
         REGISTRY: ${{ secrets.OWN_REGISTRY }}
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
         OWN_REGISTRY_PWD: ${{ secrets.OWN_REGISTRY_PWD }}

@@ -14,7 +14,7 @@ cosmos_dir=$(swagger_dir)/cosmos-sdk
 dnode = ./cmd/dnode
 dncli =./cmd/dncli
 
-cosmos_version=v0.38.2
+cosmos_version=v0.38.4
 dvm_version=release-v0.3
 
 all: install

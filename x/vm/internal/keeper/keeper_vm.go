@@ -10,6 +10,7 @@ import (
 	"github.com/OneOfOne/xxhash"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/crypto/sha3"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
@@ -110,7 +111,7 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 
 		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
 			ctx.EventManager().EmitEvent(types.NewEventError(exec.StatusStruct))
-			types.PrintVMStackTrace(keeper.Logger(ctx), exec)
+			types.PrintVMStackTrace(tmhash.Sum(ctx.TxBytes()), keeper.Logger(ctx), exec)
 			return
 		}
 
