@@ -59,25 +59,25 @@ const (
 	CoinsInfo = `{ 
 		"currencies": [
 			{
-				"path": "01d24136b8144bf1669f04b59f88edcb845d9eaf62c2440509c4945f4bc2213494",
+				"path": "0172c9f1bfe0a2bf6ac342aaa3c3380852d4694ae4e71655d37aa5d2e6700ed94e",
           		"denom": "dfi",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
         	{
-          		"path": "01faa7d704551494b9195f5389b76d558304d0cf7fe1174add70d906b7cc9733b7",
+          		"path": "0116fbac6fd286d2bfec4549161245982b730291a9cbc5281f5fcfb41aeb7bfb26",
           		"denom": "eth",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
 			{
-          		"path": "01b38df80edee9fbb71f9249afbd1e8c9b593a4523a66afd11b9087781fc228f1e",
+          		"path": "01e10f377b920a0a8a330edd7beff6c3a11cdeb7682c964b02aa5bb6a784b84920",
           		"denom": "usdt",
           		"decimals": 6,
           		"totalSupply": "10000000000000"
         	},
         	{
-          		"path": "019f5f20b472d146d3d4294c842972cf499787c0e974e3ab219f2b33b29ea6eb8d",
+          		"path": "0158c690830c7e2f25b85de6ab85052fd1e79e6a9cbb52a9740be7ff7275604c1b",
           		"denom": "btc",
           		"decimals": 8,
           		"totalSupply": "100000000000000"

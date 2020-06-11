@@ -51,9 +51,17 @@ func runeIsASCII(rValue rune) error {
 	return nil
 }
 
+func runeIsLowerCasedLetter(rValue rune) error {
+	if !unicode.IsLetter(rValue) || !unicode.IsLower(rValue) {
+		return fmt.Errorf("non lower cased letter symbol")
+	}
+
+	return nil
+}
+
 func runeLetterIsLowerCase(rValue rune) error {
 	if unicode.IsLetter(rValue) && !unicode.IsLower(rValue) {
-		return fmt.Errorf("non lower case symbol")
+		return fmt.Errorf("letter symbol is not lower cased")
 	}
 
 	return nil

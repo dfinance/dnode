@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	hexBlockHeaderPath = "017ac7c80f566fcc46400388f0a6838dcebf61a76801510b7300399d986185f622"
+	hexBlockHeaderPath = "013de4ee9dbbee0ff62887ef1f291398ee25a4e54be3f2387ff6cb19a35afd8870"
 )
 
 type BlockHeader struct {

@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/OneOfOne/xxhash"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
@@ -66,11 +65,10 @@ const oraclePriceScript = `
 script {
 	use 0x0::Event;
 	use 0x0::Oracle;
-	
-	fun main(ticket: u64) {
-		let price = Oracle::get_price(ticket);
-	
-		let event_handle = Event::new_event_handle<u64>();
+	use 0x0::Coins;
+	fun main(account: &signer) {
+		let price = Oracle::get_price<Coins::ETH, Coins::USDT>();
+		let event_handle = Event::new_event_handle<u64>(account);
 		Event::emit_event(&mut event_handle, price);
 		Event::destroy_handle(event_handle);
 	}
@@ -384,7 +382,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 
 	input.ak.SetAccount(input.ctx, acc1)
 
-	assetCode := "eth_usdt"
+	assetCode := "ethusdt"
 	okInitParams := oracle.Params{
 		Assets: oracle.Assets{
 			oracle.Asset{
@@ -435,18 +433,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	})
 	require.NoErrorf(t, err, "can't get code for oracle script: %v", err)
 
-	seed := xxhash.NewS64(0)
-	_, err = seed.WriteString(strings.ToLower(assetCode))
-	require.NoErrorf(t, err, "can't convert: %v", err)
-	value := seed.Sum64()
-
-	args := make([]types.ScriptArg, 1)
-	args[0] = types.ScriptArg{
-		Value: strconv.FormatUint(value, 10),
-		Type:  vm_grpc.VMTypeTag_U64,
-	}
-
-	msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript, args)
+	msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript, nil)
 	err = input.vk.ExecuteScript(input.ctx, msgScript)
 	require.NoError(t, err)
 
@@ -646,8 +633,8 @@ func TestKeeper_Path(t *testing.T) {
 			script {
     			use 0x0::Account;
 				use 0x0::DFI;
-				fun main() {
-					let _ = Account::balance<DFI::T>();
+				fun main(account: &signer) {
+					let _ = Account::balance<DFI::T>(account);
 				}
 			}
 		`
@@ -674,8 +661,8 @@ func TestKeeper_Path(t *testing.T) {
 			script {
     			use 0x0::Account;
 				use 0x0::Coins;
-				fun main() {
-					let _ = Account::balance<Coins::ETH>();
+				fun main(account: &signer) {
+					let _ = Account::balance<Coins::ETH>(account);
 				}
 			}
 		`
@@ -702,8 +689,8 @@ func TestKeeper_Path(t *testing.T) {
 			script {
     			use 0x0::Account;
 				use 0x0::Coins;
-				fun main() {
-					let _ = Account::balance<Coins::USDT>();
+				fun main(account: &signer) {
+					let _ = Account::balance<Coins::USDT>(account);
 				}
 			}
 		`
@@ -730,8 +717,8 @@ func TestKeeper_Path(t *testing.T) {
 			script {
     			use 0x0::Account;
 				use 0x0::Coins;
-				fun main() {
-					let _ = Account::balance<Coins::BTC>();
+				fun main(account: &signer) {
+					let _ = Account::balance<Coins::BTC>(account);
 				}
 			}
 		`
@@ -869,8 +856,8 @@ func TestKeeper_Path(t *testing.T) {
 		scriptSrc := `
 			script {
 				use 0x0::Event;
-				fun main() {
-					let event_handle = Event::new_event_handle<u64>();
+				fun main(account: &signer) {
+					let event_handle = Event::new_event_handle<u64>(account);
 					Event::emit_event(&mut event_handle, 1);
 					Event::destroy_handle(event_handle);
 				}
@@ -899,9 +886,9 @@ func TestKeeper_Path(t *testing.T) {
 			script {
 				use 0x0::Account;
 				use 0x0::DFI;
-				fun main() {
-					let dfi = Account::withdraw_from_sender<DFI::T>(1);
-					Account::deposit_to_sender<DFI::T>(dfi);
+				fun main(account: &signer) {
+					let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
+					Account::deposit_to_sender<DFI::T>(account, dfi);
 				}
 			}
 		`
