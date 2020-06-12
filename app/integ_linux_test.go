@@ -24,11 +24,10 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	const script = `
 		script {
 			use 0x0::Account;
-			use 0x0::Transaction;
 			use 0x0::DFI;
 
-			fun main() {
-				Account::can_accept<DFI::T>(Transaction::sender());
+			fun main(account: &signer) {
+				Account::accept<DFI::T>(account);
 			}
 	}
 `
