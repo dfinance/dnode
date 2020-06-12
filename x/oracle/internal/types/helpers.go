@@ -6,7 +6,7 @@ import (
 )
 
 func assetCodeFilter(code string) error {
-	return stringFilter(code, []strFilterOpt{stringIsEmpty}, []runeFilterOpt{runeIsASCII, runeLetterIsLowerCase})
+	return stringFilter(code, []strFilterOpt{stringIsEmpty}, []runeFilterOpt{runeIsLowerCasedLetter, runeIsASCII})
 }
 
 type strFilterOpt func(str string) error

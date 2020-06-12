@@ -30,3 +30,23 @@ func Test_stringFilter(t *testing.T) {
 	// empty string
 	require.Error(t, stringFilter("", []strFilterOpt{stringIsEmpty}, nil))
 }
+
+func Test_assetCodeFilter(t *testing.T) {
+	// ok
+	require.NoError(t, assetCodeFilter("ethusdt"))
+
+	// fail: empty
+	require.Error(t, assetCodeFilter(""))
+
+	// fail: non lower cased letter
+	require.Error(t, assetCodeFilter("ETHusdt"))
+
+	// fail: separator
+	require.Error(t, assetCodeFilter("eth_usdt"))
+
+	// fail: non ASCII symbol
+	require.Error(t, assetCodeFilter("eth®usdt"))
+
+	// fail: non letter symbol
+	require.Error(t, assetCodeFilter("ethusdt1"))
+}

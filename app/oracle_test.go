@@ -345,7 +345,7 @@ func Test_OracleAddAsset(t *testing.T) {
 	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dndn"
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -374,7 +374,7 @@ func Test_OracleAddAsset(t *testing.T) {
 	}
 
 	// check adding new asset with existing nominees
-	newAssetCode := "dn2test"
+	newAssetCode := "dntest"
 	{
 		msg := oracle.MsgAddAsset{
 			Nominee: nomineeAddr,
@@ -429,7 +429,7 @@ func Test_OracleSetAsset(t *testing.T) {
 	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dndn"
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -469,7 +469,7 @@ func Test_OracleSetAsset(t *testing.T) {
 
 	// check setting asset (updating)
 	{
-		updAssetCode := "dn2test1"
+		updAssetCode := "dntest"
 
 		msg := oracle.MsgSetAsset{
 			Nominee: nomineeAddr,

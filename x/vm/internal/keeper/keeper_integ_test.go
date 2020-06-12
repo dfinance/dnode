@@ -29,11 +29,11 @@ script {
 	use 0x0::Coins;
 	use 0x0::DFI;
 	
-	fun main(recipient: address, dfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
-		Account::pay_from_sender<DFI::T>(recipient, dfi_amount);
-		Account::pay_from_sender<Coins::ETH>(recipient, eth_amount);
-		Account::pay_from_sender<Coins::BTC>(recipient, btc_amount);
-		Account::pay_from_sender<Coins::USDT>(recipient, usdt_amount);
+	fun main(account: &signer, recipient: address, dfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
+		Account::pay_from_sender<DFI::T>(account, recipient, dfi_amount);
+		Account::pay_from_sender<Coins::ETH>(account, recipient, eth_amount);
+		Account::pay_from_sender<Coins::BTC>(account, recipient, btc_amount);
+		Account::pay_from_sender<Coins::USDT>(account, recipient, usdt_amount);
 	}
 }
 `
@@ -51,10 +51,10 @@ script {
 	use 0x0::Event;
 	use {{sender}}::Math;
 	
-	fun main(a: u64, b: u64) {
+	fun main(account: &signer, a: u64, b: u64) {
 		let c = Math::add(a, b);
 	
-		let event_handle = Event::new_event_handle<u64>();
+		let event_handle = Event::new_event_handle<u64>(account);
 		Event::emit_event(&mut event_handle, c);
 		Event::destroy_handle(event_handle);
 	}
@@ -83,18 +83,18 @@ script {
 	use 0x0::Coins;
 	use 0x0::Event;
 
-	fun main(c: u64) {
-		let a = Account::withdraw_from_sender<DFI::T>(523);
-		let b = Account::withdraw_from_sender<Coins::BTC>(1);
+	fun main(account: &signer, c: u64) {
+		let a = Account::withdraw_from_sender<DFI::T>(account, 523);
+		let b = Account::withdraw_from_sender<Coins::BTC>(account, 1);
 	
 	
-		let event_handle = Event::new_event_handle<u64>();
+		let event_handle = Event::new_event_handle<u64>(account);
 		Event::emit_event(&mut event_handle, 10);
 		Event::destroy_handle(event_handle);
 	
 		Transaction::assert(c == 1000, 122);
-		Account::deposit_to_sender(a);
-		Account::deposit_to_sender(b);
+		Account::deposit_to_sender(account, a);
+		Account::deposit_to_sender(account, b);
 	}
 }
 `

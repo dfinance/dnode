@@ -259,7 +259,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 			Params: oracle.Params{
 				Assets: []oracle.Asset{
 					{
-						AssetCode: "oracle_rest_asset",
+						AssetCode: "oraclerestasset",
 						Oracles:   []oracle.Oracle{},
 						Active:    true,
 					},

@@ -87,8 +87,8 @@ func Test_ConsensusFailure(t *testing.T) {
 			use 0x0::Account;
 			use 0x0::DFI;
 			
-			fun main(recipient: address, amount: u128) {
-				Account::pay_from_sender<DFI::T>(recipient, amount);
+			fun main(account: &signer, recipient: address, amount: u128) {
+				Account::pay_from_sender<DFI::T>(account, recipient, amount);
 			}
 		}
 `
@@ -154,11 +154,10 @@ func Test_VMExecuteScript(t *testing.T) {
 	const script = `
 		script {
 			use 0x0::Account;
-			use 0x0::Transaction;
 			use 0x0::DFI;
 
-			fun main() {
-				Account::can_accept<DFI::T>(Transaction::sender());
+			fun main(account: &signer) {
+				Account::accept<DFI::T>(account);
 			}
 	}
 `
