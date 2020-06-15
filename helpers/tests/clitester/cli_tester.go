@@ -107,7 +107,7 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 		ChainID:           "test-chain",
 		MonikerID:         "test-moniker",
 		AccountPassphrase: "passphrase",
-		DefAssetCode:      "tst",
+		DefAssetCode:      "tst_asset",
 		keyringBackend:    keyring.FileBackend,
 		//
 		rpcAddress: srvAddr,

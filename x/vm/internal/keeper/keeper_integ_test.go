@@ -382,7 +382,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 
 	input.ak.SetAccount(input.ctx, acc1)
 
-	assetCode := "ethusdt"
+	assetCode := "eth_usdt"
 	okInitParams := oracle.Params{
 		Assets: oracle.Assets{
 			oracle.Asset{

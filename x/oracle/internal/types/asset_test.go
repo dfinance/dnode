@@ -30,19 +30,19 @@ func Test_NewAsset(t *testing.T) {
 
 	// check invalid assetCode 3 (non-letter symbol)
 	{
-		a := NewAsset("a_b", oracles, true)
+		a := NewAsset("a_b1", oracles, true)
 		require.Error(t, a.ValidateBasic())
 	}
 
 	// check no oracles
 	{
-		a := NewAsset("dneth", Oracles{}, true)
+		a := NewAsset("dn_eth", Oracles{}, true)
 		require.Error(t, a.ValidateBasic())
 	}
 
 	// check valid assetCode
 	{
-		a := NewAsset("dneth", oracles, true)
+		a := NewAsset("dn_eth", oracles, true)
 		require.NoError(t, a.ValidateBasic())
 	}
 }

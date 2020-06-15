@@ -231,7 +231,7 @@ func Test_OracleCLI(t *testing.T) {
 	defer ct.Close()
 
 	nomineeAddr := ct.Accounts["nominee"].Address
-	assetCode := "ethdfi"
+	assetCode := "eth_dfi"
 	assetOracle1, assetOracle2, assetOracle3 := ct.Accounts["oracle1"].Address, ct.Accounts["oracle2"].Address, ct.Accounts["oracle3"].Address
 
 	// check add asset Tx

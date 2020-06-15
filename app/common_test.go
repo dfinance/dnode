@@ -206,11 +206,6 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	var genTxPubKey crypto.PubKey
 	var genTxPrivKey secp256k1.PrivKeySecp256k1
 	{
-		//if privValidatorKey == nil {
-		//	k := ed25519.GenPrivKey()
-		//	privValidatorKey = &k
-		//}
-
 		genTxPrivKey = secp256k1.GenPrivKey()
 		genTxPubKey = genTxPrivKey.PubKey()
 
@@ -219,8 +214,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 			AccountNumber: uint64(len(accs)),
 			Address:       accAddr,
 			Coins:         GenDefCoins(nil),
-			//PubKey:        privValidatorKey.PubKey(),
-			PubKey: genTxPubKey,
+			PubKey:        genTxPubKey,
 		}
 	}
 
@@ -259,7 +253,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 			Params: oracle.Params{
 				Assets: []oracle.Asset{
 					{
-						AssetCode: "oraclerestasset",
+						AssetCode: "oraclerest_asset",
 						Oracles:   []oracle.Oracle{},
 						Active:    true,
 					},

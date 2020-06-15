@@ -2,11 +2,16 @@ package types
 
 import (
 	"fmt"
+	"strings"
 	"unicode"
 )
 
 func assetCodeFilter(code string) error {
-	return stringFilter(code, []strFilterOpt{stringIsEmpty}, []runeFilterOpt{runeIsLowerCasedLetter, runeIsASCII})
+	return stringFilter(
+		code,
+		[]strFilterOpt{stringIsEmpty, newDelimiterStrFilterOpt("_")},
+		[]runeFilterOpt{runeIsASCII, newIsLowerCasedLetterOrDelimiter('_')},
+	)
 }
 
 type strFilterOpt func(str string) error
@@ -43,6 +48,27 @@ func stringIsEmpty(str string) error {
 	return nil
 }
 
+func newDelimiterStrFilterOpt(delimiter string) strFilterOpt {
+	return func(str string) error {
+		if strings.HasPrefix(str, delimiter) {
+			return fmt.Errorf("delimiter: is a prefix")
+		}
+		if strings.HasSuffix(str, delimiter) {
+			return fmt.Errorf("delimiter: is a suffix")
+		}
+
+		n := strings.Count(str, delimiter)
+		if n == 0 {
+			return fmt.Errorf("delimiter: not found")
+		}
+		if n > 1 {
+			return fmt.Errorf("delimiter: multiple")
+		}
+
+		return nil
+	}
+}
+
 func runeIsASCII(rValue rune) error {
 	if rValue > unicode.MaxASCII {
 		return fmt.Errorf("non ASCII symbol")
@@ -65,4 +91,14 @@ func runeLetterIsLowerCase(rValue rune) error {
 	}
 
 	return nil
+}
+
+func newIsLowerCasedLetterOrDelimiter(delimiter rune) runeFilterOpt {
+	return func(rValue rune) error {
+		if rValue == delimiter {
+			return nil
+		}
+
+		return runeIsLowerCasedLetter(rValue)
+	}
 }
