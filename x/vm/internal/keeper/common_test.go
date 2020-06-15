@@ -6,12 +6,11 @@ import (
 	"context"
 	"encoding/hex"
 	"flag"
-	"fmt"
 	"math/rand"
 	"net"
 	"net/url"
 	"os"
-	"strings"
+	"strconv"
 	"testing"
 	"time"
 
@@ -20,7 +19,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	docker "github.com/fsouza/go-dockerclient"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
@@ -86,41 +84,6 @@ const (
 	}`
 )
 
-type VMServer struct {
-	vm_grpc.UnimplementedVMServiceServer
-}
-
-type testInput struct {
-	cdc *codec.Codec
-	ctx sdk.Context
-
-	ak vmauth.VMAccountKeeper
-	pk params.Keeper
-	vk Keeper
-	ok oracle.Keeper
-	cr currencies_register.Keeper
-
-	keyMain      *sdk.KVStoreKey
-	keyAccount   *sdk.KVStoreKey
-	keyOracle    *sdk.KVStoreKey
-	keyCRegister *sdk.KVStoreKey
-	keyParams    *sdk.KVStoreKey
-	tkeyParams   *sdk.TransientStoreKey
-	keyVM        *sdk.KVStoreKey
-
-	pathBytes    []byte
-	codeBytes    []byte
-	addressBytes []byte
-	valueBytes   []byte
-
-	//rawServer   *grpc.Server
-	rawVMServer *grpc.Server
-	vmServer    *VMServer
-
-	dsListener *bufconn.Listener
-	dsPort     int
-}
-
 var (
 	vmMockAddress  *string
 	dataListenMock *string
@@ -132,198 +95,11 @@ var (
 	bufferSize = 1024 * 1024
 )
 
-func init() {
-	if flag.Lookup(FlagCompiler) == nil {
-		vmCompiler = flag.String(FlagCompiler, "127.0.0.1:50053", "compiler address")
-	}
-
-	if flag.Lookup(FlagVMAddress) == nil {
-		vmAddress = flag.String(FlagVMAddress, vmConfig.DefaultVMAddress, "Move VM address to connect during unit tests")
-	}
-
-	if flag.Lookup(FlagDSListen) == nil {
-		dsListen = flag.String(FlagDSListen, vmConfig.DefaultDataListen, "address to listen of Data Server (DS) during unit tests")
-	}
-
-	if flag.Lookup(FlagVMMockAddress) == nil {
-		vmMockAddress = flag.String(FlagVMMockAddress, DefaultMockVMAddress, "mocked address of virtual machine server client/server")
-	}
-
-	if flag.Lookup(FlagDSMockListen) == nil {
-		dataListenMock = flag.String(FlagDSMockListen, DefaultMockDataListen, "address of mocked data server to launch/connect")
-	}
+type vmServer struct {
+	vm_grpc.UnimplementedVMServiceServer
 }
 
-func MockVMConfig() *vmConfig.VMConfig {
-	return &vmConfig.VMConfig{
-		Address:           *vmMockAddress,
-		DataListen:        *dataListenMock,
-		MaxAttempts:       vmConfig.DefaultMaxAttempts,
-		InitialBackoff:    vmConfig.DefaultInitialBackoff,
-		MaxBackoff:        vmConfig.DefaultMaxBackoff,
-		BackoffMultiplier: vmConfig.DefaultBackoffMultiplier,
-	}
-}
-
-func VMConfigWithFlags() *vmConfig.VMConfig {
-	config := vmConfig.DefaultVMConfig()
-	config.Address = *vmAddress
-	config.DataListen = *dsListen
-
-	return config
-}
-
-func randomPath() *vm_grpc.VMAccessPath {
-	return &vm_grpc.VMAccessPath{
-		Address: randomValue(32),
-		Path:    randomValue(20),
-	}
-}
-
-func randomValue(len int) []byte {
-	rndBytes := make([]byte, len)
-
-	_, err := rand.Read(rndBytes)
-	if err != nil {
-		panic(err)
-	}
-
-	return rndBytes
-}
-
-func closeInput(_ testInput) {
-	// go func() {
-	// 	if input.rawServer != nil {
-	// 		input.rawServer.GracefulStop()
-	// 	}
-	//
-	// 	if input.rawVMServer != nil {
-	// 		input.rawVMServer.GracefulStop()
-	// 	}
-	//
-	// 	input.vk.listener.Close()
-	//
-	// 	if input.dsListener != nil {
-	// 		input.dsListener.Close()
-	// 	}
-	// }()
-}
-
-func setupTestInput(launchMock bool) testInput {
-	input := testInput{
-		cdc:        codec.New(),
-		keyMain:    sdk.NewKVStoreKey("main"),
-		keyAccount: sdk.NewKVStoreKey("acc"),
-		//keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
-		keyOracle:    sdk.NewKVStoreKey("oracle"),
-		keyParams:    sdk.NewKVStoreKey("params"),
-		keyCRegister: sdk.NewKVStoreKey("coins_register"),
-		tkeyParams:   sdk.NewTransientStoreKey("transient_params"),
-		keyVM:        sdk.NewKVStoreKey("vm"),
-	}
-
-	types.RegisterCodec(input.cdc)
-	auth.RegisterCodec(input.cdc)
-	sdk.RegisterCodec(input.cdc)
-	codec.RegisterCrypto(input.cdc)
-	oracle.RegisterCodec(input.cdc)
-
-	db := dbm.NewMemDB()
-	mstore := store.NewCommitMultiStore(db)
-	mstore.MountStoreWithDB(input.keyMain, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyOracle, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyCRegister, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
-	mstore.MountStoreWithDB(input.keyVM, sdk.StoreTypeIAVL, db)
-	err := mstore.LoadLatestVersion()
-	if err != nil {
-		panic(err)
-	}
-
-	var vmListener *bufconn.Listener
-	if launchMock {
-		input.vmServer, input.rawVMServer, vmListener = LaunchVMMock()
-	}
-
-	var config *vmConfig.VMConfig
-	if launchMock {
-		config = MockVMConfig()
-	} else {
-		config = VMConfigWithFlags()
-	}
-
-	// process if mock
-	var listener net.Listener
-	if launchMock {
-		input.dsListener = bufconn.Listen(bufferSize)
-		listener = input.dsListener
-	} else {
-		listener, err = net.Listen("tcp", "127.0.0.1:0")
-		if err != nil {
-			panic(err)
-		}
-		input.dsPort = listener.Addr().(*net.TCPAddr).Port
-	}
-
-	// no blocking, so we can launch part of tests even without vm
-	var clientConn *grpc.ClientConn
-	if launchMock {
-		ctx := context.TODO()
-		clientConn, err = grpc.DialContext(ctx, "", grpc.WithContextDialer(GetBufDialer(vmListener)), grpc.WithInsecure())
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		clientConn, err = helpers.GetGRpcClientConnection(config.Address, 1*time.Second)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
-	logger, err = tmflags.ParseLogLevel("x/vm:info,x/vm/dsserver:info", logger, cfg.DefaultLogLevel())
-	if err != nil {
-		panic(err)
-	}
-	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, logger)
-
-	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
-	input.cr = currencies_register.NewKeeper(input.cdc, input.keyCRegister, input.vk)
-	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
-	input.ak = vmauth.NewVMAccountKeeper(input.cdc, input.keyAccount, input.pk.Subspace(auth.DefaultParamspace), input.vk, auth.ProtoBaseAccount)
-	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
-
-	err = input.cr.InitGenesis(input.ctx, []byte(CoinsInfo))
-	if err != nil {
-		panic(err)
-	}
-
-	input.addressBytes, err = hex.DecodeString(accountHex)
-	if err != nil {
-		panic(err)
-	}
-
-	input.pathBytes, err = hex.DecodeString(movePath)
-	if err != nil {
-		panic(err)
-	}
-
-	input.codeBytes, err = hex.DecodeString(moveCode)
-	if err != nil {
-		panic(err)
-	}
-
-	input.valueBytes, err = hex.DecodeString(value)
-	if err != nil {
-		panic(err)
-	}
-
-	return input
-}
-
-func (server VMServer) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExecuteRequest) (*vm_grpc.VMExecuteResponses, error) {
+func (server vmServer) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExecuteRequest) (*vm_grpc.VMExecuteResponses, error) {
 	// execute module
 	resps := &vm_grpc.VMExecuteResponses{
 		Executions: make([]*vm_grpc.VMExecuteResponse, len(req.Contracts)),
@@ -383,10 +159,215 @@ func (server VMServer) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExec
 	return resps, nil
 }
 
-func LaunchVMMock() (*VMServer, *grpc.Server, *bufconn.Listener) {
+type testInput struct {
+	cdc *codec.Codec
+	ctx sdk.Context
+
+	ak vmauth.VMAccountKeeper
+	pk params.Keeper
+	vk Keeper
+	ok oracle.Keeper
+	cr currencies_register.Keeper
+
+	keyMain      *sdk.KVStoreKey
+	keyAccount   *sdk.KVStoreKey
+	keyOracle    *sdk.KVStoreKey
+	keyCRegister *sdk.KVStoreKey
+	keyParams    *sdk.KVStoreKey
+	tkeyParams   *sdk.TransientStoreKey
+	keyVM        *sdk.KVStoreKey
+
+	pathBytes    []byte
+	codeBytes    []byte
+	addressBytes []byte
+	valueBytes   []byte
+
+	rawVMServer *grpc.Server
+	vmServer    *vmServer
+
+	dsListener *bufconn.Listener
+	dsPort     int
+}
+
+func (i *testInput) Stop() {
+	// go func() {
+	// 	if input.rawServer != nil {
+	// 		input.rawServer.GracefulStop()
+	// 	}
+	//
+	// 	if input.rawVMServer != nil {
+	// 		input.rawVMServer.GracefulStop()
+	// 	}
+	//
+	// 	input.vk.listener.Close()
+	//
+	// 	if input.dsListener != nil {
+	// 		input.dsListener.Close()
+	// 	}
+	// }()
+}
+
+func newTestInput(launchMock bool) testInput {
+	input := testInput{
+		cdc:        codec.New(),
+		keyMain:    sdk.NewKVStoreKey("main"),
+		keyAccount: sdk.NewKVStoreKey("acc"),
+		//keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
+		keyOracle:    sdk.NewKVStoreKey("oracle"),
+		keyParams:    sdk.NewKVStoreKey("params"),
+		keyCRegister: sdk.NewKVStoreKey("coins_register"),
+		tkeyParams:   sdk.NewTransientStoreKey("transient_params"),
+		keyVM:        sdk.NewKVStoreKey("vm"),
+	}
+
+	types.RegisterCodec(input.cdc)
+	auth.RegisterCodec(input.cdc)
+	sdk.RegisterCodec(input.cdc)
+	codec.RegisterCrypto(input.cdc)
+	oracle.RegisterCodec(input.cdc)
+
+	db := dbm.NewMemDB()
+	mstore := store.NewCommitMultiStore(db)
+	mstore.MountStoreWithDB(input.keyMain, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyOracle, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyCRegister, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
+	mstore.MountStoreWithDB(input.keyVM, sdk.StoreTypeIAVL, db)
+	err := mstore.LoadLatestVersion()
+	if err != nil {
+		panic(err)
+	}
+
+	var vmListener *bufconn.Listener
+	if launchMock {
+		input.vmServer, input.rawVMServer, vmListener = startMockDSServer()
+	}
+
+	var config *vmConfig.VMConfig
+	if launchMock {
+		config = newMockVMConfig()
+	} else {
+		config = newVMConfigWithFlags()
+	}
+
+	// process if mock
+	var listener net.Listener
+	if launchMock {
+		input.dsListener = bufconn.Listen(bufferSize)
+		listener = input.dsListener
+	} else {
+		listener, err = net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			panic(err)
+		}
+		input.dsPort = listener.Addr().(*net.TCPAddr).Port
+	}
+
+	// no blocking, so we can launch part of tests even without vm
+	var clientConn *grpc.ClientConn
+	if launchMock {
+		ctx := context.TODO()
+		clientConn, err = grpc.DialContext(ctx, "", grpc.WithContextDialer(getBufDialer(vmListener)), grpc.WithInsecure())
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		clientConn, err = helpers.GetGRpcClientConnection(config.Address, 1*time.Second)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	logger, err = tmflags.ParseLogLevel("x/vm:info,x/vm/dsserver:info", logger, cfg.DefaultLogLevel())
+	if err != nil {
+		panic(err)
+	}
+	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, logger)
+
+	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
+	input.cr = currencies_register.NewKeeper(input.cdc, input.keyCRegister, input.vk)
+	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
+	input.ak = vmauth.NewVMAccountKeeper(input.cdc, input.keyAccount, input.pk.Subspace(auth.DefaultParamspace), input.vk, auth.ProtoBaseAccount)
+	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
+
+	err = input.cr.InitGenesis(input.ctx, []byte(CoinsInfo))
+	if err != nil {
+		panic(err)
+	}
+
+	input.addressBytes, err = hex.DecodeString(accountHex)
+	if err != nil {
+		panic(err)
+	}
+
+	input.pathBytes, err = hex.DecodeString(movePath)
+	if err != nil {
+		panic(err)
+	}
+
+	input.codeBytes, err = hex.DecodeString(moveCode)
+	if err != nil {
+		panic(err)
+	}
+
+	input.valueBytes, err = hex.DecodeString(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return input
+}
+
+func newMockVMConfig() *vmConfig.VMConfig {
+	return &vmConfig.VMConfig{
+		Address:           *vmMockAddress,
+		DataListen:        *dataListenMock,
+		MaxAttempts:       vmConfig.DefaultMaxAttempts,
+		InitialBackoff:    vmConfig.DefaultInitialBackoff,
+		MaxBackoff:        vmConfig.DefaultMaxBackoff,
+		BackoffMultiplier: vmConfig.DefaultBackoffMultiplier,
+	}
+}
+
+func newVMConfigWithFlags() *vmConfig.VMConfig {
+	config := vmConfig.DefaultVMConfig()
+	config.Address = *vmAddress
+	config.DataListen = *dsListen
+
+	return config
+}
+
+func randomPath() *vm_grpc.VMAccessPath {
+	return &vm_grpc.VMAccessPath{
+		Address: randomValue(32),
+		Path:    randomValue(20),
+	}
+}
+
+func randomValue(len int) []byte {
+	rndBytes := make([]byte, len)
+
+	_, err := rand.Read(rndBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	return rndBytes
+}
+
+func getBufDialer(listener *bufconn.Listener) func(context.Context, string) (net.Conn, error) {
+	return func(ctx context.Context, url string) (net.Conn, error) {
+		return listener.Dial()
+	}
+}
+
+func startMockDSServer() (*vmServer, *grpc.Server, *bufconn.Listener) {
 	vmListener := bufconn.Listen(bufferSize)
 
-	vmServer := VMServer{}
+	vmServer := vmServer{}
 	server := grpc.NewServer()
 	vm_grpc.RegisterVMServiceServer(server, vmServer)
 
@@ -399,158 +380,43 @@ func LaunchVMMock() (*VMServer, *grpc.Server, *bufconn.Listener) {
 	return &vmServer, server, vmListener
 }
 
-func GetBufDialer(listener *bufconn.Listener) func(context.Context, string) (net.Conn, error) {
-	return func(ctx context.Context, url string) (net.Conn, error) {
-		return listener.Dial()
+func startDVMContainer(t *testing.T, dsPort int) (stopFunc func()) {
+	vmUrl, err := url.Parse(*vmAddress)
+	require.NoError(t, err, "parsing vmAddress")
+
+	container, err := tests.NewDVMWithNetTransport(vmUrl.Port(), strconv.Itoa(dsPort))
+	require.NoError(t, err, "creating DVM container")
+
+	require.NoError(t, container.Start(5*time.Second), "starting DVM container")
+
+	require.NoError(t, tests.PingTcpAddress(*vmAddress, 500 * time.Millisecond), "waiting for DVM gRPC server to start")
+
+	*vmCompiler = "127.0.0.1:" + vmUrl.Port()
+	stopFunc = func() {
+		container.Stop()
 	}
+
+	return
 }
 
-func createVMOptions(registry, dsServerUrl, tag string) docker.CreateContainerOptions {
-	_, hostNetworkMode, _ := tests.HostMachineDockerUrl()
-
-	ports := make(map[docker.Port]struct{})
-	ports["50051/tcp"] = struct{}{}
-
-	opts := docker.CreateContainerOptions{
-		Config: &docker.Config{
-			Image:        registry + "/dfinance/dvm:" + tag,
-			ExposedPorts: ports,
-			Cmd: []string{
-				"./dvm",
-				"http://0.0.0.0:50051",
-				dsServerUrl,
-			},
-		},
-		HostConfig: &docker.HostConfig{
-			PortBindings: map[docker.Port][]docker.PortBinding{
-				"50051/tcp": {{HostIP: "0.0.0.0", HostPort: "50051"}},
-			},
-			NetworkMode: hostNetworkMode,
-		},
+func init() {
+	if flag.Lookup(FlagCompiler) == nil {
+		vmCompiler = flag.String(FlagCompiler, "127.0.0.1:50053", "compiler address")
 	}
 
-	return opts
-}
-
-// creating compiler options.
-func createCompilerOptions(registry, dsServerUrl, tag string) docker.CreateContainerOptions {
-	_, hostNetworkMode, _ := tests.HostMachineDockerUrl()
-
-	ports := make(map[docker.Port]struct{})
-	ports["50053/tcp"] = struct{}{}
-
-	opts := docker.CreateContainerOptions{
-		Config: &docker.Config{
-			Image:        registry + "/dfinance/dvm:" + tag,
-			ExposedPorts: ports,
-			Cmd: []string{
-				"./compiler",
-				"http://0.0.0.0:50053",
-				dsServerUrl,
-			},
-		},
-		HostConfig: &docker.HostConfig{
-			PortBindings: map[docker.Port][]docker.PortBinding{
-				"50053/tcp": {{HostIP: "0.0.0.0", HostPort: "50053"}},
-			},
-			NetworkMode: hostNetworkMode,
-		},
+	if flag.Lookup(FlagVMAddress) == nil {
+		vmAddress = flag.String(FlagVMAddress, vmConfig.DefaultVMAddress, "Move VM address to connect during unit tests")
 	}
 
-	return opts
-}
-
-// stop docker
-func stopDocker(t *testing.T, client *docker.Client, container *docker.Container) {
-	if err := client.RemoveContainer(docker.RemoveContainerOptions{
-		ID:    container.ID,
-		Force: true,
-	}); err != nil {
-		t.Fatalf("can't remove container: %v", err)
-	}
-}
-
-// Launch docker container with dvm.
-func launchDocker(dsServerPort int, t *testing.T) (*docker.Client, *docker.Container, *docker.Container) {
-	hostUrl, _, err := tests.HostMachineDockerUrl()
-	require.NoError(t, err)
-	dsServerUrl := fmt.Sprintf("%s:%d", hostUrl, dsServerPort)
-
-	tag := os.Getenv("TAG")
-	if tag == "" {
-		tag = "master"
+	if flag.Lookup(FlagDSListen) == nil {
+		dsListen = flag.String(FlagDSListen, vmConfig.DefaultDataListen, "address to listen of Data Server (DS) during unit tests")
 	}
 
-	registry := os.Getenv("REGISTRY")
-	if registry == "" {
-		t.Fatalf("provide REGISTRY via env, e.g. REGISTRY=...")
+	if flag.Lookup(FlagVMMockAddress) == nil {
+		vmMockAddress = flag.String(FlagVMMockAddress, DefaultMockVMAddress, "mocked address of virtual machine server client/server")
 	}
 
-	client, err := docker.NewClientFromEnv()
-	if err != nil {
-		t.Fatalf("can't connect to docker: %v", err)
+	if flag.Lookup(FlagDSMockListen) == nil {
+		dataListenMock = flag.String(FlagDSMockListen, DefaultMockDataListen, "address of mocked data server to launch/connect")
 	}
-
-	compiler, err := client.CreateContainer(createCompilerOptions(registry, dsServerUrl, tag))
-	if err != nil {
-		t.Fatalf("can't create container for compiler: %v", err)
-	}
-
-	err = client.StartContainer(compiler.ID, nil)
-	if err != nil {
-		t.Fatalf("cannot start docker container for compiler: %v", err)
-	}
-
-	vm, err := client.CreateContainer(createVMOptions(registry, dsServerUrl, tag))
-	if err != nil {
-		t.Fatalf("can't create container for vm: %v", err)
-	}
-
-	err = client.StartContainer(vm.ID, nil)
-	if err != nil {
-		t.Fatalf("can't start docker container for vm: %v", err)
-	}
-
-	return client, compiler, vm
-}
-
-// waitStarted waits for a container to start for the maxWait time.
-func waitStarted(client *docker.Client, id string, maxWait time.Duration) error {
-	done := time.Now().Add(maxWait)
-	for time.Now().Before(done) {
-		c, err := client.InspectContainerWithOptions(docker.InspectContainerOptions{
-			ID: id,
-		})
-		if err != nil {
-			break
-		}
-		if c.State.Running {
-			return nil
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	return fmt.Errorf("cannot start container %s for %v", id, maxWait)
-}
-
-// waitReachable waits for hostport to became reachable for the maxWait time.
-func waitReachable(hostport string, maxWait time.Duration) error {
-	if !strings.Contains(hostport, "://") {
-		hostport = "tcp://" + hostport
-	}
-
-	done := time.Now().Add(maxWait)
-	u, err := url.Parse(hostport)
-	if err != nil {
-		return err
-	}
-
-	for time.Now().Before(done) {
-		c, err := net.Dial(u.Scheme, u.Host+u.Path)
-		if err == nil {
-			c.Close()
-			return nil
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	return fmt.Errorf("cannot connect %v for %v", hostport, maxWait)
 }

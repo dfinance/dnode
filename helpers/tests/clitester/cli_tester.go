@@ -126,6 +126,7 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 	}
 	ct.vmConnectAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmConnectPort)
 	ct.vmListenAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmListenPort)
+	ct.vmCompilerAddress = ct.vmConnectAddress
 
 	smallAmount, ok := sdk.NewIntFromString("1000000000000000000000")
 	require.True(t, ok, "NewInt for smallAmount")

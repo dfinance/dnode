@@ -153,13 +153,11 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
-	input := setupTestInput(false)
+	input := newTestInput(false)
 
 	// launch docker
-	client, compiler, vm := launchDocker(input.dsPort, t)
-	defer input.vk.CloseConnections()
-	defer stopDocker(t, client, compiler)
-	defer stopDocker(t, client, vm)
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
 
 	// create accounts.
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
@@ -199,21 +197,6 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	input.vk.SetDSContext(input.ctx)
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
-
-	// wait for compiler
-	err := waitStarted(client, compiler.ID, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to docker compiler: %v", err)
-
-	err = waitStarted(client, vm.ID, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to docker vm: %v", err)
-
-	// wait reachable compiler
-	err = waitReachable(*vmCompiler, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to compiler server: %v", err)
-
-	// wait reachable vm
-	err = waitReachable(*vmAddress, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
 	t.Logf("Compile send script")
 	bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
@@ -268,12 +251,11 @@ func TestKeeper_DeployModule(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
-	input := setupTestInput(false)
+	input := newTestInput(false)
 
 	// launch docker
-	client, compiler, vm := launchDocker(input.dsPort, t)
-	defer stopDocker(t, client, vm)
-	defer stopDocker(t, client, compiler)
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
 
 	// create accounts.
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
@@ -286,21 +268,6 @@ func TestKeeper_DeployModule(t *testing.T) {
 	input.vk.SetDSContext(input.ctx)
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
-
-	// wait for compiler
-	err := waitStarted(client, compiler.ID, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to docker compiler: %v", err)
-
-	err = waitStarted(client, vm.ID, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to docker vm: %v", err)
-
-	// wait reachable compiler
-	err = waitReachable(*vmCompiler, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to compiler server: %v", err)
-
-	// wait reachable vm
-	err = waitReachable(*vmAddress, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
 	bytecodeModule, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    mathModule,
@@ -369,12 +336,11 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
-	input := setupTestInput(false)
+	input := newTestInput(false)
 
 	// launch docker
-	client, compiler, vm := launchDocker(input.dsPort, t)
-	defer stopDocker(t, client, vm)
-	defer stopDocker(t, client, compiler)
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
 
 	// create accounts.
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
@@ -411,21 +377,6 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	// wait for compiler
-	err := waitStarted(client, compiler.ID, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to docker compiler: %v", err)
-
-	err = waitStarted(client, vm.ID, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to docker vm: %v", err)
-
-	// wait reachable compiler
-	err = waitReachable(*vmCompiler, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to compiler server: %v", err)
-
-	// wait reachable vm
-	err = waitReachable(*vmAddress, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
-
 	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    oraclePriceScript,
 		Address: common_vm.Bech32ToLibra(addr1),
@@ -460,12 +411,11 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
-	input := setupTestInput(false)
+	input := newTestInput(false)
 
 	// launch docker
-	client, compiler, vm := launchDocker(input.dsPort, t)
-	defer stopDocker(t, client, vm)
-	defer stopDocker(t, client, compiler)
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
 
 	// create accounts.
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
@@ -483,21 +433,6 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	input.vk.SetDSContext(input.ctx)
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
-
-	// wait for compiler
-	err := waitStarted(client, compiler.ID, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to docker compiler: %v", err)
-
-	err = waitStarted(client, vm.ID, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to docker vm: %v", err)
-
-	// wait reachable compiler
-	err = waitReachable(*vmCompiler, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to compiler server: %v", err)
-
-	// wait reachable vm
-	err = waitReachable(*vmAddress, 5*time.Second)
-	require.NoErrorf(t, err, "can't connect to vm server: %v", err)
 
 	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
 		Text:    errorScript,
@@ -537,7 +472,7 @@ func TestKeeper_Path(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
-	input := setupTestInput(false)
+	input := newTestInput(false)
 
 	// Create account
 	baseAmount := sdk.NewInt(1000)
@@ -560,16 +495,9 @@ func TestKeeper_Path(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	// Launch DVM compiler and runtime
-	client, compiler, vm := launchDocker(input.dsPort, t)
-	defer input.vk.CloseConnections()
-	defer stopDocker(t, client, compiler)
-	defer stopDocker(t, client, vm)
-
-	require.NoError(t, waitStarted(client, compiler.ID, 5*time.Second), "DVM compiler: start")
-	require.NoError(t, waitStarted(client, vm.ID, 5*time.Second), "DVM runtime: start")
-	require.NoError(t, waitReachable(*vmCompiler, 5*time.Second), "DVM compiler: wait to be reachable")
-	require.NoError(t, waitReachable(*vmAddress, 5*time.Second), "DVM runtime: wait to be reachable")
+	// Launch DVM container
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
 
 	// Check middleware path: Block
 	testID := "Middleware Block"

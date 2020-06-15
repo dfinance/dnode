@@ -16,7 +16,7 @@ import (
 
 // Initialize connection to DS server.
 func getClient(t *testing.T, listener *bufconn.Listener) ds_grpc.DSServiceClient {
-	dsConn, err := grpc.DialContext(context.TODO(), "", grpc.WithContextDialer(GetBufDialer(listener)), grpc.WithInsecure())
+	dsConn, err := grpc.DialContext(context.TODO(), "", grpc.WithContextDialer(getBufDialer(listener)), grpc.WithInsecure())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,8 +26,8 @@ func getClient(t *testing.T, listener *bufconn.Listener) ds_grpc.DSServiceClient
 
 // Test set context for server.
 func TestDSServer_SetContext(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	input.vk.dsServer.SetContext(input.ctx)
 	require.EqualValues(t, input.ctx, input.vk.dsServer.ctx)
@@ -35,8 +35,8 @@ func TestDSServer_SetContext(t *testing.T) {
 
 // Test get raw data from server.
 func TestDSServer_GetRaw(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)
 	defer rawServer.Stop()
@@ -65,8 +65,8 @@ func TestDSServer_GetRaw(t *testing.T) {
 
 // Test get multiraw data from server.
 func TestDSServer_MultiGetRaw(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	rawServer := StartServer(input.vk.listener, input.vk.dsServer)
 	defer rawServer.Stop()
