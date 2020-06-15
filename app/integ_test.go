@@ -157,12 +157,12 @@ func Test_VMExecuteScript(t *testing.T) {
 			use 0x0::DFI;
 
 			fun main(account: &signer) {
-				Account::accept<DFI::T>(account);
+				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
+				Account::deposit_to_sender<DFI::T>(account, dfi);
 			}
 	}
 `
 
-	//t.Parallel()
 	ct := cliTester.New(
 		t,
 		true,
@@ -299,11 +299,11 @@ func Test_VMCommunicationUDSOverBinary(t *testing.T) {
 	const script = `
 		script {
 			use 0x0::Account;
-			use 0x0::Transaction;
 			use 0x0::DFI;
 
-			fun main() {
-				Account::can_accept<DFI::T>(Transaction::sender());
+			fun main(account: &signer) {
+				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
+				Account::deposit_to_sender<DFI::T>(account, dfi);
 			}
 	}
 `
@@ -363,11 +363,11 @@ func Test_VMCommunicationTCPOverUniBinary(t *testing.T) {
 	const script = `
 		script {
 			use 0x0::Account;
-			use 0x0::Transaction;
 			use 0x0::DFI;
 
-			fun main() {
-				Account::can_accept<DFI::T>(Transaction::sender());
+			fun main(account: &signer) {
+				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
+				Account::deposit_to_sender<DFI::T>(account, dfi);
 			}
 	}
 `
@@ -420,11 +420,11 @@ func Test_VMCommunicationUDSOverUniBinary(t *testing.T) {
 	const script = `
 		script {
 			use 0x0::Account;
-			use 0x0::Transaction;
 			use 0x0::DFI;
 
-			fun main() {
-				Account::can_accept<DFI::T>(Transaction::sender());
+			fun main(account: &signer) {
+				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
+				Account::deposit_to_sender<DFI::T>(account, dfi);
 			}
 	}
 `

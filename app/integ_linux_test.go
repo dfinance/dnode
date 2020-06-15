@@ -27,7 +27,8 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 			use 0x0::DFI;
 
 			fun main(account: &signer) {
-				Account::accept<DFI::T>(account);
+				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
+				Account::deposit_to_sender<DFI::T>(account, dfi);
 			}
 	}
 `
