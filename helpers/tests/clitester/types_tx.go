@@ -20,6 +20,7 @@ type TxRequest struct {
 	cmd            *CLICmd
 	accPassphrase  string
 	nodeRpcAddress string
+	gas            uint64
 }
 
 func (r *TxRequest) SetCmd(module, fromAddress string, args ...string) {
@@ -36,6 +37,7 @@ func (r *TxRequest) SetCmd(module, fromAddress string, args ...string) {
 	r.cmd.AddArg("broadcast-mode", "block")
 	r.cmd.AddArg("node", r.nodeRpcAddress)
 	r.cmd.AddArg("fees", "1"+config.MainDenom)
+	r.cmd.AddArg("gas", strconv.FormatUint(r.gas, 10))
 	r.cmd.AddArg("", "--yes")
 }
 
@@ -46,6 +48,31 @@ func (r *TxRequest) SetGas(amount uint64) *TxRequest {
 
 func (r *TxRequest) DisableBroadcastMode() *TxRequest {
 	r.cmd.RemoveArg("broadcast-mode")
+
+	return r
+}
+
+func (r *TxRequest) SetBroadcastMode(mode string) *TxRequest {
+	r.cmd.RemoveArg("broadcast-mode")
+	r.cmd.AddArg("broadcast-mode", mode)
+
+	return r
+}
+
+func (r *TxRequest) SetSequenceNumber(number uint64) *TxRequest {
+	r.cmd.AddArg("sequence", strconv.FormatUint(number, 10))
+
+	return r
+}
+
+func (r *TxRequest) SetAccountNumber(number uint64) *TxRequest {
+	r.cmd.AddArg("account-number", strconv.FormatUint(number, 10))
+
+	return r
+}
+
+func (r *TxRequest) SetOffline() *TxRequest {
+	r.cmd.AddArg("", "--offline")
 
 	return r
 }
@@ -66,7 +93,37 @@ func (r *TxRequest) Send() (retCode int, retStdout, retStderr []byte) {
 	return r.cmd.Execute(r.accPassphrase, r.accPassphrase)
 }
 
-func (r *TxRequest) CheckSucceeded() {
+func (r *TxRequest) Execute() (retResponse sdk.TxResponse, retErr error) {
+	code, stdout, stderr := r.Send()
+
+	if code != 0 {
+		retErr = fmt.Errorf("%s: failed with code %d:\nstdout: %s\nstrerr: %s", r.String(), code, string(stdout), string(stderr))
+		return
+	}
+	if len(stderr) > 0 {
+		retErr = fmt.Errorf("%s: failed with non-empty stderr:\nstdout: %s\nstrerr: %s", r.String(), string(stdout), string(stderr))
+		return
+	}
+
+	if len(stdout) > 0 {
+		if err := r.cdc.UnmarshalJSON(stdout, &retResponse); err != nil {
+			retErr = fmt.Errorf("%s: unmarshal", r.String())
+			return
+		}
+		if retResponse.Codespace != "" {
+			retErr = fmt.Errorf("%s: codespace: %s", r.String(), string(stdout))
+			return
+		}
+		if retResponse.Code != 0 {
+			retErr = fmt.Errorf("%s: code: %s", r.String(), string(stdout))
+			return
+		}
+	}
+
+	return
+}
+
+func (r *TxRequest) CheckSucceeded() string {
 	code, stdout, stderr := r.Send()
 
 	require.Equal(r.t, 0, code, "%s: failed with code %d:\nstdout: %s\nstrerr: %s", r.String(), code, string(stdout), string(stderr))
@@ -77,15 +134,19 @@ func (r *TxRequest) CheckSucceeded() {
 		require.NoError(r.t, r.cdc.UnmarshalJSON(stdout, &txResponse), "%s: unmarshal", r.String())
 		require.Equal(r.t, "", txResponse.Codespace, "%s: codespace: %s", r.String(), string(stdout))
 		require.Equal(r.t, uint32(0), txResponse.Code, "%s: code: %s", r.String(), string(stdout))
+
+		return txResponse.TxHash
 	}
+
+	return ""
 }
 
 func (r *TxRequest) CheckFailedWithSDKError(err error) {
 	sdkErr, ok := err.(*sdkErrors.Error)
 	require.True(r.t, ok, "not a SDK error")
 
-	code, stdout, stderr := r.Send()
-	require.NotEqual(r.t, 0, code, "%s: succeeded", r.String())
+	_, stdout, stderr := r.Send()
+	//require.NotEqual(r.t, 0, code, "%s: succeeded", r.String())
 	stdout, stderr = trimCliOutput(stdout), trimCliOutput(stderr)
 
 	txResponse := sdk.TxResponse{}

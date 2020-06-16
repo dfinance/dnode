@@ -16,11 +16,28 @@ import (
 
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/genaccounts"
+	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/orderbook"
+	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
+
+const (
+	DenomDFI  = "dfi"
+	DenomETH  = "eth"
+	DenomBTC  = "btc"
+	DenomUSDT = "usdt"
+	//
+	DefaultGas = 300000
+)
+
+type StringPair struct {
+	Key   string
+	Value string
+}
 
 var DefVmWriteSetsPath = "${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json"
 
@@ -60,4 +77,7 @@ var ModuleBasics = module.NewBasicManager(
 	multisig.AppModuleBasic{},
 	oracle.AppModuleBasic{},
 	vm.AppModuleBasic{},
+	orders.AppModuleBasic{},
+	markets.AppModuleBasic{},
+	orderbook.AppModuleBasic{},
 )

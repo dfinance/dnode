@@ -13,3 +13,4 @@ to contribute to current repository.
 * [Sentry Integration](/docs/sentry.md)
 * [Tests](/docs/tests.md)
 * [Logging](/docs/logging.md)
+* [DEX](/docs/dex.md)

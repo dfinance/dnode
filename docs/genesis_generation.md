@@ -12,7 +12,7 @@ Now configure cli:
     dncli config output json
     dncli config indent true
     dncli config trust-node true
-    dncli config compiler tcp://127.0.0.1:50053
+    dncli config compiler tcp://127.0.0.1:50051
     dncli config node http://127.0.0.1:26657
 
 If you want to keep your keys in file, instead of keystorage of your os, configure it:
@@ -58,40 +58,10 @@ Replace expressions in brackets with correct addresses, include Ethereum address
 
 Now let's register information about added coins in `genesis.json`:
 
-    dnode add-currency-info dfi  18 100000000000000000000000000  011c53cd211c8dd6f27b977dbcf497d6650944f764d15cebf75dcc17f8e2bfa5f4
-    dnode add-currency-info eth  18 100000000000000000000000000 01b7c72e9510f8bd1bfb20b45f5de59d9289798b6413722cb341aa7c0db02b52bb
-    dnode add-currency-info btc  8  100000000000000 018640c82fe545f74fe72e54cc655c43b3eb465d8ce9f902a61b4d3a0ab99aab33
-    dnode add-currency-info usdt 6  10000000000000 016f04631b2df14f2199ad915ae7f620c58c12ac8f6728356c543dbfb719e283cc
-
-Time to change denom in PoS configuration.
-So open `~/.dnode/config/genesis.json` and find this stake settings:
-
-```json
-"staking": {
-  "params": {
-    "unbonding_time": "1814400000000000",
-    "max_validators": 100,
-    "max_entries": 7,
-    "bond_denom": "stake"
-  },
-  "last_total_power": "0",
-  "last_validator_powers": null,
-  "validators": null,
-  "delegations": null,
-  "unbonding_delegations": null,
-  "redelegations": null,
-  "exported": false
-}
-```
-
-Change line:
-
-    "bond_denom": "stake"
-To:
-
-    "bond_denom": "dfi"
-
-By changing this we determine "dfi" as staking currency.
+    dnode add-currency-info dfi  18 100000000000000000000000000 0172c9f1bfe0a2bf6ac342aaa3c3380852d4694ae4e71655d37aa5d2e6700ed94e
+    dnode add-currency-info eth  18 100000000000000000000000000 0116fbac6fd286d2bfec4549161245982b730291a9cbc5281f5fcfb41aeb7bfb26
+    dnode add-currency-info btc  8  100000000000000 0158c690830c7e2f25b85de6ab85052fd1e79e6a9cbb52a9740be7ff7275604c1b
+    dnode add-currency-info usdt 6  10000000000000 01e10f377b920a0a8a330edd7beff6c3a11cdeb7682c964b02aa5bb6a784b84920
 
 Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 

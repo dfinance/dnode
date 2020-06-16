@@ -29,10 +29,10 @@ const (
 	DefaultDataListen = "tcp://127.0.0.1:50052" // Default data server address to listen for connections from VM.
 
 	// Default retry configs.
-	DefaultMaxAttempts       = 0   // Default VM retry attempts.
-	DefaultInitialBackoff    = 100 // Default VM 100 milliseconds for retry attempts.
-	DefaultMaxBackoff        = 150 // Default VM max backoff.
-	DefaultBackoffMultiplier = 0.1 // Default backoff multiplayer (10
+	DefaultMaxAttempts       = 0    // Default VM retry attempts.
+	DefaultInitialBackoff    = 1000 // Default VM 100 milliseconds for retry attempts.
+	DefaultMaxBackoff        = 2000 // Default VM max backoff.
+	DefaultBackoffMultiplier = 0.1  // Default backoff multiplayer (10
 )
 
 // Virtual machine connection config (see config/vm.toml).

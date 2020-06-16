@@ -36,8 +36,11 @@ import (
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/genaccounts"
+	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
+	"github.com/dfinance/dnode/x/orderbook"
+	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/poa"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
@@ -74,6 +77,9 @@ var (
 		oracle.AppModuleBasic{},
 		gov.AppModuleBasic{},
 		vm.AppModuleBasic{},
+		markets.AppModuleBasic{},
+		orders.AppModuleBasic{},
+		orderbook.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
@@ -82,6 +88,7 @@ var (
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		gov.ModuleName:            {supply.Burner},
+		orders.ModuleName:         {supply.Burner},
 	}
 )
 
@@ -96,20 +103,23 @@ type DnServiceApp struct {
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 
-	accountKeeper  vmauth.VMAccountKeeper
-	bankKeeper     bank.Keeper
-	supplyKeeper   supply.Keeper
-	paramsKeeper   params.Keeper
-	stakingKeeper  staking.Keeper
-	distrKeeper    distribution.Keeper
-	slashingKeeper slashing.Keeper
-	poaKeeper      poa.Keeper
-	ccKeeper       currencies.Keeper
-	msKeeper       multisig.Keeper
-	crKeeper       currencies_register.Keeper
-	vmKeeper       vm.Keeper
-	oracleKeeper   oracle.Keeper
-	govKeeper      gov.Keeper
+	accountKeeper   vmauth.VMAccountKeeper
+	bankKeeper      bank.Keeper
+	supplyKeeper    supply.Keeper
+	paramsKeeper    params.Keeper
+	stakingKeeper   staking.Keeper
+	distrKeeper     distribution.Keeper
+	slashingKeeper  slashing.Keeper
+	poaKeeper       poa.Keeper
+	ccKeeper        currencies.Keeper
+	msKeeper        multisig.Keeper
+	crKeeper        currencies_register.Keeper
+	vmKeeper        vm.Keeper
+	oracleKeeper    oracle.Keeper
+	govKeeper       gov.Keeper
+	marketKeeper    markets.Keeper
+	orderKeeper     orders.Keeper
+	orderBookKeeper orderbook.Keeper
 
 	mm *core.MsManager
 
@@ -123,7 +133,7 @@ func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
 	app.Logger().Info(fmt.Sprintf("Waiting for VM connection, address: %s", addr))
-	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1 * time.Second)
+	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1*time.Second)
 	if err != nil {
 		panic(err)
 	}
@@ -180,6 +190,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		vm.StoreKey,
 		oracle.StoreKey,
 		gov.StoreKey,
+		orders.StoreKey,
+		orderbook.StoreKey,
 	)
 
 	tkeys := sdk.NewTransientStoreKeys(
@@ -202,9 +214,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// 1 dfi == 1000000000000000000
 	sdk.PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
-	var err error
-
 	// Initializing vm keeper.
+	var err error
 	app.vmKeeper = vm.NewKeeper(
 		keys[vm.StoreKey],
 		cdc,
@@ -254,6 +265,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		cdc,
 	)
 
+	// Initialize currency_register keeper.
 	app.crKeeper = currencies_register.NewKeeper(
 		app.cdc,
 		keys[currencies_register.StoreKey],
@@ -305,7 +317,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
 	)
 
-	// Initializing oracle module
+	// Initializing oracle module.
 	app.oracleKeeper = oracle.NewKeeper(
 		keys[oracle.StoreKey],
 		cdc,
@@ -326,6 +338,29 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.govRouter,
 	)
 
+	// Initializing markets module.
+	app.marketKeeper = markets.NewKeeper(
+		cdc,
+		app.paramsKeeper.Subspace(markets.DefaultParamspace),
+		app.crKeeper,
+	)
+
+	// Initializing orders module.
+	app.orderKeeper = orders.NewKeeper(
+		keys[orders.StoreKey],
+		cdc,
+		app.bankKeeper,
+		app.supplyKeeper,
+		app.marketKeeper,
+	)
+
+	// Initializing order_bool module.
+	app.orderBookKeeper = orderbook.NewKeeper(
+		keys[orderbook.StoreKey],
+		cdc,
+		app.orderKeeper,
+	)
+
 	// Initializing multisignature manager.
 	app.mm = core.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
@@ -343,10 +378,23 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
+		markets.NewAppModule(app.marketKeeper),
+		orders.NewAppModule(app.orderKeeper),
+		orderbook.NewAppModule(app.orderBookKeeper),
 	)
 
-	app.mm.SetOrderBeginBlockers(distribution.ModuleName, slashing.ModuleName, vm.ModuleName)
-	app.mm.SetOrderEndBlockers(gov.ModuleName, staking.ModuleName, multisig.ModuleName, oracle.ModuleName)
+	app.mm.SetOrderBeginBlockers(
+		distribution.ModuleName,
+		slashing.ModuleName,
+	)
+	app.mm.SetOrderEndBlockers(
+		gov.ModuleName,
+		staking.ModuleName,
+		multisig.ModuleName,
+		oracle.ModuleName,
+		orders.ModuleName,
+		orderbook.ModuleName,
+	)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils moodule must occur after staking so that pools are
@@ -367,6 +415,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		vm.ModuleName,
 		oracle.ModuleName,
 		currencies_register.ModuleName,
+		markets.ModuleName,
+		orders.ModuleName,
+		orderbook.ModuleName,
 		genutil.ModuleName,
 	)
 

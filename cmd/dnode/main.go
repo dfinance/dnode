@@ -23,9 +23,10 @@ import (
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/logger"
-	currencyInfoCli "github.com/dfinance/dnode/x/currencies_register/cli"
+	crCli "github.com/dfinance/dnode/x/currencies_register/client/cli"
 	"github.com/dfinance/dnode/x/genaccounts"
 	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
+	marketsCli "github.com/dfinance/dnode/x/markets/client/cli"
 	oracleCli "github.com/dfinance/dnode/x/oracle/client/cli"
 	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
@@ -72,7 +73,8 @@ func main() {
 		vmCli.GenesisWSFromFile(ctx, cdc),
 		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
-		currencyInfoCli.AddGenesisCurrencyInfo(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
+		marketsCli.AddMarketGenCmd(ctx, cdc, app.DefaultNodeHome),
+		crCli.AddGenesisCurrencyInfo(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 
@@ -127,9 +129,11 @@ func exportAppStateAndTMValidators(
 }
 
 // Init cmd together with VM configruation.
+// nolint
 func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 	defaultNodeHome string) *cobra.Command { // nolint: golint
-	cmd := genutilCli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
+	//cmd := genutilCli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
+	cmd := dnConfig.InitCmd(ctx, cdc, mbm, defaultNodeHome)
 
 	cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {
 		dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))

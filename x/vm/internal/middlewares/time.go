@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	hexTimePath = "01843fe2742279c179713007ed25a37dc28652803c253cc3e08c75580c721060b1"
+	hexTimePath = "01e34206019af0f0116fb30280fb4803a6008a57f41609ac49d5a0eba226889cac"
 )
 
 type CurrentTimestamp struct {

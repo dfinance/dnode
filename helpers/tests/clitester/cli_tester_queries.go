@@ -5,12 +5,34 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	"github.com/dfinance/dnode/x/currencies_register"
+	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
+	orderTypes "github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
+
+func (ct *CLITester) QueryTx(txHash string) (*QueryRequest, *sdk.TxResponse) {
+	resObj := &sdk.TxResponse{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("tx", txHash)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryStatus() (*QueryRequest, *ctypes.ResultStatus) {
+	resObj := &ctypes.ResultStatus{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("status")
+	q.RemoveCmdArg("query")
+
+	return q, resObj
+}
 
 func (ct *CLITester) QueryCurrenciesIssue(issueID string) (*QueryRequest, *ccTypes.Issue) {
 	resObj := &ccTypes.Issue{}
@@ -134,7 +156,7 @@ func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *msTypes.LastIdRes) {
 func (ct *CLITester) QueryVmCompileScript(moveFilePath, savePath, accountAddress string) *QueryRequest {
 	q := ct.newQueryRequest(nil)
 	q.SetCmd("vm", "compile-script", moveFilePath, accountAddress)
-	q.cmd.AddArg("compiler", ct.vmCompilerAddress)
+	q.cmd.AddArg("compiler", ct.VMConnection.CompilerAddress)
 	q.cmd.AddArg("to-file", savePath)
 
 	return q
@@ -144,7 +166,7 @@ func (ct *CLITester) QueryAccount(address string) (*QueryRequest, *auth.BaseAcco
 	resObj := &auth.BaseAccount{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("account", address)
-	q.cmd.AddArg("node", ct.rpcAddress)
+	q.cmd.AddArg("node", ct.NodePorts.RPCAddress)
 
 	return q, resObj
 }
@@ -153,7 +175,78 @@ func (ct *CLITester) QueryAuthAccount(address string) (*QueryRequest, *auth.Base
 	resObj := &auth.BaseAccount{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("auth", "account", address)
-	q.cmd.AddArg("node", ct.rpcAddress)
+	q.cmd.AddArg("node", ct.NodePorts.RPCAddress)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryOrdersOrder(id dnTypes.ID) (*QueryRequest, *orderTypes.Order) {
+	resObj := &orderTypes.Order{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("orders", "order", id.String())
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orderTypes.Direction, ownerFilter *string) (*QueryRequest, *orderTypes.Orders) {
+	resObj := &orderTypes.Orders{}
+
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("orders", "list")
+
+	if page > 0 {
+		q.cmd.AddArg("page", strconv.FormatInt(int64(page), 10))
+	}
+	if limit > 0 {
+		q.cmd.AddArg("limit", strconv.FormatInt(int64(limit), 10))
+	}
+	if marketIDFilter != nil {
+		q.cmd.AddArg("market-id", marketIDFilter.String())
+	}
+	if directionFilter != nil {
+		q.cmd.AddArg("direction", directionFilter.String())
+	}
+	if ownerFilter != nil {
+		q.cmd.AddArg("owner", *ownerFilter)
+	}
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryMarketsMarket(id dnTypes.ID) (*QueryRequest, *marketTypes.Market) {
+	resObj := &marketTypes.Market{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("markets", "market", id.String())
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryMarketsList(page, limit int, baseDenom, quoteDenom *string) (*QueryRequest, *marketTypes.Markets) {
+	resObj := &marketTypes.Markets{}
+
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("markets", "list")
+
+	if page > 0 {
+		q.cmd.AddArg("page", strconv.FormatInt(int64(page), 10))
+	}
+	if limit > 0 {
+		q.cmd.AddArg("limit", strconv.FormatInt(int64(limit), 10))
+	}
+	if baseDenom != nil {
+		q.cmd.AddArg("base-asset-denom", *baseDenom)
+	}
+	if quoteDenom != nil {
+		q.cmd.AddArg("quote-asset-denom", *quoteDenom)
+	}
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryCurrencyInfo(denom string) (*QueryRequest, *currencies_register.CurrencyInfo) {
+	resObj := &currencies_register.CurrencyInfo{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("currencies_register", "info", denom)
 
 	return q, resObj
 }

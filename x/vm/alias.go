@@ -4,6 +4,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	"github.com/dfinance/dnode/x/vm/internal/keeper"
+	"github.com/dfinance/dnode/x/vm/internal/middlewares"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -24,6 +25,9 @@ type (
 	GenesisState    = types.GenesisState
 	QueryAccessPath = types.QueryAccessPath
 	QueryValueResp  = types.QueryValueResp
+
+	CurrentTimestamp = middlewares.CurrentTimestamp
+	BlockHeader      = middlewares.BlockHeader
 
 	PlannedProposal      = types.PlannedProposal
 	ProposalData         = types.ProposalData

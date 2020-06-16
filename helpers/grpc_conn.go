@@ -82,5 +82,11 @@ func GetGRpcClientConnection(addr string, keepAlivePeriod time.Duration) (*grpc.
 		dialOptions = append(dialOptions, grpc.WithKeepaliveParams(kpParams))
 	}
 
-	return grpc.Dial(address, dialOptions...)
+	// Bypass Rust h2 library UDS limitations: uri validation failure causing PROTOCOL_ERROR gRPC error
+	dialAddress :=  address
+	if schema == "unix" {
+		dialAddress = "127.0.0.1" // faking filePath with valid URL
+	}
+
+	return grpc.Dial(dialAddress, dialOptions...)
 }

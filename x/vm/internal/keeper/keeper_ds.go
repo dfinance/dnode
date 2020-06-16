@@ -50,43 +50,65 @@ func (keeper Keeper) CloseConnections() {
 }
 
 // Send request with retry mechanism and wait for connection and execution or return error.
-func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (*vm_grpc.VMExecuteResponses, error) {
-	for {
-		curTimeout := time.Duration(req.CurrentTimeout)*time.Millisecond
-		connCtx, _ := context.WithTimeout(context.Background(), curTimeout)
-
-		connStartedAt := time.Now()
-		resp, err := keeper.client.ExecuteContracts(connCtx, req.Raw)
-		connDuration := time.Now().Sub(connStartedAt)
-		if err != nil {
-			if req.Attempt == 0 {
-				// write to Sentry (if enabled)
-				keeper.Logger(ctx).Error(fmt.Sprintf("Can't get answer from VM in %v, will try to reconnect in %s attempts: %v", req.CurrentTimeout, GetMaxAttemptsStr(req.MaxAttempts), err))
+func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grpc.VMExecuteResponses, retErr error) {
+	doneCh := make(chan bool)
+	go func() {
+		var cancelCtx func()
+		stopPrevCtx := func() {
+			if cancelCtx != nil {
+				cancelCtx()
 			}
-			req.Attempt += 1
-
-			if req.MaxAttempts != 0 && req.Attempt == req.MaxAttempts {
-				// return error because of max attempts.
-				logErr := fmt.Errorf("max %d attemps reached, can't get answer from VM: %v", req.Attempt, err)
-				keeper.Logger(ctx).Error(logErr.Error())
-				return nil, logErr
-			}
-
-			if curTimeout > connDuration {
-				time.Sleep(curTimeout - connDuration)
-			}
-
-			req.CurrentTimeout += int(math.Round(float64(req.CurrentTimeout) * keeper.config.BackoffMultiplier))
-			if req.CurrentTimeout > keeper.config.MaxBackoff {
-				req.CurrentTimeout = keeper.config.MaxBackoff
-			}
-
-			continue
 		}
-		keeper.Logger(ctx).Info(fmt.Sprintf("Successfully connected to VM with %v timeout in %d attempts", req.CurrentTimeout, req.Attempt))
 
-		return resp, nil
-	}
+		defer func() {
+			close(doneCh)
+			stopPrevCtx()
+		}()
+
+		for {
+			stopPrevCtx()
+			curTimeout := time.Duration(req.CurrentTimeout)*time.Millisecond
+			connCtx, cancelFunc := context.WithTimeout(context.Background(), curTimeout)
+			cancelCtx = cancelFunc
+
+			connStartedAt := time.Now()
+			resp, err := keeper.client.ExecuteContracts(connCtx, req.Raw)
+			connDuration := time.Since(connStartedAt)
+			if err != nil {
+				if req.Attempt == 0 {
+					// write to Sentry (if enabled)
+					keeper.Logger(ctx).Error(fmt.Sprintf("Can't get answer from VM in %v, will try to reconnect in %s attempts: %v", req.CurrentTimeout, GetMaxAttemptsStr(req.MaxAttempts), err))
+				}
+				req.Attempt += 1
+
+				if req.MaxAttempts != 0 && req.Attempt == req.MaxAttempts {
+					// return error because of max attempts.
+					logErr := fmt.Errorf("max %d attemps reached, can't get answer from VM: %v", req.Attempt, err)
+					keeper.Logger(ctx).Error(logErr.Error())
+					retErr = logErr
+					return
+				}
+
+				if curTimeout > connDuration {
+					time.Sleep(curTimeout - connDuration)
+				}
+
+				req.CurrentTimeout += int(math.Round(float64(req.CurrentTimeout) * keeper.config.BackoffMultiplier))
+				if req.CurrentTimeout > keeper.config.MaxBackoff {
+					req.CurrentTimeout = keeper.config.MaxBackoff
+				}
+
+				continue
+			}
+			keeper.Logger(ctx).Info(fmt.Sprintf("Successfully connected to VM with %v timeout in %d attempts", req.CurrentTimeout, req.Attempt))
+			retResp = resp
+
+			return
+		}
+	}()
+	<-doneCh
+
+	return
 }
 
 // Send request with retry mechanism.

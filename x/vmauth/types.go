@@ -19,8 +19,8 @@ import (
 
 // Resource key for WBCoins resource from VM stdlib.
 const (
-	resourceKey   = "01eb90c676e2a7486056fc87367a8f91537c91833c76c82d7129eb8e83d001c025"
-	ehResourceKey = "0178c259fe9fe2f0e56af2598f84412df29fbcf1b7cdfb9ecdd88976c9940d3238"
+	resourceKey   = "018a648879ad9e0d7db32230eaed39c4130bb965343b61fbd7e24b688413d51265"
+	ehResourceKey = "011070ede6471d42ed53c740791479ad52b647b85c004b7e2559dd8bb8a024483d"
 )
 
 var (
@@ -33,22 +33,22 @@ var (
 func init() {
 	denomPaths = make(map[string][]byte)
 
-	err := AddDenomPath("dfi", "0136364df51f98e43cbe92dfcfdd807c7fc626aa9690793ebf7d301cfe0de72f11")
+	err := AddDenomPath("dfi", "01ce4bdcb08e5d54437f1cb7e7f4a8cef079325a2f3daa8e7137e63b7cd22888a4")
 	if err != nil {
 		panic(err)
 	}
 
-	err = AddDenomPath("eth", "01f7c5cca156342bec3ac2bfb6fc439683da605ab7bc3f58881427861c8fc44577")
+	err = AddDenomPath("eth", "01e668bf6a3511e57c0f01096dccdec0ce4a755ba69612b2520ced925ad587bd62")
 	if err != nil {
 		panic(err)
 	}
 
-	err = AddDenomPath("usdt", "01affc8719224641c76bb20b65e4a26c002a39bbc82b753410976002ad7931b270")
+	err = AddDenomPath("usdt", "014c74bbc4ef1d30a77c63885fed3ca60cf15271a78926db9ff4014d6c084ee715")
 	if err != nil {
 		panic(err)
 	}
 
-	err = AddDenomPath("btc", "01d09b573d3bea2a3853ad447728fa476925894836352c46711fb7604e962b2903")
+	err = AddDenomPath("btc", "01b7b9499bf8ae1beaec05273475576d35e9a814a17c56a5d30342ee1912557f8f")
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +67,7 @@ func RemoveDenomPath(denom string) {
 // Event generator for address.
 type EventHandleGenerator struct {
 	Counter uint64
-	Addr    []byte `lcs:"len=24"`
+	Addr    []byte `lcs:"len=20"`
 }
 
 // Balance.

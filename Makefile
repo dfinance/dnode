@@ -11,23 +11,42 @@ tags = -X github.com/cosmos/cosmos-sdk/version.Name=dfinance \
 build_dir=./.build
 swagger_dir=$(build_dir)/swagger
 cosmos_dir=$(swagger_dir)/cosmos-sdk
-cosmos_version=v0.38.2
+dnode = ./cmd/dnode
 dncli =./cmd/dncli
 
+cosmos_version=v0.38.4
+dvm_version=master
+
 all: install
-install: go.sum install-dnode install-dncli install-oracleapp
+install: go.sum install-dnode install-dncli
 swagger-ui: swagger-ui-deps swagger-ui-build
+test: test-unit test-cli test-rest test-integ
 
 install-dnode:
-		GO111MODULE=on go install --ldflags "$(tags)"  -tags "$(build_tags)" ./cmd/dnode
+	GO111MODULE=on go install -ldflags "$(tags)"  -tags "$(build_tags)" $(dnode)
 install-dncli:
-		GO111MODULE=on go install  --ldflags "$(tags)"  -tags "$(build_tags)" ${dncli}
-install-oracleapp:
-		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/oracle-app
+	GO111MODULE=on go install -ldflags "$(tags)"  -tags "$(build_tags)" $(dncli)
+
+lint:
+	@echo "--> Running Golang linter (unused variable / function warning are skipped)"
+	golangci-lint run --exclude 'unused'
+
+test-unit:
+	@echo "--> Testing: UNIT tests (parallel execution is disabled)"
+	go test ./... -p=1 -tags=unit -count=1
+test-cli: install
+	@echo "--> Testing: dncli CLI tests"
+	go test ./... -tags=cli,rest -count=1
+test-rest: install
+	@echo "--> Testing: dncli REST endpoints tests"
+	go test ./... -tags=rest -count=1
+test-integ: install
+	@echo "--> Testing: dnode <-> dvm integration tests (using Docker runtime)"
+	REGISTRY=registry.wings.toys TAG=$(dvm_version) go test ./... -v -tags=integ -count=1
 
 go.sum: go.mod
-		@echo "--> Ensure dependencies have not been modified"
-		GO111MODULE=on go mod verify
+	@echo "--> Ensure dependencies have not been modified"
+	GO111MODULE=on go mod verify
 
 swagger-ui-deps:
 	@echo "--> Preparing deps fro building Swagger API specificaion"

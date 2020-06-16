@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"testing"
@@ -10,17 +11,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func PingTcpAddress(address string) error {
+func PingTcpAddress(address string, timeout time.Duration) error {
+	const dialTimeout = 500 * time.Millisecond
+
 	// remove scheme prefix
 	if i := strings.Index(address, "://"); i != -1 {
 		address = address[i + 3:]
 	}
 
-	conn, err := net.DialTimeout("tcp", address, 500*time.Millisecond)
-	if err != nil {
-		return err
+	retryCount := int(timeout / dialTimeout)
+	connected := false
+	for i := 0; i < retryCount; i++ {
+		conn, err := net.DialTimeout("tcp", address, dialTimeout)
+		if err == nil {
+			connected = true
+		}
+		if conn != nil {
+			conn.Close()
+		}
+
+		if connected {
+			break
+		}
 	}
-	defer conn.Close()
+
+	if !connected {
+		return fmt.Errorf("TCP ping to %s failed after %d retry attempts with %v timeout", address, retryCount, dialTimeout)
+	}
 
 	return nil
 }

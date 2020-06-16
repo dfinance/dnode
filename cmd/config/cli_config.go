@@ -23,7 +23,7 @@ var configDefaults = map[string]string{
 	"output":          "text",
 	"node":            "tcp://localhost:26657",
 	"broadcast-mode":  "sync",
-	"compiler":        "tcp://127.0.0.1:50053",
+	"compiler":        "tcp://127.0.0.1:50051",
 }
 
 // ConfigCmd returns a CLI command to interactively create an application CLI

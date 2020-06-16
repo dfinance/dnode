@@ -10,6 +10,7 @@ import (
 	"github.com/OneOfOne/xxhash"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/crypto/sha3"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
@@ -48,8 +49,7 @@ func (keeper Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 // Public get path for oracle price.
 func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath {
 	seed := xxhash.NewS64(0)
-	_, err := seed.WriteString(strings.ToLower(assetCode))
-	if err != nil {
+	if _, err := seed.WriteString(strings.ToLower(assetCode)); err != nil {
 		panic(err)
 	}
 
@@ -63,7 +63,9 @@ func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath
 	}
 
 	hash := sha3.New256()
-	hash.Write(bz)
+	if _, err := hash.Write(bz); err != nil {
+		panic(err)
+	}
 	path := hash.Sum(tag)
 
 	return &vm_grpc.VMAccessPath{
@@ -109,9 +111,10 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 
 		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
 			ctx.EventManager().EmitEvent(types.NewEventError(exec.StatusStruct))
+			types.PrintVMStackTrace(tmhash.Sum(ctx.TxBytes()), keeper.Logger(ctx), exec)
+			return
 		}
 
-		// processing write set.
 		keeper.processWriteSet(ctx, exec.WriteSet)
 
 		for _, vmEvent := range exec.Events {

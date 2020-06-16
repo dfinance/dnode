@@ -16,7 +16,7 @@ func TestDefaultGenesisState(t *testing.T) {
 	require.NotNil(t, defaultGenesis)
 
 	require.Len(t, defaultGenesis.Currencies, 1)
-	require.Equal(t, "011c53cd211c8dd6f27b977dbcf497d6650944f764d15cebf75dcc17f8e2bfa5f4", defaultGenesis.Currencies[0].Path)
+	require.Equal(t, "0172c9f1bfe0a2bf6ac342aaa3c3380852d4694ae4e71655d37aa5d2e6700ed94e", defaultGenesis.Currencies[0].Path)
 	require.Equal(t, "dfi", defaultGenesis.Currencies[0].Denom)
 	require.EqualValues(t, 18, defaultGenesis.Currencies[0].Decimals)
 	require.EqualValues(t, dfiVal.String(), defaultGenesis.Currencies[0].TotalSupply.String())
