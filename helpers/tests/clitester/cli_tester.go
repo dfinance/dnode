@@ -107,7 +107,7 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 		ChainID:           "test-chain",
 		MonikerID:         "test-moniker",
 		AccountPassphrase: "passphrase",
-		DefAssetCode:      "tst",
+		DefAssetCode:      "tst_asset",
 		keyringBackend:    keyring.FileBackend,
 		//
 		rpcAddress: srvAddr,
@@ -600,9 +600,11 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	return
 }
 
-func (ct *CLITester) SetVMCompilerAddressNet(address string) {
+func (ct *CLITester) SetVMCompilerAddressNet(address string, skipTcpTest bool) {
 	ct.vmCompilerAddress = address
-	require.NoError(ct.t, tests.PingTcpAddress(address), "VM compiler address (net)")
+	if !skipTcpTest {
+		require.NoError(ct.t, tests.PingTcpAddress(address, 500 * time.Millisecond), "VM compiler address (net)")
+	}
 }
 
 func (ct *CLITester) SetVMCompilerAddressUDS(path string) {

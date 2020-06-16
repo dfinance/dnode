@@ -170,7 +170,7 @@ func (c *DockerContainer) Start(startTimeout time.Duration) error {
 				continue
 			}
 
-			if err := PingTcpAddress("127.0.0.1:" + p.Port()); err != nil {
+			if err := PingTcpAddress("127.0.0.1:" + p.Port(), 500 * time.Millisecond); err != nil {
 				portReports[p] = err.Error()
 			} else {
 				portReports[p] = "OK"

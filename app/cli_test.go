@@ -259,7 +259,7 @@ func Test_OracleCLI(t *testing.T) {
 			// invalid denom
 			{
 				tx := ct.TxOracleAddAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
-				tx.CheckFailedWithErrorSubstring("non lower case symbol")
+				tx.CheckFailedWithErrorSubstring("invalid assetCode")
 			}
 			// invalid oracles
 			{
@@ -304,7 +304,7 @@ func Test_OracleCLI(t *testing.T) {
 			// invalid denom
 			{
 				tx := ct.TxOracleSetAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
-				tx.CheckFailedWithErrorSubstring("non lower case symbol")
+				tx.CheckFailedWithErrorSubstring("invalid assetCode")
 			}
 			// invalid oracles
 			{

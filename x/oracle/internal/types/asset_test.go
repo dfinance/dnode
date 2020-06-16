@@ -16,27 +16,33 @@ func Test_NewAsset(t *testing.T) {
 	oracleAddr := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	oracles := Oracles{Oracle{Address: oracleAddr}}
 
-	// check invalid assetCode 1
+	// check invalid assetCode 1 (non lower-cased)
 	{
-		a := NewAsset("Upper-case", oracles, true)
+		a := NewAsset("EthBtc", oracles, true)
 		require.Error(t, a.ValidateBasic())
 	}
 
-	// check invalid assetCode 2
+	// check invalid assetCode 2 (non-ASCII symbol)
 	{
-		a := NewAsset("non_ascii_ẞ_symbol", oracles, true)
+		a := NewAsset("aẞb", oracles, true)
+		require.Error(t, a.ValidateBasic())
+	}
+
+	// check invalid assetCode 3 (non-letter symbol)
+	{
+		a := NewAsset("a_b1", oracles, true)
 		require.Error(t, a.ValidateBasic())
 	}
 
 	// check no oracles
 	{
-		a := NewAsset("dn2eth", Oracles{}, true)
+		a := NewAsset("dn_eth", Oracles{}, true)
 		require.Error(t, a.ValidateBasic())
 	}
 
 	// check valid assetCode
 	{
-		a := NewAsset("dn2eth", oracles, true)
+		a := NewAsset("dn_eth", oracles, true)
 		require.NoError(t, a.ValidateBasic())
 	}
 }

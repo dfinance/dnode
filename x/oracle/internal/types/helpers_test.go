@@ -29,4 +29,42 @@ func Test_stringFilter(t *testing.T) {
 
 	// empty string
 	require.Error(t, stringFilter("", []strFilterOpt{stringIsEmpty}, nil))
+
+	// delimiter: ok
+	require.NoError(t, stringFilter("abc_def", []strFilterOpt{newDelimiterStrFilterOpt("_")}, nil))
+
+	// delimiter: none
+	require.Error(t, stringFilter("abcdef", []strFilterOpt{newDelimiterStrFilterOpt("_")}, nil))
+
+	// delimiter: is prefix
+	require.Error(t, stringFilter("_abcdef", []strFilterOpt{newDelimiterStrFilterOpt("_")}, nil))
+
+	// delimiter: is suffix
+	require.Error(t, stringFilter("abcdef_", []strFilterOpt{newDelimiterStrFilterOpt("_")}, nil))
+
+	// delimiter: multiple
+	require.Error(t, stringFilter("abc_d_ef", []strFilterOpt{newDelimiterStrFilterOpt("_")}, nil))
+}
+
+func Test_assetCodeFilter(t *testing.T) {
+	// ok
+	require.NoError(t, assetCodeFilter("eth_usdt"))
+
+	// fail: empty
+	require.Error(t, assetCodeFilter(""))
+
+	// fail: non lower cased letter
+	require.Error(t, assetCodeFilter("ETH_usdt"))
+
+	// fail: invalid separator
+	require.Error(t, assetCodeFilter("eth:usdt"))
+
+	// fail: invalid separator
+	require.Error(t, assetCodeFilter("eth__usdt"))
+
+	// fail: non ASCII symbol
+	require.Error(t, assetCodeFilter("eth®_usdt"))
+
+	// fail: non letter symbol
+	require.Error(t, assetCodeFilter("eth_usdt1"))
 }
