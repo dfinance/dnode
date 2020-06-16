@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/server"
 	docker "github.com/fsouza/go-dockerclient"
 )
 
@@ -170,7 +169,7 @@ func (c *DockerContainer) Start(startTimeout time.Duration) error {
 				continue
 			}
 
-			if err := PingTcpAddress("127.0.0.1:" + p.Port()); err != nil {
+			if err := PingTcpAddress("127.0.0.1:" + p.Port(), 500 * time.Millisecond); err != nil {
 				portReports[p] = err.Error()
 			} else {
 				portReports[p] = "OK"
@@ -222,40 +221,7 @@ func (c *DockerContainer) Stop() error {
 	return nil
 }
 
-func NewVMCompilerContainerWithNetTransport(dsServerPort string) (retContainer *DockerContainer, retPort string, retErr error) {
-	_, port, err := server.FreeTCPAddr()
-	if err != nil {
-		retErr = fmt.Errorf("FreeTCPAddr (VMCompiler): %w", err)
-		return
-	}
-	retPort = port
-
-	tag := os.Getenv("TAG")
-	if tag == "" {
-		tag = "master"
-	}
-
-	registry := os.Getenv("REGISTRY")
-	if registry == "" {
-		retErr = fmt.Errorf("REGISTRY env var: not found")
-		return
-	}
-
-	hostUrl, _, _ := HostMachineDockerUrl()
-	dsServerAddress := fmt.Sprintf("%s:%s", hostUrl, dsServerPort)
-	cmdArgs := []string{"./compiler", "http://0.0.0.0:" + port, dsServerAddress}
-
-	retContainer, retErr = NewDockerContainer(
-		WithCreds(registry, "dfinance/dvm", tag),
-		WithCmdArgs(cmdArgs),
-		WithTcpPorts([]string{port}),
-		WithHostNetwork(),
-	)
-
-	return
-}
-
-func NewVMRuntimeContainerWithNetTransport(connectPort, dsServerPort string) (retContainer *DockerContainer, retErr error) {
+func NewDVMWithNetTransport(connectPort, dsServerPort string, args ...string) (retContainer *DockerContainer, retErr error) {
 	tag := os.Getenv("TAG")
 	if tag == "" {
 		tag = "master"
@@ -270,6 +236,9 @@ func NewVMRuntimeContainerWithNetTransport(connectPort, dsServerPort string) (re
 	hostUrl, _, _ := HostMachineDockerUrl()
 	dsServerAddress := fmt.Sprintf("%s:%s", hostUrl, dsServerPort)
 	cmdArgs := []string{"./dvm", "http://0.0.0.0:" + connectPort, dsServerAddress}
+	if len(args) > 0 {
+		cmdArgs = append(cmdArgs, strings.Join(args, " "))
+	}
 
 	retContainer, retErr = NewDockerContainer(
 		WithCreds(registry, "dfinance/dvm", tag),
@@ -281,37 +250,7 @@ func NewVMRuntimeContainerWithNetTransport(connectPort, dsServerPort string) (re
 	return
 }
 
-func NewVMCompilerContainerWithUDSTransport(volumePath, dsFileName, vmFileName string) (retContainer *DockerContainer, retErr error) {
-	const defVolumePath = "/tmp/dn-uds"
-
-	tag := os.Getenv("TAG")
-	if tag == "" {
-		tag = "master"
-	}
-
-	registry := os.Getenv("REGISTRY")
-	if registry == "" {
-		retErr = fmt.Errorf("REGISTRY env var: not found")
-		return
-	}
-
-	dsFilePath := path.Join(defVolumePath, dsFileName)
-	vmFilePath := path.Join(defVolumePath, vmFileName)
-
-	// one '/' is omitted on purpose
-	cmdArgs := []string{"./compiler", "-v", "ipc:/" + vmFilePath, "ipc:/" + dsFilePath}
-
-	retContainer, retErr = NewDockerContainer(
-		WithCreds(registry, "dfinance/dvm", tag),
-		WithCmdArgs(cmdArgs),
-		WithVolume(volumePath, defVolumePath),
-		WithUser(),
-	)
-
-	return
-}
-
-func NewVMRuntimeContainerWithUDSTransport(volumePath, dsFileName, vmFileName string) (retContainer *DockerContainer, retErr error) {
+func NewDVMWithUDSTransport(volumePath, vmFileName, dsFileName string, args ...string) (retContainer *DockerContainer, retErr error) {
 	const defVolumePath = "/tmp/dn-uds"
 
 	tag := os.Getenv("TAG")
@@ -330,6 +269,9 @@ func NewVMRuntimeContainerWithUDSTransport(volumePath, dsFileName, vmFileName st
 
 	// one '/' is omitted on purpose
 	cmdArgs := []string{"./dvm", "-v", "ipc:/" + vmFilePath, "ipc:/" + dsFilePath}
+	if len(args) > 0 {
+		cmdArgs = append(cmdArgs, strings.Join(args, " "))
+	}
 
 	retContainer, retErr = NewDockerContainer(
 		WithCreds(registry, "dfinance/dvm", tag),

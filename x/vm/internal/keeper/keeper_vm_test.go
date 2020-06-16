@@ -22,8 +22,8 @@ import (
 
 // Check storage set value functional.
 func TestSetValue(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	ap := &vm_grpc.VMAccessPath{
 		Address: input.addressBytes,
@@ -41,8 +41,8 @@ func TestSetValue(t *testing.T) {
 
 // Check get value from storage functional.
 func TestGetValue(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	ap := randomPath()
 	input.vk.setValue(input.ctx, ap, input.valueBytes)
@@ -59,8 +59,8 @@ func TestGetValue(t *testing.T) {
 
 // Check has value functional.
 func TestHasValue(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	ap := randomPath()
 
@@ -76,8 +76,8 @@ func TestHasValue(t *testing.T) {
 
 // Check deletion of key in storage.
 func TestDelValue(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	var emptyBytes []byte
 
@@ -102,8 +102,8 @@ func TestDelValue(t *testing.T) {
 // Check process execution (response from VM) functional.
 func TestProcessExecution(t *testing.T) {
 	// ignoring gas for now.
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	resp := &vm_grpc.VMExecuteResponse{
 		Status: vm_grpc.ContractStatus_Discard,
@@ -240,8 +240,8 @@ func TestProcessExecution(t *testing.T) {
 
 // Check returned write set procession.
 func TestProcessWriteSet(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	writeSet := make([]*vm_grpc.VMValue, 2)
 	writeSet[0] = &vm_grpc.VMValue{
@@ -289,8 +289,8 @@ func TestProcessWriteSet(t *testing.T) {
 
 // Status keep (4001) still doesn't contains error.
 func TestExecStatusKeeperNotAnError(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: types.VMCodeExecuted,
@@ -320,8 +320,8 @@ func TestExecStatusKeeperNotAnError(t *testing.T) {
 
 // When status still keep but returns error (and it could exists).
 func TestExecKeepAndError(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: 16,
@@ -358,8 +358,8 @@ func TestExecKeepAndError(t *testing.T) {
 
 // test access path generation for oracles.
 func Test_KeeperGetOracleAccessPath(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	assetCode := "eth_usdt"
 	path := input.vk.GetOracleAccessPath(assetCode)

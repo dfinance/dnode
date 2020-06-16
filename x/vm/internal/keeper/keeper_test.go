@@ -16,8 +16,8 @@ import (
 
 // Deploy script with mocked VM.
 func TestKeeper_DeployContractMock(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	acc := sdk.AccAddress(randomValue(20))
 
@@ -43,8 +43,8 @@ func TestKeeper_DeployContractMock(t *testing.T) {
 
 // Deploy script execute with mocked VM.
 func TestKeeper_ExecuteScriptMock(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	acc := sdk.AccAddress(randomValue(20))
 
@@ -70,8 +70,8 @@ func TestKeeper_ExecuteScriptMock(t *testing.T) {
 
 // Check genesis Import / Export functionality
 func TestKeeper_ExportGenesis(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	// check export with no initial genesis
 	{

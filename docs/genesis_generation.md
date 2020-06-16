@@ -12,7 +12,7 @@ Now configure cli:
     dncli config output json
     dncli config indent true
     dncli config trust-node true
-    dncli config compiler tcp://127.0.0.1:50053
+    dncli config compiler tcp://127.0.0.1:50051
     dncli config node http://127.0.0.1:26657
 
 If you want to keep your keys in file, instead of keystorage of your os, configure it:
@@ -58,10 +58,10 @@ Replace expressions in brackets with correct addresses, include Ethereum address
 
 Now let's register information about added coins in `genesis.json`:
 
-    dnode add-currency-info dfi  18 100000000000000000000000000 01d24136b8144bf1669f04b59f88edcb845d9eaf62c2440509c4945f4bc2213494
-    dnode add-currency-info eth  18 100000000000000000000000000 01faa7d704551494b9195f5389b76d558304d0cf7fe1174add70d906b7cc9733b7
-    dnode add-currency-info btc  8  100000000000000 019f5f20b472d146d3d4294c842972cf499787c0e974e3ab219f2b33b29ea6eb8d
-    dnode add-currency-info usdt 6  10000000000000 01b38df80edee9fbb71f9249afbd1e8c9b593a4523a66afd11b9087781fc228f1e
+    dnode add-currency-info dfi  18 100000000000000000000000000 0172c9f1bfe0a2bf6ac342aaa3c3380852d4694ae4e71655d37aa5d2e6700ed94e
+    dnode add-currency-info eth  18 100000000000000000000000000 0116fbac6fd286d2bfec4549161245982b730291a9cbc5281f5fcfb41aeb7bfb26
+    dnode add-currency-info btc  8  100000000000000 0158c690830c7e2f25b85de6ab85052fd1e79e6a9cbb52a9740be7ff7275604c1b
+    dnode add-currency-info usdt 6  10000000000000 01e10f377b920a0a8a330edd7beff6c3a11cdeb7682c964b02aa5bb6a784b84920
 
 Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 
