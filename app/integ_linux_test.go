@@ -41,10 +41,10 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	)
 	defer ct.Close()
 
-	dvmCompilerSocketPath := path.Join(ct.UDSDir, dvmSocket)
+	dvmCompilerSocketPath := path.Join(ct.Dirs.UDSDir, dvmSocket)
 
 	// Start DVM container
-	dvmContainer, err := tests.NewDVMWithUDSTransport(ct.UDSDir, dvmSocket, dsSocket)
+	dvmContainer, err := tests.NewDVMWithUDSTransport(ct.Dirs.UDSDir, dvmSocket, dsSocket)
 	require.NoError(t, err, "creating DVM container")
 	require.NoError(t, dvmContainer.Start(5*time.Second), "staring DVM container")
 	defer dvmContainer.Stop()
@@ -54,8 +54,8 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	ct.SetVMCompilerAddressUDS(dvmCompilerSocketPath)
 
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.json")
 
 	// Create .move script file
 	moveFile, err := os.Create(movePath)
