@@ -16,9 +16,8 @@ import (
 
 func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	const (
-		dsSocket         = "ds.sock"
-		vmCompilerSocket = "compiler.sock"
-		vmRuntimeSocket  = "runtime.sock"
+		dsSocket  = "ds.sock"
+		dvmSocket = "dvm.sock"
 	)
 
 	const script = `
@@ -38,31 +37,21 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 		t,
 		false,
 		cliTester.VMConnectionSettings(50, 1000, 100),
-		cliTester.VMCommunicationBaseAddressUDS(dsSocket, vmRuntimeSocket),
+		cliTester.VMCommunicationBaseAddressUDS(dsSocket, dvmSocket),
 	)
 	defer ct.Close()
 
-	vmCompilerSocketPath := path.Join(ct.UDSDir, vmCompilerSocket)
-	vmRuntimeSocketPath := path.Join(ct.UDSDir, vmRuntimeSocket)
+	dvmCompilerSocketPath := path.Join(ct.UDSDir, dvmSocket)
 
-	// Start VM compiler (docker)
-	compilerContainer, err := tests.NewVMCompilerContainerWithUDSTransport(ct.UDSDir, dsSocket, vmCompilerSocket)
-	require.NoError(t, err, "creating VM compiler container")
-	require.NoError(t, compilerContainer.Start(5*time.Second), "staring VM compiler container")
-	defer compilerContainer.Stop()
+	// Start DVM container
+	dvmContainer, err := tests.NewDVMWithUDSTransport(ct.UDSDir, dvmSocket, dsSocket)
+	require.NoError(t, err, "creating DVM container")
+	require.NoError(t, dvmContainer.Start(5*time.Second), "staring DVM container")
+	defer dvmContainer.Stop()
 
-	// Wait for compiler to start up and register compiler socket address
-	require.NoError(t, cliTester.WaitForFileExists(vmCompilerSocketPath, 10*time.Second), "VM compiler gRPC server start")
-	ct.SetVMCompilerAddressUDS(vmCompilerSocketPath)
-
-	// Start VM runtime
-	runtimeContainer, err := tests.NewVMRuntimeContainerWithUDSTransport(ct.UDSDir, dsSocket, vmRuntimeSocket)
-	require.NoError(t, err, "creating VM runtime container")
-	require.NoError(t, runtimeContainer.Start(5*time.Second), "staring VM runtime container")
-	defer runtimeContainer.Stop()
-
-	// Wait for runtime to start up
-	require.NoError(t, cliTester.WaitForFileExists(vmRuntimeSocketPath, 10*time.Second), "VM runtime gRPC server start")
+	// Wait for container to start up and register DVM socket address
+	require.NoError(t, cliTester.WaitForFileExists(dvmCompilerSocketPath, 10*time.Second), "DVM gRPC server start")
+	ct.SetVMCompilerAddressUDS(dvmCompilerSocketPath)
 
 	senderAddr := ct.Accounts["validator1"].Address
 	movePath := path.Join(ct.RootDir, "script.move")

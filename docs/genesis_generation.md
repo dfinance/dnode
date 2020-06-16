@@ -12,7 +12,7 @@ Now configure cli:
     dncli config output json
     dncli config indent true
     dncli config trust-node true
-    dncli config compiler tcp://127.0.0.1:50053
+    dncli config compiler tcp://127.0.0.1:50051
     dncli config node http://127.0.0.1:26657
 
 If you want to keep your keys in file, instead of keystorage of your os, configure it:
