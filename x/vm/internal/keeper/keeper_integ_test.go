@@ -28,12 +28,25 @@ script {
 	use 0x0::Account;
 	use 0x0::Coins;
 	use 0x0::DFI;
+	use 0x0::Dfinance;
+	use 0x0::Transaction; 
+	use 0x0::Compare;
 	
 	fun main(account: &signer, recipient: address, dfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
 		Account::pay_from_sender<DFI::T>(account, recipient, dfi_amount);
 		Account::pay_from_sender<Coins::ETH>(account, recipient, eth_amount);
 		Account::pay_from_sender<Coins::BTC>(account, recipient, btc_amount);
 		Account::pay_from_sender<Coins::USDT>(account, recipient, usdt_amount);
+
+		Transaction::assert(Compare::cmp_lcs_bytes(&Dfinance::denom<DFI::T>(), &b"dfi") == 0, 1);
+		Transaction::assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::ETH>(), &b"eth") == 0, 2);
+		Transaction::assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::BTC>(), &b"btc") == 0, 3);
+		Transaction::assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::USDT>(), &b"usdt") == 0, 4);
+
+		Transaction::assert(Dfinance::decimals<DFI::T>() == 18, 5);
+		Transaction::assert(Dfinance::decimals<Coins::ETH>() == 18, 6);
+		Transaction::assert(Dfinance::decimals<Coins::BTC>() == 8, 7);
+		Transaction::assert(Dfinance::decimals<Coins::USDT>() == 6, 8);
 	}
 }
 `
@@ -810,7 +823,7 @@ func TestKeeper_Path(t *testing.T) {
 	testID = "VMAuth accResource"
 	{
 		t.Logf("%s: script compile", testID)
-		scriptSrc := 	`
+		scriptSrc := `
 			script {
 				use 0x0::Account;
 				use 0x0::DFI;
