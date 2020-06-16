@@ -22,8 +22,8 @@ func (p PlainProposal) ValidateBasic() error   { return nil }
 func (p PlainProposal) String() string         { return "" }
 
 func Test_GovProposalQueue(t *testing.T) {
-	input := setupTestInput(true)
-	defer closeInput(input)
+	input := newTestInput(true)
+	defer input.Stop()
 
 	input.cdc.RegisterConcrete(PlainProposal{}, types.ModuleName+"/PlainProposal", nil)
 
