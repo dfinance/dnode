@@ -4,7 +4,7 @@ Before we start you should have a correct 'GOPATH', 'GOROOT' environment variabl
 
 Required:
 
-    * golang 1.13.8 or later.
+    * golang 1.14.1 or later.
 
 ## Install as binary
 
@@ -21,7 +21,6 @@ If you want to install specific application (not everything), you always can do:
 
     make install-dnode
     make install-dncli
-    make install-oracleapp
 
 ## Build from go
 

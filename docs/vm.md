@@ -76,7 +76,7 @@ Everything should be fine now.
 
 ## Compilation
 
-Launch the compiler server and DN.
+Launch the DVM server (compiler & runtime) and DN.
 
 Then use commands to compile modules/scripts:
 
@@ -87,7 +87,7 @@ Where:
  * `moveFile` - file that contains Move code;
  * `address` - address of account who will use the compiled code;
  * `--to-file` - allows to output the result to a file, otherwise it will be printed to console;
- * `--compiler` - address of the compiler server (optional, default is `tcp://127.0.0.1:50053`);
+ * `--compiler` - address of the compiler server (optional, default is `tcp://127.0.0.1:50051`);
 
 Refer to [DVM readme](https://github.com/dfinance/dvm/blob/master/README.md) on how to install and start the compiler
 server and the VM runtime server.
