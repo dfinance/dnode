@@ -100,7 +100,7 @@ func Test_ConsensusFailure(t *testing.T) {
 	// Start DVM compiler container (runtime also, but we don't want for dnode to connect to DVM runtime)
 	_, vmCompilerPort, err := server.FreeTCPAddr()
 	require.NoError(t, err, "FreeTCPAddr for DVM compiler port")
-	compilerContainer, err := tests.NewDVMWithNetTransport(vmCompilerPort, ct.VmListenPort)
+	compilerContainer, err := tests.NewDVMWithNetTransport(vmCompilerPort, ct.VMConnection.ListenPort)
 	require.NoError(t, err, "creating DVM compiler container")
 
 	require.NoError(t, compilerContainer.Start(5*time.Second), "staring DVM compiler container")
@@ -172,13 +172,11 @@ func Test_VMExecuteScript(t *testing.T) {
 	defer ct.Close()
 
 	// Start DVM container
-	dvmContainer, err := tests.NewDVMWithNetTransport(ct.VmConnectPort, ct.VmListenPort)
+	dvmContainer, err := tests.NewDVMWithNetTransport(ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort)
 	require.NoError(t, err, "creating DVM container")
 
 	require.NoError(t, dvmContainer.Start(5*time.Second), "staring DVM container")
 	defer dvmContainer.Stop()
-
-	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:"+ct.VmConnectPort, false)
 
 	senderAddr := ct.Accounts["validator1"].Address
 	movePath := path.Join(ct.Dirs.RootDir, "script.move")
@@ -299,12 +297,12 @@ func Test_VMCommunicationTCP(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMConnectionSettings(50, 1000, 100),
+		cliTester.VMCommunicationOption(50, 1000, 100),
 	)
 	defer ct.Close()
 
 	// Start DVM compiler / runtime (sub-process) abd register compiler
-	dvmAddr, dsAddr := "127.0.0.1:"+ct.VmConnectPort, "127.0.0.1:"+ct.VmListenPort
+	dvmAddr, dsAddr := "127.0.0.1:"+ct.VMConnection.ConnectPort, "127.0.0.1:"+ct.VMConnection.ListenPort
 	dvmCmd := cliTester.NewCLICmd(t, "dvm", "http://"+dvmAddr, "http://"+dsAddr)
 	dvmCmd.Start(t, true)
 	defer dvmCmd.Stop()
@@ -314,8 +312,8 @@ func Test_VMCommunicationTCP(t *testing.T) {
 	ct.SetVMCompilerAddressNet(dvmAddr, true)
 
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.move.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.move.json")
 
 	// Create .move script file
 	moveFile, err := os.Create(movePath)

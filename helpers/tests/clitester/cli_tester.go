@@ -65,7 +65,7 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 		VMCommunication:   NewTestVMCommunicationConfig(),
 		ConsensusTimings:  NewTestConsensusTimingConfig(),
 		AccountPassphrase: "passphrase",
-		DefAssetCode:      "tst",
+		DefAssetCode:      "tst_tst",
 		//
 		t:   t,
 		Cdc: makeCodec(),
@@ -291,7 +291,7 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 func (ct *CLITester) SetVMCompilerAddressNet(address string, skipTcpTest bool) {
 	ct.VMConnection.CompilerAddress = address
 	if !skipTcpTest {
-		require.NoError(ct.t, tests.PingTcpAddress(address, 500 * time.Millisecond), "VM compiler address (net)")
+		require.NoError(ct.t, tests.PingTcpAddress(address, 500*time.Millisecond), "VM compiler address (net)")
 	}
 }
 

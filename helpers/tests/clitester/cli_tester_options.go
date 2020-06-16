@@ -66,6 +66,7 @@ func VMCommunicationBaseAddressNetOption(baseAddr string) CLITesterOption {
 		ct.VMConnection.BaseAddress = baseAddr
 		ct.VMConnection.ConnectAddress = fmt.Sprintf("%s:%s", ct.VMConnection.BaseAddress, ct.VMConnection.ConnectPort)
 		ct.VMConnection.ListenAddress = fmt.Sprintf("%s:%s", ct.VMConnection.BaseAddress, ct.VMConnection.ListenPort)
+		ct.VMConnection.CompilerAddress = ct.VMConnection.ConnectAddress
 
 		return nil
 	}
@@ -76,6 +77,7 @@ func VMCommunicationBaseAddressUDSOption(listenFileName, vmFileName string) CLIT
 		ct.VMConnection.BaseAddress = "unix://" + ct.Dirs.UDSDir
 		ct.VMConnection.ConnectAddress = fmt.Sprintf("%s/%s", ct.VMConnection.BaseAddress, vmFileName)
 		ct.VMConnection.ListenAddress = fmt.Sprintf("%s/%s", ct.VMConnection.BaseAddress, listenFileName)
+		ct.VMConnection.CompilerAddress = ct.VMConnection.ConnectAddress
 
 		return nil
 	}

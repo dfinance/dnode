@@ -256,6 +256,7 @@ func NewTestVMConnectionConfigTCP() (c VMConnectionConfig, retErr error) {
 	c.BaseAddress = baseAddress
 	c.ListenPort, c.ListenAddress = listenPort, listenAddress
 	c.ConnectPort, c.ConnectAddress = connectPort, connectAddress
+	c.CompilerAddress = c.ConnectAddress
 
 	return
 }

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	sdkKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
-	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
@@ -174,22 +173,6 @@ func (ct *CLITester) initChain() {
 
 			cmd.CheckSuccessfulExecute(nil)
 		}
-	}
-
-	// change default genesis params
-	{
-		appState := ct.GenesisState()
-
-		// staking default denom change
-		stakingGenesis := staking.GenesisState{}
-		require.NoError(ct.t, ct.Cdc.UnmarshalJSON(appState["staking"], &stakingGenesis), "unmarshal staking genesisState")
-
-		stakingGenesis.Params.BondDenom = config.MainDenom
-		stakingGenesisRaw, err := ct.Cdc.MarshalJSON(stakingGenesis)
-		require.NoError(ct.t, err, "marshal staking genesisState")
-		appState["staking"] = stakingGenesisRaw
-
-		ct.updateGenesisState(appState)
 	}
 
 	// collect genTXs
