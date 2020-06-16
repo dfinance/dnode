@@ -73,11 +73,11 @@ func queryGetCalls(msKeeper Keeper, ctx sdk.Context) ([]byte, error) {
 		}
 
 		var callResp types.CallResp
-		call, err := msKeeper.GetCall(ctx, callId)
-		votes, err := msKeeper.GetVotes(ctx, callId)
+		call, callErr := msKeeper.GetCall(ctx, callId)
+		votes, votesErr := msKeeper.GetVotes(ctx, callId)
 
-		if err != nil {
-			return nil, sdkErrors.Wrapf(types.ErrInternal, "could not extract votes for call by id: %v", err)
+		if callErr != nil || votesErr != nil {
+			return nil, sdkErrors.Wrapf(types.ErrInternal, "could not extract votes for call by id: %v, %v", callErr, votesErr)
 		}
 
 		callResp.Call = call

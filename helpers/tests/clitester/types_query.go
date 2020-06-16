@@ -37,6 +37,29 @@ func (q *QueryRequest) SetCmd(module string, args ...string) {
 	q.cmd.AddArg("node", q.nodeRpcAddress)
 }
 
+func (q *QueryRequest) Execute() (combinedOutput string, retErr error) {
+	code, stdout, stderr := q.cmd.Execute()
+	combinedOutput = string(append(stdout, stderr...))
+
+	if code != 0 {
+		retErr = fmt.Errorf("%s: failed with code %d:\nstdout: %s\nstrerr: %s", q.String(), code, string(stdout), string(stderr))
+		return
+	}
+	if len(stderr) > 0 {
+		retErr = fmt.Errorf("%s: failed with non-empty stderr:\nstdout: %s\nstrerr: %s", q.String(), string(stdout), string(stderr))
+		return
+	}
+
+	if q.resultObj != nil {
+		if err := q.cdc.UnmarshalJSON(stdout, q.resultObj); err != nil {
+			retErr = fmt.Errorf("%s: unmarshal query stdout: %s", q.String(), string(stdout))
+			return
+		}
+	}
+
+	return
+}
+
 func (q *QueryRequest) CheckSucceeded() {
 	code, stdout, stderr := q.cmd.Execute()
 

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -16,14 +15,11 @@ import (
 	sdkKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	tmCTypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmRPCTypes "github.com/tendermint/tendermint/rpc/lib/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
-	"github.com/dfinance/dnode/cmd/config"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/tests"
 )
@@ -33,184 +29,66 @@ var (
 )
 
 type CLITester struct {
-	RootDir  string
-	DncliDir string
-	UDSDir   string
-	//
-	ChainID   string
-	MonikerID string
-	//
-	AccountPassphrase string
+	Cdc               *codec.Codec
+	IDs               NodeIdConfig
+	Dirs              DirConfig
+	BinaryPath        BinaryPathConfig
 	Accounts          map[string]*CLIAccount
+	Currencies        map[string]CurrencyInfo
+	AccountPassphrase string
+	DefAssetCode      string
+	NodePorts         NodePortConfig
+	VMConnection      VMConnectionConfig
+	VMCommunication   VMCommunicationConfig
+	ConsensusTimings  ConsensusTimingConfig
 	//
-	Cdc          *codec.Codec
-	DefAssetCode string
+	t *testing.T
 	//
-	VmListenPort  string
-	VmConnectPort string
-	//
-	//
-	t           *testing.T
-	keyBase     sdkKeys.Keybase
-	wbdBinary   string
-	wbcliBinary string
-	//
-	rpcAddress string
-	rpcPort    string
-	p2pAddress string
-	//
-	vmBaseAddress     string
-	vmConnectAddress  string
-	vmListenAddress   string
-	vmCompilerAddress string
-	vmComMinBackoffMs int
-	vmComMaxBackoffMs int
-	vmComMaxAttempts  int
-	//
-	restAddress    string
-	daemon         *CLICmd
-	restServer     *CLICmd
+	keyBase        sdkKeys.Keybase
 	keyringBackend keyring.BackendType
-}
-
-type CLIAccount struct {
-	Name            string
-	Address         string
-	EthAddress      string
-	PubKey          string
-	Mnemonic        string
-	Coins           map[string]sdk.Coin
-	IsPOAValidator  bool
-	IsOracleNominee bool
-	IsOracle        bool
+	//
+	restServer  *CLICmd
+	restAddress string
+	//
+	daemonLogLvl string
+	daemon       *CLICmd
 }
 
 func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITester {
 	sdkConfig := sdk.GetConfig()
 	dnConfig.InitBechPrefixes(sdkConfig)
 
-	_, vmConnectPort, err := server.FreeTCPAddr()
-	require.NoError(t, err, "FreeTCPAddr for VM connect")
-	_, vmListenPort, err := server.FreeTCPAddr()
-	require.NoError(t, err, "FreeTCPAddr for VM listen")
-	srvAddr, srvPort, err := server.FreeTCPAddr()
-	require.NoError(t, err, "FreeTCPAddr for srv")
-	p2pAddr, _, err := server.FreeTCPAddr()
-	require.NoError(t, err, "FreeTCPAddr for p2p")
-
 	ct := CLITester{
-		t:                 t,
-		Cdc:               makeCodec(),
-		wbdBinary:         "dnode",
-		wbcliBinary:       "dncli",
-		keyBase:           sdkKeys.NewInMemory(),
-		ChainID:           "test-chain",
-		MonikerID:         "test-moniker",
+		IDs:               NewTestNodeIdConfig(),
+		BinaryPath:        NewTestBinaryPathConfig(),
+		Currencies:        NewCurrencyMap(),
+		VMCommunication:   NewTestVMCommunicationConfig(),
+		ConsensusTimings:  NewTestConsensusTimingConfig(),
 		AccountPassphrase: "passphrase",
-		DefAssetCode:      "tst_asset",
-		keyringBackend:    keyring.FileBackend,
+		DefAssetCode:      "tst_tst",
 		//
-		rpcAddress: srvAddr,
-		rpcPort:    srvPort,
-		p2pAddress: p2pAddr,
+		t:   t,
+		Cdc: makeCodec(),
 		//
-		VmConnectPort:     vmConnectPort,
-		VmListenPort:      vmListenPort,
-		vmBaseAddress:     "127.0.0.1",
-		vmComMinBackoffMs: 100,
-		vmComMaxBackoffMs: 150,
-		vmComMaxAttempts:  1,
-		vmCompilerAddress: "",
-		//
-		Accounts: make(map[string]*CLIAccount, 0),
-	}
-	ct.vmConnectAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmConnectPort)
-	ct.vmListenAddress = fmt.Sprintf("%s:%s", ct.vmBaseAddress, ct.VmListenPort)
-	ct.vmCompilerAddress = ct.vmConnectAddress
-
-	smallAmount, ok := sdk.NewIntFromString("1000000000000000000000")
-	require.True(t, ok, "NewInt for smallAmount")
-	bigAmount, ok := sdk.NewIntFromString("1000000000000000000000")
-	//bigAmount, ok := sdk.NewIntFromString("90000000000000000000000000")
-	require.True(t, ok, "NewInt for bigAmount")
-
-	ct.Accounts["pos"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, bigAmount),
-		},
-	}
-	ct.Accounts["bank"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, bigAmount),
-		},
-	}
-	ct.Accounts["validator1"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
-		IsPOAValidator: true,
-	}
-	ct.Accounts["validator2"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
-		IsPOAValidator: true,
-	}
-	ct.Accounts["validator3"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
-		IsPOAValidator: true,
-	}
-	ct.Accounts["validator4"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
-		IsPOAValidator: true,
-	}
-	ct.Accounts["validator5"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
-		IsPOAValidator: true,
-	}
-	ct.Accounts["nominee"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
-		IsOracleNominee: true,
-	}
-	ct.Accounts["oracle1"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
-		IsOracle: true,
-	}
-	ct.Accounts["oracle2"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
-		IsOracle: false,
-	}
-	ct.Accounts["oracle3"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
-		IsOracle: false,
-	}
-	ct.Accounts["plain"] = &CLIAccount{
-		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-		},
+		keyBase:        sdkKeys.NewInMemory(),
+		keyringBackend: keyring.FileBackend,
 	}
 
-	rootDir, err := ioutil.TempDir("/tmp", fmt.Sprintf("wd-cli-test-%s-", ct.t.Name()))
-	require.NoError(t, err, "TempDir")
-	ct.RootDir = rootDir
-	ct.DncliDir = path.Join(rootDir, "dncli")
+	dirs, err := NewTempDirConfig(ct.t.Name())
+	require.NoError(ct.t, err, "New: dirs")
+	ct.Dirs = dirs
 
-	ct.UDSDir = path.Join(ct.RootDir, "sockets")
-	require.NoError(t, os.Mkdir(ct.UDSDir, 0777), "creating sockets dir")
+	accounts, err := NewAccountMap()
+	require.NoError(ct.t, err, "New: accounts")
+	ct.Accounts = accounts
+
+	nodePorts, err := NewTestNodePortConfig()
+	require.NoError(ct.t, err, "New: node ports")
+	ct.NodePorts = nodePorts
+
+	vmConnection, err := NewTestVMConnectionConfigTCP()
+	require.NoError(ct.t, err, "New: VM connection via TCP")
+	ct.VMConnection = vmConnection
 
 	for _, option := range options {
 		require.NoError(ct.t, option(&ct), "option failed")
@@ -222,34 +100,22 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 
 	ct.UpdateAccountsBalance()
 
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
+
 	return &ct
 }
 
-func (ct *CLITester) Close() {
-	if ct.restServer != nil {
-		ct.restServer.Stop()
-	}
-
-	if ct.daemon != nil {
-		ct.daemon.Stop()
-	}
-
-	if ct.RootDir != "" {
-		os.RemoveAll(ct.RootDir)
-	}
-}
-
 func (ct *CLITester) newWbdCmd() *CLICmd {
-	cmd := &CLICmd{t: ct.t, base: ct.wbdBinary}
-	cmd.AddArg("home", ct.RootDir)
+	cmd := &CLICmd{t: ct.t, base: ct.BinaryPath.wbd}
+	cmd.AddArg("home", ct.Dirs.RootDir)
 
 	return cmd
 }
 
 func (ct *CLITester) newWbcliCmd() *CLICmd {
-	cmd := &CLICmd{t: ct.t, base: ct.wbcliBinary}
-	cmd.AddArg("home", ct.DncliDir)
-	cmd.AddArg("chain-id", ct.ChainID)
+	cmd := &CLICmd{t: ct.t, base: ct.BinaryPath.wbcli}
+	cmd.AddArg("home", ct.Dirs.DncliDir)
+	cmd.AddArg("chain-id", ct.IDs.ChainID)
 	cmd.AddArg("output", "json")
 
 	return cmd
@@ -260,6 +126,7 @@ func (ct *CLITester) newRestRequest() *RestRequest {
 		t:       ct.t,
 		cdc:     ct.Cdc,
 		baseUrl: ct.restAddress,
+		gas:     DefaultGas,
 	}
 }
 
@@ -268,8 +135,9 @@ func (ct *CLITester) newTxRequest() *TxRequest {
 		t:              ct.t,
 		cdc:            ct.Cdc,
 		cmd:            ct.newWbcliCmd(),
-		nodeRpcAddress: ct.rpcAddress,
+		nodeRpcAddress: ct.NodePorts.RPCAddress,
 		accPassphrase:  ct.AccountPassphrase,
+		gas:            DefaultGas,
 	}
 }
 
@@ -278,192 +146,8 @@ func (ct *CLITester) newQueryRequest(resultObj interface{}) *QueryRequest {
 		t:              ct.t,
 		cdc:            ct.Cdc,
 		cmd:            ct.newWbcliCmd(),
-		nodeRpcAddress: ct.rpcAddress,
+		nodeRpcAddress: ct.NodePorts.RPCAddress,
 		resultObj:      resultObj,
-	}
-}
-
-func (ct *CLITester) initChain() {
-	// init chain
-	cmd := ct.newWbdCmd().AddArg("", "init").AddArg("", ct.MonikerID).AddArg("chain-id", ct.ChainID)
-	cmd.CheckSuccessfulExecute(nil)
-
-	// configure dncli
-	{
-		cmd := ct.newWbcliCmd().
-			AddArg("", "config").
-			AddArg("", "keyring-backend").
-			AddArg("", string(ct.keyringBackend))
-		cmd.CheckSuccessfulExecute(nil)
-	}
-
-	// adjust tendermint config (make blocks generation faster)
-	{
-		cfgMtx.Lock()
-		defer cfgMtx.Unlock()
-
-		cfgFile := path.Join(ct.RootDir, "config", "config.toml")
-		_, err := os.Stat(cfgFile)
-		require.NoError(ct.t, err, "reading config.toml file")
-		viper.SetConfigFile(cfgFile)
-		require.NoError(ct.t, viper.ReadInConfig())
-
-		viper.Set("consensus.timeout_propose", "250ms")
-		viper.Set("consensus.timeout_propose_delta", "250ms")
-		viper.Set("consensus.timeout_prevote", "250ms")
-		viper.Set("consensus.timeout_prevote_delta", "250ms")
-		viper.Set("consensus.timeout_precommit", "250ms")
-		viper.Set("consensus.timeout_precommit_delta", "250ms")
-		viper.Set("consensus.timeout_commit", "250ms")
-
-		require.NoError(ct.t, viper.WriteConfig(), "saving config.toml file")
-	}
-
-	// configure accounts
-	{
-		poaValidatorIdx := 0
-		for accName, accValue := range ct.Accounts {
-			// create key
-			{
-				cmd := ct.newWbcliCmd().
-					AddArg("", "keys").
-					AddArg("", "add").
-					AddArg("", accName)
-				output := sdkKeys.KeyOutput{}
-
-				cmd.CheckSuccessfulExecute(&output, ct.AccountPassphrase, ct.AccountPassphrase)
-				accValue.Name = output.Name
-				accValue.Address = output.Address
-				accValue.PubKey = output.PubKey
-				accValue.Mnemonic = output.Mnemonic
-			}
-
-			// get armored private key
-			{
-				cmd := ct.newWbcliCmd().
-					AddArg("", "keys").
-					AddArg("", "export").
-					AddArg("", accName)
-
-				output := cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase)
-				require.NoError(ct.t, ct.keyBase.ImportPrivKey(accName, output, ct.AccountPassphrase), "account %q: keyBase.ImportPrivKey", accName)
-			}
-
-			// genesis account
-			{
-				cmd := ct.newWbdCmd().
-					AddArg("", "add-genesis-account").
-					AddArg("", accValue.Address)
-
-				require.NotEmpty(ct.t, accValue.Coins, "account %q: no coins", accName)
-				var coinsArg []string
-				for _, coin := range accValue.Coins {
-					coinsArg = append(coinsArg, coin.String())
-				}
-				cmd.AddArg("", strings.Join(coinsArg, ","))
-
-				cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
-			}
-
-			// POA validator
-			if accValue.IsPOAValidator {
-				require.True(ct.t, poaValidatorIdx < len(EthAddresses), "add more predefined ethAddresses")
-				accValue.EthAddress = EthAddresses[poaValidatorIdx]
-
-				cmd := ct.newWbdCmd().
-					AddArg("", "add-genesis-poa-validator").
-					AddArg("", accValue.Address).
-					AddArg("", accValue.EthAddress)
-				cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
-
-				poaValidatorIdx++
-			}
-
-			// Oracle nominee
-			if accValue.IsOracleNominee {
-				cmd := ct.newWbdCmd().
-					AddArg("", "add-oracle-nominees-gen").
-					AddArg("", accValue.Address)
-
-				cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase)
-			}
-		}
-	}
-
-	// validator genTX
-	{
-		cmd := ct.newWbdCmd().
-			AddArg("", "gentx").
-			AddArg("home-client", ct.DncliDir).
-			AddArg("name", "pos").
-			AddArg("amount", ct.Accounts["pos"].Coins[config.MainDenom].String()).
-			AddArg("keyring-backend", string(ct.keyringBackend))
-
-		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase)
-	}
-
-	// VM default write sets
-	{
-		defWriteSetsPath := os.ExpandEnv(DefVmWriteSetsPath)
-
-		cmd := ct.newWbdCmd().
-			AddArg("", "read-genesis-write-set").
-			AddArg("", defWriteSetsPath).
-			AddArg("home", ct.RootDir)
-
-		cmd.CheckSuccessfulExecute(nil)
-	}
-
-	// add Oracle assets
-	{
-		oracles := make([]string, 0)
-		oracles = append(oracles, ct.Accounts["oracle1"].Address)
-		oracles = append(oracles, ct.Accounts["oracle2"].Address)
-
-		cmd := ct.newWbdCmd().
-			AddArg("", "add-oracle-asset-gen").
-			AddArg("", ct.DefAssetCode).
-			AddArg("", strings.Join(oracles, ","))
-
-		cmd.CheckSuccessfulExecute(nil)
-	}
-
-	// change default genesis params
-	{
-		appState := ct.GenesisState()
-
-		// staking default denom change
-		stakingGenesis := staking.GenesisState{}
-		require.NoError(ct.t, ct.Cdc.UnmarshalJSON(appState["staking"], &stakingGenesis), "unmarshal staking genesisState")
-
-		stakingGenesis.Params.BondDenom = config.MainDenom
-		stakingGenesisRaw, err := ct.Cdc.MarshalJSON(stakingGenesis)
-		require.NoError(ct.t, err, "marshal staking genesisState")
-		appState["staking"] = stakingGenesisRaw
-
-		ct.updateGenesisState(appState)
-	}
-
-	// collect genTXs
-	{
-		cmd := ct.newWbdCmd().AddArg("", "collect-gentxs")
-		cmd.CheckSuccessfulExecute(nil)
-	}
-
-	// validate genesis
-	{
-		cmd := ct.newWbdCmd().AddArg("", "validate-genesis")
-		cmd.CheckSuccessfulExecute(nil)
-	}
-
-	// prepare VM config
-	{
-		vmConfig := dnConfig.DefaultVMConfig()
-		vmConfig.Address, vmConfig.DataListen = ct.vmConnectAddress, ct.vmListenAddress
-		vmConfig.InitialBackoff = ct.vmComMinBackoffMs
-		vmConfig.MaxBackoff = ct.vmComMaxBackoffMs
-		vmConfig.MaxAttempts = ct.vmComMaxAttempts
-		dnConfig.WriteVMConfig(ct.RootDir, vmConfig)
 	}
 }
 
@@ -474,8 +158,11 @@ func (ct *CLITester) startDemon(waitForStart, printLogs bool) {
 
 	cmd := ct.newWbdCmd().
 		AddArg("", "start").
-		AddArg("rpc.laddr", ct.rpcAddress).
-		AddArg("p2p.laddr", ct.p2pAddress)
+		AddArg("rpc.laddr", ct.NodePorts.RPCAddress).
+		AddArg("p2p.laddr", ct.NodePorts.P2PAddress)
+	if ct.daemonLogLvl != "" {
+		cmd.AddArg("log_level", ct.daemonLogLvl)
+	}
 	cmd.Start(ct.t, printLogs)
 
 	// wait for the node to start up
@@ -501,7 +188,7 @@ func (ct *CLITester) startDemon(waitForStart, printLogs bool) {
 
 func (ct *CLITester) updateGenesisState(appState GenesisState) {
 	genesisFile := server.NewDefaultContext().Config.Genesis
-	genesisPath := path.Join(ct.RootDir, genesisFile)
+	genesisPath := path.Join(ct.Dirs.RootDir, genesisFile)
 
 	cdc := codec.New()
 	genDoc, err := tmTypes.GenesisDocFromFile(genesisPath)
@@ -516,7 +203,7 @@ func (ct *CLITester) updateGenesisState(appState GenesisState) {
 
 func (ct *CLITester) GenesisState() GenesisState {
 	genesisFile := server.NewDefaultContext().Config.Genesis
-	genesisPath := path.Join(ct.RootDir, genesisFile)
+	genesisPath := path.Join(ct.Dirs.RootDir, genesisFile)
 
 	cdc := codec.New()
 	genDoc, err := tmTypes.GenesisDocFromFile(genesisPath)
@@ -569,10 +256,10 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	restUrl = "http://" + restAddress
 
 	//cmd := ct.newWbcliCmd().
-	cmd := &CLICmd{t: ct.t, base: ct.wbcliBinary}
+	cmd := &CLICmd{t: ct.t, base: ct.BinaryPath.wbcli}
 	cmd.AddArg("", "rest-server")
 	cmd.AddArg("laddr", "tcp://"+restAddress)
-	cmd.AddArg("node", ct.rpcAddress)
+	cmd.AddArg("node", ct.NodePorts.RPCAddress)
 	cmd.AddArg("trust-node", "true")
 	cmd.Start(ct.t, printLogs)
 
@@ -602,16 +289,29 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 }
 
 func (ct *CLITester) SetVMCompilerAddressNet(address string, skipTcpTest bool) {
-	ct.vmCompilerAddress = address
+	ct.VMConnection.CompilerAddress = address
 	if !skipTcpTest {
-		require.NoError(ct.t, tests.PingTcpAddress(address, 500 * time.Millisecond), "VM compiler address (net)")
+		require.NoError(ct.t, tests.PingTcpAddress(address, 500*time.Millisecond), "VM compiler address (net)")
 	}
 }
 
 func (ct *CLITester) SetVMCompilerAddressUDS(path string) {
 	_, err := os.Stat(path)
 	require.NoError(ct.t, err, "VM compiler address (UDS)")
-	ct.vmCompilerAddress = "unix://" + path
+	ct.VMConnection.CompilerAddress = "unix://" + path
+}
+
+func (ct *CLITester) UpdateAccountBalance(name string) {
+	account, ok := ct.Accounts[name]
+	require.True(ct.t, ok, "account %q: not found", name)
+
+	q, acc := ct.QueryAccount(account.Address)
+	q.CheckSucceeded()
+
+	account.Number = acc.AccountNumber
+	for _, coin := range acc.Coins {
+		account.Coins[coin.Denom] = coin
+	}
 }
 
 func (ct *CLITester) UpdateAccountsBalance() {
@@ -619,6 +319,7 @@ func (ct *CLITester) UpdateAccountsBalance() {
 		q, curAcc := ct.QueryAccount(prevAcc.Address)
 		q.CheckSucceeded()
 
+		prevAcc.Number = curAcc.AccountNumber
 		for _, curCoin := range curAcc.Coins {
 			doUpdate := false
 			prevCoin, ok := prevAcc.Coins[curCoin.Denom]
@@ -638,7 +339,7 @@ func (ct *CLITester) UpdateAccountsBalance() {
 }
 
 func (ct *CLITester) GetCurrentBlockHeight() (int64, error) {
-	url := fmt.Sprintf("http://localhost:%s/block", ct.rpcPort)
+	url := fmt.Sprintf("http://localhost:%s/block", ct.NodePorts.RPCPort)
 
 	res, err := http.Get(url)
 	if err != nil {
@@ -728,5 +429,70 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 		q.CheckSucceeded()
 		require.Equal(ct.t, uniqueID, call.Call.UniqueID)
 		require.True(ct.t, call.Call.Approved)
+	}
+}
+
+func (ct *CLITester) CreateAccount(name string, balances ...StringPair) {
+	account := &CLIAccount{Coins: make(map[string]sdk.Coin)}
+
+	// create key
+	{
+		cmd := ct.newWbcliCmd().
+			AddArg("", "keys").
+			AddArg("", "add").
+			AddArg("", name)
+		output := sdkKeys.KeyOutput{}
+		cmd.CheckSuccessfulExecute(&output, ct.AccountPassphrase, ct.AccountPassphrase)
+
+		account.Name = name
+		account.Address = output.Address
+		account.PubKey = output.PubKey
+		account.Mnemonic = output.Mnemonic
+	}
+
+	// add key to CT keychain
+	{
+		cmd := ct.newWbcliCmd().
+			AddArg("", "keys").
+			AddArg("", "export").
+			AddArg("", name)
+
+		output := cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase)
+		require.NoError(ct.t, ct.keyBase.ImportPrivKey(name, output, ct.AccountPassphrase), "account %q: keyBase.ImportPrivKey", name)
+	}
+
+	// issue coins
+	for _, balance := range balances {
+		denom, amountStr := balance.Key, balance.Value
+		issueID := fmt.Sprintf("%s_%s", name, denom)
+
+		amount, ok := sdk.NewIntFromString(amountStr)
+		require.True(ct.t, ok, "invalid amount: %s", amountStr)
+
+		currency, ok := ct.Currencies[denom]
+		require.True(ct.t, ok, "currency with %q denom: not found", denom)
+
+		validator1Address := ct.Accounts["validator1"].Address
+		ct.TxCurrenciesIssue(account.Address, validator1Address, denom, amount, currency.Decimals, issueID).CheckSucceeded()
+
+		ct.ConfirmCall(issueID)
+	}
+
+	// store and update balances
+	ct.Accounts[name] = account
+	ct.UpdateAccountBalance(name)
+}
+
+func (ct *CLITester) Close() {
+	if ct.restServer != nil {
+		ct.restServer.Stop()
+	}
+
+	if ct.daemon != nil {
+		ct.daemon.Stop()
+	}
+
+	if ct.Dirs.RootDir != "" {
+		os.RemoveAll(ct.Dirs.RootDir)
 	}
 }

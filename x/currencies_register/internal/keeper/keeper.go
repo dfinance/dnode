@@ -93,7 +93,9 @@ func (keeper Keeper) GetCurrencyInfo(ctx sdk.Context, denom string) (types.Curre
 	// load path
 	var currencyPath types.CurrencyPath
 	bz := store.Get(keyPath)
-	keeper.cdc.UnmarshalBinaryBare(bz, &currencyPath)
+	if err := keeper.cdc.UnmarshalBinaryBare(bz, &currencyPath); err != nil {
+		return types.CurrencyInfo{}, sdkErrors.Wrap(types.ErrInternal, "unmarshal CurrencyPath")
+	}
 
 	accessPath := vm_grpc.VMAccessPath{
 		Address: common_vm.ZeroAddress,

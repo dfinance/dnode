@@ -7,6 +7,7 @@ import (
 
 const (
 	ModuleName = types.ModuleName
+	RouterKey  = types.RouterKey
 	StoreKey   = types.StoreKey
 )
 
@@ -14,6 +15,7 @@ type (
 	Keeper          = keeper.Keeper
 	GenesisState    = types.GenesisState
 	GenesisCurrency = types.GenesisCurrency
+	CurrencyInfo    = types.CurrencyInfo
 )
 
 var (

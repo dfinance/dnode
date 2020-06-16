@@ -29,6 +29,7 @@ type RestRequest struct {
 	requestValue  interface{}
 	responseValue interface{}
 	timeout       time.Duration
+	gas           uint64
 }
 
 // REST endpoint error object
@@ -108,31 +109,52 @@ func (r *RestRequest) Request() (retCode int, retBody []byte) {
 	return
 }
 
-func (r *RestRequest) CheckSucceeded() {
+func (r *RestRequest) Execute() error {
 	respCode, respBody := r.Request()
-	require.Equal(r.t, respCode, http.StatusOK, "%s: HTTP code %d: %s", r.String(), respCode, string(respBody))
+	if respCode != http.StatusOK {
+		return fmt.Errorf("%s: HTTP code %d: %s", r.String(), respCode, string(respBody))
+	}
 
 	// parse Tx response or Query response
 	if r.responseValue != nil {
 		if _, ok := r.responseValue.(*sdk.TxResponse); ok {
-			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, r.responseValue), "%s: unmarshal sdk.TxResponse: %s", r.String(), string(respBody))
+			if err := r.cdc.UnmarshalJSON(respBody, r.responseValue); err != nil {
+				return fmt.Errorf("%s: unmarshal txResponseValue: %s", r.String(), string(respBody))
+			}
 
 			txResp := r.responseValue.(*sdk.TxResponse)
-			require.Equal(r.t, uint32(0), txResp.Code, "%s: tx code %d: %s", r.String(), txResp.Code, txResp.RawLog)
-			return
+			if txResp.Code != 0 {
+				return fmt.Errorf("%s: tx code %d: %s", r.String(), txResp.Code, txResp.RawLog)
+			}
+
+			return nil
 		}
 
 		if _, ok := r.responseValue.(*coreTypes.ResultBlock); ok {
-			require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, r.responseValue), "%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
-			return
+			if err := r.cdc.UnmarshalJSON(respBody, r.responseValue); err != nil {
+				return fmt.Errorf("%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
+			}
+
+			return nil
 		}
 
 		respMsg := sdkRest.ResponseWithHeight{}
-		require.NoError(r.t, r.cdc.UnmarshalJSON(respBody, &respMsg), "%s: unmarshal ResponseWithHeight: %s", r.String(), string(respBody))
+		if err := r.cdc.UnmarshalJSON(respBody, &respMsg); err != nil {
+			return fmt.Errorf("%s: unmarshal ResponseWithHeight: %s", r.String(), string(respBody))
+		}
+
 		if respMsg.Result != nil {
-			require.NoError(r.t, r.cdc.UnmarshalJSON(respMsg.Result, r.responseValue), "%s: unmarshal responseValue: %s", r.String(), string(respBody))
+			if err := r.cdc.UnmarshalJSON(respMsg.Result, r.responseValue); err != nil {
+				return fmt.Errorf("%s: unmarshal responseValue: %s", r.String(), string(respBody))
+			}
 		}
 	}
+
+	return nil
+}
+
+func (r *RestRequest) CheckSucceeded() {
+	require.NoError(r.t, r.Execute())
 }
 
 func (r *RestRequest) CheckFailed(expectedCode int, expectedErr error) {

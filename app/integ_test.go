@@ -100,7 +100,7 @@ func Test_ConsensusFailure(t *testing.T) {
 	// Start DVM compiler container (runtime also, but we don't want for dnode to connect to DVM runtime)
 	_, vmCompilerPort, err := server.FreeTCPAddr()
 	require.NoError(t, err, "FreeTCPAddr for DVM compiler port")
-	compilerContainer, err := tests.NewDVMWithNetTransport(vmCompilerPort, ct.VmListenPort)
+	compilerContainer, err := tests.NewDVMWithNetTransport(vmCompilerPort, ct.VMConnection.ListenPort)
 	require.NoError(t, err, "creating DVM compiler container")
 
 	require.NoError(t, compilerContainer.Start(5*time.Second), "staring DVM compiler container")
@@ -109,8 +109,8 @@ func Test_ConsensusFailure(t *testing.T) {
 	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:"+vmCompilerPort, false)
 
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.move.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.move.json")
 
 	// Create .move script file
 	moveFile, err := os.Create(movePath)
@@ -166,23 +166,21 @@ func Test_VMExecuteScript(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		true,
-		cliTester.VMConnectionSettings(50, 1000, 100),
-		cliTester.VMCommunicationBaseAddressNet("tcp://127.0.0.1"),
+		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
 	)
 	defer ct.Close()
 
 	// Start DVM container
-	dvmContainer, err := tests.NewDVMWithNetTransport(ct.VmConnectPort, ct.VmListenPort)
+	dvmContainer, err := tests.NewDVMWithNetTransport(ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort)
 	require.NoError(t, err, "creating DVM container")
 
 	require.NoError(t, dvmContainer.Start(5*time.Second), "staring DVM container")
 	defer dvmContainer.Stop()
 
-	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:"+ct.VmConnectPort, false)
-
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.json")
 
 	// Create .moe script file
 	moveFile, err := os.Create(movePath)
@@ -210,13 +208,13 @@ func Test_VMRequestRetry(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		true,
-		cliTester.VMConnectionSettings(100, 500, 10),
-		cliTester.VMCommunicationBaseAddressUDS(dsSocket, mockDVMSocket),
+		cliTester.VMCommunicationOption(100, 500, 10),
+		cliTester.VMCommunicationBaseAddressUDSOption(dsSocket, mockDVMSocket),
 	)
 	defer ct.Close()
 	ct.StartRestServer(false)
 
-	mockDVMSocketPath := path.Join(ct.UDSDir, mockDVMSocket)
+	mockDVMSocketPath := path.Join(ct.Dirs.UDSDir, mockDVMSocket)
 	mockDVMListener, err := helpers.GetGRpcNetListener("unix://" + mockDVMSocketPath)
 	require.NoError(t, err, "creating MockDVM listener")
 
@@ -225,7 +223,7 @@ func Test_VMRequestRetry(t *testing.T) {
 	require.NoError(t, cliTester.WaitForFileExists(mockDVMSocketPath, 1*time.Second), "MockDVM start failed")
 
 	// Create fake .mov file
-	modulePath := path.Join(ct.RootDir, "fake.json")
+	modulePath := path.Join(ct.Dirs.RootDir, "fake.json")
 	moduleContent := []byte("{ \"code\": \"00\" }")
 	require.NoError(t, ioutil.WriteFile(modulePath, moduleContent, 0644), "creating fake script file")
 
@@ -299,12 +297,12 @@ func Test_VMCommunicationTCP(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMConnectionSettings(50, 1000, 100),
+		cliTester.VMCommunicationOption(50, 1000, 100),
 	)
 	defer ct.Close()
 
 	// Start DVM compiler / runtime (sub-process) abd register compiler
-	dvmAddr, dsAddr := "127.0.0.1:"+ct.VmConnectPort, "127.0.0.1:"+ct.VmListenPort
+	dvmAddr, dsAddr := "127.0.0.1:"+ct.VMConnection.ConnectPort, "127.0.0.1:"+ct.VMConnection.ListenPort
 	dvmCmd := cliTester.NewCLICmd(t, "dvm", "http://"+dvmAddr, "http://"+dsAddr)
 	dvmCmd.Start(t, true)
 	defer dvmCmd.Stop()
@@ -314,8 +312,8 @@ func Test_VMCommunicationTCP(t *testing.T) {
 	ct.SetVMCompilerAddressNet(dvmAddr, true)
 
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.move.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.move.json")
 
 	// Create .move script file
 	moveFile, err := os.Create(movePath)
@@ -356,13 +354,13 @@ func Test_VMCommunicationUDS(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMConnectionSettings(50, 1000, 100),
-		cliTester.VMCommunicationBaseAddressUDS(dsSocket, dvmSocket),
+		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationBaseAddressUDSOption(dsSocket, dvmSocket),
 	)
 	defer ct.Close()
 
-	dvmSocketPath := path.Join(ct.UDSDir, dvmSocket)
-	dsSocketPath := path.Join(ct.UDSDir, dsSocket)
+	dvmSocketPath := path.Join(ct.Dirs.UDSDir, dvmSocket)
+	dsSocketPath := path.Join(ct.Dirs.UDSDir, dsSocket)
 
 	// Start DVM compiler / runtime (sub-process) abd register compiler
 	dvmCmd := cliTester.NewCLICmd(t, "dvm", "ipc:/"+dvmSocketPath, "ipc:/"+dsSocketPath)
@@ -373,8 +371,8 @@ func Test_VMCommunicationUDS(t *testing.T) {
 	ct.SetVMCompilerAddressUDS(dvmSocketPath)
 
 	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.RootDir, "script.move")
-	compiledPath := path.Join(ct.RootDir, "script.move.json")
+	movePath := path.Join(ct.Dirs.RootDir, "script.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "script.move.json")
 
 	// Create .move script file
 	moveFile, err := os.Create(movePath)

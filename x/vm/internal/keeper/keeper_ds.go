@@ -53,15 +53,27 @@ func (keeper Keeper) CloseConnections() {
 func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grpc.VMExecuteResponses, retErr error) {
 	doneCh := make(chan bool)
 	go func() {
-		defer close(doneCh)
+		var cancelCtx func()
+		stopPrevCtx := func() {
+			if cancelCtx != nil {
+				cancelCtx()
+			}
+		}
+
+		defer func() {
+			close(doneCh)
+			stopPrevCtx()
+		}()
 
 		for {
+			stopPrevCtx()
 			curTimeout := time.Duration(req.CurrentTimeout)*time.Millisecond
-			connCtx, _ := context.WithTimeout(context.Background(), curTimeout)
+			connCtx, cancelFunc := context.WithTimeout(context.Background(), curTimeout)
+			cancelCtx = cancelFunc
 
 			connStartedAt := time.Now()
 			resp, err := keeper.client.ExecuteContracts(connCtx, req.Raw)
-			connDuration := time.Now().Sub(connStartedAt)
+			connDuration := time.Since(connStartedAt)
 			if err != nil {
 				if req.Attempt == 0 {
 					// write to Sentry (if enabled)

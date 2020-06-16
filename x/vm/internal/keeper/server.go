@@ -22,18 +22,17 @@ import (
 )
 
 // Check type.
-var _ ds_grpc.DSServiceServer = DSServer{}
+var _ ds_grpc.DSServiceServer = &DSServer{}
 
 // Server to catch VM data client requests.
 type DSServer struct {
 	ds_grpc.UnimplementedDSServiceServer
+	sync.Mutex
 
 	isStarted bool // check if server already listen
 
 	keeper *Keeper
 	ctx    sdk.Context // should be careful with it, but for now we store default context
-
-	mux sync.Mutex
 
 	dataMiddlewares []common_vm.DSDataMiddleware
 }
@@ -57,7 +56,7 @@ func (server *DSServer) RegisterDataMiddleware(md common_vm.DSDataMiddleware) {
 }
 
 // Process middlewares.
-func (server DSServer) processMiddlewares(path *vm_grpc.VMAccessPath) (data []byte, err error) {
+func (server *DSServer) processMiddlewares(path *vm_grpc.VMAccessPath) (data []byte, err error) {
 	for _, f := range server.dataMiddlewares {
 		data, err = f(server.ctx, path)
 		if err != nil || data != nil {
@@ -70,20 +69,19 @@ func (server DSServer) processMiddlewares(path *vm_grpc.VMAccessPath) (data []by
 
 // Set server context.
 func (server *DSServer) SetContext(ctx sdk.Context) {
-	server.mux.Lock()
+	server.Lock()
+	defer server.Unlock()
 
 	server.ctx = ctx
-
-	server.mux.Unlock()
 }
 
 // Check if server is already in listen mode.
-func (server DSServer) IsStarted() bool {
+func (server *DSServer) IsStarted() bool {
 	return server.isStarted
 }
 
 // Data source processing request to return value from storage.
-func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds_grpc.DSRawResponse, error) {
+func (server *DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds_grpc.DSRawResponse, error) {
 	path := &vm_grpc.VMAccessPath{
 		Address: req.Address,
 		Path:    req.Path,
@@ -116,7 +114,7 @@ func (server DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds
 }
 
 // Data source processing request to return multiplay values form storage.
-func (server DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths) (*ds_grpc.DSRawResponses, error) {
+func (server *DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths) (*ds_grpc.DSRawResponses, error) {
 	/*resps := &ds_grpc.DSRawResponses{
 		Blobs: make([][]byte, 0),
 	}

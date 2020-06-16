@@ -28,8 +28,8 @@ func NewIncrementSequenceDecorator(ak vmauth.VMAccountKeeper) IncrementSequenceD
 }
 
 func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	// no need to increment sequence on CheckTx or RecheckTx
-	if ctx.IsCheckTx() && !simulate {
+	// no need to increment sequence on RecheckTx
+	if ctx.IsReCheckTx() && !simulate {
 		return next(ctx, tx, simulate)
 	}
 
@@ -44,6 +44,7 @@ func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, sim
 		if err := acc.SetSequence(acc.GetSequence() + 1); err != nil {
 			panic(err)
 		}
+
 		isd.ak.SetAccount(ctx, acc)
 	}
 
