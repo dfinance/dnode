@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	flagGet = "get"
+	flagGet             = "get"
+	DefaultCompilerAddr = "tcp://127.0.0.1:50051"
 )
 
 var configDefaults = map[string]string{
@@ -23,7 +24,7 @@ var configDefaults = map[string]string{
 	"output":          "text",
 	"node":            "tcp://localhost:26657",
 	"broadcast-mode":  "sync",
-	"compiler":        "tcp://127.0.0.1:50051",
+	"compiler":        DefaultCompilerAddr,
 }
 
 // ConfigCmd returns a CLI command to interactively create an application CLI

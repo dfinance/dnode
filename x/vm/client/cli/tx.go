@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/viper"
 	codec "github.com/tendermint/go-amino"
 
+	"github.com/dfinance/dnode/cmd/config"
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
@@ -36,7 +37,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		ExecuteScript(cdc),
 	)
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
+		cmd.Flags().String(vmClient.FlagCompilerAddr, config.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
 		txCmd.AddCommand(cmd)
 	}
 
