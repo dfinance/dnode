@@ -1,4 +1,4 @@
-// +build cli integ
+// +build integ
 
 package app
 
@@ -125,6 +125,31 @@ func Test_VmGovStdlibUpdate(t *testing.T) {
 	{
 		ct.QueryVmCompileModule(moduleV1MovePath, moduleV1BytecodePath, senderAddr).CheckSucceeded()
 		ct.QueryVmCompileModule(moduleV2MovePath, moduleV2BytecodePath, senderAddr).CheckSucceeded()
+	}
+
+	// Check invalid arguments for StdlibUpdateProposal Tx
+	{
+		// invalid from
+		{
+			tx := ct.TxVmStdlibUpdateProposal("invalid_address", moduleV1BytecodePath, "http://ya.ru", "Desc", 50, config.GovMinDeposit)
+			tx.CheckFailedWithErrorSubstring("keyring")
+		}
+
+		// invalid file path
+		{
+			tx := ct.TxVmStdlibUpdateProposal(senderAddr, "invalid_path", "http://ya.ru", "Desc", 50, config.GovMinDeposit)
+			tx.CheckFailedWithErrorSubstring("mvFile")
+		}
+
+		// invalid blockHeight
+		{
+			tx1 := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV1BytecodePath, "http://ya.ru", "Desc", 0, config.GovMinDeposit)
+			tx1.CheckFailedWithErrorSubstring("height")
+
+			tx2 := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV1BytecodePath, "http://ya.ru", "Desc", 0, config.GovMinDeposit)
+			tx2.ChangeCmdArg("0", "abc")
+			tx2.CheckFailedWithErrorSubstring("ParseInt")
+		}
 	}
 
 	// Add DVM stdlib update proposal for module version 1 (cover the min deposit)
