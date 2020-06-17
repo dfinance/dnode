@@ -19,7 +19,7 @@ If you want to keep your keys in file, instead of keystorage of your os, configu
 
     dncli config keyring-backend file
 
-Then let's create 4 accounts, one to store coins, the rest for PoA validators:
+Then let's create accounts:
 
     dncli keys add pos
     dncli keys add bank
@@ -27,6 +27,7 @@ Then let's create 4 accounts, one to store coins, the rest for PoA validators:
     dncli keys add validator1
     dncli keys add validator2
     dncli keys add validator3
+    dncli keys add orders
 
 Copy addresses and private keys from output, we will need them in the future.
 
@@ -36,6 +37,8 @@ As you see we create one account calling `bank` where we will be store all gener
 and then 3 accounts to make them PoA validators, we need at least 3 validators because by default it's a minimum amount of PoA validators to have.
 
 `nominee` is account administrator of oracles system.
+
+`orders` is module account used for DEX system to lock coins on order posting.
 
 Now let's add genesis account and initiate genesis PoA validators and PoS account.
 
@@ -49,6 +52,7 @@ It should be done before next commands, so see tutorial **[how to initialize gen
     dnode add-genesis-account [validator-1-address] 1000000000000000000000000dfi
     dnode add-genesis-account [validator-2-address] 1000000000000000000000000dfi
     dnode add-genesis-account [validator-3-address] 1000000000000000000000000dfi
+    dnode add-genesis-account [orders-address] 1000000000000000000000000dfi --module-name orders
 
     dnode add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
     dnode add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
@@ -62,6 +66,12 @@ Now let's register information about added coins in `genesis.json`:
     dnode add-currency-info eth  18 100000000000000000000000000 0116fbac6fd286d2bfec4549161245982b730291a9cbc5281f5fcfb41aeb7bfb26
     dnode add-currency-info btc  8  100000000000000 0158c690830c7e2f25b85de6ab85052fd1e79e6a9cbb52a9740be7ff7275604c1b
     dnode add-currency-info usdt 6  10000000000000 01e10f377b920a0a8a330edd7beff6c3a11cdeb7682c964b02aa5bb6a784b84920
+
+We can also add DEX markets to genesis (markets can be added later via non-genesis Tx command as well):
+
+    dnode add-market-gen eth dfi
+    dnode add-market-gen btc dfi
+    dnode add-market-gen usdt dfi
 
 Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 
