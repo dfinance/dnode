@@ -386,6 +386,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.mm.SetOrderBeginBlockers(
 		distribution.ModuleName,
 		slashing.ModuleName,
+		vm.ModuleName,
 	)
 	app.mm.SetOrderEndBlockers(
 		gov.ModuleName,

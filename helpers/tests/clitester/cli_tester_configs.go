@@ -5,11 +5,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 
 	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 type DirConfig struct {
@@ -109,6 +112,7 @@ type CLIAccount struct {
 	Mnemonic        string
 	Number          uint64
 	Coins           map[string]sdk.Coin
+	IsModuleAcc     bool
 	IsPOAValidator  bool
 	IsOracleNominee bool
 	IsOracle        bool
@@ -117,13 +121,13 @@ type CLIAccount struct {
 func NewAccountMap() (accounts map[string]*CLIAccount, retErr error) {
 	accounts = make(map[string]*CLIAccount)
 
-	smallAmount, ok := sdk.NewIntFromString("1000000000000000000000")
+	smallAmount, ok := sdk.NewIntFromString("1000000000000000000000") // 1000dfi
 	if !ok {
 		retErr = fmt.Errorf("NewInt for smallAmount")
 		return
 	}
 
-	bigAmount, ok := sdk.NewIntFromString("1000000000000000000000")
+	bigAmount, ok := sdk.NewIntFromString("100000000000000000000000") // 100000dfi
 	if !ok {
 		retErr = fmt.Errorf("NewInt for bigAmount")
 		return
@@ -197,6 +201,18 @@ func NewAccountMap() (accounts map[string]*CLIAccount, retErr error) {
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
+	}
+	accounts[orders.ModuleName] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+		IsModuleAcc: true,
+	}
+	accounts[gov.ModuleName] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+		},
+		IsModuleAcc: true,
 	}
 
 	return
@@ -296,5 +312,15 @@ func NewTestConsensusTimingConfig() ConsensusTimingConfig {
 		TimeoutPreCommit:      "250ms",
 		TimeoutPreCommitDelta: "250ms",
 		TimeoutCommit:         "250ms",
+	}
+}
+
+type GovernanceConfig struct {
+	MinVotingDur time.Duration
+}
+
+func NewGovernanceConfig() GovernanceConfig {
+	return GovernanceConfig{
+		MinVotingDur: 10 * time.Second,
 	}
 }

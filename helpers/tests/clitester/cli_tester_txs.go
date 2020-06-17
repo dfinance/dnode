@@ -7,6 +7,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	orderTypes "github.com/dfinance/dnode/x/orders"
@@ -255,8 +256,8 @@ func (ct *CLITester) TxVmStdlibUpdateProposal(fromAddress, filePath, sourceUrl, 
 		filePath,
 		strconv.FormatInt(plannedBlockHeight, 10),
 		sourceUrl,
-		updateDesc,
-		fmt.Sprintf("--deposit %s", deposit.String()),
+		strconv.Quote(updateDesc),
+		fmt.Sprintf("--deposit=%s", deposit.String()),
 	}
 
 	r := ct.newTxRequest()
@@ -268,10 +269,10 @@ func (ct *CLITester) TxVmStdlibUpdateProposal(fromAddress, filePath, sourceUrl, 
 	return r
 }
 
-func (ct *CLITester) TxGovDeposit(fromAddress string, id int64, deposit sdk.Coin) *TxRequest {
+func (ct *CLITester) TxGovDeposit(fromAddress string, id uint64, deposit sdk.Coin) *TxRequest {
 	cmdArgs := []string{
 		"deposit",
-		strconv.FormatInt(id, 10),
+		strconv.FormatUint(id, 10),
 		deposit.String(),
 	}
 
@@ -284,10 +285,11 @@ func (ct *CLITester) TxGovDeposit(fromAddress string, id int64, deposit sdk.Coin
 	return r
 }
 
-func (ct *CLITester) TxGovVote(fromAddress string, id int64) *TxRequest {
+func (ct *CLITester) TxGovVote(fromAddress string, id uint64, option gov.VoteOption) *TxRequest {
 	cmdArgs := []string{
 		"vote",
-		strconv.FormatInt(id, 10),
+		strconv.FormatUint(id, 10),
+		strings.ToLower(option.String()),
 	}
 
 	r := ct.newTxRequest()

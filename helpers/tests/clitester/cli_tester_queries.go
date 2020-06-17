@@ -6,6 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
@@ -16,6 +18,7 @@ import (
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/vm"
 )
 
 func (ct *CLITester) QueryTx(txHash string) (*QueryRequest, *sdk.TxResponse) {
@@ -172,8 +175,25 @@ func (ct *CLITester) QueryVmCompileScript(moveFilePath, savePath, accountAddress
 	return q
 }
 
+func (ct *CLITester) QueryVmData(hexAddress, hexPath string) (*QueryRequest, *vm.QueryValueResp) {
+	resObj := &vm.QueryValueResp{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("vm", "get-data", hexAddress, hexPath)
+
+	return q, resObj
+}
+
 func (ct *CLITester) QueryAccount(address string) (*QueryRequest, *auth.BaseAccount) {
 	resObj := &auth.BaseAccount{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("account", address)
+	q.cmd.AddArg("node", ct.NodePorts.RPCAddress)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryModuleAccount(address string) (*QueryRequest, *supply.ModuleAccount) {
+	resObj := &supply.ModuleAccount{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("account", address)
 	q.cmd.AddArg("node", ct.NodePorts.RPCAddress)
@@ -261,15 +281,15 @@ func (ct *CLITester) QueryCurrencyInfo(denom string) (*QueryRequest, *currencies
 	return q, resObj
 }
 
-func (ct *CLITester) QueryGovProposal(id int64) (*QueryRequest, *gov.Proposal) {
+func (ct *CLITester) QueryGovProposal(id uint64) (*QueryRequest, *gov.Proposal) {
 	resObj := &gov.Proposal{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("gov", "proposal", strconv.FormatInt(id, 10))
+	q.SetCmd("gov", "proposal", strconv.FormatUint(id, 10))
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryGovProposals(page, limit int, depositorFilter, statusFilter, voterFilter *string) (*QueryRequest, *gov.Proposals) {
+func (ct *CLITester) QueryGovProposals(page, limit int, depositorFilter, voterFilter *string, statusFilter *govTypes.ProposalStatus) (*QueryRequest, *gov.Proposals) {
 	resObj := &gov.Proposals{}
 
 	q := ct.newQueryRequest(resObj)
@@ -285,7 +305,7 @@ func (ct *CLITester) QueryGovProposals(page, limit int, depositorFilter, statusF
 		q.cmd.AddArg("depositor", *depositorFilter)
 	}
 	if statusFilter != nil {
-		q.cmd.AddArg("status", *statusFilter)
+		q.cmd.AddArg("status", statusFilter.String())
 	}
 	if voterFilter != nil {
 		q.cmd.AddArg("voter", *voterFilter)

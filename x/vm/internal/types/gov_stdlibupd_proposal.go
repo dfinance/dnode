@@ -62,7 +62,7 @@ func (p StdlibUpdateProposal) String() string {
 	b.WriteString("Proposal:\n")
 	b.WriteString(fmt.Sprintf("  Title: %s\n", p.GetTitle()))
 	b.WriteString(fmt.Sprintf("  Description: %s\n", p.GetDescription()))
-	b.WriteString(fmt.Sprintf("  %s\n", p.Plan.String()))
+	b.WriteString(fmt.Sprintf("  %s", p.Plan.String()))
 	b.WriteString(fmt.Sprintf("  Source URL: %s\n", p.Url))
 	b.WriteString(fmt.Sprintf("  Update description: %s\n", p.UpdateDescription))
 

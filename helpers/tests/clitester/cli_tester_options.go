@@ -117,7 +117,6 @@ func DaemonLogLevelOption(logLevel string) CLITesterOption {
 func AccountsOption(accOpts ...AccountOption) CLITesterOption {
 	return func(ct *CLITester) error {
 		for _, opt := range accOpts {
-
 			account := &CLIAccount{
 				Name:  opt.Name,
 				Coins: make(map[string]sdk.Coin, len(opt.Balances)),

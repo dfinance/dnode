@@ -32,7 +32,14 @@ const (
 	DefaultMaxAttempts       = 0    // Default VM retry attempts.
 	DefaultInitialBackoff    = 1000 // Default VM 100 milliseconds for retry attempts.
 	DefaultMaxBackoff        = 2000 // Default VM max backoff.
-	DefaultBackoffMultiplier = 0.1  // Default backoff multiplayer (10
+	DefaultBackoffMultiplier = 0.1  // Default backoff multiplayer (10)
+
+	// Default governance params.
+	DefaultGovMinDepositAmount = "100000000000000000000" // 100 dfi
+)
+
+var (
+	GovMinDeposit sdk.Coin
 )
 
 // Virtual machine connection config (see config/vm.toml).
@@ -103,4 +110,13 @@ func ReadVMConfig(rootDir string) (*VMConfig, error) {
 	}
 
 	return config, nil
+}
+
+func init() {
+	minDepositAmount, ok := sdk.NewIntFromString(DefaultGovMinDepositAmount)
+	if !ok {
+		panic("governance genesisState: minDeposit convertation failed")
+	}
+
+	GovMinDeposit = sdk.NewCoin(MainDenom, minDepositAmount)
 }

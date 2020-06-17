@@ -12,9 +12,11 @@ import (
 
 // BeginBlocker handles gov proposal scheduler: iterating over plannedProposals and checking if it is time to execute.
 func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
-	keeper.IterateProposalsQueue(ctx, func(id uint64, pProposal PlannedProposal) bool {
+	logger := keeper.Logger(ctx)
+
+	keeper.IterateProposalsQueue(ctx, func(id uint64, pProposal PlannedProposal) {
 		if !pProposal.GetPlan().ShouldExecute(ctx) {
-			return false
+			return
 		}
 
 		var err error
@@ -27,25 +29,22 @@ func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
 		}
 
 		if err != nil {
-			panic(fmt.Errorf("%s\nexecution failed: %v", pProposal.String(), err))
+			logger.Error(fmt.Sprintf("%s\nexecution status: failed: %v", pProposal.String(), err))
+		} else {
+			keeper.SetDSContext(ctx)
+			logger.Info(fmt.Sprintf("%s\nexecution status: done", pProposal.String()))
 		}
 
 		keeper.RemoveProposalFromQueue(ctx, id)
-
-		return false
 	})
 }
 
 // handleStdlibUpdateProposalExecution requests DVM to update stdlib.
 func handleStdlibUpdateProposalExecution(ctx sdk.Context, keeper Keeper, proposal StdlibUpdateProposal) error {
-	logger := keeper.Logger(ctx)
-
-	msg := types.NewMsgDeployModule(common_vm.ZeroAddress, proposal.Code)
+	msg := types.NewMsgDeployModule(common_vm.Bech32ToLibra(common_vm.ZeroAddress), proposal.Code)
 	if err := keeper.DeployContract(ctx, msg); err != nil {
 		return err
 	}
-
-	logger.Info(fmt.Sprintf("proposal executed:\n%s", proposal.String()))
 
 	return nil
 }

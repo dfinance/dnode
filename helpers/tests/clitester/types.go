@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -80,4 +81,5 @@ var ModuleBasics = module.NewBasicManager(
 	orders.AppModuleBasic{},
 	markets.AppModuleBasic{},
 	orderbook.AppModuleBasic{},
+	gov.AppModuleBasic{},
 )

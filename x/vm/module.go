@@ -28,7 +28,7 @@ var (
 type AppModuleBasic struct{}
 
 // Module name.
-func (AppModuleBasic) Name() string {
+func (module AppModuleBasic) Name() string {
 	return ModuleName
 }
 
@@ -38,7 +38,7 @@ func (module AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 }
 
 // Validate exists genesis.
-func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
+func (module AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 	var state GenesisState
 	ModuleCdc.MustUnmarshalJSON(data, &state)
 
@@ -71,17 +71,17 @@ func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
 }
 
 // Register REST routes.
-func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
+func (module AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
 	rest.RegisterRoutes(ctx, r)
 }
 
 // Get transaction commands for CLI.
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
+func (module AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return cli.GetTxCmd(cdc)
 }
 
 // Get query commands for CLI.
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+func (module AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 	return cli.GetQueryCmd(cdc)
 }
 
@@ -100,15 +100,15 @@ func NewAppModule(vmKeeper Keeper) AppModule {
 }
 
 // Get name of module.
-func (AppModule) Name() string {
+func (app AppModule) Name() string {
 	return ModuleName
 }
 
 // Register module invariants.
-func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Base route of module (for handler).
-func (AppModule) Route() string { return RouterKey }
+func (app AppModule) Route() string { return RouterKey }
 
 // Create new handler.
 func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.vmKeeper) }
@@ -117,7 +117,7 @@ func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.vmKeeper) 
 func (app AppModule) NewGovHandler() gov.Handler { return NewGovHandler(app.vmKeeper) }
 
 // Get route for querier.
-func (AppModule) QuerierRoute() string { return RouterKey }
+func (app AppModule) QuerierRoute() string { return RouterKey }
 
 // Get new querier for VM module.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
@@ -130,7 +130,7 @@ func (app AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 }
 
 // Process end block (abci).
-func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }
 

@@ -30,7 +30,7 @@ func (keeper Keeper) RemoveProposalFromQueue(ctx sdk.Context, id uint64) {
 }
 
 // IterateProposalsQueue iterates over gov proposal queue.
-func (keeper Keeper) IterateProposalsQueue(ctx sdk.Context, handler func(id uint64, pProposal types.PlannedProposal) (stop bool)) {
+func (keeper Keeper) IterateProposalsQueue(ctx sdk.Context, handler func(id uint64, pProposal types.PlannedProposal)) {
 	iterator := keeper.proposalQueueIterator(ctx)
 	defer iterator.Close()
 
@@ -42,9 +42,7 @@ func (keeper Keeper) IterateProposalsQueue(ctx sdk.Context, handler func(id uint
 			panic(err)
 		}
 
-		if !handler(id, p) {
-			break
-		}
+		handler(id, p)
 	}
 }
 

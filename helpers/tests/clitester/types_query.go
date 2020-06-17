@@ -37,6 +37,14 @@ func (q *QueryRequest) SetCmd(module string, args ...string) {
 	q.cmd.AddArg("node", q.nodeRpcAddress)
 }
 
+func (q *QueryRequest) SetNonQueryCmd(module string, args ...string) {
+	q.cmd.AddArg("", module)
+
+	for _, arg := range args {
+		q.cmd.AddArg("", arg)
+	}
+}
+
 func (q *QueryRequest) Execute() (combinedOutput string, retErr error) {
 	code, stdout, stderr := q.cmd.Execute()
 	combinedOutput = string(append(stdout, stderr...))
