@@ -10,14 +10,19 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
+type proposalInput struct {
+	id       uint64
+	proposal types.TestProposal
+}
+
 func Test_GovProposalQueue(t *testing.T) {
 	input := newTestInput(true)
 	defer input.Stop()
 
-	testProposals := []types.PlannedProposal{
-		types.NewPlainProposal(100, 150),
-		types.NewPlainProposal(200, 250),
-		types.NewPlainProposal(300, 350),
+	testProposals := []proposalInput{
+		{0, types.NewTestProposal(100, 150)},
+		{1, types.NewTestProposal(200, 250)},
+		{2, types.NewTestProposal(300, 350)},
 	}
 
 	cmpProposals := func(testProposalsIdx, rcvId uint64, rcvProposal types.PlannedProposal) {
@@ -25,26 +30,24 @@ func Test_GovProposalQueue(t *testing.T) {
 		require.True(t, ok, "idx [%d]: type assert", testProposalsIdx)
 
 		testProposal := testProposals[testProposalsIdx]
-		testP := testProposal.(types.TestProposal)
 
-		require.Equal(t, testProposalsIdx, rcvId, "idx [%d]: indices", testProposalsIdx)
-		require.Equal(t, testP.Value, rcvP.Value, "idx [%d]: value", testProposalsIdx)
-		require.Equal(t, testP.ProposalType(), rcvP.ProposalType(), "idx [%d]: type", testProposalsIdx)
-		require.Equal(t, testProposal.GetPlan(), rcvProposal.GetPlan(), "idx [%d]: plan", testProposalsIdx)
+		require.Equal(t, testProposal.id, rcvId, "idx [%d]: indices", testProposalsIdx)
+		require.Equal(t, testProposal.proposal.Value, rcvP.Value, "idx [%d]: value", testProposalsIdx)
+		require.Equal(t, testProposal.proposal.ProposalType(), rcvP.ProposalType(), "idx [%d]: type", testProposalsIdx)
+		require.Equal(t, testProposal.proposal.GetPlan(), rcvProposal.GetPlan(), "idx [%d]: plan", testProposalsIdx)
 	}
 
 	// add proposals to queue
 	for _, p := range testProposals {
-		input.vk.ScheduleProposal(input.ctx, p)
+		require.NotEqual(t, input.vk.ScheduleProposal(input.ctx, p.proposal), "adding proposal %d", p.id)
 	}
 
 	// check all proposals exist
 	{
 		i := uint64(0)
-		input.vk.IterateProposalsQueue(input.ctx, func(id uint64, p types.PlannedProposal) bool {
+		input.vk.IterateProposalsQueue(input.ctx, func(id uint64, p types.PlannedProposal) {
 			cmpProposals(i, id, p)
 			i++
-			return false
 		})
 	}
 
@@ -55,36 +58,38 @@ func Test_GovProposalQueue(t *testing.T) {
 		input.vk.RemoveProposalFromQueue(input.ctx, rmIdx)
 
 		i := uint64(0)
-		input.vk.IterateProposalsQueue(input.ctx, func(id uint64, p types.PlannedProposal) bool {
+		input.vk.IterateProposalsQueue(input.ctx, func(id uint64, p types.PlannedProposal) {
 			cmpProposals(i, id, p)
 			i++
-			return false
 		})
 	}
 
 	// check removing all
 	{
+		testProposals = nil
 		input.vk.RemoveProposalFromQueue(input.ctx, 0)
 		input.vk.RemoveProposalFromQueue(input.ctx, 2)
-		input.vk.RemoveProposalFromQueue(input.ctx, 3)
+		input.vk.RemoveProposalFromQueue(input.ctx, 3) // removing non-existing
 
 		cnt := 0
-		input.vk.IterateProposalsQueue(input.ctx, func(_ uint64, _ types.PlannedProposal) bool {
+		input.vk.IterateProposalsQueue(input.ctx, func(_ uint64, _ types.PlannedProposal) {
 			cnt++
-			return false
 		})
 		require.Zero(t, cnt)
 	}
 
 	// check adding one
 	{
-		input.vk.ScheduleProposal(input.ctx, types.NewPlainProposal(400, 450))
+		newProposal := types.NewTestProposal(400, 450)
+		testProposals = append(testProposals, proposalInput{3, newProposal})
+		require.NoError(t, input.vk.ScheduleProposal(input.ctx, newProposal), "adding new proposal")
 
-		cnt := 0
-		input.vk.IterateProposalsQueue(input.ctx, func(_ uint64, _ types.PlannedProposal) bool {
-			cnt++
-			return false
+		i := uint64(0)
+		input.vk.IterateProposalsQueue(input.ctx, func(id uint64, p types.PlannedProposal) {
+			cmpProposals(i, id, p)
+			i++
 		})
-		require.Equal(t, 1, cnt)
+		require.Equal(t, uint64(1), i)
+
 	}
 }

@@ -21,7 +21,7 @@ func (p TestProposal) GetPlan() Plan          { return p.Plan }
 func (p TestProposal) ValidateBasic() error   { return nil }
 func (p TestProposal) String() string         { return "" }
 
-func NewPlainProposal(value int, blockHeight int64) TestProposal {
+func NewTestProposal(value int, blockHeight int64) TestProposal {
 	return TestProposal{
 		Value: value,
 		Plan:  NewPlan(blockHeight),
