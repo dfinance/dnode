@@ -1,47 +1,29 @@
 package types
 
-import (
-	"fmt"
+import "github.com/cosmos/cosmos-sdk/x/gov"
 
-	"github.com/cosmos/cosmos-sdk/x/gov"
+var (
+	_ gov.Content     = TestProposal{}
+	_ PlannedProposal = TestProposal{}
 )
 
+// TestProposal is only used for unit tests.
 type TestProposal struct {
-	Plan  Plan   `json:"plan"`
-	Value string `json:"value"`
+	Plan  Plan
+	Value int
 }
 
-func (p TestProposal) GetTitle() string       { return "Test" }
-func (p TestProposal) GetDescription() string { return "Test proposal" }
-func (p TestProposal) ProposalRoute() string  { return GovRouterKey }
-func (p TestProposal) ProposalType() string   { return ProposalTypeTest }
-func (p TestProposal) ValidateBasic() error {
-	if err := p.Plan.ValidateBasic(); err != nil {
-		return fmt.Errorf("plan: %w", err)
-	}
-	if p.Value == "" {
-		return fmt.Errorf("value: empty")
-	}
+func (p TestProposal) GetTitle() string       { return "Test title" }
+func (p TestProposal) GetDescription() string { return "Test description" }
+func (p TestProposal) ProposalRoute() string  { return "Test_route" }
+func (p TestProposal) ProposalType() string   { return "Test_proposal_type" }
+func (p TestProposal) GetPlan() Plan          { return p.Plan }
+func (p TestProposal) ValidateBasic() error   { return nil }
+func (p TestProposal) String() string         { return "" }
 
-	return nil
-}
-
-func (p TestProposal) String() string {
-	return fmt.Sprintf(`Proposal:
-  Title: %s
-  Description: %s
-  Value: %s
-`, p.GetTitle(), p.GetDescription(), p.Value)
-}
-
-func NewTestProposal(plan Plan, value string) gov.Content {
+func NewPlainProposal(value int, blockHeight int64) TestProposal {
 	return TestProposal{
-		Plan:  plan,
 		Value: value,
+		Plan:  NewPlan(blockHeight),
 	}
-}
-
-func init() {
-	gov.RegisterProposalType(ProposalTypeTest)
-	gov.RegisterProposalTypeCodec(TestProposal{}, ModuleName+"/TestProposal")
 }

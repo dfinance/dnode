@@ -1,6 +1,7 @@
 package clitester
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -242,6 +243,56 @@ func (ct *CLITester) TxVmDeployModule(fromAddress, filePath string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"vm",
+		fromAddress,
+		cmdArgs...)
+
+	return r
+}
+
+func (ct *CLITester) TxVmStdlibUpdateProposal(fromAddress, filePath, sourceUrl, updateDesc string, plannedBlockHeight int64, deposit sdk.Coin) *TxRequest {
+	cmdArgs := []string{
+		"update-stdlib-proposal",
+		filePath,
+		strconv.FormatInt(plannedBlockHeight, 10),
+		sourceUrl,
+		updateDesc,
+		fmt.Sprintf("--deposit %s", deposit.String()),
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"vm",
+		fromAddress,
+		cmdArgs...)
+
+	return r
+}
+
+func (ct *CLITester) TxGovDeposit(fromAddress string, id int64, deposit sdk.Coin) *TxRequest {
+	cmdArgs := []string{
+		"deposit",
+		strconv.FormatInt(id, 10),
+		deposit.String(),
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"gov",
+		fromAddress,
+		cmdArgs...)
+
+	return r
+}
+
+func (ct *CLITester) TxGovVote(fromAddress string, id int64) *TxRequest {
+	cmdArgs := []string{
+		"vote",
+		strconv.FormatInt(id, 10),
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"gov",
 		fromAddress,
 		cmdArgs...)
 

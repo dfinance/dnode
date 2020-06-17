@@ -6,8 +6,6 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 const (
@@ -30,10 +28,10 @@ func NewQuerier(vmKeeper Keeper) sdk.Querier {
 
 // Processing query to get value from DS.
 func queryGetValue(ctx sdk.Context, vmKeeper Keeper, req abci.RequestQuery) ([]byte, error) {
-	var queryAccessPath types.QueryAccessPath
+	var queryAccessPath QueryAccessPath
 
-	if err := types.ModuleCdc.UnmarshalJSON(req.Data, &queryAccessPath); err != nil {
-		return nil, sdkErrors.Wrap(types.ErrInternal, "unknown query")
+	if err := ModuleCdc.UnmarshalJSON(req.Data, &queryAccessPath); err != nil {
+		return nil, sdkErrors.Wrap(ErrInternal, "unknown query")
 	}
 
 	return vmKeeper.GetValue(ctx, &vm_grpc.VMAccessPath{

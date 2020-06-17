@@ -18,7 +18,6 @@ import (
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/client/cli"
 	"github.com/dfinance/dnode/x/vm/client/rest"
-	types "github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 var (
@@ -30,18 +29,18 @@ type AppModuleBasic struct{}
 
 // Module name.
 func (AppModuleBasic) Name() string {
-	return types.ModuleName
+	return ModuleName
 }
 
 // Registering codecs.
 func (module AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
+	RegisterCodec(cdc)
 }
 
 // Validate exists genesis.
 func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
-	var state types.GenesisState
-	types.ModuleCdc.MustUnmarshalJSON(data, &state)
+	var state GenesisState
+	ModuleCdc.MustUnmarshalJSON(data, &state)
 
 	for _, genWriteOp := range state.WriteSet {
 		bzAddr, err := hex.DecodeString(genWriteOp.Address)
@@ -68,7 +67,7 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 
 // Generate default genesis.
 func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return types.ModuleCdc.MustMarshalJSON(&types.GenesisState{})
+	return ModuleCdc.MustMarshalJSON(&GenesisState{})
 }
 
 // Register REST routes.
@@ -102,14 +101,14 @@ func NewAppModule(vmKeeper Keeper) AppModule {
 
 // Get name of module.
 func (AppModule) Name() string {
-	return types.ModuleName
+	return ModuleName
 }
 
 // Register module invariants.
 func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Base route of module (for handler).
-func (AppModule) Route() string { return types.RouterKey }
+func (AppModule) Route() string { return RouterKey }
 
 // Create new handler.
 func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.vmKeeper) }
@@ -118,7 +117,7 @@ func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.vmKeeper) 
 func (app AppModule) NewGovHandler() gov.Handler { return NewGovHandler(app.vmKeeper) }
 
 // Get route for querier.
-func (AppModule) QuerierRoute() string { return types.RouterKey }
+func (AppModule) QuerierRoute() string { return RouterKey }
 
 // Get new querier for VM module.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
@@ -144,5 +143,5 @@ func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.V
 // Export genesis.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	genesisState := app.vmKeeper.ExportGenesis(ctx)
-	return types.ModuleCdc.MustMarshalJSON(genesisState)
+	return ModuleCdc.MustMarshalJSON(genesisState)
 }

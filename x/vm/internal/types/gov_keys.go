@@ -12,6 +12,7 @@ var (
 	ProposalQueuePrefix = []byte("proposal_queue")
 )
 
+// GetProposalQueueKey returns gov proposal queue storage key.
 func GetProposalQueueKey(id uint64) []byte {
 	return bytes.Join(
 		[][]byte{
@@ -22,6 +23,7 @@ func GetProposalQueueKey(id uint64) []byte {
 	)
 }
 
+// SplitProposalQueueKey returns gov proposal queue ID for the key.
 func SplitProposalQueueKey(key []byte) (id uint64) {
 	idBytes := key[len(ProposalQueuePrefix)+len(KeyDelimiter):]
 	return binary.BigEndian.Uint64(idBytes)

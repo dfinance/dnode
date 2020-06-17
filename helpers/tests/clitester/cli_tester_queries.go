@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
@@ -153,6 +154,15 @@ func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *msTypes.LastIdRes) {
 	return q, resObj
 }
 
+func (ct *CLITester) QueryVmCompileModule(moveFilePath, savePath, accountAddress string) *QueryRequest {
+	q := ct.newQueryRequest(nil)
+	q.SetCmd("vm", "compile-module", moveFilePath, accountAddress)
+	q.cmd.AddArg("compiler", ct.VMConnection.CompilerAddress)
+	q.cmd.AddArg("to-file", savePath)
+
+	return q
+}
+
 func (ct *CLITester) QueryVmCompileScript(moveFilePath, savePath, accountAddress string) *QueryRequest {
 	q := ct.newQueryRequest(nil)
 	q.SetCmd("vm", "compile-script", moveFilePath, accountAddress)
@@ -247,6 +257,39 @@ func (ct *CLITester) QueryCurrencyInfo(denom string) (*QueryRequest, *currencies
 	resObj := &currencies_register.CurrencyInfo{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("currencies_register", "info", denom)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryGovProposal(id int64) (*QueryRequest, *gov.Proposal) {
+	resObj := &gov.Proposal{}
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("gov", "proposal", strconv.FormatInt(id, 10))
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryGovProposals(page, limit int, depositorFilter, statusFilter, voterFilter *string) (*QueryRequest, *gov.Proposals) {
+	resObj := &gov.Proposals{}
+
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("gov", "proposals")
+
+	if page > 0 {
+		q.cmd.AddArg("page", strconv.FormatInt(int64(page), 10))
+	}
+	if limit > 0 {
+		q.cmd.AddArg("limit", strconv.FormatInt(int64(limit), 10))
+	}
+	if depositorFilter != nil {
+		q.cmd.AddArg("depositor", *depositorFilter)
+	}
+	if statusFilter != nil {
+		q.cmd.AddArg("status", *statusFilter)
+	}
+	if voterFilter != nil {
+		q.cmd.AddArg("voter", *voterFilter)
+	}
 
 	return q, resObj
 }

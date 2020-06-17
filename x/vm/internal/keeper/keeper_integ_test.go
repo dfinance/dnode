@@ -121,7 +121,7 @@ func printEvent(event sdk.Event, t *testing.T) {
 }
 
 // check that sub status exists.
-func checkSubStatus(events sdk.Events, subStatus uint64, t *testing.T) {
+func checkEventSubStatus(events sdk.Events, subStatus uint64, t *testing.T) {
 	found := false
 
 	for _, event := range events {
@@ -141,7 +141,7 @@ func checkSubStatus(events sdk.Events, subStatus uint64, t *testing.T) {
 }
 
 // check script doesn't contains errors.
-func checkNoErrors(events sdk.Events, t *testing.T) {
+func checkNoEventErrors(events sdk.Events, t *testing.T) {
 	for _, event := range events {
 		if event.Type == types.EventTypeContractStatus {
 			for _, attr := range event.Attributes {
@@ -241,7 +241,7 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	events := input.ctx.EventManager().Events()
 	require.Contains(t, events, types.NewEventKeep())
 
-	checkNoErrors(events, t)
+	checkNoEventErrors(events, t)
 
 	// check balance changes
 	sender := input.ak.GetAccount(input.ctx, addr1)
@@ -298,7 +298,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 	require.NoErrorf(t, err, "can't deploy contract: %v", err)
 
 	events := ctx.EventManager().Events()
-	checkNoErrors(events, t)
+	checkNoEventErrors(events, t)
 
 	writeCtx()
 
@@ -327,7 +327,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 	events = ctx.EventManager().Events()
 	require.Contains(t, events, types.NewEventKeep())
 
-	checkNoErrors(events, t)
+	checkNoEventErrors(events, t)
 
 	require.Equal(t, events[1].Type, types.EventTypeMoveEvent, "script after execution doesn't contain event with amount")
 
@@ -416,7 +416,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	binary.LittleEndian.PutUint64(bz, 100)
 	require.EqualValues(t, events[1].Attributes[3].Value, "0x"+hex.EncodeToString(bz))
 
-	checkNoErrors(events, t)
+	checkNoEventErrors(events, t)
 }
 
 // Test oracle price return.
@@ -469,7 +469,7 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	for _, e := range events {
 		printEvent(e, t)
 	}
-	checkSubStatus(events, 122, t)
+	checkEventSubStatus(events, 122, t)
 
 	// first of all - check balance
 	// then check that error still there
@@ -536,7 +536,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check middleware path: Time
@@ -563,7 +563,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check vmauth module path: DFI
@@ -591,7 +591,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check vmauth module path: ETH
@@ -619,7 +619,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check vmauth module path: USDT
@@ -647,7 +647,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check vmauth module path: BTC
@@ -675,7 +675,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check currencies_register module path: DFI
@@ -703,7 +703,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check currencies_register module path: ETH
@@ -731,7 +731,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check currencies_register module path: USDT
@@ -759,7 +759,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check currencies_register module path: BTC
@@ -787,7 +787,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check VMAuth module path: Account eventHandler
@@ -816,7 +816,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Check VMAuth module path: Account resource
@@ -845,7 +845,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
 	// Create module and use it in script (doesn't check VM path)
@@ -873,7 +873,7 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "%s: module deploy error", testID)
 
 		t.Logf("%s: checking module events", testID)
-		checkNoErrors(ctx.EventManager().Events(), t)
+		checkNoEventErrors(ctx.EventManager().Events(), t)
 		writeCtx()
 
 		t.Logf("%s: script compile", testID)
@@ -898,6 +898,6 @@ func TestKeeper_Path(t *testing.T) {
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
-		checkNoErrors(input.ctx.EventManager().Events(), t)
+		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 }

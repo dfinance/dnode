@@ -19,7 +19,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
-	"github.com/cosmos/cosmos-sdk/x/gov/client/cli"
+	govCli "github.com/cosmos/cosmos-sdk/x/gov/client/cli"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,10 +27,6 @@ import (
 
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
-)
-
-const (
-	flagProposalValue = "value"
 )
 
 // GetTxCmd returns the transaction commands for this module.
@@ -51,8 +47,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	commands := sdkClient.PostCommands(
 		DeployContract(cdc),
 		flags.LineBreak,
-		TestProposal(cdc),
-		UpdateModuleProposal(cdc),
+		UpdateStdlibProposal(cdc),
 	)
 	commands = append(commands, compileCommands...)
 
@@ -261,38 +256,58 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 }
 
 // Send governance update stdlib VM module proposal.
-func UpdateModuleProposal(cdc *codec.Codec) *cobra.Command {
+func UpdateStdlibProposal(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "update-module-proposal plannedBlockHeight [flags]",
-		Args:  cobra.ExactArgs(1),
-		Short: "Submit a test proposal",
+		Use:   "update-stdlib-proposal [mvFile] [plannedBlockHeight] [sourceUrl] [updateDescription] [flags]",
+		Args:  cobra.ExactArgs(4),
+		Short: "Submit a DVM stdlib update proposal",
+		Example: "update-stdlib-proposal ./update.move.json 1000 http://github.com/repo 'fix for Foo module' --deposit 100dfi --from my_account --fees 1dfi",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			from := cliCtx.GetFromAddress()
 
-			depositStr, err := cmd.Flags().GetString(cli.FlagDeposit)
-			if err != nil {
-				return err
+			// parse inputs
+			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
+			fromAddress := cliCtx.FromAddress
+			if err := accGetter.EnsureExists(fromAddress); err != nil {
+				return fmt.Errorf("%s flag: %v", flags.FlagFrom, err)
 			}
 
+			depositStr, err := cmd.Flags().GetString(govCli.FlagDeposit)
+			if err != nil {
+				return fmt.Errorf("%s flag: %w", govCli.FlagDeposit, err)
+			}
 			deposit, err := sdk.ParseCoins(depositStr)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s flag %q: parsing: %w", govCli.FlagDeposit, depositStr, err)
 			}
 
-			plannedBlockHeight, err := strconv.ParseInt(args[0], 10, 64)
+			mvFilePath := args[0]
+			mvFile, err := GetMVFromFile(mvFilePath)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s argument %q: %w", "mvFile", mvFilePath, err)
+			}
+			code, err := hex.DecodeString(mvFile.Code)
+			if err != nil {
+				return fmt.Errorf("%s argument %q: decoding: %w", "mvFile", mvFilePath, err)
 			}
 
-			content := types.NewModuleUpdateProposal(types.NewPlan(plannedBlockHeight))
+			plannedBlockHeightStr := args[1]
+			plannedBlockHeight, err := strconv.ParseInt(plannedBlockHeightStr, 10, 64)
+			if err != nil {
+				return fmt.Errorf("%s argument %q: decoding: %w", "plannedBlockHeight", plannedBlockHeightStr, err)
+			}
+
+			sourceUrl, updateDesc := args[2], args[3]
+
+			// prepare and send message
+			content := types.NewStdlibUpdateProposal(types.NewPlan(plannedBlockHeight), sourceUrl, updateDesc, code)
 			if err := content.ValidateBasic(); err != nil {
 				return err
 			}
 
-			msg := gov.NewMsgSubmitProposal(content, deposit, from)
+			msg := gov.NewMsgSubmitProposal(content, deposit, fromAddress)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -301,59 +316,7 @@ func UpdateModuleProposal(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
-
-	return cmd
-}
-
-// Send governance test proposal.
-func TestProposal(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "test-proposal plannedBlockHeight [flags]",
-		Args:  cobra.ExactArgs(1),
-		Short: "Submit a test proposal",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			from := cliCtx.GetFromAddress()
-
-			depositStr, err := cmd.Flags().GetString(cli.FlagDeposit)
-			if err != nil {
-				return err
-			}
-
-			deposit, err := sdk.ParseCoins(depositStr)
-			if err != nil {
-				return err
-			}
-
-			plannedBlockHeight, err := strconv.ParseInt(args[0], 10, 64)
-			if err != nil {
-				return err
-			}
-
-			value, err := cmd.Flags().GetString(flagProposalValue)
-			if err != nil {
-				return err
-			}
-
-			content := types.NewTestProposal(types.NewPlan(plannedBlockHeight), value)
-			if err := content.ValidateBasic(); err != nil {
-				return err
-			}
-
-			msg := gov.NewMsgSubmitProposal(content, deposit, from)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-
-	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
-	cmd.Flags().String(flagProposalValue, "default", "proposal value")
+	cmd.Flags().String(govCli.FlagDeposit, "", "deposit of proposal")
 
 	return cmd
 }

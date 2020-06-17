@@ -7,7 +7,49 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-func (keeper Keeper) GetNextProposalID(ctx sdk.Context) (id uint64) {
+// ScheduleProposal checks if proposal can be added to gov proposal queue and adds it.
+func (keeper Keeper) ScheduleProposal(ctx sdk.Context, pProposal types.PlannedProposal) error {
+	if pProposal.GetPlan().Height <= ctx.BlockHeight() {
+		return sdkErrors.Wrapf(
+			sdkErrors.ErrInvalidRequest,
+			"proposal can't be scheduled, planned blockHeight LE than current: %d le %d",
+			pProposal.GetPlan().Height, ctx.BlockHeight())
+	}
+
+	keeper.addProposalToQueue(ctx, pProposal)
+
+	return nil
+}
+
+// RemoveProposalFromQueue removes proposal from the gov proposal queue.
+func (keeper Keeper) RemoveProposalFromQueue(ctx sdk.Context, id uint64) {
+	queueKey := types.GetProposalQueueKey(id)
+
+	store := ctx.KVStore(keeper.storeKey)
+	store.Delete(queueKey)
+}
+
+// IterateProposalsQueue iterates over gov proposal queue.
+func (keeper Keeper) IterateProposalsQueue(ctx sdk.Context, handler func(id uint64, pProposal types.PlannedProposal) (stop bool)) {
+	iterator := keeper.proposalQueueIterator(ctx)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		id := types.SplitProposalQueueKey(iterator.Key())
+
+		p, err := keeper.unmarshalPlannedProposal(iterator.Value())
+		if err != nil {
+			panic(err)
+		}
+
+		if !handler(id, p) {
+			break
+		}
+	}
+}
+
+// getNextProposalID returns next gov proposal queue ID.
+func (keeper Keeper) getNextProposalID(ctx sdk.Context) (id uint64) {
 	store := ctx.KVStore(keeper.storeKey)
 	if !store.Has(types.ProposalIDKey) {
 		return 0
@@ -21,60 +63,42 @@ func (keeper Keeper) GetNextProposalID(ctx sdk.Context) (id uint64) {
 	return id + 1
 }
 
-func (keeper Keeper) SetProposalID(ctx sdk.Context, id uint64) {
+// setProposalID updates gov proposal queue last ID.
+func (keeper Keeper) setProposalID(ctx sdk.Context, id uint64) {
 	store := ctx.KVStore(keeper.storeKey)
 
 	bz := keeper.cdc.MustMarshalBinaryLengthPrefixed(id)
 	store.Set(types.ProposalIDKey, bz)
 }
 
-func (keeper Keeper) AddProposalToQueue(ctx sdk.Context, p types.PlannedProposal) {
-	id := keeper.GetNextProposalID(ctx)
+// addProposalToQueue adds proposal to the gov proposal queue.
+func (keeper Keeper) addProposalToQueue(ctx sdk.Context, pProposal types.PlannedProposal) {
+	id := keeper.getNextProposalID(ctx)
 	queueKey := types.GetProposalQueueKey(id)
 
 	store := ctx.KVStore(keeper.storeKey)
-	bz := keeper.cdc.MustMarshalBinaryLengthPrefixed(p)
+	bz := keeper.cdc.MustMarshalBinaryLengthPrefixed(pProposal)
 	store.Set(queueKey, bz)
-	keeper.SetProposalID(ctx, id)
+	keeper.setProposalID(ctx, id)
 }
 
-func (keeper Keeper) RemoveProposalFromQueue(ctx sdk.Context, id uint64) {
-	queueKey := types.GetProposalQueueKey(id)
-
-	store := ctx.KVStore(keeper.storeKey)
-	store.Delete(queueKey)
-}
-
-func (keeper Keeper) ProposalQueueIterator(ctx sdk.Context) sdk.Iterator {
+// proposalQueueIterator returns gov proposal queue iterator.
+func (keeper Keeper) proposalQueueIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(keeper.storeKey)
 	return store.Iterator(types.ProposalQueuePrefix, sdk.PrefixEndBytes(types.ProposalQueuePrefix))
 }
 
-func (keeper Keeper) IterateProposalsQueue(ctx sdk.Context, handler func(id uint64, proposal types.PlannedProposal) (stop bool)) {
-	iterator := keeper.ProposalQueueIterator(ctx)
-	defer iterator.Close()
-
-	for ; iterator.Valid(); iterator.Next() {
-		id := types.SplitProposalQueueKey(iterator.Key())
-
-		p := types.PlannedProposal{}
-		keeper.cdc.MustUnmarshalBinaryLengthPrefixed(iterator.Value(), &p)
-
-		if !handler(id, p) {
-			break
-		}
-	}
-}
-
-func (keeper Keeper) ScheduleProposal(ctx sdk.Context, p types.PlannedProposal) error {
-	if p.Plan.Height <= ctx.BlockHeight() {
-		return sdkErrors.Wrapf(
-			sdkErrors.ErrInvalidRequest,
-			"update can't be scheduled, planned blockHeight le than current: %d le %d",
-			p.Plan.Height, ctx.BlockHeight())
+// unmarshalPlannedProposal unmarshals stored PlannedProposal to a known concrete type.
+func (keeper Keeper) unmarshalPlannedProposal(bz []byte) (types.PlannedProposal, error) {
+	pStdlib := types.StdlibUpdateProposal{}
+	if err := keeper.cdc.UnmarshalBinaryLengthPrefixed(bz, &pStdlib); err == nil {
+		return pStdlib, nil
 	}
 
-	keeper.AddProposalToQueue(ctx, p)
+	pTest := types.TestProposal{}
+	if err := keeper.cdc.UnmarshalBinaryLengthPrefixed(bz, &pTest); err == nil {
+		return pTest, nil
+	}
 
-	return nil
+	return nil, sdkErrors.Wrap(types.ErrInternal, "unkown stored PlannedProposal type")
 }
