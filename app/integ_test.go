@@ -303,8 +303,7 @@ func Test_VMCommunicationUDS(t *testing.T) {
 	defer ct.Close()
 
 	// Start DVM compiler / runtime (sub-process) abd register compiler
-	os.Unsetenv(tests.EnvDvmIntegDockerUse)
-	os.Setenv(tests.EnvDvmIntegBinaryUse, "1")
+	os.Setenv(tests.EnvDvmIntegUse, "binary")
 	dvmStop := tests.LaunchDVMWithUDSTransport(t, ct.Dirs.UDSDir, dvmSocket, dsSocket, false)
 	defer dvmStop()
 
