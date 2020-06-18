@@ -1,7 +1,9 @@
-package tests
+package docker
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"runtime"
@@ -9,6 +11,12 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
+
+	testUtils "github.com/dfinance/dnode/helpers/tests/utils"
+)
+
+const (
+	DvmDockerStartTimeout = 5 * time.Second
 )
 
 type DockerContainerOption func(*DockerContainer) error
@@ -17,6 +25,7 @@ type DockerContainer struct {
 	dClient    *docker.Client
 	dContainer *docker.Container
 	dOptions   docker.CreateContainerOptions
+	printLogs  bool
 }
 
 func NewDockerContainer(options ...DockerContainerOption) (*DockerContainer, error) {
@@ -114,8 +123,15 @@ func WithUser() DockerContainerOption {
 	}
 }
 
+func WithConsoleLogs(enabled bool) DockerContainerOption {
+	return func(c *DockerContainer) error {
+		c.printLogs = enabled
+		return nil
+	}
+}
+
 func (c *DockerContainer) String() string {
-	return c.dOptions.Config.Image
+	return "container " + c.dOptions.Config.Image
 }
 
 func (c *DockerContainer) Start(startTimeout time.Duration) error {
@@ -131,6 +147,43 @@ func (c *DockerContainer) Start(startTimeout time.Duration) error {
 	container, err := client.CreateContainer(c.dOptions)
 	if err != nil {
 		return fmt.Errorf("%q: creating container: %w", c.String(), err)
+	}
+
+	if c.printLogs {
+		stdoutBuf, stderrBuf := bytes.Buffer{}, bytes.Buffer{}
+		opts := docker.LogsOptions{
+			Container:    container.ID,
+			OutputStream: &stdoutBuf,
+			ErrorStream:  &stderrBuf,
+			Follow:       true,
+			Stdout:       true,
+			Stderr:       true,
+			Tail: "0",
+			Timestamps:   false,
+		}
+
+		//if err := client.Logs(opts); err != nil {
+		//	return fmt.Errorf("%q: setting log options: %w", c.String(), err)
+		//}
+
+		streamPrinter := func(streamName string, buf *bytes.Buffer) {
+			for {
+				line, err := buf.ReadString('\n')
+				if err != nil && err != io.EOF {
+					fmt.Printf("%s: broken %s stream: %v\n", c.String(), streamName, err)
+					return
+				}
+
+				line = strings.TrimSpace(line)
+				if line != "" {
+					fmt.Printf("%s: %s stream: %s\n", c.String(), streamName, line)
+				}
+			}
+		}
+
+		client.Logs(opts)
+		go streamPrinter("stdout", &stdoutBuf)
+		go streamPrinter("stderr", &stderrBuf)
 	}
 
 	if err := client.StartContainer(container.ID, nil); err != nil {
@@ -169,7 +222,7 @@ func (c *DockerContainer) Start(startTimeout time.Duration) error {
 				continue
 			}
 
-			if err := PingTcpAddress("127.0.0.1:" + p.Port(), 500 * time.Millisecond); err != nil {
+			if err := testUtils.PingTcpAddress("127.0.0.1:"+p.Port(), 500*time.Millisecond); err != nil {
 				portReports[p] = err.Error()
 			} else {
 				portReports[p] = "OK"
@@ -221,16 +274,9 @@ func (c *DockerContainer) Stop() error {
 	return nil
 }
 
-func NewDVMWithNetTransport(connectPort, dsServerPort string, args ...string) (retContainer *DockerContainer, retErr error) {
-	tag := os.Getenv("TAG")
-	if tag == "" {
-		tag = "master"
-	}
-
-	registry := os.Getenv("REGISTRY")
-	if registry == "" {
-		retErr = fmt.Errorf("REGISTRY env var: not found")
-		return
+func NewDVMWithNetTransport(registry, tag, connectPort, dsServerPort string, printLogs bool, args ...string) (*DockerContainer, error) {
+	if registry == "" || tag == "" {
+		return nil, fmt.Errorf("registry / tag: not specified")
 	}
 
 	hostUrl, _, _ := HostMachineDockerUrl()
@@ -240,47 +286,60 @@ func NewDVMWithNetTransport(connectPort, dsServerPort string, args ...string) (r
 		cmdArgs = append(cmdArgs, strings.Join(args, " "))
 	}
 
-	retContainer, retErr = NewDockerContainer(
+	container, err := NewDockerContainer(
 		WithCreds(registry, "dfinance/dvm", tag),
 		WithCmdArgs(cmdArgs),
 		WithTcpPorts([]string{connectPort}),
 		WithHostNetwork(),
+		WithConsoleLogs(printLogs),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("creating DVM container over Net: %v", err)
+	}
 
-	return
+	if err := container.Start(DvmDockerStartTimeout); err != nil {
+		return nil, fmt.Errorf("starting DVM container over Net: %v", err)
+	}
+
+	return container, nil
 }
 
-func NewDVMWithUDSTransport(volumePath, vmFileName, dsFileName string, args ...string) (retContainer *DockerContainer, retErr error) {
+func NewDVMWithUDSTransport(registry, tag, volumePath, vmFileName, dsFileName string, printLogs bool, args ...string) (*DockerContainer, error) {
 	const defVolumePath = "/tmp/dn-uds"
 
-	tag := os.Getenv("TAG")
-	if tag == "" {
-		tag = "master"
+	if registry == "" || tag == "" {
+		return nil, fmt.Errorf("registry / tag: not specified")
 	}
 
-	registry := os.Getenv("REGISTRY")
-	if registry == "" {
-		retErr = fmt.Errorf("REGISTRY env var: not found")
-		return
-	}
-
-	dsFilePath := path.Join(defVolumePath, dsFileName)
 	vmFilePath := path.Join(defVolumePath, vmFileName)
+	dsFilePath := path.Join(defVolumePath, dsFileName)
 
 	// one '/' is omitted on purpose
-	cmdArgs := []string{"./dvm", "-v", "ipc:/" + vmFilePath, "ipc:/" + dsFilePath}
+	cmdArgs := []string{"./dvm", "ipc:/" + vmFilePath, "ipc:/" + dsFilePath}
 	if len(args) > 0 {
 		cmdArgs = append(cmdArgs, strings.Join(args, " "))
 	}
 
-	retContainer, retErr = NewDockerContainer(
+	container, err := NewDockerContainer(
 		WithCreds(registry, "dfinance/dvm", tag),
 		WithCmdArgs(cmdArgs),
 		WithVolume(volumePath, defVolumePath),
 		WithUser(),
+		WithConsoleLogs(printLogs),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("creating DVM container over UDS: %v", err)
+	}
 
-	return
+	if err := container.Start(DvmDockerStartTimeout); err != nil {
+		return nil, fmt.Errorf("starting DVM container over UDS: %v", err)
+	}
+
+	if err := testUtils.WaitForFileExists(path.Join(volumePath, vmFileName), DvmDockerStartTimeout); err != nil {
+		return nil, fmt.Errorf("creating DVM container over UDS: %v", err)
+	}
+
+	return container, nil
 }
 
 func HostMachineDockerUrl() (hostUrl, hostNetworkMode string, err error) {

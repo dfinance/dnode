@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -41,17 +40,11 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	)
 	defer ct.Close()
 
-	dvmCompilerSocketPath := path.Join(ct.Dirs.UDSDir, dvmSocket)
+	// Start DVM container and set compiler address
+	dvmStop := tests.LaunchDVMWithUDSTransport(t, ct.Dirs.UDSDir, dvmSocket, dsSocket, false)
+	defer dvmStop()
 
-	// Start DVM container
-	dvmContainer, err := tests.NewDVMWithUDSTransport(ct.Dirs.UDSDir, dvmSocket, dsSocket)
-	require.NoError(t, err, "creating DVM container")
-	require.NoError(t, dvmContainer.Start(5*time.Second), "staring DVM container")
-	defer dvmContainer.Stop()
-
-	// Wait for container to start up and register DVM socket address
-	require.NoError(t, cliTester.WaitForFileExists(dvmCompilerSocketPath, 10*time.Second), "DVM gRPC server start")
-	ct.SetVMCompilerAddressUDS(dvmCompilerSocketPath)
+	ct.SetVMCompilerAddressUDS(path.Join(ct.Dirs.UDSDir, dvmSocket))
 
 	senderAddr := ct.Accounts["validator1"].Address
 	movePath := path.Join(ct.Dirs.RootDir, "script.move")

@@ -80,22 +80,22 @@ func NewCurrencyMap() map[string]CurrencyInfo {
 	currencies[DenomDFI] = CurrencyInfo{
 		Decimals: 18,
 		Supply:   dfiSupply,
-		Path:     "018bfc024222e94fbed60ff0c9c1cf48c5b2809d83c82f513b2c385e21ba8a2d35",
+		Path:     "0172c9f1bfe0a2bf6ac342aaa3c3380852d4694ae4e71655d37aa5d2e6700ed94e",
 	}
 	currencies[DenomETH] = CurrencyInfo{
 		Decimals: 18,
 		Supply:   ethSupply,
-		Path:     "01f8799f504905a182aff8d5fc102da1d73b8bec199147bb5512af6e99006baeb6",
+		Path:     "0116fbac6fd286d2bfec4549161245982b730291a9cbc5281f5fcfb41aeb7bfb26",
 	}
 	currencies[DenomBTC] = CurrencyInfo{
 		Decimals: 8,
 		Supply:   btcSupply,
-		Path:     "01fe7c965b1c008c5974c7750959fa10189e803225d5057207563553922a09f906",
+		Path:     "0158c690830c7e2f25b85de6ab85052fd1e79e6a9cbb52a9740be7ff7275604c1b",
 	}
 	currencies[DenomUSDT] = CurrencyInfo{
 		Decimals: 6,
 		Supply:   usdtSupply,
-		Path:     "0136cb3312422fa6991412077ee93dd9db6cb5b3fcf55750fe2cc739d1d399673b",
+		Path:     "01e10f377b920a0a8a330edd7beff6c3a11cdeb7682c964b02aa5bb6a784b84920",
 	}
 
 	return currencies

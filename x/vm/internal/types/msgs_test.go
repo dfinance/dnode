@@ -12,7 +12,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
-	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/helpers/tests/utils"
 )
 
 func getMsgSignBytes(t *testing.T, msg sdk.Msg) []byte {
@@ -42,11 +42,11 @@ func TestMsgDeployModule(t *testing.T) {
 
 	msg = NewMsgDeployModule([]byte{}, code)
 	require.Empty(t, msg.Signer)
-	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, msg.ValidateBasic())
+	utils.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, msg.ValidateBasic())
 
 	msg = NewMsgDeployModule(acc, Contract{})
 	require.Empty(t, msg.Module)
-	tests.CheckExpectedErr(t, ErrEmptyContract, msg.ValidateBasic())
+	utils.CheckExpectedErr(t, ErrEmptyContract, msg.ValidateBasic())
 }
 
 // Test MsgExecuteScript.
@@ -76,7 +76,7 @@ func TestMsgExecuteScript(t *testing.T) {
 	msg = NewMsgExecuteScript([]byte{}, code, nil)
 	require.Empty(t, msg.Signer)
 	require.Nil(t, msg.Args)
-	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, msg.ValidateBasic())
+	utils.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, msg.ValidateBasic())
 
 	// message without args should be fine
 	msg = NewMsgExecuteScript(acc, code, nil)
@@ -84,7 +84,7 @@ func TestMsgExecuteScript(t *testing.T) {
 
 	// script without code
 	msg = NewMsgExecuteScript(acc, []byte{}, nil)
-	tests.CheckExpectedErr(t, ErrEmptyContract, msg.ValidateBasic())
+	utils.CheckExpectedErr(t, ErrEmptyContract, msg.ValidateBasic())
 }
 
 // Test new argument

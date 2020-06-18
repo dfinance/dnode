@@ -23,6 +23,7 @@ import (
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/tests"
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
+	testUtils "github.com/dfinance/dnode/helpers/tests/utils"
 )
 
 type MockDVM struct {
@@ -100,11 +101,8 @@ func Test_ConsensusFailure(t *testing.T) {
 	// Start DVM compiler container (runtime also, but we don't want for dnode to connect to DVM runtime)
 	_, vmCompilerPort, err := server.FreeTCPAddr()
 	require.NoError(t, err, "FreeTCPAddr for DVM compiler port")
-	compilerContainer, err := tests.NewDVMWithNetTransport(vmCompilerPort, ct.VMConnection.ListenPort)
-	require.NoError(t, err, "creating DVM compiler container")
-
-	require.NoError(t, compilerContainer.Start(5*time.Second), "staring DVM compiler container")
-	defer compilerContainer.Stop()
+	compilerStop := tests.LaunchDVMWithNetTransport(t, vmCompilerPort, ct.VMConnection.ListenPort, false)
+	defer compilerStop()
 
 	ct.SetVMCompilerAddressNet("tcp://127.0.0.1:"+vmCompilerPort, false)
 
@@ -172,11 +170,8 @@ func Test_VMExecuteScript(t *testing.T) {
 	defer ct.Close()
 
 	// Start DVM container
-	dvmContainer, err := tests.NewDVMWithNetTransport(ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort)
-	require.NoError(t, err, "creating DVM container")
-
-	require.NoError(t, dvmContainer.Start(5*time.Second), "staring DVM container")
-	defer dvmContainer.Stop()
+	dvmStop := tests.LaunchDVMWithNetTransport(t, ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort, false)
+	defer dvmStop()
 
 	senderAddr := ct.Accounts["validator1"].Address
 	movePath := path.Join(ct.Dirs.RootDir, "script.move")
@@ -220,7 +215,7 @@ func Test_VMRequestRetry(t *testing.T) {
 
 	mockDvm := StartMockDVMService(mockDVMListener)
 	defer mockDvm.Stop()
-	require.NoError(t, cliTester.WaitForFileExists(mockDVMSocketPath, 1*time.Second), "MockDVM start failed")
+	require.NoError(t, testUtils.WaitForFileExists(mockDVMSocketPath, 1*time.Second), "MockDVM start failed")
 
 	// Create fake .mov file
 	modulePath := path.Join(ct.Dirs.RootDir, "fake.json")
@@ -277,58 +272,6 @@ func Test_VMRequestRetry(t *testing.T) {
 	wg.Wait()
 }
 
-// Test is skipped: should be used for dnode <-> dvm (uni-binary) communication over TCP debug locally (with DVM binaries).
-func Test_VMCommunicationTCP(t *testing.T) {
-	t.Skip()
-
-	const script = `
-		script {
-			use 0x0::Account;
-			use 0x0::DFI;
-
-			fun main(account: &signer) {
-				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
-				Account::deposit_to_sender<DFI::T>(account, dfi);
-			}
-	}
-`
-
-	t.Parallel()
-	ct := cliTester.New(
-		t,
-		false,
-		cliTester.VMCommunicationOption(50, 1000, 100),
-	)
-	defer ct.Close()
-
-	// Start DVM compiler / runtime (sub-process) abd register compiler
-	dvmAddr, dsAddr := "127.0.0.1:"+ct.VMConnection.ConnectPort, "127.0.0.1:"+ct.VMConnection.ListenPort
-	dvmCmd := cliTester.NewCLICmd(t, "dvm", "http://"+dvmAddr, "http://"+dsAddr)
-	dvmCmd.Start(t, true)
-	defer dvmCmd.Stop()
-	time.Sleep(1 * time.Second)
-
-	// We skip TCP port ping as DVM doesn't open a new port
-	ct.SetVMCompilerAddressNet(dvmAddr, true)
-
-	senderAddr := ct.Accounts["validator1"].Address
-	movePath := path.Join(ct.Dirs.RootDir, "script.move")
-	compiledPath := path.Join(ct.Dirs.RootDir, "script.move.json")
-
-	// Create .move script file
-	moveFile, err := os.Create(movePath)
-	require.NoError(t, err, "creating script file")
-	_, err = moveFile.WriteString(script)
-	require.NoError(t, err, "write script file")
-	require.NoError(t, moveFile.Close(), "close script file")
-
-	// Compile .move script file
-	ct.QueryVmCompileScript(movePath, compiledPath, senderAddr).CheckSucceeded()
-
-	// Execute .json script file
-	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
-}
-
 // Test is skipped: should be used for dnode <-> dvm (uni-binary) communication over UDS debug locally (with DVM binaries).
 func Test_VMCommunicationUDS(t *testing.T) {
 	t.Skip()
@@ -359,16 +302,13 @@ func Test_VMCommunicationUDS(t *testing.T) {
 	)
 	defer ct.Close()
 
-	dvmSocketPath := path.Join(ct.Dirs.UDSDir, dvmSocket)
-	dsSocketPath := path.Join(ct.Dirs.UDSDir, dsSocket)
-
 	// Start DVM compiler / runtime (sub-process) abd register compiler
-	dvmCmd := cliTester.NewCLICmd(t, "dvm", "ipc:/"+dvmSocketPath, "ipc:/"+dsSocketPath)
-	dvmCmd.Start(t, true)
-	defer dvmCmd.Stop()
-	time.Sleep(1 * time.Second)
+	os.Unsetenv(tests.EnvDvmIntegDockerUse)
+	os.Setenv(tests.EnvDvmIntegBinaryUse, "1")
+	dvmStop := tests.LaunchDVMWithUDSTransport(t, ct.Dirs.UDSDir, dvmSocket, dsSocket, false)
+	defer dvmStop()
 
-	ct.SetVMCompilerAddressUDS(dvmSocketPath)
+	ct.SetVMCompilerAddressUDS(path.Join(ct.Dirs.UDSDir, dvmSocket))
 
 	senderAddr := ct.Accounts["validator1"].Address
 	movePath := path.Join(ct.Dirs.RootDir, "script.move")
