@@ -37,14 +37,28 @@ To launch tests **ONLY** related to VM:
 To launch tests covering basic logic run: 
 
     GO111MODULE=on go test ./... --tags=unit
-    
-To launch VM integration tests (required docker installed, dvm registry authorized and image pulled) run:
 
-    export TAG=master # needed tag (master by default)
-    export REGISTRY=  # replace of registry contains dvm
-    
-    docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
-    
+There are two options to run integration tests (dnode <-> DVM integration):
+1. Using Docker container.
+
+    Requirements:
+    * Docker installed;
+    * DVM registry authorized;
+    * DVM image pulled (`docker image pull ${REGISTRY}/dfinance/dvm:${TAG}`)
+
+    Configuration:
+    * `export DN_DVM_INTEG_TESTS_DOCKER_USE=true` - using Docker for integration tests flag;
+    * `export DN_DVM_INTEG_TESTS_DOCKER_REGISTRY=<docker_registry_path>` - Docker registry containing DVM image;
+    * `export DN_DVM_INTEG_TESTS_DOCKER_TAG` - DVM Docker image tag;
+
+2. Using prebuild binaries.
+
+    Configuration:
+    * `export DN_DVM_INTEG_TESTS_BINARY_USE=true` - using binary for integration tests flag;
+    * `export DN_DVM_INTEG_TESTS_BINARY_PATH` - directory containing DVM binary (if not specified, file should be reachable within `$PATH`);
+
+To launch VM integration tests run:
+
     GO111MODULE=on go test ./... --tags=integ
     
 To launch REST API tests run:

@@ -12,12 +12,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	FmtInfColorPrefix = "\033[1;34m"
+	FmtWrnColorPrefix = "\033[1;33m"
+	FmtColorEndLine   = "\033[0m\n"
+)
+
 func PingTcpAddress(address string, timeout time.Duration) error {
 	const dialTimeout = 500 * time.Millisecond
 
 	// remove scheme prefix
 	if i := strings.Index(address, "://"); i != -1 {
-		address = address[i + 3:]
+		address = address[i+3:]
 	}
 
 	retryCount := int(timeout / dialTimeout)

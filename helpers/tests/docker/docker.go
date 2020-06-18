@@ -22,10 +22,11 @@ const (
 type DockerContainerOption func(*DockerContainer) error
 
 type DockerContainer struct {
-	dClient    *docker.Client
-	dContainer *docker.Container
-	dOptions   docker.CreateContainerOptions
-	printLogs  bool
+	dClient          *docker.Client
+	dContainer       *docker.Container
+	dOptions         docker.CreateContainerOptions
+	printLogs        bool
+	logsStreamStopCh chan bool
 }
 
 func NewDockerContainer(options ...DockerContainerOption) (*DockerContainer, error) {
@@ -149,8 +150,12 @@ func (c *DockerContainer) Start(startTimeout time.Duration) error {
 		return fmt.Errorf("%q: creating container: %w", c.String(), err)
 	}
 
+	if err := client.StartContainer(container.ID, nil); err != nil {
+		return fmt.Errorf("%q: starting container: %w", c.String(), err)
+	}
+
 	if c.printLogs {
-		stdoutBuf, stderrBuf := bytes.Buffer{}, bytes.Buffer{}
+		var stdoutBuf, stderrBuf bytes.Buffer
 		opts := docker.LogsOptions{
 			Container:    container.ID,
 			OutputStream: &stdoutBuf,
@@ -158,36 +163,25 @@ func (c *DockerContainer) Start(startTimeout time.Duration) error {
 			Follow:       true,
 			Stdout:       true,
 			Stderr:       true,
-			Tail: "0",
-			Timestamps:   false,
 		}
 
-		//if err := client.Logs(opts); err != nil {
-		//	return fmt.Errorf("%q: setting log options: %w", c.String(), err)
-		//}
+		c.logsStreamStopCh = make(chan bool)
+		go func() {
+			if err := client.Logs(opts); err != nil {
+				fmt.Printf("%q: logs worker: %v\n", c.String(), err)
+			}
+		}()
 
-		streamPrinter := func(streamName string, buf *bytes.Buffer) {
-			for {
-				line, err := buf.ReadString('\n')
-				if err != nil && err != io.EOF {
-					fmt.Printf("%s: broken %s stream: %v\n", c.String(), streamName, err)
-					return
-				}
+		streamPrinter := func(msgFmtPrefix string, inCh <-chan string) {
+			msgFmt := msgFmtPrefix + "%s: %s" + testUtils.FmtColorEndLine
 
-				line = strings.TrimSpace(line)
-				if line != "" {
-					fmt.Printf("%s: %s stream: %s\n", c.String(), streamName, line)
-				}
+			for msg := range inCh {
+				fmt.Printf(msgFmt, c.String(), msg)
 			}
 		}
 
-		client.Logs(opts)
-		go streamPrinter("stdout", &stdoutBuf)
-		go streamPrinter("stderr", &stderrBuf)
-	}
-
-	if err := client.StartContainer(container.ID, nil); err != nil {
-		return fmt.Errorf("%q: starting container: %w", c.String(), err)
+		go streamPrinter(testUtils.FmtInfColorPrefix, startStreamReader(&stdoutBuf, c.logsStreamStopCh))
+		go streamPrinter(testUtils.FmtWrnColorPrefix, startStreamReader(&stderrBuf, c.logsStreamStopCh))
 	}
 
 	// wait for container to start
@@ -263,6 +257,9 @@ func (c *DockerContainer) Stop() error {
 		return fmt.Errorf("%q: not started", c.String())
 	}
 
+	if c.logsStreamStopCh != nil {
+		close(c.logsStreamStopCh)
+	}
 	err := c.dClient.RemoveContainer(docker.RemoveContainerOptions{
 		ID:    c.dContainer.ID,
 		Force: true,
@@ -353,4 +350,31 @@ func HostMachineDockerUrl() (hostUrl, hostNetworkMode string, err error) {
 	}
 
 	return
+}
+
+func startStreamReader(buf *bytes.Buffer, stopCh chan bool) <-chan string {
+	outCh := make(chan string)
+
+	go func() {
+		defer close(outCh)
+
+		for {
+			select {
+			case <-stopCh:
+				return
+			default:
+				line, err := buf.ReadString('\n')
+				if err != nil && err != io.EOF {
+					return
+				}
+
+				line = strings.TrimSpace(line)
+				if line != "" {
+					outCh <- line
+				}
+			}
+		}
+	}()
+
+	return outCh
 }

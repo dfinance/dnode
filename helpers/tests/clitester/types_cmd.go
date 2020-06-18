@@ -98,6 +98,10 @@ func (c *CLICmd) Start(t *testing.T, printLogs bool) {
 		for {
 			line, _, err := buf.ReadLine()
 			if err != nil {
+				if err == io.EOF {
+					return
+				}
+
 				if printLogs {
 					c.t.Logf("%q %s: reading daemon pipe: %v", c.base, pipeName, err)
 				}

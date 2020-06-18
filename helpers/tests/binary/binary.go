@@ -6,7 +6,6 @@ import (
 	"io"
 	"path"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/tests"
@@ -25,7 +24,6 @@ type BinaryCmd struct {
 	proc         *tests.Process
 	args         []string
 	printLogs    bool
-	pipeLoggerWG sync.WaitGroup
 }
 
 func (c *BinaryCmd) String() string {
@@ -70,25 +68,28 @@ func (c *BinaryCmd) Start() error {
 		return fmt.Errorf("%s: creating process: %w", c.String(), err)
 	}
 
-	pipeLogger := func(pipeName string, pipe io.ReadCloser, wg *sync.WaitGroup) {
-		defer wg.Done()
-
-		buf := bufio.NewReader(pipe)
-		for {
-			line, _, err := buf.ReadLine()
-			if err != nil {
-				fmt.Printf("%s: broken %s pipe: %v\n", c.String(), pipeName, err)
-				return
-			}
-
-			fmt.Printf("%s: %s pipe: %s\n", c.String(), pipeName, line)
-		}
-	}
-
 	if c.printLogs {
-		c.pipeLoggerWG.Add(2)
-		go pipeLogger("stdout", proc.StdoutPipe, &c.pipeLoggerWG)
-		go pipeLogger("stderr", proc.StderrPipe, &c.pipeLoggerWG)
+		pipeLogger := func(msgFmtPrefix string, pipe io.ReadCloser) {
+			msgFmt := msgFmtPrefix + "%s: %s" + testUtils.FmtColorEndLine
+
+			buf := bufio.NewReader(pipe)
+			for {
+				line, _, err := buf.ReadLine()
+				if err != nil {
+					if err == io.EOF {
+						return
+					}
+
+					fmt.Printf("%s: broken pipe: %v", c.String(), err.Error())
+					return
+				}
+
+				fmt.Printf(msgFmt, c.String(), line)
+			}
+		}
+
+		go pipeLogger(testUtils.FmtInfColorPrefix, proc.StdoutPipe)
+		go pipeLogger(testUtils.FmtWrnColorPrefix, proc.StderrPipe)
 	}
 
 	if err := proc.Cmd.Start(); err != nil {
@@ -107,7 +108,6 @@ func (c *BinaryCmd) Stop() error {
 	if err := c.proc.Stop(true); err != nil {
 		return fmt.Errorf("%s: stop failed: %w", c.String(), err)
 	}
-	c.pipeLoggerWG.Wait()
 
 	return nil
 }
