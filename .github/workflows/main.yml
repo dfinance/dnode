@@ -80,7 +80,7 @@ jobs:
         #
 
         docker login -u ${OWN_REGISTRY_USR} --password-stdin ${DN_DVM_INTEG_TESTS_DOCKER_REGISTRY} <<< ${OWN_REGISTRY_PWD}
-        docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
+        docker image pull ${DN_DVM_INTEG_TESTS_DOCKER_REGISTRY}/dfinance/dvm:${DN_DVM_INTEG_TESTS_DOCKER_TAG}
         cd go/src/github.com/${{ github.repository }}
         go test -v ./... --tags=integ
         docker logout
