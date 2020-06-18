@@ -17,6 +17,7 @@ import (
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
+	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/common_vm"
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
@@ -34,7 +35,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 		CompileModule(cdc),
 	)
 	for _, cmd := range compileCommands {
-		cmd.Flags().String(vmClient.FlagCompilerAddr, vmClient.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
+		cmd.Flags().String(vmClient.FlagCompilerAddr, config.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
 		cmd.Flags().String(vmClient.FlagOutput, "", "--to-file ./compiled.mv")
 	}
 
