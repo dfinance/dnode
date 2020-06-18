@@ -12,11 +12,13 @@ import (
 )
 
 const (
-	EnvDvmIntegDockerUse      = "DN_DVM_INTEG_TESTS_DOCKER_USE"
+	EnvDvmIntegUse            = "DN_DVM_INTEG_TESTS_USE"
 	EnvDvmIntegDockerRegistry = "DN_DVM_INTEG_TESTS_DOCKER_REGISTRY"
 	EnvDvmIntegDockerTag      = "DN_DVM_INTEG_TESTS_DOCKER_TAG"
-	EnvDvmIntegBinaryUse      = "DN_DVM_INTEG_TESTS_BINARY_USE"
 	EnvDvmIntegBinaryPath     = "DN_DVM_INTEG_TESTS_BINARY_PATH"
+	//
+	EnvDvmIntegUseDocker = "docker"
+	EnvDvmIntegUseBinary = "binary"
 	//
 	TestErrFmt = "Launching DVM over %s with %s transport"
 )
@@ -46,7 +48,7 @@ func LaunchDVMWithNetTransport(t *testing.T, connectPort, dsServerPort string, p
 		}
 	}
 
-	t.Fatalf("Docker / Binary DVM launch option not specified")
+	t.Fatalf("Docker / Binary DVM launch option not specified: %s", os.Getenv(EnvDvmIntegUse))
 
 	return nil
 }
@@ -76,13 +78,16 @@ func LaunchDVMWithUDSTransport(t *testing.T, socketsDir, connectSocketName, dsSo
 		}
 	}
 
-	t.Fatalf("Docker / Binary DVM launch option not specified")
+	t.Fatalf("Docker / Binary DVM launch option not specified: %s", os.Getenv(EnvDvmIntegUse))
 
 	return nil
 }
 
 func dvmDockerLaunchEnvParams(transportLabel string) (enabled bool, registry, tag, errMsg string) {
-	_, enabled = os.LookupEnv(EnvDvmIntegDockerUse)
+	if os.Getenv(EnvDvmIntegUse) != EnvDvmIntegUseDocker {
+		return
+	}
+	enabled = true
 	registry = os.Getenv(EnvDvmIntegDockerRegistry)
 	tag = os.Getenv(EnvDvmIntegDockerTag)
 	errMsg = fmt.Sprintf(TestErrFmt, "Docker", transportLabel)
@@ -91,7 +96,10 @@ func dvmDockerLaunchEnvParams(transportLabel string) (enabled bool, registry, ta
 }
 
 func dvmBinaryLaunchEnvParams(transportLabel string) (enabled bool, path, errMsg string) {
-	_, enabled = os.LookupEnv(EnvDvmIntegBinaryUse)
+	if os.Getenv(EnvDvmIntegUse) != EnvDvmIntegUseBinary {
+		return
+	}
+	enabled = true
 	path = os.Getenv(EnvDvmIntegBinaryPath)
 	errMsg = fmt.Sprintf(TestErrFmt, "UDS", transportLabel)
 

@@ -47,15 +47,15 @@ There are two options to run integration tests (dnode <-> DVM integration):
     * DVM image pulled (`docker image pull ${REGISTRY}/dfinance/dvm:${TAG}`)
 
     Configuration:
-    * `export DN_DVM_INTEG_TESTS_DOCKER_USE=true` - using Docker for integration tests flag;
+    * `export DN_DVM_INTEG_TESTS_USE=docker` - using Docker for integration tests;
     * `export DN_DVM_INTEG_TESTS_DOCKER_REGISTRY=<docker_registry_path>` - Docker registry containing DVM image;
-    * `export DN_DVM_INTEG_TESTS_DOCKER_TAG` - DVM Docker image tag;
+    * `export DN_DVM_INTEG_TESTS_DOCKER_TAG=master` - DVM Docker image tag;
 
 2. Using prebuild binaries.
 
     Configuration:
-    * `export DN_DVM_INTEG_TESTS_BINARY_USE=true` - using binary for integration tests flag;
-    * `export DN_DVM_INTEG_TESTS_BINARY_PATH` - directory containing DVM binary (if not specified, file should be reachable within `$PATH`);
+    * `export DN_DVM_INTEG_TESTS_USE=binary` - using binary for integration tests;
+    * `export DN_DVM_INTEG_TESTS_BINARY_PATH="/dvmDir"` - directory containing DVM binary (if not specified, file should be reachable within `$PATH`);
 
 To launch VM integration tests run:
 

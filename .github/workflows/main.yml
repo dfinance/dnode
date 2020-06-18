@@ -85,7 +85,7 @@ jobs:
         go test -v ./... --tags=integ
         docker logout
       env:
-        DN_DVM_INTEG_TESTS_DOCKER_USE: true
+        DN_DVM_INTEG_TESTS_USE: docker
         DN_DVM_INTEG_TESTS_DOCKER_REGISTRY: ${{ secrets.OWN_REGISTRY }}
         DN_DVM_INTEG_TESTS_DOCKER_TAG_DEFAULT: master
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
