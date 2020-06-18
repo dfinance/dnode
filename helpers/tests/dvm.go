@@ -29,7 +29,9 @@ func LaunchDVMWithNetTransport(t *testing.T, connectPort, dsServerPort string, p
 		require.NoError(t, err, errMsg)
 
 		return func() {
-			container.Stop()
+			if err := container.Stop(); err != nil {
+				t.Logf("stopping container: %v", err)
+			}
 		}
 	}
 
@@ -38,7 +40,9 @@ func LaunchDVMWithNetTransport(t *testing.T, connectPort, dsServerPort string, p
 		require.NoError(t, err, errMsg)
 
 		return func() {
-			cmd.Stop()
+			if err := cmd.Stop(); err != nil {
+				t.Logf("stopping binary: %v", err)
+			}
 		}
 	}
 
@@ -55,7 +59,9 @@ func LaunchDVMWithUDSTransport(t *testing.T, socketsDir, connectSocketName, dsSo
 		require.NoError(t, err, errMsg)
 
 		return func() {
-			container.Stop()
+			if err := container.Stop(); err != nil {
+				t.Logf("stopping container: %v", err)
+			}
 		}
 	}
 
@@ -64,7 +70,9 @@ func LaunchDVMWithUDSTransport(t *testing.T, socketsDir, connectSocketName, dsSo
 		require.NoError(t, err, errMsg)
 
 		return func() {
-			cmd.Stop()
+			if err := cmd.Stop(); err != nil {
+				t.Logf("stopping binary: %v", err)
+			}
 		}
 	}
 
