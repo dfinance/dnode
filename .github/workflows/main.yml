@@ -109,7 +109,7 @@ jobs:
       with:
         draft: true
         files: |
-          builds/dncli-*
+          go/src/github.com/${{ github.repository }}/builds/dncli-*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
