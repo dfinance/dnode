@@ -42,6 +42,7 @@ var (
 	RegisterCodec           = types.RegisterCodec
 	NewKeeper               = keeper.NewKeeper
 	RegisterVMServiceServer = vm_grpc.RegisterVMServiceServer
+	NewMsgDeployModule      = types.NewMsgDeployModule
 	// error aliases
 	ErrInternal           = types.ErrInternal
 	ErrVMCrashed          = types.ErrVMCrashed

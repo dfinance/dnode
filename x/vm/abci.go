@@ -5,9 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 // BeginBlocker handles gov proposal scheduler: iterating over plannedProposals and checking if it is time to execute.
@@ -41,7 +38,7 @@ func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
 
 // handleStdlibUpdateProposalExecution requests DVM to update stdlib.
 func handleStdlibUpdateProposalExecution(ctx sdk.Context, keeper Keeper, proposal StdlibUpdateProposal) error {
-	msg := types.NewMsgDeployModule(common_vm.Bech32ToLibra(common_vm.ZeroAddress), proposal.Code)
+	msg, _ := getStdlibUpdateMsg(proposal)
 	if err := keeper.DeployContract(ctx, msg); err != nil {
 		return err
 	}

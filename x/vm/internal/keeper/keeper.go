@@ -107,3 +107,30 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 
 	return nil
 }
+
+// DeployContractDryRun checks that contract can be deployed (returned writeSets are not persisted to store).
+func (keeper Keeper) DeployContractDryRun(ctx sdk.Context, msg types.MsgDeployModule) error {
+	req, sdkErr := NewDeployRequest(ctx, msg)
+	if sdkErr != nil {
+		return sdkErr
+	}
+
+	resp, dvmErr := keeper.sendExecuteReq(ctx, req)
+	if dvmErr != nil {
+		return sdkErrors.Wrap(types.ErrVMCrashed, dvmErr.Error())
+	}
+
+	if len(resp.Executions) != 1 {
+		return sdkErrors.Wrap(types.ErrWrongExecutionResponse, "invalid number of resp.Executions")
+	}
+
+	exec := resp.Executions[0]
+	if exec.Status != vm_grpc.ContractStatus_Discard {
+		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
+			statusMsg := types.ExecStatusToString(exec.Status, exec.StatusStruct)
+			return sdkErrors.Wrap(types.ErrWrongExecutionResponse, statusMsg)
+		}
+	}
+
+	return nil
+}
