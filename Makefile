@@ -19,7 +19,7 @@ cosmos_version=v0.38.4
 all: install
 install: go.sum install-dnode install-dncli
 swagger-ui: swagger-ui-deps swagger-ui-build
-test: test-unit test-cli test-rest test-integ
+tests: | test-unit test-cli test-rest test-integ
 
 install-dnode:
 	GO111MODULE=on go install -ldflags "$(tags)"  -tags "$(build_tags)" $(dnode)
@@ -35,13 +35,13 @@ test-unit:
 	go test ./... -p=1 -tags=unit -count=1
 test-cli: install
 	@echo "--> Testing: dncli CLI tests"
-	go test ./... -tags=cli,rest -count=1
+	go test ./... -tags=cli -count=1
 test-rest: install
 	@echo "--> Testing: dncli REST endpoints tests"
 	go test ./... -tags=rest -count=1
 test-integ: install
 	@echo "--> Testing: dnode <-> dvm integration tests (using Binary)"
-	DN_DVM_INTEG_TESTS_BINARY_USE=true go test ./... -v -tags=integ -count=1
+	DN_DVM_INTEG_TESTS_USE=binary go test ./... -v -tags=integ -count=1
 
 go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"

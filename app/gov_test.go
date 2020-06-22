@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -94,12 +93,9 @@ func Test_VmGovStdlibUpdate(t *testing.T) {
 
 	senderAddr := ct.Accounts["pos"].Address
 
-	// Start DVM container
-	dvmContainer, err := tests.NewDVMWithNetTransport(ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort)
-	require.NoError(t, err, "creating DVM container")
-
-	require.NoError(t, dvmContainer.Start(5*time.Second), "staring DVM container")
-	defer dvmContainer.Stop()
+	// Start DVM
+	dvmStop := tests.LaunchDVMWithNetTransport(t, ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort, false)
+	defer dvmStop()
 
 	createMovFile := func(fileName, code string) string {
 		movePath := path.Join(ct.Dirs.RootDir, fileName + ".move")
