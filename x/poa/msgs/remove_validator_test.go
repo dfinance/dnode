@@ -9,7 +9,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/helpers/tests/utils"
 )
 
 func Test_MsgRemoveValidator(t *testing.T) {
@@ -20,7 +20,7 @@ func Test_MsgRemoveValidator(t *testing.T) {
 	// correct
 	require.Nil(t, NewMsgRemoveValidator(sdkAddress, sdkAddress).ValidateBasic())
 	// invalid sdkAddress
-	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgRemoveValidator([]byte{}, sdkAddress).ValidateBasic())
+	utils.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgRemoveValidator([]byte{}, sdkAddress).ValidateBasic())
 	// invalid sender
-	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgRemoveValidator(sdkAddress, []byte{}).ValidateBasic())
+	utils.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgRemoveValidator(sdkAddress, []byte{}).ValidateBasic())
 }

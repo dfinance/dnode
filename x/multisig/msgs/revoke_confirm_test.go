@@ -9,7 +9,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/helpers/tests/utils"
 )
 
 func Test_RevokeConfirmValidator(t *testing.T) {
@@ -20,5 +20,5 @@ func Test_RevokeConfirmValidator(t *testing.T) {
 	// correct
 	require.Nil(t, NewMsgRevokeConfirm(0, sdkAddress).ValidateBasic())
 	// empty sender sdkAddress
-	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgRevokeConfirm(0, []byte{}).ValidateBasic())
+	utils.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgRevokeConfirm(0, []byte{}).ValidateBasic())
 }

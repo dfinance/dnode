@@ -17,7 +17,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/helpers/tests/utils"
 	"github.com/dfinance/dnode/x/core"
 	mstypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/poa"
@@ -174,12 +174,12 @@ func TestKeeper_SubmitCallInvalidMsg(t *testing.T) {
 	// check msg has no route condition
 	{
 		err := target.SubmitCall(ctx, NewTestMsg("", ""), "", sdk.AccAddress([]byte("addr1")))
-		tests.CheckExpectedErr(t, mstypes.ErrRouteDoesntExist, err)
+		utils.CheckExpectedErr(t, mstypes.ErrRouteDoesntExist, err)
 	}
 	// check msg has no type
 	{
 		err := target.SubmitCall(ctx, NewTestMsg(msgRouteNoop, ""), "", sdk.AccAddress([]byte("addr1")))
-		tests.CheckExpectedErr(t, mstypes.ErrEmptyType, err)
+		utils.CheckExpectedErr(t, mstypes.ErrEmptyType, err)
 	}
 }
 
@@ -200,7 +200,7 @@ func TestKeeper_SubmitCallUniqueness(t *testing.T) {
 	// confirm non-existing calId
 	{
 		err := target.Confirm(ctx, 1, addr)
-		tests.CheckExpectedErr(t, mstypes.ErrWrongCallId, err)
+		utils.CheckExpectedErr(t, mstypes.ErrWrongCallId, err)
 	}
 	// get existing unique call
 	{
@@ -211,13 +211,13 @@ func TestKeeper_SubmitCallUniqueness(t *testing.T) {
 	// get non-existing unique call
 	{
 		id, err := target.GetCallIDByUnique(ctx, "2")
-		tests.CheckExpectedErr(t, mstypes.ErrNotFoundUniqueID, err)
+		utils.CheckExpectedErr(t, mstypes.ErrNotFoundUniqueID, err)
 		require.Equal(t, uint64(0), id)
 	}
 	// check call with uniqueID already exists
 	{
 		err := target.SubmitCall(ctx, testMsg, uniqueCallId, addr)
-		tests.CheckExpectedErr(t, mstypes.ErrNotUniqueID, err)
+		utils.CheckExpectedErr(t, mstypes.ErrNotUniqueID, err)
 	}
 }
 

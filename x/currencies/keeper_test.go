@@ -19,7 +19,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/helpers/tests/utils"
 	"github.com/dfinance/dnode/x/currencies/msgs"
 	"github.com/dfinance/dnode/x/currencies/types"
 	"github.com/dfinance/dnode/x/multisig"
@@ -269,7 +269,7 @@ func TestKeeper(t *testing.T) {
 		Recipient: addr,
 	}
 	require.Nil(t, target.IssueCurrency(ctx, issueMsg.Symbol, issueMsg.Amount, issueMsg.Decimals, issueMsg.Recipient, "issue1"))
-	tests.CheckExpectedErr(t, types.ErrExistsIssue, target.IssueCurrency(ctx, issueMsg.Symbol, issueMsg.Amount, issueMsg.Decimals, issueMsg.Recipient, "issue1"))
+	utils.CheckExpectedErr(t, types.ErrExistsIssue, target.IssueCurrency(ctx, issueMsg.Symbol, issueMsg.Amount, issueMsg.Decimals, issueMsg.Recipient, "issue1"))
 	require.Nil(t, target.IssueCurrency(ctx, issueMsg.Symbol, issueMsg.Amount, issueMsg.Decimals, issueMsg.Recipient, "issue2"))
 }
 
@@ -299,7 +299,7 @@ func Test_IssueHugeAmount(t *testing.T) {
 	require.Nil(t, target.IssueCurrency(ctx, issueMsg.Symbol, issueMsg.Amount, issueMsg.Decimals, issueMsg.Recipient, "issue1"))
 	require.Equal(t, bigInt.String(), target.coinKeeper.GetCoins(ctx, addr).AmountOf(symbol).BigInt().String())
 
-	tests.CheckExpectedErr(t, types.ErrExistsIssue, target.IssueCurrency(ctx, issueMsg.Symbol, issueMsg.Amount, issueMsg.Decimals, issueMsg.Recipient, "issue1"))
+	utils.CheckExpectedErr(t, types.ErrExistsIssue, target.IssueCurrency(ctx, issueMsg.Symbol, issueMsg.Amount, issueMsg.Decimals, issueMsg.Recipient, "issue1"))
 	require.Nil(t, target.IssueCurrency(ctx, issueMsg.Symbol, issueMsg.Amount, issueMsg.Decimals, issueMsg.Recipient, "issue2"))
 	require.Equal(t, big.NewInt(0).Add(bigInt, bigInt).String(), target.coinKeeper.GetCoins(ctx, addr).AmountOf(symbol).BigInt().String())
 }

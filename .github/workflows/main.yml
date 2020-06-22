@@ -67,26 +67,27 @@ jobs:
     - name: Run INTEG tests
       run: |
         # Build DVM Docker tag used for integ tests
-        export TAG=${DEFAULT_TAG}
+        export DN_DVM_INTEG_TESTS_DOCKER_TAG=${DN_DVM_INTEG_TESTS_DOCKER_TAG_DEFAULT}
 
         export REPO_TAG="${GITHUB_REF##*/}"
         echo "REPO_TAG: ${REPO_TAG}"
         if [[ "${REPO_TAG}" =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]]; then
-            export TAG="release-${REPO_TAG%.*}"
+            export DN_DVM_INTEG_TESTS_DOCKER_TAG="release-${REPO_TAG%.*}"
         elif [[ "${REPO_TAG}" =~ ^release-v[0-9]+.[0-9]+$ ]]; then
-            export TAG="${REPO_TAG}"
+            export DN_DVM_INTEG_TESTS_DOCKER_TAG="${REPO_TAG}"
         fi
-        echo "TAG: ${TAG}"
+        echo "DN_DVM_INTEG_TESTS_DOCKER_TAG: ${DN_DVM_INTEG_TESTS_DOCKER_TAG}"
         #
 
-        docker login -u ${OWN_REGISTRY_USR} --password-stdin ${REGISTRY} <<< ${OWN_REGISTRY_PWD}
-        docker image pull ${REGISTRY}/dfinance/dvm:${TAG}
+        docker login -u ${OWN_REGISTRY_USR} --password-stdin ${DN_DVM_INTEG_TESTS_DOCKER_REGISTRY} <<< ${OWN_REGISTRY_PWD}
+        docker image pull ${DN_DVM_INTEG_TESTS_DOCKER_REGISTRY}/dfinance/dvm:${DN_DVM_INTEG_TESTS_DOCKER_TAG}
         cd go/src/github.com/${{ github.repository }}
         go test -v ./... --tags=integ
         docker logout
       env:
-        DEFAULT_TAG: master
-        REGISTRY: ${{ secrets.OWN_REGISTRY }}
+        DN_DVM_INTEG_TESTS_USE: docker
+        DN_DVM_INTEG_TESTS_DOCKER_REGISTRY: ${{ secrets.OWN_REGISTRY }}
+        DN_DVM_INTEG_TESTS_DOCKER_TAG_DEFAULT: master
         OWN_REGISTRY_USR: ${{ secrets.OWN_REGISTRY_USR }}
         OWN_REGISTRY_PWD: ${{ secrets.OWN_REGISTRY_PWD }}
 
@@ -109,7 +110,7 @@ jobs:
       with:
         draft: true
         files: |
-          builds/dncli-*
+          go/src/github.com/${{ github.repository }}/builds/dncli-*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

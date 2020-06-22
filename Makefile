@@ -15,7 +15,6 @@ dnode = ./cmd/dnode
 dncli =./cmd/dncli
 
 cosmos_version=v0.38.4
-dvm_version=master
 
 all: install
 install: go.sum install-dnode install-dncli
@@ -41,8 +40,8 @@ test-rest: install
 	@echo "--> Testing: dncli REST endpoints tests"
 	go test ./... -tags=rest -count=1
 test-integ: install
-	@echo "--> Testing: dnode <-> dvm integration tests (using Docker runtime)"
-	REGISTRY=registry.wings.toys TAG=$(dvm_version) go test ./... -v -tags=integ -count=1
+	@echo "--> Testing: dnode <-> dvm integration tests (using Binary)"
+	DN_DVM_INTEG_TESTS_BINARY_USE=true go test ./... -v -tags=integ -count=1
 
 go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"

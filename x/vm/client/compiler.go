@@ -8,14 +8,14 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"google.golang.org/grpc"
 
+	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
 )
 
 const (
-	FlagCompilerAddr    = "compiler"
-	DefaultCompilerAddr = "127.0.0.1:50053"
-	FlagOutput          = "to-file"
-	FlagCompilerUsage   = "--compiler " + DefaultCompilerAddr
+	FlagCompilerAddr  = "compiler"
+	FlagOutput        = "to-file"
+	FlagCompilerUsage = "--compiler " + config.DefaultCompilerAddr
 )
 
 // MVFile struct contains code from file in hex.
