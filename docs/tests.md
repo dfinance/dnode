@@ -11,14 +11,10 @@ and with unit tests (using Mock servers), standard configuration looks so:
 // Mocks
 DefaultMockVMAddress        = "127.0.0.1:60051" // Default virtual machine address to connect from Cosmos SDK.
 DefaultMockDataListen       = "127.0.0.1:60052" // Default data server address to listen for connections from VM.
-DefaultMockVMTimeoutDeploy  = 100               // Default timeout for deploy module request.
-DefaultMockVMTimeoutExecute = 100               // Default timeout for execute request.
 
 // Integrations
-DefaultVMAddress        = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
-DefaultDataListen       = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
-DefaultVMTimeoutDeploy  = 100               // Default timeout for deploy module request.
-DefaultVMTimeoutExecute = 100               // Default timeout for execute request.
+DefaultVMAddress  = "127.0.0.1:50051" // Default virtual machine address to connect from Cosmos SDK.
+DefaultDataListen = "127.0.0.1:50052" // Default data server address to listen for connections from VM.
 ```
 
 To change these parameters during test launch, use next flags after test command:
