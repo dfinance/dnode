@@ -82,9 +82,9 @@ func GetMVFromFile(filePath string) (vmClient.MoveFile, error) {
 // Execute script contract.
 func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "execute-script [compiledMoveFile] [arg1,arg2,arg3,...] --from [account] --fees [dfiFee] --gas [gas]",
+		Use:     "execute [compiledMoveFile] [arg1,arg2,arg3,...] --from [account] --fees [dfiFee] --gas [gas]",
 		Short:   "execute Move script",
-		Example: "execute-script ./script.move.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\" --from my_account --fees 1dfi --gas 500000",
+		Example: "execute ./script.move.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\" --from my_account --fees 1dfi --gas 500000",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
@@ -216,9 +216,9 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 // Deploy contract cli TX command.
 func DeployContract(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "deploy-module [compiledMoveFile] --from [account] --fees [dfiFee] --gas [gas]",
-		Short:   "deploy Move module",
-		Example: "deploy-module ./my_module.move.json --from my_account --fees 1dfi --gas 500000",
+		Use:     "publish [compiledMoveFile] --from [account] --fees [dfiFee] --gas [gas]",
+		Short:   "publish Move module",
+		Example: "publish ./my_module.move.json --from my_account --fees 1dfi --gas 500000",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
@@ -255,9 +255,9 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 // Send governance update stdlib VM module proposal.
 func UpdateStdlibProposal(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "update-stdlib-proposal [mvFile] [plannedBlockHeight] [sourceUrl] [updateDescription] [flags]",
-		Args:  cobra.ExactArgs(4),
-		Short: "Submit a DVM stdlib update proposal",
+		Use:     "update-stdlib-proposal [mvFile] [plannedBlockHeight] [sourceUrl] [updateDescription] [flags]",
+		Args:    cobra.ExactArgs(4),
+		Short:   "Submit a DVM stdlib update proposal",
 		Example: "update-stdlib-proposal ./update.move.json 1000 http://github.com/repo 'fix for Foo module' --deposit 100dfi --from my_account --fees 1dfi",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
