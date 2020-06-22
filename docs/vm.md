@@ -4,9 +4,9 @@ DN blockchain currently supports smart-contracts via Move VM.
 
 Two types of Move transaction are supported: publish module / execute script.
 
-To deploy a module:
+To publish a module:
 
-    dncli tx vm deploy [fileMV] --from <from> --fees <fees>
+    dncli tx vm publish [fileMV] --from <from> --fees <fees>
     
 To execute a script:
 
