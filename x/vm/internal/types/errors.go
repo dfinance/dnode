@@ -26,4 +26,7 @@ var (
 
 	// Data source: value missed in Data Source server.
 	ErrDSMissedValue = sdkErrors.Register(ModuleName, 401, "value is missed in storage")
+
+	// Gov: invalid proposal
+	ErrGovInvalidProposal = sdkErrors.Register(ModuleName, 500, "invalid proposal")
 )

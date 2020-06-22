@@ -16,6 +16,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authExported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
@@ -38,6 +39,10 @@ import (
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
+)
+
+const (
+	defGasAmount = 500000
 )
 
 var (
@@ -228,7 +233,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	moduleAccs := make([]*supply.ModuleAccount, 0)
 	// generate module acconts
 	{
-		// orders module
+		// gov module
 		{
 			privKey := secp256k1.GenPrivKey()
 			pubKey := privKey.PubKey()
@@ -236,6 +241,21 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 
 			acc := &auth.BaseAccount{
 				AccountNumber: nodeAcc.AccountNumber + 1,
+				Address:       addr,
+				Coins:         GenDefCoins(nil),
+				PubKey:        pubKey,
+			}
+			moduleAccs = append(moduleAccs, supply.NewModuleAccount(acc, gov.ModuleName, supply.Burner))
+		}
+
+		// orders module
+		{
+			privKey := secp256k1.GenPrivKey()
+			pubKey := privKey.PubKey()
+			addr := sdk.AccAddress(pubKey.Address())
+
+			acc := &auth.BaseAccount{
+				AccountNumber: nodeAcc.AccountNumber + 2,
 				Address:       addr,
 				Coins:         GenDefCoins(nil),
 				PubKey:        pubKey,
@@ -330,7 +350,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 
 		txFee := auth.StdFee{
 			Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
-			Gas:    300000,
+			Gas:    defGasAmount,
 		}
 		txMemo := "testmemo"
 
@@ -387,7 +407,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 
 	fee := auth.StdFee{
 		Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
-		Gas:    500000,
+		Gas:    defGasAmount,
 	}
 
 	for i, p := range priv {

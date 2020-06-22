@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -17,7 +18,6 @@ import (
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/client/cli"
 	"github.com/dfinance/dnode/x/vm/client/rest"
-	types "github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 var (
@@ -28,19 +28,19 @@ var (
 type AppModuleBasic struct{}
 
 // Module name.
-func (AppModuleBasic) Name() string {
-	return types.ModuleName
+func (module AppModuleBasic) Name() string {
+	return ModuleName
 }
 
 // Registering codecs.
 func (module AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
+	RegisterCodec(cdc)
 }
 
 // Validate exists genesis.
-func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
-	var state types.GenesisState
-	types.ModuleCdc.MustUnmarshalJSON(data, &state)
+func (module AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
+	var state GenesisState
+	ModuleCdc.MustUnmarshalJSON(data, &state)
 
 	for _, genWriteOp := range state.WriteSet {
 		bzAddr, err := hex.DecodeString(genWriteOp.Address)
@@ -67,21 +67,21 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 
 // Generate default genesis.
 func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return types.ModuleCdc.MustMarshalJSON(&types.GenesisState{})
+	return ModuleCdc.MustMarshalJSON(&GenesisState{})
 }
 
 // Register REST routes.
-func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
+func (module AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
 	rest.RegisterRoutes(ctx, r)
 }
 
 // Get transaction commands for CLI.
-func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
+func (module AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return cli.GetTxCmd(cdc)
 }
 
 // Get query commands for CLI.
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+func (module AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 	return cli.GetQueryCmd(cdc)
 }
 
@@ -100,21 +100,24 @@ func NewAppModule(vmKeeper Keeper) AppModule {
 }
 
 // Get name of module.
-func (AppModule) Name() string {
-	return types.ModuleName
+func (app AppModule) Name() string {
+	return ModuleName
 }
 
 // Register module invariants.
-func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Base route of module (for handler).
-func (AppModule) Route() string { return types.RouterKey }
+func (app AppModule) Route() string { return RouterKey }
 
 // Create new handler.
 func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.vmKeeper) }
 
+// Create governance handler.
+func (app AppModule) NewGovHandler() gov.Handler { return NewGovHandler(app.vmKeeper) }
+
 // Get route for querier.
-func (AppModule) QuerierRoute() string { return types.RouterKey }
+func (app AppModule) QuerierRoute() string { return RouterKey }
 
 // Get new querier for VM module.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
@@ -122,10 +125,12 @@ func (app AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 // Process begin block (abci).
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (app AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	BeginBlocker(ctx, app.vmKeeper, req)
+}
 
 // Process end block (abci).
-func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }
 
@@ -138,5 +143,5 @@ func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.V
 // Export genesis.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	genesisState := app.vmKeeper.ExportGenesis(ctx)
-	return types.ModuleCdc.MustMarshalJSON(genesisState)
+	return ModuleCdc.MustMarshalJSON(genesisState)
 }

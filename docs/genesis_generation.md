@@ -28,6 +28,7 @@ Then let's create accounts:
     dncli keys add validator2
     dncli keys add validator3
     dncli keys add orders
+    dncli keys add gov
 
 Copy addresses and private keys from output, we will need them in the future.
 
@@ -38,7 +39,9 @@ and then 3 accounts to make them PoA validators, we need at least 3 validators b
 
 `nominee` is account administrator of oracles system.
 
-`orders` is module account used for DEX system to lock coins on order posting.
+`orders` is a module account used for DEX system to lock coins on order posting.
+
+`gov` is a module account used by Governance module to lock / refund deposits.
 
 Now let's add genesis account and initiate genesis PoA validators and PoS account.
 
@@ -53,6 +56,7 @@ It should be done before next commands, so see tutorial **[how to initialize gen
     dnode add-genesis-account [validator-2-address] 1000000000000000000000000dfi
     dnode add-genesis-account [validator-3-address] 1000000000000000000000000dfi
     dnode add-genesis-account [orders-address] 1000000000000000000000000dfi --module-name orders
+    dnode add-genesis-account [gov-address] 1000000000000000000000000dfi --module-name gov
 
     dnode add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
     dnode add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]

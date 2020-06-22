@@ -1,11 +1,13 @@
 package clitester
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	orderTypes "github.com/dfinance/dnode/x/orders"
@@ -242,6 +244,57 @@ func (ct *CLITester) TxVmDeployModule(fromAddress, filePath string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"vm",
+		fromAddress,
+		cmdArgs...)
+
+	return r
+}
+
+func (ct *CLITester) TxVmStdlibUpdateProposal(fromAddress, filePath, sourceUrl, updateDesc string, plannedBlockHeight int64, deposit sdk.Coin) *TxRequest {
+	cmdArgs := []string{
+		"update-stdlib-proposal",
+		filePath,
+		strconv.FormatInt(plannedBlockHeight, 10),
+		sourceUrl,
+		strconv.Quote(updateDesc),
+		fmt.Sprintf("--deposit=%s", deposit.String()),
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"vm",
+		fromAddress,
+		cmdArgs...)
+
+	return r
+}
+
+func (ct *CLITester) TxGovDeposit(fromAddress string, id uint64, deposit sdk.Coin) *TxRequest {
+	cmdArgs := []string{
+		"deposit",
+		strconv.FormatUint(id, 10),
+		deposit.String(),
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"gov",
+		fromAddress,
+		cmdArgs...)
+
+	return r
+}
+
+func (ct *CLITester) TxGovVote(fromAddress string, id uint64, option gov.VoteOption) *TxRequest {
+	cmdArgs := []string{
+		"vote",
+		strconv.FormatUint(id, 10),
+		strings.ToLower(option.String()),
+	}
+
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"gov",
 		fromAddress,
 		cmdArgs...)
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	sdkKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
@@ -87,6 +88,9 @@ func (ct *CLITester) initChain() {
 				cmd := ct.newWbdCmd().
 					AddArg("", "add-genesis-account").
 					AddArg("", accValue.Address)
+				if accValue.IsModuleAcc {
+					cmd.AddArg("module-name", accName)
+				}
 
 				require.NotEmpty(ct.t, accValue.Coins, "account %q: no coins", accName)
 				var coinsArg []string
@@ -125,11 +129,14 @@ func (ct *CLITester) initChain() {
 
 	// validator genTX
 	{
+		stakingCoin := ct.Accounts["pos"].Coins[config.MainDenom]
+		stakingCoin.Amount = stakingCoin.Amount.QuoRaw(4)
+
 		cmd := ct.newWbdCmd().
 			AddArg("", "gentx").
 			AddArg("home-client", ct.Dirs.DncliDir).
 			AddArg("name", "pos").
-			AddArg("amount", ct.Accounts["pos"].Coins[config.MainDenom].String()).
+			AddArg("amount", stakingCoin.String()).
 			AddArg("keyring-backend", string(ct.keyringBackend))
 
 		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase)
@@ -173,6 +180,21 @@ func (ct *CLITester) initChain() {
 
 			cmd.CheckSuccessfulExecute(nil)
 		}
+	}
+
+	// adjust governance genesis
+	{
+		appState := ct.GenesisState()
+
+		govGenesis := gov.GenesisState{}
+		require.NoError(ct.t, ct.Cdc.UnmarshalJSON(appState[gov.ModuleName], &govGenesis), "unmarshal gov genesisState")
+
+		govGenesis.VotingParams.VotingPeriod = ct.GovernanceConfig.MinVotingDur
+		govGenesisRaw, err := ct.Cdc.MarshalJSON(govGenesis)
+		require.NoError(ct.t, err, "marshal gov genesisState")
+		appState[gov.ModuleName] = govGenesisRaw
+
+		ct.updateGenesisState(appState)
 	}
 
 	// collect genTXs

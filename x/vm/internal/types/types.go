@@ -15,8 +15,9 @@ import (
 const (
 	ModuleName = "vm"
 
-	StoreKey  = ModuleName
-	RouterKey = ModuleName
+	StoreKey     = ModuleName
+	RouterKey    = ModuleName
+	GovRouterKey = ModuleName
 
 	VmGasPrice      = 1
 	VmUnknowTagType = -1
@@ -24,7 +25,8 @@ const (
 
 // VM related variables.
 var (
-	KeyGenesis = []byte("gen") // used to save genesis
+	KeyGenesis   = []byte("gen") // used to save genesis
+	KeyDelimiter = []byte(":")
 )
 
 // Type of Move contract (bytes).

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -15,6 +17,8 @@ import (
 	sdkKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/gov"
+	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 	tmCTypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmRPCTypes "github.com/tendermint/tendermint/rpc/lib/types"
@@ -41,6 +45,7 @@ type CLITester struct {
 	VMConnection      VMConnectionConfig
 	VMCommunication   VMCommunicationConfig
 	ConsensusTimings  ConsensusTimingConfig
+	GovernanceConfig  GovernanceConfig
 	//
 	t *testing.T
 	//
@@ -64,6 +69,7 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 		Currencies:        NewCurrencyMap(),
 		VMCommunication:   NewTestVMCommunicationConfig(),
 		ConsensusTimings:  NewTestConsensusTimingConfig(),
+		GovernanceConfig:  NewGovernanceConfig(),
 		AccountPassphrase: "passphrase",
 		DefAssetCode:      "tst_tst",
 		//
@@ -201,6 +207,7 @@ func (ct *CLITester) updateGenesisState(appState GenesisState) {
 	require.NoError(ct.t, genDoc.SaveAs(genesisPath), "saving updated genesis file %q", genesisPath)
 }
 
+// GenesisState reads genesisState file and returns unmarshalled result.
 func (ct *CLITester) GenesisState() GenesisState {
 	genesisFile := server.NewDefaultContext().Config.Genesis
 	genesisPath := path.Join(ct.Dirs.RootDir, genesisFile)
@@ -215,6 +222,7 @@ func (ct *CLITester) GenesisState() GenesisState {
 	return appState
 }
 
+// RestartDaemon restarts dnode daemon process.
 func (ct *CLITester) RestartDaemon(waitForStart, printLogs bool) {
 	require.NotNil(ct.t, ct.daemon, "daemon is not running")
 
@@ -224,6 +232,7 @@ func (ct *CLITester) RestartDaemon(waitForStart, printLogs bool) {
 	ct.startDemon(waitForStart, printLogs)
 }
 
+// CheckDaemonStopped waits for dnode daemon to stop.
 func (ct *CLITester) CheckDaemonStopped(timeout time.Duration) (exitCode int, daemonLogs []string) {
 	require.NotNil(ct.t, ct.daemon, "daemon wasn't started")
 
@@ -239,12 +248,14 @@ func (ct *CLITester) CheckDaemonStopped(timeout time.Duration) (exitCode int, da
 	return
 }
 
+// DaemonLogsContain checks dnode daemon logs contains some strings.
 func (ct *CLITester) DaemonLogsContain(subStr string) bool {
 	require.NotNil(ct.t, ct.daemon, "daemon wasn't started")
 
 	return ct.daemon.LogsContain(subStr)
 }
 
+// StartRestServer start REST server via dncli cmd.
 func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	const startTimeout = 30 * time.Second
 
@@ -288,6 +299,8 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	return
 }
 
+// SetVMCompilerAddressNet sets DVM address using TCP connection.
+//   <skipTcpTest> flag omits TCP port ping tests.
 func (ct *CLITester) SetVMCompilerAddressNet(address string, skipTcpTest bool) {
 	ct.VMConnection.CompilerAddress = address
 	if !skipTcpTest {
@@ -295,12 +308,15 @@ func (ct *CLITester) SetVMCompilerAddressNet(address string, skipTcpTest bool) {
 	}
 }
 
+// SetVMCompilerAddressUDS sets DVM address using UDS connection.
 func (ct *CLITester) SetVMCompilerAddressUDS(path string) {
 	_, err := os.Stat(path)
 	require.NoError(ct.t, err, "VM compiler address (UDS)")
 	ct.VMConnection.CompilerAddress = "unix://" + path
 }
 
+// UpdateAccountBalance updates ct.Accounts balance for specified name.
+// Contract: works only for non-module accounts.
 func (ct *CLITester) UpdateAccountBalance(name string) {
 	account, ok := ct.Accounts[name]
 	require.True(ct.t, ok, "account %q: not found", name)
@@ -314,13 +330,26 @@ func (ct *CLITester) UpdateAccountBalance(name string) {
 	}
 }
 
+// UpdateAccountsBalance updates all ct.Accounts balances.
 func (ct *CLITester) UpdateAccountsBalance() {
 	for accName, prevAcc := range ct.Accounts {
-		q, curAcc := ct.QueryAccount(prevAcc.Address)
-		q.CheckSucceeded()
+		var curCoins sdk.Coins
+		var accNumber uint64
 
-		prevAcc.Number = curAcc.AccountNumber
-		for _, curCoin := range curAcc.Coins {
+		if prevAcc.IsModuleAcc {
+			q, modAcc := ct.QueryModuleAccount(prevAcc.Address)
+			q.CheckSucceeded()
+
+			curCoins, accNumber = modAcc.Coins, modAcc.AccountNumber
+		} else {
+			q, baseAcc := ct.QueryAccount(prevAcc.Address)
+			q.CheckSucceeded()
+
+			curCoins, accNumber = baseAcc.Coins, baseAcc.AccountNumber
+		}
+
+		prevAcc.Number = accNumber
+		for _, curCoin := range curCoins {
 			doUpdate := false
 			prevCoin, ok := prevAcc.Coins[curCoin.Denom]
 			if !ok {
@@ -338,6 +367,7 @@ func (ct *CLITester) UpdateAccountsBalance() {
 	}
 }
 
+// UpdateAccountsBalance returns current blockHeight using RPC methods.
 func (ct *CLITester) GetCurrentBlockHeight() (int64, error) {
 	url := fmt.Sprintf("http://localhost:%s/block", ct.NodePorts.RPCPort)
 
@@ -372,6 +402,7 @@ func (ct *CLITester) GetCurrentBlockHeight() (int64, error) {
 	return resultBlock.Block.Height, nil
 }
 
+// WaitForNextBlocks waits for next <n> blocks and return current blockHeight.
 func (ct *CLITester) WaitForNextBlocks(n int64) int64 {
 	prevHeight, err := ct.GetCurrentBlockHeight()
 	require.NoError(ct.t, err, "prevBlockHeight")
@@ -387,6 +418,7 @@ func (ct *CLITester) WaitForNextBlocks(n int64) int64 {
 	}
 }
 
+// ConfirmCall confirms multisig call with validator accounts.
 func (ct *CLITester) ConfirmCall(uniqueID string) {
 	// get validators list
 	validatorAddrs := make([]string, 0)
@@ -432,6 +464,80 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 	}
 }
 
+// SubmitAndConfirmProposal submits proposal, votes for it and waits until Passed / Rejected.
+// Contract 1: plannedBlockHeight must be -1 on txRequest creation.
+// Contract 2: proposalTx must cover proposal minDeposit.
+// Contract 3: not concurrent safe.
+func (ct *CLITester) SubmitAndConfirmProposal(proposalTx *TxRequest) {
+	// get current proposals count
+	prevProposalsCount := 0
+	{
+		q, proposals := ct.QueryGovProposals(-1, -1, nil, nil, nil)
+		out, err := q.Execute()
+		if err == nil {
+			prevProposalsCount = len(*proposals)
+		} else {
+			if !strings.Contains(out, "no matching proposals found") {
+				require.NoError(ct.t, err, "initial proposal query failed")
+			}
+		}
+	}
+
+	// calculate the planned height
+	plannedHeight := int64(0)
+	{
+		curHeight, err := ct.GetCurrentBlockHeight()
+		require.NoError(ct.t, err, "GetCurrentBlockHeight failed")
+
+		plannedHeight = curHeight + 20
+	}
+
+	// modify the plannedBlockHeight argument and emit the Tx
+	{
+		proposalTx.ChangeCmdArg("-1", strconv.FormatInt(plannedHeight, 10))
+		proposalTx.CheckSucceeded()
+	}
+
+	// check proposal added
+	proposalID := uint64(0)
+	{
+		q, proposals := ct.QueryGovProposals(-1, -1, nil, nil, nil)
+		q.CheckSucceeded()
+
+		curProposalsCount := len(*proposals)
+		require.Equal(ct.t, curProposalsCount-1, prevProposalsCount, "proposal not added")
+
+		proposal := (*proposals)[curProposalsCount-1]
+		require.Equal(ct.t, proposal.Status, govTypes.StatusVotingPeriod, "invalid proposal initial state")
+		proposalID = proposal.ProposalID
+	}
+
+	// vote (CLITester starts one node, so we need to add only one vote)
+	ct.TxGovVote(ct.Accounts["pos"].Address, proposalID, govTypes.OptionYes).CheckSucceeded()
+
+	// wait for voting period
+	time.Sleep(ct.GovernanceConfig.MinVotingDur)
+
+	// check proposal passed
+	{
+		q, proposal := ct.QueryGovProposal(proposalID)
+		q.CheckSucceeded()
+
+		require.Equal(ct.t, proposal.Status, gov.StatusPassed, "proposal didn't pass")
+	}
+
+	// wait for scheduler
+	{
+		curHeight, err := ct.GetCurrentBlockHeight()
+		require.NoError(ct.t, err, "GetCurrentBlockHeight failed")
+
+		if curHeight < plannedHeight {
+			ct.WaitForNextBlocks(plannedHeight - curHeight)
+		}
+	}
+}
+
+// CreateAccount creates a new account with specified balances.
 func (ct *CLITester) CreateAccount(name string, balances ...StringPair) {
 	account := &CLIAccount{Coins: make(map[string]sdk.Coin)}
 
@@ -483,6 +589,7 @@ func (ct *CLITester) CreateAccount(name string, balances ...StringPair) {
 	ct.UpdateAccountBalance(name)
 }
 
+// Close stop dnode tester.
 func (ct *CLITester) Close() {
 	if ct.restServer != nil {
 		ct.restServer.Stop()

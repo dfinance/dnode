@@ -9,8 +9,10 @@ import (
 )
 
 const (
-	ModuleName = types.ModuleName
-	StoreKey   = types.StoreKey
+	ModuleName   = types.ModuleName
+	StoreKey     = types.StoreKey
+	RouterKey    = types.RouterKey
+	GovRouterKey = types.GovRouterKey
 )
 
 type (
@@ -27,11 +29,22 @@ type (
 
 	CurrentTimestamp = middlewares.CurrentTimestamp
 	BlockHeader      = middlewares.BlockHeader
+
+	PlannedProposal      = types.PlannedProposal
+	TestProposal         = types.TestProposal
+	StdlibUpdateProposal = types.StdlibUpdateProposal
 )
 
 var (
+	// variable aliases
+	ModuleCdc = types.ModuleCdc
+	// function aliases
+	RegisterCodec           = types.RegisterCodec
 	NewKeeper               = keeper.NewKeeper
 	RegisterVMServiceServer = vm_grpc.RegisterVMServiceServer
-
-	ErrVMCrashed = types.ErrVMCrashed
+	NewMsgDeployModule      = types.NewMsgDeployModule
+	// error aliases
+	ErrInternal           = types.ErrInternal
+	ErrVMCrashed          = types.ErrVMCrashed
+	ErrGovInvalidProposal = types.ErrGovInvalidProposal
 )

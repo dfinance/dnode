@@ -12,10 +12,14 @@ import (
 
 	"github.com/OneOfOne/xxhash"
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/gov"
+	govCli "github.com/cosmos/cosmos-sdk/x/gov/client/cli"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -41,7 +45,11 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		txCmd.AddCommand(cmd)
 	}
 
-	commands := sdkClient.PostCommands(DeployContract(cdc))
+	commands := sdkClient.PostCommands(
+		DeployContract(cdc),
+		flags.LineBreak,
+		UpdateStdlibProposal(cdc),
+	)
 	commands = append(commands, compileCommands...)
 
 	txCmd.AddCommand(commands...)
@@ -246,4 +254,70 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+}
+
+// Send governance update stdlib VM module proposal.
+func UpdateStdlibProposal(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "update-stdlib-proposal [mvFile] [plannedBlockHeight] [sourceUrl] [updateDescription] [flags]",
+		Args:  cobra.ExactArgs(4),
+		Short: "Submit a DVM stdlib update proposal",
+		Example: "update-stdlib-proposal ./update.move.json 1000 http://github.com/repo 'fix for Foo module' --deposit 100dfi --from my_account --fees 1dfi",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			inBuf := bufio.NewReader(cmd.InOrStdin())
+			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
+
+			// parse inputs
+			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
+			fromAddress := cliCtx.FromAddress
+			if err := accGetter.EnsureExists(fromAddress); err != nil {
+				return fmt.Errorf("%s flag: %v", flags.FlagFrom, err)
+			}
+
+			depositStr, err := cmd.Flags().GetString(govCli.FlagDeposit)
+			if err != nil {
+				return fmt.Errorf("%s flag: %w", govCli.FlagDeposit, err)
+			}
+			deposit, err := sdk.ParseCoins(depositStr)
+			if err != nil {
+				return fmt.Errorf("%s flag %q: parsing: %w", govCli.FlagDeposit, depositStr, err)
+			}
+
+			mvFilePath := args[0]
+			mvFile, err := GetMVFromFile(mvFilePath)
+			if err != nil {
+				return fmt.Errorf("%s argument %q: %w", "mvFile", mvFilePath, err)
+			}
+			code, err := hex.DecodeString(mvFile.Code)
+			if err != nil {
+				return fmt.Errorf("%s argument %q: decoding: %w", "mvFile", mvFilePath, err)
+			}
+
+			plannedBlockHeightStr := args[1]
+			plannedBlockHeight, err := strconv.ParseInt(plannedBlockHeightStr, 10, 64)
+			if err != nil {
+				return fmt.Errorf("%s argument %q: decoding: %w", "plannedBlockHeight", plannedBlockHeightStr, err)
+			}
+
+			sourceUrl, updateDesc := args[2], args[3]
+
+			// prepare and send message
+			content := types.NewStdlibUpdateProposal(types.NewPlan(plannedBlockHeight), sourceUrl, updateDesc, code)
+			if err := content.ValidateBasic(); err != nil {
+				return err
+			}
+
+			msg := gov.NewMsgSubmitProposal(content, deposit, fromAddress)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+
+	cmd.Flags().String(govCli.FlagDeposit, "", "deposit of proposal")
+
+	return cmd
 }

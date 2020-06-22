@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -91,13 +92,21 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 
 			appGenState := mbm.DefaultGenesis()
 
-			// Change default denom.
+			// Change default staking denom.
 			stakingDataBz := appGenState[staking.ModuleName]
 			var stakingGenState staking.GenesisState
 
 			cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
 			stakingGenState.Params.BondDenom = MainDenom
 			appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
+
+			// Change default minimal governance deposit coin.
+			govDataBz := appGenState[gov.ModuleName]
+			var govGenState gov.GenesisState
+
+			cdc.MustUnmarshalJSON(govDataBz, &govGenState)
+			govGenState.DepositParams.MinDeposit = sdk.NewCoins(GovMinDeposit)
+			appGenState[gov.ModuleName] = cdc.MustMarshalJSON(govGenState)
 
 			appState, err := codec.MarshalJSONIndent(cdc, appGenState)
 			if err != nil {
