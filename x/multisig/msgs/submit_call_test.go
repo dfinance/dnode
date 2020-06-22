@@ -10,7 +10,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/helpers/tests/utils"
 )
 
 type InvalidMsg struct{}
@@ -31,7 +31,7 @@ func Test_SubmitCallValidator(t *testing.T) {
 	// correct
 	require.Nil(t, NewMsgSubmitCall(okMsg, "", sdkAddress).ValidateBasic())
 	// empty sender sdkAddress
-	tests.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgSubmitCall(okMsg, "", []byte{}).ValidateBasic())
+	utils.CheckExpectedErr(t, sdkErrors.ErrInvalidAddress, NewMsgSubmitCall(okMsg, "", []byte{}).ValidateBasic())
 	// invalid msg
 	require.NotNil(t, NewMsgSubmitCall(invalidMsg, "", []byte{}).ValidateBasic())
 }

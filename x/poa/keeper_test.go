@@ -18,7 +18,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/helpers/tests/utils"
 	poatypes "github.com/dfinance/dnode/x/poa/types"
 )
 
@@ -314,7 +314,7 @@ func TestModule_ValidateGenesis(t *testing.T) {
 	// check minValidators error
 	if genesis.Parameters.MinValidators > 1 {
 		err := app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis))
-		tests.CheckExpectedErr(t, poatypes.ErrNotEnoungValidators, err)
+		utils.CheckExpectedErr(t, poatypes.ErrNotEnoungValidators, err)
 	}
 
 	// check OK
@@ -335,7 +335,7 @@ func TestModule_ValidateGenesis(t *testing.T) {
 			EthAddress: ethAddress1,
 		})
 		err := app.ValidateGenesis(input.cdc.MustMarshalJSON(genesis))
-		tests.CheckExpectedErr(t, poatypes.ErrMaxValidatorsReached, err)
+		utils.CheckExpectedErr(t, poatypes.ErrMaxValidatorsReached, err)
 	}
 
 	// check params validation

@@ -49,9 +49,7 @@ func (sgcd SigGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			// account's pubkey is nil, both signature verification and gasKVStore.Set()
 			// shall consume the largest amount, i.e. it takes more gas to verify
 			// secp256k1 keys than ed25519 ones.
-			if pubKey == nil {
-				pubKey = simSecp256k1Pubkey
-			}
+			pubKey = simSecp256k1Pubkey
 		}
 		err = sgcd.sigGasConsumer(ctx.GasMeter(), sig, pubKey, params)
 		if err != nil {

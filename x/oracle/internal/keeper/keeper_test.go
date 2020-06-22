@@ -11,7 +11,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
-	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/helpers/tests/utils"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
@@ -237,7 +237,7 @@ func TestKeeper_checkPriceReceivedAtTimestamp(t *testing.T) {
 	// check timestamps outside of +-range
 	{
 		dur := receivedAtDiffDur + 1*time.Second
-		tests.CheckExpectedErr(t, types.ErrInvalidReceivedAt, helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(dur)))
-		tests.CheckExpectedErr(t, types.ErrInvalidReceivedAt, helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(-dur)))
+		utils.CheckExpectedErr(t, types.ErrInvalidReceivedAt, helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(dur)))
+		utils.CheckExpectedErr(t, types.ErrInvalidReceivedAt, helper.keeper.CheckPriceReceivedAtTimestamp(ctx, header.Time.Add(-dur)))
 	}
 }

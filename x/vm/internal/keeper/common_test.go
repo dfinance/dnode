@@ -384,19 +384,10 @@ func startDVMContainer(t *testing.T, dsPort int) (stopFunc func()) {
 	vmUrl, err := url.Parse(*vmAddress)
 	require.NoError(t, err, "parsing vmAddress")
 
-	container, err := tests.NewDVMWithNetTransport(vmUrl.Port(), strconv.Itoa(dsPort))
-	require.NoError(t, err, "creating DVM container")
-
-	require.NoError(t, container.Start(5*time.Second), "starting DVM container")
-
-	require.NoError(t, tests.PingTcpAddress(*vmAddress, 500 * time.Millisecond), "waiting for DVM gRPC server to start")
-
+	containerStop := tests.LaunchDVMWithNetTransport(t, vmUrl.Port(), strconv.Itoa(dsPort), false)
 	*vmCompiler = "127.0.0.1:" + vmUrl.Port()
-	stopFunc = func() {
-		container.Stop()
-	}
 
-	return
+	return containerStop
 }
 
 func init() {
