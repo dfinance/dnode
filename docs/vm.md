@@ -6,14 +6,14 @@ Two types of Move transaction are supported: deploy module / execute script.
 
 To deploy a module:
 
-    dncli tx vm deploy-module [fileMV] --from <from> --fees <fees>
+    dncli tx vm deploy [fileMV] --from <from> --fees <fees>
     
 To execute a script:
 
-    dncli tx vm execute-script [fileMV] arg1:type1, arg2:type2, arg3:type3... --from <from> --fees <fees>
+    dncli tx vm execute [fileMV] arg1:type1, arg2:type2, arg3:type3... --from <from> --fees <fees>
     
     # Or (as an example with arguments):
-    dncli tx vm execute-script [fileMV] true:Bool, 150:U64 --from <from> --fees <fees>
+    dncli tx vm execute [fileMV] true:Bool, 150:U64 --from <from> --fees <fees>
     
 To get execution results (gas spent, events) just query the transaction:
 

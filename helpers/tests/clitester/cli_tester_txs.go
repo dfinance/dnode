@@ -171,7 +171,7 @@ func (ct *CLITester) TxMultiSigRevokeConfirm(fromAddress string, callID uint64) 
 
 func (ct *CLITester) TxVmExecuteScript(fromAddress, filePath string, args ...string) *TxRequest {
 	cmdArgs := make([]string, 0, 2+len(args))
-	cmdArgs = append(cmdArgs, "execute-script")
+	cmdArgs = append(cmdArgs, "execute")
 	cmdArgs = append(cmdArgs, filePath)
 	cmdArgs = append(cmdArgs, args...)
 
@@ -237,7 +237,7 @@ func (ct *CLITester) TxMarketsAdd(fromAddress string, baseDenom, quoteDenom stri
 
 func (ct *CLITester) TxVmDeployModule(fromAddress, filePath string) *TxRequest {
 	cmdArgs := []string{
-		"deploy-module",
+		"deploy",
 		filePath,
 	}
 
