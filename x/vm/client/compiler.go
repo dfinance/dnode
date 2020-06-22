@@ -39,10 +39,7 @@ func ExtractArguments(addr string, bytecode []byte) ([]vm_grpc.VMTypeTag, error)
 	client := vm_grpc.NewVMScriptMetadataClient(conn)
 	connCtx := context.Background()
 
-	res, err := client.GetSignature(connCtx, &vm_grpc.VMScript{
-		Code: bytecode,
-	})
-
+	res, err := client.GetSignature(connCtx, &vm_grpc.VMScript{Code: bytecode})
 	if err != nil {
 		return nil, fmt.Errorf("Can't extract contract metadata because of error during connection to VM: %s\n", err.Error())
 	}
@@ -51,7 +48,7 @@ func ExtractArguments(addr string, bytecode []byte) ([]vm_grpc.VMTypeTag, error)
 }
 
 // Compile script via grpc compiler.
-func Compile(addr string, sourceFile *vm_grpc.MvIrSourceFile) ([]byte, error) {
+func Compile(addr string, sourceFile *vm_grpc.SourceFile) ([]byte, error) {
 	conn, err := CreateConnection(addr)
 	if err != nil {
 		return nil, fmt.Errorf("compilation failed because of error during connection to VM: %w", err)

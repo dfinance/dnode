@@ -87,12 +87,12 @@ func (server *DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*d
 		Path:    req.Path,
 	}
 
-	server.Logger().Info(fmt.Sprintf("Get path: %s", types.PathToHex(path)))
+	server.Logger().Info(fmt.Sprintf("Get path: %s", types.VMPathToHex(path)))
 
 	// here go with middlewares
 	blob, err := server.processMiddlewares(path)
 	if err != nil {
-		server.Logger().Error(fmt.Sprintf("Error processing middlewares for path %s: %v", types.PathToHex(path), err))
+		server.Logger().Error(fmt.Sprintf("Error processing middlewares for path %s: %v", types.VMPathToHex(path), err))
 		return ErrNoData(req), nil
 	}
 
@@ -102,11 +102,11 @@ func (server *DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*d
 
 	// we can move it to middleware too later.
 	if !server.keeper.hasValue(server.ctx, path) {
-		server.Logger().Debug(fmt.Sprintf("Can't find path: %s", types.PathToHex(path)))
+		server.Logger().Debug(fmt.Sprintf("Can't find path: %s", types.VMPathToHex(path)))
 		return ErrNoData(req), nil
 	}
 
-	server.Logger().Debug(fmt.Sprintf("Get path: %s", types.PathToHex(path)))
+	server.Logger().Debug(fmt.Sprintf("Get path: %s", types.VMPathToHex(path)))
 	blob = server.keeper.getValue(server.ctx, path)
 	server.Logger().Debug(fmt.Sprintf("Return values: %s\n", hex.EncodeToString(blob)))
 

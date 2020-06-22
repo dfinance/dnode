@@ -19,7 +19,6 @@ const (
 	AttrKeyMajorStatus    = "major_status"
 	AttrKeySubStatus      = "sub_status"
 	AttrKeyMessage        = "message"
-	AttrKeySequenceNumber = "sequence_number"
 	AttrKeyType           = "type"
 	AttrKeyData           = "data"
 	AttrKeyGuid           = "guid"
@@ -67,11 +66,11 @@ func NewEventDiscard(errorStatus *vm_grpc.VMStatus) sdk.Event {
 // Parse VM event to standard SDK event.
 // In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
 func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
+	// TODO: implementation is wrong
 	return sdk.NewEvent(
 		EventTypeMoveEvent,
-		sdk.NewAttribute(AttrKeyGuid, "0x"+hex.EncodeToString(event.Key)),
-		sdk.NewAttribute(AttrKeySequenceNumber, strconv.FormatUint(event.SequenceNumber, 10)),
-		sdk.NewAttribute(AttrKeyType, VMTypeToStringPanic(event.Type.Tag)),
+		//sdk.NewAttribute(AttrKeyGuid, "0x"+hex.EncodeToString(event.Key)),
+		sdk.NewAttribute(AttrKeyType, VMLCSTagToStringPanic(event.EventType)),
 		// we will not parse event data, as it doesn't make sense
 		sdk.NewAttribute(AttrKeyData, "0x"+hex.EncodeToString(event.EventData)),
 	)

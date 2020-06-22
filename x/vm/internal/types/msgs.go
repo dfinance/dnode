@@ -110,7 +110,7 @@ func (msg MsgExecuteScript) ValidateBasic() error {
 	}
 
 	for _, val := range msg.Args {
-		if _, err := VMTypeToString(val.Type); err != nil {
+		if _, err := VMTypeTagToString(val.Type); err != nil {
 			return sdkErrors.Wrap(ErrWrongArgTypeTag, err.Error())
 		}
 	}

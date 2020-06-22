@@ -13,9 +13,9 @@ const (
 )
 
 var (
-	KeyDelimiter = []byte(":")
-	VMKey        = []byte("vm")
-	ZeroAddress  = make([]byte, VMAddressLength)
+	KeyDelimiter  = []byte(":")
+	VMKey         = []byte("vm")
+	StdLibAddress = make([]byte, VMAddressLength)
 )
 
 // Data server middleware type.
@@ -52,4 +52,8 @@ func MakePathKey(path *vm_grpc.VMAccessPath) []byte {
 // Convert bech32 to libra hex.
 func Bech32ToLibra(addr sdk.AccAddress) []byte {
 	return addr.Bytes()
+}
+
+func init() {
+	StdLibAddress[VMAddressLength-1] = 1
 }

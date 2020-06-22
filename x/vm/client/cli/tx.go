@@ -126,7 +126,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 
 			for i, arg := range parsedArgs {
 				switch extractedArgs[i] {
-				case vm_grpc.VMTypeTag_ByteArray:
+				case vm_grpc.VMTypeTag_Vector:
 					// trying to parse hex
 					_, err := hex.DecodeString(arg)
 					if err != nil {
@@ -136,9 +136,6 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 						// otherwise just use hex.
 						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("x\"%s\"", arg), extractedArgs[i])
 					}
-
-				case vm_grpc.VMTypeTag_Struct:
-					return fmt.Errorf("currently doesnt's support struct type as argument")
 
 				case vm_grpc.VMTypeTag_U8, vm_grpc.VMTypeTag_U64, vm_grpc.VMTypeTag_U128:
 					if arg[0] == '#' {
@@ -158,9 +155,8 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 					}
 
 					n, isOk := sdk.NewIntFromString(arg)
-
 					if !isOk {
-						return fmt.Errorf("%s is not a unsigned number (max is unsigned 256), wrong argument type, must be: %s", arg, types.VMTypeToStringPanic(extractedArgs[i]))
+						return fmt.Errorf("%s is not a unsigned number (max is unsigned 256), wrong argument type, must be: %s", arg, types.VMTypeTagToStringPanic(extractedArgs[i]))
 					}
 
 					switch extractedArgs[i] {

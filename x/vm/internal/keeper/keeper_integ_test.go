@@ -212,10 +212,9 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	t.Logf("Compile send script")
-	bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+	bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    sendScript,
 		Address: common_vm.Bech32ToLibra(addr1),
-		Type:    vm_grpc.ContractType_Script,
 	})
 	require.NoErrorf(t, err, "can't get code for send script: %v", err)
 
@@ -282,10 +281,9 @@ func TestKeeper_DeployModule(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	bytecodeModule, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+	bytecodeModule, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    mathModule,
 		Address: common_vm.Bech32ToLibra(addr1),
-		Type:    vm_grpc.ContractType_Module,
 	})
 	require.NoErrorf(t, err, "can't get code for math module: %v", err)
 
@@ -302,10 +300,9 @@ func TestKeeper_DeployModule(t *testing.T) {
 
 	writeCtx()
 
-	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    strings.Replace(mathScript, "{{sender}}", addr1.String(), 1),
 		Address: common_vm.Bech32ToLibra(addr1),
-		Type:    vm_grpc.ContractType_Script,
 	})
 	require.NoErrorf(t, err, "can't compiler script for math module: %v", err)
 
@@ -335,7 +332,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeySequenceNumber)
 	require.EqualValues(t, events[1].Attributes[1].Value, "0")
 	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[2].Value, types.VMTypeToStringPanic(vm_grpc.VMTypeTag_U64))
+	require.EqualValues(t, events[1].Attributes[2].Value, types.VMTypeTagToStringPanic(vm_grpc.VMTypeTag_U64))
 	require.EqualValues(t, events[1].Attributes[3].Key, types.AttrKeyData)
 
 	uintBz := make([]byte, 8)
@@ -390,10 +387,9 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    oraclePriceScript,
 		Address: common_vm.Bech32ToLibra(addr1),
-		Type:    vm_grpc.ContractType_Script,
 	})
 	require.NoErrorf(t, err, "can't get code for oracle script: %v", err)
 
@@ -408,7 +404,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeySequenceNumber)
 	require.EqualValues(t, events[1].Attributes[1].Value, "0")
 	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[2].Value, types.VMTypeToStringPanic(vm_grpc.VMTypeTag_U64))
+	require.EqualValues(t, events[1].Attributes[2].Value, types.VMTypeTagToStringPanic(vm_grpc.VMTypeTag_U64))
 	require.EqualValues(t, events[1].Attributes[3].Key, types.AttrKeyData)
 
 	bz := make([]byte, 8)
@@ -447,10 +443,9 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    errorScript,
 		Address: common_vm.Bech32ToLibra(addr1),
-		Type:    vm_grpc.ContractType_Script,
 	})
 	require.NoErrorf(t, err, "can't get code for error script: %v", err)
 
@@ -524,10 +519,9 @@ func TestKeeper_Path(t *testing.T) {
     			}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -551,10 +545,9 @@ func TestKeeper_Path(t *testing.T) {
     			}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -579,10 +572,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -607,10 +599,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -635,10 +626,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -663,10 +653,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -691,10 +680,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -719,10 +707,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -747,10 +734,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -775,10 +761,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -804,10 +789,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -833,10 +817,9 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
@@ -859,10 +842,9 @@ func TestKeeper_Path(t *testing.T) {
 			    }
 			}
 		`
-		moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    moduleSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Module,
 		})
 		require.NoErrorf(t, err, "%s: module compile error", testID)
 
@@ -886,10 +868,9 @@ func TestKeeper_Path(t *testing.T) {
 			}
 		`
 		scriptSrc := fmt.Sprintf(scriptSrcFmt, addr1)
-		scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.MvIrSourceFile{
+		scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
-			Type:    vm_grpc.ContractType_Script,
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
 
