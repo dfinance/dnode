@@ -25,12 +25,12 @@ import (
 
 const sendScript = `
 script {
-	use 0x0::Account;
-	use 0x0::Coins;
-	use 0x0::DFI;
-	use 0x0::Dfinance;
-	use 0x0::Transaction; 
-	use 0x0::Compare;
+	use 0x1::Account;
+	use 0x1::Coins;
+	use 0x1::DFI;
+	use 0x1::Dfinance;
+	use 0x1::Transaction; 
+	use 0x1::Compare;
 	
 	fun main(account: &signer, recipient: address, dfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
 		Account::pay_from_sender<DFI::T>(account, recipient, dfi_amount);
@@ -61,24 +61,22 @@ module Math {
 
 const mathScript = `
 script {
-	use 0x0::Event;
+	use 0x1::Event;
 	use {{sender}}::Math;
 	
-	fun main(account: &signer, a: u64, b: u64) {
+	fun main(_account: &signer, a: u64, b: u64) {
 		let c = Math::add(a, b);
-	
-		let event_handle = Event::new_event_handle<u64>(account);
-		Event::emit_event(&mut event_handle, c);
-		Event::destroy_handle(event_handle);
+		Event::emit<u64>(c);
 	}
 }
 `
 
 const oraclePriceScript = `
 script {
-	use 0x0::Event;
-	use 0x0::Oracle;
-	use 0x0::Coins;
+	use 0x1::Event;
+	use 0x1::Oracle;
+	use 0x1::Coins;
+
 	fun main(account: &signer) {
 		let price = Oracle::get_price<Coins::ETH, Coins::USDT>();
 		let event_handle = Event::new_event_handle<u64>(account);
@@ -90,11 +88,11 @@ script {
 
 const errorScript = `
 script {
-	use 0x0::Account;
-	use 0x0::DFI;
-	use 0x0::Transaction;
-	use 0x0::Coins;
-	use 0x0::Event;
+	use 0x1::Account;
+	use 0x1::DFI;
+	use 0x1::Transaction;
+	use 0x1::Coins;
+	use 0x1::Event;
 
 	fun main(account: &signer, c: u64) {
 		let a = Account::withdraw_from_sender<DFI::T>(account, 523);
@@ -108,6 +106,27 @@ script {
 		Transaction::assert(c == 1000, 122);
 		Account::deposit_to_sender(account, a);
 		Account::deposit_to_sender(account, b);
+	}
+}
+`
+
+const argsScript = `
+script {
+	use 0x1::Vector;
+
+	fun main(account: &singer, arg_u8: u8, arg_u64: u64, arg_u128: u128, arg_addr: address, arg_bool_true, arg_bool_false: bool, arg_vector: vector<u8>) {
+        assert(arg_u8 == 128, 10)
+        assert(arg_u64 == 1000000, 11)
+        assert(arg_u128 == 100000000000000000000000000000, 12)
+        
+        assert(0x1::Signer::address_of(account) == arg_addr, 20)
+
+        assert(arg_bool_true == true, 30)
+        assert(arg_bool_false == false, 31)
+        
+        assert(Vector::length(&arg_vector) == 2, 40)
+        assert(Vector::pop_back(&arg_vector) == 1, 41)
+        assert(Vector::pop_back(&arg_vector) == 0, 42)
 	}
 }
 `
@@ -329,11 +348,11 @@ func TestKeeper_DeployModule(t *testing.T) {
 	require.Equal(t, events[1].Type, types.EventTypeMoveEvent, "script after execution doesn't contain event with amount")
 
 	require.Len(t, events[1].Attributes, 4)
-	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeySequenceNumber)
-	require.EqualValues(t, events[1].Attributes[1].Value, "0")
-	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[2].Value, types.VMTypeTagToStringPanic(vm_grpc.VMTypeTag_U64))
-	require.EqualValues(t, events[1].Attributes[3].Key, types.AttrKeyData)
+	require.EqualValues(t, events[1].Attributes[0].Key, types.AttrKeySenderAddress)
+	require.EqualValues(t, events[1].Attributes[0].Value, common_vm.Bech32ToLibra(addr1))
+	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeyType)
+	require.EqualValues(t, events[1].Attributes[1].Value, types.VMTypeTagToStringPanic(vm_grpc.VMTypeTag_U64))
+	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyData)
 
 	uintBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(uintBz, uint64(110))
@@ -401,11 +420,11 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	require.Contains(t, events, types.NewEventKeep())
 
 	require.Len(t, events[1].Attributes, 4)
-	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeySequenceNumber)
-	require.EqualValues(t, events[1].Attributes[1].Value, "0")
-	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[2].Value, types.VMTypeTagToStringPanic(vm_grpc.VMTypeTag_U64))
-	require.EqualValues(t, events[1].Attributes[3].Key, types.AttrKeyData)
+	require.EqualValues(t, events[1].Attributes[0].Key, types.AttrKeySenderAddress)
+	require.EqualValues(t, events[1].Attributes[0].Value, common_vm.Bech32ToLibra(addr1))
+	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeyType)
+	require.EqualValues(t, events[1].Attributes[1].Value, types.VMTypeTagToStringPanic(vm_grpc.VMTypeTag_U64))
+	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyData)
 
 	bz := make([]byte, 8)
 
@@ -474,6 +493,53 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	require.Len(t, events, 2)
 }
 
+func TestKeeper_AllArgsTypes(t *testing.T) {
+	config := sdk.GetConfig()
+	dnodeConfig.InitBechPrefixes(config)
+
+	input := newTestInput(false)
+
+	// Create account
+	accCoins := sdk.NewCoins(sdk.NewCoin("dfi", sdk.NewInt(1000)))
+	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
+	acc1.SetCoins(accCoins)
+	input.ak.SetAccount(input.ctx, acc1)
+
+	// Init genesis and start DS
+	gs := getGenesis(t)
+	input.vk.InitGenesis(input.ctx, gs)
+	input.vk.SetDSContext(input.ctx)
+	input.vk.StartDSServer(input.ctx)
+	time.Sleep(2 * time.Second)
+
+	// Launch DVM container
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
+
+	// Compile script
+	bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		Text:    argsScript,
+		Address: common_vm.Bech32ToLibra(addr1),
+	})
+	require.NoErrorf(t, err, "script compile error")
+
+	// Add all args and execute
+	args := []types.ScriptArg{
+		{Type: vm_grpc.VMTypeTag_U8, Value: "128"},
+		{Type: vm_grpc.VMTypeTag_U64, Value: "1000000"},
+		{Type: vm_grpc.VMTypeTag_U128, Value: "100000000000000000000000000000"},
+		{Type: vm_grpc.VMTypeTag_Address, Value: addr1.String()},
+		{Type: vm_grpc.VMTypeTag_Bool, Value: "true"},
+		{Type: vm_grpc.VMTypeTag_Bool, Value: "false"},
+		{Type: vm_grpc.VMTypeTag_Vector, Value: fmt.Sprintf("x\"%s\"", hex.EncodeToString([]byte{0, 1}))},
+	}
+	scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, args)
+	require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "script execute error")
+
+	checkNoEventErrors(input.ctx.EventManager().Events(), t)
+}
+
 // Test that all hardcoded VM Path are correct.
 // If something goes wrong, check the DataSource logs for requested Path and fix.
 func TestKeeper_Path(t *testing.T) {
@@ -513,7 +579,8 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-				use 0x0::Block;
+				use 0x1::Block;
+
     			fun main() {
         			let _ = Block::get_current_block_height();
     			}
@@ -534,12 +601,13 @@ func TestKeeper_Path(t *testing.T) {
 	}
 
 	// Check middleware path: Time
-	testID = "middleware Time"
+	testID = "Middleware Time"
 	{
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-    			use 0x0::Time;
+    			use 0x1::Time;
+
 			    fun main() {
         			let _ = Time::now();
     			}
@@ -565,8 +633,9 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-    			use 0x0::Account;
-				use 0x0::DFI;
+    			use 0x1::Account;
+				use 0x1::DFI;
+
 				fun main(account: &signer) {
 					let _ = Account::balance<DFI::T>(account);
 				}
@@ -592,8 +661,9 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-    			use 0x0::Account;
-				use 0x0::Coins;
+    			use 0x1::Account;
+				use 0x1::Coins;
+
 				fun main(account: &signer) {
 					let _ = Account::balance<Coins::ETH>(account);
 				}
@@ -619,8 +689,9 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-    			use 0x0::Account;
-				use 0x0::Coins;
+    			use 0x1::Account;
+				use 0x1::Coins;
+
 				fun main(account: &signer) {
 					let _ = Account::balance<Coins::USDT>(account);
 				}
@@ -646,8 +717,9 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-    			use 0x0::Account;
-				use 0x0::Coins;
+    			use 0x1::Account;
+				use 0x1::Coins;
+
 				fun main(account: &signer) {
 					let _ = Account::balance<Coins::BTC>(account);
 				}
@@ -673,8 +745,9 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-				use 0x0::Dfinance;
-				use 0x0::DFI;
+				use 0x1::Dfinance;
+				use 0x1::DFI;
+
 				fun main() {
 					let _ = Dfinance::denom<DFI::T>();
 				}
@@ -700,8 +773,9 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-				use 0x0::Dfinance;
-				use 0x0::Coins;
+				use 0x1::Dfinance;
+				use 0x1::Coins;
+
 				fun main() {
 					let _ = Dfinance::denom<Coins::ETH>();
 				}
@@ -727,8 +801,9 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-				use 0x0::Dfinance;
-				use 0x0::Coins;
+				use 0x1::Dfinance;
+				use 0x1::Coins;
+
 				fun main() {
 					let _ = Dfinance::denom<Coins::USDT>();
 				}
@@ -754,8 +829,9 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-				use 0x0::Dfinance;
-				use 0x0::Coins;
+				use 0x1::Dfinance;
+				use 0x1::Coins;
+
 				fun main() {
 					let _ = Dfinance::denom<Coins::BTC>();
 				}
@@ -781,11 +857,10 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-				use 0x0::Event;
-				fun main(account: &signer) {
-					let event_handle = Event::new_event_handle<u64>(account);
-					Event::emit_event(&mut event_handle, 1);
-					Event::destroy_handle(event_handle);
+				use 0x1::Event;
+
+				fun main(_account: &signer) {
+					Event::emit<u8>(1);
 				}
 			}
 		`
@@ -809,8 +884,9 @@ func TestKeeper_Path(t *testing.T) {
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
-				use 0x0::Account;
-				use 0x0::DFI;
+				use 0x1::Account;
+				use 0x1::DFI;
+
 				fun main(account: &signer) {
 					let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
 					Account::deposit_to_sender<DFI::T>(account, dfi);
@@ -862,8 +938,9 @@ func TestKeeper_Path(t *testing.T) {
 		scriptSrcFmt := `
 			script {
 				use %s::Dummy;
+
     			fun main() {
-       			let _ = Dummy::one_u64();
+       				let _ = Dummy::one_u64();
     			}
 			}
 		`

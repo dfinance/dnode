@@ -167,7 +167,7 @@ func (keeper VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Accoun
 	keeper.AccountKeeper.RemoveAccount(ctx, acc)
 	vmAddr := common_vm.Bech32ToLibra(acc.GetAddress())
 
-	// Should be remove account from VM storage too
+	// Should remove account from VM storage too
 	keeper.vmKeeper.DelValue(ctx, &vm_grpc.VMAccessPath{
 		Address: vmAddr,
 		Path:    GetResPath(),

@@ -226,11 +226,3 @@ func TestGetResPath(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, path, bz)
 }
-
-// Test get event handler generator path.
-func TestGetEHPath(t *testing.T) {
-	path := GetEHPath()
-	bz, err := hex.DecodeString(ehResourceKey)
-	require.NoError(t, err)
-	require.EqualValues(t, path, bz)
-}

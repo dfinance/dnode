@@ -184,9 +184,9 @@ func init() {
 }
 
 type VMServer struct {
-	compiler  vm_grpc.UnimplementedVMCompilerServer
-	publisher vm_grpc.UnimplementedVMModulePublisherServer
-	executor  vm_grpc.UnimplementedVMScriptExecutorServer
+	vm_grpc.UnimplementedVMCompilerServer
+	vm_grpc.UnimplementedVMModulePublisherServer
+	vm_grpc.UnimplementedVMScriptExecutorServer
 }
 
 func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
@@ -197,9 +197,9 @@ func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
 	vmServer := VMServer{}
 	server := grpc.NewServer()
 
-	vm_grpc.RegisterVMCompilerServer(server, &vmServer.compiler)
-	vm_grpc.RegisterVMModulePublisherServer(server, &vmServer.publisher)
-	vm_grpc.RegisterVMScriptExecutorServer(server, &vmServer.executor)
+	vm_grpc.RegisterVMCompilerServer(server, &vmServer.UnimplementedVMCompilerServer)
+	vm_grpc.RegisterVMModulePublisherServer(server, &vmServer.UnimplementedVMModulePublisherServer)
+	vm_grpc.RegisterVMScriptExecutorServer(server, &vmServer.UnimplementedVMScriptExecutorServer)
 
 	go func() {
 		if err := server.Serve(vmListener); err != nil {

@@ -123,7 +123,7 @@ func VMLCSTagToString(tag *vm_grpc.LcsTag, indentCount ...int) (string, error) {
 	}
 
 	indentStr := buildStrIndent()
-	strBuilder.WriteString("nil\n")
+	strBuilder.WriteString("\n")
 
 	// Field: TypeTag
 	typeTagStr, err := buildLcsTypeStr(tag.TypeTag)

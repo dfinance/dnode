@@ -34,21 +34,20 @@ func GetFreeGas(ctx sdk.Context) sdk.Gas {
 	return ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumed()
 }
 
-// Create deploy request for VM gRPC server.
-func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMPublishModule, error) {
+// NewDeployContract creates object used for publish module request.
+func NewDeployContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte) *vm_grpc.VMPublishModule {
 	return &vm_grpc.VMPublishModule{
-		Address:      common_vm.Bech32ToLibra(msg.Signer),
-		MaxGasAmount: GetFreeGas(ctx),
+		Address:      common_vm.Bech32ToLibra(address),
+		MaxGasAmount: maxGas,
 		GasUnitPrice: types.VmGasPrice,
-		Code:         msg.Module,
-	}, nil
+		Code:         code,
+	}
 }
 
-// Create execute script request for VM gRPC server.
-func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteScript, error) {
-	vmArgs := make([]*vm_grpc.VMArgs, len(msg.Args))
-
-	for argIdx, arg := range msg.Args {
+// NewExecuteContract creates object used for script execute request.
+func NewExecuteContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, args []types.ScriptArg) (*vm_grpc.VMExecuteScript, error) {
+	vmArgs := make([]*vm_grpc.VMArgs, len(args))
+	for argIdx, arg := range args {
 		if arg.Type == vm_grpc.VMTypeTag_Address {
 			addr, err := sdk.AccAddressFromBech32(arg.Value)
 			if err != nil {
@@ -68,11 +67,26 @@ func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VM
 	}
 
 	return &vm_grpc.VMExecuteScript{
-		Address:      common_vm.Bech32ToLibra(msg.Signer),
-		MaxGasAmount: GetFreeGas(ctx),
+		Address:      common_vm.Bech32ToLibra(address),
+		MaxGasAmount: maxGas,
 		GasUnitPrice: types.VmGasPrice,
-		Code:         msg.Script,
+		Code:         code,
 		TypeParams:   nil,
-		Args:         nil,
+		Args:         vmArgs,
 	}, nil
+}
+
+// Create deploy request for VM gRPC server.
+func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMPublishModule, error) {
+	return NewDeployContract(msg.Signer, GetFreeGas(ctx), msg.Module), nil
+}
+
+// Create execute script request for VM gRPC server.
+func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteScript, error) {
+	contract, err := NewExecuteContract(msg.Signer, GetFreeGas(ctx), msg.Script, msg.Args)
+	if err != nil {
+		return nil, err
+	}
+
+	return contract, nil
 }

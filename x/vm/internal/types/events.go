@@ -15,13 +15,15 @@ const (
 	EventTypeMoveEvent      = "contract_events"
 
 	// Attributes keys
-	AttrKeyStatus         = "status"
-	AttrKeyMajorStatus    = "major_status"
-	AttrKeySubStatus      = "sub_status"
-	AttrKeyMessage        = "message"
-	AttrKeyType           = "type"
-	AttrKeyData           = "data"
-	AttrKeyGuid           = "guid"
+	AttrKeyStatus        = "status"
+	AttrKeyMajorStatus   = "major_status"
+	AttrKeySubStatus     = "sub_status"
+	AttrKeyMessage       = "message"
+	AttrKeyType          = "type"
+	AttrKeySenderAddress = "sender_address"
+	AttrKeyModuleName    = "module_name"
+	AttrKeyModuleAddress = "module_address"
+	AttrKeyData          = "data"
 
 	// Values.
 	StatusDiscard = "discard"
@@ -66,12 +68,19 @@ func NewEventDiscard(errorStatus *vm_grpc.VMStatus) sdk.Event {
 // Parse VM event to standard SDK event.
 // In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
 func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
-	// TODO: implementation is wrong
-	return sdk.NewEvent(
-		EventTypeMoveEvent,
-		//sdk.NewAttribute(AttrKeyGuid, "0x"+hex.EncodeToString(event.Key)),
+	// TODO: check the tests TestNewEventFromVM
+
+	// eventData: we will not parse event data, as it doesn't make sense
+	attrs := []sdk.Attribute{
+		sdk.NewAttribute(AttrKeySenderAddress, "0x"+hex.EncodeToString(event.SenderAddress)),
 		sdk.NewAttribute(AttrKeyType, VMLCSTagToStringPanic(event.EventType)),
-		// we will not parse event data, as it doesn't make sense
 		sdk.NewAttribute(AttrKeyData, "0x"+hex.EncodeToString(event.EventData)),
-	)
+	}
+
+	if event.SenderModule != nil {
+		attrs = append(attrs, sdk.NewAttribute(AttrKeyModuleName, event.SenderModule.Name))
+		attrs = append(attrs, sdk.NewAttribute(AttrKeyModuleAddress, "0x"+hex.EncodeToString(event.SenderModule.Address)))
+	}
+
+	return sdk.NewEvent(EventTypeMoveEvent, attrs...)
 }

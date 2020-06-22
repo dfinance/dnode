@@ -20,62 +20,95 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// Generate VM arguments.
-func getArgs() []*vm_grpc.VMArgs {
-	addr := sdk.AccAddress([]byte(randomValue(32)))
-	args := make([]*vm_grpc.VMArgs, 8)
+type argInput struct {
+	vmType  vm_grpc.VMTypeTag
+	vmValue []byte
+	value   string
+}
 
-	args[0] = &vm_grpc.VMArgs{
-		Type:  vm_grpc.VMTypeTag_Bool,
-		Value: "true",
-	}
+type argInputs []argInput
 
-	args[1] = &vm_grpc.VMArgs{
-		Type:  vm_grpc.VMTypeTag_Bool,
-		Value: "false",
-	}
-
-	args[2] = &vm_grpc.VMArgs{
-		Type:  vm_grpc.VMTypeTag_U64,
-		Value: "1000000",
-	}
-
-	args[3] = &vm_grpc.VMArgs{
-		Type:  vm_grpc.VMTypeTag_ByteArray,
-		Value: "0x" + hex.EncodeToString(randomValue(32)),
-	}
-
-	args[4] = &vm_grpc.VMArgs{
-		Type:  vm_grpc.VMTypeTag_Address,
-		Value: addr.String(),
-	}
-
-	args[5] = &vm_grpc.VMArgs{
-		Type:  vm_grpc.VMTypeTag_Struct,
-		Value: "0x" + hex.EncodeToString(randomValue(64)),
-	}
-
-	args[6] = &vm_grpc.VMArgs{
-		Type:  vm_grpc.VMTypeTag_U8,
-		Value: "128",
-	}
-
-	args[7] = &vm_grpc.VMArgs{
-		Type:  vm_grpc.VMTypeTag_U128,
-		Value: "100000000000000000000000000000",
+func (list argInputs) getScriptArgs() []types.ScriptArg {
+	args := make([]types.ScriptArg, 0, len(list))
+	for _, input := range list {
+		args = append(args, types.ScriptArg{
+			Type:  input.vmType,
+			Value: input.value,
+		})
 	}
 
 	return args
 }
 
-// Get contract.
-func getContract(addr sdk.AccAddress, contractType vm_grpc.ContractType, code []byte, maxGas uint64, args []*vm_grpc.VMArgs, t *testing.T) *vm_grpc.VMContract {
-	contractModule, err := NewContract(addr, maxGas, code, contractType, args)
-	if err != nil {
-		t.Fatal(err)
+// Generate VM arguments.
+func newArgInputs() argInputs {
+	inputs := make(argInputs, 0)
+
+	// Bool: true
+	{
+		value := "true"
+		inputs = append(inputs, argInput{
+			vmType:  vm_grpc.VMTypeTag_Bool,
+			vmValue: []byte(value),
+			value:   value,
+		})
+	}
+	// Bool: false
+	{
+		value := "false"
+		inputs = append(inputs, argInput{
+			vmType:  vm_grpc.VMTypeTag_Bool,
+			vmValue: []byte(value),
+			value:   value,
+		})
+	}
+	// Vector
+	{
+		value := "0x" + hex.EncodeToString(randomValue(32))
+		inputs = append(inputs, argInput{
+			vmType:  vm_grpc.VMTypeTag_Vector,
+			vmValue: []byte(value),
+			value:   value,
+		})
+	}
+	// Address
+	{
+		addr := sdk.AccAddress(randomValue(common_vm.VMAddressLength))
+		inputs = append(inputs, argInput{
+			vmType:  vm_grpc.VMTypeTag_Address,
+			vmValue: common_vm.Bech32ToLibra(addr),
+			value:   addr.String(),
+		})
+	}
+	// U8
+	{
+		value := "128"
+		inputs = append(inputs, argInput{
+			vmType:  vm_grpc.VMTypeTag_U8,
+			vmValue: []byte(value),
+			value:   value,
+		})
+	}
+	// U64
+	{
+		value := "1000000"
+		inputs = append(inputs, argInput{
+			vmType:  vm_grpc.VMTypeTag_U64,
+			vmValue: []byte(value),
+			value:   value,
+		})
+	}
+	// U128
+	{
+		value := "100000000000000000000000000000"
+		inputs = append(inputs, argInput{
+			vmType:  vm_grpc.VMTypeTag_U128,
+			vmValue: []byte(value),
+			value:   value,
+		})
 	}
 
-	return contractModule
+	return inputs
 }
 
 // Get free gas calculations.
@@ -109,29 +142,30 @@ func TestGetFreeGas(t *testing.T) {
 	require.EqualValues(t, 0, freeGas)
 }
 
-// Check creationg of new contract instance.
+// Check creation of new contract instance.
 func TestNewContract(t *testing.T) {
-	addr := sdk.AccAddress(randomValue(32))
+	addr := sdk.AccAddress(randomValue(common_vm.VMAddressLength))
 	code := randomValue(1024)
-	args := getArgs()
+	argInputs := newArgInputs()
+	maxGas := uint64(1000000)
 
-	var maxGas uint64 = 1000000
-
-	contractModule := getContract(addr, vm_grpc.ContractType_Module, code, maxGas, args, t)
-
-	require.Equal(t, vm_grpc.ContractType_Module, contractModule.ContractType)
+	contractModule := NewDeployContract(addr, maxGas, code)
+	require.Equal(t, common_vm.Bech32ToLibra(addr), contractModule.Address)
 	require.Equal(t, maxGas, contractModule.MaxGasAmount)
-	require.EqualValues(t, 1, contractModule.GasUnitPrice)
+	require.Equal(t, uint64(types.VmGasPrice), contractModule.GasUnitPrice)
+	require.Equal(t, code, contractModule.Code)
 
-	for i, arg := range args {
-		require.Equal(t, arg.Value, contractModule.Args[i].Value)
-		require.Equal(t, arg.Type, contractModule.Args[i].Type)
+	contractScript, err := NewExecuteContract(addr, maxGas, code, argInputs.getScriptArgs())
+	require.NoError(t, err)
+	require.Equal(t, common_vm.Bech32ToLibra(addr), contractScript.Address)
+	require.Equal(t, maxGas, contractScript.MaxGasAmount)
+	require.Equal(t, uint64(types.VmGasPrice), contractScript.GasUnitPrice)
+	require.Equal(t, code, contractScript.Code)
+	require.Equal(t, len(argInputs), len(contractScript.Args))
+	for i, contractArg := range contractScript.Args {
+		require.Equal(t, argInputs[i].vmType, contractArg.Type)
+		require.Equal(t, argInputs[i].vmValue, contractArg.Value)
 	}
-
-	// check script type
-	contractScript := getContract(addr, vm_grpc.ContractType_Script, code, maxGas, args, t)
-
-	require.Equal(t, vm_grpc.ContractType_Script, contractScript.ContractType)
 }
 
 // Create new deploy request.
@@ -161,9 +195,8 @@ func TestNewDeployRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	require.EqualValues(t, 0, req.Options)
-	require.EqualValues(t, gasLimit, req.Contracts[0].MaxGasAmount)
-	require.EqualValues(t, code, req.Contracts[0].Code)
-	require.EqualValues(t, "0x"+hex.EncodeToString(common_vm.Bech32ToLibra(addr)), req.Contracts[0].Address)
-	require.Equal(t, 1, len(req.Contracts))
+	require.EqualValues(t, common_vm.Bech32ToLibra(addr), req.Address)
+	require.EqualValues(t, gasLimit, req.MaxGasAmount)
+	require.EqualValues(t, types.VmGasPrice, req.GasUnitPrice)
+	require.EqualValues(t, code, req.Code)
 }

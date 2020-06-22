@@ -100,7 +100,7 @@ func (server *DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*d
 		return &ds_grpc.DSRawResponse{Blob: blob}, nil
 	}
 
-	// we can move it to middleware too later.
+	// we can move it to middleware later.
 	if !server.keeper.hasValue(server.ctx, path) {
 		server.Logger().Debug(fmt.Sprintf("Can't find path: %s", types.VMPathToHex(path)))
 		return ErrNoData(req), nil
