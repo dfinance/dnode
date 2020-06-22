@@ -2,7 +2,9 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc"
@@ -48,21 +50,61 @@ func NewDeployContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte) *vm_
 func NewExecuteContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, args []types.ScriptArg) (*vm_grpc.VMExecuteScript, error) {
 	vmArgs := make([]*vm_grpc.VMArgs, len(args))
 	for argIdx, arg := range args {
-		if arg.Type == vm_grpc.VMTypeTag_Address {
+		var argValue []byte
+
+		switch arg.Type {
+		case vm_grpc.VMTypeTag_Address:
 			addr, err := sdk.AccAddressFromBech32(arg.Value)
 			if err != nil {
 				return nil, fmt.Errorf("argument[%d]: can't parse address argument %s: %v", argIdx, arg.Value, err)
 			}
+			argValue = common_vm.Bech32ToLibra(addr)
+		case vm_grpc.VMTypeTag_U8:
+			value, err := strconv.ParseUint(arg.Value, 10, 8)
+			if err != nil {
+				return nil, fmt.Errorf("argument[%d]: can't parse u8 argument %s: %v", argIdx, arg.Value, err)
+			}
+			argValue = []byte{uint8(value)}
+		case vm_grpc.VMTypeTag_U64:
+			value, err := strconv.ParseUint(arg.Value, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("argument[%d]: can't parse u64 argument %s: %v", argIdx, arg.Value, err)
+			}
+			argValue = make([]byte, 8)
+			binary.LittleEndian.PutUint64(argValue, value)
+		case vm_grpc.VMTypeTag_U128:
+			value := sdk.NewUintFromString(arg.Value)
+			if value.BigInt().BitLen() > 128 {
+				return nil, fmt.Errorf("argument[%d]: can't parse u128 argument %s: invalid bitLen %d", argIdx, arg.Value, value.BigInt().BitLen())
+			}
 
-			vmArgs[argIdx] = &vm_grpc.VMArgs{
-				Type:  arg.Type,
-				Value: common_vm.Bech32ToLibra(addr),
+			// BigInt().Bytes() returns BigEndian format, reverse it
+			argValue = value.BigInt().Bytes()
+			for left, right := 0, len(argValue)-1; left < right; left, right = left+1, right-1 {
+				argValue[left], argValue[right] = argValue[right], argValue[left]
 			}
-		} else {
-			vmArgs[argIdx] = &vm_grpc.VMArgs{
-				Type:  arg.Type,
-				Value: []byte(arg.Value),
+			// Extend to 16 bytes
+			if len(argValue) < 16 {
+				zeros := make([]byte, 16-len(argValue))
+				argValue = append(argValue, zeros...)
 			}
+		case vm_grpc.VMTypeTag_Bool:
+			value, err := strconv.ParseBool(arg.Value)
+			if err != nil {
+				return nil, fmt.Errorf("argument[%d]: can't parse bool argument %s: %v", argIdx, arg.Value, err)
+			}
+			if value {
+				argValue = []byte{1}
+			} else {
+				argValue = []byte{0}
+			}
+		default:
+			argValue = []byte(arg.Value)
+		}
+
+		vmArgs[argIdx] = &vm_grpc.VMArgs{
+			Type:  arg.Type,
+			Value: argValue,
 		}
 	}
 

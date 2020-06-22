@@ -46,21 +46,19 @@ func (s *MockDVM) Stop() {
 	}
 }
 
-func (s *MockDVM) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExecuteRequest) (*vm_grpc.VMExecuteResponses, error) {
+func (s *MockDVM) PublishModule(ctx context.Context, in *vm_grpc.VMPublishModule) (*vm_grpc.VMExecuteResponse, error) {
 	if s.failExecution {
 		return nil, grpcStatus.Errorf(codes.Internal, "failing gRPC execution")
 	}
 
-	resp := &vm_grpc.VMExecuteResponses{}
+	resp := &vm_grpc.VMExecuteResponse{}
 	if !s.failResponse {
-		resp.Executions = []*vm_grpc.VMExecuteResponse{
-			{
-				WriteSet:     nil,
-				Events:       nil,
-				GasUsed:      1,
-				Status:       vm_grpc.ContractStatus_Discard,
-				StatusStruct: nil,
-			},
+		resp = &vm_grpc.VMExecuteResponse{
+			WriteSet:     nil,
+			Events:       nil,
+			GasUsed:      1,
+			Status:       vm_grpc.ContractStatus_Discard,
+			StatusStruct: nil,
 		}
 	}
 
@@ -73,7 +71,7 @@ func StartMockDVMService(listener net.Listener) *MockDVM {
 	}
 
 	server := grpc.NewServer()
-	vm_grpc.RegisterVMServiceServer(server, s)
+	vm_grpc.RegisterVMModulePublisherServer(server, s)
 
 	go func() {
 		server.Serve(listener)
@@ -86,8 +84,8 @@ func StartMockDVMService(listener net.Listener) *MockDVM {
 func Test_ConsensusFailure(t *testing.T) {
 	const script = `
 		script {
-			use 0x0::Account;
-			use 0x0::DFI;
+			use 0x1::Account;
+			use 0x1::DFI;
 			
 			fun main(account: &signer, recipient: address, amount: u128) {
 				Account::pay_from_sender<DFI::T>(account, recipient, amount);
@@ -118,7 +116,7 @@ func Test_ConsensusFailure(t *testing.T) {
 	require.NoError(t, moveFile.Close(), "close script file")
 
 	// Compile .move script file
-	ct.QueryVmCompileScript(movePath, compiledPath, senderAddr).CheckSucceeded()
+	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
 
 	// Execute .json script file
 	// Should panic as there is no local VM running
@@ -151,15 +149,15 @@ func Test_ConsensusFailure(t *testing.T) {
 func Test_VMExecuteScript(t *testing.T) {
 	const script = `
 		script {
-			use 0x0::Account;
-			use 0x0::DFI;
+			use 0x1::Account;
+			use 0x1::DFI;
 
 			fun main(account: &signer) {
 				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
 				Account::deposit_to_sender<DFI::T>(account, dfi);
 			}
-	}
-`
+		}
+	`
 
 	ct := cliTester.New(
 		t,
@@ -185,7 +183,7 @@ func Test_VMExecuteScript(t *testing.T) {
 	require.NoError(t, moveFile.Close(), "close script file")
 
 	// Compile .move script file
-	ct.QueryVmCompileScript(movePath, compiledPath, senderAddr).CheckSucceeded()
+	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
 
 	// Execute .json script file
 	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
@@ -220,7 +218,7 @@ func Test_VMRequestRetry(t *testing.T) {
 	// Create fake .mov file
 	modulePath := path.Join(ct.Dirs.RootDir, "fake.json")
 	moduleContent := []byte("{ \"code\": \"00\" }")
-	require.NoError(t, ioutil.WriteFile(modulePath, moduleContent, 0644), "creating fake script file")
+	require.NoError(t, ioutil.WriteFile(modulePath, moduleContent, 0644), "creating fake module file")
 
 	wg := sync.WaitGroup{}
 	vmDeployDoneCh := make(chan bool)
@@ -283,15 +281,15 @@ func Test_VMCommunicationUDS(t *testing.T) {
 
 	const script = `
 		script {
-			use 0x0::Account;
-			use 0x0::DFI;
+			use 0x1::Account;
+			use 0x1::DFI;
 
 			fun main(account: &signer) {
 				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
 				Account::deposit_to_sender<DFI::T>(account, dfi);
 			}
-	}
-`
+		}
+	`
 
 	t.Parallel()
 	ct := cliTester.New(
@@ -321,7 +319,7 @@ func Test_VMCommunicationUDS(t *testing.T) {
 	require.NoError(t, moveFile.Close(), "close script file")
 
 	// Compile .move script file
-	ct.QueryVmCompileScript(movePath, compiledPath, senderAddr).CheckSucceeded()
+	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
 
 	// Execute .json script file
 	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()

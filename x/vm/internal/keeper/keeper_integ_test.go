@@ -29,7 +29,6 @@ script {
 	use 0x1::Coins;
 	use 0x1::DFI;
 	use 0x1::Dfinance;
-	use 0x1::Transaction; 
 	use 0x1::Compare;
 	
 	fun main(account: &signer, recipient: address, dfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
@@ -38,15 +37,15 @@ script {
 		Account::pay_from_sender<Coins::BTC>(account, recipient, btc_amount);
 		Account::pay_from_sender<Coins::USDT>(account, recipient, usdt_amount);
 
-		Transaction::assert(Compare::cmp_lcs_bytes(&Dfinance::denom<DFI::T>(), &b"dfi") == 0, 1);
-		Transaction::assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::ETH>(), &b"eth") == 0, 2);
-		Transaction::assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::BTC>(), &b"btc") == 0, 3);
-		Transaction::assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::USDT>(), &b"usdt") == 0, 4);
+		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<DFI::T>(), &b"dfi") == 0, 1);
+		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::ETH>(), &b"eth") == 0, 2);
+		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::BTC>(), &b"btc") == 0, 3);
+		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::USDT>(), &b"usdt") == 0, 4);
 
-		Transaction::assert(Dfinance::decimals<DFI::T>() == 18, 5);
-		Transaction::assert(Dfinance::decimals<Coins::ETH>() == 18, 6);
-		Transaction::assert(Dfinance::decimals<Coins::BTC>() == 8, 7);
-		Transaction::assert(Dfinance::decimals<Coins::USDT>() == 6, 8);
+		assert(Dfinance::decimals<DFI::T>() == 18, 5);
+		assert(Dfinance::decimals<Coins::ETH>() == 18, 6);
+		assert(Dfinance::decimals<Coins::BTC>() == 8, 7);
+		assert(Dfinance::decimals<Coins::USDT>() == 6, 8);
 	}
 }
 `
@@ -77,11 +76,9 @@ script {
 	use 0x1::Oracle;
 	use 0x1::Coins;
 
-	fun main(account: &signer) {
+	fun main(_account: &signer) {
 		let price = Oracle::get_price<Coins::ETH, Coins::USDT>();
-		let event_handle = Event::new_event_handle<u64>(account);
-		Event::emit_event(&mut event_handle, price);
-		Event::destroy_handle(event_handle);
+		Event::emit<u64>(price);
 	}
 }
 `
@@ -90,7 +87,6 @@ const errorScript = `
 script {
 	use 0x1::Account;
 	use 0x1::DFI;
-	use 0x1::Transaction;
 	use 0x1::Coins;
 	use 0x1::Event;
 
@@ -98,12 +94,9 @@ script {
 		let a = Account::withdraw_from_sender<DFI::T>(account, 523);
 		let b = Account::withdraw_from_sender<Coins::BTC>(account, 1);
 	
+		Event::emit<u64>(10);
 	
-		let event_handle = Event::new_event_handle<u64>(account);
-		Event::emit_event(&mut event_handle, 10);
-		Event::destroy_handle(event_handle);
-	
-		Transaction::assert(c == 1000, 122);
+		assert(c == 1000, 122);
 		Account::deposit_to_sender(account, a);
 		Account::deposit_to_sender(account, b);
 	}
@@ -114,19 +107,19 @@ const argsScript = `
 script {
 	use 0x1::Vector;
 
-	fun main(account: &singer, arg_u8: u8, arg_u64: u64, arg_u128: u128, arg_addr: address, arg_bool_true, arg_bool_false: bool, arg_vector: vector<u8>) {
-        assert(arg_u8 == 128, 10)
-        assert(arg_u64 == 1000000, 11)
-        assert(arg_u128 == 100000000000000000000000000000, 12)
+	fun main(_account: &signer, arg_u8: u8, arg_u64: u64, arg_u128: u128, arg_addr: address, arg_bool_true: bool, arg_bool_false: bool, arg_vector: vector<u8>) {
+        assert(arg_u8 == 128, 10);
+        assert(arg_u64 == 1000000, 11);
+        assert(arg_u128 == 100000000000000000000000000000, 12);
         
-        assert(0x1::Signer::address_of(account) == arg_addr, 20)
+        assert(0x1::Signer::address_of(account) == arg_addr, 20);
 
-        assert(arg_bool_true == true, 30)
-        assert(arg_bool_false == false, 31)
+        assert(arg_bool_true == true, 30);
+        assert(arg_bool_false == false, 31);
         
-        assert(Vector::length(&arg_vector) == 2, 40)
-        assert(Vector::pop_back(&arg_vector) == 1, 41)
-        assert(Vector::pop_back(&arg_vector) == 0, 42)
+        assert(Vector::length(&arg_vector) == 2, 40);
+        assert(Vector::pop_back(&arg_vector) == 1, 41);
+        assert(Vector::pop_back(&arg_vector) == 0, 42);
 	}
 }
 `
@@ -341,23 +334,20 @@ func TestKeeper_DeployModule(t *testing.T) {
 	require.NoError(t, err)
 
 	events = ctx.EventManager().Events()
-	require.Contains(t, events, types.NewEventKeep())
-
 	checkNoEventErrors(events, t)
 
+	require.Contains(t, events, types.NewEventKeep())
 	require.Equal(t, events[1].Type, types.EventTypeMoveEvent, "script after execution doesn't contain event with amount")
-
-	require.Len(t, events[1].Attributes, 4)
+	require.Len(t, events[1].Attributes, 3)
 	require.EqualValues(t, events[1].Attributes[0].Key, types.AttrKeySenderAddress)
-	require.EqualValues(t, events[1].Attributes[0].Value, common_vm.Bech32ToLibra(addr1))
+	require.EqualValues(t, events[1].Attributes[0].Value, "0x"+hex.EncodeToString(common_vm.Bech32ToLibra(addr1)))
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[1].Value, types.VMTypeTagToStringPanic(vm_grpc.VMTypeTag_U64))
+	require.EqualValues(t, events[1].Attributes[1].Value, types.VMLCSTagToStringPanic(&vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
 	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyData)
 
 	uintBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(uintBz, uint64(110))
-
-	require.EqualValues(t, events[1].Attributes[3].Value, "0x"+hex.EncodeToString(uintBz))
+	require.EqualValues(t, events[1].Attributes[2].Value, "0x"+hex.EncodeToString(uintBz))
 }
 
 // Test oracle price return.
@@ -417,21 +407,19 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	require.NoError(t, err)
 
 	events := input.ctx.EventManager().Events()
-	require.Contains(t, events, types.NewEventKeep())
+	checkNoEventErrors(events, t)
 
+	require.Contains(t, events, types.NewEventKeep())
 	require.Len(t, events[1].Attributes, 4)
 	require.EqualValues(t, events[1].Attributes[0].Key, types.AttrKeySenderAddress)
-	require.EqualValues(t, events[1].Attributes[0].Value, common_vm.Bech32ToLibra(addr1))
+	require.EqualValues(t, events[1].Attributes[0].Value, "0x"+hex.EncodeToString(common_vm.Bech32ToLibra(addr1)))
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[1].Value, types.VMTypeTagToStringPanic(vm_grpc.VMTypeTag_U64))
+	require.EqualValues(t, events[1].Attributes[1].Value, types.VMLCSTagToStringPanic(&vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
 	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyData)
 
 	bz := make([]byte, 8)
-
 	binary.LittleEndian.PutUint64(bz, 100)
 	require.EqualValues(t, events[1].Attributes[3].Value, "0x"+hex.EncodeToString(bz))
-
-	checkNoEventErrors(events, t)
 }
 
 // Test oracle price return.
@@ -494,6 +482,8 @@ func TestKeeper_ErrorScript(t *testing.T) {
 }
 
 func TestKeeper_AllArgsTypes(t *testing.T) {
+	t.Skip()
+
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
