@@ -58,7 +58,7 @@ func Test_VMCommunicationUDSOverDocker(t *testing.T) {
 	require.NoError(t, moveFile.Close(), "close script file")
 
 	// Compile .move script file
-	ct.QueryVmCompileScript(movePath, compiledPath, senderAddr).CheckSucceeded()
+	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
 
 	// Execute .json script file
 	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
