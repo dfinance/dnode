@@ -869,62 +869,6 @@ func TestKeeper_Path(t *testing.T) {
 		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
-	// Check VMAuth module path: Account eventHandler
-	testID = "VMAuth eventHandler"
-	{
-		t.Logf("%s: script compile", testID)
-		scriptSrc := `
-			script {
-				use 0x1::Event;
-
-				fun main(_account: &signer) {
-					Event::emit<u8>(1);
-				}
-			}
-		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
-			Text:    scriptSrc,
-			Address: common_vm.Bech32ToLibra(addr1),
-		})
-		require.NoErrorf(t, err, "%s: script compile error", testID)
-
-		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
-		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
-
-		t.Logf("%s: checking script events", testID)
-		checkNoEventErrors(input.ctx.EventManager().Events(), t)
-	}
-
-	// Check VMAuth module path: Account resource
-	testID = "VMAuth accResource"
-	{
-		t.Logf("%s: script compile", testID)
-		scriptSrc := `
-			script {
-				use 0x1::Account;
-				use 0x1::DFI;
-
-				fun main(account: &signer) {
-					let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
-					Account::deposit_to_sender<DFI::T>(account, dfi);
-				}
-			}
-		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
-			Text:    scriptSrc,
-			Address: common_vm.Bech32ToLibra(addr1),
-		})
-		require.NoErrorf(t, err, "%s: script compile error", testID)
-
-		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
-		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
-
-		t.Logf("%s: checking script events", testID)
-		checkNoEventErrors(input.ctx.EventManager().Events(), t)
-	}
-
 	// Create module and use it in script (doesn't check VM path)
 	testID = "Account module"
 	{
