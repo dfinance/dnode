@@ -13,6 +13,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	"github.com/dfinance/dnode/helpers/tests/utils"
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 func getMsgSignBytes(t *testing.T, msg sdk.Msg) []byte {
@@ -56,10 +57,11 @@ func TestMsgExecuteScript(t *testing.T) {
 	acc := sdk.AccAddress([]byte("addr1"))
 	code := make(Contract, 128)
 
-	args := make([]ScriptArg, 3)
-	args[0] = NewScriptArg("10", vm_grpc.VMTypeTag_U64)
-	args[1] = NewScriptArg("0x00", vm_grpc.VMTypeTag_Vector)
-	args[2] = NewScriptArg(acc.String(), vm_grpc.VMTypeTag_Address)
+	args := []ScriptArg{
+		{Type: vm_grpc.VMTypeTag_U64, Value: []byte{0x1, 0x2, 0x3, 0x4}},
+		{Type: vm_grpc.VMTypeTag_Vector, Value: []byte{0x0}},
+		{Type: vm_grpc.VMTypeTag_Address, Value: common_vm.Bech32ToLibra(acc)},
+	}
 
 	msg := NewMsgExecuteScript(acc, code, args)
 	require.Equal(t, msg.Signer, acc)
@@ -91,9 +93,9 @@ func TestMsgExecuteScript(t *testing.T) {
 func TestNewScriptArg(t *testing.T) {
 	t.Parallel()
 
-	value := "100"
+	value := []byte{0, 1}
 	tagType := vm_grpc.VMTypeTag_U64
-	arg := NewScriptArg(value, tagType)
+	arg := NewScriptArg(tagType, value)
 	require.Equal(t, tagType, arg.Type)
 	require.Equal(t, value, arg.Value)
 }

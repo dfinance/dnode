@@ -231,17 +231,16 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	require.NoErrorf(t, err, "can't get code for send script: %v", err)
 
 	// execute contract.
-	args := make([]types.ScriptArg, 1)
-	args[0] = types.ScriptArg{
-		Value: addr2.String(),
-		Type:  vm_grpc.VMTypeTag_Address,
+	var args []types.ScriptArg
+	{
+		arg, err := compilerClient.NewAddressScriptArg(addr2.String())
+		require.NoError(t, err)
+		args = append(args, arg)
 	}
-
 	for _, d := range denoms {
-		args = append(args, types.ScriptArg{
-			Value: toSend[d].String(),
-			Type:  vm_grpc.VMTypeTag_U128,
-		})
+		arg, err := compilerClient.NewU128ScriptArg(toSend[d].String())
+		require.NoError(t, err)
+		args = append(args, arg)
 	}
 
 	t.Logf("Execute send script")
@@ -318,14 +317,16 @@ func TestKeeper_DeployModule(t *testing.T) {
 	})
 	require.NoErrorf(t, err, "can't compiler script for math module: %v", err)
 
-	args := make([]types.ScriptArg, 2)
-	args[0] = types.ScriptArg{
-		Value: "10",
-		Type:  vm_grpc.VMTypeTag_U64,
+	var args []types.ScriptArg
+	{
+		arg, err := compilerClient.NewU64ScriptArg("10")
+		require.NoError(t, err)
+		args = append(args, arg)
 	}
-	args[1] = types.ScriptArg{
-		Value: "100",
-		Type:  vm_grpc.VMTypeTag_U64,
+	{
+		arg, err := compilerClient.NewU64ScriptArg("100")
+		require.NoError(t, err)
+		args = append(args, arg)
 	}
 
 	ctx, _ = input.ctx.CacheContext()
@@ -410,7 +411,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	checkNoEventErrors(events, t)
 
 	require.Contains(t, events, types.NewEventKeep())
-	require.Len(t, events[1].Attributes, 4)
+	require.Len(t, events[1].Attributes, 3)
 	require.EqualValues(t, events[1].Attributes[0].Key, types.AttrKeySenderAddress)
 	require.EqualValues(t, events[1].Attributes[0].Value, "0x"+hex.EncodeToString(common_vm.Bech32ToLibra(addr1)))
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeyType)
@@ -419,7 +420,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, 100)
-	require.EqualValues(t, events[1].Attributes[3].Value, "0x"+hex.EncodeToString(bz))
+	require.EqualValues(t, events[1].Attributes[2].Value, "0x"+hex.EncodeToString(bz))
 }
 
 // Test oracle price return.
@@ -456,10 +457,11 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	})
 	require.NoErrorf(t, err, "can't get code for error script: %v", err)
 
-	args := make([]types.ScriptArg, 1)
-	args[0] = types.ScriptArg{
-		Value: strconv.FormatUint(10, 10),
-		Type:  vm_grpc.VMTypeTag_U64,
+	var args []types.ScriptArg
+	{
+		arg, err := compilerClient.NewU64ScriptArg(strconv.FormatUint(10, 10))
+		require.NoError(t, err)
+		args = append(args, arg)
 	}
 
 	msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript, args)
@@ -513,15 +515,43 @@ func TestKeeper_AllArgsTypes(t *testing.T) {
 	require.NoErrorf(t, err, "script compile error")
 
 	// Add all args and execute
-	args := []types.ScriptArg{
-		{Type: vm_grpc.VMTypeTag_U8, Value: "128"},
-		{Type: vm_grpc.VMTypeTag_U64, Value: "1000000"},
-		{Type: vm_grpc.VMTypeTag_U128, Value: "100000000000000000000000000000"},
-		{Type: vm_grpc.VMTypeTag_Address, Value: addr1.String()},
-		{Type: vm_grpc.VMTypeTag_Bool, Value: "true"},
-		{Type: vm_grpc.VMTypeTag_Bool, Value: "false"},
-		{Type: vm_grpc.VMTypeTag_Vector, Value: hex.EncodeToString([]byte{0, 1})},
+	var args []types.ScriptArg
+	{
+		arg, err := compilerClient.NewU8ScriptArg("128")
+		require.NoError(t, err)
+		args = append(args, arg)
 	}
+	{
+		arg, err := compilerClient.NewU64ScriptArg("1000000")
+		require.NoError(t, err)
+		args = append(args, arg)
+	}
+	{
+		arg, err := compilerClient.NewU128ScriptArg("100000000000000000000000000000")
+		require.NoError(t, err)
+		args = append(args, arg)
+	}
+	{
+		arg, err := compilerClient.NewAddressScriptArg(addr1.String())
+		require.NoError(t, err)
+		args = append(args, arg)
+	}
+	{
+		arg, err := compilerClient.NewBoolScriptArg("true")
+		require.NoError(t, err)
+		args = append(args, arg)
+	}
+	{
+		arg, err := compilerClient.NewBoolScriptArg("false")
+		require.NoError(t, err)
+		args = append(args, arg)
+	}
+	{
+		arg, err := compilerClient.NewVectorScriptArg("0x0001")
+		require.NoError(t, err)
+		args = append(args, arg)
+	}
+
 	scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, args)
 	require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "script execute error")
 

@@ -42,7 +42,7 @@ func VMPathToHex(path *vm_grpc.VMAccessPath) string {
 	return fmt.Sprintf("Access path:\n"+
 		"  Address: %s\n"+
 		"  Path:    %s\n"+
-		"  Key:     %s\n",
+		"  Key:     %s",
 		hex.EncodeToString(path.Address),
 		hex.EncodeToString(path.Path),
 		hex.EncodeToString(common_vm.MakePathKey(path)),
@@ -123,7 +123,7 @@ func VMLCSTagToString(tag *vm_grpc.LcsTag, indentCount ...int) (string, error) {
 	}
 
 	indentStr := buildStrIndent()
-	strBuilder.WriteString("\n")
+	strBuilder.WriteString("LcsTag:\n")
 
 	// Field: TypeTag
 	typeTagStr, err := buildLcsTypeStr(tag.TypeTag)
@@ -150,13 +150,16 @@ func VMLCSTagToString(tag *vm_grpc.LcsTag, indentCount ...int) (string, error) {
 				if err != nil {
 					return "", buildErr(fmt.Sprintf("StructIdent.TypeParams[%d]", structParamIdx), err)
 				}
-				strBuilder.WriteString(fmt.Sprintf("%sStructIdent.TypeParams[%d]: %s\n", indentStr, structParamIdx, structParamTagStr))
+				strBuilder.WriteString(fmt.Sprintf("%sStructIdent.TypeParams[%d]: %s", indentStr, structParamIdx, structParamTagStr))
+				if structParamIdx < len(tag.StructIdent.TypeParams) - 1 {
+					strBuilder.WriteString("\n")
+				}
 			}
 		} else {
-			strBuilder.WriteString(fmt.Sprintf("%sStructIdent.TypeParams: empty\n", indentStr))
+			strBuilder.WriteString(fmt.Sprintf("%sStructIdent.TypeParams: empty", indentStr))
 		}
 	} else {
-		strBuilder.WriteString(fmt.Sprintf("%sStructIdent: nil\n", indentStr))
+		strBuilder.WriteString(fmt.Sprintf("%sStructIdent: nil", indentStr))
 	}
 
 	return strBuilder.String(), nil
@@ -194,7 +197,7 @@ func VMWriteSetToString(value *vm_grpc.VMValue) string {
 	return fmt.Sprintf("\nWriteSet %q:\n"+
 		"  Address: %s\n"+
 		"  Path: %s\n"+
-		"  Value: %s\n",
+		"  Value: %s",
 		VMWriteOpToString(value.Type),
 		hex.EncodeToString(value.Path.Address),
 		hex.EncodeToString(value.Path.Path),
@@ -211,9 +214,9 @@ func VMExecStatusToString(status vm_grpc.ContractStatus, sstruct *vm_grpc.VMStat
 		strBuilder.WriteString(fmt.Sprintf("  Major code: %d\n", sstruct.MajorStatus))
 		strBuilder.WriteString(fmt.Sprintf("  Major status: %s\n", GetStrCode(strconv.FormatUint(sstruct.MajorStatus, 10))))
 		strBuilder.WriteString(fmt.Sprintf("  Sub code: %d\n", sstruct.SubStatus))
-		strBuilder.WriteString(fmt.Sprintf("  Message: %s\n", sstruct.Message))
+		strBuilder.WriteString(fmt.Sprintf("  Message: %s", sstruct.Message))
 	} else {
-		strBuilder.WriteString("  VMStatus: nil\n")
+		strBuilder.WriteString("  VMStatus: nil")
 	}
 
 	return strBuilder.String()
@@ -238,7 +241,7 @@ func VMEventToString(event *vm_grpc.VMEvent) string {
 		strBuilder.WriteString("  SenderModule: nil\n")
 	}
 	strBuilder.WriteString(fmt.Sprintf("  EventType: %s\n", VMLCSTagToStringPanic(event.EventType, 2)))
-	strBuilder.WriteString(fmt.Sprintf("  EventData: %s\n", hex.EncodeToString(event.EventData)))
+	strBuilder.WriteString(fmt.Sprintf("  EventData: %s", hex.EncodeToString(event.EventData)))
 
 	return strBuilder.String()
 }
@@ -261,10 +264,10 @@ func PrintVMStackTrace(txId []byte, log log.Logger, exec *vm_grpc.VMExecuteRespo
 	// Print all writeSets
 	if len(exec.WriteSet) > 0 {
 		for wsIdx, ws := range exec.WriteSet {
-			strBuilder.WriteString(fmt.Sprintf("WriteSet[%d]: %s\n", wsIdx, VMWriteSetToString(ws)))
+			strBuilder.WriteString(fmt.Sprintf("WriteSet[%d]: %s", wsIdx, VMWriteSetToString(ws)))
 		}
 	} else {
-		strBuilder.WriteString("WriteSet: empty\n")
+		strBuilder.WriteString("WriteSet: empty")
 	}
 
 	log.Debug(strBuilder.String())
