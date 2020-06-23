@@ -158,14 +158,14 @@ func TestProcessExecution(t *testing.T) {
 
 	respEvents := make([]*vm_grpc.VMEvent, 2)
 	respEvents[0] = &vm_grpc.VMEvent{
-		SenderAddress: common_vm.Bech32ToLibra(common_vm.StdLibAddress),
+		SenderAddress: common_vm.StdLibAddress,
 		EventType: &vm_grpc.LcsTag{
 			TypeTag: vm_grpc.LcsType_LcsVector,
 		},
 		EventData: randomValue(32),
 	}
 	respEvents[1] = &vm_grpc.VMEvent{
-		SenderAddress: common_vm.Bech32ToLibra(common_vm.StdLibAddress),
+		SenderAddress: common_vm.StdLibAddress,
 		EventType: &vm_grpc.LcsTag{
 			TypeTag: vm_grpc.LcsType_LcsU64,
 		},

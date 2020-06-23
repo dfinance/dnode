@@ -69,7 +69,7 @@ func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath
 	path := hash.Sum(tag)
 
 	return &vm_grpc.VMAccessPath{
-		Address: make([]byte, common_vm.VMAddressLength),
+		Address: common_vm.StdLibAddress,
 		Path:    path,
 	}
 }

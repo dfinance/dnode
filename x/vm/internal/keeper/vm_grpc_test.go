@@ -64,11 +64,11 @@ func newArgInputs() argInputs {
 	}
 	// Vector
 	{
-		value := "0x" + hex.EncodeToString(randomValue(32))
+		vector := randomValue(32)
 		inputs = append(inputs, argInput{
 			vmType:  vm_grpc.VMTypeTag_Vector,
-			vmValue: []byte(value),
-			value:   value,
+			vmValue: vector,
+			value:   hex.EncodeToString(vector),
 		})
 	}
 	// Address
