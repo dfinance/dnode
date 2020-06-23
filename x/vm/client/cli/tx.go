@@ -127,14 +127,14 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			for i, arg := range parsedArgs {
 				switch extractedArgs[i] {
 				case vm_grpc.VMTypeTag_Vector:
-					// trying to parse hex
+					// trying to parse hex string
 					_, err := hex.DecodeString(arg)
 					if err != nil {
-						// if not success, just convert string to hex.
-						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("x\"%s\"", hex.EncodeToString([]byte(arg))), extractedArgs[i])
+						// if failed, convert string to hex
+						scriptArgs[i] = types.NewScriptArg(hex.EncodeToString([]byte(arg)), extractedArgs[i])
 					} else {
-						// otherwise just use hex.
-						scriptArgs[i] = types.NewScriptArg(fmt.Sprintf("x\"%s\"", arg), extractedArgs[i])
+						// otherwise use hex
+						scriptArgs[i] = types.NewScriptArg(arg, extractedArgs[i])
 					}
 
 				case vm_grpc.VMTypeTag_U8, vm_grpc.VMTypeTag_U64, vm_grpc.VMTypeTag_U128:

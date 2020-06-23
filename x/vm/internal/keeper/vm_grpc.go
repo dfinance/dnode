@@ -3,6 +3,7 @@ package keeper
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -98,6 +99,12 @@ func NewExecuteContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, arg
 			} else {
 				argValue = []byte{0}
 			}
+		case vm_grpc.VMTypeTag_Vector:
+			value, err := hex.DecodeString(arg.Value)
+			if err != nil {
+				return nil, fmt.Errorf("argument[%d]: can't parse vector argument %s: %v", argIdx, arg.Value, err)
+			}
+			argValue = value
 		default:
 			argValue = []byte(arg.Value)
 		}
