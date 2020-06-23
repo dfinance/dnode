@@ -107,7 +107,7 @@ const argsScript = `
 script {
 	use 0x1::Vector;
 
-	fun main(_account: &signer, arg_u8: u8, arg_u64: u64, arg_u128: u128, arg_addr: address, arg_bool_true: bool, arg_bool_false: bool, arg_vector: vector<u8>) {
+	fun main(account: &signer, arg_u8: u8, arg_u64: u64, arg_u128: u128, arg_addr: address, arg_bool_true: bool, arg_bool_false: bool, arg_vector: vector<u8>) {
         assert(arg_u8 == 128, 10);
         assert(arg_u64 == 1000000, 11);
         assert(arg_u128 == 100000000000000000000000000000, 12);
@@ -117,9 +117,9 @@ script {
         assert(arg_bool_true == true, 30);
         assert(arg_bool_false == false, 31);
         
-        assert(Vector::length(&arg_vector) == 2, 40);
-        assert(Vector::pop_back(&arg_vector) == 1, 41);
-        assert(Vector::pop_back(&arg_vector) == 0, 42);
+        assert(Vector::length<u8>(&mut arg_vector) == 2, 40);
+        assert(Vector::pop_back<u8>(&mut arg_vector) == 1, 41);
+        assert(Vector::pop_back<u8>(&mut arg_vector) == 0, 42);
 	}
 }
 `
@@ -482,8 +482,6 @@ func TestKeeper_ErrorScript(t *testing.T) {
 }
 
 func TestKeeper_AllArgsTypes(t *testing.T) {
-	t.Skip()
-
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
@@ -522,7 +520,7 @@ func TestKeeper_AllArgsTypes(t *testing.T) {
 		{Type: vm_grpc.VMTypeTag_Address, Value: addr1.String()},
 		{Type: vm_grpc.VMTypeTag_Bool, Value: "true"},
 		{Type: vm_grpc.VMTypeTag_Bool, Value: "false"},
-		{Type: vm_grpc.VMTypeTag_Vector, Value: fmt.Sprintf("x\"%s\"", hex.EncodeToString([]byte{0, 1}))},
+		{Type: vm_grpc.VMTypeTag_Vector, Value: hex.EncodeToString([]byte{0, 1})},
 	}
 	scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, args)
 	require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "script execute error")
