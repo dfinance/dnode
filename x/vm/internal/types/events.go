@@ -2,6 +2,7 @@
 package types
 
 import (
+	"bytes"
 	"encoding/hex"
 	"strconv"
 
@@ -29,9 +30,11 @@ const (
 	StatusDiscard = "discard"
 	StatusKeep    = "keep"
 	StatusError   = "error"
+)
 
-	// Misc
-	AttrKeyTypePrefix = "0x1::Event::"
+var (
+	// System address.
+	CoreLib = []byte{16}
 )
 
 // New event with keep status.
@@ -68,14 +71,23 @@ func NewEventDiscard(errorStatus *vm_grpc.VMStatus) sdk.Event {
 	return newEventStatus(StatusDiscard, errorStatus)
 }
 
+// Get sender address 0x1 or wallet1...
+func GetSenderAddress(addr []byte) string {
+	if bytes.Equal(addr, CoreLib) {
+		return "0x" + hex.EncodeToString(addr)
+	} else {
+		return sdk.AccAddress(addr).String()
+	}
+}
+
 // Parse VM event to standard SDK event.
 // In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
 func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
 	// eventData: not parsed as it doesn't make sense
 	attrs := []sdk.Attribute{
-		sdk.NewAttribute(AttrKeySenderAddress, "0x"+hex.EncodeToString(event.SenderAddress)),
-		sdk.NewAttribute(AttrKeyType, AttrKeyTypePrefix+StringifyEventTypePanic(event.EventType)),
-		sdk.NewAttribute(AttrKeyData, "0x"+hex.EncodeToString(event.EventData)),
+		sdk.NewAttribute(AttrKeySenderAddress, GetSenderAddress(event.SenderAddress)),
+		sdk.NewAttribute(AttrKeyType, StringifyEventTypePanic(event.EventType)),
+		sdk.NewAttribute(AttrKeyData, hex.EncodeToString(event.EventData)),
 	}
 
 	if event.SenderModule != nil {
