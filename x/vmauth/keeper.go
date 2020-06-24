@@ -1,4 +1,4 @@
-// Implements account keeper with vm storage inside to allow work with accounts from VM.
+// Implements account keeper with vm storage inside to allow work with account resources from VM.
 package vmauth
 
 import (
@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	codec "github.com/tendermint/go-amino"
 
 	"github.com/dfinance/dnode/x/common_vm"
@@ -32,49 +31,7 @@ func NewVMAccountKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Su
 	}
 }
 
-// Get account from VM storage.
-// If no account found, second return parameter is false.
-func (keeper VMAccountKeeper) getVMAccount(ctx sdk.Context, address sdk.AccAddress) (AccountResource, bool) {
-	accessPath := &vm_grpc.VMAccessPath{
-		Address: common_vm.Bech32ToLibra(address),
-		Path:    GetResPath(),
-	}
-
-	val := keeper.vmKeeper.GetValue(ctx, accessPath)
-	if val == nil {
-		return AccountResource{}, false
-	}
-
-	return BytesToAccRes(val), true
-}
-
-// Set account for VM.
-func (keeper VMAccountKeeper) setVMAccount(ctx sdk.Context, address sdk.AccAddress, vmAccount AccountResource) {
-	accessPath := &vm_grpc.VMAccessPath{
-		Address: common_vm.Bech32ToLibra(address),
-		Path:    GetResPath(),
-	}
-
-	keeper.vmKeeper.SetValue(ctx, accessPath, AccResToBytes(vmAccount))
-}
-
-// Save new VM account.
-func (keeper VMAccountKeeper) saveNewVMAccount(ctx sdk.Context, address sdk.AccAddress, vmAccount AccountResource, eventHandleGen EventHandleGenerator) {
-	vmAddr := common_vm.Bech32ToLibra(address)
-	accountResourcePath := &vm_grpc.VMAccessPath{
-		Address: vmAddr,
-		Path:    GetResPath(),
-	}
-	eventHandlerPath := &vm_grpc.VMAccessPath{
-		Address: vmAddr,
-		Path:    GetEHPath(),
-	}
-
-	keeper.vmKeeper.SetValue(ctx, accountResourcePath, AccResToBytes(vmAccount))
-	keeper.vmKeeper.SetValue(ctx, eventHandlerPath, EventHandlerGenToBytes(eventHandleGen))
-}
-
-// Save balances in VM keeper.
+// saveBalances updates / removes Balance resources from the storage.
 func (keeper VMAccountKeeper) saveBalances(ctx sdk.Context, balances Balances, toDelete Balances) {
 	for _, balance := range balances {
 		keeper.vmKeeper.SetValue(ctx, balance.accessPath, BalanceToBytes(balance.balance))
@@ -87,7 +44,7 @@ func (keeper VMAccountKeeper) saveBalances(ctx sdk.Context, balances Balances, t
 	}
 }
 
-// Load balances from VM storage.
+// loadBalances gets Balance resources from the storage.
 func (keeper VMAccountKeeper) loadBalances(ctx sdk.Context, addr sdk.AccAddress) Balances {
 	balances := loadAccessPaths(addr)
 	realBalances := make([]Balance, 0)
@@ -104,29 +61,22 @@ func (keeper VMAccountKeeper) loadBalances(ctx sdk.Context, addr sdk.AccAddress)
 	return realBalances
 }
 
-// Set account in storage.
+// SetAccount stores account resources to the storage and updates std keeper.
 func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
-	addr := acc.GetAddress()
-	source, isExists := keeper.getVMAccount(ctx, addr)
-
-	if isExists {
-		keeper.setVMAccount(ctx, addr, source)
-	} else {
-		vmAccount, eventHandleGen := CreateVMAccount(acc)
-		keeper.saveNewVMAccount(ctx, addr, vmAccount, eventHandleGen)
-	}
-
-	// Update balances extracted from coins.
+	// Update balances extracted from Coins.
 	balances, toDelete := coinsToBalances(acc)
 	keeper.saveBalances(ctx, balances, toDelete)
 
+	// Add account to std keeper.
 	keeper.AccountKeeper.SetAccount(ctx, acc)
 }
 
-// Get account from storage.
+// GetAccount reads account from the std keeper and updates account resources.
 func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) exported.Account {
+	// Get account from std keeper.
 	account := keeper.AccountKeeper.GetAccount(ctx, addr)
 
+	// Update balances.
 	balances := keeper.loadBalances(ctx, addr)
 	if len(balances) > 0 {
 		realCoins := balancesToCoins(balances)
@@ -152,8 +102,8 @@ func (keeper VMAccountKeeper) GetAccount(ctx sdk.Context, addr sdk.AccAddress) e
 	return account
 }
 
-// GetAllAccounts returns all accounts in the accountKeeper.
-// as it's not calling anywhere, as it seems, we can ignore vm storage for now.
+// GetAllAccounts returns all accounts in the std keeper.
+// As it's not colled anywhere (as it seems), we can ignore vm storage for now.
 // todo: process all vm storage accounts and compare with standard accounts.
 func (keeper VMAccountKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account {
 	accounts := keeper.AccountKeeper.GetAllAccounts(ctx)
@@ -161,33 +111,20 @@ func (keeper VMAccountKeeper) GetAllAccounts(ctx sdk.Context) []exported.Account
 	return accounts
 }
 
-// Removes an account from storage.
-// NOTE: this will cause supply invariant violation if called
+// RemoveAccount removes account resources from the storage and removes account from the std keeper.
+// NOTE: this will cause supply invariant violation if called.
 func (keeper VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Account) {
+	// Remove account from the std keeper.
 	keeper.AccountKeeper.RemoveAccount(ctx, acc)
-	vmAddr := common_vm.Bech32ToLibra(acc.GetAddress())
 
-	// Should remove account from VM storage too
-	keeper.vmKeeper.DelValue(ctx, &vm_grpc.VMAccessPath{
-		Address: vmAddr,
-		Path:    GetResPath(),
-	})
-
-	// Should remove event generator.
-	keeper.vmKeeper.DelValue(ctx, &vm_grpc.VMAccessPath{
-		Address: vmAddr,
-		Path:    GetEHPath(),
-	})
-
-	// Should remove all balances.
+	// Remove all Balance resources.
 	balances := loadAccessPaths(acc.GetAddress())
 	for _, b := range balances {
 		keeper.vmKeeper.DelValue(ctx, b.accessPath)
 	}
 }
 
-// GetSignerAcc returns an account for a given address that is expected to sign
-// a transaction.
+// GetSignerAcc returns an account for a given address that is expected to sign a transaction.
 func GetSignerAcc(ctx sdk.Context, ak VMAccountKeeper, addr sdk.AccAddress) (exported.Account, error) {
 	if acc := ak.GetAccount(ctx, addr); acc != nil {
 		return acc, nil

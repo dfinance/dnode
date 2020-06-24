@@ -130,7 +130,7 @@ func (server vmServer) ExecuteScript(context.Context, *vm_grpc.VMExecuteScript) 
 
 	events := make([]*vm_grpc.VMEvent, 1)
 	events[0] = &vm_grpc.VMEvent{
-		SenderAddress: common_vm.Bech32ToLibra(common_vm.StdLibAddress),
+		SenderAddress: common_vm.StdLibAddress,
 		EventType: &vm_grpc.LcsTag{
 			TypeTag: vm_grpc.LcsType_LcsVector,
 		},

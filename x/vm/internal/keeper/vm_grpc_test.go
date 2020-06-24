@@ -3,7 +3,6 @@
 package keeper
 
 import (
-	"encoding/hex"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/store"
@@ -14,101 +13,53 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
-
 	"github.com/dfinance/dnode/x/common_vm"
+	"github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-type argInput struct {
-	vmType  vm_grpc.VMTypeTag
-	vmValue []byte
-	value   string
-}
-
-type argInputs []argInput
-
-func (list argInputs) getScriptArgs() []types.ScriptArg {
-	args := make([]types.ScriptArg, 0, len(list))
-	for _, input := range list {
-		args = append(args, types.ScriptArg{
-			Type:  input.vmType,
-			Value: input.value,
-		})
-	}
-
-	return args
-}
-
 // Generate VM arguments.
-func newArgInputs() argInputs {
-	inputs := make(argInputs, 0)
+func newArgInputs() []types.ScriptArg {
+	args := make([]types.ScriptArg, 0)
 
 	// Bool: true
 	{
-		value := "true"
-		inputs = append(inputs, argInput{
-			vmType:  vm_grpc.VMTypeTag_Bool,
-			vmValue: []byte(value),
-			value:   value,
-		})
+		tag, _ := client.NewBoolScriptArg("true")
+		args = append(args, tag)
 	}
 	// Bool: false
 	{
-		value := "false"
-		inputs = append(inputs, argInput{
-			vmType:  vm_grpc.VMTypeTag_Bool,
-			vmValue: []byte(value),
-			value:   value,
-		})
+		tag, _ := client.NewBoolScriptArg("false")
+		args = append(args, tag)
 	}
 	// Vector
 	{
-		value := "0x" + hex.EncodeToString(randomValue(32))
-		inputs = append(inputs, argInput{
-			vmType:  vm_grpc.VMTypeTag_Vector,
-			vmValue: []byte(value),
-			value:   value,
-		})
+		tag, _ := client.NewVectorScriptArg("0x010203040506070809AABBCCDDEEFF")
+		args = append(args, tag)
 	}
 	// Address
 	{
 		addr := sdk.AccAddress(randomValue(common_vm.VMAddressLength))
-		inputs = append(inputs, argInput{
-			vmType:  vm_grpc.VMTypeTag_Address,
-			vmValue: common_vm.Bech32ToLibra(addr),
-			value:   addr.String(),
-		})
+		tag, _ := client.NewAddressScriptArg(addr.String())
+		args = append(args, tag)
 	}
 	// U8
 	{
-		value := "128"
-		inputs = append(inputs, argInput{
-			vmType:  vm_grpc.VMTypeTag_U8,
-			vmValue: []byte(value),
-			value:   value,
-		})
+		tag, _ := client.NewU8ScriptArg("128")
+		args = append(args, tag)
 	}
 	// U64
 	{
-		value := "1000000"
-		inputs = append(inputs, argInput{
-			vmType:  vm_grpc.VMTypeTag_U64,
-			vmValue: []byte(value),
-			value:   value,
-		})
+		tag, _ := client.NewU64ScriptArg("1000000")
+		args = append(args, tag)
 	}
 	// U128
 	{
-		value := "100000000000000000000000000000"
-		inputs = append(inputs, argInput{
-			vmType:  vm_grpc.VMTypeTag_U128,
-			vmValue: []byte(value),
-			value:   value,
-		})
+		tag, _ := client.NewU128ScriptArg("100000000000000000000000000000")
+		args = append(args, tag)
 	}
 
-	return inputs
+	return args
 }
 
 // Get free gas calculations.
@@ -155,7 +106,7 @@ func TestNewContract(t *testing.T) {
 	require.Equal(t, uint64(types.VmGasPrice), contractModule.GasUnitPrice)
 	require.Equal(t, code, contractModule.Code)
 
-	contractScript, err := NewExecuteContract(addr, maxGas, code, argInputs.getScriptArgs())
+	contractScript, err := NewExecuteContract(addr, maxGas, code, argInputs)
 	require.NoError(t, err)
 	require.Equal(t, common_vm.Bech32ToLibra(addr), contractScript.Address)
 	require.Equal(t, maxGas, contractScript.MaxGasAmount)
@@ -163,8 +114,8 @@ func TestNewContract(t *testing.T) {
 	require.Equal(t, code, contractScript.Code)
 	require.Equal(t, len(argInputs), len(contractScript.Args))
 	for i, contractArg := range contractScript.Args {
-		require.Equal(t, argInputs[i].vmType, contractArg.Type)
-		require.Equal(t, argInputs[i].vmValue, contractArg.Value)
+		require.Equal(t, argInputs[i].Type, contractArg.Type)
+		require.Equal(t, argInputs[i].Value, contractArg.Value)
 	}
 }
 

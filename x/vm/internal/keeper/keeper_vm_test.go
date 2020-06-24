@@ -158,14 +158,14 @@ func TestProcessExecution(t *testing.T) {
 
 	respEvents := make([]*vm_grpc.VMEvent, 2)
 	respEvents[0] = &vm_grpc.VMEvent{
-		SenderAddress: common_vm.Bech32ToLibra(common_vm.StdLibAddress),
+		SenderAddress: common_vm.StdLibAddress,
 		EventType: &vm_grpc.LcsTag{
 			TypeTag: vm_grpc.LcsType_LcsVector,
 		},
 		EventData: randomValue(32),
 	}
 	respEvents[1] = &vm_grpc.VMEvent{
-		SenderAddress: common_vm.Bech32ToLibra(common_vm.StdLibAddress),
+		SenderAddress: common_vm.StdLibAddress,
 		EventType: &vm_grpc.LcsTag{
 			TypeTag: vm_grpc.LcsType_LcsU64,
 		},
@@ -361,6 +361,6 @@ func Test_KeeperGetOracleAccessPath(t *testing.T) {
 
 	assetCode := "eth_usdt"
 	path := input.vk.GetOracleAccessPath(assetCode)
-	require.Equal(t, make([]byte, common_vm.VMAddressLength), path.Address)
+	require.Equal(t, common_vm.StdLibAddress, path.Address)
 	require.Equal(t, "ffe300b84cc0315d7a963b504ca77202c8c38cd28bad5bce7bbe0301c806666200", hex.EncodeToString(path.Path))
 }

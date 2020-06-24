@@ -70,7 +70,7 @@ func TestNewEventFromVM(t *testing.T) {
 	binary.LittleEndian.PutUint64(valBytes, value)
 
 	vmEvent := vm_grpc.VMEvent{
-		SenderAddress: common_vm.Bech32ToLibra(common_vm.StdLibAddress),
+		SenderAddress: common_vm.StdLibAddress,
 		SenderModule: &vm_grpc.ModuleIdent{
 			Name:    "testModule",
 			Address: common_vm.Bech32ToLibra(moduleAddr),
