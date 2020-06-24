@@ -232,7 +232,7 @@ func VMEventToString(event *vm_grpc.VMEvent) string {
 	}
 	strBuilder.WriteString("\n")
 
-	strBuilder.WriteString("Event\n")
+	strBuilder.WriteString("Event:\n")
 	strBuilder.WriteString(fmt.Sprintf("  SenderAddress: %s\n", hex.EncodeToString(event.SenderAddress)))
 	if event.SenderModule != nil {
 		strBuilder.WriteString(fmt.Sprintf("  SenderModule.Address: %s\n", hex.EncodeToString(event.SenderModule.Address)))
@@ -271,4 +271,90 @@ func PrintVMStackTrace(txId []byte, log log.Logger, exec *vm_grpc.VMExecuteRespo
 	}
 
 	log.Debug(strBuilder.String())
+}
+
+// StringifyEventType return vm_grpc.LcsTag Move serialization.
+// Func is simmilar to VMLCSTagToString, but result is one lined Move representation.
+func StringifyEventType(tag *vm_grpc.LcsTag) (string, error) {
+	if tag == nil {
+		return "", nil
+	}
+
+	// Helper function: lcsTypeToString returns vm_grpc.LcsType Move representation
+	lcsTypeToString := func(lcsType vm_grpc.LcsType) string {
+		switch lcsType {
+		case vm_grpc.LcsType_LcsBool:
+			return "bool"
+		case vm_grpc.LcsType_LcsU8:
+			return "u8"
+		case vm_grpc.LcsType_LcsU64:
+			return "u64"
+		case vm_grpc.LcsType_LcsU128:
+			return "u128"
+		case vm_grpc.LcsType_LcsSigner:
+			return "signer"
+		case vm_grpc.LcsType_LcsVector:
+			return "vector"
+		case vm_grpc.LcsType_LcsStruct:
+			return "struct"
+		default:
+			return vm_grpc.LcsType_name[int32(lcsType)]
+		}
+	}
+
+	// Check data consistency
+	if tag.TypeTag == vm_grpc.LcsType_LcsVector && tag.VectorType == nil {
+		return "", fmt.Errorf("TypeTag of type %q, but VectorType is nil", lcsTypeToString(tag.TypeTag))
+	}
+	if tag.TypeTag == vm_grpc.LcsType_LcsStruct && tag.StructIdent == nil {
+		return "", fmt.Errorf("TypeTag of type %q, but StructIdent is nil", lcsTypeToString(tag.TypeTag))
+	}
+
+	// Vector tag
+	if tag.VectorType != nil {
+		vectorType, err := StringifyEventType(tag.VectorType)
+		if err != nil {
+			return "", fmt.Errorf("VectorType serialization: %w", err)
+		}
+		return fmt.Sprintf("%s<%s>", lcsTypeToString(vm_grpc.LcsType_LcsVector), vectorType), nil
+	}
+
+	// Struct tag
+	if tag.StructIdent != nil {
+		structType := fmt.Sprintf("0x%s::%s::%s", hex.EncodeToString(tag.StructIdent.Address), tag.StructIdent.Module, tag.StructIdent.Name)
+		if len(tag.StructIdent.TypeParams) == 0 {
+			return structType, nil
+		}
+
+		structParams := make([]string, 0, len(tag.StructIdent.TypeParams))
+		for paramIdx, paramTag := range tag.StructIdent.TypeParams {
+			structParam, err := StringifyEventType(paramTag)
+			if err != nil {
+				return "", fmt.Errorf("StructIdent serialization: TypeParam[%d]: %w", paramIdx, err)
+			}
+			structParams = append(structParams, structParam)
+		}
+		return fmt.Sprintf("%s<%s>", structType, strings.Join(structParams, ", ")), nil
+	}
+
+	// Single tag
+	return lcsTypeToString(tag.TypeTag), nil
+}
+
+// StringifyEventTypePanic wraps StringifyEventType and panic on failure.
+func StringifyEventTypePanic(tag *vm_grpc.LcsTag) string {
+	eventType, eventTypeErr := StringifyEventType(tag)
+	if eventTypeErr != nil {
+		debugMsg := ""
+		if tagStr, tagErr := VMLCSTagToString(tag); tagErr != nil {
+			debugMsg = fmt.Sprintf("VMLCSTagToString failed: %v", tagErr)
+		} else {
+			debugMsg = tagStr
+		}
+
+		panicErr := fmt.Sprintf("EventType serialization failed: %v\n%s", eventTypeErr, debugMsg)
+		panic(panicErr)
+	}
+
+	return eventType
 }
