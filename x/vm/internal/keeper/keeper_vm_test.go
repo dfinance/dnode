@@ -161,6 +161,9 @@ func TestProcessExecution(t *testing.T) {
 		SenderAddress: common_vm.StdLibAddress,
 		EventType: &vm_grpc.LcsTag{
 			TypeTag: vm_grpc.LcsType_LcsVector,
+			VectorType: &vm_grpc.LcsTag{
+				TypeTag: vm_grpc.LcsType_LcsU8,
+			},
 		},
 		EventData: randomValue(32),
 	}

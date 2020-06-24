@@ -343,7 +343,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 	require.EqualValues(t, events[1].Attributes[0].Key, types.AttrKeySenderAddress)
 	require.EqualValues(t, events[1].Attributes[0].Value, "0x"+hex.EncodeToString(common_vm.Bech32ToLibra(addr1)))
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[1].Value, types.VMLCSTagToStringPanic(&vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
+	require.EqualValues(t, events[1].Attributes[1].Value, types.AttrKeyTypePrefix+types.StringifyEventTypePanic(&vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
 	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyData)
 
 	uintBz := make([]byte, 8)
@@ -415,7 +415,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	require.EqualValues(t, events[1].Attributes[0].Key, types.AttrKeySenderAddress)
 	require.EqualValues(t, events[1].Attributes[0].Value, "0x"+hex.EncodeToString(common_vm.Bech32ToLibra(addr1)))
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[1].Value, types.VMLCSTagToStringPanic(&vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
+	require.EqualValues(t, events[1].Attributes[1].Value, types.AttrKeyTypePrefix+types.StringifyEventTypePanic(&vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
 	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyData)
 
 	bz := make([]byte, 8)
@@ -919,5 +919,108 @@ func TestKeeper_Path(t *testing.T) {
 
 		t.Logf("%s: checking script events", testID)
 		checkNoEventErrors(input.ctx.EventManager().Events(), t)
+	}
+}
+
+// VM Event.EventType string serialization test.
+func Test_EventTypeSerialization(t *testing.T) {
+	const moduleSrc = `
+		module Foo {
+		    struct FooEvent<T, VT> {
+		        field_T:  T,
+		        field_VT: VT
+		    }
+		
+		    public fun NewFooEvent<T, VT>(arg_T: T, arg_VT: VT): FooEvent<T, VT> {
+		        let fooEvent = FooEvent<T, VT> {
+		            field_T:  arg_T,
+		            field_VT: arg_VT
+		        };
+				
+				0x1::Event::emit<bool>(true);
+		
+		        fooEvent
+		    }
+		}
+	`
+	const scriptSrcFmt = `
+		script {
+			use %s::Foo;
+			
+			fun main(_account: &signer) {
+				// Event with single tag
+				0x1::Event::emit<u8>(128);
+				
+				// Event with single vector
+				0x1::Event::emit<vector<u8>>(x"0102");
+				
+				// Two events:
+				//   1. Module: single tag
+				//   2. Script: generic struct with tag, vector
+				let fooEvent = Foo::NewFooEvent<u64, vector<u8>>(1000, x"0102");
+				0x1::Event::emit<Foo::FooEvent<u64, vector<u8>>>(fooEvent);
+    		}
+		}
+	`
+
+	config := sdk.GetConfig()
+	dnodeConfig.InitBechPrefixes(config)
+
+	input := newTestInput(false)
+
+	// Create account
+	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
+	input.ak.SetAccount(input.ctx, acc1)
+
+	// Init genesis and start DS
+	gs := getGenesis(t)
+	input.vk.InitGenesis(input.ctx, gs)
+	input.vk.SetDSContext(input.ctx)
+	input.vk.StartDSServer(input.ctx)
+	time.Sleep(2 * time.Second)
+
+	// Launch DVM container
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
+
+	// Compile, publish module
+	moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		Text:    moduleSrc,
+		Address: common_vm.Bech32ToLibra(addr1),
+	})
+	require.NoErrorf(t, err, "module compile error")
+
+	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+	require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
+	ctx, writeCtx := input.ctx.CacheContext()
+	require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "module deploy error")
+
+	t.Logf("checking module events")
+	checkNoEventErrors(ctx.EventManager().Events(), t)
+	writeCtx()
+
+	// Compile, execute script
+	scriptSrc := fmt.Sprintf(scriptSrcFmt, addr1)
+	scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		Text:    scriptSrc,
+		Address: common_vm.Bech32ToLibra(addr1),
+	})
+	require.NoErrorf(t, err, "script compile error")
+
+	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+	resp, err := input.vk.ExecuteScriptNoProcessing(input.ctx, scriptMsg)
+	require.NoErrorf(t, err, "script execute error")
+
+	t.Logf("checking script events")
+	checkNoEventErrors(input.ctx.EventManager().Events(), t)
+
+	for idx, event := range resp.Events {
+		t.Logf("Event #%d", idx)
+		t.Log(types.VMEventToString(event))
+
+		eventType, err := types.StringifyEventType(event.EventType)
+		require.NoError(t, err, "event serialization")
+		t.Logf("Serialization: %s", eventType)
 	}
 }

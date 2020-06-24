@@ -78,6 +78,21 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 	return nil
 }
 
+// Execute script without response processing (used for debug).
+func (keeper Keeper) ExecuteScriptNoProcessing(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteResponse, error) {
+	req, sdkErr := NewExecuteRequest(ctx, msg)
+	if sdkErr != nil {
+		return nil, sdkErr
+	}
+
+	exec, err := keeper.sendExecuteReq(ctx, nil, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return exec, nil
+}
+
 // Deploy module.
 func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) error {
 	req, sdkErr := NewDeployRequest(ctx, msg)

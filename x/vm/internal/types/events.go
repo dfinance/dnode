@@ -29,6 +29,9 @@ const (
 	StatusDiscard = "discard"
 	StatusKeep    = "keep"
 	StatusError   = "error"
+
+	// Misc
+	AttrKeyTypePrefix = "0x1::Event::"
 )
 
 // New event with keep status.
@@ -68,12 +71,10 @@ func NewEventDiscard(errorStatus *vm_grpc.VMStatus) sdk.Event {
 // Parse VM event to standard SDK event.
 // In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
 func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
-	// TODO: check the tests TestNewEventFromVM
-
-	// eventData: we will not parse event data, as it doesn't make sense
+	// eventData: not parsed as it doesn't make sense
 	attrs := []sdk.Attribute{
 		sdk.NewAttribute(AttrKeySenderAddress, "0x"+hex.EncodeToString(event.SenderAddress)),
-		sdk.NewAttribute(AttrKeyType, VMLCSTagToStringPanic(event.EventType)),
+		sdk.NewAttribute(AttrKeyType, AttrKeyTypePrefix+StringifyEventTypePanic(event.EventType)),
 		sdk.NewAttribute(AttrKeyData, "0x"+hex.EncodeToString(event.EventData)),
 	}
 
