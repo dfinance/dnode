@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -22,6 +23,8 @@ const (
 
 	VmGasPrice       = 1
 	VmUnknownTagType = -1
+
+	EventTypeProcessingGas = 10000
 )
 
 // VM related variables.
@@ -151,7 +154,7 @@ func VMLCSTagToString(tag *vm_grpc.LcsTag, indentCount ...int) (string, error) {
 					return "", buildErr(fmt.Sprintf("StructIdent.TypeParams[%d]", structParamIdx), err)
 				}
 				strBuilder.WriteString(fmt.Sprintf("%sStructIdent.TypeParams[%d]: %s", indentStr, structParamIdx, structParamTagStr))
-				if structParamIdx < len(tag.StructIdent.TypeParams) - 1 {
+				if structParamIdx < len(tag.StructIdent.TypeParams)-1 {
 					strBuilder.WriteString("\n")
 				}
 			}
@@ -275,7 +278,11 @@ func PrintVMStackTrace(txId []byte, log log.Logger, exec *vm_grpc.VMExecuteRespo
 
 // StringifyEventType return vm_grpc.LcsTag Move serialization.
 // Func is simmilar to VMLCSTagToString, but result is one lined Move representation.
-func StringifyEventType(tag *vm_grpc.LcsTag) (string, error) {
+func StringifyEventType(ctx sdk.Context, tag *vm_grpc.LcsTag, gas, depth uint64) (string, error) {
+	// we can't consume gas later, as it open doors for holes.
+	newGas := gas + (EventTypeProcessingGas * depth)
+	ctx.GasMeter().ConsumeGas(newGas, "event type processing")
+
 	if tag == nil {
 		return "", nil
 	}
@@ -312,7 +319,7 @@ func StringifyEventType(tag *vm_grpc.LcsTag) (string, error) {
 
 	// Vector tag
 	if tag.VectorType != nil {
-		vectorType, err := StringifyEventType(tag.VectorType)
+		vectorType, err := StringifyEventType(ctx, tag.VectorType, newGas, depth+1)
 		if err != nil {
 			return "", fmt.Errorf("VectorType serialization: %w", err)
 		}
@@ -321,14 +328,14 @@ func StringifyEventType(tag *vm_grpc.LcsTag) (string, error) {
 
 	// Struct tag
 	if tag.StructIdent != nil {
-		structType := fmt.Sprintf("0x%s::%s::%s", hex.EncodeToString(tag.StructIdent.Address), tag.StructIdent.Module, tag.StructIdent.Name)
+		structType := fmt.Sprintf("%s::%s::%s", GetSenderAddress(tag.StructIdent.Address), tag.StructIdent.Module, tag.StructIdent.Name)
 		if len(tag.StructIdent.TypeParams) == 0 {
 			return structType, nil
 		}
 
 		structParams := make([]string, 0, len(tag.StructIdent.TypeParams))
 		for paramIdx, paramTag := range tag.StructIdent.TypeParams {
-			structParam, err := StringifyEventType(paramTag)
+			structParam, err := StringifyEventType(ctx, paramTag, newGas, depth+1)
 			if err != nil {
 				return "", fmt.Errorf("StructIdent serialization: TypeParam[%d]: %w", paramIdx, err)
 			}
@@ -342,8 +349,8 @@ func StringifyEventType(tag *vm_grpc.LcsTag) (string, error) {
 }
 
 // StringifyEventTypePanic wraps StringifyEventType and panic on failure.
-func StringifyEventTypePanic(tag *vm_grpc.LcsTag) string {
-	eventType, eventTypeErr := StringifyEventType(tag)
+func StringifyEventTypePanic(ctx sdk.Context, tag *vm_grpc.LcsTag, gas, depth uint64) string {
+	eventType, eventTypeErr := StringifyEventType(ctx, tag, gas, depth)
 	if eventTypeErr != nil {
 		debugMsg := ""
 		if tagStr, tagErr := VMLCSTagToString(tag); tagErr != nil {

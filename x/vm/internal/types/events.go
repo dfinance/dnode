@@ -82,17 +82,17 @@ func GetSenderAddress(addr []byte) string {
 
 // Parse VM event to standard SDK event.
 // In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
-func NewEventFromVM(event *vm_grpc.VMEvent) sdk.Event {
+func NewEventFromVM(ctx sdk.Context, event *vm_grpc.VMEvent) sdk.Event {
 	// eventData: not parsed as it doesn't make sense
 	attrs := []sdk.Attribute{
 		sdk.NewAttribute(AttrKeySenderAddress, GetSenderAddress(event.SenderAddress)),
-		sdk.NewAttribute(AttrKeyType, StringifyEventTypePanic(event.EventType)),
+		sdk.NewAttribute(AttrKeyType, StringifyEventTypePanic(ctx, event.EventType, EventTypeProcessingGas, 1)),
 		sdk.NewAttribute(AttrKeyData, hex.EncodeToString(event.EventData)),
 	}
 
 	if event.SenderModule != nil {
 		attrs = append(attrs, sdk.NewAttribute(AttrKeyModuleName, event.SenderModule.Name))
-		attrs = append(attrs, sdk.NewAttribute(AttrKeyModuleAddress, "0x"+hex.EncodeToString(event.SenderModule.Address)))
+		attrs = append(attrs, sdk.NewAttribute(AttrKeyModuleAddress, GetSenderAddress(event.SenderModule.Address)))
 	}
 
 	return sdk.NewEvent(EventTypeMoveEvent, attrs...)
