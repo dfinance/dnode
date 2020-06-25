@@ -1059,6 +1059,121 @@ func Test_EventTypeSerialization(t *testing.T) {
 	}
 }
 
+// VM Event.EventType string serialization test with gas charged check.
+func Test_EventTypeSerializationGas(t *testing.T) {
+	const moduleSrc = `
+		module GasEvent {
+			struct A {
+				value: u64
+			}
+		
+			struct B<T> {
+				value: T
+			}
+		
+			struct C<T> {
+				value: T
+			}
+		
+			struct D<T> {
+				value: T
+			}
+		
+			public fun test() {
+				let a = A {
+					value: 10
+				};
+		
+				let b = B<A> {
+					value: a
+				};
+		
+				let c = C<B<A>> {
+					value: b
+				};
+		
+				let d = D<C<B<A>>> {
+					value: c
+				};
+		
+				0x1::Event::emit<D<C<B<A>>>>(d);
+			}
+		
+		}
+	`
+	const scriptSrcFmt = `
+		script {
+			use %s::GasEvent;
+
+			fun main() {
+				GasEvent::test();
+			}
+		}
+	`
+
+	config := sdk.GetConfig()
+	dnodeConfig.InitBechPrefixes(config)
+
+	input := newTestInput(false)
+
+	// Create account
+	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
+	input.ak.SetAccount(input.ctx, acc1)
+
+	// Init genesis and start DS
+	gs := getGenesis(t)
+	input.vk.InitGenesis(input.ctx, gs)
+	input.vk.SetDSContext(input.ctx)
+	input.vk.StartDSServer(input.ctx)
+	time.Sleep(2 * time.Second)
+
+	// Launch DVM container
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
+
+	// Compile, publish module
+	moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		Text:    moduleSrc,
+		Address: common_vm.Bech32ToLibra(addr1),
+	})
+	require.NoErrorf(t, err, "module compile error")
+
+	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+	require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
+	ctx, writeCtx := input.ctx.CacheContext()
+	require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "module deploy error")
+
+	t.Logf("checking module events")
+	checkNoEventErrors(ctx.EventManager().Events(), t)
+	writeCtx()
+
+	// Compile, execute script
+	scriptSrc := fmt.Sprintf(scriptSrcFmt, addr1)
+	scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		Text:    scriptSrc,
+		Address: common_vm.Bech32ToLibra(addr1),
+	})
+	require.NoErrorf(t, err, "script compile error")
+
+	gasMeter := sdk.NewGasMeter(100000)
+	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+	scriptErr := input.vk.ExecuteScript(input.ctx.WithGasMeter(gasMeter), scriptMsg)
+	require.NoError(t, scriptErr, "script execute error")
+
+	// Calculate min / max gasConsumed: script has 4 depth level
+	expectedMinChargedGas := uint64(0)
+	for i := 1; i <= 4 - types.EventTypeNoGasLevels; i++ {
+		expectedMinChargedGas += uint64(i) * types.EventTypeProcessingGas
+	}
+	expectedMaxChargedGas := expectedMinChargedGas + types.EventTypeProcessingGas
+
+	t.Logf("Consumed gas: %d", gasMeter.GasConsumed())
+	t.Logf("Expected min/max gas: %d / %d", expectedMinChargedGas, expectedMaxChargedGas)
+	require.GreaterOrEqual(t, gasMeter.GasConsumed(), expectedMinChargedGas)
+	require.LessOrEqual(t, gasMeter.GasConsumed(), expectedMaxChargedGas)
+}
+
 // VM Event.EventType string serialization test with out of gas.
 func Test_EventTypeSerializationOutOfGas(t *testing.T) {
 	const moduleSrc = `
@@ -1108,7 +1223,7 @@ func Test_EventTypeSerializationOutOfGas(t *testing.T) {
 					value: z
 				};
 		
-				let m  = M<V<Z<C<B<A>>>>> {
+				let m = M<V<Z<C<B<A>>>>> {
 					value: v
 				};
 		
@@ -1175,7 +1290,6 @@ func Test_EventTypeSerializationOutOfGas(t *testing.T) {
 	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
 
 	require.PanicsWithValue(t, sdk.ErrorOutOfGas{"event type processing"}, func() {
-		input.vk.ExecuteScript(input.ctx.WithGasMeter(sdk.NewGasMeter(400000)), scriptMsg)
+		input.vk.ExecuteScript(input.ctx.WithGasMeter(sdk.NewGasMeter(100000)), scriptMsg)
 	})
-
 }

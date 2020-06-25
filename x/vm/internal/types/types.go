@@ -25,7 +25,9 @@ const (
 	VmUnknownTagType = -1
 
 	// Initial gas for processing event type.
+	// NoGasLevels defines number of nesting levels that do not charge gas.
 	EventTypeProcessingGas = 10000
+	EventTypeNoGasLevels   = 2
 )
 
 // VM related variables.
@@ -278,12 +280,17 @@ func PrintVMStackTrace(txId []byte, log log.Logger, exec *vm_grpc.VMExecuteRespo
 }
 
 // Recursive process event type and return result event type as string.
+// If {depth} < 0 we do not charge gas as some nesting levels might be "free".
 func processEventType(gasMeter sdk.GasMeter, tag *vm_grpc.LcsTag, gas, depth uint64) (string, error) {
-	// we can't consume gas later, after recognize type, because it open doors for security holes.
-	// let's say dev will create type with a lot of generics, so transaction will take much more time to process.
-	// in result it could be a situation when validator doesn't have enough time to process transaction.
-	newGas := gas + (EventTypeProcessingGas * depth)
-	gasMeter.ConsumeGas(newGas, "event type processing")
+	// We can't consume gas later (after recognizing the type), because it open doors for security holes.
+	// Let's say dev will create type with a lot of generics, so transaction will take much more time to process.
+	// In result it could be a situation when validator doesn't have enough time to process transaction.
+	// Charging gas amount is geometry increased from depth to depth.
+
+	if depth > EventTypeNoGasLevels {
+		gas += EventTypeProcessingGas * (depth - EventTypeNoGasLevels - 1)
+		gasMeter.ConsumeGas(gas, "event type processing")
+	}
 
 	if tag == nil {
 		return "", nil
@@ -321,7 +328,7 @@ func processEventType(gasMeter sdk.GasMeter, tag *vm_grpc.LcsTag, gas, depth uin
 
 	// Vector tag
 	if tag.VectorType != nil {
-		vectorType, err := processEventType(gasMeter, tag.VectorType, newGas, depth+1)
+		vectorType, err := processEventType(gasMeter, tag.VectorType, gas, depth+1)
 		if err != nil {
 			return "", fmt.Errorf("VectorType serialization: %w", err)
 		}
@@ -337,7 +344,7 @@ func processEventType(gasMeter sdk.GasMeter, tag *vm_grpc.LcsTag, gas, depth uin
 
 		structParams := make([]string, 0, len(tag.StructIdent.TypeParams))
 		for paramIdx, paramTag := range tag.StructIdent.TypeParams {
-			structParam, err := processEventType(gasMeter, paramTag, newGas, depth+1)
+			structParam, err := processEventType(gasMeter, paramTag, gas, depth+1)
 			if err != nil {
 				return "", fmt.Errorf("StructIdent serialization: TypeParam[%d]: %w", paramIdx, err)
 			}
@@ -354,7 +361,7 @@ func processEventType(gasMeter sdk.GasMeter, tag *vm_grpc.LcsTag, gas, depth uin
 // Func is simmilar to VMLCSTagToString, but result is one lined Move representation.
 func StringifyEventType(gasMeter sdk.GasMeter, tag *vm_grpc.LcsTag) (string, error) {
 	// Start with initial gas for first event, and then go in progression based on depth.
-	return processEventType(gasMeter, tag, EventTypeProcessingGas, 0)
+	return processEventType(gasMeter, tag, EventTypeProcessingGas, 1)
 }
 
 // StringifyEventTypePanic wraps StringifyEventType and panic on failure.
