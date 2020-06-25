@@ -341,14 +341,14 @@ func TestKeeper_DeployModule(t *testing.T) {
 	require.Equal(t, events[1].Type, types.EventTypeMoveEvent, "script after execution doesn't contain event with amount")
 	require.Len(t, events[1].Attributes, 3)
 	require.EqualValues(t, events[1].Attributes[0].Key, types.AttrKeySenderAddress)
-	require.EqualValues(t, events[1].Attributes[0].Value, "0x"+hex.EncodeToString(common_vm.Bech32ToLibra(addr1)))
+	require.EqualValues(t, events[1].Attributes[0].Value, types.GetSenderAddress(addr1))
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[1].Value, types.AttrKeyTypePrefix+types.StringifyEventTypePanic(&vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
+	require.EqualValues(t, events[1].Attributes[1].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
 	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyData)
 
 	uintBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(uintBz, uint64(110))
-	require.EqualValues(t, events[1].Attributes[2].Value, "0x"+hex.EncodeToString(uintBz))
+	require.EqualValues(t, events[1].Attributes[2].Value, hex.EncodeToString(uintBz))
 }
 
 // Test oracle price return.
@@ -413,14 +413,14 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	require.Contains(t, events, types.NewEventKeep())
 	require.Len(t, events[1].Attributes, 3)
 	require.EqualValues(t, events[1].Attributes[0].Key, types.AttrKeySenderAddress)
-	require.EqualValues(t, events[1].Attributes[0].Value, "0x"+hex.EncodeToString(common_vm.Bech32ToLibra(addr1)))
+	require.EqualValues(t, events[1].Attributes[0].Value, types.GetSenderAddress(addr1))
 	require.EqualValues(t, events[1].Attributes[1].Key, types.AttrKeyType)
-	require.EqualValues(t, events[1].Attributes[1].Value, types.AttrKeyTypePrefix+types.StringifyEventTypePanic(&vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
+	require.EqualValues(t, events[1].Attributes[1].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
 	require.EqualValues(t, events[1].Attributes[2].Key, types.AttrKeyData)
 
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, 100)
-	require.EqualValues(t, events[1].Attributes[2].Value, "0x"+hex.EncodeToString(bz))
+	require.EqualValues(t, events[1].Attributes[2].Value, hex.EncodeToString(bz))
 }
 
 // Test oracle price return.
@@ -1019,7 +1019,7 @@ func Test_EventTypeSerialization(t *testing.T) {
 		t.Logf("Event #%d", idx)
 		t.Log(types.VMEventToString(event))
 
-		eventType, err := types.StringifyEventType(event.EventType)
+		eventType, err := types.StringifyEventType(sdk.NewInfiniteGasMeter(), event.EventType)
 		require.NoError(t, err, "event serialization")
 		t.Logf("Serialization: %s", eventType)
 	}
