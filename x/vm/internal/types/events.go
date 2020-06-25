@@ -8,6 +8,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 const (
@@ -30,11 +32,6 @@ const (
 	StatusDiscard = "discard"
 	StatusKeep    = "keep"
 	StatusError   = "error"
-)
-
-var (
-	// System address.
-	CoreLib = []byte{16}
 )
 
 // New event with keep status.
@@ -73,8 +70,8 @@ func NewEventDiscard(errorStatus *vm_grpc.VMStatus) sdk.Event {
 
 // Get sender address 0x1 or wallet1...
 func GetSenderAddress(addr []byte) string {
-	if bytes.Equal(addr, CoreLib) {
-		return "0x" + hex.EncodeToString(addr)
+	if bytes.Equal(addr, common_vm.StdLibAddress) {
+		return "0x1"
 	} else {
 		return sdk.AccAddress(addr).String()
 	}
