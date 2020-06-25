@@ -176,8 +176,8 @@ func TestProcessExecution(t *testing.T) {
 	}
 
 	dnEvents := make(sdk.Events, 2)
-	dnEvents[0] = types.NewEventFromVM(respEvents[0])
-	dnEvents[1] = types.NewEventFromVM(respEvents[1])
+	dnEvents[0] = types.NewEventFromVM(sdk.NewInfiniteGasMeter(), respEvents[0])
+	dnEvents[1] = types.NewEventFromVM(sdk.NewInfiniteGasMeter(), respEvents[1])
 
 	writeSet := make([]*vm_grpc.VMValue, 2)
 	writeSet[0] = &vm_grpc.VMValue{

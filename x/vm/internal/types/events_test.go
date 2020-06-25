@@ -10,6 +10,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
@@ -24,6 +25,13 @@ func TestNewEventKeep(t *testing.T) {
 	require.Equal(t, EventTypeContractStatus, event.Type)
 	require.EqualValues(t, AttrKeyStatus, event.Attributes[0].Key)
 	require.EqualValues(t, StatusKeep, event.Attributes[0].Value)
+}
+
+// Test GetSenderAddress.
+func Test_GetSenderAddress(t *testing.T) {
+	address := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	require.EqualValues(t, common_vm.StdLibAddressShortStr, GetSenderAddress(common_vm.StdLibAddress))
+	require.EqualValues(t, address.String(), GetSenderAddress(address))
 }
 
 // Test event happens when VM return status discard.
@@ -78,9 +86,9 @@ func TestNewEventFromVM(t *testing.T) {
 		EventType: &vm_grpc.LcsTag{
 			TypeTag: vm_grpc.LcsType_LcsU64,
 			StructIdent: &vm_grpc.StructIdent{
-				Address:    []byte{1},
-				Module:     "Module_1",
-				Name:       "Struct_1",
+				Address: []byte{1},
+				Module:  "Module_1",
+				Name:    "Struct_1",
 				TypeParams: []*vm_grpc.LcsTag{
 					{
 						TypeTag: vm_grpc.LcsType_LcsBool,
@@ -94,22 +102,22 @@ func TestNewEventFromVM(t *testing.T) {
 		EventData: valBytes,
 	}
 
-	sdkEvent := NewEventFromVM(&vmEvent)
+	sdkEvent := NewEventFromVM(sdk.NewInfiniteGasMeter(), &vmEvent)
 	require.Equal(t, EventTypeMoveEvent, sdkEvent.Type)
 	require.Len(t, sdkEvent.Attributes, 5)
 
 	// sender
-	require.EqualValues(t, "0x"+hex.EncodeToString(vmEvent.SenderAddress), sdkEvent.Attributes[0].Value)
+	require.EqualValues(t, GetSenderAddress(vmEvent.SenderAddress), sdkEvent.Attributes[0].Value)
 	// type
 	// TODO: sdkEvent.Attributes[1] is omitted
 	// data
 	require.EqualValues(t, AttrKeyData, sdkEvent.Attributes[2].Key)
-	require.EqualValues(t, "0x"+hex.EncodeToString(valBytes), sdkEvent.Attributes[2].Value)
+	require.EqualValues(t, hex.EncodeToString(valBytes), sdkEvent.Attributes[2].Value)
 	// module
 	require.EqualValues(t, AttrKeyModuleName, sdkEvent.Attributes[3].Key)
 	require.EqualValues(t, vmEvent.SenderModule.Name, sdkEvent.Attributes[3].Value)
 	require.EqualValues(t, AttrKeyModuleAddress, sdkEvent.Attributes[4].Key)
-	require.EqualValues(t, "0x"+hex.EncodeToString(vmEvent.SenderModule.Address), sdkEvent.Attributes[4].Value)
+	require.EqualValues(t, GetSenderAddress(vmEvent.SenderModule.Address), sdkEvent.Attributes[4].Value)
 }
 
 // Test event happens when VM return status with errors.
@@ -166,4 +174,45 @@ func TestNewEventWithError(t *testing.T) {
 		require.EqualValuesf(t, []byte(attr.Key), event.Attributes[i].Key, "incorrect attribute key for event discard at position %d", i)
 		require.EqualValuesf(t, []byte(attr.Value), event.Attributes[i].Value, "incorrect attribute key for event discard at position %d", i)
 	}
+}
+
+// Processing event with out of gas.
+func Test_OutOfGasProcessEvent(t *testing.T) {
+	moduleAddr := make([]byte, common_vm.VMAddressLength)
+	moduleAddr[common_vm.VMAddressLength-1] = 2
+
+	value := uint64(18446744073709551615)
+	valBytes := make([]byte, 8)
+
+	// seems Move using to_le_bytes
+	binary.LittleEndian.PutUint64(valBytes, value)
+
+	vmEvent := vm_grpc.VMEvent{
+		SenderAddress: common_vm.StdLibAddress,
+		SenderModule: &vm_grpc.ModuleIdent{
+			Name:    "testModule",
+			Address: common_vm.Bech32ToLibra(moduleAddr),
+		},
+		EventType: &vm_grpc.LcsTag{
+			TypeTag: vm_grpc.LcsType_LcsU64,
+			StructIdent: &vm_grpc.StructIdent{
+				Address: []byte{1},
+				Module:  "Module_1",
+				Name:    "Struct_1",
+				TypeParams: []*vm_grpc.LcsTag{
+					{
+						TypeTag: vm_grpc.LcsType_LcsBool,
+					},
+					{
+						TypeTag: vm_grpc.LcsType_LcsU128,
+					},
+				},
+			},
+		},
+		EventData: valBytes,
+	}
+
+	require.PanicsWithValue(t, sdk.ErrorOutOfGas{"event type processing"}, func() {
+		NewEventFromVM(sdk.NewGasMeter(1000), &vmEvent)
+	})
 }

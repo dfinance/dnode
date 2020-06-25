@@ -79,11 +79,11 @@ func GetSenderAddress(addr []byte) string {
 
 // Parse VM event to standard SDK event.
 // In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
-func NewEventFromVM(ctx sdk.Context, event *vm_grpc.VMEvent) sdk.Event {
+func NewEventFromVM(gasMeter sdk.GasMeter, event *vm_grpc.VMEvent) sdk.Event {
 	// eventData: not parsed as it doesn't make sense
 	attrs := []sdk.Attribute{
 		sdk.NewAttribute(AttrKeySenderAddress, GetSenderAddress(event.SenderAddress)),
-		sdk.NewAttribute(AttrKeyType, StringifyEventTypePanic(ctx, event.EventType)),
+		sdk.NewAttribute(AttrKeyType, StringifyEventTypePanic(gasMeter, event.EventType)),
 		sdk.NewAttribute(AttrKeyData, hex.EncodeToString(event.EventData)),
 	}
 

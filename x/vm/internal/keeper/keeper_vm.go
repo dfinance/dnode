@@ -118,7 +118,7 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 		keeper.processWriteSet(ctx, exec.WriteSet)
 
 		for _, vmEvent := range exec.Events {
-			ctx.EventManager().EmitEvent(types.NewEventFromVM(ctx, vmEvent))
+			ctx.EventManager().EmitEvent(types.NewEventFromVM(ctx.GasMeter(), vmEvent))
 		}
 	}
 }
