@@ -6,18 +6,32 @@ import (
 )
 
 const (
-	ModuleName = types.ModuleName
-	RouterKey  = types.RouterKey
-	StoreKey   = types.StoreKey
+	ModuleName   = types.ModuleName
+	StoreKey     = types.StoreKey
+	RouterKey    = types.RouterKey
+	GovRouterKey = types.GovRouterKey
 )
 
 type (
-	Keeper          = keeper.Keeper
+	Keeper = keeper.Keeper
+
 	GenesisState    = types.GenesisState
 	GenesisCurrency = types.GenesisCurrency
-	CurrencyInfo    = types.CurrencyInfo
+
+	CurrencyInfo = types.CurrencyInfo
+
+	AddCurrencyProposal = types.AddCurrencyProposal
 )
 
 var (
-	NewKeeper = keeper.NewKeeper
+	// variable aliases
+	ModuleCdc = types.ModuleCdc
+	// function aliases
+	NewKeeper              = keeper.NewKeeper
+	NewQuerier             = keeper.NewQuerier
+	RegisterCodec          = types.RegisterCodec
+	DefaultGenesisState    = types.DefaultGenesisState
+	NewAddCurrencyProposal = types.NewAddCurrencyProposal
+	// errors
+	ErrGovInvalidProposal = types.ErrGovInvalidProposal
 )

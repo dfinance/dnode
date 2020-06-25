@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 )
 
@@ -20,9 +21,13 @@ type CurrencyInfo struct {
 }
 
 // New currency.
-func NewCurrencyInfo(denom []byte, decimals uint8, isToken bool, owner []byte, totalSupply *big.Int) (CurrencyInfo, error) {
+func NewCurrencyInfo(denom []byte, decimals uint8, isToken bool, owner []byte, totalSupply sdk.Int) (CurrencyInfo, error) {
+	if err := dnTypes.DenomFilter(string(denom)); err != nil {
+		return CurrencyInfo{}, fmt.Errorf("denom: %w", err)
+	}
+
 	if len(owner) != common_vm.VMAddressLength {
-		return CurrencyInfo{}, fmt.Errorf("length of owner address is not equal to address length: %d / %d", len(owner), common_vm.VMAddressLength)
+		return CurrencyInfo{}, fmt.Errorf("owner: address length is not equal to VM address length: %d / %d", len(owner), common_vm.VMAddressLength)
 	}
 
 	return CurrencyInfo{
@@ -30,7 +35,7 @@ func NewCurrencyInfo(denom []byte, decimals uint8, isToken bool, owner []byte, t
 		Decimals:    decimals,
 		IsToken:     isToken,
 		Owner:       owner,
-		TotalSupply: totalSupply,
+		TotalSupply: totalSupply.BigInt(),
 	}, nil
 }
 

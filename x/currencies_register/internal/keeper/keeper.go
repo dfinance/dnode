@@ -8,6 +8,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/dfinance/lcs"
 	"github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/currencies_register/internal/types"
@@ -35,38 +36,39 @@ func (keeper Keeper) AddCurrencyInfo(ctx sdk.Context, denom string, decimals uin
 	store := ctx.KVStore(keeper.storeKey)
 	keyPath := types.GetCurrencyPathKey(denom)
 
-	// Return error if currency already registered.
+	// Check path is empty.
+	if len(path) == 0 {
+		return types.ErrInvalidPath
+	}
+
+	// Check currency already exists.
 	if store.Has(keyPath) {
-		// Return error.
 		return sdkErrors.Wrap(types.ErrExists, fmt.Sprintf("denom %q", denom))
 	}
 
-	// Save currency.
+	// Save currency path
 	currencyPath := types.NewCurrencyPath(path)
 	bz, err := keeper.cdc.MarshalBinaryBare(currencyPath)
 	if err != nil {
-		return err
+		return sdkErrors.Wrap(types.ErrInternal, err.Error())
 	}
-
-	// Save path.
 	store.Set(keyPath, bz)
 
-	// Now save currency info to vm storage under owner account.
-	currencyInfo, err := types.NewCurrencyInfo([]byte(denom), decimals, isToken, owner, totalSupply.BigInt())
+	// Save to vm storage under owner account.
+	currencyInfo, err := types.NewCurrencyInfo([]byte(denom), decimals, isToken, owner, totalSupply)
 	if err != nil {
-		return sdkErrors.Wrap(types.ErrWrongAddressLen, fmt.Sprintf("can't create new currency info, denom %q: %v", denom, err))
+		return sdkErrors.Wrap(types.ErrWrongCurrencyInfo, err.Error())
 	}
 
 	bz, err = lcs.Marshal(currencyInfo)
 	if err != nil {
-		return sdkErrors.Wrap(types.ErrLcsMarshal, fmt.Sprintf("can't marshall currency info %q: %v", denom, err)) // should not happen at all
+		return sdkErrors.Wrapf(types.ErrLcsMarshal, "currencyInfo marshal: %v", err)
 	}
 
 	accessPath := vm_grpc.VMAccessPath{
 		Address: common_vm.StdLibAddress,
 		Path:    path,
 	}
-
 	keeper.vmStorage.SetValue(ctx, &accessPath, bz)
 
 	return nil
@@ -111,4 +113,9 @@ func (keeper Keeper) GetCurrencyInfo(ctx sdk.Context, denom string) (types.Curre
 	}
 
 	return currInfo, nil
+}
+
+// GetLogger gets logger with keeper context.
+func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", "x/" + types.ModuleName)
 }

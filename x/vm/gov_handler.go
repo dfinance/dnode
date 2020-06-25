@@ -13,7 +13,7 @@ import (
 // NewGovHandler creates proposal type handler for Gov module.
 func NewGovHandler(keeper Keeper) gov.Handler {
 	return func(ctx sdk.Context, c govTypes.Content) error {
-		if c.ProposalRoute() != ModuleName {
+		if c.ProposalRoute() != GovRouterKey {
 			return fmt.Errorf("invalid proposal route %q for module %q", c.ProposalRoute(), ModuleName)
 		}
 
