@@ -158,25 +158,26 @@ func TestProcessExecution(t *testing.T) {
 
 	respEvents := make([]*vm_grpc.VMEvent, 2)
 	respEvents[0] = &vm_grpc.VMEvent{
-		Key:            []byte("test 1"),
-		SequenceNumber: 0,
-		Type: &vm_grpc.VMType{
-			Tag: vm_grpc.VMTypeTag_ByteArray,
+		SenderAddress: common_vm.StdLibAddress,
+		EventType: &vm_grpc.LcsTag{
+			TypeTag: vm_grpc.LcsType_LcsVector,
+			VectorType: &vm_grpc.LcsTag{
+				TypeTag: vm_grpc.LcsType_LcsU8,
+			},
 		},
 		EventData: randomValue(32),
 	}
 	respEvents[1] = &vm_grpc.VMEvent{
-		Key:            []byte("test 2"),
-		SequenceNumber: 1,
-		Type: &vm_grpc.VMType{
-			Tag: vm_grpc.VMTypeTag_U64,
+		SenderAddress: common_vm.StdLibAddress,
+		EventType: &vm_grpc.LcsTag{
+			TypeTag: vm_grpc.LcsType_LcsU64,
 		},
 		EventData: u64Bytes,
 	}
 
 	dnEvents := make(sdk.Events, 2)
-	dnEvents[0] = types.NewEventFromVM(respEvents[0])
-	dnEvents[1] = types.NewEventFromVM(respEvents[1])
+	dnEvents[0] = types.NewEventFromVM(sdk.NewInfiniteGasMeter(), respEvents[0])
+	dnEvents[1] = types.NewEventFromVM(sdk.NewInfiniteGasMeter(), respEvents[1])
 
 	writeSet := make([]*vm_grpc.VMValue, 2)
 	writeSet[0] = &vm_grpc.VMValue{
@@ -363,6 +364,6 @@ func Test_KeeperGetOracleAccessPath(t *testing.T) {
 
 	assetCode := "eth_usdt"
 	path := input.vk.GetOracleAccessPath(assetCode)
-	require.Equal(t, make([]byte, common_vm.VMAddressLength), path.Address)
+	require.Equal(t, common_vm.StdLibAddress, path.Address)
 	require.Equal(t, "ffe300b84cc0315d7a963b504ca77202c8c38cd28bad5bce7bbe0301c806666200", hex.EncodeToString(path.Path))
 }

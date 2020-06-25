@@ -106,9 +106,7 @@ func (k Keeper) SetPrice(
 		index = len(prices) - 1
 	}
 
-	store.Set(
-		types.GetRawPricesKey(assetCode, ctx.BlockHeight()), k.cdc.MustMarshalBinaryBare(prices),
-	)
+	store.Set(types.GetRawPricesKey(assetCode, ctx.BlockHeight()), k.cdc.MustMarshalBinaryBare(prices))
 
 	return prices[index], nil
 }
@@ -172,9 +170,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 			ReceivedAt: medianReceivedAt,
 		}
 
-		store.Set(
-			[]byte(types.CurrentPricePrefix+assetCode), k.cdc.MustMarshalBinaryBare(newPrice),
-		)
+		store.Set([]byte(types.CurrentPricePrefix+assetCode), k.cdc.MustMarshalBinaryBare(newPrice))
 
 		// save price to vm storage
 		accessPath := k.vmKeeper.GetOracleAccessPath(newPrice.AssetCode)

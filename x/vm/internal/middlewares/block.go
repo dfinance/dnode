@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	hexBlockHeaderPath = "013de4ee9dbbee0ff62887ef1f291398ee25a4e54be3f2387ff6cb19a35afd8870"
+	hexBlockHeaderPath = "01ada6f79e8eddfdf986687174de1000df3c5fa45e9965ece812fed33332ec543a"
 )
 
 type BlockHeader struct {
@@ -26,7 +26,7 @@ func NewBlockMiddleware() common_vm.DSDataMiddleware {
 	}
 
 	blockHeaderPath := vm_grpc.VMAccessPath{
-		Address: common_vm.ZeroAddress,
+		Address: common_vm.StdLibAddress,
 		Path:    bzPath,
 	}
 

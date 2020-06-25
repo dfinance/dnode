@@ -8,7 +8,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-// creates a querier for auth REST endpoints
+// NewQuerier creates a querier for auth REST endpoints.
 func NewQuerier(keeper VMAccountKeeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
@@ -20,6 +20,7 @@ func NewQuerier(keeper VMAccountKeeper) sdk.Querier {
 	}
 }
 
+// queryAccount is an account getter querier handler.
 func queryAccount(ctx sdk.Context, req abci.RequestQuery, keeper VMAccountKeeper) ([]byte, error) {
 	var params authTypes.QueryAccountParams
 	if err := keeper.cdc.UnmarshalJSON(req.Data, &params); err != nil {

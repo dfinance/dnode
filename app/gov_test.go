@@ -15,7 +15,7 @@ import (
 )
 
 const govUpdModuleV1 = `
-	address 0x0 {
+	address 0x1 {
 	module Foo {
 	    resource struct U64 {val: u64}
 	    resource struct Address {val: address}
@@ -29,7 +29,7 @@ const govUpdModuleV1 = `
 `
 
 const govUpdModuleV2 = `
-	address 0x0 {
+	address 0x1 {
 	module Foo {
 	    resource struct U64 {val: u64}
 	    resource struct Address {val: address}
@@ -44,7 +44,7 @@ const govUpdModuleV2 = `
 
 const govScript = `
 	script {
-		use 0x0::Foo;
+		use 0x1::Foo;
 		fun main() {
    			Foo::store_u64();
 		}
@@ -52,10 +52,15 @@ const govScript = `
 `
 
 func Test_VmGovStdlibUpdate(t *testing.T) {
+	const (
+		moduleAddr = "0000000000000000000000000000000000000001"
+		modulePath = "0058e1e3e2f8edf7df0c4b1ab8c1c8ec661b3210b29c85b1449ac6214c6476b0e8"
+	)
+
 	ct := cliTester.New(
 		t,
 		true,
-		cliTester.DaemonLogLevelOption("x/vm:info,x/gov:info,main:info,state:info,*:error"),
+		cliTester.DaemonLogLevelOption("x/vm/dsserver:info,x/vm:info,x/gov:info,main:info,state:info,*:error"),
 		cliTester.VMCommunicationOption(50, 1000, 100),
 		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
 	)
@@ -114,13 +119,13 @@ func Test_VmGovStdlibUpdate(t *testing.T) {
 
 	// Check script can't be compiled as module doesn't exist yet
 	{
-		ct.QueryVmCompileScript(scriptMovePath, scriptBytecodePath, senderAddr).CheckFailedWithErrorSubstring("not found")
+		ct.QueryVmCompile(scriptMovePath, scriptBytecodePath, senderAddr).CheckFailedWithErrorSubstring("not found")
 	}
 
 	// Compile modules
 	{
-		ct.QueryVmCompileModule(moduleV1MovePath, moduleV1BytecodePath, senderAddr).CheckSucceeded()
-		ct.QueryVmCompileModule(moduleV2MovePath, moduleV2BytecodePath, senderAddr).CheckSucceeded()
+		ct.QueryVmCompile(moduleV1MovePath, moduleV1BytecodePath, senderAddr).CheckSucceeded()
+		ct.QueryVmCompile(moduleV2MovePath, moduleV2BytecodePath, senderAddr).CheckSucceeded()
 	}
 
 	// Check invalid arguments for StdlibUpdateProposal Tx
@@ -157,15 +162,16 @@ func Test_VmGovStdlibUpdate(t *testing.T) {
 	// Check module added and script works now
 	{
 		t.Log("Compiling script")
-		ct.QueryVmCompileScript(scriptMovePath, scriptBytecodePath, senderAddr).CheckSucceeded()
+		ct.QueryVmCompile(scriptMovePath, scriptBytecodePath, senderAddr).CheckSucceeded()
 		ct.TxVmExecuteScript(senderAddr, scriptBytecodePath).CheckSucceeded()
 	}
 
 	// Save module writeSet to compare later (if fails, 100% Libra path has changed again)
 	moduleV1WriteSet := ""
 	{
-		q, writeSet := ct.QueryVmData("0000000000000000000000000000000000000000", "00b3fafba7710d2bc614054f5cd7b53edc0da61bfae33cd7f1483fa50b5dd0029c")
+		q, writeSet := ct.QueryVmData(moduleAddr, modulePath)
 		q.CheckSucceeded()
+		require.NotEmpty(t, writeSet, "moduleV1 writeSet is empty")
 
 		moduleV1WriteSet = writeSet.Value
 	}
@@ -178,8 +184,9 @@ func Test_VmGovStdlibUpdate(t *testing.T) {
 
 	// Check module writeSet changed
 	{
-		q, writeSet := ct.QueryVmData("0000000000000000000000000000000000000000", "00b3fafba7710d2bc614054f5cd7b53edc0da61bfae33cd7f1483fa50b5dd0029c")
+		q, writeSet := ct.QueryVmData(moduleAddr, modulePath)
 		q.CheckSucceeded()
+		require.NotEmpty(t, writeSet, "moduleV2 writeSet is empty")
 
 		moduleV2WriteSet := writeSet.Value
 		require.NotEqual(t, moduleV1WriteSet, moduleV2WriteSet)

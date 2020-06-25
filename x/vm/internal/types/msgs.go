@@ -65,15 +65,15 @@ func (msg MsgDeployModule) GetSigners() []sdk.AccAddress {
 
 // Arguments to execute script.
 type ScriptArg struct {
-	Value string            `json:"value"`
 	Type  vm_grpc.VMTypeTag `json:"type"`
+	Value []byte            `json:"value"`
 }
 
 // New ScriptArg from arguments.
-func NewScriptArg(value string, typeTag vm_grpc.VMTypeTag) ScriptArg {
+func NewScriptArg(typeTag vm_grpc.VMTypeTag, value []byte) ScriptArg {
 	return ScriptArg{
-		Value: value,
 		Type:  typeTag,
+		Value: value,
 	}
 }
 
@@ -109,9 +109,12 @@ func (msg MsgExecuteScript) ValidateBasic() error {
 		return ErrEmptyContract
 	}
 
-	for _, val := range msg.Args {
-		if _, err := VMTypeToString(val.Type); err != nil {
+	for _, arg := range msg.Args {
+		if _, err := VMTypeTagToString(arg.Type); err != nil {
 			return sdkErrors.Wrap(ErrWrongArgTypeTag, err.Error())
+		}
+		if len(arg.Value) == 0 {
+			return ErrWrongArgValue
 		}
 	}
 

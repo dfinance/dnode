@@ -19,6 +19,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -37,7 +38,6 @@ import (
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
-	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
 )
 
@@ -184,7 +184,9 @@ func init() {
 }
 
 type VMServer struct {
-	vm.UnimplementedVMServiceServer
+	vm_grpc.UnimplementedVMCompilerServer
+	vm_grpc.UnimplementedVMModulePublisherServer
+	vm_grpc.UnimplementedVMScriptExecutorServer
 }
 
 func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
@@ -195,7 +197,9 @@ func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
 	vmServer := VMServer{}
 	server := grpc.NewServer()
 
-	vm.RegisterVMServiceServer(server, &vmServer)
+	vm_grpc.RegisterVMCompilerServer(server, &vmServer.UnimplementedVMCompilerServer)
+	vm_grpc.RegisterVMModulePublisherServer(server, &vmServer.UnimplementedVMModulePublisherServer)
+	vm_grpc.RegisterVMScriptExecutorServer(server, &vmServer.UnimplementedVMScriptExecutorServer)
 
 	go func() {
 		if err := server.Serve(vmListener); err != nil {

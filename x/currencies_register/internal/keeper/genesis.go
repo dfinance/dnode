@@ -30,7 +30,7 @@ func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) error {
 			return err
 		}
 
-		err = keeper.AddCurrencyInfo(ctx, genCurr.Denom, genCurr.Decimals, false, common_vm.ZeroAddress, genCurr.TotalSupply, bzPath)
+		err = keeper.AddCurrencyInfo(ctx, genCurr.Denom, genCurr.Decimals, false, common_vm.StdLibAddress, genCurr.TotalSupply, bzPath)
 		if err != nil {
 			return err
 		}

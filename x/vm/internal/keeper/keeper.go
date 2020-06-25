@@ -24,9 +24,9 @@ type Keeper struct {
 	cdc      *amino.Codec // Amino codec.
 	storeKey sdk.StoreKey // Store key.
 
-	client    vm_grpc.VMServiceClient // VM service client.
-	listener  net.Listener            // VM data server listener.
-	rawClient *grpc.ClientConn        // GRPC connection to VM.
+	client    VMClient         // VM service client.
+	listener  net.Listener     // VM data server listener.
+	rawClient *grpc.ClientConn // GRPC connection to VM.
 
 	config *config.VMConfig // VM config.
 
@@ -43,7 +43,7 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *amino.Codec, conn *grpc.ClientConn, l
 		cdc:       cdc,
 		storeKey:  storeKey,
 		rawClient: conn,
-		client:    vm_grpc.NewVMServiceClient(conn),
+		client:    NewVMClient(conn),
 		listener:  listener,
 		config:    config,
 	}
@@ -67,21 +67,30 @@ func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) 
 		return sdkErr
 	}
 
-	resp, err := keeper.sendExecuteReq(ctx, req)
+	exec, err := keeper.sendExecuteReq(ctx, nil, req)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(sdkErrors.Wrap(types.ErrVMCrashed, err.Error()))
 	}
 
-	if len(resp.Executions) != 1 {
-		// error because execution amount during such transaction could be only one.
-		return sdkErrors.Wrapf(types.ErrWrongExecutionResponse, "%v", *resp)
-	}
-
-	exec := resp.Executions[0]
 	keeper.processExecution(ctx, exec)
 
 	return nil
+}
+
+// Execute script without response processing (used for debug).
+func (keeper Keeper) ExecuteScriptNoProcessing(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteResponse, error) {
+	req, sdkErr := NewExecuteRequest(ctx, msg)
+	if sdkErr != nil {
+		return nil, sdkErr
+	}
+
+	exec, err := keeper.sendExecuteReq(ctx, nil, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return exec, nil
 }
 
 // Deploy module.
@@ -91,18 +100,12 @@ func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) 
 		return sdkErr
 	}
 
-	resp, err := keeper.sendExecuteReq(ctx, req)
+	exec, err := keeper.sendExecuteReq(ctx, req, nil)
 	if err != nil {
 		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(sdkErrors.Wrap(types.ErrVMCrashed, err.Error()))
 	}
 
-	if len(resp.Executions) != 1 {
-		// error because execution amount during such transaction could be only one.
-		return sdkErrors.Wrapf(types.ErrWrongExecutionResponse, "%v", *resp)
-	}
-
-	exec := resp.Executions[0]
 	keeper.processExecution(ctx, exec)
 
 	return nil
@@ -115,19 +118,14 @@ func (keeper Keeper) DeployContractDryRun(ctx sdk.Context, msg types.MsgDeployMo
 		return sdkErr
 	}
 
-	resp, dvmErr := keeper.sendExecuteReq(ctx, req)
+	exec, dvmErr := keeper.sendExecuteReq(ctx, req, nil)
 	if dvmErr != nil {
 		return sdkErrors.Wrap(types.ErrVMCrashed, dvmErr.Error())
 	}
 
-	if len(resp.Executions) != 1 {
-		return sdkErrors.Wrap(types.ErrWrongExecutionResponse, "invalid number of resp.Executions")
-	}
-
-	exec := resp.Executions[0]
 	if exec.Status != vm_grpc.ContractStatus_Discard {
 		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
-			statusMsg := types.ExecStatusToString(exec.Status, exec.StatusStruct)
+			statusMsg := types.VMExecStatusToString(exec.Status, exec.StatusStruct)
 			return sdkErrors.Wrap(types.ErrWrongExecutionResponse, statusMsg)
 		}
 	}

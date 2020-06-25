@@ -10,8 +10,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 // Test event happens when VM return status to keep changes.
@@ -22,6 +25,13 @@ func TestNewEventKeep(t *testing.T) {
 	require.Equal(t, EventTypeContractStatus, event.Type)
 	require.EqualValues(t, AttrKeyStatus, event.Attributes[0].Key)
 	require.EqualValues(t, StatusKeep, event.Attributes[0].Value)
+}
+
+// Test GetSenderAddress.
+func Test_GetSenderAddress(t *testing.T) {
+	address := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	require.EqualValues(t, common_vm.StdLibAddressShortStr, GetSenderAddress(common_vm.StdLibAddress))
+	require.EqualValues(t, address.String(), GetSenderAddress(address))
 }
 
 // Test event happens when VM return status discard.
@@ -58,39 +68,80 @@ func TestNewEventDiscard(t *testing.T) {
 
 // Test event convertation from Move type to Cosmos.
 func TestNewEventFromVM(t *testing.T) {
-	typeTag, err := GetVMTypeByString("U64")
-	if err != nil {
-		t.Fatal(err)
-	}
+	moduleAddr := make([]byte, common_vm.VMAddressLength)
+	moduleAddr[common_vm.VMAddressLength-1] = 2
 
-	var value uint64 = 18446744073709551615
+	value := uint64(18446744073709551615)
 	valBytes := make([]byte, 8)
 
 	// seems Move using to_le_bytes
 	binary.LittleEndian.PutUint64(valBytes, value)
 
 	vmEvent := vm_grpc.VMEvent{
-		Key:            []byte("deposit"),
-		SequenceNumber: 1,
-		Type: &vm_grpc.VMType{
-			Tag:       typeTag,
-			StructTag: nil,
+		SenderAddress: common_vm.StdLibAddress,
+		SenderModule: &vm_grpc.ModuleIdent{
+			Name:    "testModule",
+			Address: common_vm.Bech32ToLibra(moduleAddr),
+		},
+		EventType: &vm_grpc.LcsTag{
+			TypeTag: vm_grpc.LcsType_LcsU64,
+			StructIdent: &vm_grpc.StructIdent{
+				Address: []byte{1},
+				Module:  "Module_1",
+				Name:    "Struct_1",
+				TypeParams: []*vm_grpc.LcsTag{
+					{
+						TypeTag: vm_grpc.LcsType_LcsBool,
+					},
+					{
+						TypeTag: vm_grpc.LcsType_LcsU128,
+					},
+				},
+			},
 		},
 		EventData: valBytes,
 	}
 
-	event := NewEventFromVM(&vmEvent)
-	require.Equal(t, EventTypeMoveEvent, event.Type)
-	require.Len(t, event.Attributes, 4)
+	sdkModuleEvent := NewEventFromVM(sdk.NewInfiniteGasMeter(), &vmEvent)
+	require.Equal(t, EventTypeMoveEvent, sdkModuleEvent.Type)
+	require.Len(t, sdkModuleEvent.Attributes, 4)
 
-	require.EqualValues(t, AttrKeyGuid, event.Attributes[0].Key)
-	require.EqualValues(t, "0x"+hex.EncodeToString(vmEvent.Key), event.Attributes[0].Value)
-	require.EqualValues(t, AttrKeySequenceNumber, event.Attributes[1].Key)
-	require.EqualValues(t, strconv.FormatUint(vmEvent.SequenceNumber, 10), event.Attributes[1].Value)
-	require.EqualValues(t, AttrKeyType, event.Attributes[2].Key)
-	require.EqualValues(t, VMTypeToStringPanic(vmEvent.Type.Tag), event.Attributes[2].Value)
-	require.EqualValues(t, AttrKeyData, event.Attributes[3].Key)
-	require.EqualValues(t, "0x"+hex.EncodeToString(valBytes), event.Attributes[3].Value)
+	// sender
+	{
+		attrId := 0
+		require.EqualValues(t, AttrKeySenderAddress, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, GetSenderAddress(vmEvent.SenderAddress), sdkModuleEvent.Attributes[attrId].Value)
+	}
+	// source
+	{
+		attrId := 1
+		require.EqualValues(t, AttrKeySource, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, GetEventSource(vmEvent.SenderModule), sdkModuleEvent.Attributes[attrId].Value)
+	}
+	// type
+	{
+		attrId := 2
+		require.EqualValues(t, AttrKeyType, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), vmEvent.EventType), sdkModuleEvent.Attributes[attrId].Value)
+	}
+	// data
+	{
+		attrId := 3
+		require.EqualValues(t, AttrKeyData, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, hex.EncodeToString(valBytes), sdkModuleEvent.Attributes[attrId].Value)
+	}
+
+	// Modify vmEvent: from script
+	vmEvent.SenderModule = nil
+	sdkScriptEvent := NewEventFromVM(sdk.NewInfiniteGasMeter(), &vmEvent)
+	require.Equal(t, EventTypeMoveEvent, sdkScriptEvent.Type)
+	require.Len(t, sdkScriptEvent.Attributes, 4)
+	// source
+	{
+		attrId := 1
+		require.EqualValues(t, AttrKeySource, sdkScriptEvent.Attributes[attrId].Key)
+		require.EqualValues(t, SourceScript, sdkScriptEvent.Attributes[attrId].Value)
+	}
 }
 
 // Test event happens when VM return status with errors.
@@ -147,4 +198,55 @@ func TestNewEventWithError(t *testing.T) {
 		require.EqualValuesf(t, []byte(attr.Key), event.Attributes[i].Key, "incorrect attribute key for event discard at position %d", i)
 		require.EqualValuesf(t, []byte(attr.Value), event.Attributes[i].Value, "incorrect attribute key for event discard at position %d", i)
 	}
+}
+
+// Processing event with out of gas.
+func Test_OutOfGasProcessEvent(t *testing.T) {
+	moduleAddr := make([]byte, common_vm.VMAddressLength)
+	moduleAddr[common_vm.VMAddressLength-1] = 2
+
+	value := uint64(18446744073709551615)
+	valBytes := make([]byte, 8)
+
+	// seems Move using to_le_bytes
+	binary.LittleEndian.PutUint64(valBytes, value)
+
+	vmEvent := vm_grpc.VMEvent{
+		SenderAddress: common_vm.StdLibAddress,
+		SenderModule: &vm_grpc.ModuleIdent{
+			Name:    "testModule",
+			Address: common_vm.Bech32ToLibra(moduleAddr),
+		},
+		EventType: &vm_grpc.LcsTag{
+			TypeTag: vm_grpc.LcsType_LcsU64,
+			StructIdent: &vm_grpc.StructIdent{
+				Address: []byte{1},
+				Module:  "Module_1",
+				Name:    "Struct_1",
+				TypeParams: []*vm_grpc.LcsTag{
+					{
+						TypeTag: vm_grpc.LcsType_LcsBool,
+						StructIdent: &vm_grpc.StructIdent{
+							Address:    []byte{2},
+							Module:     "Module_1",
+							Name:       "Struct_2",
+							TypeParams: []*vm_grpc.LcsTag{
+								{
+									TypeTag: vm_grpc.LcsType_LcsU8,
+								},
+							},
+						},
+					},
+					{
+						TypeTag: vm_grpc.LcsType_LcsU128,
+					},
+				},
+			},
+		},
+		EventData: valBytes,
+	}
+
+	require.PanicsWithValue(t, sdk.ErrorOutOfGas{"event type processing"}, func() {
+		NewEventFromVM(sdk.NewGasMeter(1000), &vmEvent)
+	})
 }

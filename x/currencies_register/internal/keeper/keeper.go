@@ -63,7 +63,7 @@ func (keeper Keeper) AddCurrencyInfo(ctx sdk.Context, denom string, decimals uin
 	}
 
 	accessPath := vm_grpc.VMAccessPath{
-		Address: common_vm.ZeroAddress,
+		Address: common_vm.StdLibAddress,
 		Path:    path,
 	}
 
@@ -98,7 +98,7 @@ func (keeper Keeper) GetCurrencyInfo(ctx sdk.Context, denom string) (types.Curre
 	}
 
 	accessPath := vm_grpc.VMAccessPath{
-		Address: common_vm.ZeroAddress,
+		Address: common_vm.StdLibAddress,
 		Path:    currencyPath.Path,
 	}
 

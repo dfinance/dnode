@@ -69,7 +69,7 @@ func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath
 	path := hash.Sum(tag)
 
 	return &vm_grpc.VMAccessPath{
-		Address: make([]byte, common_vm.VMAddressLength),
+		Address: common_vm.StdLibAddress,
 		Path:    path,
 	}
 }
@@ -118,7 +118,7 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 		keeper.processWriteSet(ctx, exec.WriteSet)
 
 		for _, vmEvent := range exec.Events {
-			ctx.EventManager().EmitEvent(types.NewEventFromVM(vmEvent))
+			ctx.EventManager().EmitEvent(types.NewEventFromVM(ctx.GasMeter(), vmEvent))
 		}
 	}
 }

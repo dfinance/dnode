@@ -40,7 +40,7 @@ func TestKeeper_AddCurrencyInfo(t *testing.T) {
 	require.NoError(t, err)
 
 	accessPath := vm_grpc.VMAccessPath{
-		Address: common_vm.ZeroAddress,
+		Address: common_vm.StdLibAddress,
 		Path:    path,
 	}
 
@@ -142,7 +142,7 @@ func TestKeeper_GetCurrencyInfoErrors(t *testing.T) {
 
 	// Cant unmarshal.
 	accessPath := vm_grpc.VMAccessPath{
-		Address: common_vm.ZeroAddress,
+		Address: common_vm.StdLibAddress,
 		Path:    path,
 	}
 

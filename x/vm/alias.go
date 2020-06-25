@@ -1,8 +1,6 @@
 package vm
 
 import (
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
-
 	"github.com/dfinance/dnode/x/vm/internal/keeper"
 	"github.com/dfinance/dnode/x/vm/internal/middlewares"
 	"github.com/dfinance/dnode/x/vm/internal/types"
@@ -20,9 +18,6 @@ type (
 	MsgDeployModule  = types.MsgDeployModule
 	MsgExecuteScript = types.MsgExecuteScript
 
-	VMServer                     = vm_grpc.VMServiceServer
-	UnimplementedVMServiceServer = vm_grpc.UnimplementedVMServiceServer
-
 	GenesisState    = types.GenesisState
 	QueryAccessPath = types.QueryAccessPath
 	QueryValueResp  = types.QueryValueResp
@@ -39,10 +34,9 @@ var (
 	// variable aliases
 	ModuleCdc = types.ModuleCdc
 	// function aliases
-	RegisterCodec           = types.RegisterCodec
-	NewKeeper               = keeper.NewKeeper
-	RegisterVMServiceServer = vm_grpc.RegisterVMServiceServer
-	NewMsgDeployModule      = types.NewMsgDeployModule
+	RegisterCodec      = types.RegisterCodec
+	NewKeeper          = keeper.NewKeeper
+	NewMsgDeployModule = types.NewMsgDeployModule
 	// error aliases
 	ErrInternal           = types.ErrInternal
 	ErrVMCrashed          = types.ErrVMCrashed

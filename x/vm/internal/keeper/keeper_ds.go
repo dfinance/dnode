@@ -16,10 +16,11 @@ import (
 // Retry "execution" request.
 // Contains information about request to VM and retry settings.
 type RetryExecReq struct {
-	Raw            *vm_grpc.VMExecuteRequest // Request to retry.
-	Attempt        int                       // Current attempt.
-	CurrentTimeout int                       // Current timeout.
-	MaxAttempts    int                       // Max attempts.
+	RawModule      *vm_grpc.VMPublishModule // Request to retry (module publish).
+	RawScript      *vm_grpc.VMExecuteScript // Request to retry (script execution)
+	Attempt        int                      // Current attempt.
+	CurrentTimeout int                      // Current timeout.
+	MaxAttempts    int                      // Max attempts.
 }
 
 // Start Data source (DS) server.
@@ -50,7 +51,8 @@ func (keeper Keeper) CloseConnections() {
 }
 
 // Send request with retry mechanism and wait for connection and execution or return error.
-func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grpc.VMExecuteResponses, retErr error) {
+// Contract: either RawModule or RawScript must be specified for RetryExecReq.
+func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grpc.VMExecuteResponse, retErr error) {
 	doneCh := make(chan bool)
 	go func() {
 		var cancelCtx func()
@@ -67,12 +69,19 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *v
 
 		for {
 			stopPrevCtx()
-			curTimeout := time.Duration(req.CurrentTimeout)*time.Millisecond
+			curTimeout := time.Duration(req.CurrentTimeout) * time.Millisecond
 			connCtx, cancelFunc := context.WithTimeout(context.Background(), curTimeout)
 			cancelCtx = cancelFunc
 
 			connStartedAt := time.Now()
-			resp, err := keeper.client.ExecuteContracts(connCtx, req.Raw)
+			var resp *vm_grpc.VMExecuteResponse
+			var err error
+			if req.RawModule != nil {
+				resp, err = keeper.client.PublishModule(connCtx, req.RawModule)
+			} else if req.RawScript != nil {
+				resp, err = keeper.client.ExecuteScript(connCtx, req.RawScript)
+			}
+
 			connDuration := time.Since(connStartedAt)
 			if err != nil {
 				if req.Attempt == 0 {
@@ -112,9 +121,17 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *v
 }
 
 // Send request with retry mechanism.
-func (keeper Keeper) sendExecuteReq(ctx sdk.Context, req *vm_grpc.VMExecuteRequest) (*vm_grpc.VMExecuteResponses, error) {
+func (keeper Keeper) sendExecuteReq(ctx sdk.Context, moduleReq *vm_grpc.VMPublishModule, scriptReq *vm_grpc.VMExecuteScript) (*vm_grpc.VMExecuteResponse, error) {
+	if moduleReq == nil && scriptReq == nil {
+		return nil, fmt.Errorf("request (module / script) not specified")
+	}
+	if moduleReq != nil && scriptReq != nil {
+		return nil, fmt.Errorf(" only single request (module / script) is supported")
+	}
+
 	retryReq := RetryExecReq{
-		Raw:            req,
+		RawModule:      moduleReq,
+		RawScript:      scriptReq,
 		CurrentTimeout: keeper.config.InitialBackoff,
 		MaxAttempts:    keeper.config.MaxAttempts,
 	}
