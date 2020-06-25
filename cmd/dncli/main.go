@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	stdLog "log"
 	"os"
 	"path"
@@ -114,6 +115,36 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 	return queryCmd
 }
 
+// Set default gas for tx commands.
+func SetDefaultFeeForTxCmd(cmd *cobra.Command) {
+	if feesFlag := cmd.Flag(flags.FlagFees); feesFlag != nil {
+		feesFlag.DefValue = dnConfig.DefaultFee
+		feesFlag.NoOptDefVal = dnConfig.DefaultFee
+		feesFlag.Usage = "Fees to pay along with transaction; eg: " + dnConfig.DefaultFee
+
+		if feesFlag.Value.String() == "" {
+			feesFlag.Value.Set(dnConfig.DefaultFee)
+		}
+
+		cmd.PreRunE = func(_ *cobra.Command, _ []string) error {
+			coin, err := sdk.ParseCoin(feesFlag.Value.String())
+			if err != nil {
+				return fmt.Errorf("can't parse fees value to coins: %v", err)
+			}
+
+			if coin.Denom != dnConfig.MainDenom {
+				return fmt.Errorf("fees must be paid only in %q, current fees in are %q", dnConfig.MainDenom, coin.Denom)
+			}
+
+			return nil
+		}
+	}
+
+	for _, child := range cmd.Commands() {
+		SetDefaultFeeForTxCmd(child)
+	}
+}
+
 // Add transactions subcommands to CLI.
 func txCmd(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
@@ -133,6 +164,7 @@ func txCmd(cdc *amino.Codec) *cobra.Command {
 	)
 
 	app.ModuleBasics.AddTxCommands(txCmd, cdc)
+	SetDefaultFeeForTxCmd(txCmd)
 
 	return txCmd
 }

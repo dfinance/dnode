@@ -13,6 +13,7 @@ import (
 
 const (
 	MainDenom            = "dfi"
+	DefaultFee           = "1" + MainDenom
 	MainPrefix           = "wallet"                                                                  // Main prefix for all addresses.
 	Bech32PrefixAccAddr  = MainPrefix                                                                // Bech32 prefix for account addresses.
 	Bech32PrefixAccPub   = MainPrefix + sdk.PrefixPublic                                             // Bech32 prefix for accounts pub keys.
