@@ -1024,3 +1024,124 @@ func Test_EventTypeSerialization(t *testing.T) {
 		t.Logf("Serialization: %s", eventType)
 	}
 }
+
+// VM Event.EventType string serialization test with out of gas.
+func Test_EventTypeSerializationOutOfGas(t *testing.T) {
+	const moduleSrc = `
+		module OutOfGasEvent {
+			struct A {
+				value: u64
+			}
+		
+			struct B<T> {
+				value: T
+			}
+		
+			struct C<T> {
+				value: T
+			}
+		
+			struct Z<T> {
+				value: T
+			}
+		
+			struct V<T> {
+				value: T
+			}
+		
+			struct M<T> {
+				value: T
+			}
+		
+			public fun test() {
+				let a = A {
+					value: 10
+				};
+		
+				let b = B<A> {
+					value: a
+				};
+		
+				let c = C<B<A>> {
+					value: b
+				};
+		
+				let z = Z<C<B<A>>> {
+					value: c
+				};
+		
+				let v = V<Z<C<B<A>>>> {
+					value: z
+				};
+		
+				let m  = M<V<Z<C<B<A>>>>> {
+					value: v
+				};
+		
+				0x1::Event::emit<M<V<Z<C<B<A>>>>>>(m);
+			}
+		
+		}
+	`
+	const scriptSrcFmt = `
+		script {
+			use %s::OutOfGasEvent;
+
+			fun main() {
+				OutOfGasEvent::test();
+			}
+		}
+	`
+
+	config := sdk.GetConfig()
+	dnodeConfig.InitBechPrefixes(config)
+
+	input := newTestInput(false)
+
+	// Create account
+	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
+	input.ak.SetAccount(input.ctx, acc1)
+
+	// Init genesis and start DS
+	gs := getGenesis(t)
+	input.vk.InitGenesis(input.ctx, gs)
+	input.vk.SetDSContext(input.ctx)
+	input.vk.StartDSServer(input.ctx)
+	time.Sleep(2 * time.Second)
+
+	// Launch DVM container
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
+
+	// Compile, publish module
+	moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		Text:    moduleSrc,
+		Address: common_vm.Bech32ToLibra(addr1),
+	})
+	require.NoErrorf(t, err, "module compile error")
+
+	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+	require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
+	ctx, writeCtx := input.ctx.CacheContext()
+	require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "module deploy error")
+
+	t.Logf("checking module events")
+	checkNoEventErrors(ctx.EventManager().Events(), t)
+	writeCtx()
+
+	// Compile, execute script
+	scriptSrc := fmt.Sprintf(scriptSrcFmt, addr1)
+	scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		Text:    scriptSrc,
+		Address: common_vm.Bech32ToLibra(addr1),
+	})
+	require.NoErrorf(t, err, "script compile error")
+
+	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+
+	require.PanicsWithValue(t, sdk.ErrorOutOfGas{"event type processing"}, func() {
+		input.vk.ExecuteScript(input.ctx.WithGasMeter(sdk.NewGasMeter(400000)), scriptMsg)
+	})
+
+}
