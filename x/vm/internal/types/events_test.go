@@ -226,6 +226,16 @@ func Test_OutOfGasProcessEvent(t *testing.T) {
 				TypeParams: []*vm_grpc.LcsTag{
 					{
 						TypeTag: vm_grpc.LcsType_LcsBool,
+						StructIdent: &vm_grpc.StructIdent{
+							Address:    []byte{2},
+							Module:     "Module_1",
+							Name:       "Struct_2",
+							TypeParams: []*vm_grpc.LcsTag{
+								{
+									TypeTag: vm_grpc.LcsType_LcsU8,
+								},
+							},
+						},
 					},
 					{
 						TypeTag: vm_grpc.LcsType_LcsU128,
