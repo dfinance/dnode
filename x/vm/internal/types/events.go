@@ -4,6 +4,7 @@ package types
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,14 +25,17 @@ const (
 	AttrKeyMessage       = "message"
 	AttrKeyType          = "type"
 	AttrKeySenderAddress = "sender_address"
-	AttrKeyModuleName    = "module_name"
-	AttrKeyModuleAddress = "module_address"
+	AttrKeySource        = "source"
 	AttrKeyData          = "data"
 
 	// Values.
 	StatusDiscard = "discard"
 	StatusKeep    = "keep"
 	StatusError   = "error"
+
+	// Source key options.
+	SourceScript    = "script"
+	SourceModuleFmt = "%s::%s"
 )
 
 // New event with keep status.
@@ -77,19 +81,24 @@ func GetSenderAddress(addr []byte) string {
 	}
 }
 
+// GetEventSource return VM event source (script / module) serialized to string.
+func GetEventSource(senderModule *vm_grpc.ModuleIdent) string {
+	if senderModule == nil {
+		return SourceScript
+	}
+
+	return fmt.Sprintf(SourceModuleFmt, GetSenderAddress(senderModule.Address), senderModule.Name)
+}
+
 // Parse VM event to standard SDK event.
 // In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
 func NewEventFromVM(gasMeter sdk.GasMeter, event *vm_grpc.VMEvent) sdk.Event {
 	// eventData: not parsed as it doesn't make sense
 	attrs := []sdk.Attribute{
 		sdk.NewAttribute(AttrKeySenderAddress, GetSenderAddress(event.SenderAddress)),
+		sdk.NewAttribute(AttrKeySource, GetEventSource(event.SenderModule)),
 		sdk.NewAttribute(AttrKeyType, StringifyEventTypePanic(gasMeter, event.EventType)),
 		sdk.NewAttribute(AttrKeyData, hex.EncodeToString(event.EventData)),
-	}
-
-	if event.SenderModule != nil {
-		attrs = append(attrs, sdk.NewAttribute(AttrKeyModuleName, event.SenderModule.Name))
-		attrs = append(attrs, sdk.NewAttribute(AttrKeyModuleAddress, GetSenderAddress(event.SenderModule.Address)))
 	}
 
 	return sdk.NewEvent(EventTypeMoveEvent, attrs...)

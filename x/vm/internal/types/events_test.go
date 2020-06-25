@@ -102,22 +102,46 @@ func TestNewEventFromVM(t *testing.T) {
 		EventData: valBytes,
 	}
 
-	sdkEvent := NewEventFromVM(sdk.NewInfiniteGasMeter(), &vmEvent)
-	require.Equal(t, EventTypeMoveEvent, sdkEvent.Type)
-	require.Len(t, sdkEvent.Attributes, 5)
+	sdkModuleEvent := NewEventFromVM(sdk.NewInfiniteGasMeter(), &vmEvent)
+	require.Equal(t, EventTypeMoveEvent, sdkModuleEvent.Type)
+	require.Len(t, sdkModuleEvent.Attributes, 4)
 
 	// sender
-	require.EqualValues(t, GetSenderAddress(vmEvent.SenderAddress), sdkEvent.Attributes[0].Value)
+	{
+		attrId := 0
+		require.EqualValues(t, AttrKeySenderAddress, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, GetSenderAddress(vmEvent.SenderAddress), sdkModuleEvent.Attributes[attrId].Value)
+	}
+	// source
+	{
+		attrId := 1
+		require.EqualValues(t, AttrKeySource, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, GetEventSource(vmEvent.SenderModule), sdkModuleEvent.Attributes[attrId].Value)
+	}
 	// type
-	// TODO: sdkEvent.Attributes[1] is omitted
+	{
+		attrId := 2
+		require.EqualValues(t, AttrKeyType, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), vmEvent.EventType), sdkModuleEvent.Attributes[attrId].Value)
+	}
 	// data
-	require.EqualValues(t, AttrKeyData, sdkEvent.Attributes[2].Key)
-	require.EqualValues(t, hex.EncodeToString(valBytes), sdkEvent.Attributes[2].Value)
-	// module
-	require.EqualValues(t, AttrKeyModuleName, sdkEvent.Attributes[3].Key)
-	require.EqualValues(t, vmEvent.SenderModule.Name, sdkEvent.Attributes[3].Value)
-	require.EqualValues(t, AttrKeyModuleAddress, sdkEvent.Attributes[4].Key)
-	require.EqualValues(t, GetSenderAddress(vmEvent.SenderModule.Address), sdkEvent.Attributes[4].Value)
+	{
+		attrId := 3
+		require.EqualValues(t, AttrKeyData, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, hex.EncodeToString(valBytes), sdkModuleEvent.Attributes[attrId].Value)
+	}
+
+	// Modify vmEvent: from script
+	vmEvent.SenderModule = nil
+	sdkScriptEvent := NewEventFromVM(sdk.NewInfiniteGasMeter(), &vmEvent)
+	require.Equal(t, EventTypeMoveEvent, sdkScriptEvent.Type)
+	require.Len(t, sdkScriptEvent.Attributes, 4)
+	// source
+	{
+		attrId := 1
+		require.EqualValues(t, AttrKeySource, sdkScriptEvent.Attributes[attrId].Key)
+		require.EqualValues(t, SourceScript, sdkScriptEvent.Attributes[attrId].Value)
+	}
 }
 
 // Test event happens when VM return status with errors.
