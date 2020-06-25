@@ -123,7 +123,10 @@ func SetDefaultFeeForTxCmd(cmd *cobra.Command) {
 		feesFlag.Usage = "Fees to pay along with transaction; eg: " + dnConfig.DefaultFee
 
 		if feesFlag.Value.String() == "" {
-			feesFlag.Value.Set(dnConfig.DefaultFee)
+			err := feesFlag.Value.Set(dnConfig.DefaultFee)
+			if err != nil {
+				panic(err)
+			}
 		}
 
 		cmd.PreRunE = func(_ *cobra.Command, _ []string) error {
