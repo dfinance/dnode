@@ -13,9 +13,10 @@ const (
 )
 
 var (
-	KeyDelimiter  = []byte(":")
-	VMKey         = []byte("vm")
-	StdLibAddress = make([]byte, VMAddressLength)
+	KeyDelimiter          = []byte(":")
+	VMKey                 = []byte("vm")
+	StdLibAddress         = make([]byte, VMAddressLength)
+	StdLibAddressShortStr = "0x1"
 )
 
 // Data server middleware type.

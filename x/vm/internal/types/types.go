@@ -24,6 +24,7 @@ const (
 	VmGasPrice       = 1
 	VmUnknownTagType = -1
 
+	// Initial gas for processing event type.
 	EventTypeProcessingGas = 10000
 )
 
@@ -276,10 +277,11 @@ func PrintVMStackTrace(txId []byte, log log.Logger, exec *vm_grpc.VMExecuteRespo
 	log.Debug(strBuilder.String())
 }
 
-// StringifyEventType return vm_grpc.LcsTag Move serialization.
-// Func is simmilar to VMLCSTagToString, but result is one lined Move representation.
-func StringifyEventType(ctx sdk.Context, tag *vm_grpc.LcsTag, gas, depth uint64) (string, error) {
-	// we can't consume gas later, as it open doors for holes.
+// Recursive process event type and return result event type as string.
+func processEventType(ctx sdk.Context, tag *vm_grpc.LcsTag, gas, depth uint64) (string, error) {
+	// we can't consume gas later, after recognize type, because it open doors for security holes.
+	// let's say dev will create type with a lot of generics, so transaction will take much more time to process.
+	// in result it could be a situation when validator doesn't have enough time to process transaction.
 	newGas := gas + (EventTypeProcessingGas * depth)
 	ctx.GasMeter().ConsumeGas(newGas, "event type processing")
 
@@ -319,7 +321,7 @@ func StringifyEventType(ctx sdk.Context, tag *vm_grpc.LcsTag, gas, depth uint64)
 
 	// Vector tag
 	if tag.VectorType != nil {
-		vectorType, err := StringifyEventType(ctx, tag.VectorType, newGas, depth+1)
+		vectorType, err := processEventType(ctx, tag.VectorType, newGas, depth+1)
 		if err != nil {
 			return "", fmt.Errorf("VectorType serialization: %w", err)
 		}
@@ -335,7 +337,7 @@ func StringifyEventType(ctx sdk.Context, tag *vm_grpc.LcsTag, gas, depth uint64)
 
 		structParams := make([]string, 0, len(tag.StructIdent.TypeParams))
 		for paramIdx, paramTag := range tag.StructIdent.TypeParams {
-			structParam, err := StringifyEventType(ctx, paramTag, newGas, depth+1)
+			structParam, err := processEventType(ctx, paramTag, newGas, depth+1)
 			if err != nil {
 				return "", fmt.Errorf("StructIdent serialization: TypeParam[%d]: %w", paramIdx, err)
 			}
@@ -348,9 +350,16 @@ func StringifyEventType(ctx sdk.Context, tag *vm_grpc.LcsTag, gas, depth uint64)
 	return lcsTypeToString(tag.TypeTag), nil
 }
 
+// StringifyEventType return vm_grpc.LcsTag Move serialization.
+// Func is simmilar to VMLCSTagToString, but result is one lined Move representation.
+func StringifyEventType(ctx sdk.Context, tag *vm_grpc.LcsTag) (string, error) {
+	// Start with initial gas for first event, and then go in progression based on depth.
+	return processEventType(ctx, tag, EventTypeProcessingGas, 0)
+}
+
 // StringifyEventTypePanic wraps StringifyEventType and panic on failure.
-func StringifyEventTypePanic(ctx sdk.Context, tag *vm_grpc.LcsTag, gas, depth uint64) string {
-	eventType, eventTypeErr := StringifyEventType(ctx, tag, gas, depth)
+func StringifyEventTypePanic(ctx sdk.Context, tag *vm_grpc.LcsTag) string {
+	eventType, eventTypeErr := StringifyEventType(ctx, tag)
 	if eventTypeErr != nil {
 		debugMsg := ""
 		if tagStr, tagErr := VMLCSTagToString(tag); tagErr != nil {

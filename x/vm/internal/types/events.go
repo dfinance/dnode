@@ -17,7 +17,7 @@ const (
 	EventTypeContractStatus = "contract_status"
 	EventTypeMoveEvent      = "contract_events"
 
-	// Attributes keys
+	// Attributes keys.
 	AttrKeyStatus        = "status"
 	AttrKeyMajorStatus   = "major_status"
 	AttrKeySubStatus     = "sub_status"
@@ -71,7 +71,7 @@ func NewEventDiscard(errorStatus *vm_grpc.VMStatus) sdk.Event {
 // Get sender address 0x1 or wallet1...
 func GetSenderAddress(addr []byte) string {
 	if bytes.Equal(addr, common_vm.StdLibAddress) {
-		return "0x1"
+		return common_vm.StdLibAddressShortStr
 	} else {
 		return sdk.AccAddress(addr).String()
 	}
@@ -83,7 +83,7 @@ func NewEventFromVM(ctx sdk.Context, event *vm_grpc.VMEvent) sdk.Event {
 	// eventData: not parsed as it doesn't make sense
 	attrs := []sdk.Attribute{
 		sdk.NewAttribute(AttrKeySenderAddress, GetSenderAddress(event.SenderAddress)),
-		sdk.NewAttribute(AttrKeyType, StringifyEventTypePanic(ctx, event.EventType, EventTypeProcessingGas, 1)),
+		sdk.NewAttribute(AttrKeyType, StringifyEventTypePanic(ctx, event.EventType)),
 		sdk.NewAttribute(AttrKeyData, hex.EncodeToString(event.EventData)),
 	}
 
