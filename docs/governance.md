@@ -39,7 +39,7 @@ More info could be found in the [Cosmos SDK gov specs](https://github.com/cosmos
 Proposal is used to update DVM standard library code without the chain reboot.
 Modules can be updated individually (adding new features for example) and in batch.
 
-    dncli tx vm update-stdlib-proposal ./update.json 1000 http://github.com/repo 'fix for Foo module' --deposit 100dfi --from {accountAddress} --fees 1dfi
+    dncli tx vm update-stdlib-proposal ./update.json 1000 http://github.com/repo 'fix for Foo module' --deposit 100dfi --from {accountAddress}
 
 * `./update.json` - path to file containing modules bytecode (precompiled);
 * `1000` - scheduled block height;
