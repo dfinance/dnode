@@ -27,7 +27,7 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-currency-info [denom] [decimals] [totalSupply] [path]",
-		Short: "Add currency info to genesis.json",
+		Short: "Add currency info to genesis state (non-token)",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config

@@ -15,8 +15,10 @@ import (
 type CurrencyInfo struct {
 	Denom       []byte   `json:"denom" swaggertype:"string" example:"dfi"`
 	Decimals    uint8    `json:"decimals"`
+	// If true, currency created in DVM using 0x1::Dfinance::tokenize func.
 	IsToken     bool     `json:"isToken"`
-	Owner       []byte   `json:"owner" lcs:"len=20" swaggertype:"string" example:"dfi"`
+	// Owner is 0x1 for non-token currency and account address for token currencies.
+	Owner       []byte   `json:"owner" lcs:"len=20" swaggertype:"string"`
 	TotalSupply *big.Int `json:"totalSupply"`
 }
 
@@ -28,6 +30,10 @@ func NewCurrencyInfo(denom []byte, decimals uint8, isToken bool, owner []byte, t
 
 	if len(owner) != common_vm.VMAddressLength {
 		return CurrencyInfo{}, fmt.Errorf("owner: address length is not equal to VM address length: %d / %d", len(owner), common_vm.VMAddressLength)
+	}
+
+	if totalSupply.IsNegative() {
+		return CurrencyInfo{}, fmt.Errorf("totalSupply: negative")
 	}
 
 	return CurrencyInfo{

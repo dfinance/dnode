@@ -3,7 +3,6 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"strconv"
 
 	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -22,10 +21,10 @@ import (
 // Send governance add currency proposal.
 func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "add-currency-proposal [denom] [decimals] [totalSupply] [path] [owner] [isToken] [flags]",
-		Args:    cobra.ExactArgs(6),
-		Short:   "Submit a add currency proposal",
-		Example: "add-currency-proposal dfi 18 100000000000000000000 01f3a1f15d7b13931f3bd5f957ad154b5cbaa0e1a2c3d4d967f286e8800eeb510d my_address false --deposit 100dfi --fees 1dfi",
+		Use:     "add-currency-proposal [denom] [decimals] [totalSupply] [path] [flags]",
+		Args:    cobra.ExactArgs(4),
+		Short:   "Submit currency add proposal, creating non-token currency",
+		Example: "add-currency-proposal dfi 18 100000000000000000000 01f3a1f15d7b13931f3bd5f957ad154b5cbaa0e1a2c3d4d967f286e8800eeb510d --deposit 100dfi --fees 1dfi",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -43,20 +42,6 @@ func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var owner []byte
-			if addr, err := sdk.AccAddressFromBech32(args[4]); err == nil {
-				owner = addr.Bytes()
-			} else if addr, err := sdk.AccAddressFromHex(args[4]); err == nil {
-				owner = addr.Bytes()
-			} else {
-				return fmt.Errorf("%s argument %q parse error: Bech32 and HEX strings parsing failed", "owner", args[4])
-			}
-
-			isToken, err := strconv.ParseBool(args[5])
-			if err != nil {
-				return fmt.Errorf("%s argument %q parse error: %w", "isToken", args[5], err)
-			}
-
 			depositStr, err := cmd.Flags().GetString(govCli.FlagDeposit)
 			if err != nil {
 				return fmt.Errorf("%s flag: %w", govCli.FlagDeposit, err)
@@ -67,7 +52,7 @@ func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// prepare and send message
-			content := types.NewAddCurrencyProposal(denom, decimals, isToken, owner, path, totalSupply)
+			content := types.NewAddCurrencyProposal(denom, decimals, path, totalSupply)
 			if err := content.ValidateBasic(); err != nil {
 				return err
 			}

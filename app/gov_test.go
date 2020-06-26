@@ -204,11 +204,11 @@ func Test_CRGovAddCurrency(t *testing.T) {
 	)
 	defer ct.Close()
 
+	senderAddr := ct.Accounts["validator1"].Address
+
 	// New currency info
 	crDenom := "tst"
 	crDecimals := uint8(8)
-	crIsToken := true
-	crOwnerAddr := ct.Accounts["validator1"].Address
 	crPathHex := "0102030405060708090A0B0C0D0E0FA1A2A3A4A5A6A7A8A9AAABACADAEAFB1B2B3"
 	crTotalSupply, ok := sdk.NewIntFromString("100000000000")
 	require.True(t, ok)
@@ -217,38 +217,32 @@ func Test_CRGovAddCurrency(t *testing.T) {
 	{
 		// invalid from
 		{
-			tx := ct.TxCRAddCurrencyProposal("invalid_from", crDenom, crOwnerAddr, crPathHex, crDecimals, crIsToken, crTotalSupply, config.GovMinDeposit)
+			tx := ct.TxCRAddCurrencyProposal("invalid_from", crDenom, crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
 			tx.CheckFailedWithErrorSubstring("keyring")
 		}
 
 		// invalid denom
 		{
-			tx := ct.TxCRAddCurrencyProposal(crOwnerAddr, "invalid1", crOwnerAddr, crPathHex, crDecimals, crIsToken, crTotalSupply, config.GovMinDeposit)
+			tx := ct.TxCRAddCurrencyProposal(senderAddr, "invalid1", crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
 			tx.CheckFailedWithErrorSubstring("denom")
-		}
-
-		// invalid owner
-		{
-			tx := ct.TxCRAddCurrencyProposal(crOwnerAddr, crDenom, "123", crPathHex, crDecimals, crIsToken, crTotalSupply, config.GovMinDeposit)
-			tx.CheckFailedWithErrorSubstring("owner")
 		}
 
 		// invalid path
 		{
-			tx := ct.TxCRAddCurrencyProposal(crOwnerAddr, crDenom, crOwnerAddr, "_", crDecimals, crIsToken, crTotalSupply, config.GovMinDeposit)
+			tx := ct.TxCRAddCurrencyProposal(senderAddr, crDenom, "_", crDecimals, crTotalSupply, config.GovMinDeposit)
 			tx.CheckFailedWithErrorSubstring("path")
 		}
 
 		// invalid decimals
 		{
-			tx := ct.TxCRAddCurrencyProposal(crOwnerAddr, crDenom, crOwnerAddr, crPathHex, crDecimals, crIsToken, crTotalSupply, config.GovMinDeposit)
+			tx := ct.TxCRAddCurrencyProposal(senderAddr, crDenom, crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
 			tx.ChangeCmdArg("8", "abc")
 			tx.CheckFailedWithErrorSubstring("decimals")
 		}
 
 		// invalid totalSupply
 		{
-			tx := ct.TxCRAddCurrencyProposal(crOwnerAddr, crDenom, crOwnerAddr, crPathHex, crDecimals, crIsToken, crTotalSupply, config.GovMinDeposit)
+			tx := ct.TxCRAddCurrencyProposal(senderAddr, crDenom, crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
 			tx.ChangeCmdArg(crTotalSupply.String(), "abc")
 			tx.CheckFailedWithErrorSubstring("totalSupply")
 		}
@@ -256,7 +250,7 @@ func Test_CRGovAddCurrency(t *testing.T) {
 
 	// Add proposal
 	{
-		tx := ct.TxCRAddCurrencyProposal(crOwnerAddr, crDenom, crOwnerAddr, crPathHex, crDecimals, crIsToken, crTotalSupply, config.GovMinDeposit)
+		tx := ct.TxCRAddCurrencyProposal(senderAddr, crDenom, crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
 		ct.SubmitAndConfirmProposal(tx, false)
 	}
 
@@ -265,13 +259,10 @@ func Test_CRGovAddCurrency(t *testing.T) {
 		req, crInfo := ct.QueryCurrencyInfo(crDenom)
 		req.CheckSucceeded()
 
-		addr, err := sdk.AccAddressFromBech32(crOwnerAddr)
-		require.NoError(t, err)
-
 		require.Equal(t, crDenom, string(crInfo.Denom))
 		require.Equal(t, crDecimals, crInfo.Decimals)
-		require.Equal(t, crIsToken, crInfo.IsToken)
-		require.Equal(t, addr.Bytes(), crInfo.Owner)
+		require.Equal(t, false, crInfo.IsToken)
+		require.Equal(t, common_vm.StdLibAddress, crInfo.Owner)
 		require.Equal(t, crTotalSupply.BigInt().String(), crInfo.TotalSupply.String())
 	}
 

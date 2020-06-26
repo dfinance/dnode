@@ -7,6 +7,8 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
+	"github.com/dfinance/dnode/x/common_vm"
 )
 
 // NewGovHandler creates proposal type handler for Gov module.
@@ -33,8 +35,8 @@ func handleAddCurrencyProposal(ctx sdk.Context, keeper Keeper, proposal AddCurre
 		ctx,
 		proposal.Denom,
 		proposal.Decimals,
-		proposal.IsToken,
-		proposal.Owner.Bytes(),
+		false,
+		common_vm.StdLibAddress,
 		proposal.TotalSupply,
 		proposal.Path,
 	)

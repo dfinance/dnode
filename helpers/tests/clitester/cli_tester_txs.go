@@ -269,15 +269,13 @@ func (ct *CLITester) TxVmStdlibUpdateProposal(fromAddress, filePath, sourceUrl, 
 	return r
 }
 
-func (ct *CLITester) TxCRAddCurrencyProposal(fromAddress, denom, owner, path string, decimals uint8, isToken bool, totalSupply sdk.Int, deposit sdk.Coin) *TxRequest {
+func (ct *CLITester) TxCRAddCurrencyProposal(fromAddress, denom, path string, decimals uint8, totalSupply sdk.Int, deposit sdk.Coin) *TxRequest {
 	cmdArgs := []string{
 		"add-currency-proposal",
 		denom,
 		strconv.FormatUint(uint64(decimals), 10),
 		totalSupply.String(),
 		path,
-		owner,
-		strconv.FormatBool(isToken),
 		fmt.Sprintf("--deposit=%s", deposit.String()),
 	}
 
