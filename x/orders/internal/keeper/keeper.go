@@ -41,15 +41,26 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, bk bank.Keeper, sk suppl
 func (k Keeper) PostOrder(
 	ctx sdk.Context,
 	owner sdk.AccAddress,
-	marketID dnTypes.ID,
+	assetCode types.AssetCode,
 	direction types.Direction,
 	price sdk.Uint,
 	quantity sdk.Uint,
 	ttlInSec uint64) (types.Order, error) {
 
-	market, err := k.marketKeeper.GetExtended(ctx, marketID)
+	marketsList := k.marketKeeper.GetList(ctx)
+
+	var market markets.MarketExtended
+	err := sdkErrors.Wrap(types.ErrWrongAssetCode, "not found")
+
+	for _, marketItem := range marketsList {
+		if marketItem.GetAssetCode() == assetCode.String() {
+			market, err = k.marketKeeper.GetExtended(ctx, marketItem.ID)
+			break
+		}
+	}
+
 	if err != nil {
-		return types.Order{}, sdkErrors.Wrap(types.ErrWrongMarketID, "not found")
+		return types.Order{}, err
 	}
 
 	id := k.nextID(ctx)
@@ -90,7 +101,7 @@ func (k Keeper) RevokeOrder(ctx sdk.Context, id dnTypes.ID) error {
 
 // GetLogger gets logger with keeper context.
 func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", "x/" + types.ModuleName)
+	return ctx.Logger().With("module", "x/"+types.ModuleName)
 }
 
 // nextID return next unique order object ID.
