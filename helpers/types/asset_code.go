@@ -2,9 +2,9 @@ package types
 
 type AssetCode string
 
-// IsValid validates asset code.
-func (a AssetCode) IsValid() bool {
-	return true
+// Validate validates asset code.
+func (a AssetCode) Validate() error {
+	return nil
 }
 
 // String returns string enum representation.

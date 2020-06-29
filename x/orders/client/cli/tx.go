@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -37,9 +36,9 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("fromAddress: %w", err)
 			}
 
-			assetCode := types.AssetCode(strings.ToLower(args[0]))
-			if !assetCode.IsValid() {
-				return errors.New("argument asset_code: invalid format")
+			assetCode := dnTypes.AssetCode(strings.ToLower(args[0]))
+			if err := assetCode.Validate(); err != nil {
+				return fmt.Errorf("argument %q: parsing: %w", "asset_code", err)
 			}
 
 			direction := types.Direction(strings.ToLower(args[1]))

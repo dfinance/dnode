@@ -14,12 +14,12 @@ var (
 
 // Client message to post an order object.
 type MsgPostOrder struct {
-	Owner     sdk.AccAddress `json:"owner" yaml:"owner"`
-	AssetCode AssetCode      `json:"asset_code" yaml:"asset_code"`
-	Direction Direction      `json:"direction" yaml:"direction"`
-	Price     sdk.Uint       `json:"price" yaml:"price"`
-	Quantity  sdk.Uint       `json:"quantity" yaml:"quantity"`
-	TtlInSec  uint64         `json:"ttl_in_sec" yaml:"ttl_in_sec"`
+	Owner     sdk.AccAddress    `json:"owner" yaml:"owner"`
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code"`
+	Direction Direction         `json:"direction" yaml:"direction"`
+	Price     sdk.Uint          `json:"price" yaml:"price"`
+	Quantity  sdk.Uint          `json:"quantity" yaml:"quantity"`
+	TtlInSec  uint64            `json:"ttl_in_sec" yaml:"ttl_in_sec"`
 }
 
 // Implements sdk.Msg interface.
@@ -34,8 +34,8 @@ func (msg MsgPostOrder) Type() string {
 
 // Implements sdk.Msg interface.
 func (msg MsgPostOrder) ValidateBasic() error {
-	if !msg.AssetCode.IsValid() {
-		return ErrWrongAssetCode
+	if err := msg.AssetCode.Validate(); err != nil {
+		return sdkErrors.Wrap(ErrWrongAssetCode, err.Error())
 	}
 	if msg.Owner.Empty() {
 		return ErrWrongOwner
@@ -67,7 +67,7 @@ func (msg MsgPostOrder) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgPost creates MsgPostOrder message object.
-func NewMsgPost(owner sdk.AccAddress, assetCode AssetCode, direction Direction, price sdk.Uint, quantity sdk.Uint, ttlInSec uint64) MsgPostOrder {
+func NewMsgPost(owner sdk.AccAddress, assetCode dnTypes.AssetCode, direction Direction, price sdk.Uint, quantity sdk.Uint, ttlInSec uint64) MsgPostOrder {
 	return MsgPostOrder{
 		Owner:     owner,
 		AssetCode: assetCode,

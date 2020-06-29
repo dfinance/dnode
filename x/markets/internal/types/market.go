@@ -67,7 +67,7 @@ func (m Market) TableValues() []string {
 	}
 }
 
-// GetAssetCode returns asset code for market
+// GetAssetCode returns asset code for market.
 func (m Market) GetAssetCode() string {
 	return m.BaseAssetDenom + "_" + m.QuoteAssetDenom
 }

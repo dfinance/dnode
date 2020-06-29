@@ -41,24 +41,20 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, bk bank.Keeper, sk suppl
 func (k Keeper) PostOrder(
 	ctx sdk.Context,
 	owner sdk.AccAddress,
-	assetCode types.AssetCode,
+	assetCode dnTypes.AssetCode,
 	direction types.Direction,
 	price sdk.Uint,
 	quantity sdk.Uint,
 	ttlInSec uint64) (types.Order, error) {
 
-	marketsList := k.marketKeeper.GetList(ctx)
+	filter := markets.NewMarketsFilter(1, 1, assetCode.String(), "", "")
+	marketsList := k.marketKeeper.GetListFiltered(ctx, filter)
 
-	var market markets.MarketExtended
-	err := sdkErrors.Wrap(types.ErrWrongAssetCode, "not found")
-
-	for _, marketItem := range marketsList {
-		if marketItem.GetAssetCode() == assetCode.String() {
-			market, err = k.marketKeeper.GetExtended(ctx, marketItem.ID)
-			break
-		}
+	if len(marketsList) == 0 {
+		return types.Order{}, sdkErrors.Wrap(types.ErrWrongAssetCode, "not found")
 	}
 
+	market, err := k.marketKeeper.GetExtended(ctx, marketsList[0].ID)
 	if err != nil {
 		return types.Order{}, err
 	}
