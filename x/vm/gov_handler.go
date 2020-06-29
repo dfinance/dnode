@@ -51,7 +51,7 @@ func handleUpdateStdlibProposalDryRun(ctx sdk.Context, keeper Keeper, proposal S
 
 // getStdlibUpdateMsg returns deploy message for stdlib update.
 func getStdlibUpdateMsg(proposal StdlibUpdateProposal) (MsgDeployModule, error) {
-	msg := NewMsgDeployModule(common_vm.Bech32ToLibra(common_vm.ZeroAddress), proposal.Code)
+	msg := NewMsgDeployModule(common_vm.StdLibAddress, proposal.Code)
 	if err := msg.ValidateBasic(); err != nil {
 		return MsgDeployModule{}, fmt.Errorf("deploy message validation failed: %w", err)
 	}

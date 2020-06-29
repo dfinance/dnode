@@ -31,8 +31,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	}
 
 	compileCommands := sdkClient.GetCommands(
-		CompileScript(cdc),
-		CompileModule(cdc),
+		Compile(cdc),
 	)
 	for _, cmd := range compileCommands {
 		cmd.Flags().String(vmClient.FlagCompilerAddr, config.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
@@ -138,12 +137,12 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// Compile Move script.
-func CompileScript(cdc *codec.Codec) *cobra.Command {
+// Compile Move script / module.
+func Compile(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "compile-script [moveFile] [account]",
-		Short:   "compile script using source code from Move file",
-		Example: "compile-script script.move wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file script.move.json",
+		Use:     "compile [moveFile] [account]",
+		Short:   "compile script / module using source code from Move file",
+		Example: "compile script.move wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file script.move.json",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
@@ -160,55 +159,9 @@ func CompileScript(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// Move file
-			sourceFile := &vm_grpc.MvIrSourceFile{
+			sourceFile := &vm_grpc.SourceFile{
 				Text:    string(moveContent),
 				Address: common_vm.Bech32ToLibra(addr),
-				Type:    vm_grpc.ContractType_Script,
-			}
-
-			// compile Move file
-			bytecode, err := vmClient.Compile(compilerAddr, sourceFile)
-			if err != nil {
-				return err
-			}
-
-			if err := saveOutput(bytecode, cdc); err != nil {
-				return fmt.Errorf("error during compiled bytes output: %v", err)
-			}
-
-			fmt.Println("Compilation successful done.")
-
-			return nil
-		},
-	}
-}
-
-// Compile Move module.
-func CompileModule(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:     "compile-module [moveFile] [account]",
-		Short:   "compile module connected to account, using source code from Move file",
-		Example: "compile-module module.move wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file module.move.json",
-		Args:    cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
-
-			// read provided file
-			moveContent, err := readMoveFile(args[0])
-			if err != nil {
-				return fmt.Errorf("error during reading Move file %q: %v", args[0], err)
-			}
-
-			addr, err := sdk.AccAddressFromBech32(args[1])
-			if err != nil {
-				return fmt.Errorf("error during parsing address %s: %v", args[1], err)
-			}
-
-			// Move file
-			sourceFile := &vm_grpc.MvIrSourceFile{
-				Text:    string(moveContent),
-				Address: common_vm.Bech32ToLibra(addr),
-				Type:    vm_grpc.ContractType_Module,
 			}
 
 			// compile Move file

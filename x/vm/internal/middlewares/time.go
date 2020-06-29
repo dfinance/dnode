@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	hexTimePath = "01e34206019af0f0116fb30280fb4803a6008a57f41609ac49d5a0eba226889cac"
+	hexTimePath = "01bb4980dfba817aaa64cb4b3a75ee1e1d8352111dead64c5c4f05fb7b4c85bb3e"
 )
 
 type CurrentTimestamp struct {
@@ -26,7 +26,7 @@ func NewTimeMiddleware() common_vm.DSDataMiddleware {
 	}
 
 	timeHeaderPath := vm_grpc.VMAccessPath{
-		Address: common_vm.ZeroAddress,
+		Address: common_vm.StdLibAddress,
 		Path:    bzPath,
 	}
 

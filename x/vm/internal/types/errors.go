@@ -21,8 +21,10 @@ var (
 	ErrWrongAddressLength = sdkErrors.Register(ModuleName, 201, "address passed to vm has wrong length")
 	// Converting msg.Args VMTypeTag to string failed.
 	ErrWrongArgTypeTag = sdkErrors.Register(ModuleName, 202, "something wrong with argument type")
+	// Empty argument value.
+	ErrWrongArgValue = sdkErrors.Register(ModuleName, 203, "something wrong with argument value")
 	// Move VM can't process request correctly: number of resp.Executions != 1.
-	ErrWrongExecutionResponse = sdkErrors.Register(ModuleName, 203, "wrong execution response from vm")
+	ErrWrongExecutionResponse = sdkErrors.Register(ModuleName, 204, "wrong execution response from vm")
 
 	// Data source: value missed in Data Source server.
 	ErrDSMissedValue = sdkErrors.Register(ModuleName, 401, "value is missed in storage")

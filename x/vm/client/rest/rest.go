@@ -32,45 +32,23 @@ type compileReq struct {
 
 // Registering routes for REST API.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
-	r.HandleFunc(fmt.Sprintf("/%s/compile-script", types.ModuleName), compileScript(cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/compile-module", types.ModuleName), compileModule(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/compile", types.ModuleName), compile(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/data/{%s}/{%s}", types.ModuleName, accountAddrName, vmPathName), getData(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", types.ModuleName, txHash), getTxVMStatus(cliCtx)).Methods("GET")
 }
-
-// GetCompiledScript godoc
+// Compile godoc
 // @Tags vm
-// @Summary Get compiled script
-// @Description Compile script code using VM and return byteCode
-// @ID vmGetCompiledScript
+// @Summary Get compiled byteCode
+// @Description Compile script / module code using VM and return byteCode
+// @ID vmCompile
 // @Accept  json
 // @Produce json
 // @Param getRequest body compileReq true "Code with metadata"
 // @Success 200 {object} VmRespCompile
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
-// @Router /vm/compile-script [get]
-func compileScript(cliCtx context.CLIContext) http.HandlerFunc {
-	return commonCompileHandler(cliCtx, vm_grpc.ContractType_Script)
-}
-
-// GetCompiledModule godoc
-// @Tags vm
-// @Summary Get compiled module
-// @Description Compile module code using VM and return byteCode
-// @ID vmGetCompiledModule
-// @Accept  json
-// @Produce json
-// @Param getRequest body compileReq true "Code with metadata"
-// @Success 200 {object} VmRespCompile
-// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
-// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
-// @Router /vm/compile-module [get]
-func compileModule(cliCtx context.CLIContext) http.HandlerFunc {
-	return commonCompileHandler(cliCtx, vm_grpc.ContractType_Module)
-}
-
-func commonCompileHandler(cliCtx context.CLIContext, compileType vm_grpc.ContractType) http.HandlerFunc {
+// @Router /vm/compile [get]
+func compile(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := compileReq{}
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
@@ -79,10 +57,9 @@ func commonCompileHandler(cliCtx context.CLIContext, compileType vm_grpc.Contrac
 		}
 
 		compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
-		sourceFile := &vm_grpc.MvIrSourceFile{
+		sourceFile := &vm_grpc.SourceFile{
 			Text:    req.Code,
 			Address: []byte(req.Account),
-			Type:    compileType,
 		}
 
 		byteCode, err := vmClient.Compile(compilerAddr, sourceFile)

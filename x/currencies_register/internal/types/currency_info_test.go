@@ -18,7 +18,7 @@ func TestNewCurrencyInfo(t *testing.T) {
 	denom := "dfi"
 	decimals := 18
 	isToken := true
-	owner := common_vm.ZeroAddress
+	owner := common_vm.StdLibAddress
 	totalSupply := sdk.NewInt(1000000)
 
 	// New currency info.
@@ -40,7 +40,7 @@ func TestCurrencyInfo_String(t *testing.T) {
 	denom := "dfi"
 	decimals := 18
 	isToken := true
-	owner := common_vm.ZeroAddress
+	owner := common_vm.StdLibAddress
 	totalSupply := sdk.NewInt(1000000)
 
 	currInfo, err := NewCurrencyInfo([]byte(denom), uint8(decimals), isToken, owner, totalSupply.BigInt())

@@ -34,6 +34,7 @@ import (
 	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/vm/internal/types"
@@ -58,25 +59,25 @@ const (
 	CoinsInfo = `{ 
 		"currencies": [
 			{
-				"path": "0172c9f1bfe0a2bf6ac342aaa3c3380852d4694ae4e71655d37aa5d2e6700ed94e",
+				"path": "01f3a1f15d7b13931f3bd5f957ad154b5cbaa0e1a2c3d4d967f286e8800eeb510d",
           		"denom": "dfi",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
         	{
-          		"path": "0116fbac6fd286d2bfec4549161245982b730291a9cbc5281f5fcfb41aeb7bfb26",
+          		"path": "012a00668b5325f832c28a24eb83dffa8295170c80345fbfbf99a5263f962c76f4",
           		"denom": "eth",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
 			{
-          		"path": "01e10f377b920a0a8a330edd7beff6c3a11cdeb7682c964b02aa5bb6a784b84920",
+          		"path": "01d058943a984bc02bc4a8547e7c0d780c59334e9aa415b90c87e70d140b2137b8",
           		"denom": "usdt",
           		"decimals": 6,
           		"totalSupply": "10000000000000"
         	},
         	{
-          		"path": "0158c690830c7e2f25b85de6ab85052fd1e79e6a9cbb52a9740be7ff7275604c1b",
+          		"path": "019fdf92aeba5356ec5455b1246c2e1b71d5c7192c6e5a1b50444dafaedc1c40c9",
           		"denom": "btc",
           		"decimals": 8,
           		"totalSupply": "100000000000000"
@@ -96,68 +97,55 @@ var (
 	bufferSize = 1024 * 1024
 )
 
-type vmServer struct {
-	vm_grpc.UnimplementedVMServiceServer
+type vmServer struct {}
+
+func (server vmServer) PublishModule(context.Context, *vm_grpc.VMPublishModule) (*vm_grpc.VMExecuteResponse, error) {
+	values := make([]*vm_grpc.VMValue, 1)
+	values[0] = &vm_grpc.VMValue{
+		Type:  vm_grpc.VmWriteOp_Value,
+		Value: randomValue(512),
+		Path:  randomPath(),
+	}
+
+	return &vm_grpc.VMExecuteResponse{
+		WriteSet: values,
+		Events:   nil,
+		GasUsed:  10000,
+		Status:   vm_grpc.ContractStatus_Keep,
+	}, nil
 }
 
-func (server vmServer) ExecuteContracts(ctx context.Context, req *vm_grpc.VMExecuteRequest) (*vm_grpc.VMExecuteResponses, error) {
-	// execute module
-	resps := &vm_grpc.VMExecuteResponses{
-		Executions: make([]*vm_grpc.VMExecuteResponse, len(req.Contracts)),
+func (server vmServer) ExecuteScript(context.Context, *vm_grpc.VMExecuteScript) (*vm_grpc.VMExecuteResponse, error) {
+	values := make([]*vm_grpc.VMValue, 2)
+	values[0] = &vm_grpc.VMValue{
+		Type:  vm_grpc.VmWriteOp_Value,
+		Value: randomValue(8),
+		Path:  randomPath(),
+	}
+	values[1] = &vm_grpc.VMValue{
+		Type:  vm_grpc.VmWriteOp_Value,
+		Value: randomValue(32),
+		Path:  randomPath(),
 	}
 
-	for i, contract := range req.Contracts {
-		if contract.ContractType == vm_grpc.ContractType_Module {
-			// process module
-			values := make([]*vm_grpc.VMValue, 1)
-			values[0] = &vm_grpc.VMValue{
-				Type:  vm_grpc.VmWriteOp_Value,
-				Value: randomValue(512),
-				Path:  randomPath(),
-			}
-
-			resps.Executions[i] = &vm_grpc.VMExecuteResponse{
-				WriteSet: values,
-				Events:   nil,
-				GasUsed:  10000,
-				Status:   vm_grpc.ContractStatus_Keep,
-			}
-		} else if contract.ContractType == vm_grpc.ContractType_Script {
-			// process script
-			values := make([]*vm_grpc.VMValue, 2)
-			values[0] = &vm_grpc.VMValue{
-				Type:  vm_grpc.VmWriteOp_Value,
-				Value: randomValue(8),
-				Path:  randomPath(),
-			}
-			values[1] = &vm_grpc.VMValue{
-				Type:  vm_grpc.VmWriteOp_Value,
-				Value: randomValue(32),
-				Path:  randomPath(),
-			}
-
-			events := make([]*vm_grpc.VMEvent, 1)
-			events[0] = &vm_grpc.VMEvent{
-				Key:            []byte("test event"),
-				SequenceNumber: 0,
-				Type: &vm_grpc.VMType{
-					Tag: vm_grpc.VMTypeTag_ByteArray,
-				},
-				EventData: randomValue(32),
-			}
-
-			resps.Executions[i] = &vm_grpc.VMExecuteResponse{
-				WriteSet: values,
-				Events:   events,
-				GasUsed:  10000,
-				Status:   vm_grpc.ContractStatus_Keep,
-			}
-		} else {
-			panic("wrong contract type")
-		}
+	events := make([]*vm_grpc.VMEvent, 1)
+	events[0] = &vm_grpc.VMEvent{
+		SenderAddress: common_vm.StdLibAddress,
+		EventType: &vm_grpc.LcsTag{
+			TypeTag: vm_grpc.LcsType_LcsVector,
+			VectorType: &vm_grpc.LcsTag{
+				TypeTag: vm_grpc.LcsType_LcsU8,
+			},
+		},
+		EventData: randomValue(32),
 	}
 
-	return resps, nil
+	return &vm_grpc.VMExecuteResponse{
+		WriteSet: values,
+		Events:   events,
+		GasUsed:  10000,
+		Status:   vm_grpc.ContractStatus_Keep,
+	}, nil
 }
 
 type testInput struct {
@@ -371,7 +359,8 @@ func startMockDSServer() (*vmServer, *grpc.Server, *bufconn.Listener) {
 
 	vmServer := vmServer{}
 	server := grpc.NewServer()
-	vm_grpc.RegisterVMServiceServer(server, vmServer)
+	vm_grpc.RegisterVMModulePublisherServer(server, &vmServer)
+	vm_grpc.RegisterVMScriptExecutorServer(server, &vmServer)
 
 	go func() {
 		if err := server.Serve(vmListener); err != nil {
