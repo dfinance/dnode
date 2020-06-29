@@ -1,4 +1,3 @@
-// Implements multisignature message handler for currency module.
 package currencies
 
 import (
@@ -6,23 +5,22 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/core"
-	"github.com/dfinance/dnode/x/currencies/msgs"
+	"github.com/dfinance/dnode/x/currencies/internal/keeper"
 )
 
-// Handler for currencies messages, proves issue/destroy messages.
-func NewMsHandler(keeper Keeper) core.MsHandler {
+// NewMsHandler creates core.MsMsg type messages handler.
+func NewMsHandler(keeper keeper.Keeper) core.MsHandler {
 	return func(ctx sdk.Context, msg core.MsMsg) error {
 		switch msg := msg.(type) {
-		case msgs.MsgIssueCurrency:
+		case MsgIssueCurrency:
 			return handleMsMsgIssueCurrency(ctx, keeper, msg)
-
 		default:
-			return sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized nameservice Msg type: %v", msg.Type())
+			return sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized currencies multisig msg type: %v", msg.Type())
 		}
 	}
 }
 
-// Handle issue message.
-func handleMsMsgIssueCurrency(ctx sdk.Context, keeper Keeper, msg msgs.MsgIssueCurrency) error {
-	return keeper.IssueCurrency(ctx, msg.Symbol, msg.Amount, msg.Decimals, msg.Recipient, msg.IssueID)
+// handleMsMsgIssueCurrency hanldes MsgIssueCurrency multisig message.
+func handleMsMsgIssueCurrency(ctx sdk.Context, keeper keeper.Keeper, msg MsgIssueCurrency) error {
+	return keeper.IssueCurrency(ctx, msg.ID, msg.Denom, msg.Amount, msg.Decimals, msg.Payee)
 }

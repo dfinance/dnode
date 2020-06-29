@@ -11,7 +11,7 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/currencies_register"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
@@ -38,15 +38,15 @@ func (ct *CLITester) QueryStatus() (*QueryRequest, *ctypes.ResultStatus) {
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesIssue(issueID string) (*QueryRequest, *ccTypes.Issue) {
+func (ct *CLITester) QueryCurrenciesIssue(id string) (*QueryRequest, *ccTypes.Issue) {
 	resObj := &ccTypes.Issue{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies", "issue", issueID)
+	q.SetCmd("currencies", "issue", id)
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesDestroy(id sdk.Int) (*QueryRequest, *ccTypes.Destroy) {
+func (ct *CLITester) QueryCurrenciesDestroy(id dnTypes.ID) (*QueryRequest, *ccTypes.Destroy) {
 	resObj := &ccTypes.Destroy{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("currencies", "destroy", id.String())
@@ -57,15 +57,22 @@ func (ct *CLITester) QueryCurrenciesDestroy(id sdk.Int) (*QueryRequest, *ccTypes
 func (ct *CLITester) QueryCurrenciesDestroys(page, limit int) (*QueryRequest, *ccTypes.Destroys) {
 	resObj := &ccTypes.Destroys{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies", "destroys", strconv.Itoa(page), strconv.Itoa(limit))
+	q.SetCmd("currencies", "destroys")
+
+	if page > 0 {
+		q.cmd.AddArg("page", strconv.FormatInt(int64(page), 10))
+	}
+	if limit > 0 {
+		q.cmd.AddArg("limit", strconv.FormatInt(int64(limit), 10))
+	}
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesCurrency(symbol string) (*QueryRequest, *ccTypes.Currency) {
+func (ct *CLITester) QueryCurrenciesCurrency(denom string) (*QueryRequest, *ccTypes.Currency) {
 	resObj := &ccTypes.Currency{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies", "currency", symbol)
+	q.SetCmd("currencies", "currency", denom)
 
 	return q, resObj
 }

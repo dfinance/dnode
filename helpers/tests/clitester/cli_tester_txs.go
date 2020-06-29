@@ -13,31 +13,31 @@ import (
 	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
-func (ct *CLITester) TxCurrenciesIssue(recipientAddr, fromAddr, symbol string, amount sdk.Int, decimals int8, issueID string) *TxRequest {
+func (ct *CLITester) TxCurrenciesIssue(payeeAddr, fromAddr, issueID, denom string, amount sdk.Int, decimals uint8) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"currencies",
 		fromAddr,
 		"ms-issue-currency",
-		symbol,
+		issueID,
+		denom,
 		amount.String(),
 		strconv.Itoa(int(decimals)),
-		recipientAddr,
-		issueID)
+		payeeAddr)
 
 	return r
 }
 
-func (ct *CLITester) TxCurrenciesDestroy(recipientAddr, fromAddr, symbol string, amount sdk.Int) *TxRequest {
+func (ct *CLITester) TxCurrenciesDestroy(recipientAddr, fromAddr, denom string, amount sdk.Int) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"currencies",
 		fromAddr,
 		"destroy-currency",
-		ct.IDs.ChainID,
-		symbol,
+		denom,
 		amount.String(),
-		recipientAddr)
+		recipientAddr,
+		ct.IDs.ChainID)
 
 	return r
 }

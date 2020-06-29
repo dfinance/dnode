@@ -17,7 +17,7 @@ import (
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
@@ -25,18 +25,18 @@ import (
 	"github.com/dfinance/dnode/x/vm"
 )
 
-func Test_CurrencyRest(t *testing.T) {
+func TestCurrencyREST(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
 
 	recipientAddr := ct.Accounts["validator1"].Address
-	curAmount, curDecimals, denom, issueId := sdk.NewInt(100), int8(0), "btc", "issue1"
+	curAmount, curDecimals, denom, issueId := sdk.NewInt(100), uint8(0), "btc", "issue1"
 	destroyAmounts := make([]sdk.Int, 0)
 
 	// issue currency
-	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, denom, curAmount, curDecimals, issueId).CheckSucceeded()
+	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, issueId, denom, curAmount, curDecimals).CheckSucceeded()
 	ct.ConfirmCall(issueId)
 
 	// check getIssue endpoint
@@ -44,11 +44,11 @@ func Test_CurrencyRest(t *testing.T) {
 		req, respMsg := ct.RestQueryCurrenciesIssue(issueId)
 		req.CheckSucceeded()
 
-		require.Equal(t, denom, respMsg.Symbol)
+		require.Equal(t, denom, respMsg.Denom)
 		require.True(t, respMsg.Amount.Equal(curAmount))
-		require.Equal(t, recipientAddr, respMsg.Recipient.String())
+		require.Equal(t, recipientAddr, respMsg.Payee.String())
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// non-existing issueID
 			{
@@ -63,23 +63,23 @@ func Test_CurrencyRest(t *testing.T) {
 		req, respMsg := ct.RestQueryCurrenciesCurrency(denom)
 		req.CheckSucceeded()
 
-		require.Equal(t, denom, respMsg.Symbol)
+		require.Equal(t, denom, respMsg.Denom)
 		require.True(t, respMsg.Supply.Equal(curAmount))
 		require.Equal(t, curDecimals, respMsg.Decimals)
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// non-existing symbol
 			{
 				req, _ := ct.RestQueryCurrenciesCurrency("non_existing_symbol")
-				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrNotExistCurrency)
+				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongDenom)
 			}
 		}
 	}
 
 	// check getDestroys endpoint (no destroys)
 	{
-		req, respMsg := ct.RestQueryCurrenciesDestroys(1, nil)
+		req, respMsg := ct.RestQueryCurrenciesDestroys(nil, nil)
 		req.CheckSucceeded()
 
 		require.Len(t, *respMsg, 0)
@@ -96,14 +96,13 @@ func Test_CurrencyRest(t *testing.T) {
 		req, respMsg := ct.RestQueryCurrenciesDestroy(sdk.NewInt(0))
 		req.CheckSucceeded()
 
-		require.Equal(t, int64(0), respMsg.ID.Int64())
 		require.Equal(t, ct.IDs.ChainID, respMsg.ChainID)
-		require.Equal(t, denom, respMsg.Symbol)
+		require.Equal(t, denom, respMsg.Denom)
 		require.True(t, respMsg.Amount.Equal(newAmount))
 		require.Equal(t, recipientAddr, respMsg.Spender.String())
 		require.Equal(t, recipientAddr, respMsg.Recipient)
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// invalid destroyID
 			{
@@ -114,12 +113,8 @@ func Test_CurrencyRest(t *testing.T) {
 
 			// non-existing destroyID
 			{
-				req, respMsg := ct.RestQueryCurrenciesDestroy(sdk.NewInt(1))
-				req.CheckSucceeded()
-
-				require.Empty(t, respMsg.ChainID)
-				require.Empty(t, respMsg.Symbol)
-				require.True(t, respMsg.Amount.IsZero())
+				req, _ := ct.RestQueryCurrenciesDestroy(sdk.NewInt(1))
+				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongDestroyID)
 			}
 		}
 	}
@@ -132,34 +127,35 @@ func Test_CurrencyRest(t *testing.T) {
 
 	// check getDestroys endpoint
 	{
-		req, respMsg := ct.RestQueryCurrenciesDestroys(1, nil)
+		page := 1
+		req, respMsg := ct.RestQueryCurrenciesDestroys(&page, nil)
 		req.CheckSucceeded()
 
 		require.Len(t, *respMsg, len(destroyAmounts))
 		for i, amount := range destroyAmounts {
 			destroy := (*respMsg)[i]
-			require.Equal(t, int64(i), destroy.ID.Int64())
+			require.Equal(t, uint64(i), destroy.ID.UInt64())
 			require.Equal(t, ct.IDs.ChainID, destroy.ChainID)
-			require.Equal(t, denom, destroy.Symbol)
+			require.Equal(t, denom, destroy.Denom)
 			require.True(t, destroy.Amount.Equal(amount))
 			require.Equal(t, recipientAddr, destroy.Spender.String())
 			require.Equal(t, recipientAddr, destroy.Recipient)
 		}
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// invalid "page" value
 			{
-				req, _ := ct.RestQueryCurrenciesDestroys(1, nil)
-				req.ModifySubPath("1", "abc")
+				req, _ := ct.RestQueryCurrenciesDestroys(&page, nil)
+				req.ModifyUrlValues("page", "abc")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}
 
 			// invalid "limit" value
 			{
 				limit := 1
-				req, _ := ct.RestQueryCurrenciesDestroys(1, &limit)
-				req.ModifyUrlValues("limit", "abc")
+				req, _ := ct.RestQueryCurrenciesDestroys(&page, &limit)
+				req.ModifyUrlValues("limit", "-1")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}
 		}

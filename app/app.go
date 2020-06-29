@@ -260,9 +260,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	// Initialize currency keeper.
 	app.ccKeeper = currencies.NewKeeper(
-		app.bankKeeper,
-		keys[currencies.StoreKey],
 		cdc,
+		keys[currencies.StoreKey],
+		app.bankKeeper,
 	)
 
 	// Initialize currency_register keeper.

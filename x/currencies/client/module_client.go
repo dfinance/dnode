@@ -1,4 +1,3 @@
-// Implements getters for query and transaction CLI commands.
 package client
 
 import (
@@ -7,31 +6,31 @@ import (
 	"github.com/tendermint/go-amino"
 
 	"github.com/dfinance/dnode/x/currencies/client/cli"
-	"github.com/dfinance/dnode/x/currencies/types"
+	types2 "github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
-// Returns get commands for this module.
+// GetQueryCmd returns module query commands.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
-		Use:   types.ModuleName,
+		Use:   types2.ModuleName,
 		Short: "Querying commands for the currencies module",
 	}
 
 	queryCmd.AddCommand(
 		sdkClient.GetCommands(
-			cli.GetIssue(types.ModuleName, cdc),
-			cli.GetCurrency(types.ModuleName, cdc),
-			cli.GetDestroy(types.ModuleName, cdc),
-			cli.GetDestroys(types.ModuleName, cdc),
+			cli.GetIssue(types2.ModuleName, cdc),
+			cli.GetCurrency(types2.ModuleName, cdc),
+			cli.GetDestroy(types2.ModuleName, cdc),
+			cli.GetDestroys(types2.ModuleName, cdc),
 		)...)
 
 	return queryCmd
 }
 
-// GetTxCmd returns the transaction commands for this module.
+// GetTxCmd returns module tx commands.
 func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
-		Use:   types.ModuleName,
+		Use:   types2.ModuleName,
 		Short: "Currency transactions subcommands",
 	}
 

@@ -580,7 +580,7 @@ func (ct *CLITester) CreateAccount(name string, balances ...StringPair) {
 		require.True(ct.t, ok, "currency with %q denom: not found", denom)
 
 		validator1Address := ct.Accounts["validator1"].Address
-		ct.TxCurrenciesIssue(account.Address, validator1Address, denom, amount, currency.Decimals, issueID).CheckSucceeded()
+		ct.TxCurrenciesIssue(account.Address, validator1Address, issueID, denom, amount, currency.Decimals).CheckSucceeded()
 
 		ct.ConfirmCall(issueID)
 	}

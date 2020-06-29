@@ -18,7 +18,7 @@ import (
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
@@ -30,60 +30,76 @@ const (
 	NotFoundErrSubString = "The specified item could not be found in the keyring"
 )
 
-func Test_CurrencyCLI(t *testing.T) {
+func TestCurrenciesCLI(t *testing.T) {
 	t.Parallel()
-	ct := cliTester.New(t, false)
+	ct := cliTester.New(t, true)
 	defer ct.Close()
 
-	ccSymbol, ccCurAmount, ccDecimals, ccRecipient := "btc", sdk.NewInt(1000), int8(1), ct.Accounts["validator1"].Address
+	ccDenom, ccCurAmount, ccDecimals, ccRecipient := "btc", sdk.NewInt(1000), uint8(1), ct.Accounts["validator1"].Address
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 	issueID := "issue1"
 
-	// check issue currency multisig Tx
+	// check issue currency multisig Tx, issue Query, currency Query
 	{
 		// submit & confirm call
-		ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID).CheckSucceeded()
-		ct.ConfirmCall(issueID)
-		// check currency issued
-		q, issue := ct.QueryCurrenciesIssue(issueID)
-		q.CheckSucceeded()
-		require.Equal(t, ccSymbol, issue.Symbol)
-		require.True(t, ccCurAmount.Equal(issue.Amount))
-		require.Equal(t, ccRecipient, issue.Recipient.String())
+		{
+			ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals).CheckSucceeded()
+			ct.ConfirmCall(issueID)
+		}
 
-		// check incorrect inputs
+		// check issue appeared
+		{
+			q, currency := ct.QueryCurrenciesCurrency(ccDenom)
+			q.CheckSucceeded()
+
+			require.Equal(t, ccDenom, currency.Denom)
+			require.True(t, ccCurAmount.Equal(currency.Supply))
+			require.Equal(t, ccDecimals, currency.Decimals)
+		}
+
+		// check currency issued
+		{
+			q, issue := ct.QueryCurrenciesIssue(issueID)
+			q.CheckSucceeded()
+
+			require.Equal(t, ccDenom, issue.Denom)
+			require.True(t, ccCurAmount.Equal(issue.Amount))
+			require.Equal(t, ccRecipient, issue.Payee.String())
+		}
+
+		// incorrect inputs
 		{
 			// wrong number of args
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals)
 				tx.RemoveCmdArg(issueID)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// from non-existing account
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, nonExistingAddress.String(), ccSymbol, ccCurAmount, ccDecimals, issueID)
+				tx := ct.TxCurrenciesIssue(ccRecipient, nonExistingAddress.String(), issueID, ccDenom, ccCurAmount, ccDecimals)
 				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid amount
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals)
 				tx.ChangeCmdArg(ccCurAmount.String(), "invalid_amount")
-				tx.CheckFailedWithErrorSubstring("not a number")
+				tx.CheckFailedWithErrorSubstring("parsing Int")
 			}
 			// invalid decimals
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals)
 				tx.ChangeCmdArg(strconv.Itoa(int(ccDecimals)), "invalid_decimals")
-				tx.CheckFailedWithErrorSubstring("not a number")
+				tx.CheckFailedWithErrorSubstring("uint8 parsing")
 			}
 			// invalid recipient
 			{
-				tx := ct.TxCurrenciesIssue("invalid_addr", ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID)
-				tx.CheckFailedWithErrorSubstring("decoding bech32 failed")
+				tx := ct.TxCurrenciesIssue("invalid_addr", ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals)
+				tx.CheckFailedWithErrorSubstring("Bech32 / HEX")
 			}
 			// MsgIssueCurrency ValidateBasic
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, sdk.ZeroInt(), ccDecimals, issueID)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, sdk.ZeroInt(), ccDecimals)
 				tx.CheckFailedWithErrorSubstring("wrong amount")
 			}
 		}
@@ -93,62 +109,55 @@ func Test_CurrencyCLI(t *testing.T) {
 	{
 		// reduce amount
 		destroyAmount := sdk.NewInt(100)
-		ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, destroyAmount).CheckSucceeded()
-		ccCurAmount = ccCurAmount.Sub(destroyAmount)
-		// check destroy
-		q, destroy := ct.QueryCurrenciesDestroy(sdk.ZeroInt())
-		q.CheckSucceeded()
-		require.True(t, sdk.ZeroInt().Equal(destroy.ID))
-		require.Equal(t, ccSymbol, destroy.Symbol)
-		require.Equal(t, ct.IDs.ChainID, destroy.ChainID)
-		require.Equal(t, ccRecipient, destroy.Recipient)
-		require.Equal(t, ccRecipient, destroy.Spender.String())
-		require.True(t, destroyAmount.Equal(destroy.Amount))
+		{
+			ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccDenom, destroyAmount).CheckSucceeded()
+			ccCurAmount = ccCurAmount.Sub(destroyAmount)
+		}
 
-		// check incorrect inputs
+		// check destroy appeared
+		{
+			id := dnTypes.NewIDFromUint64(0)
+			q, destroy := ct.QueryCurrenciesDestroy(id)
+			q.CheckSucceeded()
+
+			require.True(t, destroy.ID.Equal(id))
+			require.Equal(t, ccDenom, destroy.Denom)
+			require.Equal(t, ct.IDs.ChainID, destroy.ChainID)
+			require.Equal(t, ccRecipient, destroy.Recipient)
+			require.Equal(t, ccRecipient, destroy.Spender.String())
+			require.True(t, destroyAmount.Equal(destroy.Amount))
+		}
+
+		// incorrect inputs
 		{
 			// wrong number of args
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, sdk.OneInt())
-				tx.RemoveCmdArg(ccSymbol)
+				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccDenom, sdk.OneInt())
+				tx.RemoveCmdArg(ccDenom)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// from non-existing account
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, nonExistingAddress.String(), ccSymbol, sdk.OneInt())
+				tx := ct.TxCurrenciesDestroy(ccRecipient, nonExistingAddress.String(), ccDenom, sdk.OneInt())
 				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid amount
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, ccCurAmount)
+				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccDenom, ccCurAmount)
 				tx.ChangeCmdArg(ccCurAmount.String(), "invalid_amount")
-				tx.CheckFailedWithErrorSubstring("amount")
+				tx.CheckFailedWithErrorSubstring("parsing Int")
 			}
-			// MsgIssueCurrency ValidateBasic
+			// MsgDestroyCurrency ValidateBasic
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, sdk.ZeroInt())
+				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccDenom, sdk.ZeroInt())
 				tx.CheckFailedWithErrorSubstring("wrong amount")
 			}
 		}
 	}
 
-	// check balance
-	{
-		q, acc := ct.QueryAccount(ccRecipient)
-		q.CheckSucceeded()
-		require.Len(t, acc.Coins, 2)
-		for _, coin := range acc.Coins {
-			if coin.Denom != ccSymbol {
-				continue
-			}
-
-			require.True(t, ccCurAmount.Equal(coin.Amount))
-		}
-	}
-
 	// check issue Query
 	{
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// invalid number of args
 			{
@@ -166,20 +175,12 @@ func Test_CurrencyCLI(t *testing.T) {
 
 	// check currency Query
 	{
-		q, currency := ct.QueryCurrenciesCurrency(ccSymbol)
-		q.CheckSucceeded()
-
-		require.True(t, currency.CurrencyId.IsZero())
-		require.Equal(t, ccSymbol, currency.Symbol)
-		require.True(t, ccCurAmount.Equal(currency.Supply))
-		require.Equal(t, ccDecimals, currency.Decimals)
-
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// invalid number of args
 			{
-				q, _ := ct.QueryCurrenciesCurrency(ccSymbol)
-				q.RemoveCmdArg(ccSymbol)
+				q, _ := ct.QueryCurrenciesCurrency(ccDenom)
+				q.RemoveCmdArg(ccDenom)
 				q.CheckFailedWithErrorSubstring("arg(s)")
 			}
 		}
@@ -187,17 +188,17 @@ func Test_CurrencyCLI(t *testing.T) {
 
 	// check destroy Query
 	{
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// invalid number of args
 			{
-				q, _ := ct.QueryCurrenciesCurrency(ccSymbol)
-				q.RemoveCmdArg(ccSymbol)
+				q, _ := ct.QueryCurrenciesCurrency(ccDenom)
+				q.RemoveCmdArg(ccDenom)
 				q.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// non-existing destroyID
 			{
-				q, _ := ct.QueryCurrenciesDestroy(sdk.OneInt())
+				q, _ := ct.QueryCurrenciesDestroy(dnTypes.NewIDFromUint64(1))
 				q.ChangeCmdArg("1", "non_int")
 				q.CheckFailedWithErrorSubstring("")
 			}
@@ -210,19 +211,16 @@ func Test_CurrencyCLI(t *testing.T) {
 		q.CheckSucceeded()
 		require.Len(t, *destroys, 1)
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
-			// wrong number of args
-			{
-				q, _ := ct.QueryCurrenciesDestroys(1, 10)
-				q.RemoveCmdArg("10")
-				q.CheckFailedWithErrorSubstring("arg(s)")
-			}
 			// page / limit
 			{
-				q, _ := ct.QueryCurrenciesDestroys(-1, 10)
+				q, _ := ct.QueryCurrenciesDestroys(1, 10)
+				q.ChangeCmdArg("--page=1", "--page=-1")
 				q.CheckFailedWithErrorSubstring("")
-				q, _ = ct.QueryCurrenciesDestroys(1, -1)
+
+				q, _ = ct.QueryCurrenciesDestroys(1, 10)
+				q.ChangeCmdArg("--limit=10", "--limit=abc")
 				q.CheckFailedWithErrorSubstring("")
 			}
 		}
@@ -768,8 +766,8 @@ func Test_MultiSigCLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	ccSymbol1, ccSymbol2 := "btc", "usdt"
-	ccCurAmount, ccDecimals := sdk.NewInt(1000), int8(1)
+	ccDenom1, ccDenom2 := "btc", "eth"
+	ccCurAmount, ccDecimals := sdk.NewInt(1000), uint8(1)
 	callUniqueId1, callUniqueId2 := "issue1", "issue2"
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 
@@ -782,8 +780,8 @@ func Test_MultiSigCLI(t *testing.T) {
 	}
 
 	// create calls
-	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
-	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).SetGas(300000).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], callUniqueId1, ccDenom1, ccCurAmount, ccDecimals).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], callUniqueId2, ccDenom2, ccCurAmount, ccDecimals).SetGas(300000).CheckSucceeded()
 
 	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))

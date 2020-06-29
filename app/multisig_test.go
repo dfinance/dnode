@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/x/currencies/msgs"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	poaMsgs "github.com/dfinance/dnode/x/poa/msgs"
@@ -215,7 +215,7 @@ func Test_MSBlockHeight(t *testing.T) {
 		app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
 		// generate submit message
 		issueId, msgId := fmt.Sprintf("issue%d", curIssueIdx), strconv.Itoa(curIssueIdx)
-		issueMsg := msgs.NewMsgIssueCurrency(currency1Symbol, amount, 0, senderAddr, issueId)
+		issueMsg := ccTypes.NewMsgIssueCurrency(issueId, currency1Denom, amount, 0, senderAddr)
 		submitMsg := msMsgs.NewMsgSubmitCall(issueMsg, msgId, senderAddr)
 		// emit transaction
 		senderAcc := GetAccount(app, senderAddr)

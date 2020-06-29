@@ -46,15 +46,15 @@ const (
 )
 
 var (
-	chainID         = ""
-	currency1Symbol = "testa"
-	currency2Symbol = "testb"
-	currency3Symbol = "testc"
-	issue1ID        = "issue1"
-	issue2ID        = "issue2"
-	issue3ID        = "issue3"
-	amount          = sdk.NewInt(100)
-	ethAddresses    = []string{
+	chainID        = ""
+	currency1Denom = "testa"
+	currency2Denom = "testb"
+	currency3Denom = "testc"
+	issue1ID       = "issue1"
+	issue2ID       = "issue2"
+	issue3ID       = "issue3"
+	amount         = sdk.NewInt(100)
+	ethAddresses   = []string{
 		"0x82A978B3f5962A5b0957d9ee9eEf472EE55B42F1",
 		"0x7d577a597B2742b498Cb5Cf0C26cDCD726d39E6e",
 		"0xDCEceAF3fc5C0a63d195d69b1A90011B7B19650D",
@@ -170,15 +170,15 @@ func init() {
 		dataListenMock = flag.String(FlagDSMockListen, DefaultMockDataListen, "address of mocked data server to launch/connect")
 	}
 
-	if err := vmauth.AddDenomPath(currency1Symbol, "00"); err != nil {
+	if err := vmauth.AddDenomPath(currency1Denom, "00"); err != nil {
 		panic(err)
 	}
 
-	if err := vmauth.AddDenomPath(currency2Symbol, "01"); err != nil {
+	if err := vmauth.AddDenomPath(currency2Denom, "01"); err != nil {
 		panic(err)
 	}
 
-	if err := vmauth.AddDenomPath(currency3Symbol, "11"); err != nil {
+	if err := vmauth.AddDenomPath(currency3Denom, "11"); err != nil {
 		panic(err)
 	}
 }

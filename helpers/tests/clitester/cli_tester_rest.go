@@ -14,7 +14,7 @@ import (
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies/types"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
@@ -62,8 +62,8 @@ func (ct *CLITester) newRestTxRequestRaw(accName string, accNumber, accSequence 
 	return
 }
 
-func (ct *CLITester) RestQueryCurrenciesIssue(issueId string) (*RestRequest, *ccTypes.Issue) {
-	reqSubPath := fmt.Sprintf("%s/issue/%s", ccTypes.ModuleName, issueId)
+func (ct *CLITester) RestQueryCurrenciesIssue(id string) (*RestRequest, *ccTypes.Issue) {
+	reqSubPath := fmt.Sprintf("%s/%s/%s", ccTypes.ModuleName, ccTypes.QueryIssue, id)
 	respMsg := &ccTypes.Issue{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
@@ -72,7 +72,7 @@ func (ct *CLITester) RestQueryCurrenciesIssue(issueId string) (*RestRequest, *cc
 }
 
 func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *ccTypes.Currency) {
-	reqSubPath := fmt.Sprintf("%s/currency/%s", ccTypes.ModuleName, symbol)
+	reqSubPath := fmt.Sprintf("%s/%s/%s", ccTypes.ModuleName, ccTypes.QueryCurrency, symbol)
 	respMsg := &ccTypes.Currency{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
@@ -81,7 +81,7 @@ func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *
 }
 
 func (ct *CLITester) RestQueryCurrenciesDestroy(id sdk.Int) (*RestRequest, *ccTypes.Destroy) {
-	reqSubPath := fmt.Sprintf("%s/destroy/%d", ccTypes.ModuleName, id.Int64())
+	reqSubPath := fmt.Sprintf("%s/%s/%d", ccTypes.ModuleName, ccTypes.QueryDestroy, id.Int64())
 	respMsg := &ccTypes.Destroy{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
@@ -89,10 +89,14 @@ func (ct *CLITester) RestQueryCurrenciesDestroy(id sdk.Int) (*RestRequest, *ccTy
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesDestroys(page int, limit *int) (*RestRequest, *ccTypes.Destroys) {
-	reqSubPath := fmt.Sprintf("%s/destroys/%d", ccTypes.ModuleName, page)
+func (ct *CLITester) RestQueryCurrenciesDestroys(page, limit *int) (*RestRequest, *ccTypes.Destroys) {
+	reqSubPath := fmt.Sprintf("%s/%s", ccTypes.ModuleName, ccTypes.QueryDestroys)
 	respMsg := &ccTypes.Destroys{}
 	var reqValues url.Values
+	if page != nil {
+		reqValues = url.Values{}
+		reqValues.Set("page", strconv.Itoa(*page))
+	}
 	if limit != nil {
 		reqValues = url.Values{}
 		reqValues.Set("limit", strconv.Itoa(*limit))

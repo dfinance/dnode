@@ -64,6 +64,7 @@ func (keeper VMAccountKeeper) loadBalances(ctx sdk.Context, addr sdk.AccAddress)
 // SetAccount stores account resources to the storage and updates std keeper.
 func (keeper VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
 	// Update balances extracted from Coins.
+
 	balances, toDelete := coinsToBalances(acc)
 	keeper.saveBalances(ctx, balances, toDelete)
 

@@ -68,7 +68,7 @@ func NewTestBinaryPathConfig() BinaryPathConfig {
 }
 
 type CurrencyInfo struct {
-	Decimals int8
+	Decimals uint8
 	Path     string
 	Supply   sdk.Int
 }
