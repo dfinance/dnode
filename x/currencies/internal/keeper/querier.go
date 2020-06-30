@@ -22,7 +22,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 		case types.QueryCurrency:
 			return queryGetCurrency(k, ctx, req)
 		default:
-			return nil, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "unknown currencies query endpoint")
+			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unsupported query endpoint %q for module %q", path[0], types.ModuleName)
 		}
 	}
 }

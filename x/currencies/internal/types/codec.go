@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 )
 
 var ModuleCdc *codec.Codec
@@ -12,6 +13,7 @@ var ModuleCdc *codec.Codec
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgIssueCurrency{}, fmt.Sprintf("%s/issue-currency", ModuleName), nil)
 	cdc.RegisterConcrete(MsgWithdrawCurrency{}, fmt.Sprintf("%s/withdraw-currency", ModuleName), nil)
+	cdc.RegisterConcrete(AddCurrencyProposal{}, fmt.Sprintf("%s/AddCurrencyProposal", ModuleName), nil)
 }
 
 func init() {
@@ -19,4 +21,7 @@ func init() {
 	RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 	ModuleCdc = cdc.Seal()
+
+	gov.RegisterProposalType(ProposalTypeAddCurrency)
+	gov.RegisterProposalTypeCodec(AddCurrencyProposal{}, GovRouterKey+"/AddCurrencyProposal")
 }

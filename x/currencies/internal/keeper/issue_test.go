@@ -21,11 +21,19 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 	{
 		require.False(t, keeper.HasIssue(ctx, defIssueID1))
 		require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defDenom, defAmount, defDecimals, addr))
+
+		// check account balance changed
 		require.True(t, input.bankKeeper.GetCoins(ctx, addr).AmountOf(defDenom).Equal(defAmount))
 
+		// check currency supply increased
 		currency, err := keeper.GetCurrency(ctx, defDenom)
 		require.NoError(t, err)
 		require.True(t, currency.Supply.Equal(defAmount))
+
+		// check currencyInfo supply increased
+		curInfo, err := keeper.GetStandardCurrencyInfo(ctx, defDenom)
+		require.NoError(t, err)
+		require.Equal(t, curInfo.TotalSupply.String(), defAmount.String())
 	}
 
 	// fail: existing issueID
@@ -44,11 +52,19 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 
 		require.False(t, keeper.HasIssue(ctx, defIssueID2))
 		require.NoError(t, keeper.IssueCurrency(ctx, defIssueID2, defDenom, defAmount, defDecimals, addr))
+
+		// check account balance changed
 		require.True(t, input.bankKeeper.GetCoins(ctx, addr).AmountOf(defDenom).Equal(newAmount))
 
+		// check currency supply increased
 		currency, err := keeper.GetCurrency(ctx, defDenom)
 		require.NoError(t, err)
 		require.True(t, currency.Supply.Equal(newAmount))
+
+		// check currencyInfo supply increased
+		curInfo, err := keeper.GetStandardCurrencyInfo(ctx, defDenom)
+		require.NoError(t, err)
+		require.Equal(t, curInfo.TotalSupply.String(), newAmount.String())
 	}
 }
 

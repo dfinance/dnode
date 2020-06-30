@@ -16,6 +16,23 @@ type Currency struct {
 	Supply sdk.Int `json:"supply" swaggertype:"string" example:"100"`
 }
 
+// UintToDec converts sdk.Uint to sdk.Dec using currency decimals.
+func (c Currency) UintToDec(quantity sdk.Uint) sdk.Dec {
+	return sdk.NewDecFromIntWithPrec(sdk.Int(quantity), int64(c.Decimals))
+}
+
+// DecToUint converts sdk.Dec to sdk.Uint using currency decimals.
+func (c Currency) DecToUint(quantity sdk.Dec) sdk.Uint {
+	res := quantity.Quo(c.MinDecimal()).TruncateInt()
+
+	return sdk.NewUintFromBigInt(res.BigInt())
+}
+
+// MinDecimal return minimal currency value.
+func (c Currency) MinDecimal() sdk.Dec {
+	return sdk.NewDecFromIntWithPrec(sdk.OneInt(), int64(c.Decimals))
+}
+
 func (c Currency) String() string {
 	return fmt.Sprintf("Currency:\n"+
 		"  Denom:    %s\n"+

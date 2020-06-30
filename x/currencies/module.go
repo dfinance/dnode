@@ -40,10 +40,17 @@ func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 }
 
 // DefaultGenesis gets default module genesis state.
-func (AppModuleBasic) DefaultGenesis() json.RawMessage { return nil }
+func (AppModuleBasic) DefaultGenesis() json.RawMessage {
+	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
+}
 
 // ValidateGenesis validates module genesis state.
-func (AppModuleBasic) ValidateGenesis(json.RawMessage) error { return nil }
+func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
+	state := GenesisState{}
+	ModuleCdc.MustUnmarshalJSON(bz, &state)
+
+	return state.Validate()
+}
 
 // RegisterRESTRoutes registers module REST routes.
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
@@ -109,11 +116,15 @@ func (app AppModule) NewQuerierHandler() sdk.Querier {
 
 // InitGenesis inits module-genesis state.
 func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	app.ccKeeper.InitGenesis(ctx, data)
+
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports module genesis state.
-func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage { return nil }
+func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
+	return app.ccKeeper.ExportGenesis(ctx)
+}
 
 // BeginBlock performs module actions at a block start.
 func (app AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}

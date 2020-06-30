@@ -262,7 +262,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.ccKeeper = currencies.NewKeeper(
 		cdc,
 		keys[currencies.StoreKey],
+		app.paramsKeeper.Subspace(currencies.DefaultParamspace),
 		app.bankKeeper,
+		app.vmKeeper,
 	)
 
 	// Initialize currency_register keeper.
@@ -328,6 +330,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// The Governance keeper.
 	app.govRouter = gov.NewRouter()
 	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
+	app.govRouter.AddRoute(currencies.GovRouterKey, currencies.NewGovHandler(app.ccKeeper))
 	app.govRouter.AddRoute(currencies_register.GovRouterKey, currencies_register.NewGovHandler(app.crKeeper))
 
 	app.govKeeper = gov.NewKeeper(

@@ -21,19 +21,15 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id, denom string, amount sdk.Int,
 		return sdkErrors.Wrapf(types.ErrWrongIssueID, "issue with ID %q: already exists", id)
 	}
 
-	isNew := false
-	if isNew = k.HasCurrency(ctx, denom); !isNew {
-		currency := types.NewCurrency(denom, amount, decimals)
-		k.storeCurrency(ctx, currency)
-	} else {
-		currency := k.getCurrency(ctx, denom)
-
-		if currency.Decimals != decimals {
-			return sdkErrors.Wrapf(types.ErrIncorrectDecimals, "currency %q decimals: %d", denom, currency.Decimals)
-		}
-
-		k.increaseSupply(ctx, denom, amount)
+	if !k.HasCurrency(ctx, denom) {
+		return sdkErrors.Wrapf(types.ErrWrongDenom, "currency %q: not exists", denom)
 	}
+
+	currency := k.getCurrency(ctx, denom)
+	if currency.Decimals != decimals {
+		return sdkErrors.Wrapf(types.ErrIncorrectDecimals, "currency %q decimals: %d", denom, currency.Decimals)
+	}
+	k.increaseSupply(ctx, denom, amount)
 
 	issue := types.NewIssue(denom, amount, payee)
 	k.storeIssue(ctx, id, issue)

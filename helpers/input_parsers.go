@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"bufio"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"strconv"
@@ -125,6 +126,22 @@ func ParseDnIDParam(argName, argValue string, paramType ParamType) (dnTypes.ID, 
 	}
 
 	return id, nil
+}
+
+func ValidateDenomParam(argName, argValue string, paramType ParamType) error {
+	if err := dnTypes.DenomFilter(argValue); err != nil {
+		fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+	}
+
+	return nil
+}
+
+func ValidateHexStringParam(argName, argValue string, paramType ParamType) error {
+	if _, err := hex.DecodeString(argValue); err != nil {
+		fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+	}
+
+	return nil
 }
 
 func AddPaginationCmdFlags(cmd *cobra.Command) {

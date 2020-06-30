@@ -4,8 +4,32 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
+
+func (k Keeper) CreateCurrency(ctx sdk.Context, denom string, params types.CurrencyParams) error {
+	if k.HasCurrency(ctx, denom) {
+		return sdkErrors.Wrapf(types.ErrWrongDenom, "currency %q: exists", denom)
+	}
+
+	// build currency objects
+	currency := types.NewCurrency(denom, sdk.ZeroInt(), params.Decimals)
+	_, err := types.NewCurrencyInfo(currency, common_vm.StdLibAddress)
+	if err != nil {
+		return sdkErrors.Wrapf(types.ErrWrongParams, "currency %q: %v", denom, err)
+	}
+
+	// store VM path objects
+	k.storeCurrencyBalancePath(ctx, denom, params.BalancePath())
+	k.storeCurrencyInfoPath(ctx, denom, params.InfoPath())
+
+	// store currency objects
+	k.storeCurrency(ctx, currency)
+	k.storeStandardCurrencyInfo(ctx, currency)
+
+	return nil
+}
 
 // HasCurrency checks that currency exists.
 func (k Keeper) HasCurrency(ctx sdk.Context, denom string) bool {
@@ -46,6 +70,7 @@ func (k Keeper) increaseSupply(ctx sdk.Context, denom string, amount sdk.Int) {
 	currency.Supply = currency.Supply.Add(amount)
 
 	k.storeCurrency(ctx, currency)
+	k.storeStandardCurrencyInfo(ctx, currency)
 }
 
 // reduceSupply reduces currency supply and stores withdraw info.
@@ -58,5 +83,6 @@ func (k Keeper) reduceSupply(ctx sdk.Context, denom string, amount sdk.Int, spen
 
 	k.storeWithdraw(ctx, withdraw)
 	k.storeCurrency(ctx, currency)
+	k.storeStandardCurrencyInfo(ctx, currency)
 	k.setLastWithdrawID(ctx, newId)
 }

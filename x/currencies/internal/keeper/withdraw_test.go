@@ -37,11 +37,18 @@ func TestCurrenciesKeeper_WithdrawCurrency(t *testing.T) {
 		require.NoError(t, keeper.WithdrawCurrency(ctx, defDenom, defAmount, addr, recipient.String(), ctx.ChainID()))
 		require.True(t, keeper.HasWithdraw(ctx, withdrawID))
 
+		// check account balance changed
 		require.True(t, input.bankKeeper.GetCoins(ctx, addr).AmountOf(defDenom).IsZero())
 
+		// check currency supply decreased
 		currency, err := keeper.GetCurrency(ctx, defDenom)
 		require.NoError(t, err)
 		require.True(t, currency.Supply.IsZero())
+
+		// check currencyInfo supply decreased
+		curInfo, err := keeper.GetStandardCurrencyInfo(ctx, defDenom)
+		require.NoError(t, err)
+		require.Equal(t, curInfo.TotalSupply.String(), defAmount.String())
 	}
 
 	// fail: insufficient coins (balance is 0)
