@@ -101,7 +101,7 @@ func (k Keeper) GetListFiltered(ctx sdk.Context, params types.MarketsReq) types.
 		if params.QuoteDenomFilter() && m.QuoteAssetDenom != params.QuoteAssetDenom {
 			add = false
 		}
-		if params.AssetCodeFilter() && params.AssetCode != m.GetAssetCode() {
+		if params.AssetCodeFilter() && params.AssetCode != m.GetAssetCode().String() {
 			add = false
 		}
 

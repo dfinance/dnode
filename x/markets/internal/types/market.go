@@ -68,8 +68,8 @@ func (m Market) TableValues() []string {
 }
 
 // GetAssetCode returns asset code for market.
-func (m Market) GetAssetCode() string {
-	return m.BaseAssetDenom + "_" + m.QuoteAssetDenom
+func (m Market) GetAssetCode() dnTypes.AssetCode {
+	return dnTypes.AssetCode(m.BaseAssetDenom + "_" + m.QuoteAssetDenom)
 }
 
 // NewMarket creates a new market object.
