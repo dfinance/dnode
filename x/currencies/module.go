@@ -1,5 +1,5 @@
 // Currencies module registers / issues and withdraws currencies.
-// Module is integrated with VM for CurrencyInfo resource.
+// Module is integrated with VM for CurrencyInfo and Balance resources.
 // Issue is a multisig operation.
 package currencies
 

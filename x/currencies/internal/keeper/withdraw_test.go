@@ -46,7 +46,7 @@ func TestCurrenciesKeeper_WithdrawCurrency(t *testing.T) {
 		require.True(t, currency.Supply.IsZero())
 
 		// check currencyInfo supply decreased
-		curInfo, err := keeper.GetStandardCurrencyInfo(ctx, defDenom)
+		curInfo, err := keeper.GetResStdCurrencyInfo(ctx, defDenom)
 		require.NoError(t, err)
 		require.Equal(t, curInfo.TotalSupply.String(), "0")
 	}

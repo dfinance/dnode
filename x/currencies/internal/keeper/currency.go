@@ -15,7 +15,7 @@ func (k Keeper) CreateCurrency(ctx sdk.Context, denom string, params types.Curre
 
 	// build currency objects
 	currency := types.NewCurrency(denom, sdk.ZeroInt(), params.Decimals)
-	_, err := types.NewCurrencyInfo(currency, common_vm.StdLibAddress)
+	_, err := types.NewResCurrencyInfo(currency, common_vm.StdLibAddress)
 	if err != nil {
 		return sdkErrors.Wrapf(types.ErrWrongParams, "currency %q: %v", denom, err)
 	}
@@ -26,7 +26,8 @@ func (k Keeper) CreateCurrency(ctx sdk.Context, denom string, params types.Curre
 
 	// store currency objects
 	k.storeCurrency(ctx, currency)
-	k.storeStandardCurrencyInfo(ctx, currency)
+	k.storeResStdCurrencyInfo(ctx, currency)
+	k.updateCurrenciesParams(ctx, denom, params)
 
 	return nil
 }
@@ -70,7 +71,7 @@ func (k Keeper) increaseSupply(ctx sdk.Context, denom string, amount sdk.Int) {
 	currency.Supply = currency.Supply.Add(amount)
 
 	k.storeCurrency(ctx, currency)
-	k.storeStandardCurrencyInfo(ctx, currency)
+	k.storeResStdCurrencyInfo(ctx, currency)
 }
 
 // reduceSupply reduces currency supply and stores withdraw info.
@@ -83,6 +84,6 @@ func (k Keeper) reduceSupply(ctx sdk.Context, denom string, amount sdk.Int, spen
 
 	k.storeWithdraw(ctx, withdraw)
 	k.storeCurrency(ctx, currency)
-	k.storeStandardCurrencyInfo(ctx, currency)
+	k.storeResStdCurrencyInfo(ctx, currency)
 	k.setLastWithdrawID(ctx, newId)
 }

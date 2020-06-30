@@ -30,14 +30,33 @@ func TestCurrenciesKeeper_Params(t *testing.T) {
 		},
 	}
 
-	keeper.SetCurrenciesParams(ctx, inParams)
-	outParams := keeper.GetCurrenciesParams(ctx)
+	check := func(outParams types.CurrenciesParams) {
+		for denom, in := range inParams {
+			out, ok := outParams[denom]
+			require.True(t, ok)
+			require.Equal(t, in.Decimals, out.Decimals)
+			require.Equal(t, in.BalancePathHex, out.BalancePathHex)
+			require.Equal(t, in.InfoPathHex, out.InfoPathHex)
+		}
+	}
+
+	// check set / get
+	{
+		keeper.setCurrenciesParams(ctx, inParams)
+		check(keeper.getCurrenciesParams(ctx))
+	}
 	
-	for denom, in := range inParams {
-		out, ok := outParams[denom]
-		require.True(t, ok)
-		require.Equal(t, in.Decimals, out.Decimals)
-		require.Equal(t, in.BalancePathHex, out.BalancePathHex)
-		require.Equal(t, in.InfoPathHex, out.InfoPathHex)
+	// check update
+	{
+		newDenom := "c"
+		newParams := types.CurrencyParams{
+			Decimals:       3,
+			BalancePathHex: "03",
+			InfoPathHex:    "0C",
+		}
+		keeper.updateCurrenciesParams(ctx, newDenom, newParams)
+
+		inParams[newDenom] = newParams
+		check(keeper.getCurrenciesParams(ctx))
 	}
 }

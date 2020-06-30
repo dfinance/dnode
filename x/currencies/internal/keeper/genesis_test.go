@@ -10,6 +10,29 @@ import (
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
+// Check genesis currencies created and params updated.
+func TestCurrenciesKeeper_InitGenesis(t *testing.T) {
+	t.Parallel()
+
+	input := NewTestInput(t)
+	ctx, keeper := input.ctx, input.keeper
+
+	defGenesis := types.DefaultGenesisState()
+	params := keeper.getCurrenciesParams(ctx)
+	require.Equal(t, len(defGenesis.CurrenciesParams), len(params))
+
+	for denom, genParams := range defGenesis.CurrenciesParams {
+		require.True(t, keeper.HasCurrency(ctx, denom))
+
+		paramParam, ok := params[denom]
+		require.True(t, ok)
+
+		require.Equal(t, genParams.Decimals, paramParam.Decimals)
+		require.Equal(t, genParams.BalancePathHex, paramParam.BalancePathHex)
+		require.Equal(t, genParams.InfoPathHex, paramParam.InfoPathHex)
+	}
+}
+
 // Check runtime genesis export.
 func TestCurrenciesKeeper_ExportGenesis(t *testing.T) {
 	t.Parallel()

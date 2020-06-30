@@ -12,11 +12,11 @@ import (
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
-// GetStandardCurrencyInfo returns VM currencyInfo for stdlib currencies (non-token).
-func (k Keeper) GetStandardCurrencyInfo(ctx sdk.Context, denom string) (types.CurrencyInfo, error) {
+// GetResStdCurrencyInfo returns VM currencyInfo for stdlib currencies (non-token).
+func (k Keeper) GetResStdCurrencyInfo(ctx sdk.Context, denom string) (types.ResCurrencyInfo, error) {
 	path, err := k.GetCurrencyInfoPath(ctx, denom)
 	if err != nil {
-		return types.CurrencyInfo{}, sdkErrors.Wrapf(types.ErrWrongDenom, err.Error())
+		return types.ResCurrencyInfo{}, sdkErrors.Wrapf(types.ErrWrongDenom, err.Error())
 	}
 
 	accessPath := &vm_grpc.VMAccessPath{
@@ -25,21 +25,21 @@ func (k Keeper) GetStandardCurrencyInfo(ctx sdk.Context, denom string) (types.Cu
 	}
 
 	if !k.vmKeeper.HasValue(ctx, accessPath) {
-		return types.CurrencyInfo{}, sdkErrors.Wrapf(types.ErrInternal, "currencyInfo for %q: nof found in VM storage", denom)
+		return types.ResCurrencyInfo{}, sdkErrors.Wrapf(types.ErrInternal, "currencyInfo for %q: nof found in VM storage", denom)
 	}
 
-	currencyInfo := types.CurrencyInfo{}
+	currencyInfo := types.ResCurrencyInfo{}
 	bz := k.vmKeeper.GetValue(ctx, accessPath)
 	if err := lcs.Unmarshal(bz, &currencyInfo); err != nil {
-		return types.CurrencyInfo{}, sdkErrors.Wrapf(types.ErrInternal, "currencyInfo for %q: lcs unmarshal: %v", denom, err)
+		return types.ResCurrencyInfo{}, sdkErrors.Wrapf(types.ErrInternal, "currencyInfo for %q: lcs unmarshal: %v", denom, err)
 	}
 
 	return currencyInfo, nil
 }
 
-// storeStandardCurrencyInfo sets currencyInfo to the VM storage.
-func (k Keeper) storeStandardCurrencyInfo(ctx sdk.Context, currency types.Currency) {
-	currencyInfo, err := types.NewCurrencyInfo(currency, common_vm.StdLibAddress)
+// storeResStdCurrencyInfo sets currencyInfo to the VM storage.
+func (k Keeper) storeResStdCurrencyInfo(ctx sdk.Context, currency types.Currency) {
+	currencyInfo, err := types.NewResCurrencyInfo(currency, common_vm.StdLibAddress)
 	if err != nil {
 		panic(fmt.Errorf("currency %q: %v", currency.Denom, err))
 	}

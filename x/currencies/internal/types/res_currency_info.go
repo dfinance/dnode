@@ -9,10 +9,10 @@ import (
 	"github.com/dfinance/dnode/x/common_vm"
 )
 
-// CurrencyInfo contains Currency meta-data used as a WriteSet by VM.
+// ResCurrencyInfo is a DVM resource, containing Currency meta-data.
 // For standard currencies, CurrencyInfo is converted from Currency.
 // For token currencies, CurrencyInfo is created by VM.
-type CurrencyInfo struct {
+type ResCurrencyInfo struct {
 	// Currency denom ([]byte is used for VM)
 	Denom []byte `json:"denom" swaggertype:"string" example:"dfi"`
 	// Number of currency decimals
@@ -25,8 +25,8 @@ type CurrencyInfo struct {
 	TotalSupply *big.Int `json:"totalSupply"`
 }
 
-func (c CurrencyInfo) String() string {
-	return fmt.Sprintf("CurrencyInfo:\n"+
+func (c ResCurrencyInfo) String() string {
+	return fmt.Sprintf("ResCurrencyInfo:\n"+
 		"  Denom:    %s\n"+
 		"  Decimals: %d\n"+
 		"  Is Token: %t\n"+
@@ -40,11 +40,11 @@ func (c CurrencyInfo) String() string {
 	)
 }
 
-// NewCurrencyInfo converts Currency to VM's CurrencyInfo checking if owner is stdlib.
+// NewResCurrencyInfo converts Currency to VM's ResCurrencyInfo checking if owner is stdlib.
 // Contract: Currency object is expected to be valid.
-func NewCurrencyInfo(currency Currency, ownerAddress []byte) (CurrencyInfo, error) {
+func NewResCurrencyInfo(currency Currency, ownerAddress []byte) (ResCurrencyInfo, error) {
 	if len(ownerAddress) != common_vm.VMAddressLength {
-		return CurrencyInfo{}, fmt.Errorf("ownerAddress: address length is not equal to VM address length: %d / %d", len(ownerAddress), common_vm.VMAddressLength)
+		return ResCurrencyInfo{}, fmt.Errorf("ownerAddress: address length is not equal to VM address length: %d / %d", len(ownerAddress), common_vm.VMAddressLength)
 	}
 
 	isToken := false
@@ -52,7 +52,7 @@ func NewCurrencyInfo(currency Currency, ownerAddress []byte) (CurrencyInfo, erro
 		isToken = true
 	}
 
-	return CurrencyInfo{
+	return ResCurrencyInfo{
 		Denom:       []byte(currency.Denom),
 		Decimals:    currency.Decimals,
 		IsToken:     isToken,

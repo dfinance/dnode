@@ -39,7 +39,7 @@ func TestCurrenciesKeeper_CreateCurrency(t *testing.T) {
 		require.True(t, keeper.HasCurrency(ctx, denom))
 
 		// check currencyInfo
-		curInfo, err := keeper.GetStandardCurrencyInfo(ctx, denom)
+		curInfo, err := keeper.GetResStdCurrencyInfo(ctx, denom)
 		require.NoError(t, err)
 		require.EqualValues(t, denom, curInfo.Denom)
 		require.EqualValues(t, params.Decimals, curInfo.Decimals)

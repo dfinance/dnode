@@ -17,7 +17,7 @@ func TestCurrencies_NewCurrencyInfo(t *testing.T) {
 
 	// ok: stdlib
 	{
-		curInfo, err := NewCurrencyInfo(currency, common_vm.StdLibAddress)
+		curInfo, err := NewResCurrencyInfo(currency, common_vm.StdLibAddress)
 		require.NoError(t, err)
 		require.EqualValues(t, currency.Denom, curInfo.Denom)
 		require.EqualValues(t, currency.Decimals, curInfo.Decimals)
@@ -30,7 +30,7 @@ func TestCurrencies_NewCurrencyInfo(t *testing.T) {
 	{
 		owner := make([]byte, common_vm.VMAddressLength)
 
-		curInfo, err := NewCurrencyInfo(currency, owner)
+		curInfo, err := NewResCurrencyInfo(currency, owner)
 		require.NoError(t, err)
 		require.EqualValues(t, currency.Denom, curInfo.Denom)
 		require.EqualValues(t, currency.Decimals, curInfo.Decimals)
@@ -43,7 +43,7 @@ func TestCurrencies_NewCurrencyInfo(t *testing.T) {
 	{
 		owner := make([]byte, common_vm.VMAddressLength-1)
 
-		_, err := NewCurrencyInfo(currency, owner)
+		_, err := NewResCurrencyInfo(currency, owner)
 		require.Error(t, err)
 	}
 }

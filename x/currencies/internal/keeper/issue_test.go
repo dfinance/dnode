@@ -31,7 +31,7 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 		require.True(t, currency.Supply.Equal(defAmount))
 
 		// check currencyInfo supply increased
-		curInfo, err := keeper.GetStandardCurrencyInfo(ctx, defDenom)
+		curInfo, err := keeper.GetResStdCurrencyInfo(ctx, defDenom)
 		require.NoError(t, err)
 		require.Equal(t, curInfo.TotalSupply.String(), defAmount.String())
 	}
@@ -62,7 +62,7 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 		require.True(t, currency.Supply.Equal(newAmount))
 
 		// check currencyInfo supply increased
-		curInfo, err := keeper.GetStandardCurrencyInfo(ctx, defDenom)
+		curInfo, err := keeper.GetResStdCurrencyInfo(ctx, defDenom)
 		require.NoError(t, err)
 		require.Equal(t, curInfo.TotalSupply.String(), newAmount.String())
 	}

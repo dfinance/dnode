@@ -11,7 +11,7 @@ import (
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
-// Test keeper GetStandardCurrencyInfo method.
+// Test keeper GetResStdCurrencyInfo method.
 func TestCurrenciesKeeper_GetStandardCurrencyInfo(t *testing.T) {
 	t.Parallel()
 
@@ -22,7 +22,7 @@ func TestCurrenciesKeeper_GetStandardCurrencyInfo(t *testing.T) {
 	// ok
 	{
 		for denom, params := range defaultGenesis.CurrenciesParams {
-			curInfo, err := keeper.GetStandardCurrencyInfo(ctx, denom)
+			curInfo, err := keeper.GetResStdCurrencyInfo(ctx, denom)
 			require.NoError(t, err)
 
 			require.EqualValues(t, denom, curInfo.Denom)
@@ -43,7 +43,7 @@ func TestCurrenciesKeeper_GetStandardCurrencyInfo(t *testing.T) {
 
 	// fail: non-existing denom
 	{
-		_, err := keeper.GetStandardCurrencyInfo(ctx, "nonexisting")
+		_, err := keeper.GetResStdCurrencyInfo(ctx, "nonexisting")
 		require.Error(t, err)
 	}
 }

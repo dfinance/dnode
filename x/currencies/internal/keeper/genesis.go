@@ -13,15 +13,11 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	state := types.GenesisState{}
 	k.cdc.MustUnmarshalJSON(data, &state)
 
-	// create currencies
 	for denom, params := range state.CurrenciesParams {
 		if err := k.CreateCurrency(ctx, denom, params); err != nil {
 			panic(err)
 		}
 	}
-
-	// set params
-	k.SetCurrenciesParams(ctx, state.CurrenciesParams)
 }
 
 // ExportGenesis exports module genesis state using current params state.
