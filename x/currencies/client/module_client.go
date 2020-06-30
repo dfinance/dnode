@@ -20,8 +20,8 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 		sdkClient.GetCommands(
 			cli.GetIssue(types2.ModuleName, cdc),
 			cli.GetCurrency(types2.ModuleName, cdc),
-			cli.GetDestroy(types2.ModuleName, cdc),
-			cli.GetDestroys(types2.ModuleName, cdc),
+			cli.GetWithdraw(types2.ModuleName, cdc),
+			cli.GetWithdraws(types2.ModuleName, cdc),
 		)...)
 
 	return queryCmd
@@ -36,7 +36,7 @@ func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 
 	txCmd.AddCommand(sdkClient.PostCommands(
 		cli.PostMsIssueCurrency(cdc),
-		cli.PostDestroyCurrency(cdc),
+		cli.PostWithdrawCurrency(cdc),
 	)...)
 
 	return txCmd

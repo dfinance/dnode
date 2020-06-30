@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	queryCurrencyIssuePath    = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryIssue
-	queryCurrencyCurrencyPath = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryCurrency
-	queryCurrencyDestroyPath  = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryDestroy
-	queryCurrencyDestroysPath = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryDestroys
+	queryCurrencyIssuePath     = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryIssue
+	queryCurrencyCurrencyPath  = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryCurrency
+	queryCurrencyWithdrawsPath = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryWithdraws
+	queryCurrencyWithdrawPath  = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryWithdraw
 )
 
 // Checks that currencies module supports only multisig calls for issue msg (using MSRouter).
@@ -57,12 +57,12 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
 
-	checkDestroyQueryObj := func(obj ccTypes.Destroy, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress) {
+	checkWithdrawQueryObj := func(obj ccTypes.Withdraw, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress) {
 		require.Equal(t, id, obj.ID.UInt64())
 		require.Equal(t, denom, obj.Denom)
 		require.True(t, obj.Amount.Equal(amount))
 		require.Equal(t, spenderAddr, obj.Spender)
-		require.Equal(t, chainID, obj.ChainID)
+		require.Equal(t, chainID, obj.PegZoneChainID)
 	}
 
 	// issue multiple currencies
@@ -84,41 +84,41 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 		checkIssueExists(t, app, issue3ID, currency3Denom, amount, recipientAddr)
 	}
 
-	// destroy currencies
-	destroyAmount := amount.QuoRaw(3)
-	destroyCurrency(t, app, chainID, currency3Denom, destroyAmount, recipientAddr, recipientPrivKey, true)
-	destroyCurrency(t, app, chainID, currency3Denom, destroyAmount, recipientAddr, recipientPrivKey, true)
-	destroyCurrency(t, app, chainID, currency3Denom, destroyAmount, recipientAddr, recipientPrivKey, true)
+	// withdraw currencies
+	withdrawAmount := amount.QuoRaw(3)
+	withdrawCurrency(t, app, chainID, currency3Denom, withdrawAmount, recipientAddr, recipientPrivKey, true)
+	withdrawCurrency(t, app, chainID, currency3Denom, withdrawAmount, recipientAddr, recipientPrivKey, true)
+	withdrawCurrency(t, app, chainID, currency3Denom, withdrawAmount, recipientAddr, recipientPrivKey, true)
 
-	// check getDestroys query with pagination
+	// check getWithdraws query with pagination
 	{
 		// page 1
 		{
-			destroys := ccTypes.Destroys{}
-			reqParams := ccTypes.DestroysReq{Page: sdk.NewUint(1), Limit: sdk.NewUint(2)}
-			CheckRunQuery(t, app, reqParams, queryCurrencyDestroysPath, &destroys)
+			withdraws := ccTypes.Withdraws{}
+			reqParams := ccTypes.WithdrawsReq{Page: sdk.NewUint(1), Limit: sdk.NewUint(2)}
+			CheckRunQuery(t, app, reqParams, queryCurrencyWithdrawsPath, &withdraws)
 
-			require.Len(t, destroys, 2)
-			checkDestroyQueryObj(destroys[0], 0, currency3Denom, destroyAmount, recipientAddr)
-			checkDestroyQueryObj(destroys[1], 1, currency3Denom, destroyAmount, recipientAddr)
+			require.Len(t, withdraws, 2)
+			checkWithdrawQueryObj(withdraws[0], 0, currency3Denom, withdrawAmount, recipientAddr)
+			checkWithdrawQueryObj(withdraws[1], 1, currency3Denom, withdrawAmount, recipientAddr)
 		}
 
 		// page 2
 		{
-			destroys := ccTypes.Destroys{}
-			reqParams := ccTypes.DestroysReq{Page: sdk.NewUint(2), Limit: sdk.NewUint(2)}
-			CheckRunQuery(t, app, reqParams, queryCurrencyDestroysPath, &destroys)
+			withdraws := ccTypes.Withdraws{}
+			reqParams := ccTypes.WithdrawsReq{Page: sdk.NewUint(2), Limit: sdk.NewUint(2)}
+			CheckRunQuery(t, app, reqParams, queryCurrencyWithdrawsPath, &withdraws)
 
-			require.Len(t, destroys, 1)
-			checkDestroyQueryObj(destroys[0], 2, currency3Denom, destroyAmount, recipientAddr)
+			require.Len(t, withdraws, 1)
+			checkWithdrawQueryObj(withdraws[0], 2, currency3Denom, withdrawAmount, recipientAddr)
 		}
 	}
 
-	// check getDestroy query
+	// check getWithdraw query
 	{
-		checkDestroyExists(t, app, 0, currency3Denom, destroyAmount, recipientAddr, recipientAddr.String())
-		checkDestroyExists(t, app, 1, currency3Denom, destroyAmount, recipientAddr, recipientAddr.String())
-		checkDestroyExists(t, app, 2, currency3Denom, destroyAmount, recipientAddr, recipientAddr.String())
+		checkWithdrawExists(t, app, 0, currency3Denom, withdrawAmount, recipientAddr, recipientAddr.String())
+		checkWithdrawExists(t, app, 1, currency3Denom, withdrawAmount, recipientAddr, recipientAddr.String())
+		checkWithdrawExists(t, app, 2, currency3Denom, withdrawAmount, recipientAddr, recipientAddr.String())
 	}
 }
 
@@ -228,7 +228,7 @@ func TestCurrenciesApp_IssueHugeAmount(t *testing.T) {
 	}
 }
 
-// Test issue/destroy currency with decimals.
+// Test issue/withdraw currency with decimals.
 func TestCurrenciesApp_Decimals(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
@@ -271,14 +271,14 @@ func TestCurrenciesApp_Decimals(t *testing.T) {
 		newAmount := sdk.OneInt()
 		curAmount = curAmount.Sub(newAmount)
 
-		destroyCurrency(t, app, chainID, denom, newAmount, recipientAddr, recipientPrivKey, true)
+		withdrawCurrency(t, app, chainID, denom, newAmount, recipientAddr, recipientPrivKey, true)
 		checkCurrencyExists(t, app, denom, curAmount, curDecimals)
 		checkRecipientCoins(t, app, recipientAddr, denom, curAmount, curDecimals)
 	}
 }
 
-// Test destroy currency with fail scenarios.
-func TestCurrenciesApp_Destroy(t *testing.T) {
+// Test withdraw currency with fail scenarios.
+func TestCurrenciesApp_Withdraw(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -300,37 +300,37 @@ func TestCurrenciesApp_Destroy(t *testing.T) {
 		checkRecipientCoins(t, app, recipientAddr, denom, curSupply, 0)
 	}
 
-	// ok: destroy currency
+	// ok: withdraw currency
 	{
 		curSupply = curSupply.Sub(amount)
-		destroyCurrency(t, app, chainID, denom, amount, recipientAddr, recipientPrivKey, true)
-		checkDestroyExists(t, app, 0, denom, amount, recipientAddr, recipientAddr.String())
+		withdrawCurrency(t, app, chainID, denom, amount, recipientAddr, recipientPrivKey, true)
+		checkWithdrawExists(t, app, 0, denom, amount, recipientAddr, recipientAddr.String())
 		checkCurrencyExists(t, app, denom, curSupply, 0)
 		checkRecipientCoins(t, app, recipientAddr, denom, curSupply, 0)
 	}
 
-	// ok: destroy currency (currency supply is 0)
+	// ok: withdraw currency (currency supply is 0)
 	{
 		curSupply = curSupply.Sub(amount)
 		require.True(t, curSupply.IsZero())
 
-		destroyCurrency(t, app, chainID, denom, amount, recipientAddr, recipientPrivKey, true)
-		checkDestroyExists(t, app, 1, denom, amount, recipientAddr, recipientAddr.String())
+		withdrawCurrency(t, app, chainID, denom, amount, recipientAddr, recipientPrivKey, true)
+		checkWithdrawExists(t, app, 1, denom, amount, recipientAddr, recipientAddr.String())
 		checkCurrencyExists(t, app, denom, curSupply, 0)
 		checkRecipientCoins(t, app, recipientAddr, denom, curSupply, 0)
 	}
 
-	// fail: currency destroy over the limit
+	// fail: currency withdraw over the limit
 	{
-		res, err := destroyCurrency(t, app, chainID, denom, sdk.OneInt(), recipientAddr, recipientPrivKey, false)
+		res, err := withdrawCurrency(t, app, chainID, denom, sdk.OneInt(), recipientAddr, recipientPrivKey, false)
 		CheckResultError(t, sdkErrors.ErrInsufficientFunds, res, err)
 	}
 
-	// fail: currency destroy with denom account doesn't have
+	// fail: currency withdraw with denom account doesn't have
 	{
 		wrongDenom := currency2Denom
 
-		res, err := destroyCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
+		res, err := withdrawCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
 		CheckResultError(t, sdkErrors.ErrInsufficientFunds, res, err)
 	}
 }
@@ -343,13 +343,13 @@ func issueCurrency(t *testing.T, app *DnServiceApp,
 	return MSMsgSubmitAndVote(t, app, msgID, issueMsg, recipientAccIdx, accs, privKeys, doCheck)
 }
 
-func destroyCurrency(t *testing.T, app *DnServiceApp,
+func withdrawCurrency(t *testing.T, app *DnServiceApp,
 	chainID, ccDenom string, ccAmount sdk.Int,
-	recipientAddr sdk.AccAddress, recipientPrivKey crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
+	spenderAddr sdk.AccAddress, spenderPrivKey crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
 
-	recipientAcc := GetAccountCheckTx(app, recipientAddr)
-	destroyMsg := ccTypes.NewMsgDestroyCurrency(ccDenom, ccAmount, recipientAcc.GetAddress(), recipientAcc.GetAddress().String(), chainID)
-	tx := genTx([]sdk.Msg{destroyMsg}, []uint64{recipientAcc.GetAccountNumber()}, []uint64{recipientAcc.GetSequence()}, recipientPrivKey)
+	spenderAcc := GetAccountCheckTx(app, spenderAddr)
+	withdrawMsg := ccTypes.NewMsgWithdrawCurrency(ccDenom, ccAmount, spenderAcc.GetAddress(), spenderAcc.GetAddress().String(), chainID)
+	tx := genTx([]sdk.Msg{withdrawMsg}, []uint64{spenderAcc.GetAccountNumber()}, []uint64{spenderAcc.GetSequence()}, spenderPrivKey)
 
 	res, err := DeliverTx(app, tx)
 	if doCheck {
@@ -377,16 +377,16 @@ func checkIssueExists(t *testing.T, app *DnServiceApp, issueID, denom string, am
 	require.Equal(t, payeeAddr, issue.Payee)
 }
 
-func checkDestroyExists(t *testing.T, app *DnServiceApp, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress, recipient string) {
-	destroy := ccTypes.Destroy{}
-	CheckRunQuery(t, app, ccTypes.DestroyReq{ID: dnTypes.NewIDFromUint64(id)}, queryCurrencyDestroyPath, &destroy)
+func checkWithdrawExists(t *testing.T, app *DnServiceApp, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress, pzSpender string) {
+	withdraw := ccTypes.Withdraw{}
+	CheckRunQuery(t, app, ccTypes.WithdrawReq{ID: dnTypes.NewIDFromUint64(id)}, queryCurrencyWithdrawPath, &withdraw)
 
-	require.Equal(t, id, destroy.ID.UInt64())
-	require.Equal(t, denom, destroy.Denom)
-	require.True(t, destroy.Amount.Equal(amount))
-	require.Equal(t, spenderAddr, destroy.Spender)
-	require.Equal(t, recipient, destroy.Recipient)
-	require.Equal(t, chainID, destroy.ChainID)
+	require.Equal(t, id, withdraw.ID.UInt64())
+	require.Equal(t, denom, withdraw.Denom)
+	require.True(t, withdraw.Amount.Equal(amount))
+	require.Equal(t, spenderAddr, withdraw.Spender)
+	require.Equal(t, pzSpender, withdraw.PegZoneSpender)
+	require.Equal(t, chainID, withdraw.PegZoneChainID)
 }
 
 func checkRecipientCoins(t *testing.T, app *DnServiceApp, recipientAddr sdk.AccAddress, denom string, amount sdk.Int, decimals uint8) {

@@ -1,6 +1,6 @@
-// Currencies module registers / issues and destroys currencies.
+// Currencies module registers / issues and withdraws currencies.
 // Module is integrated with VM for CurrencyInfo resource.
-// Issue / destroy is a multisig operation.
+// Issue is a multisig operation.
 package currencies
 
 import (

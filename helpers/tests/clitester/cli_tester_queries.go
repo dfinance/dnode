@@ -46,18 +46,18 @@ func (ct *CLITester) QueryCurrenciesIssue(id string) (*QueryRequest, *ccTypes.Is
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesDestroy(id dnTypes.ID) (*QueryRequest, *ccTypes.Destroy) {
-	resObj := &ccTypes.Destroy{}
+func (ct *CLITester) QueryCurrenciesWithdraw(id dnTypes.ID) (*QueryRequest, *ccTypes.Withdraw) {
+	resObj := &ccTypes.Withdraw{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies", "destroy", id.String())
+	q.SetCmd("currencies", "withdraw", id.String())
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesDestroys(page, limit int) (*QueryRequest, *ccTypes.Destroys) {
-	resObj := &ccTypes.Destroys{}
+func (ct *CLITester) QueryCurrenciesWithdraws(page, limit int) (*QueryRequest, *ccTypes.Withdraws) {
+	resObj := &ccTypes.Withdraws{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies", "destroys")
+	q.SetCmd("currencies", "withdraws")
 
 	if page > 0 {
 		q.cmd.AddArg("page", strconv.FormatInt(int64(page), 10))

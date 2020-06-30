@@ -13,17 +13,17 @@ import (
 )
 
 const (
-	Denom     = "denom"
-	IssueID   = "issueID"
-	DestroyID = "destroyID"
+	Denom      = "denom"
+	IssueID    = "issueID"
+	WithdrawID = "withdrawID"
 )
 
 // RegisterRoutes adds endpoint to REST router.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/issue/{%s}", types.ModuleName, IssueID), getIssue(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/currency/{%s}", types.ModuleName, Denom), getCurrency(cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/destroy/{%s}", types.ModuleName, DestroyID), getDestroy(cliCtx)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/destroys", types.ModuleName), getDestroys(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/withdraw/{%s}", types.ModuleName, WithdrawID), getWithdraw(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/withdraws", types.ModuleName), getWithdraws(cliCtx)).Methods("GET")
 }
 
 // GetCurrency godoc
@@ -96,20 +96,20 @@ func getIssue(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// GetDestroys godoc
+// GetWithdraws godoc
 // @Tags currencies
-// @Summary Get currency destroys
-// @Description Get array of Destroy objects with pagination
-// @ID currenciesGetDestroys
+// @Summary Get currency withdraws
+// @Description Get array of Withdraw objects with pagination
+// @ID currenciesGetWithdraws
 // @Accept  json
 // @Produce json
 // @Param page query uint false "page number (first page: 1)"
 // @Param limit query uint false "items per page (default: 100)"
-// @Success 200 {object} CCRespGetDestroys
+// @Success 200 {object} CCRespGetWithdraws
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
-// @Router /currencies/destroys [get]
-func getDestroys(cliCtx context.CLIContext) http.HandlerFunc {
+// @Router /currencies/withdraws [get]
+func getWithdraws(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs
 		pageStr := r.URL.Query().Get("page")
@@ -121,7 +121,7 @@ func getDestroys(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		// prepare request
-		req := types.DestroysReq{
+		req := types.WithdrawsReq{
 			Page:  page,
 			Limit: limit,
 		}
@@ -133,7 +133,7 @@ func getDestroys(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		// send request and process response
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryDestroys), bz)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryWithdraws), bz)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -143,29 +143,29 @@ func getDestroys(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// GetDestroy godoc
+// GetWithdraw godoc
 // @Tags currencies
-// @Summary Get currency destroy
-// @Description Get currency destroy by destroyID
-// @ID currenciesGetDestroy
+// @Summary Get currency withdraw
+// @Description Get currency withdraw by withdrawID
+// @ID currenciesGetWithdraw
 // @Accept  json
 // @Produce json
-// @Param destroyID path int true "destroyID"
-// @Success 200 {object} CCRespGetDestroy
+// @Param withdrawID path int true "withdrawID"
+// @Success 200 {object} CCRespGetWithdraw
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
-// @Router /currencies/destroy/{destroyID} [get]
-func getDestroy(cliCtx context.CLIContext) http.HandlerFunc {
+// @Router /currencies/withdraw/{withdrawID} [get]
+func getWithdraw(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs and prepare request
 		vars := mux.Vars(r)
-		id, err := helpers.ParseDnIDParam("destroyID", vars[DestroyID], helpers.ParamTypeRestQuery)
+		id, err := helpers.ParseDnIDParam(WithdrawID, vars[WithdrawID], helpers.ParamTypeRestQuery)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		req := types.DestroyReq{
+		req := types.WithdrawReq{
 			ID: id,
 		}
 
@@ -176,7 +176,7 @@ func getDestroy(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		// send request and process response
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryDestroy), bz)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryWithdraw), bz)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

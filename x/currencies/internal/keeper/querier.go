@@ -13,10 +13,10 @@ import (
 func NewQuerier(k Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) ([]byte, error) {
 		switch path[0] {
-		case types.QueryDestroys:
-			return queryGetDestroys(k, ctx, req)
-		case types.QueryDestroy:
-			return queryGetDestroy(k, ctx, req)
+		case types.QueryWithdraws:
+			return queryGetWithdraws(k, ctx, req)
+		case types.QueryWithdraw:
+			return queryGetWithdraw(k, ctx, req)
 		case types.QueryIssue:
 			return queryGetIssue(k, ctx, req)
 		case types.QueryCurrency:
@@ -27,41 +27,41 @@ func NewQuerier(k Keeper) sdk.Querier {
 	}
 }
 
-// queryGetDestroys handles getDestroys query which return destroy objects filtered.
-func queryGetDestroys(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, error) {
-	params := types.DestroysReq{}
+// queryGetWithdraws handles getWithdraws query which return withdraw objects filtered.
+func queryGetWithdraws(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, error) {
+	params := types.WithdrawsReq{}
 	if err := types.ModuleCdc.UnmarshalJSON(req.Data, &params); err != nil {
 		return nil, sdkErrors.Wrapf(types.ErrInternal, "failed to parse params: %v", err)
 	}
 
-	destroys, err := k.GetDestroysFiltered(ctx, params)
+	withdraws, err := k.GetWithdrawsFiltered(ctx, params)
 	if err != nil {
 		return nil, sdkErrors.Wrap(types.ErrInternal, err.Error())
 	}
 
-	bz, err := codec.MarshalJSONIndent(k.cdc, destroys)
+	bz, err := codec.MarshalJSONIndent(k.cdc, withdraws)
 	if err != nil {
-		return nil, sdkErrors.Wrapf(types.ErrInternal, "destroys marshal: %v", err)
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "withdraws marshal: %v", err)
 	}
 
 	return bz, nil
 }
 
-// queryGetDestroy handles getDestroy query which return destroy by id.
-func queryGetDestroy(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, error) {
-	params := types.DestroyReq{}
+// queryGetWithdraw handles getWithdraw query which return withdraw by id.
+func queryGetWithdraw(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, error) {
+	params := types.WithdrawReq{}
 	if err := types.ModuleCdc.UnmarshalJSON(req.Data, &params); err != nil {
 		return nil, sdkErrors.Wrapf(types.ErrInternal, "failed to parse params: %v", err)
 	}
 
-	destroy, err := k.GetDestroy(ctx, params.ID)
+	withdraw, err := k.GetWithdraw(ctx, params.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	bz, err := codec.MarshalJSONIndent(k.cdc, destroy)
+	bz, err := codec.MarshalJSONIndent(k.cdc, withdraw)
 	if err != nil {
-		return nil, sdkErrors.Wrapf(types.ErrInternal, "destroy marshal: %v", err)
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "withdraw marshal: %v", err)
 	}
 
 	return bz, nil

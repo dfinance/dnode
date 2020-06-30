@@ -1,28 +1,28 @@
 package rest
 
 import (
-	types2 "github.com/dfinance/dnode/x/currencies/internal/types"
+	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
 //nolint:deadcode,unused
 type (
-	CCRespGetDestroys struct {
-		Height int64           `json:"height"`
-		Result types2.Destroys `json:"result"`
+	CCRespGetWithdraws struct {
+		Height int64            `json:"height"`
+		Result types.Withdraws `json:"result"`
 	}
 
-	CCRespGetDestroy struct {
-		Height int64          `json:"height"`
-		Result types2.Destroy `json:"result"`
+	CCRespGetWithdraw struct {
+		Height int64           `json:"height"`
+		Result types.Withdraw `json:"result"`
 	}
 
 	CCRespGetIssue struct {
 		Height int64        `json:"height"`
-		Result types2.Issue `json:"result"`
+		Result types.Issue `json:"result"`
 	}
 
 	CCRespGetCurrency struct {
 		Height int64           `json:"height"`
-		Result types2.Currency `json:"result"`
+		Result types.Currency `json:"result"`
 	}
 )

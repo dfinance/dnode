@@ -21,8 +21,8 @@ Currencies:
 
 * `/currencies/issue/{issueID}` - Get issue operation by issue id.
 * `/currencies/currency/{symbol}` - Get currency info by symbol.
-* `/currencies/destroy/{destroyID}` - Get destroy info by id.
-* `/currencies/destroys/{page}?limit={limit}` - Get destroys list, limit parameter is optional, equal 100 by default.
+* `/currencies/withdraw/{withdrawID}` - Get withdraw info by id.
+* `/currencies/withdraws?page={page}&limit={limit}` - Get withdraw list, page/limit parameters are optional.
 
 PoA:
 

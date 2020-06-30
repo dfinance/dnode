@@ -43,7 +43,7 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id, denom string, amount sdk.Int,
 		return sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q: %v", payee, err)
 	}
 
-	return nil
+	return
 }
 
 // HasIssue checks that issue exists.

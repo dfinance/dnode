@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	cliCtx "github.com/cosmos/cosmos-sdk/client/context"
@@ -127,6 +128,24 @@ func ParseDnIDParam(argName, argValue string, paramType ParamType) (dnTypes.ID, 
 }
 
 func AddPaginationCmdFlags(cmd *cobra.Command) {
-	cmd.Flags().String(flags.FlagPage, "1", "pagination page of destroys to to query for (first page: 1)")
-	cmd.Flags().String(flags.FlagLimit, "100", "pagination limit of destroys to query for")
+	cmd.Flags().String(flags.FlagPage, "1", "pagination page of objects list to to query for (first page: 1)")
+	cmd.Flags().String(flags.FlagLimit, "100", "pagination limit of objects list to query for")
+}
+
+func BuildCmdHelp(cmd *cobra.Command, argDescriptions []string) {
+	args := strings.Split(cmd.Use, " ")
+	args = args[1:]
+
+	if len(argDescriptions) != len(args) {
+		panic(fmt.Errorf("building Help for cmd %q, argDescriptions len mismatch %d / %d: ", cmd.Use, len(argDescriptions), len(args)))
+	}
+
+	helpBuilder := strings.Builder{}
+	helpBuilder.WriteString(fmt.Sprintf("%s:\n", cmd.Short))
+	for argIdx, arg := range args {
+		argDesc := argDescriptions[argIdx]
+		helpBuilder.WriteString(fmt.Sprintf("  %s - %s\n", arg, argDesc))
+	}
+
+	cmd.Long = helpBuilder.String()
 }

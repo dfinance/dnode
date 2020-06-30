@@ -80,18 +80,18 @@ func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesDestroy(id sdk.Int) (*RestRequest, *ccTypes.Destroy) {
-	reqSubPath := fmt.Sprintf("%s/%s/%d", ccTypes.ModuleName, ccTypes.QueryDestroy, id.Int64())
-	respMsg := &ccTypes.Destroy{}
+func (ct *CLITester) RestQueryCurrenciesWithdraw(id sdk.Int) (*RestRequest, *ccTypes.Withdraw) {
+	reqSubPath := fmt.Sprintf("%s/%s/%d", ccTypes.ModuleName, ccTypes.QueryWithdraw, id.Int64())
+	respMsg := &ccTypes.Withdraw{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesDestroys(page, limit *int) (*RestRequest, *ccTypes.Destroys) {
-	reqSubPath := fmt.Sprintf("%s/%s", ccTypes.ModuleName, ccTypes.QueryDestroys)
-	respMsg := &ccTypes.Destroys{}
+func (ct *CLITester) RestQueryCurrenciesWithdraws(page, limit *int) (*RestRequest, *ccTypes.Withdraws) {
+	reqSubPath := fmt.Sprintf("%s/%s", ccTypes.ModuleName, ccTypes.QueryWithdraws)
+	respMsg := &ccTypes.Withdraws{}
 	var reqValues url.Values
 	if page != nil {
 		reqValues = url.Values{}

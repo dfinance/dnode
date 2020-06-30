@@ -33,7 +33,7 @@ func TestCurrencyREST(t *testing.T) {
 
 	recipientAddr := ct.Accounts["validator1"].Address
 	curAmount, curDecimals, denom, issueId := sdk.NewInt(100), uint8(0), "btc", "issue1"
-	destroyAmounts := make([]sdk.Int, 0)
+	withdrawAmounts := make([]sdk.Int, 0)
 
 	// issue currency
 	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, issueId, denom, curAmount, curDecimals).CheckSucceeded()
@@ -77,76 +77,76 @@ func TestCurrencyREST(t *testing.T) {
 		}
 	}
 
-	// check getDestroys endpoint (no destroys)
+	// check getWithdraws endpoint (no withdraws)
 	{
-		req, respMsg := ct.RestQueryCurrenciesDestroys(nil, nil)
+		req, respMsg := ct.RestQueryCurrenciesWithdraws(nil, nil)
 		req.CheckSucceeded()
 
 		require.Len(t, *respMsg, 0)
 	}
 
-	// destroy currency
+	// withdraw currency
 	newAmount := sdk.NewInt(50)
 	curAmount = curAmount.Sub(newAmount)
-	ct.TxCurrenciesDestroy(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
-	destroyAmounts = append(destroyAmounts, newAmount)
+	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
+	withdrawAmounts = append(withdrawAmounts, newAmount)
 
-	// check getDestroy endpoint
+	// check getWithdraw endpoint
 	{
-		req, respMsg := ct.RestQueryCurrenciesDestroy(sdk.NewInt(0))
+		req, respMsg := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(0))
 		req.CheckSucceeded()
 
-		require.Equal(t, ct.IDs.ChainID, respMsg.ChainID)
+		require.Equal(t, ct.IDs.ChainID, respMsg.PegZoneChainID)
 		require.Equal(t, denom, respMsg.Denom)
 		require.True(t, respMsg.Amount.Equal(newAmount))
 		require.Equal(t, recipientAddr, respMsg.Spender.String())
-		require.Equal(t, recipientAddr, respMsg.Recipient)
+		require.Equal(t, recipientAddr, respMsg.PegZoneSpender)
 
 		// incorrect inputs
 		{
-			// invalid destroyID
+			// invalid withdrawID
 			{
-				req, _ := ct.RestQueryCurrenciesDestroy(sdk.NewInt(0))
+				req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(0))
 				req.ModifySubPath("0", "abc")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}
 
-			// non-existing destroyID
+			// non-existing withdrawID
 			{
-				req, _ := ct.RestQueryCurrenciesDestroy(sdk.NewInt(1))
-				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongDestroyID)
+				req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(1))
+				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongWithdrawID)
 			}
 		}
 	}
 
-	// destroy currency once more
+	// withdraw currency once more
 	newAmount = sdk.NewInt(25)
 	curAmount = curAmount.Sub(newAmount)
-	ct.TxCurrenciesDestroy(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
-	destroyAmounts = append(destroyAmounts, newAmount)
+	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
+	withdrawAmounts = append(withdrawAmounts, newAmount)
 
-	// check getDestroys endpoint
+	// check getWithdraws endpoint
 	{
 		page := 1
-		req, respMsg := ct.RestQueryCurrenciesDestroys(&page, nil)
+		req, respMsg := ct.RestQueryCurrenciesWithdraws(&page, nil)
 		req.CheckSucceeded()
 
-		require.Len(t, *respMsg, len(destroyAmounts))
-		for i, amount := range destroyAmounts {
-			destroy := (*respMsg)[i]
-			require.Equal(t, uint64(i), destroy.ID.UInt64())
-			require.Equal(t, ct.IDs.ChainID, destroy.ChainID)
-			require.Equal(t, denom, destroy.Denom)
-			require.True(t, destroy.Amount.Equal(amount))
-			require.Equal(t, recipientAddr, destroy.Spender.String())
-			require.Equal(t, recipientAddr, destroy.Recipient)
+		require.Len(t, *respMsg, len(withdrawAmounts))
+		for i, amount := range withdrawAmounts {
+			withdraw := (*respMsg)[i]
+			require.Equal(t, uint64(i), withdraw.ID.UInt64())
+			require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
+			require.Equal(t, denom, withdraw.Denom)
+			require.True(t, withdraw.Amount.Equal(amount))
+			require.Equal(t, recipientAddr, withdraw.Spender.String())
+			require.Equal(t, recipientAddr, withdraw.PegZoneSpender)
 		}
 
 		// incorrect inputs
 		{
 			// invalid "page" value
 			{
-				req, _ := ct.RestQueryCurrenciesDestroys(&page, nil)
+				req, _ := ct.RestQueryCurrenciesWithdraws(&page, nil)
 				req.ModifyUrlValues("page", "abc")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}
@@ -154,7 +154,7 @@ func TestCurrencyREST(t *testing.T) {
 			// invalid "limit" value
 			{
 				limit := 1
-				req, _ := ct.RestQueryCurrenciesDestroys(&page, &limit)
+				req, _ := ct.RestQueryCurrenciesWithdraws(&page, &limit)
 				req.ModifyUrlValues("limit", "-1")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}

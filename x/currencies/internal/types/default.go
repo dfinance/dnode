@@ -38,18 +38,18 @@ func GetIssuesKey(id string) []byte {
 	)
 }
 
-// GetDestroyKey returns key for storing destroy.
-func GetDestroyKey(id dnTypes.ID) []byte {
+// GetWithdrawKey returns key for storing withdraw.
+func GetWithdrawKey(id dnTypes.ID) []byte {
 	return bytes.Join(
 		[][]byte{
-			[]byte("destroy"),
+			[]byte("withdraw"),
 			[]byte(id.String()),
 		},
 		KeyDelimiter,
 	)
 }
 
-// GetLastDestroyIDKey returns storage key for destroyID.
-func GetLastDestroyIDKey() []byte {
-	return []byte("lastDestroyID")
+// GetLastWithdrawIDKey returns storage key for withdrawID.
+func GetLastWithdrawIDKey() []byte {
+	return []byte("lastWithdrawID")
 }

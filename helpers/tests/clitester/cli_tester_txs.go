@@ -28,12 +28,12 @@ func (ct *CLITester) TxCurrenciesIssue(payeeAddr, fromAddr, issueID, denom strin
 	return r
 }
 
-func (ct *CLITester) TxCurrenciesDestroy(recipientAddr, fromAddr, denom string, amount sdk.Int) *TxRequest {
+func (ct *CLITester) TxCurrenciesWithdraw(recipientAddr, fromAddr, denom string, amount sdk.Int) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"currencies",
 		fromAddr,
-		"destroy-currency",
+		"withdraw-currency",
 		denom,
 		amount.String(),
 		recipientAddr,

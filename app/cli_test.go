@@ -105,51 +105,51 @@ func TestCurrenciesCLI(t *testing.T) {
 		}
 	}
 
-	// check destroy currency Tx
+	// check withdraw currency Tx
 	{
 		// reduce amount
-		destroyAmount := sdk.NewInt(100)
+		withdrawAmount := sdk.NewInt(100)
 		{
-			ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccDenom, destroyAmount).CheckSucceeded()
-			ccCurAmount = ccCurAmount.Sub(destroyAmount)
+			ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, withdrawAmount).CheckSucceeded()
+			ccCurAmount = ccCurAmount.Sub(withdrawAmount)
 		}
 
-		// check destroy appeared
+		// check withdraw appeared
 		{
 			id := dnTypes.NewIDFromUint64(0)
-			q, destroy := ct.QueryCurrenciesDestroy(id)
+			q, withdraw := ct.QueryCurrenciesWithdraw(id)
 			q.CheckSucceeded()
 
-			require.True(t, destroy.ID.Equal(id))
-			require.Equal(t, ccDenom, destroy.Denom)
-			require.Equal(t, ct.IDs.ChainID, destroy.ChainID)
-			require.Equal(t, ccRecipient, destroy.Recipient)
-			require.Equal(t, ccRecipient, destroy.Spender.String())
-			require.True(t, destroyAmount.Equal(destroy.Amount))
+			require.True(t, withdraw.ID.Equal(id))
+			require.Equal(t, ccDenom, withdraw.Denom)
+			require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
+			require.Equal(t, ccRecipient, withdraw.PegZoneSpender)
+			require.Equal(t, ccRecipient, withdraw.Spender.String())
+			require.True(t, withdrawAmount.Equal(withdraw.Amount))
 		}
 
 		// incorrect inputs
 		{
 			// wrong number of args
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccDenom, sdk.OneInt())
+				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, sdk.OneInt())
 				tx.RemoveCmdArg(ccDenom)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// from non-existing account
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, nonExistingAddress.String(), ccDenom, sdk.OneInt())
+				tx := ct.TxCurrenciesWithdraw(ccRecipient, nonExistingAddress.String(), ccDenom, sdk.OneInt())
 				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid amount
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccDenom, ccCurAmount)
+				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, ccCurAmount)
 				tx.ChangeCmdArg(ccCurAmount.String(), "invalid_amount")
 				tx.CheckFailedWithErrorSubstring("parsing Int")
 			}
-			// MsgDestroyCurrency ValidateBasic
+			// MsgWithdrawCurrency ValidateBasic
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccDenom, sdk.ZeroInt())
+				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, sdk.ZeroInt())
 				tx.CheckFailedWithErrorSubstring("wrong amount")
 			}
 		}
@@ -186,7 +186,7 @@ func TestCurrenciesCLI(t *testing.T) {
 		}
 	}
 
-	// check destroy Query
+	// check withdraw Query
 	{
 		// incorrect inputs
 		{
@@ -196,30 +196,30 @@ func TestCurrenciesCLI(t *testing.T) {
 				q.RemoveCmdArg(ccDenom)
 				q.CheckFailedWithErrorSubstring("arg(s)")
 			}
-			// non-existing destroyID
+			// non-existing withdrawID
 			{
-				q, _ := ct.QueryCurrenciesDestroy(dnTypes.NewIDFromUint64(1))
+				q, _ := ct.QueryCurrenciesWithdraw(dnTypes.NewIDFromUint64(1))
 				q.ChangeCmdArg("1", "non_int")
 				q.CheckFailedWithErrorSubstring("")
 			}
 		}
 	}
 
-	// check destroys Query
+	// check withdraws Query
 	{
-		q, destroys := ct.QueryCurrenciesDestroys(1, 10)
+		q, withdraws := ct.QueryCurrenciesWithdraws(1, 10)
 		q.CheckSucceeded()
-		require.Len(t, *destroys, 1)
+		require.Len(t, *withdraws, 1)
 
 		// incorrect inputs
 		{
 			// page / limit
 			{
-				q, _ := ct.QueryCurrenciesDestroys(1, 10)
+				q, _ := ct.QueryCurrenciesWithdraws(1, 10)
 				q.ChangeCmdArg("--page=1", "--page=-1")
 				q.CheckFailedWithErrorSubstring("")
 
-				q, _ = ct.QueryCurrenciesDestroys(1, 10)
+				q, _ = ct.QueryCurrenciesWithdraws(1, 10)
 				q.ChangeCmdArg("--limit=10", "--limit=abc")
 				q.CheckFailedWithErrorSubstring("")
 			}

@@ -11,7 +11,7 @@ var ModuleCdc *codec.Codec
 // RegisterCodec registers module specific messages.
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgIssueCurrency{}, fmt.Sprintf("%s/issue-currency", ModuleName), nil)
-	cdc.RegisterConcrete(MsgDestroyCurrency{}, fmt.Sprintf("%s/destroy-currency", ModuleName), nil)
+	cdc.RegisterConcrete(MsgWithdrawCurrency{}, fmt.Sprintf("%s/withdraw-currency", ModuleName), nil)
 }
 
 func init() {

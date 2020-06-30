@@ -48,15 +48,15 @@ func (k Keeper) increaseSupply(ctx sdk.Context, denom string, amount sdk.Int) {
 	k.storeCurrency(ctx, currency)
 }
 
-// reduceSupply reduces currency supply and stores destroy info.
+// reduceSupply reduces currency supply and stores withdraw info.
 func (k Keeper) reduceSupply(ctx sdk.Context, denom string, amount sdk.Int, spender sdk.AccAddress, recipient, chainID string) {
 	currency := k.getCurrency(ctx, denom)
 	currency.Supply = currency.Supply.Sub(amount)
 
-	newId := k.getNextDestroyID(ctx)
-	destroy := types.NewDestroy(newId, denom, amount, spender, recipient, chainID, ctx.BlockHeader().Time.Unix(), ctx.TxBytes())
+	newId := k.getNextWithdrawID(ctx)
+	withdraw := types.NewWithdraw(newId, denom, amount, spender, recipient, chainID, ctx.BlockHeader().Time.Unix(), ctx.TxBytes())
 
-	k.storeDestroy(ctx, destroy)
+	k.storeWithdraw(ctx, withdraw)
 	k.storeCurrency(ctx, currency)
-	k.setLastDestroyID(ctx, newId)
+	k.setLastWithdrawID(ctx, newId)
 }

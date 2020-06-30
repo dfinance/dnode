@@ -15,9 +15,9 @@ import (
 
 // PostMsIssueCurrency returns tx command which post a new multisig issue request.
 func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "ms-issue-currency [issueID] [denom] [amount] [decimals] [payee]",
-		Short: "issue new currency via multisignature",
+		Short: "Issue new currency via multisignature, increasing payee coin balance",
 		Example: "ms-issue-currency issue1 dfi 100 18 {account} --from {account}",
 		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -60,4 +60,13 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{callMsg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"unique issue ID",
+		"currency denomination symbol",
+		"increase coin amount",
+		"currency decimals count",
+		"payee address",
+	})
+
+	return cmd
 }

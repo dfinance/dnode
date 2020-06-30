@@ -12,13 +12,13 @@ import (
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
-// PostDestroyCurrency returns tx command which post a new destroy request.
-func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "destroy-currency [denom] [amount] [recipient] [chainID]",
-		Short: "Destroy issued currency",
-		Example: "destroy-currency dfi 100 {account} testnet --from {account}",
-		Args:  cobra.ExactArgs(4),
+// PostWithdrawCurrency returns tx command which post a new withdraw request.
+func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "withdraw-currency [denom] [amount] [pegZoneSpender] [pegZoneChainID]",
+		Short:   "Withdraw issued currency, reducing spender balance",
+		Example: "withdraw-currency dfi 100 {account} testnet --from {account}",
+		Args:    cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
@@ -34,7 +34,7 @@ func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// prepare and send message
-			msg := types.NewMsgDestroyCurrency(args[0], amount, fromAddr, args[2], args[3])
+			msg := types.NewMsgWithdrawCurrency(args[0], amount, fromAddr, args[2], args[3])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -44,4 +44,12 @@ func PostDestroyCurrency(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"currency denomination symbol",
+		"reduce coin amount",
+		"spender address for PegZone",
+		"chainID for PegZone blockchain",
+	})
+
+	return cmd
 }

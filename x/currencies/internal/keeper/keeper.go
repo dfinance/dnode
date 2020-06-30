@@ -1,4 +1,4 @@
-// Currencies module keeper stores currency info, issue, destroy data.
+// Currencies module keeper stores currency info, issue, withdraw data.
 package keeper
 
 import (

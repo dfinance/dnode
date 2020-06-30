@@ -15,7 +15,7 @@ import (
 
 // GetCurrency returns query command that return currency by denom.
 func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "currency [denom]",
 		Short:   "Get currency by denom",
 		Example: "currency dfi",
@@ -43,11 +43,16 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return cliCtx.PrintOutput(out)
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"currency denomination symbol",
+	})
+
+	return cmd
 }
 
 // GetIssue returns query command that return issue by id.
 func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "issue [issueID]",
 		Short: "Get issue by ID",
 		Example: "issue issue1",
@@ -75,14 +80,19 @@ func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return cliCtx.PrintOutput(out)
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"unique issue ID",
+	})
+
+	return cmd
 }
 
-// GetDestroys returns query command that lists all destroy objects with filters and pagination.
-func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetWithdraws returns query command that lists all withdraw objects with filters and pagination.
+func GetWithdraws(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "destroys",
-		Short:   "Get destroys list by page and limit",
-		Example: "destroys --page=1 --limit=10",
+		Use:     "withdraws",
+		Short:   "Get withdraw list by page and limit",
+		Example: "withdraws --page=1 --limit=10",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
@@ -93,7 +103,7 @@ func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			// prepare request
-			req := types.DestroysReq{
+			req := types.WithdrawsReq{
 				Page:  page,
 				Limit: limit,
 			}
@@ -104,12 +114,12 @@ func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			// query and parse the result
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryDestroys), bz)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryWithdraws), bz)
 			if err != nil {
 				return err
 			}
 
-			var out types.Destroys
+			var out types.Withdraws
 			cdc.MustUnmarshalJSON(res, &out)
 
 			return cliCtx.PrintOutput(out)
@@ -120,24 +130,24 @@ func GetDestroys(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-// GetDestroy returns query command that return destroy by id.
-func GetDestroy(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:     "destroy [destroyID]",
-		Short:   "Get destroy by ID",
-		Example: "destroy 0",
+// GetWithdraw returns query command that return withdraw by id.
+func GetWithdraw(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "withdraw [withdrawID]",
+		Short:   "Get withdraw by ID",
+		Example: "withdraw 0",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			// parse inputs
-			id, err := helpers.ParseDnIDParam("destroyID", args[0], helpers.ParamTypeCliArg)
+			id, err := helpers.ParseDnIDParam("withdrawID", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
 			// prepare request
-			req := types.DestroyReq{
+			req := types.WithdrawReq{
 				ID: id,
 			}
 
@@ -147,15 +157,20 @@ func GetDestroy(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			// query and parse the result
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryDestroy), bz)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryWithdraw), bz)
 			if err != nil {
 				return err
 			}
 
-			var out types.Destroy
+			var out types.Withdraw
 			cdc.MustUnmarshalJSON(res, &out)
 
 			return cliCtx.PrintOutput(out)
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"withdraw unique ID",
+	})
+
+	return cmd
 }

@@ -11,17 +11,17 @@ import (
 func NewHandler(keeper keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
-		case MsgDestroyCurrency:
-			return handleMsgDestroy(ctx, keeper, msg)
+		case MsgWithdrawCurrency:
+			return handleMsgWithdraw(ctx, keeper, msg)
 		default:
 			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized currencies msg type: %v", msg.Type())
 		}
 	}
 }
 
-// handleMsgDestroy handles MsgDestroyCurrency message.
-func handleMsgDestroy(ctx sdk.Context, keeper keeper.Keeper, msg MsgDestroyCurrency) (*sdk.Result, error) {
-	if err := keeper.DestroyCurrency(ctx, msg.Denom, msg.Amount, msg.Spender, msg.Recipient, msg.ChainID); err != nil {
+// handleMsgWithdraw handles MsgWithdrawCurrency message.
+func handleMsgWithdraw(ctx sdk.Context, keeper keeper.Keeper, msg MsgWithdrawCurrency) (*sdk.Result, error) {
+	if err := keeper.WithdrawCurrency(ctx, msg.Denom, msg.Amount, msg.Spender, msg.PegZoneRecipient, msg.PegZoneChainID); err != nil {
 		return nil, err
 	}
 

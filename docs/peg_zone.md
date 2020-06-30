@@ -77,9 +77,9 @@ Where:
 | **issueID**    | Any issue id, usually transaction id.                                                                                       |
 | **uniqueID**   | Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex. |
 
-To destroy currency from any account call:
+To withdraw currency from any account call:
 
-    dncli tx currencies destroy-currency [symbol] [amount] [recipient] --from account
+    dncli tx currencies withdraw-currency [denom] [amount] [pegZoneSpender] --from account
 
 To get issued currencies demons/symbols:
 
@@ -89,19 +89,19 @@ To get specific issue info:
 
     dncli query currencies issue [issueID]
 
-To get destroys list:
+To get withdraw list:
 
-    dncli query currencies destroys [page] [limit]
-
-Where:
-
-* **[page]** - page number
-* **[limit]** - limit of destroys per page
-
-To get destroy by ID:
-
-    dncli query currencies destroy [destroyID]
+    dncli query currencies withdraws --page=1 --limit=100
 
 Where:
 
-* **[destroyID]** - destroy ID, usually just from 0 to N.
+* **[page]** - page number (optional)
+* **[limit]** - limit of objects per page (optional)
+
+To get withdraw by ID:
+
+    dncli query currencies withdraw [withdrawID]
+
+Where:
+
+* **[withdrawID]** - withdraw ID, usually just from 0 to N.

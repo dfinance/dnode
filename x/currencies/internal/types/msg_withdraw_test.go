@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test MsgDestroyCurrency ValidateBasic.
-func TestCurrenciesMsg_DestroyCurrency_ValidateBasic(t *testing.T) {
+// Test MsgWithdrawCurrency ValidateBasic.
+func TestCurrenciesMsg_WithdrawCurrency_ValidateBasic(t *testing.T) {
 	t.Parallel()
 
-	target := NewMsgDestroyCurrency("symbol", sdk.NewInt(10), sdk.AccAddress("addr1"), "recipient", "chainID")
+	target := NewMsgWithdrawCurrency("symbol", sdk.NewInt(10), sdk.AccAddress("addr1"), "recipient", "chainID")
 	// ok
 	{
 		require.NoError(t, target.ValidateBasic())
@@ -40,20 +40,20 @@ func TestCurrenciesMsg_DestroyCurrency_ValidateBasic(t *testing.T) {
 		require.Error(t, invalidTarget.ValidateBasic())
 	}
 
-	// invalid: recipient
+	// invalid: pegZoneSpender
 	{
 		invalidTarget := target
-		invalidTarget.Recipient = ""
+		invalidTarget.PegZoneRecipient = ""
 		require.Error(t, invalidTarget.ValidateBasic())
 	}
 }
 
-// Test MsgDestroyCurrency sdk.Msg params.
-func TestCurrenciesMsg_DestroyCurrency_MsgInterface(t *testing.T) {
+// Test MsgWithdrawCurrency sdk.Msg params.
+func TestCurrenciesMsg_WithdrawCurrency_MsgInterface(t *testing.T) {
 	t.Parallel()
 
-	target := NewMsgDestroyCurrency("symbol", sdk.NewInt(10), sdk.AccAddress("addr1"), "recipient", "chainID")
-	require.Equal(t, "destroy_currency", target.Type())
+	target := NewMsgWithdrawCurrency("symbol", sdk.NewInt(10), sdk.AccAddress("addr1"), "recipient", "chainID")
+	require.Equal(t, "withdraw_currency", target.Type())
 	require.Equal(t, RouterKey, target.Route())
 	require.True(t, len(target.GetSignBytes()) > 0)
 	require.Equal(t, []sdk.AccAddress{target.Spender}, target.GetSigners())
