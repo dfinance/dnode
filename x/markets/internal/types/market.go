@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/olekukonko/tablewriter"
 
@@ -28,11 +27,11 @@ func (m Market) Valid() error {
 	if err := m.ID.Valid(); err != nil {
 		return sdkErrors.Wrap(ErrWrongID, err.Error())
 	}
-	if err := sdk.ValidateDenom(m.BaseAssetDenom); err != nil {
-		return sdkErrors.Wrap(ErrWrongAssetDenom, "BaseAsset is invalid")
+	if err := dnTypes.DenomFilter(m.BaseAssetDenom); err != nil {
+		return sdkErrors.Wrapf(ErrWrongAssetDenom, "BaseAsset is invalid: %v", err)
 	}
-	if err := sdk.ValidateDenom(m.QuoteAssetDenom); err != nil {
-		return sdkErrors.Wrap(ErrWrongAssetDenom, "QuoteAsset is invalid")
+	if err := dnTypes.DenomFilter(m.QuoteAssetDenom); err != nil {
+		return sdkErrors.Wrapf(ErrWrongAssetDenom, "QuoteAsset is invalid: %v", err)
 	}
 
 	return nil

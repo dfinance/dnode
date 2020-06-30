@@ -82,7 +82,7 @@ func TestKeeper_AddCurrencyInfoErrors(t *testing.T) {
 	// Add currency with wrong owner address.
 	err = input.keeper.AddCurrencyInfo(input.ctx, anotherDenom, uint8(decimals), isToken, make([]byte, 40), totalSupply, path)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "wrong length address:")
+	require.Contains(t, err.Error(), "owner")
 }
 
 // Exists currency info.

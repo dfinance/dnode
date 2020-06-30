@@ -328,6 +328,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// The Governance keeper.
 	app.govRouter = gov.NewRouter()
 	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
+	app.govRouter.AddRoute(currencies_register.GovRouterKey, currencies_register.NewGovHandler(app.crKeeper))
 
 	app.govKeeper = gov.NewKeeper(
 		cdc,

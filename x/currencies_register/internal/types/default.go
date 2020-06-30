@@ -6,8 +6,10 @@ import (
 
 const (
 	ModuleName = "currencies_register"
-	RouterKey  = "currenciesregister"
-	StoreKey   = ModuleName
+
+	StoreKey     = ModuleName
+	RouterKey    = "currenciesregister"
+	GovRouterKey = RouterKey
 )
 
 // Get currency path key.

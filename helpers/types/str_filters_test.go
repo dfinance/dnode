@@ -1,5 +1,3 @@
-// +build unit
-
 package types
 
 import (
@@ -28,7 +26,7 @@ func Test_stringFilter(t *testing.T) {
 	require.Error(t, stringFilter("abc_123Def_®", nil, []runeFilterOpt{runeIsASCII, runeLetterIsLowerCase}))
 
 	// empty string
-	require.Error(t, stringFilter("", []strFilterOpt{stringIsEmpty}, nil))
+	require.Error(t, stringFilter("", []strFilterOpt{stringNotEmpty}, nil))
 
 	// delimiter: ok
 	require.NoError(t, stringFilter("abc_def", []strFilterOpt{newDelimiterStrFilterOpt("_")}, nil))
@@ -48,23 +46,40 @@ func Test_stringFilter(t *testing.T) {
 
 func Test_assetCodeFilter(t *testing.T) {
 	// ok
-	require.NoError(t, assetCodeFilter("eth_usdt"))
+	require.NoError(t, AssetCodeFilter("eth_usdt"))
 
 	// fail: empty
-	require.Error(t, assetCodeFilter(""))
+	require.Error(t, AssetCodeFilter(""))
 
 	// fail: non lower cased letter
-	require.Error(t, assetCodeFilter("ETH_usdt"))
+	require.Error(t, AssetCodeFilter("ETH_usdt"))
 
 	// fail: invalid separator
-	require.Error(t, assetCodeFilter("eth:usdt"))
+	require.Error(t, AssetCodeFilter("eth:usdt"))
 
 	// fail: invalid separator
-	require.Error(t, assetCodeFilter("eth__usdt"))
+	require.Error(t, AssetCodeFilter("eth__usdt"))
 
 	// fail: non ASCII symbol
-	require.Error(t, assetCodeFilter("eth®_usdt"))
+	require.Error(t, AssetCodeFilter("eth®_usdt"))
 
 	// fail: non letter symbol
-	require.Error(t, assetCodeFilter("eth_usdt1"))
+	require.Error(t, AssetCodeFilter("eth_usdt1"))
+}
+
+func Test_denomFilter(t *testing.T) {
+	// ok
+	require.NoError(t, DenomFilter("dfi"))
+
+	// fail: empty
+	require.Error(t, DenomFilter(""))
+
+	// fail: non lower cased letter
+	require.Error(t, DenomFilter("Dfi"))
+
+	// fail: non ASCII symbol
+	require.Error(t, DenomFilter("eth®"))
+
+	// fail: non letter symbol
+	require.Error(t, DenomFilter("eth1"))
 }
