@@ -28,22 +28,6 @@ type MarketsReq struct {
 	AssetCode string
 }
 
-func NewMarketsFilter(
-	page int,
-	limit int,
-	assetCode string,
-	baseAssetDenom string,
-	quoteAssetDenom string) MarketsReq {
-
-	return MarketsReq{
-		Page:            page,
-		Limit:           limit,
-		AssetCode:       assetCode,
-		BaseAssetDenom:  baseAssetDenom,
-		QuoteAssetDenom: quoteAssetDenom,
-	}
-}
-
 // BaseDenomFilter check if BaseAssetDenom filter is enabled.
 func (r MarketsReq) BaseDenomFilter() bool {
 	return r.BaseAssetDenom != ""
