@@ -19,7 +19,7 @@ func Test_Keeper_PostRevokeOrder(t *testing.T) {
 	// non-existing market
 	{
 		owner := sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07z`")
-		_, err := input.keeper.PostOrder(input.ctx, owner, dnTypes.NewIDFromUint64(0), types.Bid, sdk.OneUint(), sdk.OneUint(), 60)
+		_, err := input.keeper.PostOrder(input.ctx, owner, dnTypes.AssetCode("dfi_usd"), types.Bid, sdk.OneUint(), sdk.OneUint(), 60)
 		require.Error(t, err)
 	}
 
@@ -58,7 +58,7 @@ func Test_Keeper_PostRevokeOrder(t *testing.T) {
 			quantity := sdk.NewUintFromString("1000000000") // 10 btc
 
 			// post and check returned order
-			postOrder, err := input.keeper.PostOrder(input.ctx, addr, market.ID, types.Ask, price, quantity, 60)
+			postOrder, err := input.keeper.PostOrder(input.ctx, addr, market.GetAssetCode(), types.Ask, price, quantity, 60)
 			require.NoError(t, err)
 			require.Equal(t, postOrder.ID.UInt64(), uint64(0))
 			require.True(t, postOrder.Market.ID.Equal(market.ID))
@@ -88,10 +88,10 @@ func Test_Keeper_PostRevokeOrder(t *testing.T) {
 		// bid order
 		{
 			price := sdk.NewUintFromString("10000000000000000000") // 10 dfi
-			quantity := sdk.NewUintFromString("1000000000") // 10 btc
+			quantity := sdk.NewUintFromString("1000000000")        // 10 btc
 
 			// post and check returned order
-			postOrder, err := input.keeper.PostOrder(input.ctx, addr, market.ID, types.Bid, price, quantity, 60)
+			postOrder, err := input.keeper.PostOrder(input.ctx, addr, market.GetAssetCode(), types.Bid, price, quantity, 60)
 			require.NoError(t, err)
 			require.Equal(t, postOrder.ID.UInt64(), uint64(1))
 			require.True(t, postOrder.Market.ID.Equal(market.ID))

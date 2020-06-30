@@ -3,6 +3,7 @@
 package keeper
 
 import (
+	helperTypes "github.com/dfinance/dnode/helpers/types"
 	"testing"
 	"time"
 
@@ -42,15 +43,17 @@ func Test_Keeper_OrderFill(t *testing.T) {
 	require.NoError(t, err)
 	input.accountKeeper.SetAccount(input.ctx, acc)
 
+	assetCode := helperTypes.AssetCode(market.GetAssetCode())
+
 	// post orders
 	askPrice := sdk.NewUintFromString("10000000000000000000") // 10 dfi
-	askQuantity := sdk.NewUintFromString("5000000000") // 50 btc
-	askOrder, err := input.keeper.PostOrder(input.ctx, addr, market.ID, types.Ask, askPrice, askQuantity, 60)
+	askQuantity := sdk.NewUintFromString("5000000000")        // 50 btc
+	askOrder, err := input.keeper.PostOrder(input.ctx, addr, assetCode, types.Ask, askPrice, askQuantity, 60)
 	require.NoError(t, err)
 
 	bidPrice := sdk.NewUintFromString("25000000000000000000") // 25 dfi
-	bidQuantity := sdk.NewUintFromString("2500000000") // 25 btc
-	bidOrder, err := input.keeper.PostOrder(input.ctx, addr, market.ID, types.Bid, bidPrice, bidQuantity, 60)
+	bidQuantity := sdk.NewUintFromString("2500000000")        // 25 btc
+	bidOrder, err := input.keeper.PostOrder(input.ctx, addr, assetCode, types.Bid, bidPrice, bidQuantity, 60)
 	require.NoError(t, err)
 
 	now := time.Now()

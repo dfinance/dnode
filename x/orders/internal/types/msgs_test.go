@@ -14,35 +14,36 @@ import (
 func Test_PostOrderMsg_Valid(t *testing.T) {
 	ownerAddr := sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h")
 
-	msg := NewMsgPost(ownerAddr, dnTypes.NewIDFromUint64(0), Bid, sdk.OneUint(), sdk.OneUint(), 60)
+	msg := NewMsgPost(ownerAddr, dnTypes.AssetCode("btc_dfi"), Bid, sdk.OneUint(), sdk.OneUint(), 60)
 	require.NoError(t, msg.ValidateBasic())
 }
 
 func Test_PostOrderMsg_Invalid(t *testing.T) {
 	ownerAddr := sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h")
-	marketID := dnTypes.NewIDFromUint64(0)
+	assetCode := dnTypes.AssetCode("btc_dfi")
 	direction := Bid
 	price := sdk.OneUint()
 	quantity := sdk.OneUint()
 	ttl := uint64(60)
 
 	// owner
-	require.Error(t, NewMsgPost(sdk.AccAddress{}, marketID, direction, price, quantity, ttl).ValidateBasic())
+	require.Error(t, NewMsgPost(sdk.AccAddress{}, assetCode, direction, price, quantity, ttl).ValidateBasic())
 
 	// marketID
-	require.Error(t, NewMsgPost(ownerAddr, dnTypes.ID{}, direction, price, quantity, ttl).ValidateBasic())
+	// TODO: change after validation
+	//require.Error(t, NewMsgPost(ownerAddr, dnTypes.AssetCode(""), direction, price, quantity, ttl).ValidateBasic())
 
 	// direction
-	require.Error(t, NewMsgPost(ownerAddr, marketID, Direction(""), price, quantity, ttl).ValidateBasic())
+	require.Error(t, NewMsgPost(ownerAddr, assetCode, Direction(""), price, quantity, ttl).ValidateBasic())
 
 	// price
-	require.Error(t, NewMsgPost(ownerAddr, marketID, direction, sdk.ZeroUint(), quantity, ttl).ValidateBasic())
+	require.Error(t, NewMsgPost(ownerAddr, assetCode, direction, sdk.ZeroUint(), quantity, ttl).ValidateBasic())
 
 	// quantity
-	require.Error(t, NewMsgPost(ownerAddr, marketID, direction, price, sdk.ZeroUint(), ttl).ValidateBasic())
+	require.Error(t, NewMsgPost(ownerAddr, assetCode, direction, price, sdk.ZeroUint(), ttl).ValidateBasic())
 
 	// ttl
-	require.Error(t, NewMsgPost(ownerAddr, marketID, direction, price, quantity, 0).ValidateBasic())
+	require.Error(t, NewMsgPost(ownerAddr, assetCode, direction, price, quantity, 0).ValidateBasic())
 }
 
 func Test_RevokeOrderMsg_Valid(t *testing.T) {
