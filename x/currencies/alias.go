@@ -9,6 +9,7 @@ type (
 	Keeper              = keeper.Keeper
 	GenesisState        = types.GenesisState
 	Currency            = types.Currency
+	CurrencyParams      = types.CurrencyParams
 	Issue               = types.Issue
 	Withdraw            = types.Withdraw
 	Withdraws           = types.Withdraws

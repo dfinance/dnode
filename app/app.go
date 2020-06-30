@@ -34,7 +34,6 @@ import (
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/currencies"
-	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
@@ -72,7 +71,6 @@ var (
 		supply.AppModuleBasic{},
 		poa.AppModuleBasic{},
 		currencies.AppModuleBasic{},
-		currencies_register.AppModuleBasic{},
 		multisig.AppModuleBasic{},
 		oracle.AppModuleBasic{},
 		gov.AppModuleBasic{},
@@ -113,7 +111,6 @@ type DnServiceApp struct {
 	poaKeeper       poa.Keeper
 	ccKeeper        currencies.Keeper
 	msKeeper        multisig.Keeper
-	crKeeper        currencies_register.Keeper
 	vmKeeper        vm.Keeper
 	oracleKeeper    oracle.Keeper
 	govKeeper       gov.Keeper
@@ -185,7 +182,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		slashing.StoreKey,
 		poa.StoreKey,
 		currencies.StoreKey,
-		currencies_register.StoreKey,
 		multisig.StoreKey,
 		vm.StoreKey,
 		oracle.StoreKey,
@@ -267,13 +263,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.vmKeeper,
 	)
 
-	// Initialize currency_register keeper.
-	app.crKeeper = currencies_register.NewKeeper(
-		app.cdc,
-		keys[currencies_register.StoreKey],
-		app.vmKeeper,
-	)
-
 	// Initializing distribution keeper.
 	app.distrKeeper = distribution.NewKeeper(
 		cdc,
@@ -331,7 +320,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.govRouter = gov.NewRouter()
 	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
 	app.govRouter.AddRoute(currencies.GovRouterKey, currencies.NewGovHandler(app.ccKeeper))
-	app.govRouter.AddRoute(currencies_register.GovRouterKey, currencies_register.NewGovHandler(app.crKeeper))
 
 	app.govKeeper = gov.NewKeeper(
 		cdc,
@@ -346,7 +334,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.marketKeeper = markets.NewKeeper(
 		cdc,
 		app.paramsKeeper.Subspace(markets.DefaultParamspace),
-		app.crKeeper,
+		app.ccKeeper,
 	)
 
 	// Initializing orders module.
@@ -377,7 +365,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
-		currencies_register.NewAppModule(app.crKeeper),
 		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
@@ -419,7 +406,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		multisig.ModuleName,
 		vm.ModuleName,
 		oracle.ModuleName,
-		currencies_register.ModuleName,
 		markets.ModuleName,
 		orders.ModuleName,
 		orderbook.ModuleName,

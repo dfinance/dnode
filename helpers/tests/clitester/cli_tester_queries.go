@@ -12,7 +12,6 @@ import (
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccTypes "github.com/dfinance/dnode/x/currencies"
-	"github.com/dfinance/dnode/x/currencies_register"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
@@ -267,14 +266,6 @@ func (ct *CLITester) QueryMarketsList(page, limit int, baseDenom, quoteDenom *st
 	if quoteDenom != nil {
 		q.cmd.AddArg("quote-asset-denom", *quoteDenom)
 	}
-
-	return q, resObj
-}
-
-func (ct *CLITester) QueryCurrencyInfo(denom string) (*QueryRequest, *currencies_register.CurrencyInfo) {
-	resObj := &currencies_register.CurrencyInfo{}
-	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies_register", "info", denom)
 
 	return q, resObj
 }

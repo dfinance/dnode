@@ -172,11 +172,11 @@ func (ct *CLITester) initChain() {
 	{
 		for denom, info := range ct.Currencies {
 			cmd := ct.newWbdCmd().
-				AddArg("", "add-currency-info").
+				AddArg("", "set-currency-info").
 				AddArg("", denom).
-				AddArg("", strconv.FormatInt(int64(info.Decimals), 10)).
-				AddArg("", info.Supply.String()).
-				AddArg("", info.Path)
+				AddArg("", strconv.FormatUint(uint64(info.Decimals), 10)).
+				AddArg("", info.BalancePath).
+				AddArg("", info.InfoPath)
 
 			cmd.CheckSuccessfulExecute(nil)
 		}

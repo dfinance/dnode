@@ -24,7 +24,6 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/logger"
 	ccCli "github.com/dfinance/dnode/x/currencies/client/cli"
-	crCli "github.com/dfinance/dnode/x/currencies_register/client/cli"
 	"github.com/dfinance/dnode/x/genaccounts"
 	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
 	marketsCli "github.com/dfinance/dnode/x/markets/client/cli"
@@ -76,7 +75,6 @@ func main() {
 		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		marketsCli.AddMarketGenCmd(ctx, cdc, app.DefaultNodeHome),
-		crCli.AddGenesisCurrencyInfo(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 

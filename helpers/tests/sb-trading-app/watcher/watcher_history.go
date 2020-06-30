@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/dfinance/dnode/x/currencies_register"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 )
 
 type History struct {
@@ -37,8 +37,8 @@ type BlockInfo struct {
 }
 
 type MarketInfo struct {
-	BaseCurrency  currencies_register.CurrencyInfo
-	QuoteCurrency currencies_register.CurrencyInfo
+	BaseCurrency  ccTypes.Currency
+	QuoteCurrency ccTypes.Currency
 }
 
 type HistoryItem struct {

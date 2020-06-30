@@ -14,8 +14,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/currencies_register"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	obTypes "github.com/dfinance/dnode/x/orderbook"
 	orderTypes "github.com/dfinance/dnode/x/orders"
@@ -37,7 +36,7 @@ type OrderBookTester struct {
 	// markets maps (key: ID)
 	Markets map[string]marketTypes.Market
 	// currencies info map (key: denom)
-	Currencies map[string]currencies_register.CurrencyInfo
+	Currencies map[string]ccTypes.Currency
 }
 
 type ClientTestState struct {
@@ -82,7 +81,7 @@ func NewOrderBookTester(t *testing.T, app *DnServiceApp) OrderBookTester {
 		t:          t,
 		app:        app,
 		Markets:    make(map[string]marketTypes.Market, 0),
-		Currencies: make(map[string]currencies_register.CurrencyInfo, 0),
+		Currencies: make(map[string]ccTypes.Currency, 0),
 		Clients:    make([]*ClientTestState, 0),
 	}
 
@@ -123,23 +122,20 @@ func (tester *OrderBookTester) RegisterMarket(ownerAddr sdk.AccAddress, baseDeno
 	ctx := GetContext(tester.app, false)
 
 	registerCurrency := func(denom string, decimals uint8) {
-		path := hex.EncodeToString([]byte(denom))
+		pathHex := hex.EncodeToString(ownerAddr.Bytes())
 
-		require.NoError(tester.t, vmauth.AddDenomPath(denom, string(path)), "registering path for denom: %s", denom)
-		err := tester.app.crKeeper.AddCurrencyInfo(
-			ctx,
-			denom,
-			decimals,
-			false,
-			common_vm.Bech32ToLibra(ownerAddr),
-			sdk.ZeroInt(),
-			[]byte(denom),
-		)
+		require.NoError(tester.t, vmauth.AddDenomPath(denom, pathHex), "registering path for denom: %s", denom)
+		ccParams := ccTypes.CurrencyParams{
+			Decimals:       decimals,
+			BalancePathHex: pathHex,
+			InfoPathHex:    pathHex,
+		}
+		err := tester.app.ccKeeper.CreateCurrency(ctx, denom, ccParams)
 		require.NoError(tester.t, err, "adding currency for denom: %s", denom)
 
-		ccInfo, err := tester.app.crKeeper.GetCurrencyInfo(ctx, denom)
+		currency, err := tester.app.ccKeeper.GetCurrency(ctx, denom)
 		require.NoError(tester.t, err, "checking currency added for denom: %s", denom)
-		tester.Currencies[denom] = ccInfo
+		tester.Currencies[denom] = currency
 	}
 
 	// register currencies

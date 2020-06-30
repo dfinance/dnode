@@ -9,7 +9,7 @@ import (
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	crTypes "github.com/dfinance/dnode/x/currencies_register"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
@@ -33,8 +33,8 @@ type Config struct {
 	Name                   string
 	Address                string
 	Number                 uint64
-	BaseCurrency           crTypes.CurrencyInfo
-	QuoteCurrency          crTypes.CurrencyInfo
+	BaseCurrency           ccTypes.Currency
+	QuoteCurrency          ccTypes.Currency
 	MarketID               dnTypes.ID
 	MMakingMinPrice        sdk.Uint
 	MMakingMaxPrice        sdk.Uint

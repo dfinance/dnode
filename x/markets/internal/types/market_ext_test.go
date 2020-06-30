@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dnode/x/currencies_register"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 )
 
 type BaseToQuoteQuantityInput struct {
@@ -40,18 +40,18 @@ func checkBaseToQuoteQuantityInputs(t *testing.T, inputs []BaseToQuoteQuantityIn
 
 func Test_BaseToQuoteQuantity(t *testing.T) {
 	marketNoDecimals := MarketExtended{
-		BaseCurrency:  currencies_register.CurrencyInfo{Decimals: 0},
-		QuoteCurrency: currencies_register.CurrencyInfo{Decimals: 0},
+		BaseCurrency:  ccTypes.Currency{Decimals: 0},
+		QuoteCurrency: ccTypes.Currency{Decimals: 0},
 	}
 
 	marketBase2Quote2 := MarketExtended{
-		BaseCurrency:  currencies_register.CurrencyInfo{Decimals: 2},
-		QuoteCurrency: currencies_register.CurrencyInfo{Decimals: 2},
+		BaseCurrency:  ccTypes.Currency{Decimals: 2},
+		QuoteCurrency: ccTypes.Currency{Decimals: 2},
 	}
 
 	marketBase2Quote3 := MarketExtended{
-		BaseCurrency:  currencies_register.CurrencyInfo{Decimals: 2},
-		QuoteCurrency: currencies_register.CurrencyInfo{Decimals: 3},
+		BaseCurrency:  ccTypes.Currency{Decimals: 2},
+		QuoteCurrency: ccTypes.Currency{Decimals: 3},
 	}
 
 	inputs := []BaseToQuoteQuantityInput{

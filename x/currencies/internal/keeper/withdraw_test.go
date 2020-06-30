@@ -24,7 +24,7 @@ func TestCurrenciesKeeper_WithdrawCurrency(t *testing.T) {
 
 	// fail: unknown currency
 	{
-		require.Error(t, keeper.WithdrawCurrency(ctx, defDenom, defAmount, addr, recipient.String(), ctx.ChainID()))
+		require.Error(t, keeper.WithdrawCurrency(ctx, "test", defAmount, addr, recipient.String(), ctx.ChainID()))
 	}
 
 	// issue currency
@@ -48,7 +48,7 @@ func TestCurrenciesKeeper_WithdrawCurrency(t *testing.T) {
 		// check currencyInfo supply decreased
 		curInfo, err := keeper.GetStandardCurrencyInfo(ctx, defDenom)
 		require.NoError(t, err)
-		require.Equal(t, curInfo.TotalSupply.String(), defAmount.String())
+		require.Equal(t, curInfo.TotalSupply.String(), "0")
 	}
 
 	// fail: insufficient coins (balance is 0)

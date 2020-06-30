@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccrTypes "github.com/dfinance/dnode/x/currencies_register"
+	ccTypes "github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
@@ -35,22 +35,22 @@ func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome stri
 				return err
 			}
 
-			// retrive the currencies_register genesis
-			var genesisCCRegister ccrTypes.GenesisState
-			cdc.MustUnmarshalJSON(appState[ccrTypes.ModuleName], &genesisCCRegister)
+			// retrieve the genesis
+			var genesisCC ccTypes.GenesisState
+			cdc.MustUnmarshalJSON(appState[ccTypes.ModuleName], &genesisCC)
 
 			// retrieve the markets genesis
 			var genesisMarket types.GenesisState
 			cdc.MustUnmarshalJSON(appState[types.ModuleName], &genesisMarket)
 
-			// check if base/quote denom do exist in currencies_register genesis
+			// check if base/quote denom do exist in currencies genesis
 			baseFound, quoteFound := false, false
-			for _, ccInfo := range genesisCCRegister.Currencies {
-				if ccInfo.Denom == baseDenom {
+			for denom, _ := range genesisCC.CurrenciesParams {
+				if denom == baseDenom {
 					baseFound = true
 					continue
 				}
-				if ccInfo.Denom == quoteDenom {
+				if denom == quoteDenom {
 					quoteFound = true
 					continue
 				}

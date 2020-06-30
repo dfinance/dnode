@@ -54,3 +54,9 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 
 	return k.cdc.MustMarshalJSON(state)
 }
+
+// InitDefaultGenesis is used for easier unit tests setup for other currencies dependant modules.
+func (k Keeper) InitDefaultGenesis(ctx sdk.Context) {
+	bz := k.cdc.MustMarshalJSON(types.DefaultGenesisState())
+	k.InitGenesis(ctx, bz)
+}

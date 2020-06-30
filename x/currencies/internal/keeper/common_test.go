@@ -80,7 +80,6 @@ type TestInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
 	//
-	keyMain      *sdk.KVStoreKey
 	keyAccount   *sdk.KVStoreKey
 	keyCC        *sdk.KVStoreKey
 	keySupply    *sdk.KVStoreKey
@@ -131,8 +130,8 @@ func NewTestInput(t *testing.T) TestInput {
 		keySupply:    sdk.NewKVStoreKey(supply.StoreKey),
 		keyPoa:       sdk.NewKVStoreKey(poa.StoreKey),
 		keyMS:        sdk.NewKVStoreKey(multisig.StoreKey),
-		keyVMStorage: sdk.NewKVStoreKey(vm.StoreKey),
 		keyCC:        sdk.NewKVStoreKey(types.StoreKey),
+		keyVMStorage: sdk.NewKVStoreKey(vm.StoreKey),
 		tkeyParams:   sdk.NewTransientStoreKey(params.TStoreKey),
 	}
 
@@ -153,8 +152,8 @@ func NewTestInput(t *testing.T) TestInput {
 	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyPoa, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyMS, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyVMStorage, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyCC, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyVMStorage, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
 	err := mstore.LoadLatestVersion()
 	if err != nil {
