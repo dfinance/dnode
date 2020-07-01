@@ -29,9 +29,8 @@ func Test_PostOrderMsg_Invalid(t *testing.T) {
 	// owner
 	require.Error(t, NewMsgPost(sdk.AccAddress{}, assetCode, direction, price, quantity, ttl).ValidateBasic())
 
-	// marketID
-	// TODO: change after validation
-	//require.Error(t, NewMsgPost(ownerAddr, dnTypes.AssetCode(""), direction, price, quantity, ttl).ValidateBasic())
+	// assetCode
+	require.Error(t, NewMsgPost(ownerAddr, dnTypes.AssetCode(""), direction, price, quantity, ttl).ValidateBasic())
 
 	// direction
 	require.Error(t, NewMsgPost(ownerAddr, assetCode, Direction(""), price, quantity, ttl).ValidateBasic())

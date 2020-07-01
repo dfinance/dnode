@@ -4,7 +4,7 @@ type AssetCode string
 
 // Validate validates asset code.
 func (a AssetCode) Validate() error {
-	return nil
+	return AssetCodeFilter(a.String())
 }
 
 // String returns string enum representation.
