@@ -15,7 +15,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govCli "github.com/cosmos/cosmos-sdk/x/gov/client/cli"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
@@ -44,6 +46,19 @@ func ParseFromFlag(cliCtx cliCtx.CLIContext) (sdk.AccAddress, error) {
 	}
 
 	return cliCtx.FromAddress, nil
+}
+
+func ParseDepositFlag(flags *pflag.FlagSet) (sdk.Coins, error) {
+	depositStr, err := flags.GetString(govCli.FlagDeposit)
+	if err != nil {
+		return sdk.Coins{}, fmt.Errorf("%s %s: %w", govCli.FlagDeposit, ParamTypeCliFlag, err)
+	}
+	deposit, err := sdk.ParseCoins(depositStr)
+	if err != nil {
+		return sdk.Coins{}, fmt.Errorf("%s %s %q: parsing Coins: %w", govCli.FlagDeposit, ParamTypeCliFlag, depositStr, err)
+	}
+
+	return deposit, nil
 }
 
 func ParsePaginationParams(pageStr, limitStr string, paramType ParamType) (page, limit sdk.Uint, retErr error) {

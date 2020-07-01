@@ -26,12 +26,12 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 		require.True(t, input.bankKeeper.GetCoins(ctx, addr).AmountOf(defDenom).Equal(defAmount))
 
 		// check currency supply increased
-		currency, err := keeper.GetCurrency(ctx, defDenom)
+		currency, err := input.ccsStorage.GetCurrency(ctx, defDenom)
 		require.NoError(t, err)
 		require.True(t, currency.Supply.Equal(defAmount))
 
 		// check currencyInfo supply increased
-		curInfo, err := keeper.GetResStdCurrencyInfo(ctx, defDenom)
+		curInfo, err := input.ccsStorage.GetResStdCurrencyInfo(ctx, defDenom)
 		require.NoError(t, err)
 		require.Equal(t, curInfo.TotalSupply.String(), defAmount.String())
 	}
@@ -57,12 +57,12 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 		require.True(t, input.bankKeeper.GetCoins(ctx, addr).AmountOf(defDenom).Equal(newAmount))
 
 		// check currency supply increased
-		currency, err := keeper.GetCurrency(ctx, defDenom)
+		currency, err := input.ccsStorage.GetCurrency(ctx, defDenom)
 		require.NoError(t, err)
 		require.True(t, currency.Supply.Equal(newAmount))
 
 		// check currencyInfo supply increased
-		curInfo, err := keeper.GetResStdCurrencyInfo(ctx, defDenom)
+		curInfo, err := input.ccsStorage.GetResStdCurrencyInfo(ctx, defDenom)
 		require.NoError(t, err)
 		require.Equal(t, curInfo.TotalSupply.String(), newAmount.String())
 	}

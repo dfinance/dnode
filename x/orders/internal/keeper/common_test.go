@@ -13,83 +13,32 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/supply"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/dfinance/dnode/helpers/tests"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/common_vm"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orders/internal/types"
+	"github.com/dfinance/dnode/x/vm"
 )
-
-var (
-	// BankKeeper, SupplyKeeper dependency
-	maccPerms = map[string][]string{
-		types.ModuleName: {supply.Burner},
-	}
-)
-
-// BankKeeper, SupplyKeeper dependency.
-func ModuleAccountAddrs() map[string]bool {
-	modAccAddrs := make(map[string]bool)
-	for acc := range maccPerms {
-		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
-	}
-
-	return modAccAddrs
-}
-
-// Mock VM storage implementation.
-type VMStorage struct {
-	storeKey sdk.StoreKey
-}
-
-func NewVMStorage(storeKey sdk.StoreKey) VMStorage {
-	return VMStorage{
-		storeKey: storeKey,
-	}
-}
-
-func (storage VMStorage) GetOracleAccessPath(_ string) *vm_grpc.VMAccessPath {
-	return &vm_grpc.VMAccessPath{}
-}
-
-func (storage VMStorage) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
-	store := ctx.KVStore(storage.storeKey)
-	store.Set(common_vm.MakePathKey(accessPath), value)
-}
-
-func (storage VMStorage) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
-	store := ctx.KVStore(storage.storeKey)
-	return store.Get(common_vm.MakePathKey(accessPath))
-}
-
-func (storage VMStorage) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
-	store := ctx.KVStore(storage.storeKey)
-	store.Delete(common_vm.MakePathKey(accessPath))
-}
-
-func (storage VMStorage) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
-	store := ctx.KVStore(storage.storeKey)
-	return store.Has(common_vm.MakePathKey(accessPath))
-}
 
 // Module keeper tests input.
 type TestInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
 	//
-	keyParams    *sdk.KVStoreKey
-	keyAccount   *sdk.KVStoreKey
-	keySupply    *sdk.KVStoreKey
-	keyCC        *sdk.KVStoreKey
-	keyOrders    *sdk.KVStoreKey
-	keyVMStorage *sdk.KVStoreKey
-	tKeyParams   *sdk.TransientStoreKey
+	keyParams  *sdk.KVStoreKey
+	keyAccount *sdk.KVStoreKey
+	keySupply  *sdk.KVStoreKey
+	keyCCS     *sdk.KVStoreKey
+	keyOrders  *sdk.KVStoreKey
+	keyVMS     *sdk.KVStoreKey
+	tKeyParams *sdk.TransientStoreKey
 	//
 	baseBtcDenom    string
 	baseBtcDecimals uint8
@@ -101,7 +50,7 @@ type TestInput struct {
 	accountKeeper auth.AccountKeeper
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
-	ccKeeper      ccTypes.Keeper
+	ccsKeeper     ccsTypes.Keeper
 	marketKeeper  markets.Keeper
 	paramsKeeper  params.Keeper
 	keeper        Keeper
@@ -111,14 +60,14 @@ type TestInput struct {
 
 func NewTestInput(t *testing.T) TestInput {
 	input := TestInput{
-		cdc:          codec.New(),
-		keyParams:    sdk.NewKVStoreKey(params.StoreKey),
-		keyAccount:   sdk.NewKVStoreKey(auth.StoreKey),
-		keySupply:    sdk.NewKVStoreKey(supply.StoreKey),
-		keyCC:        sdk.NewKVStoreKey(ccTypes.StoreKey),
-		keyOrders:    sdk.NewKVStoreKey(types.StoreKey),
-		keyVMStorage: sdk.NewKVStoreKey("key_vm_storage"),
-		tKeyParams:   sdk.NewTransientStoreKey("tkey_params"),
+		cdc:        codec.New(),
+		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
+		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
+		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
+		keyCCS:     sdk.NewKVStoreKey(ccsTypes.StoreKey),
+		keyOrders:  sdk.NewKVStoreKey(types.StoreKey),
+		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
+		tKeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 		//
 		baseBtcDenom:    "btc",
 		baseBtcDecimals: 8,
@@ -135,36 +84,35 @@ func NewTestInput(t *testing.T) TestInput {
 	auth.RegisterCodec(input.cdc)
 	bank.RegisterCodec(input.cdc)
 	supply.RegisterCodec(input.cdc)
-	ccTypes.RegisterCodec(input.cdc)
 	types.RegisterCodec(input.cdc)
 
 	// init in-memory DB
 	db := dbm.NewMemDB()
 	mstore := store.NewCommitMultiStore(db)
-	mstore.MountStoreWithDB(input.keyVMStorage, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyVMS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyCC, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyCCS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyOrders, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tKeyParams, sdk.StoreTypeTransient, db)
 	require.NoError(t, mstore.LoadLatestVersion(), "in-memory DB init")
 
 	// create target and dependant keepers
-	input.vmStorage = NewVMStorage(input.keyVMStorage)
+	input.vmStorage = tests.NewVMStorage(input.keyVMS)
 	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tKeyParams)
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), ModuleAccountAddrs())
-	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, maccPerms)
-	input.ccKeeper = ccTypes.NewKeeper(input.cdc, input.keyCC, input.paramsKeeper.Subspace(ccTypes.DefaultParamspace), input.bankKeeper, input.vmStorage)
-	input.marketKeeper = markets.NewKeeper(input.cdc, input.paramsKeeper.Subspace(markets.DefaultParamspace), input.ccKeeper)
+	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
+	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
+	input.ccsKeeper = ccsTypes.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccsTypes.DefaultParamspace), input.vmStorage)
+	input.marketKeeper = markets.NewKeeper(input.cdc, input.paramsKeeper.Subspace(markets.DefaultParamspace), input.ccsKeeper)
 	input.keeper = NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
 
 	// init genesis / params
-	input.ccKeeper.InitDefaultGenesis(input.ctx)
+	input.ccsKeeper.InitDefaultGenesis(input.ctx)
 	input.marketKeeper.SetParams(input.ctx, markets.DefaultParams())
 
 	return input
@@ -192,11 +140,11 @@ func NewBtcDfiMockOrder(direction types.Direction) types.Order {
 		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"),
 		Market: markets.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(0),
-			BaseCurrency: ccTypes.Currency{
+			BaseCurrency: ccsTypes.Currency{
 				Denom:    "btc",
 				Decimals: 8,
 			},
-			QuoteCurrency: ccTypes.Currency{
+			QuoteCurrency: ccsTypes.Currency{
 				Denom:    "dfi",
 				Decimals: 18,
 			},
@@ -218,11 +166,11 @@ func NewEthDfiMockOrder(direction types.Direction) types.Order {
 		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07i"),
 		Market: markets.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(1),
-			BaseCurrency: ccTypes.Currency{
+			BaseCurrency: ccsTypes.Currency{
 				Denom:    "eth",
 				Decimals: 18,
 			},
-			QuoteCurrency: ccTypes.Currency{
+			QuoteCurrency: ccsTypes.Currency{
 				Denom:    "dfi",
 				Decimals: 18,
 			},
@@ -237,7 +185,7 @@ func NewEthDfiMockOrder(direction types.Direction) types.Order {
 }
 
 func CompareOrders(t *testing.T, order1, order2 types.Order) {
-	compareCurrency := func(logMsg string, c1, c2 ccTypes.Currency) {
+	compareCurrency := func(logMsg string, c1, c2 ccsTypes.Currency) {
 		require.Equal(t, c1.Denom, c2.Denom, "%s: Denom", logMsg)
 		require.Equal(t, c1.Decimals, c2.Decimals, "%s: Decimals", logMsg)
 	}

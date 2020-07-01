@@ -8,7 +8,6 @@ import (
 	"path"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/dfinance/dnode/cmd/config"
@@ -54,7 +53,7 @@ const govScript = `
 	}
 `
 
-func Test_VmGovStdlibUpdate(t *testing.T) {
+func TestIntegGov_StdlibUpdate(t *testing.T) {
 	const (
 		moduleAddr = "0000000000000000000000000000000000000001"
 		modulePath = "0058e1e3e2f8edf7df0c4b1ab8c1c8ec661b3210b29c85b1449ac6214c6476b0e8"
@@ -106,7 +105,7 @@ func Test_VmGovStdlibUpdate(t *testing.T) {
 	defer dvmStop()
 
 	createMovFile := func(fileName, code string) string {
-		movePath := path.Join(ct.Dirs.RootDir, fileName + ".move")
+		movePath := path.Join(ct.Dirs.RootDir, fileName+".move")
 		moveFile, err := os.Create(movePath)
 		require.NoErrorf(t, err, "creating .move file for %s", fileName)
 		_, err = moveFile.WriteString(code)
@@ -196,7 +195,7 @@ func Test_VmGovStdlibUpdate(t *testing.T) {
 	}
 }
 
-func Test_CRGovAddCurrency(t *testing.T) {
+func TestIntegGov_RegisterCurrency(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		true,
@@ -209,66 +208,58 @@ func Test_CRGovAddCurrency(t *testing.T) {
 	// New currency info
 	crDenom := "tst"
 	crDecimals := uint8(8)
-	crPathHex := "0102030405060708090A0B0C0D0E0FA1A2A3A4A5A6A7A8A9AAABACADAEAFB1B2B3"
-	crTotalSupply, ok := sdk.NewIntFromString("100000000000")
-	require.True(t, ok)
+	crBalancePathHex := "A1A2A3A4A5A6A7A8A9ABACADAEAFB1B2B3B4B5B6B7B8B9BABBBCBDBEBFC1C2C3C4"
+	crInfoPathHex    := "0102030405060708090A0B0C0D0E0FA1A2A3A4A5A6A7A8A9AAABACADAEAFB1B2B3"
 
 	// Check invalid arguments for AddCurrencyProposal Tx
 	{
 		// invalid from
 		{
-			tx := ct.TxCRAddCurrencyProposal("invalid_from", crDenom, crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
+			tx := ct.TxCCAddCurrencyProposal("invalid_from", crDenom, crBalancePathHex, crInfoPathHex, crDecimals, config.GovMinDeposit)
 			tx.CheckFailedWithErrorSubstring("keyring")
 		}
 
 		// invalid denom
 		{
-			tx := ct.TxCRAddCurrencyProposal(senderAddr, "invalid1", crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
+			tx := ct.TxCCAddCurrencyProposal(senderAddr, "invalid1", crBalancePathHex, crInfoPathHex, crDecimals, config.GovMinDeposit)
 			tx.CheckFailedWithErrorSubstring("denom")
 		}
 
 		// invalid path
 		{
-			tx := ct.TxCRAddCurrencyProposal(senderAddr, crDenom, "_", crDecimals, crTotalSupply, config.GovMinDeposit)
-			tx.CheckFailedWithErrorSubstring("path")
+			tx1 := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, "zzvv", crInfoPathHex, crDecimals, config.GovMinDeposit)
+			tx1.CheckFailedWithErrorSubstring("balancePathHex")
+			tx2 := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, "abc", crDecimals, config.GovMinDeposit)
+			tx2.CheckFailedWithErrorSubstring("infoPathHex")
 		}
 
 		// invalid decimals
 		{
-			tx := ct.TxCRAddCurrencyProposal(senderAddr, crDenom, crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
+			tx := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, crInfoPathHex, crDecimals, config.GovMinDeposit)
 			tx.ChangeCmdArg("8", "abc")
 			tx.CheckFailedWithErrorSubstring("decimals")
-		}
-
-		// invalid totalSupply
-		{
-			tx := ct.TxCRAddCurrencyProposal(senderAddr, crDenom, crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
-			tx.ChangeCmdArg(crTotalSupply.String(), "abc")
-			tx.CheckFailedWithErrorSubstring("totalSupply")
 		}
 	}
 
 	// Add proposal
 	{
-		tx := ct.TxCRAddCurrencyProposal(senderAddr, crDenom, crPathHex, crDecimals, crTotalSupply, config.GovMinDeposit)
+		tx := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, crInfoPathHex, crDecimals, config.GovMinDeposit)
 		ct.SubmitAndConfirmProposal(tx, false)
 	}
 
 	// Check currency added
 	{
-		req, crInfo := ct.QueryCurrencyInfo(crDenom)
+		req, currency := ct.QueryCurrenciesCurrency(crDenom)
 		req.CheckSucceeded()
 
-		require.Equal(t, crDenom, string(crInfo.Denom))
-		require.Equal(t, crDecimals, crInfo.Decimals)
-		require.Equal(t, false, crInfo.IsToken)
-		require.Equal(t, common_vm.StdLibAddress, crInfo.Owner)
-		require.Equal(t, crTotalSupply.BigInt().String(), crInfo.TotalSupply.String())
+		require.Equal(t, crDenom, string(currency.Denom))
+		require.Equal(t, crDecimals, currency.Decimals)
+		require.True(t, currency.Supply.IsZero())
 	}
 
 	// Check writeSet is stored
 	{
-		q, writeSet := ct.QueryVmData(hex.EncodeToString(common_vm.StdLibAddress), crPathHex)
+		q, writeSet := ct.QueryVmData(hex.EncodeToString(common_vm.StdLibAddress), crInfoPathHex)
 		q.CheckSucceeded()
 		require.NotEmpty(t, writeSet)
 	}

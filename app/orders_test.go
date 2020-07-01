@@ -17,7 +17,7 @@ const (
 	queryOrdersListPath = "/custom/orders/list"
 )
 
-func Test_Orders_Ttl(t *testing.T) {
+func TestOrders_Ttl(t *testing.T) {
 	baseDenom, quoteDenom := "base", "quote"
 	baseDecimals, quoteDecimals := uint8(0), uint8(0)
 	baseSupply, quoteSupply := sdk.NewInt(1000), sdk.NewInt(1000)

@@ -25,7 +25,7 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	_ "github.com/dfinance/dnode/cmd/dncli/docs/statik"
 	"github.com/dfinance/dnode/helpers/logger"
-	"github.com/dfinance/dnode/x/vmauth"
+	vmauthCli "github.com/dfinance/dnode/x/vmauth/client/cli"
 )
 
 const (
@@ -101,7 +101,7 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 	}
 
 	queryCmd.AddCommand(
-		vmauth.GetAccountCmd(cdc),
+		vmauthCli.GetAccountCmd(cdc),
 		flags.LineBreak,
 		rpc.ValidatorCommand(cdc),
 		rpc.BlockCommand(),

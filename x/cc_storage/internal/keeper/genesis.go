@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/dfinance/dnode/x/currencies/internal/types"
+	"github.com/dfinance/dnode/x/cc_storage/internal/types"
 )
 
 // InitGenesis inits module genesis state: creates currencies.

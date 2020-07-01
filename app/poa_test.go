@@ -22,7 +22,7 @@ const (
 	queryPoaGetMinMaxParamsPath = "/custom/poa/minmax"
 )
 
-func Test_POAHandlerIsMultisigOnly(t *testing.T) {
+func TestPOA_HandlerIsMultisigOnly(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -43,7 +43,7 @@ func Test_POAHandlerIsMultisigOnly(t *testing.T) {
 	}
 }
 
-func Test_POAQueries(t *testing.T) {
+func TestPOA_Queries(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -84,7 +84,7 @@ func Test_POAQueries(t *testing.T) {
 	}
 }
 
-func Test_POAInvalidGenesis(t *testing.T) {
+func TestPOA_InvalidGenesis(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -113,7 +113,7 @@ func Test_POAInvalidGenesis(t *testing.T) {
 	}
 }
 
-func Test_POAValidatorsAdd(t *testing.T) {
+func TestPOA_ValidatorsAdd(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -167,7 +167,7 @@ func Test_POAValidatorsAdd(t *testing.T) {
 	}
 }
 
-func Test_POAValidatorsRemove(t *testing.T) {
+func TestPOA_ValidatorsRemove(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -224,7 +224,7 @@ func Test_POAValidatorsRemove(t *testing.T) {
 	}
 }
 
-func Test_POAValidatorsReplace(t *testing.T) {
+func TestPOA_ValidatorsReplace(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -257,7 +257,7 @@ func Test_POAValidatorsReplace(t *testing.T) {
 	}
 }
 
-func Test_POAValidatorsReplaceExisting(t *testing.T) {
+func TestPOA_ValidatorsReplaceExisting(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -284,7 +284,7 @@ func Test_POAValidatorsReplaceExisting(t *testing.T) {
 	}
 }
 
-func Test_POAValidatorsMinMaxRange(t *testing.T) {
+func TestPOA_ValidatorsMinMaxRange(t *testing.T) {
 	defMinValidators, defMaxValidators := poaTypes.DefaultMinValidators, poaTypes.DefaultMaxValidators
 
 	t.Parallel()

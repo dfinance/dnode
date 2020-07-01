@@ -3,7 +3,6 @@ package clitester
 import (
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	sdkKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
@@ -166,20 +165,6 @@ func (ct *CLITester) initChain() {
 			AddArg("", strings.Join(oracles, ","))
 
 		cmd.CheckSuccessfulExecute(nil)
-	}
-
-	// register currencies
-	{
-		for denom, info := range ct.Currencies {
-			cmd := ct.newWbdCmd().
-				AddArg("", "set-currency-info").
-				AddArg("", denom).
-				AddArg("", strconv.FormatUint(uint64(info.Decimals), 10)).
-				AddArg("", info.BalancePath).
-				AddArg("", info.InfoPath)
-
-			cmd.CheckSuccessfulExecute(nil)
-		}
 	}
 
 	// adjust governance genesis

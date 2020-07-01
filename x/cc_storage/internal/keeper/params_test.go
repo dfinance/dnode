@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dnode/x/currencies/internal/types"
+	"github.com/dfinance/dnode/x/cc_storage/internal/types"
 )
 
 // Test keeper set/get params.
-func TestCurrenciesKeeper_Params(t *testing.T) {
+func TestCCSKeeper_Params(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)

@@ -7,12 +7,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/dfinance/dnode/x/cc_storage/internal/types"
 	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
 // Test keeper GetResStdCurrencyInfo method.
-func TestCurrenciesKeeper_GetStandardCurrencyInfo(t *testing.T) {
+func TestCCSKeeper_GetStandardCurrencyInfo(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)

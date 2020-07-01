@@ -11,7 +11,7 @@ import (
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
-func Test_Market_StoreIO(t *testing.T) {
+func TestMarketsKeeper_StoreIO(t *testing.T) {
 	input := NewTestInput(t)
 
 	// non-existing market
@@ -58,7 +58,7 @@ func Test_Market_StoreIO(t *testing.T) {
 	}
 }
 
-func Test_Market_List(t *testing.T) {
+func TestMarketsKeeper_List(t *testing.T) {
 	input := NewTestInput(t)
 
 	// get empty list
@@ -132,7 +132,7 @@ func Test_Market_List(t *testing.T) {
 	}
 }
 
-func Test_Market_AddDuplicate(t *testing.T) {
+func TestMarketsKeeper_AddDuplicate(t *testing.T) {
 	input := NewTestInput(t)
 
 	market1, err := input.keeper.Add(input.ctx, input.baseBtcDenom, input.quoteDenom)

@@ -18,10 +18,10 @@ import (
 //
 // CONTRACT: The tx must implement the SigVerifiableTx interface.
 type IncrementSequenceDecorator struct {
-	ak vmauth.VMAccountKeeper
+	ak vmauth.Keeper
 }
 
-func NewIncrementSequenceDecorator(ak vmauth.VMAccountKeeper) IncrementSequenceDecorator {
+func NewIncrementSequenceDecorator(ak vmauth.Keeper) IncrementSequenceDecorator {
 	return IncrementSequenceDecorator{
 		ak: ak,
 	}

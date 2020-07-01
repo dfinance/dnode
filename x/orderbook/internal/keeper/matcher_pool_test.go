@@ -16,7 +16,7 @@ import (
 
 	"github.com/dfinance/dnode/helpers/logger"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
 	orderTypes "github.com/dfinance/dnode/x/orders"
@@ -57,8 +57,8 @@ func (i *MatchingPoolInput) PostOrders(t *testing.T, pool *MatcherPool) {
 
 	extMarkets := make([]marketTypes.MarketExtended, 0, len(i.Markets))
 	for id, input := range i.Markets {
-		baseCurrency := ccTypes.Currency{Denom: input.BaseDenom, Decimals: input.BaseDecimals}
-		quoteCurrency := ccTypes.Currency{Denom: input.QuoteDenom, Decimals: input.QuoteDecimals}
+		baseCurrency := ccsTypes.Currency{Denom: input.BaseDenom, Decimals: input.BaseDecimals}
+		quoteCurrency := ccsTypes.Currency{Denom: input.QuoteDenom, Decimals: input.QuoteDecimals}
 		market := marketTypes.NewMarket(dnTypes.NewIDFromUint64(uint64(id)), input.BaseDenom, input.QuoteDenom)
 		marketExt := marketTypes.NewMarketExtended(market, baseCurrency, quoteCurrency)
 		extMarkets = append(extMarkets, marketExt)
@@ -231,7 +231,7 @@ func (i *MatchingPoolInput) PrintCurves(pool *MatcherPool) {
 	}
 }
 
-func Test_Matching_XARExample(t *testing.T) {
+func TestOB_Matching_XARExample(t *testing.T) {
 	// End-to-end test with XAR example.
 	inputs := MatchingPoolInput{
 		Markets: []MatchingPoolMarketInput{
@@ -261,7 +261,7 @@ func Test_Matching_XARExample(t *testing.T) {
 	inputs.PrintCurves(&matcherPool)
 }
 
-func Test_Matching_NotionExample(t *testing.T) {
+func TestOB_Matching_NotionExample(t *testing.T) {
 	// End-to-end test with Dfinance Notion example.
 	inputs := MatchingPoolInput{
 		Markets: []MatchingPoolMarketInput{
@@ -291,7 +291,7 @@ func Test_Matching_NotionExample(t *testing.T) {
 	inputs.PrintCurves(&matcherPool)
 }
 
-func Test_Matching_ProRata(t *testing.T) {
+func TestOB_Matching_ProRata(t *testing.T) {
 	// Specific test.
 	// Ask amount is twice larger than Bid amount (ProRata = 2.0): only half of Asks should be filled.
 	inputs := MatchingPoolInput{
@@ -318,7 +318,7 @@ func Test_Matching_ProRata(t *testing.T) {
 	inputs.PrintResults(results)
 }
 
-func Test_Matching_FillPriority(t *testing.T) {
+func TestOB_Matching_FillPriority(t *testing.T) {
 	// Specific test.
 	// Result MaxAskVolume is 25 (ProRata = 3.6).
 	// Ask orders would be filled from the lowest (50) and each fill would be weighted with ProRata.
@@ -354,7 +354,7 @@ func Test_Matching_FillPriority(t *testing.T) {
 	inputs.PrintCurves(&matcherPool)
 }
 
-func Test_Matching_TwoOrders(t *testing.T) {
+func TestOB_Matching_TwoOrders(t *testing.T) {
 	// Two orders, no crossing check.
 	// Aggregates will "draw" two parallel lines (with the same Quantity) and CP would be found by min diff (left).
 	inputs := MatchingPoolInput{

@@ -95,7 +95,7 @@ func queryGetCurrency(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte,
 		return nil, sdkErrors.Wrapf(types.ErrInternal, "failed to parse params: %v", err)
 	}
 
-	currency, err := k.GetCurrency(ctx, params.Denom)
+	currency, err := k.ccsKeeper.GetCurrency(ctx, params.Denom)
 	if err != nil {
 		return nil, err
 	}

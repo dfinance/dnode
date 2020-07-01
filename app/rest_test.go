@@ -25,18 +25,20 @@ import (
 	"github.com/dfinance/dnode/x/vm"
 )
 
-func TestCurrencyREST(t *testing.T) {
+func TestCurrency_REST(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
 
+	ccDenom := "btc"
+	ccDecimals := ct.Currencies[ccDenom].Decimals
 	recipientAddr := ct.Accounts["validator1"].Address
-	curAmount, curDecimals, denom, issueId := sdk.NewInt(100), uint8(0), "btc", "issue1"
+	curAmount, issueId := sdk.NewInt(100), "issue1"
 	withdrawAmounts := make([]sdk.Int, 0)
 
 	// issue currency
-	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, issueId, denom, curAmount, curDecimals).CheckSucceeded()
+	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, issueId, ccDenom, curAmount, ccDecimals).CheckSucceeded()
 	ct.ConfirmCall(issueId)
 
 	// check getIssue endpoint
@@ -44,7 +46,7 @@ func TestCurrencyREST(t *testing.T) {
 		req, respMsg := ct.RestQueryCurrenciesIssue(issueId)
 		req.CheckSucceeded()
 
-		require.Equal(t, denom, respMsg.Denom)
+		require.Equal(t, ccDenom, respMsg.Denom)
 		require.True(t, respMsg.Amount.Equal(curAmount))
 		require.Equal(t, recipientAddr, respMsg.Payee.String())
 
@@ -60,12 +62,12 @@ func TestCurrencyREST(t *testing.T) {
 
 	// check getCurrency endpoint
 	{
-		req, respMsg := ct.RestQueryCurrenciesCurrency(denom)
+		req, respMsg := ct.RestQueryCurrenciesCurrency(ccDenom)
 		req.CheckSucceeded()
 
-		require.Equal(t, denom, respMsg.Denom)
+		require.Equal(t, ccDenom, respMsg.Denom)
 		require.True(t, respMsg.Supply.Equal(curAmount))
-		require.Equal(t, curDecimals, respMsg.Decimals)
+		require.Equal(t, ccDecimals, respMsg.Decimals)
 
 		// incorrect inputs
 		{
@@ -88,7 +90,7 @@ func TestCurrencyREST(t *testing.T) {
 	// withdraw currency
 	newAmount := sdk.NewInt(50)
 	curAmount = curAmount.Sub(newAmount)
-	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
+	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, ccDenom, newAmount).CheckSucceeded()
 	withdrawAmounts = append(withdrawAmounts, newAmount)
 
 	// check getWithdraw endpoint
@@ -97,7 +99,7 @@ func TestCurrencyREST(t *testing.T) {
 		req.CheckSucceeded()
 
 		require.Equal(t, ct.IDs.ChainID, respMsg.PegZoneChainID)
-		require.Equal(t, denom, respMsg.Denom)
+		require.Equal(t, ccDenom, respMsg.Denom)
 		require.True(t, respMsg.Amount.Equal(newAmount))
 		require.Equal(t, recipientAddr, respMsg.Spender.String())
 		require.Equal(t, recipientAddr, respMsg.PegZoneSpender)
@@ -122,7 +124,7 @@ func TestCurrencyREST(t *testing.T) {
 	// withdraw currency once more
 	newAmount = sdk.NewInt(25)
 	curAmount = curAmount.Sub(newAmount)
-	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
+	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, ccDenom, newAmount).CheckSucceeded()
 	withdrawAmounts = append(withdrawAmounts, newAmount)
 
 	// check getWithdraws endpoint
@@ -136,7 +138,7 @@ func TestCurrencyREST(t *testing.T) {
 			withdraw := (*respMsg)[i]
 			require.Equal(t, uint64(i), withdraw.ID.UInt64())
 			require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
-			require.Equal(t, denom, withdraw.Denom)
+			require.Equal(t, ccDenom, withdraw.Denom)
 			require.True(t, withdraw.Amount.Equal(amount))
 			require.Equal(t, recipientAddr, withdraw.Spender.String())
 			require.Equal(t, recipientAddr, withdraw.PegZoneSpender)
@@ -162,7 +164,7 @@ func TestCurrencyREST(t *testing.T) {
 	}
 }
 
-func Test_MSRest(t *testing.T) {
+func TestMS_Rest(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
@@ -254,7 +256,7 @@ func Test_MSRest(t *testing.T) {
 	}
 }
 
-func Test_OracleRest(t *testing.T) {
+func TestOracle_Rest(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
@@ -374,7 +376,7 @@ func Test_OracleRest(t *testing.T) {
 	}
 }
 
-func Test_POARest(t *testing.T) {
+func TestPOA_Rest(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
@@ -404,7 +406,7 @@ func Test_POARest(t *testing.T) {
 	}
 }
 
-func Test_VMRest(t *testing.T) {
+func TestVM_Rest(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
@@ -463,7 +465,7 @@ func Test_VMRest(t *testing.T) {
 	}
 }
 
-func Test_MarketsREST(t *testing.T) {
+func TestMarkets_REST(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
@@ -581,7 +583,7 @@ func Test_MarketsREST(t *testing.T) {
 	}
 }
 
-func Test_OrdersREST(t *testing.T) {
+func TestOrders_REST(t *testing.T) {
 	const (
 		DecimalsDFI = "1000000000000000000"
 		DecimalsETH = "1000000000000000000"

@@ -66,7 +66,6 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 	ct := CLITester{
 		IDs:               NewTestNodeIdConfig(),
 		BinaryPath:        NewTestBinaryPathConfig(),
-		Currencies:        NewCurrencyMap(),
 		VMCommunication:   NewTestVMCommunicationConfig(),
 		ConsensusTimings:  NewTestConsensusTimingConfig(),
 		GovernanceConfig:  NewGovernanceConfig(),
@@ -105,6 +104,8 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 	ct.startDemon(true, printDaemonLogs)
 
 	ct.UpdateAccountsBalance()
+
+	ct.Currencies = NewCurrencyMap(ct.Cdc, ct.GenesisState())
 
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
 

@@ -24,7 +24,7 @@ func (aggInput AggInput) Check(t *testing.T, agg OrderAggregates) {
 	}
 }
 
-func Test_OrderAggregate_Bid(t *testing.T) {
+func TestOB_OrderAggregate_Bid(t *testing.T) {
 	// zero input
 	{
 		agg := NewBidOrderAggregates(orderTypes.Orders{})
@@ -68,7 +68,7 @@ func Test_OrderAggregate_Bid(t *testing.T) {
 	}
 }
 
-func Test_OrderAggregate_Ask(t *testing.T) {
+func TestOB_OrderAggregate_Ask(t *testing.T) {
 	// zero input
 	{
 		agg := NewAskOrderAggregates(orderTypes.Orders{})

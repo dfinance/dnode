@@ -11,7 +11,7 @@ import (
 )
 
 // Test checks balance resource lcs marshalling.
-func TestCurrencies_ResBalance(t *testing.T) {
+func TestCCS_ResBalance(t *testing.T) {
 	inRes := ResBalance{Value: sdk.NewIntFromUint64(1234567890).BigInt()}
 
 	inBz, err := inRes.Bytes()
@@ -24,7 +24,7 @@ func TestCurrencies_ResBalance(t *testing.T) {
 }
 
 // Test check balance creation.
-func TestCurrencies_Balance(t *testing.T) {
+func TestCCS_Balance(t *testing.T) {
 	res := ResBalance{Value: sdk.NewIntFromUint64(1234567890).BigInt()}
 	resBz, err := res.Bytes()
 	require.NoError(t, err)
@@ -68,7 +68,7 @@ func TestCurrencies_Balance(t *testing.T) {
 }
 
 // Test check balances function.
-func TestCurrencies_Balances(t *testing.T) {
+func TestCCS_Balances(t *testing.T) {
 	balances := Balances{
 		Balance{
 			Denom:      "testa",

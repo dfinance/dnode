@@ -21,19 +21,24 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id, denom string, amount sdk.Int,
 		return sdkErrors.Wrapf(types.ErrWrongIssueID, "issue with ID %q: already exists", id)
 	}
 
-	if !k.HasCurrency(ctx, denom) {
-		return sdkErrors.Wrapf(types.ErrWrongDenom, "currency %q: not exists", denom)
+	// check and update currency
+	currency, err := k.ccsKeeper.GetCurrency(ctx, denom)
+	if err != nil {
+		return err
 	}
-
-	currency := k.getCurrency(ctx, denom)
 	if currency.Decimals != decimals {
 		return sdkErrors.Wrapf(types.ErrIncorrectDecimals, "currency %q decimals: %d", denom, currency.Decimals)
 	}
-	k.increaseSupply(ctx, denom, amount)
 
+	if err := k.ccsKeeper.IncreaseCurrencySupply(ctx, denom, amount); err != nil {
+		return err
+	}
+
+	// store issue
 	issue := types.NewIssue(denom, amount, payee)
 	k.storeIssue(ctx, id, issue)
 
+	// update account balance
 	newCoin := sdk.NewCoin(denom, amount)
 	if _, err := k.bankKeeper.AddCoins(ctx, payee, sdk.Coins{newCoin}); err != nil {
 		return sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q: %v", payee, err)

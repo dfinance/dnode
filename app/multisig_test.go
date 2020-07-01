@@ -24,7 +24,7 @@ const (
 	queryMsGetUniqueCall = "/custom/multisig/unique"
 )
 
-func Test_MSQueries(t *testing.T) {
+func TestMS_Queries(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -42,7 +42,7 @@ func Test_MSQueries(t *testing.T) {
 	}
 }
 
-func Test_MSVoting(t *testing.T) {
+func TestMS_Voting(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -195,7 +195,7 @@ func Test_MSVoting(t *testing.T) {
 	}
 }
 
-func Test_MSBlockHeight(t *testing.T) {
+func TestMS_BlockHeight(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -205,6 +205,8 @@ func Test_MSBlockHeight(t *testing.T) {
 
 	_, err := setGenesis(t, app, genAccs)
 	require.NoError(t, err)
+
+	createCurrency(t, app, currency1Denom, 0)
 
 	// generate blocks to reach multisig call reject condition
 	senderAddr, senderPrivKey := genAddrs[0], genPrivKeys[0]

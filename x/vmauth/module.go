@@ -1,3 +1,5 @@
+// VM auth keeper is wrapper around standard auth.Keeper.
+// Module intercepts account related actions and interacts with currencies storage module to update VM resources (balances).
 package vmauth
 
 import (
@@ -6,14 +8,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	authCli "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
-	authRoutes "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	codec "github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/dfinance/dnode/x/vmauth/internal/keeper"
 )
 
 var (
@@ -21,108 +22,108 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
-// app module basics object
+// AppModuleBasic app module basics object.
 type AppModuleBasic struct{}
 
-// module name
+// Name gets module name.
 func (AppModuleBasic) Name() string {
-	return auth.ModuleName
+	return ModuleName
 }
 
-// register module codec
+// RegisterCodec registers module codec.
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	authTypes.RegisterCodec(cdc)
+	RegisterCodec(cdc)
 }
 
-// default genesis state
+// DefaultGenesis gets default module genesis state.
 func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return authTypes.ModuleCdc.MustMarshalJSON(authTypes.DefaultGenesisState())
+	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
 }
 
-// module validate genesis
+// ValidateGenesis validates module genesis state.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	var data authTypes.GenesisState
-	if err := authTypes.ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
+	var data GenesisState
+	if err := ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
 		return err
 	}
 
-	return authTypes.ValidateGenesis(data)
+	return ValidateGenesis(data)
 }
 
-// register rest routes
+// RegisterRESTRoutes registers module REST routes.
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
-	authRoutes.RegisterRoutes(ctx, rtr, authTypes.StoreKey)
+	RegisterRoutes(ctx, rtr, authTypes.StoreKey)
 }
 
-// get the root tx command of this module
+// GetTxCmd returns module root tx command.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return authCli.GetTxCmd(cdc)
+	return GetTxCmd(cdc)
 }
 
-// get the root query command of this module
+// GetQueryCmd returns module root query command.
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return authCli.GetQueryCmd(cdc)
+	return GetQueryCmd(cdc)
 }
 
-//___________________________
-// app module object
+// AppModule is a app module type.
 type AppModule struct {
 	AppModuleBasic
-	accountKeeper *VMAccountKeeper
+	vmAccKeeper Keeper
 }
 
-// NewAppModule creates a new AppModule object
-func NewAppModule(accountKeeper *VMAccountKeeper) AppModule {
+// NewAppMsModule creates new AppMsModule object.
+func NewAppModule(vmAccKeeper Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		accountKeeper:  accountKeeper,
+		vmAccKeeper:    vmAccKeeper,
 	}
 }
 
-// module name
-func (AppModule) Name() string {
-	return authTypes.ModuleName
+// Name gets module name.
+func (app AppModule) Name() string {
+	return ModuleName
 }
 
-// register invariants
-func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+// RegisterInvariants registers module invariants.
+func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// module message route name
-func (AppModule) Route() string { return "" }
+// Route returns module messages route.
+func (app AppModule) Route() string { return "" }
 
-// module handler
-func (AppModule) NewHandler() sdk.Handler { return nil }
+// NewHandler returns module messages handler.
+func (app AppModule) NewHandler() sdk.Handler { return nil }
 
-// module querier route name
-func (AppModule) QuerierRoute() string {
-	return authTypes.QuerierRoute
+// QuerierRoute returns module querier route.
+func (app AppModule) QuerierRoute() string {
+	return QuerierRoute
 }
 
-// module querier
-func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.accountKeeper)
+// NewQuerierHandler creates module querier.
+func (app AppModule) NewQuerierHandler() sdk.Querier {
+	return keeper.NewQuerier(app.vmAccKeeper)
 }
 
-// module init-genesis
-func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	var genesisState auth.GenesisState
-	authTypes.ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-	am.accountKeeper.SetParams(ctx, genesisState.Params)
+// InitGenesis inits module-genesis state.
+func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	var genesisState GenesisState
+
+	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
+	app.vmAccKeeper.SetParams(ctx, genesisState.Params)
 
 	return []abci.ValidatorUpdate{}
 }
 
-// module export genesis
-func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	gs := auth.ExportGenesis(ctx, *am.accountKeeper.AccountKeeper)
+// ExportGenesis exports module genesis state.
+func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
+	gs := ExportGenesis(ctx, app.vmAccKeeper.AccountKeeper)
 
-	return authTypes.ModuleCdc.MustMarshalJSON(gs)
+	return ModuleCdc.MustMarshalJSON(gs)
 }
 
-// module begin-block
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+// BeginBlock performs module actions at a block start.
+func (app AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
-// module end-block
-func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+// EndBlock performs module actions at a block end.
+func (app AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }

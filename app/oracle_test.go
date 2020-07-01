@@ -21,7 +21,7 @@ const (
 	queryOracleGetAssetsPath          = "/custom/oracle/assets"
 )
 
-func Test_OracleQueries(t *testing.T) {
+func TestOracle_Queries(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -174,7 +174,7 @@ func Test_OracleQueries(t *testing.T) {
 	}
 }
 
-func Test_OracleAddOracle(t *testing.T) {
+func TestOracle_AddOracle(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -259,7 +259,7 @@ func Test_OracleAddOracle(t *testing.T) {
 	}
 }
 
-func Test_OracleSetOracles(t *testing.T) {
+func TestOracle_SetOracles(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -335,7 +335,7 @@ func Test_OracleSetOracles(t *testing.T) {
 	}
 }
 
-func Test_OracleAddAsset(t *testing.T) {
+func TestOracle_AddAsset(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -419,7 +419,7 @@ func Test_OracleAddAsset(t *testing.T) {
 	}
 }
 
-func Test_OracleSetAsset(t *testing.T) {
+func TestOracle_SetAsset(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
@@ -491,7 +491,7 @@ func Test_OracleSetAsset(t *testing.T) {
 	}
 }
 
-func Test_OraclePostPrices(t *testing.T) {
+func TestOracle_PostPrices(t *testing.T) {
 	t.Parallel()
 	app, server := newTestDnApp()
 	defer app.CloseConnections()

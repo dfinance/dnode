@@ -9,7 +9,7 @@ import (
 )
 
 // Test keeper store/get PathData methods.
-func TestCurrenciesKeeper_PathData(t *testing.T) {
+func TestCCSKeeper_PathData(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)

@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/dfinance/dnode/helpers"
-	"github.com/dfinance/dnode/x/currencies/internal/types"
+	"github.com/dfinance/dnode/x/cc_storage/internal/types"
 )
 
 // AddGenesisCurrencyInfo return genesis cmd which adds currency into node genesis state.

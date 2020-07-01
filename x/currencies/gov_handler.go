@@ -10,7 +10,7 @@ import (
 )
 
 // NewGovHandler creates proposal type handler for Gov module.
-func NewGovHandler(keeper Keeper) gov.Handler {
+func NewGovHandler(k Keeper) gov.Handler {
 	return func(ctx sdk.Context, c govTypes.Content) error {
 		if c.ProposalRoute() != GovRouterKey {
 			return fmt.Errorf("invalid proposal route %q for module %q", c.ProposalRoute(), ModuleName)
@@ -18,7 +18,7 @@ func NewGovHandler(keeper Keeper) gov.Handler {
 
 		switch p := c.(type) {
 		case AddCurrencyProposal:
-			return handleAddCurrencyProposal(ctx, keeper, p)
+			return handleAddCurrencyProposal(ctx, k, p)
 		default:
 			return fmt.Errorf("unsupported proposal content type %q for module %q", c.ProposalType(), ModuleName)
 		}
@@ -26,10 +26,10 @@ func NewGovHandler(keeper Keeper) gov.Handler {
 }
 
 // handleAddCurrencyProposal handles currency creation proposal.
-func handleAddCurrencyProposal(ctx sdk.Context, keeper Keeper, p AddCurrencyProposal) error {
-	logger := keeper.GetLogger(ctx)
+func handleAddCurrencyProposal(ctx sdk.Context, k Keeper, p AddCurrencyProposal) error {
+	logger := k.GetLogger(ctx)
 
-	err := keeper.CreateCurrency(ctx, p.Denom, p.GetCurrencyParams())
+	err := k.CreateCurrency(ctx, p.Denom, p.GetCurrencyParams())
 	if err != nil {
 		return sdkErrors.Wrapf(ErrGovInvalidProposal, "creating currency: %v", err)
 	}

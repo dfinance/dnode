@@ -16,12 +16,12 @@ import (
 type Keeper struct {
 	storeKey   sdk.StoreKey
 	cdc        *codec.Codec
-	router     msmodule.Router
+	router     msmodule.MsRouter
 	paramStore params.Subspace
 }
 
 // Creating new multisignature keeper implementation.
-func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, router msmodule.Router, paramStore params.Subspace) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, router msmodule.MsRouter, paramStore params.Subspace) Keeper {
 	keeper := Keeper{
 		storeKey:   storeKey,
 		cdc:        cdc,

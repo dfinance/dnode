@@ -7,9 +7,6 @@ import (
 
 type (
 	Keeper              = keeper.Keeper
-	GenesisState        = types.GenesisState
-	Currency            = types.Currency
-	CurrencyParams      = types.CurrencyParams
 	Issue               = types.Issue
 	Withdraw            = types.Withdraw
 	Withdraws           = types.Withdraws
@@ -20,18 +17,13 @@ type (
 	IssueReq            = types.IssueReq
 	WithdrawsReq        = types.WithdrawsReq
 	WithdrawReq         = types.WithdrawReq
-	ResCurrencyInfo     = types.ResCurrencyInfo
-	ResBalance          = types.ResBalance
-	Balance             = types.Balance
-	Balances            = types.Balances
 )
 
 const (
-	ModuleName        = types.ModuleName
-	StoreKey          = types.StoreKey
-	DefaultParamspace = types.DefaultParamspace
-	RouterKey         = types.RouterKey
-	GovRouterKey      = types.GovRouterKey
+	ModuleName   = types.ModuleName
+	StoreKey     = types.StoreKey
+	RouterKey    = types.RouterKey
+	GovRouterKey = types.GovRouterKey
 	//
 	QueryWithdraws = types.QueryWithdraws
 	QueryWithdraw  = types.QueryWithdraw
@@ -46,7 +38,6 @@ var (
 	RegisterCodec          = types.RegisterCodec
 	NewKeeper              = keeper.NewKeeper
 	NewQuerier             = keeper.NewQuerier
-	DefaultGenesisState    = types.DefaultGenesisState
 	NewMsgIssueCurrency    = types.NewMsgIssueCurrency
 	NewMsgWithdrawCurrency = types.NewMsgWithdrawCurrency
 	NewAddCurrencyProposal = types.NewAddCurrencyProposal
@@ -58,6 +49,5 @@ var (
 	ErrWrongWithdrawID     = types.ErrWrongWithdrawID
 	ErrWrongPegZoneSpender = types.ErrWrongPegZoneSpender
 	ErrIncorrectDecimals   = types.ErrIncorrectDecimals
-	ErrWrongParams         = types.ErrWrongParams
 	ErrGovInvalidProposal  = types.ErrGovInvalidProposal
 )

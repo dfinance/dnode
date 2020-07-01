@@ -11,6 +11,7 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	ccTypes "github.com/dfinance/dnode/x/currencies"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
@@ -68,8 +69,8 @@ func (ct *CLITester) QueryCurrenciesWithdraws(page, limit int) (*QueryRequest, *
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesCurrency(denom string) (*QueryRequest, *ccTypes.Currency) {
-	resObj := &ccTypes.Currency{}
+func (ct *CLITester) QueryCurrenciesCurrency(denom string) (*QueryRequest, *ccsTypes.Currency) {
+	resObj := &ccsTypes.Currency{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("currencies", "currency", denom)
 

@@ -20,7 +20,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 		case types.QueryOrder:
 			return queryOrder(ctx, k, req)
 		default:
-			return nil, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "unknown orders query endpoint")
+			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unsupported query endpoint %q for module %q", path[0], types.ModuleName)
 		}
 	}
 }

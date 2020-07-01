@@ -17,12 +17,23 @@ func (k Keeper) WithdrawCurrency(ctx sdk.Context, denom string, amount sdk.Int, 
 		}
 	}()
 
-	if !k.HasCurrency(ctx, denom) {
-		return sdkErrors.Wrapf(sdkErrors.ErrInsufficientFunds, "denom %q: not found", denom)
+	// check and update currency
+	if _, err := k.ccsKeeper.GetCurrency(ctx, denom); err != nil {
+		return err
 	}
 
-	k.reduceSupply(ctx, denom, amount, spender, recipient, chainID)
+	if err := k.ccsKeeper.DecreaseCurrencySupply(ctx, denom, amount); err != nil {
+		return err
+	}
 
+	// store withdraw
+	newId := k.getNextWithdrawID(ctx)
+	withdraw := types.NewWithdraw(newId, denom, amount, spender, recipient, chainID, ctx.BlockHeader().Time.Unix(), ctx.TxBytes())
+
+	k.storeWithdraw(ctx, withdraw)
+	k.setLastWithdrawID(ctx, newId)
+
+	// update account balance
 	newCoin := sdk.NewCoin(denom, amount)
 	if _, err := k.bankKeeper.SubtractCoins(ctx, spender, sdk.Coins{newCoin}); err != nil {
 		return err

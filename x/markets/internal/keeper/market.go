@@ -43,12 +43,12 @@ func (k Keeper) GetExtended(ctx sdk.Context, id dnTypes.ID) (retMarket types.Mar
 		return
 	}
 
-	baseCurrency, err := k.ccKeeper.GetCurrency(ctx, market.BaseAssetDenom)
+	baseCurrency, err := k.ccsStorage.GetCurrency(ctx, market.BaseAssetDenom)
 	if err != nil {
 		retErr = sdkErrors.Wrap(err, "BaseAsset")
 	}
 
-	quoteCurrency, err := k.ccKeeper.GetCurrency(ctx, market.QuoteAssetDenom)
+	quoteCurrency, err := k.ccsStorage.GetCurrency(ctx, market.QuoteAssetDenom)
 	if err != nil {
 		retErr = sdkErrors.Wrap(err, "QuoteAsset")
 	}
@@ -68,10 +68,10 @@ func (k Keeper) Add(ctx sdk.Context, baseAsset, quoteAsset string) (types.Market
 		}
 	}
 
-	if !k.ccKeeper.HasCurrency(ctx, baseAsset) {
+	if !k.ccsStorage.HasCurrency(ctx, baseAsset) {
 		return types.Market{}, sdkErrors.Wrap(types.ErrWrongAssetDenom, "BaseAsset not registered")
 	}
-	if !k.ccKeeper.HasCurrency(ctx, quoteAsset) {
+	if !k.ccsStorage.HasCurrency(ctx, quoteAsset) {
 		return types.Market{}, sdkErrors.Wrap(types.ErrWrongAssetDenom, "QuoteAsset not registered")
 	}
 

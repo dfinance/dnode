@@ -13,7 +13,7 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
-func Test_OB_BasicNoDecimalAssets(t *testing.T) {
+func TestOB_BasicNoDecimalAssets(t *testing.T) {
 	const defOrderTtl = 60
 
 	baseDenom, quoteDenom := "base", "quote"
@@ -75,7 +75,7 @@ func Test_OB_BasicNoDecimalAssets(t *testing.T) {
 	tester.CheckClientsOutput()
 }
 
-func Test_OB_BasicDiffDecimalAssets(t *testing.T) {
+func TestOB_BasicDiffDecimalAssets(t *testing.T) {
 	const defOrderTtl = 60
 
 	baseDenom, quoteDenom := "base", "quote"
@@ -137,7 +137,7 @@ func Test_OB_BasicDiffDecimalAssets(t *testing.T) {
 	tester.CheckClientsOutput()
 }
 
-func Test_OB_ManyOrders(t *testing.T) {
+func TestOB_ManyOrders(t *testing.T) {
 	const (
 		defOrderTtl      = 60
 		inputOrdersCount = 10000

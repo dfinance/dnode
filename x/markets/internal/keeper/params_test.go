@@ -11,7 +11,7 @@ import (
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
-func Test_Params_StoreIO(t *testing.T) {
+func TestMarketsKeeper_Params_StoreIO(t *testing.T) {
 	input := NewTestInput(t)
 
 	inParams := types.Params{

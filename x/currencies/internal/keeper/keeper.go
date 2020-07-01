@@ -1,14 +1,13 @@
-// Currencies module keeper stores currency info, issue, withdraw data.
+// Currencies module keeper stores issue, withdraw data.
 package keeper
 
 import (
 	cdcCodec "github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/dfinance/dnode/x/common_vm"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
@@ -16,10 +15,8 @@ import (
 type Keeper struct {
 	cdc        *cdcCodec.Codec
 	storeKey   sdk.StoreKey
-	paramStore params.Subspace
 	bankKeeper bank.Keeper
-	vmKeeper   common_vm.VMStorage
-	tst        bool
+	ccsKeeper  ccsTypes.Keeper
 }
 
 // GetLogger gets logger with keeper context.
@@ -28,13 +25,11 @@ func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
 }
 
 // Create new currency keeper.
-func NewKeeper(cdc *cdcCodec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace, bankKeeper bank.Keeper, vmKeeper common_vm.VMStorage) Keeper {
+func NewKeeper(cdc *cdcCodec.Codec, storeKey sdk.StoreKey, bankKeeper bank.Keeper, ccsKeeper ccsTypes.Keeper) Keeper {
 	return Keeper{
 		cdc:        cdc,
 		storeKey:   storeKey,
-		paramStore: paramSubspace.WithKeyTable(types.ParamKeyTable()),
 		bankKeeper: bankKeeper,
-		vmKeeper:   vmKeeper,
-		tst:        true,
+		ccsKeeper:  ccsKeeper,
 	}
 }

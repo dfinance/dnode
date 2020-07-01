@@ -11,8 +11,8 @@ import (
 	"github.com/dfinance/dnode/x/common_vm"
 )
 
-// Test MsgIssueCurrency ValidateBasic.
-func TestCurrencies_NewCurrencyInfo(t *testing.T) {
+// Test NewCurrencyInfo.
+func TestCCS_NewCurrencyInfo(t *testing.T) {
 	currency := NewCurrency("test", sdk.NewIntFromUint64(100), 8)
 
 	// ok: stdlib

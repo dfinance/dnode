@@ -14,10 +14,10 @@ import (
 // PubKeys must be set in context for all signers before any other sigverify decorators run
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type SetPubKeyDecorator struct {
-	ak vmauth.VMAccountKeeper
+	ak vmauth.Keeper
 }
 
-func NewSetPubKeyDecorator(ak vmauth.VMAccountKeeper) SetPubKeyDecorator {
+func NewSetPubKeyDecorator(ak vmauth.Keeper) SetPubKeyDecorator {
 	return SetPubKeyDecorator{
 		ak: ak,
 	}

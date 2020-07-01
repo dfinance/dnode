@@ -1,19 +1,19 @@
-package vmauth
+package cli
 
 import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 	codec "github.com/tendermint/go-amino"
+
+	"github.com/dfinance/dnode/helpers"
 )
 
-// GetAccountCmd returns a query account that will display the state of the
-// account at a given address.
+// GetAccountCmd returns a query cmd that return account state (same as std keeper query, but using VM balance resources).
 func GetAccountCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "account [address]",
@@ -22,20 +22,23 @@ func GetAccountCmd(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			key, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "address", args[0], err)
-			}
-
-			bz, err := cdc.MarshalJSON(types.QueryAccountParams{
-				Address: key,
-			})
+			// parse inputs
+			addr, err := helpers.ParseSdkAddressParam("address", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData("custom/acc/account", bz)
+			// prepare request
+			req := authTypes.QueryAccountParams{
+				Address: addr,
+			}
 
+			bz, err := cdc.MarshalJSON(req)
+			if err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", authTypes.QuerierRoute, authTypes.QueryAccount), bz)
 			if err != nil {
 				return err
 			}
@@ -48,6 +51,9 @@ func GetAccountCmd(cdc *codec.Codec) *cobra.Command {
 			return cliCtx.PrintOutput(acc)
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"account address",
+	})
 
 	return flags.GetCommands(cmd)[0]
 }

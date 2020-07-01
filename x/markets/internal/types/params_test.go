@@ -11,7 +11,7 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
-func Test_Params_Valid(t *testing.T) {
+func TestMarkets_Params_Valid(t *testing.T) {
 	params := Params{
 		Markets: Markets{
 			Market{
@@ -29,7 +29,7 @@ func Test_Params_Valid(t *testing.T) {
 	require.NoError(t, params.Validate())
 }
 
-func Test_Params_Invalid(t *testing.T) {
+func TestMarkets_Params_Invalid(t *testing.T) {
 	// invalid ID
 	{
 		params := Params{

@@ -13,7 +13,7 @@ import (
 	orderTypes "github.com/dfinance/dnode/x/orders"
 )
 
-func Test_Sorter(t *testing.T) {
+func TestOB_Sorter(t *testing.T) {
 	orders := orderTypes.Orders{
 		orderTypes.Order{ID: dnTypes.NewIDFromUint64(1), Price: sdk.NewUint(100)},
 		orderTypes.Order{ID: dnTypes.NewIDFromUint64(0), Price: sdk.NewUint(50)},

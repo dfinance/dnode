@@ -3,7 +3,6 @@
 package app
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math"
 	"testing"
@@ -14,7 +13,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	obTypes "github.com/dfinance/dnode/x/orderbook"
 	orderTypes "github.com/dfinance/dnode/x/orders"
@@ -35,7 +34,7 @@ type OrderBookTester struct {
 	// markets maps (key: ID)
 	Markets map[string]marketTypes.Market
 	// currencies info map (key: denom)
-	Currencies map[string]ccTypes.Currency
+	Currencies map[string]ccsTypes.Currency
 }
 
 type ClientTestState struct {
@@ -80,7 +79,7 @@ func NewOrderBookTester(t *testing.T, app *DnServiceApp) OrderBookTester {
 		t:          t,
 		app:        app,
 		Markets:    make(map[string]marketTypes.Market, 0),
-		Currencies: make(map[string]ccTypes.Currency, 0),
+		Currencies: make(map[string]ccsTypes.Currency, 0),
 		Clients:    make([]*ClientTestState, 0),
 	}
 
@@ -121,17 +120,18 @@ func (tester *OrderBookTester) RegisterMarket(ownerAddr sdk.AccAddress, baseDeno
 	ctx := GetContext(tester.app, false)
 
 	registerCurrency := func(denom string, decimals uint8) {
-		pathHex := hex.EncodeToString(ownerAddr.Bytes())
+		_, balancePathHex := GenerateRandomBytes(10)
+		_, infoPathHex := GenerateRandomBytes(10)
 
-		ccParams := ccTypes.CurrencyParams{
+		ccParams := ccsTypes.CurrencyParams{
 			Decimals:       decimals,
-			BalancePathHex: pathHex,
-			InfoPathHex:    pathHex,
+			BalancePathHex: balancePathHex,
+			InfoPathHex:    infoPathHex,
 		}
 		err := tester.app.ccKeeper.CreateCurrency(ctx, denom, ccParams)
 		require.NoError(tester.t, err, "adding currency for denom: %s", denom)
 
-		currency, err := tester.app.ccKeeper.GetCurrency(ctx, denom)
+		currency, err := tester.app.ccsKeeper.GetCurrency(ctx, denom)
 		require.NoError(tester.t, err, "checking currency added for denom: %s", denom)
 		tester.Currencies[denom] = currency
 	}

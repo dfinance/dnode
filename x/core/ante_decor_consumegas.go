@@ -21,10 +21,10 @@ import (
 // CONTRACT: To use this decorator, signatures of transaction must be represented
 // as types.StdSignature otherwise simulate mode will incorrectly estimate gas cost.
 type ConsumeTxSizeGasDecorator struct {
-	ak vmauth.VMAccountKeeper
+	ak vmauth.Keeper
 }
 
-func NewConsumeGasForTxSizeDecorator(ak vmauth.VMAccountKeeper) ConsumeTxSizeGasDecorator {
+func NewConsumeGasForTxSizeDecorator(ak vmauth.Keeper) ConsumeTxSizeGasDecorator {
 	return ConsumeTxSizeGasDecorator{
 		ak: ak,
 	}

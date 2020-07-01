@@ -81,7 +81,7 @@ func StartMockDVMService(listener net.Listener) *MockDVM {
 	return s
 }
 
-func Test_ConsensusFailure(t *testing.T) {
+func TestInteg_ConsensusFailure(t *testing.T) {
 	const script = `
 		script {
 			use 0x1::Account;
@@ -146,7 +146,7 @@ func Test_ConsensusFailure(t *testing.T) {
 	}
 }
 
-func Test_VMExecuteScript(t *testing.T) {
+func TestIntegVM_ExecuteScript(t *testing.T) {
 	const script = `
 		script {
 			use 0x1::Account;
@@ -189,7 +189,7 @@ func Test_VMExecuteScript(t *testing.T) {
 	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
 }
 
-func Test_VMRequestRetry(t *testing.T) {
+func TestIntegVM_RequestRetry(t *testing.T) {
 	// TODO: Test should be rewritten as its success / failure is Moon phase dependant (not repeatable)
 	t.Skip()
 
@@ -271,7 +271,7 @@ func Test_VMRequestRetry(t *testing.T) {
 }
 
 // Test is skipped: should be used for dnode <-> dvm (uni-binary) communication over UDS debug locally (with DVM binaries).
-func Test_VMCommunicationUDS(t *testing.T) {
+func TestIntegVM_CommunicationUDS(t *testing.T) {
 	t.Skip()
 
 	const (

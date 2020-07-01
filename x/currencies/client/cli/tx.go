@@ -6,6 +6,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/cosmos/cosmos-sdk/x/gov"
+	govCli "github.com/cosmos/cosmos-sdk/x/gov/client/cli"
 	"github.com/spf13/cobra"
 
 	"github.com/dfinance/dnode/helpers"
@@ -49,6 +51,72 @@ func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 		"reduce coin amount",
 		"spender address for PegZone",
 		"chainID for PegZone blockchain",
+	})
+
+	return cmd
+}
+
+// Send governance add currency proposal.
+func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "add-currency-proposal [denom] [decimals] [vmBalancePathHex] [vmInfoPathHex]",
+		Args:    cobra.ExactArgs(4),
+		Short:   "Submit currency add proposal, creating non-token currency",
+		Example: "add-currency-proposal dfi 18 {balancePath} {infoPath} --deposit 100dfi --fees 1dfi",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
+
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
+			if err != nil {
+				return err
+			}
+
+			deposit, err := helpers.ParseDepositFlag(cmd.Flags())
+			if err != nil {
+				return err
+			}
+
+			denom := args[0]
+			if err := helpers.ValidateDenomParam("denom", denom, helpers.ParamTypeCliArg); err != nil {
+				return err
+			}
+
+			decimals, err := helpers.ParseUint8Param("decimals", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			balancePath := args[2]
+			if err := helpers.ValidateHexStringParam("vmBalancePathHex", balancePath, helpers.ParamTypeCliArg); err != nil {
+				return err
+			}
+
+			infoPath := args[3]
+			if err := helpers.ValidateHexStringParam("vmInfoPathHex", infoPath, helpers.ParamTypeCliArg); err != nil {
+				return err
+			}
+
+			// prepare and send message
+			content := types.NewAddCurrencyProposal(denom, decimals, balancePath, infoPath)
+			if err := content.ValidateBasic(); err != nil {
+				return err
+			}
+
+			msg := gov.NewMsgSubmitProposal(content, deposit, fromAddr)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msg})
+		},
+	}
+	cmd.Flags().String(govCli.FlagDeposit, "", "deposit of proposal")
+	helpers.BuildCmdHelp(cmd, []string{
+		"new currency denomination symbol",
+		"new currency number of decimals",
+		"DVM path for balance resources [HEX string]",
+		"DVM path for currencyInfo resource [HEX string]",
 	})
 
 	return cmd

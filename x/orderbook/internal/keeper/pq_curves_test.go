@@ -65,7 +65,7 @@ func (input SDCurvesInput) Check(t *testing.T) {
 	}
 }
 
-func Test_SDCurves_New(t *testing.T) {
+func TestOB_SDCurves_New(t *testing.T) {
 	// zero Bids
 	{
 		input := SDCurvesInput{
@@ -202,7 +202,7 @@ func (input ClearanceStateInput) Check(t *testing.T, caseName string) {
 	require.True(t, state.ProRataInvert.Equal(proRataInvert), "State: ProRataInvert")
 }
 
-func Test_SDCurves_State(t *testing.T) {
+func TestOB_SDCurves_State(t *testing.T) {
 	// empty curves
 	{
 		input := ClearanceStateInput{

@@ -26,6 +26,7 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v0.0.6
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.5.1
 	github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15

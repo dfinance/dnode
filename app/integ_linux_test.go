@@ -13,7 +13,7 @@ import (
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 )
 
-func Test_VMCommunicationUDSOverDocker(t *testing.T) {
+func TestIntegVM_CommunicationUDSOverDocker(t *testing.T) {
 	const (
 		dsSocket  = "ds.sock"
 		dvmSocket = "dvm.sock"

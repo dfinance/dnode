@@ -3,8 +3,6 @@
 package app
 
 import (
-	"encoding/hex"
-	"math/rand"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,6 +13,7 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	ccTypes "github.com/dfinance/dnode/x/currencies"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 )
@@ -345,25 +344,18 @@ func TestCurrenciesApp_Withdraw(t *testing.T) {
 		wrongDenom := currency2Denom
 
 		res, err := withdrawCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
-		CheckResultError(t, sdkErrors.ErrInsufficientFunds, res, err)
+		CheckResultError(t, ccsTypes.ErrWrongDenom, res, err)
 	}
 }
 
 func createCurrency(t *testing.T, app *DnServiceApp, ccDenom string, ccDecimals uint8) {
-	generatePath := func() string {
-		rndBytes := make([]byte, 10)
-		_, err := rand.Read(rndBytes)
-		if err != nil {
-			panic(err)
-		}
+	_, balancePathHex := GenerateRandomBytes(10)
+	_, infoPathHex := GenerateRandomBytes(10)
 
-		return hex.EncodeToString(rndBytes)
-	}
-
-	params := ccTypes.CurrencyParams{
+	params := ccsTypes.CurrencyParams{
 		Decimals:       ccDecimals,
-		BalancePathHex: generatePath(),
-		InfoPathHex:    generatePath(),
+		BalancePathHex: balancePathHex,
+		InfoPathHex:    infoPathHex,
 	}
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
@@ -398,7 +390,7 @@ func withdrawCurrency(t *testing.T, app *DnServiceApp,
 }
 
 func checkCurrencyExists(t *testing.T, app *DnServiceApp, denom string, supply sdk.Int, decimals uint8) {
-	currencyObj := ccTypes.Currency{}
+	currencyObj := ccsTypes.Currency{}
 	CheckRunQuery(t, app, ccTypes.CurrencyReq{Denom: denom}, queryCurrencyCurrencyPath, &currencyObj)
 
 	require.Equal(t, denom, currencyObj.Denom, "denom")
@@ -435,7 +427,7 @@ func checkRecipientCoins(t *testing.T, app *DnServiceApp, recipientAddr sdk.AccA
 
 	require.True(t, actualBalance.Equal(checkBalance), " denom %q, checkBalance / actualBalance mismatch: %s / %s", denom, checkBalance.String(), actualBalance.String())
 
-	balances, err := app.ccKeeper.GetAccountBalanceResources(GetContext(app, true), recipientAddr)
+	balances, err := app.ccsKeeper.GetAccountBalanceResources(GetContext(app, true), recipientAddr)
 	require.NoError(t, err, "denom %q: reading balance resources", denom)
 	for _, balance := range balances {
 		if balance.Denom == denom {

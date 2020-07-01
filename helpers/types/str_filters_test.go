@@ -1,3 +1,5 @@
+// +build integ
+
 package types
 
 import (

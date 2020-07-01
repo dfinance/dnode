@@ -1,5 +1,5 @@
-// Currencies module registers / issues and withdraws currencies.
-// Module is integrated with VM for CurrencyInfo and Balance resources.
+// Currencies module issues and withdraws currencies.
+// Module is integrated with currencies storage module for CurrencyInfo and Balance resources.
 // Issue is a multisig operation.
 package currencies
 
@@ -18,7 +18,6 @@ import (
 	"github.com/dfinance/dnode/x/currencies/client"
 	"github.com/dfinance/dnode/x/currencies/client/rest"
 	"github.com/dfinance/dnode/x/currencies/internal/keeper"
-	types2 "github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
 var (
@@ -31,26 +30,19 @@ type AppModuleBasic struct{}
 
 // Name gets module name.
 func (AppModuleBasic) Name() string {
-	return types2.ModuleName
+	return ModuleName
 }
 
 // RegisterCodec registers module codec.
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types2.RegisterCodec(cdc)
+	RegisterCodec(cdc)
 }
 
 // DefaultGenesis gets default module genesis state.
-func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
-}
+func (AppModuleBasic) DefaultGenesis() json.RawMessage { return nil }
 
 // ValidateGenesis validates module genesis state.
-func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	state := GenesisState{}
-	ModuleCdc.MustUnmarshalJSON(bz, &state)
-
-	return state.Validate()
-}
+func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error { return nil }
 
 // RegisterRESTRoutes registers module REST routes.
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
@@ -83,7 +75,7 @@ func NewAppMsModule(ccKeeper keeper.Keeper) msmodule.AppMsModule {
 
 // Name gets module name.
 func (AppModule) Name() string {
-	return types2.ModuleName
+	return ModuleName
 }
 
 // RegisterInvariants registers module invariants.
@@ -106,7 +98,7 @@ func (app AppModule) NewMsHandler() msmodule.MsHandler {
 
 // QuerierRoute returns module querier route.
 func (app AppModule) QuerierRoute() string {
-	return types2.RouterKey
+	return RouterKey
 }
 
 // NewQuerierHandler creates module querier.
@@ -116,15 +108,11 @@ func (app AppModule) NewQuerierHandler() sdk.Querier {
 
 // InitGenesis inits module-genesis state.
 func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	app.ccKeeper.InitGenesis(ctx, data)
-
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports module genesis state.
-func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return app.ccKeeper.ExportGenesis(ctx)
-}
+func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage { return nil }
 
 // BeginBlock performs module actions at a block start.
 func (app AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}

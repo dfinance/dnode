@@ -1,4 +1,4 @@
-package vmauth
+package types
 
 import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"

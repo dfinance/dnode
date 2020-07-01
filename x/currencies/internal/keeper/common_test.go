@@ -13,12 +13,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/dfinance/dnode/helpers/tests"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 	"github.com/dfinance/dnode/x/multisig"
@@ -34,77 +35,31 @@ const (
 )
 
 var (
-	maccPerms map[string][]string = map[string][]string{
-		auth.FeeCollectorName: nil,
-	}
 	defAmount = sdk.NewInt(10)
 )
-
-// VM storage.
-type VMStorageImpl struct {
-	storeKey sdk.StoreKey
-}
-
-// Create VM storage for tests.
-func NewVMStorage(storeKey sdk.StoreKey) VMStorageImpl {
-	return VMStorageImpl{
-		storeKey: storeKey,
-	}
-}
-
-func (storage VMStorageImpl) GetOracleAccessPath(_ string) *vm_grpc.VMAccessPath {
-	return &vm_grpc.VMAccessPath{}
-}
-
-func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
-	store := ctx.KVStore(storage.storeKey)
-	store.Set(common_vm.MakePathKey(accessPath), value)
-}
-
-func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
-	store := ctx.KVStore(storage.storeKey)
-	return store.Get(common_vm.MakePathKey(accessPath))
-}
-
-func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
-	store := ctx.KVStore(storage.storeKey)
-	store.Delete(common_vm.MakePathKey(accessPath))
-}
-
-func (storage VMStorageImpl) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
-	store := ctx.KVStore(storage.storeKey)
-	return store.Has(common_vm.MakePathKey(accessPath))
-}
 
 type TestInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
 	//
-	keyAccount   *sdk.KVStoreKey
-	keyCC        *sdk.KVStoreKey
-	keySupply    *sdk.KVStoreKey
-	keyParams    *sdk.KVStoreKey
-	tkeyParams   *sdk.TransientStoreKey
-	keyPoa       *sdk.KVStoreKey
-	keyMS        *sdk.KVStoreKey
-	keyVMStorage *sdk.KVStoreKey
+	keyAccount *sdk.KVStoreKey
+	keyCC      *sdk.KVStoreKey
+	keyCCS     *sdk.KVStoreKey
+	keySupply  *sdk.KVStoreKey
+	keyParams  *sdk.KVStoreKey
+	tkeyParams *sdk.TransientStoreKey
+	keyPoa     *sdk.KVStoreKey
+	keyMS      *sdk.KVStoreKey
+	keyVMS     *sdk.KVStoreKey
 	//
 	accountKeeper auth.AccountKeeper
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
 	paramsKeeper  params.Keeper
+	ccsStorage    ccsTypes.Keeper
 	keeper        Keeper
 	//
 	vmStorage common_vm.VMStorage
-}
-
-func (input *TestInput) ModuleAccountAddrs() map[string]bool {
-	modAccAddrs := make(map[string]bool)
-	for acc := range maccPerms {
-		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
-	}
-
-	return modAccAddrs
 }
 
 func (input *TestInput) CreateAccount(t *testing.T, accName string, coins sdk.Coins) (accAddress sdk.AccAddress) {
@@ -124,15 +79,16 @@ func (input *TestInput) CreateAccount(t *testing.T, accName string, coins sdk.Co
 
 func NewTestInput(t *testing.T) TestInput {
 	input := TestInput{
-		cdc:          codec.New(),
-		keyParams:    sdk.NewKVStoreKey(params.StoreKey),
-		keyAccount:   sdk.NewKVStoreKey(auth.StoreKey),
-		keySupply:    sdk.NewKVStoreKey(supply.StoreKey),
-		keyPoa:       sdk.NewKVStoreKey(poa.StoreKey),
-		keyMS:        sdk.NewKVStoreKey(multisig.StoreKey),
-		keyCC:        sdk.NewKVStoreKey(types.StoreKey),
-		keyVMStorage: sdk.NewKVStoreKey(vm.StoreKey),
-		tkeyParams:   sdk.NewTransientStoreKey(params.TStoreKey),
+		cdc:        codec.New(),
+		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
+		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
+		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
+		keyPoa:     sdk.NewKVStoreKey(poa.StoreKey),
+		keyMS:      sdk.NewKVStoreKey(multisig.StoreKey),
+		keyCCS:     sdk.NewKVStoreKey(ccsTypes.StoreKey),
+		keyCC:      sdk.NewKVStoreKey(types.StoreKey),
+		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
+		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 	}
 
 	// register codec
@@ -152,8 +108,9 @@ func NewTestInput(t *testing.T) TestInput {
 	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyPoa, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyMS, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyCCS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyCC, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyVMStorage, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyVMS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
 	err := mstore.LoadLatestVersion()
 	if err != nil {
@@ -161,21 +118,21 @@ func NewTestInput(t *testing.T) TestInput {
 	}
 
 	// create test VM storage
-	input.vmStorage = NewVMStorage(input.keyVMStorage)
+	input.vmStorage = tests.NewVMStorage(input.keyVMS)
 
 	// create target and dependant keepers
 	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
-	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), input.ModuleAccountAddrs())
-	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, maccPerms)
-	input.keeper = NewKeeper(input.cdc, input.keyCC, input.paramsKeeper.Subspace(types.DefaultParamspace), input.bankKeeper, input.vmStorage)
+	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
+	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
+	input.ccsStorage = ccsTypes.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccsTypes.DefaultParamspace), input.vmStorage)
+	input.keeper = NewKeeper(input.cdc, input.keyCC, input.bankKeeper, input.ccsStorage)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
 
 	// init genesis
-	bz := input.cdc.MustMarshalJSON(types.DefaultGenesisState())
-	input.keeper.InitGenesis(input.ctx, bz)
+	input.ccsStorage.InitDefaultGenesis(input.ctx)
 
 	return input
 }

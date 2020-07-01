@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/dfinance/dnode/helpers"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
@@ -37,7 +38,7 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var out types.Currency
+			var out ccsTypes.Currency
 			cdc.MustUnmarshalJSON(res, &out)
 
 			return cliCtx.PrintOutput(out)

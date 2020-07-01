@@ -9,7 +9,7 @@ import (
 )
 
 // Test keeper CreateCurrency method.
-func TestCurrencies_CurrencyParams_Validate(t *testing.T) {
+func TestCCS_CurrencyParams_Validate(t *testing.T) {
 	// ok
 	{
 		param := CurrencyParams{0, "0102", "AABB"}

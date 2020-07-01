@@ -7,11 +7,13 @@ import (
 	"path"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 
 	"github.com/dfinance/dnode/cmd/config"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/orders"
 )
 
@@ -68,13 +70,28 @@ func NewTestBinaryPathConfig() BinaryPathConfig {
 }
 
 type CurrencyInfo struct {
-	Decimals    uint8
-	BalancePath string
-	InfoPath    string
+	Decimals       uint8
+	BalancePathHex string
+	BalancePath    []byte
+	InfoPathHex    string
+	InfoPath       []byte
 }
 
-func NewCurrencyMap() map[string]CurrencyInfo {
+func NewCurrencyMap(cdc *codec.Codec, state GenesisState) map[string]CurrencyInfo {
 	currencies := make(map[string]CurrencyInfo)
+
+	var ccsGenesis ccsTypes.GenesisState
+	cdc.MustUnmarshalJSON(state[ccsTypes.ModuleName], &ccsGenesis)
+
+	for denom, params := range ccsGenesis.CurrenciesParams {
+		currencies[denom] = CurrencyInfo{
+			Decimals:       params.Decimals,
+			BalancePathHex: params.BalancePathHex,
+			BalancePath:    params.BalancePath(),
+			InfoPathHex:    params.InfoPathHex,
+			InfoPath:       params.InfoPath(),
+		}
+	}
 
 	return currencies
 }

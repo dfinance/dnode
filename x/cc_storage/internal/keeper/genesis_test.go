@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dnode/x/currencies/internal/types"
+	"github.com/dfinance/dnode/x/cc_storage/internal/types"
 )
 
 // Check genesis currencies created and params updated.
-func TestCurrenciesKeeper_InitGenesis(t *testing.T) {
+func TestCCSKeeper_InitGenesis(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)
@@ -34,7 +34,7 @@ func TestCurrenciesKeeper_InitGenesis(t *testing.T) {
 }
 
 // Check runtime genesis export.
-func TestCurrenciesKeeper_ExportGenesis(t *testing.T) {
+func TestCCSKeeper_ExportGenesis(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)

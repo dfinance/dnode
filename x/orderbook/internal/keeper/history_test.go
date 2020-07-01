@@ -24,7 +24,7 @@ func CompareHistoryItems(t *testing.T, item1, item2 types.HistoryItem) {
 	require.Equal(t, item1.BlockHeight, item2.BlockHeight, "BlockHeight")
 }
 
-func Test_History_StoreIO(t *testing.T) {
+func TestOB_History_StoreIO(t *testing.T) {
 	input := NewTestInput(t)
 	marketID := dnTypes.NewIDFromUint64(0)
 

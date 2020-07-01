@@ -12,7 +12,7 @@ import (
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	"github.com/dfinance/dnode/helpers/tests/sb-trading-app/bot"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 )
 
 type Watcher struct {
@@ -50,8 +50,8 @@ type Market struct {
 type MarketState struct {
 	Market
 	id            dnTypes.ID
-	baseCurrency  ccTypes.Currency
-	quoteCurrency ccTypes.Currency
+	baseCurrency  ccsTypes.Currency
+	quoteCurrency ccsTypes.Currency
 	bots          []*bot.Bot
 }
 

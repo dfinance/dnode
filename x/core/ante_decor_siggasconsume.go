@@ -13,11 +13,11 @@ import (
 // CONTRACT: Pubkeys are set in context for all signers before this decorator runs
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type SigGasConsumeDecorator struct {
-	ak             vmauth.VMAccountKeeper
+	ak             vmauth.Keeper
 	sigGasConsumer ante.SignatureVerificationGasConsumer
 }
 
-func NewSigGasConsumeDecorator(ak vmauth.VMAccountKeeper, sigGasConsumer ante.SignatureVerificationGasConsumer) SigGasConsumeDecorator {
+func NewSigGasConsumeDecorator(ak vmauth.Keeper, sigGasConsumer ante.SignatureVerificationGasConsumer) SigGasConsumeDecorator {
 	return SigGasConsumeDecorator{
 		ak:             ak,
 		sigGasConsumer: sigGasConsumer,

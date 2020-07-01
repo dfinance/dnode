@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	marketTypes "github.com/dfinance/dnode/x/markets"
 )
 
@@ -22,11 +22,11 @@ func NewMockOrder() Order {
 		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"),
 		Market: marketTypes.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(0),
-			BaseCurrency: ccTypes.Currency{
+			BaseCurrency: ccsTypes.Currency{
 				Denom:    "btc",
 				Decimals: 8,
 			},
-			QuoteCurrency: ccTypes.Currency{
+			QuoteCurrency: ccsTypes.Currency{
 				Denom:    "dfi",
 				Decimals: 18,
 			},
@@ -40,7 +40,7 @@ func NewMockOrder() Order {
 	}
 }
 
-func Test_Order_ValidatePriceQuantity(t *testing.T) {
+func TestOrders_Order_ValidatePriceQuantity(t *testing.T) {
 	orderOk := NewMockOrder()
 
 	// ok
@@ -61,7 +61,7 @@ func Test_Order_ValidatePriceQuantity(t *testing.T) {
 	}
 }
 
-func Test_Order_LockCoin(t *testing.T) {
+func TestOrders_Order_LockCoin(t *testing.T) {
 	order := NewMockOrder()
 
 	// bid order

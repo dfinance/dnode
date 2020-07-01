@@ -4,8 +4,10 @@ package app
 
 import (
 	"bytes"
+	"encoding/hex"
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"sort"
 	"testing"
@@ -604,4 +606,14 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 	}
 
 	return nil, nil
+}
+
+func GenerateRandomBytes(length int) ([]byte, string) {
+	rndBytes := make([]byte, length)
+
+	if _, err := rand.Read(rndBytes); err != nil {
+		panic(err)
+	}
+
+	return rndBytes, hex.EncodeToString(rndBytes)
 }

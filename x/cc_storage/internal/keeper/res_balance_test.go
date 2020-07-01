@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
+	"github.com/dfinance/dnode/x/cc_storage/internal/types"
 	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
 type balanceInput struct {
@@ -63,7 +63,7 @@ func (l balanceInputs) AccountWithCoins(t *testing.T, acc exported.Account) expo
 
 func (l balanceInputs) CheckNewBalances(t *testing.T, filledBalances, emptyBalances types.Balances, err error) {
 	require.NoError(t, err, "newBalances error")
-	require.Equal(t, len(l), len(filledBalances) + len(emptyBalances), "length mismatch")
+	require.Equal(t, len(l), len(filledBalances)+len(emptyBalances), "length mismatch")
 
 	for _, input := range l {
 		found := false
@@ -122,7 +122,7 @@ func newBalanceInputs(t *testing.T, addr sdk.AccAddress) balanceInputs {
 }
 
 // Test checks keeper newBalance method.
-func TestCurrenciesKeeper_newBalance(t *testing.T) {
+func TestCCSKeeper_newBalance(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)
@@ -159,7 +159,7 @@ func TestCurrenciesKeeper_newBalance(t *testing.T) {
 }
 
 // Test checks keeper newBalances method.
-func TestCurrenciesKeeper_newBalances(t *testing.T) {
+func TestCCSKeeper_newBalances(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)
@@ -178,14 +178,14 @@ func TestCurrenciesKeeper_newBalances(t *testing.T) {
 
 	// half filled, half empty
 	{
-		for i := 0; i < len(inputs) / 2; i++ {
+		for i := 0; i < len(inputs)/2; i++ {
 			inputs[i].Amount = sdk.NewIntFromUint64(uint64(i) + 100)
 		}
 
 		filledBalances, emptyBalances, err := keeper.newBalances(ctx, addr, inputs.Coins())
 		inputs.CheckNewBalances(t, filledBalances, emptyBalances, err)
-		require.Len(t, filledBalances, len(inputs) / 2)
-		require.Len(t, emptyBalances, len(inputs) / 2)
+		require.Len(t, filledBalances, len(inputs)/2)
+		require.Len(t, emptyBalances, len(inputs)/2)
 	}
 
 	// all filled
@@ -214,7 +214,7 @@ func TestCurrenciesKeeper_newBalances(t *testing.T) {
 }
 
 // Test checks SetAccountBalanceResources / GetAccountBalanceResources / RemoveAccountBalanceResources keeper methods.
-func TestCurrenciesKeeper_AccountBalanceResources(t *testing.T) {
+func TestCCSKeeper_AccountBalanceResources(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)

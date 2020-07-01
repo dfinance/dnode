@@ -8,7 +8,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/currencies"
+	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
@@ -16,15 +16,15 @@ import (
 type Keeper struct {
 	cdc           *codec.Codec
 	paramSubspace subspace.Subspace
-	ccKeeper      currencies.Keeper
+	ccsStorage    ccsTypes.Keeper
 }
 
 // NewKeeper creates keeper object.
-func NewKeeper(cdc *codec.Codec, paramStore subspace.Subspace, cck currencies.Keeper) Keeper {
+func NewKeeper(cdc *codec.Codec, paramStore subspace.Subspace, ccsKeeper ccsTypes.Keeper) Keeper {
 	return Keeper{
 		cdc:           cdc,
 		paramSubspace: paramStore.WithKeyTable(types.ParamKeyTable()),
-		ccKeeper:      cck,
+		ccsStorage:    ccsKeeper,
 	}
 }
 

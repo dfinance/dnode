@@ -30,12 +30,14 @@ const (
 	NotFoundErrSubString = "The specified item could not be found in the keyring"
 )
 
-func TestCurrenciesCLI(t *testing.T) {
+func TestCurrencies_CLI(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, true)
 	defer ct.Close()
 
-	ccDenom, ccCurAmount, ccDecimals, ccRecipient := "btc", sdk.NewInt(1000), uint8(1), ct.Accounts["validator1"].Address
+	ccDenom := "btc"
+	ccDecimals := ct.Currencies[ccDenom].Decimals
+	ccCurAmount, ccRecipient := sdk.NewInt(1000), ct.Accounts["validator1"].Address
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 	issueID := "issue1"
 
@@ -227,7 +229,7 @@ func TestCurrenciesCLI(t *testing.T) {
 	}
 }
 
-func Test_OracleCLI(t *testing.T) {
+func TestOracle_CLI(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
@@ -513,7 +515,7 @@ func Test_OracleCLI(t *testing.T) {
 	}
 }
 
-func Test_PoaCLI(t *testing.T) {
+func TestPoa_CLI(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
@@ -761,13 +763,14 @@ func Test_PoaCLI(t *testing.T) {
 	}
 }
 
-func Test_MultiSigCLI(t *testing.T) {
+func TestMS_CLI(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	ccDenom1, ccDenom2 := "btc", "eth"
-	ccCurAmount, ccDecimals := sdk.NewInt(1000), uint8(1)
+	ccDecimals1, ccDecimals2 := ct.Currencies[ccDenom1].Decimals, ct.Currencies[ccDenom2].Decimals
+	ccCurAmount := sdk.NewInt(1000)
 	callUniqueId1, callUniqueId2 := "issue1", "issue2"
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 
@@ -780,8 +783,8 @@ func Test_MultiSigCLI(t *testing.T) {
 	}
 
 	// create calls
-	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], callUniqueId1, ccDenom1, ccCurAmount, ccDecimals).CheckSucceeded()
-	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], callUniqueId2, ccDenom2, ccCurAmount, ccDecimals).SetGas(300000).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], callUniqueId1, ccDenom1, ccCurAmount, ccDecimals1).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], callUniqueId2, ccDenom2, ccCurAmount, ccDecimals2).SetGas(300000).CheckSucceeded()
 
 	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))
@@ -941,7 +944,7 @@ func Test_MultiSigCLI(t *testing.T) {
 	}
 }
 
-func Test_MarketsCLI(t *testing.T) {
+func TestMarkets_CLI(t *testing.T) {
 	t.Parallel()
 	ct := cliTester.New(t, false)
 	defer ct.Close()
@@ -1060,7 +1063,7 @@ func Test_MarketsCLI(t *testing.T) {
 	}
 }
 
-func Test_OrdersCLI(t *testing.T) {
+func TestOrders_CLI(t *testing.T) {
 	const (
 		DecimalsDFI = "1000000000000000000"
 		DecimalsETH = "1000000000000000000"

@@ -1,4 +1,3 @@
-// Multisignature router implementation.
 package msmodule
 
 import (
@@ -7,35 +6,28 @@ import (
 )
 
 var (
-	_ Router = (*router)(nil)
+	_ MsRouter = (*msRouter)(nil)
 
 	isAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9]+$`).MatchString
 )
 
-// Router implements a governance Handler router.
-//
-// TODO: Use generic router (ref #3976).
-type Router interface {
-	AddRoute(r string, h MsHandler) (rtr Router)
+// MsRouter defines multi signature message router (copy from gov module).
+type MsRouter interface {
+	AddRoute(r string, h MsHandler) MsRouter
 	HasRoute(r string) bool
-	GetRoute(path string) (h MsHandler)
+	GetRoute(path string) MsHandler
 	Seal()
 }
 
-type router struct {
+// msRouter is a MsRouter implementation.
+type msRouter struct {
 	routes map[string]MsHandler
 	sealed bool
 }
 
-func NewRouter() Router {
-	return &router{
-		routes: make(map[string]MsHandler),
-	}
-}
-
 // Seal seals the router which prohibits any subsequent route handlers to be
 // added. Seal will panic if called more than once.
-func (rtr *router) Seal() {
+func (rtr *msRouter) Seal() {
 	if rtr.sealed {
 		panic("router already sealed")
 	}
@@ -44,7 +36,7 @@ func (rtr *router) Seal() {
 
 // AddRoute adds a governance handler for a given path. It returns the Router
 // so AddRoute calls can be linked. It will panic if the router is sealed.
-func (rtr *router) AddRoute(path string, h MsHandler) Router {
+func (rtr *msRouter) AddRoute(path string, h MsHandler) MsRouter {
 	if rtr.sealed {
 		panic("router sealed; cannot add route handler")
 	}
@@ -61,15 +53,22 @@ func (rtr *router) AddRoute(path string, h MsHandler) Router {
 }
 
 // HasRoute returns true if the router has a path registered or false otherwise.
-func (rtr *router) HasRoute(path string) bool {
+func (rtr *msRouter) HasRoute(path string) bool {
 	return rtr.routes[path] != nil
 }
 
 // GetRoute returns a Handler for a given path.
-func (rtr *router) GetRoute(path string) MsHandler {
+func (rtr *msRouter) GetRoute(path string) MsHandler {
 	if !rtr.HasRoute(path) {
 		panic(fmt.Sprintf("route \"%s\" does not exist", path))
 	}
 
 	return rtr.routes[path]
+}
+
+// NewMsRouter creates a new multi signature router.
+func NewMsRouter() MsRouter {
+	return &msRouter{
+		routes: make(map[string]MsHandler),
+	}
 }

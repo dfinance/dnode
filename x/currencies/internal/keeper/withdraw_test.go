@@ -41,12 +41,12 @@ func TestCurrenciesKeeper_WithdrawCurrency(t *testing.T) {
 		require.True(t, input.bankKeeper.GetCoins(ctx, addr).AmountOf(defDenom).IsZero())
 
 		// check currency supply decreased
-		currency, err := keeper.GetCurrency(ctx, defDenom)
+		currency, err := input.ccsStorage.GetCurrency(ctx, defDenom)
 		require.NoError(t, err)
 		require.True(t, currency.Supply.IsZero())
 
 		// check currencyInfo supply decreased
-		curInfo, err := keeper.GetResStdCurrencyInfo(ctx, defDenom)
+		curInfo, err := input.ccsStorage.GetResStdCurrencyInfo(ctx, defDenom)
 		require.NoError(t, err)
 		require.Equal(t, curInfo.TotalSupply.String(), "0")
 	}

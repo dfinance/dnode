@@ -50,7 +50,7 @@ type testInput struct {
 	tkeyParams *sdk.TransientStoreKey
 	keyMs      *sdk.KVStoreKey
 
-	msRouter msmodule.Router
+	msRouter msmodule.MsRouter
 
 	accountKeeper auth.AccountKeeper
 	bankKeeper    bank.Keeper
@@ -134,7 +134,7 @@ func setupTestInput(t *testing.T) testInput {
 
 	input.poaKeeper = poa.NewKeeper(input.keyPoa, input.cdc, input.paramsKeeper.Subspace(poa.DefaultParamspace))
 
-	input.msRouter = msmodule.NewRouter()
+	input.msRouter = msmodule.NewMsRouter()
 	input.msRouter.AddRoute(msgRouteNoop, func(ctx sdk.Context, msg msmodule.MsMsg) error {
 		return nil
 	})
