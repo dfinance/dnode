@@ -213,7 +213,7 @@ func TestCurrenciesKeeper_newBalances(t *testing.T) {
 	}
 }
 
-// Test checks SetAccountBalanceResources / GetAccountBalanceResources keeper methods.
+// Test checks SetAccountBalanceResources / GetAccountBalanceResources / RemoveAccountBalanceResources keeper methods.
 func TestCurrenciesKeeper_AccountBalanceResources(t *testing.T) {
 	t.Parallel()
 
@@ -240,6 +240,7 @@ func TestCurrenciesKeeper_AccountBalanceResources(t *testing.T) {
 
 		balances, err := keeper.GetAccountBalanceResources(ctx, acc.GetAddress())
 		inputs.CheckResources(t, ctx, storage, balances, err)
+		require.Len(t, balances, 1)
 	}
 
 	// add balance (total: 2)
@@ -251,6 +252,7 @@ func TestCurrenciesKeeper_AccountBalanceResources(t *testing.T) {
 
 		balances, err := keeper.GetAccountBalanceResources(ctx, acc.GetAddress())
 		inputs.CheckResources(t, ctx, storage, balances, err)
+		require.Len(t, balances, 2)
 	}
 
 	// all balances (with updates)
@@ -264,5 +266,19 @@ func TestCurrenciesKeeper_AccountBalanceResources(t *testing.T) {
 
 		balances, err := keeper.GetAccountBalanceResources(ctx, acc.GetAddress())
 		inputs.CheckResources(t, ctx, storage, balances, err)
+		require.Len(t, balances, len(inputs))
+	}
+
+	// remove all resources
+	{
+		for i := 0; i < len(inputs); i++ {
+			inputs[i].Amount = sdk.ZeroInt()
+		}
+
+		keeper.RemoveAccountBalanceResources(ctx, addr)
+
+		balances, err := keeper.GetAccountBalanceResources(ctx, acc.GetAddress())
+		inputs.CheckResources(t, ctx, storage, balances, err)
+		require.Len(t, balances, 0)
 	}
 }

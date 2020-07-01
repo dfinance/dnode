@@ -14,7 +14,7 @@ import (
 	codec "github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/currencies/client"
 	"github.com/dfinance/dnode/x/currencies/client/rest"
 	"github.com/dfinance/dnode/x/currencies/internal/keeper"
@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	_ core.AppMsModule      = AppModule{}
+	_ msmodule.AppMsModule  = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
@@ -74,7 +74,7 @@ type AppModule struct {
 }
 
 // NewAppMsModule creates new AppMsModule object.
-func NewAppMsModule(ccKeeper keeper.Keeper) core.AppMsModule {
+func NewAppMsModule(ccKeeper keeper.Keeper) msmodule.AppMsModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		ccKeeper:       ccKeeper,
@@ -100,7 +100,7 @@ func (app AppModule) NewHandler() sdk.Handler {
 }
 
 // NewMsHandler returns module multisig messages handler.
-func (app AppModule) NewMsHandler() core.MsHandler {
+func (app AppModule) NewMsHandler() msmodule.MsHandler {
 	return NewMsHandler(app.ccKeeper)
 }
 

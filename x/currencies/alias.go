@@ -20,6 +20,10 @@ type (
 	IssueReq            = types.IssueReq
 	WithdrawsReq        = types.WithdrawsReq
 	WithdrawReq         = types.WithdrawReq
+	ResCurrencyInfo     = types.ResCurrencyInfo
+	ResBalance          = types.ResBalance
+	Balance             = types.Balance
+	Balances            = types.Balances
 )
 
 const (

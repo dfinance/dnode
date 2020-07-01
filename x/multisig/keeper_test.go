@@ -18,7 +18,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/dfinance/dnode/helpers/tests/utils"
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	mstypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/poa"
 )
@@ -50,7 +50,7 @@ type testInput struct {
 	tkeyParams *sdk.TransientStoreKey
 	keyMs      *sdk.KVStoreKey
 
-	msRouter core.Router
+	msRouter msmodule.Router
 
 	accountKeeper auth.AccountKeeper
 	bankKeeper    bank.Keeper
@@ -134,8 +134,8 @@ func setupTestInput(t *testing.T) testInput {
 
 	input.poaKeeper = poa.NewKeeper(input.keyPoa, input.cdc, input.paramsKeeper.Subspace(poa.DefaultParamspace))
 
-	input.msRouter = core.NewRouter()
-	input.msRouter.AddRoute(msgRouteNoop, func(ctx sdk.Context, msg core.MsMsg) error {
+	input.msRouter = msmodule.NewRouter()
+	input.msRouter.AddRoute(msgRouteNoop, func(ctx sdk.Context, msg msmodule.MsMsg) error {
 		return nil
 	})
 

@@ -5,12 +5,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/multisig/types"
 )
 
 // Submit call to execute by confirmations from validators.
-func (keeper Keeper) SubmitCall(ctx sdk.Context, msg core.MsMsg, uniqueID string, sender sdk.AccAddress) error {
+func (keeper Keeper) SubmitCall(ctx sdk.Context, msg msmodule.MsMsg, uniqueID string, sender sdk.AccAddress) error {
 	if !keeper.router.HasRoute(msg.Route()) {
 		return sdkErrors.Wrap(types.ErrRouteDoesntExist, msg.Route())
 	}

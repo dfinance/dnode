@@ -1,5 +1,5 @@
 // MsManager implements Manager functional, but also allows to manage multisignature modules.
-package core
+package msmodule
 
 import (
 	"github.com/cosmos/cosmos-sdk/types/module"

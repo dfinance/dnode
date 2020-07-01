@@ -68,11 +68,11 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 // app module object
 type AppModule struct {
 	AppModuleBasic
-	accountKeeper VMAccountKeeper
+	accountKeeper *VMAccountKeeper
 }
 
 // NewAppModule creates a new AppModule object
-func NewAppModule(accountKeeper VMAccountKeeper) AppModule {
+func NewAppModule(accountKeeper *VMAccountKeeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		accountKeeper:  accountKeeper,

@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 )
 
 // Call that will be executed itself, contains msg instances, that executing via router and handler.
@@ -20,14 +20,14 @@ type Call struct {
 	Failed   bool           `json:"failed"`                       // Call failed to execute
 	Rejected bool           `json:"rejected"`                     // Call was rejected
 	Error    string         `json:"error"`                        // Call failed reason
-	Msg      core.MsMsg     `json:"msg_data"`                     // Message to execute
+	Msg      msmodule.MsMsg `json:"msg_data"`                     // Message to execute
 	MsgRoute string         `json:"msg_route" example:"oracle"`   // Message route
 	MsgType  string         `json:"msg_type" example:"add_asset"` // Message type
 	Height   int64          `json:"height" example:"1"`           // BlockHeight when call was submitted
 }
 
 // Create new call instance.
-func NewCall(id uint64, uniqueID string, msg core.MsMsg, height int64, creator sdk.AccAddress) (Call, error) {
+func NewCall(id uint64, uniqueID string, msg msmodule.MsMsg, height int64, creator sdk.AccAddress) (Call, error) {
 	msgRoute := msg.Route()
 
 	if msgRoute == "" {

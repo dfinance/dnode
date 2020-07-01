@@ -31,14 +31,13 @@ import (
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	vmConfig "github.com/dfinance/dnode/cmd/config"
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/genaccounts"
 	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
-	"github.com/dfinance/dnode/x/vmauth"
 )
 
 const (
@@ -168,18 +167,6 @@ func init() {
 
 	if flag.Lookup(FlagDSMockListen) == nil {
 		dataListenMock = flag.String(FlagDSMockListen, DefaultMockDataListen, "address of mocked data server to launch/connect")
-	}
-
-	if err := vmauth.AddDenomPath(currency1Denom, "00"); err != nil {
-		panic(err)
-	}
-
-	if err := vmauth.AddDenomPath(currency2Denom, "01"); err != nil {
-		panic(err)
-	}
-
-	if err := vmauth.AddDenomPath(currency3Denom, "11"); err != nil {
-		panic(err)
 	}
 }
 
@@ -545,7 +532,7 @@ func ResultErrorMsg(res *sdk.Result, err error) string {
 	return fmt.Sprintf("result with log %q: %v", resLog, err)
 }
 
-func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg core.MsMsg, submitAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
+func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg msmodule.MsMsg, submitAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
 	confirmCnt := int(app.poaKeeper.GetEnoughConfirmations(GetContext(app, true)))
 
 	// lazy input check

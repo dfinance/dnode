@@ -63,6 +63,19 @@ func (k Keeper) GetAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddress)
 	return balances, nil
 }
 
+// RemoveAccountBalanceResources removes all account balance resource.
+func (k Keeper) RemoveAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddress) {
+	addrLibra := common_vm.Bech32ToLibra(addr)
+
+	for _, params := range k.getCurrenciesParams(ctx) {
+		accessPath := &vm_grpc.VMAccessPath{
+			Address: addrLibra,
+			Path:    params.BalancePath(),
+		}
+		k.vmKeeper.DelValue(ctx, accessPath)
+	}
+}
+
 // newBalance converts sdk.Coin for sdk.AccAddress to Balance.
 func (k Keeper) newBalance(ctx sdk.Context, addr sdk.AccAddress, coin sdk.Coin) (types.Balance, error) {
 	denom := coin.Denom

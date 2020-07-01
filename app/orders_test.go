@@ -43,6 +43,9 @@ func Test_Orders_Ttl(t *testing.T) {
 		tester.AddClient(clientAddr, baseSupply, quoteSupply)
 
 		tester.EndBlock()
+
+		acc := app.accountKeeper.GetAccount(GetContext(app, true), clientAddr)
+		t.Logf("acc %q: %v", clientAddr.String(), acc.GetCoins())
 	}
 
 	var longTtlOrderID dnTypes.ID
@@ -67,6 +70,9 @@ func Test_Orders_Ttl(t *testing.T) {
 
 	// emulate TTL and recheck orders existence
 	{
+		acc := app.accountKeeper.GetAccount(GetContext(app, true), clientAddr)
+		t.Logf("acc %q: %v", clientAddr.String(), acc.GetCoins())
+
 		tester.BeginBlockWithDuration(2 * time.Second)
 		tester.EndBlock()
 

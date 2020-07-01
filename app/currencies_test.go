@@ -3,12 +3,15 @@
 package app
 
 import (
+	"encoding/hex"
+	"math/rand"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
@@ -66,6 +69,9 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 	}
 
 	// issue multiple currencies
+	createCurrency(t, app, currency1Denom, 0)
+	createCurrency(t, app, currency2Denom, 0)
+	createCurrency(t, app, currency3Denom, 0)
 	issueCurrency(t, app, currency1Denom, amount, 0, "msg1", issue1ID, recipientIdx, genAccs, genPrivKeys, true)
 	issueCurrency(t, app, currency2Denom, amount, 0, "msg2", issue2ID, recipientIdx, genAccs, genPrivKeys, true)
 	issueCurrency(t, app, currency3Denom, amount, 0, "msg3", issue3ID, recipientIdx, genAccs, genPrivKeys, true)
@@ -137,6 +143,8 @@ func TestCurrenciesApp_Issue(t *testing.T) {
 	recipientIdx, recipientAddr := uint(0), genAccs[0].Address
 	curAmount, curDecimals, denom := amount, uint8(0), currency1Denom
 
+	createCurrency(t, app, denom, curDecimals)
+
 	// ok: currency is issued
 	{
 		msgId, issueId := "1", "issue1"
@@ -205,6 +213,7 @@ func TestCurrenciesApp_IssueHugeAmount(t *testing.T) {
 		hugeAmount, ok := sdk.NewIntFromString("100000000000000000000000000000000000000")
 		require.True(t, ok)
 
+		createCurrency(t, app, denom, 0)
 		issueCurrency(t, app, denom, hugeAmount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
 		checkIssueExists(t, app, issueId, denom, hugeAmount, recipientAddr)
 		checkCurrencyExists(t, app, denom, hugeAmount, 0)
@@ -218,6 +227,7 @@ func TestCurrenciesApp_IssueHugeAmount(t *testing.T) {
 		hugeAmount, ok := sdk.NewIntFromString("1000000000000000000000000000000000000000000000")
 		require.True(t, ok)
 
+		createCurrency(t, app, denom, 0)
 		issueCurrency(t, app, denom, hugeAmount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
 		checkIssueExists(t, app, issueId, denom, hugeAmount, recipientAddr)
 		checkCurrencyExists(t, app, denom, hugeAmount, 0)
@@ -242,6 +252,8 @@ func TestCurrenciesApp_Decimals(t *testing.T) {
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
 	curAmount, curDecimals, denom := sdk.OneInt(), uint8(1), currency1Denom
+
+	createCurrency(t, app, denom, curDecimals)
 
 	// issue currency amount with decimals
 	{
@@ -292,6 +304,8 @@ func TestCurrenciesApp_Withdraw(t *testing.T) {
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
 	curSupply, denom := amount.Mul(sdk.NewInt(2)), currency1Denom
 
+	createCurrency(t, app, denom, 0)
+
 	// issue currency
 	{
 		issueCurrency(t, app, denom, curSupply, 0, "1", issue1ID, recipientIdx, genAccs, genPrivKeys, true)
@@ -333,6 +347,30 @@ func TestCurrenciesApp_Withdraw(t *testing.T) {
 		res, err := withdrawCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
 		CheckResultError(t, sdkErrors.ErrInsufficientFunds, res, err)
 	}
+}
+
+func createCurrency(t *testing.T, app *DnServiceApp, ccDenom string, ccDecimals uint8) {
+	generatePath := func() string {
+		rndBytes := make([]byte, 10)
+		_, err := rand.Read(rndBytes)
+		if err != nil {
+			panic(err)
+		}
+
+		return hex.EncodeToString(rndBytes)
+	}
+
+	params := ccTypes.CurrencyParams{
+		Decimals:       ccDecimals,
+		BalancePathHex: generatePath(),
+		InfoPathHex:    generatePath(),
+	}
+
+	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
+	err := app.ccKeeper.CreateCurrency(GetContext(app, false), ccDenom, params)
+	require.NoError(t, err, "creating %q currency", ccDenom)
+	app.EndBlock(abci.RequestEndBlock{})
+	app.Commit()
 }
 
 func issueCurrency(t *testing.T, app *DnServiceApp,
@@ -396,4 +434,12 @@ func checkRecipientCoins(t *testing.T, app *DnServiceApp, recipientAddr sdk.AccA
 	actualBalance := coins.AmountOf(denom)
 
 	require.True(t, actualBalance.Equal(checkBalance), " denom %q, checkBalance / actualBalance mismatch: %s / %s", denom, checkBalance.String(), actualBalance.String())
+
+	balances, err := app.ccKeeper.GetAccountBalanceResources(GetContext(app, true), recipientAddr)
+	require.NoError(t, err, "denom %q: reading balance resources", denom)
+	for _, balance := range balances {
+		if balance.Denom == denom {
+			require.Equal(t, amount.String(), balance.Resource.Value.String(), "denom %q: checking balance resource value", denom)
+		}
+	}
 }

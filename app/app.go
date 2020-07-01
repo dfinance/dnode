@@ -33,6 +33,7 @@ import (
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/markets"
@@ -95,13 +96,13 @@ type DnServiceApp struct {
 	*BaseApp
 
 	cdc       *codec.Codec
-	msRouter  core.Router
+	msRouter  msmodule.Router
 	govRouter govTypes.Router
 
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 
-	accountKeeper   vmauth.VMAccountKeeper
+	accountKeeper   *vmauth.VMAccountKeeper
 	bankKeeper      bank.Keeper
 	supplyKeeper    supply.Keeper
 	paramsKeeper    params.Keeper
@@ -118,7 +119,7 @@ type DnServiceApp struct {
 	orderKeeper     orders.Keeper
 	orderBookKeeper orderbook.Keeper
 
-	mm *core.MsManager
+	mm *msmodule.MsManager
 
 	// vm connection
 	vmConn     *grpc.ClientConn
@@ -232,7 +233,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		cdc,
 		keys[auth.StoreKey],
 		app.paramsKeeper.Subspace(auth.DefaultParamspace),
-		app.vmKeeper,
 		auth.ProtoBaseAccount,
 	)
 
@@ -262,6 +262,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.bankKeeper,
 		app.vmKeeper,
 	)
+	app.accountKeeper.SetCurrenciesKeeper(app.ccKeeper)
 
 	// Initializing distribution keeper.
 	app.distrKeeper = distribution.NewKeeper(
@@ -298,7 +299,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	// Initializing multisignature router.
-	app.msRouter = core.NewRouter()
+	app.msRouter = msmodule.NewRouter()
 
 	// Initializing multisignature router.
 	app.msKeeper = multisig.NewKeeper(
@@ -354,7 +355,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	// Initializing multisignature manager.
-	app.mm = core.NewMsManager(
+	app.mm = msmodule.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		vmauth.NewAppModule(app.accountKeeper),

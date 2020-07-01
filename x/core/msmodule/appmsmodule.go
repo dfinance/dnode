@@ -1,5 +1,5 @@
 // Implements AppMsModule interface (inherits from AppModule) to manage also multisignature modules.
-package core
+package msmodule
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"

@@ -19,6 +19,7 @@ type Keeper struct {
 	paramStore params.Subspace
 	bankKeeper bank.Keeper
 	vmKeeper   common_vm.VMStorage
+	tst        bool
 }
 
 // GetLogger gets logger with keeper context.
@@ -34,5 +35,6 @@ func NewKeeper(cdc *cdcCodec.Codec, storeKey sdk.StoreKey, paramSubspace params.
 		paramStore: paramSubspace.WithKeyTable(types.ParamKeyTable()),
 		bankKeeper: bankKeeper,
 		vmKeeper:   vmKeeper,
+		tst:        true,
 	}
 }

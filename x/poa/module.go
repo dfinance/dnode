@@ -13,14 +13,14 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/poa/client"
 	"github.com/dfinance/dnode/x/poa/client/rest"
 	"github.com/dfinance/dnode/x/poa/types"
 )
 
 var (
-	_ core.AppMsModule      = AppModule{}
+	_ msmodule.AppMsModule  = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
@@ -91,7 +91,7 @@ type AppModule struct {
 }
 
 // Create new PoA module.
-func NewAppMsModule(poaKeeper Keeper) core.AppMsModule {
+func NewAppMsModule(poaKeeper Keeper) msmodule.AppMsModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		poaKeeper:      poaKeeper,
@@ -113,7 +113,7 @@ func (AppModule) Route() string { return types.RouterKey }
 func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.poaKeeper) }
 
 // Create new multisignature handler.
-func (app AppModule) NewMsHandler() core.MsHandler { return NewMsHandler(app.poaKeeper) }
+func (app AppModule) NewMsHandler() msmodule.MsHandler { return NewMsHandler(app.poaKeeper) }
 
 // Get route for querier.
 func (AppModule) QuerierRoute() string { return types.RouterKey }

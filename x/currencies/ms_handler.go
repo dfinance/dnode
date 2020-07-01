@@ -4,13 +4,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/currencies/internal/keeper"
 )
 
 // NewMsHandler creates core.MsMsg type messages handler.
-func NewMsHandler(keeper keeper.Keeper) core.MsHandler {
-	return func(ctx sdk.Context, msg core.MsMsg) error {
+func NewMsHandler(keeper keeper.Keeper) msmodule.MsHandler {
+	return func(ctx sdk.Context, msg msmodule.MsMsg) error {
 		switch msg := msg.(type) {
 		case MsgIssueCurrency:
 			return handleMsMsgIssueCurrency(ctx, keeper, msg)

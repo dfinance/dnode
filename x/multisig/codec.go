@@ -4,7 +4,7 @@ package multisig
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/multisig/msgs"
 )
 
@@ -14,7 +14,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(msgs.MsgConfirmCall{}, "multisig/confirm-call", nil)
 	cdc.RegisterConcrete(msgs.MsgRevokeConfirm{}, "multisig/revoke-confirm", nil)
 
-	cdc.RegisterInterface((*core.MsMsg)(nil), nil)
+	cdc.RegisterInterface((*msmodule.MsMsg)(nil), nil)
 }
 
 var ModuleCdc *codec.Codec

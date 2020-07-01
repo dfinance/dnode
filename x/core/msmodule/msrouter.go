@@ -1,5 +1,5 @@
 // Multisignature router implementation.
-package core
+package msmodule
 
 import (
 	"fmt"

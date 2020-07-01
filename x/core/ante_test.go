@@ -31,7 +31,7 @@ var (
 type testInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
-	ak  vmauth.VMAccountKeeper
+	ak  *vmauth.VMAccountKeeper
 	sk  types.SupplyKeeper
 }
 

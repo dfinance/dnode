@@ -18,7 +18,6 @@ import (
 	marketTypes "github.com/dfinance/dnode/x/markets"
 	obTypes "github.com/dfinance/dnode/x/orderbook"
 	orderTypes "github.com/dfinance/dnode/x/orders"
-	"github.com/dfinance/dnode/x/vmauth"
 )
 
 const (
@@ -124,7 +123,6 @@ func (tester *OrderBookTester) RegisterMarket(ownerAddr sdk.AccAddress, baseDeno
 	registerCurrency := func(denom string, decimals uint8) {
 		pathHex := hex.EncodeToString(ownerAddr.Bytes())
 
-		require.NoError(tester.t, vmauth.AddDenomPath(denom, pathHex), "registering path for denom: %s", denom)
 		ccParams := ccTypes.CurrencyParams{
 			Decimals:       decimals,
 			BalancePathHex: pathHex,

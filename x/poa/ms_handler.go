@@ -5,14 +5,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/poa/msgs"
 	"github.com/dfinance/dnode/x/poa/types"
 )
 
 // New multisignature message handler for PoA module.
-func NewMsHandler(keeper Keeper) core.MsHandler {
-	return func(ctx sdk.Context, msg core.MsMsg) error {
+func NewMsHandler(keeper Keeper) msmodule.MsHandler {
+	return func(ctx sdk.Context, msg msmodule.MsMsg) error {
 		switch msg := msg.(type) {
 		case msgs.MsgAddValidator:
 			return handleMsMsgAddValidator(ctx, keeper, msg)
