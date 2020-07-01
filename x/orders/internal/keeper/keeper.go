@@ -47,10 +47,8 @@ func (k Keeper) PostOrder(
 	quantity sdk.Uint,
 	ttlInSec uint64) (types.Order, error) {
 
-	filter := markets.NewMarketsFilter
+	filter := markets.NewMarketsFilter(1, 1)
 	filter.AssetCode = assetCode.String()
-	filter.Page = 1
-	filter.Limit = 1
 
 	marketsList := k.marketKeeper.GetListFiltered(ctx, filter)
 

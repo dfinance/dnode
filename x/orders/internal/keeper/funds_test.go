@@ -3,15 +3,13 @@
 package keeper
 
 import (
-	helperTypes "github.com/dfinance/dnode/helpers/types"
-	"testing"
-	"time"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/stretchr/testify/require"
-
+	helperTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orders/internal/types"
+	"github.com/stretchr/testify/require"
+	"testing"
+	"time"
 )
 
 func Test_Keeper_OrderFill(t *testing.T) {

@@ -28,6 +28,14 @@ type MarketsReq struct {
 	AssetCode string
 }
 
+// NewMarketsFilter returned MarketsReq object with filled required fields page and limit.
+func NewMarketsFilter(page, limit int) MarketsReq {
+	return MarketsReq{
+		Page:  page,
+		Limit: limit,
+	}
+}
+
 // BaseDenomFilter check if BaseAssetDenom filter is enabled.
 func (r MarketsReq) BaseDenomFilter() bool {
 	return r.BaseAssetDenom != ""
