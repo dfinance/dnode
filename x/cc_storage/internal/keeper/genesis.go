@@ -24,7 +24,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	store := ctx.KVStore(k.storeKey)
 	state := types.GenesisState{
-		CurrenciesParams: make(types.CurrenciesParams, 0),
+		CurrenciesParams: make(types.CurrenciesParams),
 	}
 
 	keyPrefix := types.KeyCurrencyPrefix

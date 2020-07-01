@@ -21,7 +21,7 @@ func (s GenesisState) Validate() error {
 // DefaultGenesisState returns default genesis state (validation is done on module init).
 func DefaultGenesisState() GenesisState {
 	state := GenesisState{
-		CurrenciesParams: make(CurrenciesParams, 0),
+		CurrenciesParams: make(CurrenciesParams),
 	}
 	state.CurrenciesParams["dfi"] = CurrencyParams{
 		18,

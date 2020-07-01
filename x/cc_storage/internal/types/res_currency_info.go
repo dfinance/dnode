@@ -48,7 +48,7 @@ func NewResCurrencyInfo(currency Currency, ownerAddress []byte) (ResCurrencyInfo
 	}
 
 	isToken := false
-	if bytes.Compare(ownerAddress, common_vm.StdLibAddress) != 0 {
+	if !bytes.Equal(ownerAddress, common_vm.StdLibAddress) {
 		isToken = true
 	}
 

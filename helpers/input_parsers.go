@@ -145,7 +145,7 @@ func ParseDnIDParam(argName, argValue string, paramType ParamType) (dnTypes.ID, 
 
 func ValidateDenomParam(argName, argValue string, paramType ParamType) error {
 	if err := dnTypes.DenomFilter(argValue); err != nil {
-		fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+		return fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
 	}
 
 	return nil
@@ -153,7 +153,7 @@ func ValidateDenomParam(argName, argValue string, paramType ParamType) error {
 
 func ValidateHexStringParam(argName, argValue string, paramType ParamType) error {
 	if _, err := hex.DecodeString(argValue); err != nil {
-		fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+		return fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
 	}
 
 	return nil
