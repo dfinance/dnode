@@ -17,6 +17,7 @@ import (
 
 	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
@@ -79,6 +80,7 @@ var ModuleBasics = module.NewBasicManager(
 	currencies.AppModuleBasic{},
 	multisig.AppModuleBasic{},
 	oracle.AppModuleBasic{},
+	currencies_register.AppModuleBasic{},
 	vm.AppModuleBasic{},
 	orders.AppModuleBasic{},
 	markets.AppModuleBasic{},
