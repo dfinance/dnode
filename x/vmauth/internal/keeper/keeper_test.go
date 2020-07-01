@@ -207,8 +207,12 @@ func TestVMAccountKeeper_RemoveBalance(t *testing.T) {
 	balances, err := ccsStorage.GetAccountBalanceResources(ctx, acc.GetAddress())
 	require.NoError(t, err)
 
-	// remove balance from the VM storage
-	vmStorage.DelValue(ctx, balances[1].AccessPath)
+	// remove eth balance from the VM storage
+	for _, b := range balances {
+		if b.Denom == "eth" {
+			vmStorage.DelValue(ctx, b.AccessPath)
+		}
+	}
 
 	// balance should be removed from account coins
 	acc = keeper.GetAccount(ctx, acc.GetAddress())
@@ -231,11 +235,15 @@ func TestVMAccountKeeper_ModifyBalance(t *testing.T) {
 	balances, err := ccsStorage.GetAccountBalanceResources(ctx, acc.GetAddress())
 	require.NoError(t, err)
 
-	// modify balance
-	balances[1].Resource.Value = sdk.ZeroInt().BigInt()
-	bz, err := balances[1].ResourceBytes()
-	require.NoError(t, err)
-	vmStorage.SetValue(ctx, balances[1].AccessPath, bz)
+	// modify eth balance
+	for _, b := range balances {
+		if b.Denom == "eth" {
+			b.Resource.Value = sdk.ZeroInt().BigInt()
+			bz, err := b.ResourceBytes()
+			require.NoError(t, err)
+			vmStorage.SetValue(ctx, b.AccessPath, bz)
+		}
+	}
 
 	// check keeper "caught" that modification
 	acc = keeper.GetAccount(ctx, acc.GetAddress())
