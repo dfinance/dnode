@@ -24,5 +24,5 @@ func init() {
 	ModuleCdc.Seal()
 
 	gov.RegisterProposalType(ProposalTypeStdlibUpdate)
-	gov.RegisterProposalTypeCodec(StdlibUpdateProposal{}, ModuleName+"/StdlibUpdateProposal")
+	gov.RegisterProposalTypeCodec(StdlibUpdateProposal{}, GovRouterKey+"/StdlibUpdateProposal")
 }

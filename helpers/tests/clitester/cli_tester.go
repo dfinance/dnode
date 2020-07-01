@@ -468,7 +468,7 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 // Contract 1: plannedBlockHeight must be -1 on txRequest creation.
 // Contract 2: proposalTx must cover proposal minDeposit.
 // Contract 3: not concurrent safe.
-func (ct *CLITester) SubmitAndConfirmProposal(proposalTx *TxRequest) {
+func (ct *CLITester) SubmitAndConfirmProposal(proposalTx *TxRequest, isPlannedProposal bool) {
 	// get current proposals count
 	prevProposalsCount := 0
 	{
@@ -483,20 +483,19 @@ func (ct *CLITester) SubmitAndConfirmProposal(proposalTx *TxRequest) {
 		}
 	}
 
-	// calculate the planned height
 	plannedHeight := int64(0)
-	{
+	if isPlannedProposal {
+		// calculate the planned height
 		curHeight, err := ct.GetCurrentBlockHeight()
 		require.NoError(ct.t, err, "GetCurrentBlockHeight failed")
-
 		plannedHeight = curHeight + 20
+
+		// modify the plannedBlockHeight argument
+		proposalTx.ChangeCmdArg("-1", strconv.FormatInt(plannedHeight, 10))
 	}
 
-	// modify the plannedBlockHeight argument and emit the Tx
-	{
-		proposalTx.ChangeCmdArg("-1", strconv.FormatInt(plannedHeight, 10))
-		proposalTx.CheckSucceeded()
-	}
+	// emit the Tx
+	proposalTx.CheckSucceeded()
 
 	// check proposal added
 	proposalID := uint64(0)
@@ -526,13 +525,15 @@ func (ct *CLITester) SubmitAndConfirmProposal(proposalTx *TxRequest) {
 		require.Equal(ct.t, proposal.Status, gov.StatusPassed, "proposal didn't pass")
 	}
 
-	// wait for scheduler
-	{
-		curHeight, err := ct.GetCurrentBlockHeight()
-		require.NoError(ct.t, err, "GetCurrentBlockHeight failed")
+	if isPlannedProposal {
+		// wait for scheduler
+		{
+			curHeight, err := ct.GetCurrentBlockHeight()
+			require.NoError(ct.t, err, "GetCurrentBlockHeight failed")
 
-		if curHeight < plannedHeight {
-			ct.WaitForNextBlocks(plannedHeight - curHeight)
+			if curHeight < plannedHeight {
+				ct.WaitForNextBlocks(plannedHeight - curHeight)
+			}
 		}
 	}
 }

@@ -6,6 +6,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 var (
@@ -99,7 +101,7 @@ type ParamSubspace interface {
 // Validate ensure that params have valid values
 func (p Params) Validate() error {
 	for _, asset := range p.Assets {
-		if err := assetCodeFilter(asset.AssetCode); err != nil {
+		if err := dnTypes.AssetCodeFilter(asset.AssetCode); err != nil {
 			return fmt.Errorf("invalid asset %q: %w", asset.String(), err)
 		}
 	}

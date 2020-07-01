@@ -22,7 +22,7 @@ func TestNewCurrencyInfo(t *testing.T) {
 	totalSupply := sdk.NewInt(1000000)
 
 	// New currency info.
-	currInfo, err := NewCurrencyInfo([]byte(denom), uint8(decimals), isToken, owner, totalSupply.BigInt())
+	currInfo, err := NewCurrencyInfo([]byte(denom), uint8(decimals), isToken, owner, totalSupply)
 	require.NoError(t, err)
 
 	require.EqualValues(t, denom, currInfo.Denom)
@@ -31,7 +31,7 @@ func TestNewCurrencyInfo(t *testing.T) {
 	require.EqualValues(t, totalSupply.BigInt().String(), currInfo.TotalSupply.String())
 
 	// Expect error with wrong address.
-	_, err = NewCurrencyInfo([]byte(denom), uint8(decimals), isToken, make([]byte, 32), totalSupply.BigInt())
+	_, err = NewCurrencyInfo([]byte(denom), uint8(decimals), isToken, make([]byte, 32), totalSupply)
 	require.Errorf(t, err, "length of owner address is not equal to address length: %d / %d", len(owner), common_vm.VMAddressLength)
 }
 
@@ -43,7 +43,7 @@ func TestCurrencyInfo_String(t *testing.T) {
 	owner := common_vm.StdLibAddress
 	totalSupply := sdk.NewInt(1000000)
 
-	currInfo, err := NewCurrencyInfo([]byte(denom), uint8(decimals), isToken, owner, totalSupply.BigInt())
+	currInfo, err := NewCurrencyInfo([]byte(denom), uint8(decimals), isToken, owner, totalSupply)
 	require.NoError(t, err)
 
 	currStr := fmt.Sprintf("Currency: %s\n"+

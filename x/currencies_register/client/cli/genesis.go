@@ -14,6 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/currencies_register/internal/types"
 )
 
@@ -26,30 +27,16 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-currency-info [denom] [decimals] [totalSupply] [path]",
-		Short: "Add currency info to genesis.json",
+		Short: "Add currency info to genesis state (non-token)",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
-			denom := args[0]
-			if err := sdk.ValidateDenom(denom); err != nil {
-				return fmt.Errorf("incorrect denom %q: %v", denom, err)
-			}
-
-			decimals, err := strconv.ParseUint(args[1], 10, 8)
+			// parse inputs
+			denom, decimals, totalSupply, path, err := parseCurrencyArgs(args[0], args[1], args[2], args[3])
 			if err != nil {
-				return fmt.Errorf("can't parse decimals %q: %v", args[1], err)
-			}
-
-			totalSupply, isOk := sdk.NewIntFromString(args[2])
-			if !isOk {
-				return fmt.Errorf("can't parse total supply %q", totalSupply)
-			}
-
-			path, err := hex.DecodeString(args[3])
-			if err != nil {
-				return fmt.Errorf("path is not a correct hex %q: %v", args[3], err)
+				return err
 			}
 
 			// retrieve the app state
@@ -61,7 +48,8 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec,
 
 			genesisState := types.GenesisState{}
 			cdc.MustUnmarshalJSON(appState[types.ModuleName], &genesisState)
-			// find dublicated
+
+			// find duplicated
 			found := -1
 			for i, genCurr := range genesisState.Currencies {
 				if genCurr.Denom == denom {
@@ -70,19 +58,21 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec,
 				}
 			}
 
+			// update / add genesis state
 			if found >= 0 {
 				genesisState.Currencies[found].Path = hex.EncodeToString(path)
 				genesisState.Currencies[found].TotalSupply = totalSupply
-				genesisState.Currencies[found].Decimals = uint8(decimals)
+				genesisState.Currencies[found].Decimals = decimals
 			} else {
 				genesisState.Currencies = append(genesisState.Currencies, types.GenesisCurrency{
 					Path:        hex.EncodeToString(path),
 					Denom:       denom,
-					Decimals:    uint8(decimals),
+					Decimals:    decimals,
 					TotalSupply: totalSupply,
 				})
 			}
 
+			// update and export app state
 			genesisStateBz := cdc.MustMarshalJSON(genesisState)
 			appState[types.ModuleName] = genesisStateBz
 
@@ -90,8 +80,6 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec,
 			if err != nil {
 				return err
 			}
-
-			// export app state
 			genDoc.AppState = appStateJSON
 
 			return genutil.ExportGenesisFile(genDoc, genFile)
@@ -102,4 +90,36 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec,
 	cmd.Flags().String(flagClientHome, defaultClientHome, "client's home directory")
 
 	return cmd
+}
+
+func parseCurrencyArgs(denomArg, decimalsArg, totalSupplyArg, pathArg string) (denom string, decimals uint8, totalSupply sdk.Int, path []byte, retErr error){
+	if err := dnTypes.DenomFilter(denomArg); err != nil {
+		retErr = fmt.Errorf("%s argument %q parse error: %w", "denom", denomArg, err)
+		return
+	} else {
+		denom = denomArg
+	}
+
+	if v, err := strconv.ParseUint(decimalsArg, 10, 8); err != nil {
+		retErr = fmt.Errorf("%s argument %q parse error: %w", "decimals", decimalsArg, err)
+		return
+	} else {
+		decimals = uint8(v)
+	}
+
+	if v, ok := sdk.NewIntFromString(totalSupplyArg); !ok {
+		retErr = fmt.Errorf("%s argument %q parse error: invalid big.Int", "totalSupply", totalSupplyArg)
+		return
+	} else {
+		totalSupply = v
+	}
+
+	if v, err := hex.DecodeString(pathArg); err != nil {
+		retErr = fmt.Errorf("%s argument %q parse error: %w", "path", pathArg, err)
+		return
+	} else {
+		path = v
+	}
+
+	return
 }

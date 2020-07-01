@@ -4,12 +4,22 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func assetCodeFilter(code string) error {
+func DenomFilter(denom string) error {
+	return stringFilter(
+		denom,
+		[]strFilterOpt{stringNotEmpty, validCoinDenom},
+		[]runeFilterOpt{runeIsASCII, runeIsLowerCasedLetter},
+	)
+}
+
+func AssetCodeFilter(code string) error {
 	return stringFilter(
 		code,
-		[]strFilterOpt{stringIsEmpty, newDelimiterStrFilterOpt("_")},
+		[]strFilterOpt{stringNotEmpty, newDelimiterStrFilterOpt("_")},
 		[]runeFilterOpt{runeIsASCII, newIsLowerCasedLetterOrDelimiter('_')},
 	)
 }
@@ -40,9 +50,17 @@ func stringFilter(str string, strOpts []strFilterOpt, runeOpts []runeFilterOpt) 
 	return nil
 }
 
-func stringIsEmpty(str string) error {
+func stringNotEmpty(str string) error {
 	if len(str) == 0 {
 		return fmt.Errorf("empty")
+	}
+
+	return nil
+}
+
+func validCoinDenom(str string) error {
+	if err := sdk.ValidateDenom(str); err != nil {
+		return fmt.Errorf("invalid denom: %w", err)
 	}
 
 	return nil

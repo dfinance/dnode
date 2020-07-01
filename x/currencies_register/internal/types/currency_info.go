@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 )
 
@@ -14,15 +15,25 @@ import (
 type CurrencyInfo struct {
 	Denom       []byte   `json:"denom" swaggertype:"string" example:"dfi"`
 	Decimals    uint8    `json:"decimals"`
+	// If true, currency created in DVM using 0x1::Dfinance::tokenize func.
 	IsToken     bool     `json:"isToken"`
-	Owner       []byte   `json:"owner" lcs:"len=20" swaggertype:"string" example:"dfi"`
+	// Owner is 0x1 for non-token currency and account address for token currencies.
+	Owner       []byte   `json:"owner" lcs:"len=20" swaggertype:"string"`
 	TotalSupply *big.Int `json:"totalSupply"`
 }
 
 // New currency.
-func NewCurrencyInfo(denom []byte, decimals uint8, isToken bool, owner []byte, totalSupply *big.Int) (CurrencyInfo, error) {
+func NewCurrencyInfo(denom []byte, decimals uint8, isToken bool, owner []byte, totalSupply sdk.Int) (CurrencyInfo, error) {
+	if err := dnTypes.DenomFilter(string(denom)); err != nil {
+		return CurrencyInfo{}, fmt.Errorf("denom: %w", err)
+	}
+
 	if len(owner) != common_vm.VMAddressLength {
-		return CurrencyInfo{}, fmt.Errorf("length of owner address is not equal to address length: %d / %d", len(owner), common_vm.VMAddressLength)
+		return CurrencyInfo{}, fmt.Errorf("owner: address length is not equal to VM address length: %d / %d", len(owner), common_vm.VMAddressLength)
+	}
+
+	if totalSupply.IsNegative() {
+		return CurrencyInfo{}, fmt.Errorf("totalSupply: negative")
 	}
 
 	return CurrencyInfo{
@@ -30,7 +41,7 @@ func NewCurrencyInfo(denom []byte, decimals uint8, isToken bool, owner []byte, t
 		Decimals:    decimals,
 		IsToken:     isToken,
 		Owner:       owner,
-		TotalSupply: totalSupply,
+		TotalSupply: totalSupply.BigInt(),
 	}, nil
 }
 
