@@ -31,8 +31,8 @@ lint:
 	golangci-lint run --exclude 'unused'
 
 test-unit:
-	@echo "--> Testing: UNIT tests (parallel execution is disabled)"
-	go test ./... -p=1 -tags=unit -count=1
+	@echo "--> Testing: UNIT tests"
+	go test ./... -tags=unit -count=1
 test-cli: install
 	@echo "--> Testing: dncli CLI tests"
 	go test ./... -tags=cli -count=1
