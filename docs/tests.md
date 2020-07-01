@@ -64,3 +64,12 @@ To launch REST API tests run:
 To launch CLI tests (`dnode`, `dncli` binaries should be build and available within `$PATH`) run:
 
     GO111MODULE=on go test ./... --tags=cli
+
+For all CLI, REST and some Integ tests [dvm_genesis_file](../x/vm/internal/keeper/genesis_ws.json) is used to configure test.
+There are to options to make this file reachable:
+1. Set `GOPATH` environment variable (refer to Golang docs).
+
+    In that case file would be reachable at path: `${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json`
+2. Set `VMWSPATH` environment variable with genesis file full path.
+
+    As an example: `export VMWSPATH=/go/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json`

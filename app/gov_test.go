@@ -228,9 +228,9 @@ func TestIntegGov_RegisterCurrency(t *testing.T) {
 		// invalid path
 		{
 			tx1 := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, "zzvv", crInfoPathHex, crDecimals, config.GovMinDeposit)
-			tx1.CheckFailedWithErrorSubstring("balancePathHex")
+			tx1.CheckFailedWithErrorSubstring("vmBalancePathHex")
 			tx2 := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, "abc", crDecimals, config.GovMinDeposit)
-			tx2.CheckFailedWithErrorSubstring("infoPathHex")
+			tx2.CheckFailedWithErrorSubstring("vmInfoPathHex")
 		}
 
 		// invalid decimals
