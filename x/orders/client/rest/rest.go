@@ -2,16 +2,15 @@ package rest
 
 import (
 	"fmt"
-	"net/http"
-	"strconv"
-
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/gorilla/mux"
-
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orders/internal/types"
+	"github.com/gorilla/mux"
+	"net/http"
+	"strconv"
 )
 
 const (
@@ -21,10 +20,26 @@ const (
 	OrderMarketID  = "marketID"
 )
 
+type postOrderReq struct {
+	BaseReq   rest.BaseReq      `json:"base_req" yaml:"base_req"`
+	AssetCode dnTypes.AssetCode `json:"asset_code" example:"btc_dfi"`
+	Direction types.Direction   `json:"direction" example:"ask"`
+	Price     string            `json:"price" example:"100"`
+	Quantity  string            `json:"quantity" example:"10"`
+	TtlInSec  string            `json:"ttl_in_sec" example:"3"`
+}
+
+type revokeOrderReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	OrderId string       `json:"order_id" yaml:"order_id"`
+}
+
 // RegisterRoutes adds endpoint to REST router.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s", types.ModuleName), getOrdersWithParams(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/{%s}", types.ModuleName, OrderID), getOrder(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/post", types.ModuleName), postOrder(cliCtx)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("/%s/revoke", types.ModuleName), revokeOrder(cliCtx)).Methods("PUT")
 }
 
 // GetOrdersWithParams godoc
@@ -147,5 +162,123 @@ func getOrder(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// postOrder godoc
+// @Tags orders
+// @Summary Post new order
+// @Description Post new order
+// @ID ordersPostOrder
+// @Accept  json
+// @Produce json
+// @Param postRequest body postOrderReq true "PostOrder request with signed transaction"
+// @Success 200 {object} OrdersRespPostOrder
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /orders/post [put]
+func postOrder(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req postOrderReq
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		addr, err := sdk.AccAddressFromBech32(baseReq.From)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if err := req.AssetCode.Validate(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if !req.Direction.IsValid() {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrWrongDirection.Error())
+			return
+		}
+
+		price, err := sdk.ParseUint(req.Price)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("something wrong with price value: %s", err.Error()))
+			return
+		}
+
+		quantity, err := sdk.ParseUint(req.Quantity)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("something wrong with quantity value: %s", err.Error()))
+			return
+		}
+
+		ttl := sdk.NewUintFromString(req.TtlInSec)
+		if ttl.IsZero() {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "something wrong with ttl value")
+			return
+		}
+
+		msg := types.NewMsgPost(addr, req.AssetCode, req.Direction, price, quantity, ttl.Uint64())
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
+// revokeOrder godoc
+// @Tags orders
+// @Summary Revoke order
+// @Description Revoke order
+// @ID ordersRevokeOrder
+// @Accept  json
+// @Produce json
+// @Param postRequest body revokeOrderReq true "RevokeOrder request with signed transaction"
+// @Success 200 {object} OrdersRespRevokeOrder
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /orders/revoke [put]
+func revokeOrder(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req revokeOrderReq
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		addr, err := sdk.AccAddressFromBech32(baseReq.From)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		id, err := dnTypes.NewIDFromString(req.OrderId)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("%q param parsing: %v", OrderID, err))
+			return
+		}
+
+		msg := types.NewMsgRevokeOrder(addr, id)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
 	}
 }
