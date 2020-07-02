@@ -127,7 +127,10 @@ func ParseUint8Param(argName, argValue string, paramType ParamType) (uint8, erro
 func ParseSdkAddressParam(argName, argValue string, paramType ParamType) (sdk.AccAddress, error) {
 	if v, err := sdk.AccAddressFromBech32(argValue); err == nil {
 		return v, nil
-	} else if v, err := sdk.AccAddressFromHex(argValue); err == nil {
+	}
+
+	argValueNorm := strings.TrimPrefix(argValue, "0x")
+	if v, err := sdk.AccAddressFromHex(argValueNorm); err == nil {
 		return v, nil
 	}
 
@@ -151,12 +154,13 @@ func ValidateDenomParam(argName, argValue string, paramType ParamType) error {
 	return nil
 }
 
-func ValidateHexStringParam(argName, argValue string, paramType ParamType) error {
-	if _, err := hex.DecodeString(argValue); err != nil {
-		return fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+func ParseHexStringParam(argName, argValue string, paramType ParamType) (string, error) {
+	argValueNorm := strings.TrimPrefix(argValue, "0x")
+	if _, err := hex.DecodeString(argValueNorm); err != nil {
+		return "", fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
 	}
 
-	return nil
+	return argValueNorm, nil
 }
 
 func AddPaginationCmdFlags(cmd *cobra.Command) {
