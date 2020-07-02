@@ -115,7 +115,7 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			bz, err := cdc.MarshalJSON(types.QueryAccessPath{
-				Address: address,
+				Address: common_vm.Bech32ToLibra(address),
 				Path:    path,
 			})
 			if err != nil {

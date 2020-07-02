@@ -34,7 +34,7 @@ func queryGetValue(ctx sdk.Context, vmKeeper Keeper, req abci.RequestQuery) ([]b
 		return nil, sdkErrors.Wrap(ErrInternal, "unknown query")
 	}
 
-	return vmKeeper.GetValue(ctx, &vm_grpc.VMAccessPath{
+	return vmKeeper.GetValueWithMiddlewares(ctx, &vm_grpc.VMAccessPath{
 		Address: queryAccessPath.Address,
 		Path:    queryAccessPath.Path,
 	}), nil
