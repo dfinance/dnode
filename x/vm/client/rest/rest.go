@@ -106,8 +106,6 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 				)
 				return
 			}
-
-			address = common_vm.Bech32ToLibra(address)
 		}
 
 		path, err := hex.DecodeString(rawPath)
