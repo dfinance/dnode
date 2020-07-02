@@ -29,12 +29,11 @@ func NewQuerier(vmKeeper Keeper) sdk.Querier {
 // Processing query to get value from DS.
 func queryGetValue(ctx sdk.Context, vmKeeper Keeper, req abci.RequestQuery) ([]byte, error) {
 	var queryAccessPath QueryAccessPath
-
 	if err := ModuleCdc.UnmarshalJSON(req.Data, &queryAccessPath); err != nil {
 		return nil, sdkErrors.Wrap(ErrInternal, "unknown query")
 	}
 
-	return vmKeeper.GetValue(ctx, &vm_grpc.VMAccessPath{
+	return vmKeeper.GetValueWithMiddlewares(ctx, &vm_grpc.VMAccessPath{
 		Address: queryAccessPath.Address,
 		Path:    queryAccessPath.Path,
 	}), nil
