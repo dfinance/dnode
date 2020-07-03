@@ -12,6 +12,8 @@ import (
 )
 
 func TestMarketsKeeper_StoreIO(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 
 	// non-existing market
@@ -59,6 +61,8 @@ func TestMarketsKeeper_StoreIO(t *testing.T) {
 }
 
 func TestMarketsKeeper_List(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 
 	// get empty list
@@ -133,6 +137,8 @@ func TestMarketsKeeper_List(t *testing.T) {
 }
 
 func TestMarketsKeeper_AddDuplicate(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 
 	market1, err := input.keeper.Add(input.ctx, input.baseBtcDenom, input.quoteDenom)

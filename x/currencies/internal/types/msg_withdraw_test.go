@@ -48,7 +48,7 @@ func TestCurrenciesMsg_WithdrawCurrency_ValidateBasic(t *testing.T) {
 	}
 }
 
-// Test MsgWithdrawCurrency sdk.Msg params.
+// Test MsgWithdrawCurrency implements sdk.Msg interface.
 func TestCurrenciesMsg_WithdrawCurrency_MsgInterface(t *testing.T) {
 	t.Parallel()
 

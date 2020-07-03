@@ -10,8 +10,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/libs/rand"
 
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/core"
 	posMsgs "github.com/dfinance/dnode/x/poa/msgs"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 )
@@ -39,7 +40,7 @@ func TestPOA_HandlerIsMultisigOnly(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
 		addMsg := posMsgs.NewMsgAddValidator(newValidators[0].Address, ethAddresses[0], genValidators[0].Address)
 		tx := genTx([]sdk.Msg{addMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, msTypes.ErrOnlyMultisig)
+		CheckDeliverSpecificErrorTx(t, app, tx, core.ErrNotMultisigModule)
 	}
 }
 
@@ -329,7 +330,7 @@ func TestPOA_ValidatorsMinMaxRange(t *testing.T) {
 func addValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, newValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
 	for _, v := range newValidators {
 		addMsg := posMsgs.NewMsgAddValidator(v.Address, ethAddresses[0], genAccs[0].Address)
-		msgID := fmt.Sprintf("addValidator:%s", v.Address)
+		msgID := fmt.Sprintf("addValidator:%s:%d", v.Address, rand.Uint16())
 
 		res, err := MSMsgSubmitAndVote(t, app, msgID, addMsg, 0, genAccs, privKeys, doChecks)
 		if doChecks {
@@ -352,7 +353,7 @@ func replaceValidator(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccou
 func removeValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, rmValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
 	for _, v := range rmValidators {
 		removeMsg := posMsgs.NewMsgRemoveValidator(v.Address, genAccs[0].Address)
-		msgID := fmt.Sprintf("removeValidator:%s", v.Address)
+		msgID := fmt.Sprintf("removeValidator:%s:%d", v.Address, rand.Uint16())
 
 		res, err := MSMsgSubmitAndVote(t, app, msgID, removeMsg, 0, genAccs, privKeys, doChecks)
 		if doChecks {

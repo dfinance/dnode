@@ -66,7 +66,7 @@ func NewAppModule(keeper Keeper) AppModule {
 }
 
 // Name gets module name.
-func (AppModule) Name() string {
+func (app AppModule) Name() string {
 	return ModuleName
 }
 

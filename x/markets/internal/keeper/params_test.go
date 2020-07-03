@@ -12,6 +12,8 @@ import (
 )
 
 func TestMarketsKeeper_Params_StoreIO(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 
 	inParams := types.Params{

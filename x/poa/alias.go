@@ -11,3 +11,7 @@ const (
 	DefaultParamspace = types.DefaultParamspace
 	QuerierRoute      = types.ModuleName
 )
+
+var (
+	DefaultParams = types.DefaultParams
+)

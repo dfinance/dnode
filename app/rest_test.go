@@ -18,7 +18,7 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccTypes "github.com/dfinance/dnode/x/currencies"
 	marketTypes "github.com/dfinance/dnode/x/markets"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/vm"
@@ -26,6 +26,7 @@ import (
 
 func TestCurrency_REST(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -165,6 +166,7 @@ func TestCurrency_REST(t *testing.T) {
 
 func TestMS_Rest(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -199,7 +201,7 @@ func TestMS_Rest(t *testing.T) {
 		for i, call := range *respMsg {
 			require.Len(t, call.Votes, 1)
 			require.Equal(t, senderAddr, call.Votes[0].String())
-			require.Equal(t, uint64(i), call.Call.MsgID)
+			require.EqualValues(t, i, call.Call.ID.UInt64())
 			require.Equal(t, senderAddr, call.Call.Creator.String())
 			require.Equal(t, msgIDs[i], call.Call.UniqueID)
 		}
@@ -207,12 +209,12 @@ func TestMS_Rest(t *testing.T) {
 
 	// check getCall endpoint
 	{
-		req, respMsg := ct.RestQueryMultiSigCall(0)
+		req, respMsg := ct.RestQueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 		req.CheckSucceeded()
 
 		require.Len(t, respMsg.Votes, 1)
 		require.Equal(t, senderAddr, respMsg.Votes[0].String())
-		require.Equal(t, uint64(0), respMsg.Call.MsgID)
+		require.EqualValues(t, 0, respMsg.Call.ID.UInt64())
 		require.Equal(t, senderAddr, respMsg.Call.Creator.String())
 		require.Equal(t, msgIDs[0], respMsg.Call.UniqueID)
 
@@ -220,15 +222,15 @@ func TestMS_Rest(t *testing.T) {
 		{
 			// invalid "id"
 			{
-				req, _ := ct.RestQueryMultiSigCall(0)
+				req, _ := ct.RestQueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 				req.ModifySubPath("0", "-1")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}
 
 			// non-existing "id"
 			{
-				req, _ := ct.RestQueryMultiSigCall(2)
-				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrWrongCallId)
+				req, _ := ct.RestQueryMultiSigCall(dnTypes.NewIDFromUint64(2))
+				req.CheckFailed(http.StatusInternalServerError, multisig.ErrWrongCallId)
 			}
 		}
 	}
@@ -240,7 +242,7 @@ func TestMS_Rest(t *testing.T) {
 
 		require.Len(t, respMsg.Votes, 1)
 		require.Equal(t, senderAddr, respMsg.Votes[0].String())
-		require.Equal(t, uint64(0), respMsg.Call.MsgID)
+		require.EqualValues(t, 0, respMsg.Call.ID.UInt64())
 		require.Equal(t, senderAddr, respMsg.Call.Creator.String())
 		require.Equal(t, msgIDs[0], respMsg.Call.UniqueID)
 
@@ -249,7 +251,7 @@ func TestMS_Rest(t *testing.T) {
 			// non-existing "unique"
 			{
 				req, _ := ct.RestQueryMultiSigUnique("non-existing-UNIQUE")
-				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrNotFoundUniqueID)
+				req.CheckFailed(http.StatusInternalServerError, multisig.ErrWrongCallUniqueId)
 			}
 		}
 	}
@@ -257,6 +259,7 @@ func TestMS_Rest(t *testing.T) {
 
 func TestOracle_Rest(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -377,6 +380,7 @@ func TestOracle_Rest(t *testing.T) {
 
 func TestPOA_Rest(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -407,6 +411,7 @@ func TestPOA_Rest(t *testing.T) {
 
 func TestVM_Rest(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -452,6 +457,7 @@ func TestVM_Rest(t *testing.T) {
 
 func TestMarkets_REST(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -569,6 +575,8 @@ func TestMarkets_REST(t *testing.T) {
 }
 
 func TestOrders_REST(t *testing.T) {
+	t.Parallel()
+
 	const (
 		DecimalsDFI = "1000000000000000000"
 		DecimalsETH = "1000000000000000000"
@@ -597,7 +605,6 @@ func TestOrders_REST(t *testing.T) {
 		{Name: "client2", Balances: accountBalances},
 	}
 
-	t.Parallel()
 	ct := cliTester.New(
 		t,
 		false,

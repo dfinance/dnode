@@ -14,7 +14,7 @@ import (
 	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	ccTypes "github.com/dfinance/dnode/x/currencies"
 	marketTypes "github.com/dfinance/dnode/x/markets"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
@@ -132,32 +132,32 @@ func (ct *CLITester) QueryPoaMinMax() (*QueryRequest, *poaTypes.Params) {
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMultiSigUnique(uniqueID string) (*QueryRequest, *msTypes.CallResp) {
-	resObj := &msTypes.CallResp{}
+func (ct *CLITester) QueryMultiSigUnique(uniqueID string) (*QueryRequest, *multisig.CallResp) {
+	resObj := &multisig.CallResp{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("multisig", "unique", uniqueID)
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMultiSigCall(callID uint64) (*QueryRequest, *msTypes.CallResp) {
-	resObj := &msTypes.CallResp{}
+func (ct *CLITester) QueryMultiSigCall(callID dnTypes.ID) (*QueryRequest, *multisig.CallResp) {
+	resObj := &multisig.CallResp{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("multisig", "call", strconv.FormatUint(callID, 10))
+	q.SetCmd("multisig", "call", callID.String())
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMultiSigCalls() (*QueryRequest, *msTypes.CallsResp) {
-	resObj := &msTypes.CallsResp{}
+func (ct *CLITester) QueryMultiSigCalls() (*QueryRequest, *multisig.CallsResp) {
+	resObj := &multisig.CallsResp{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("multisig", "calls")
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *msTypes.LastIdRes) {
-	resObj := &msTypes.LastIdRes{}
+func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *multisig.LastCallIdResp) {
+	resObj := &multisig.LastCallIdResp{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("multisig", "lastId")
 

@@ -29,6 +29,8 @@ func TestNewEventKeep(t *testing.T) {
 
 // Test GetSenderAddress.
 func Test_GetSenderAddress(t *testing.T) {
+	t.Parallel()
+
 	address := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	require.EqualValues(t, common_vm.StdLibAddressShortStr, GetSenderAddress(common_vm.StdLibAddress))
 	require.EqualValues(t, address.String(), GetSenderAddress(address))
@@ -68,6 +70,8 @@ func TestNewEventDiscard(t *testing.T) {
 
 // Test event convertation from Move type to Cosmos.
 func TestNewEventFromVM(t *testing.T) {
+	t.Parallel()
+
 	moduleAddr := make([]byte, common_vm.VMAddressLength)
 	moduleAddr[common_vm.VMAddressLength-1] = 2
 
@@ -146,6 +150,8 @@ func TestNewEventFromVM(t *testing.T) {
 
 // Test event happens when VM return status with errors.
 func TestNewEventError(t *testing.T) {
+	t.Parallel()
+
 	errorStatus := vm_grpc.VMStatus{
 		MajorStatus: 0,
 		SubStatus:   0,
@@ -172,6 +178,8 @@ func TestNewEventError(t *testing.T) {
 
 // Test creation event with error status.
 func TestNewEventWithError(t *testing.T) {
+	t.Parallel()
+
 	event := newEventStatus(StatusKeep, nil)
 
 	require.Equal(t, EventTypeContractStatus, event.Type)
@@ -202,6 +210,8 @@ func TestNewEventWithError(t *testing.T) {
 
 // Processing event with out of gas.
 func Test_OutOfGasProcessEvent(t *testing.T) {
+	t.Parallel()
+
 	moduleAddr := make([]byte, common_vm.VMAddressLength)
 	moduleAddr[common_vm.VMAddressLength-1] = 2
 

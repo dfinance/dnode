@@ -22,6 +22,8 @@ import (
 
 // Check storage set value functional.
 func TestSetValue(t *testing.T) {
+	t.Parallel()
+
 	input := newTestInput(true)
 	defer input.Stop()
 
@@ -41,6 +43,8 @@ func TestSetValue(t *testing.T) {
 
 // Check get value from storage functional.
 func TestGetValue(t *testing.T) {
+	t.Parallel()
+
 	input := newTestInput(true)
 	defer input.Stop()
 
@@ -59,6 +63,8 @@ func TestGetValue(t *testing.T) {
 
 // Check has value functional.
 func TestHasValue(t *testing.T) {
+	t.Parallel()
+
 	input := newTestInput(true)
 	defer input.Stop()
 
@@ -76,6 +82,8 @@ func TestHasValue(t *testing.T) {
 
 // Check deletion of key in storage.
 func TestDelValue(t *testing.T) {
+	t.Parallel()
+
 	input := newTestInput(true)
 	defer input.Stop()
 
@@ -101,6 +109,8 @@ func TestDelValue(t *testing.T) {
 
 // Check process execution (response from VM) functional.
 func TestProcessExecution(t *testing.T) {
+	t.Parallel()
+
 	// ignoring gas for now.
 	input := newTestInput(true)
 	defer input.Stop()
@@ -241,6 +251,8 @@ func TestProcessExecution(t *testing.T) {
 
 // Check returned write set procession.
 func TestProcessWriteSet(t *testing.T) {
+	t.Parallel()
+
 	input := newTestInput(true)
 	defer input.Stop()
 
@@ -290,6 +302,8 @@ func TestProcessWriteSet(t *testing.T) {
 
 // Status keep (4001) still doesn't contains error.
 func TestExecStatusKeeperNotAnError(t *testing.T) {
+	t.Parallel()
+
 	input := newTestInput(true)
 	defer input.Stop()
 
@@ -321,6 +335,8 @@ func TestExecStatusKeeperNotAnError(t *testing.T) {
 
 // When status still keep but returns error (and it could exists).
 func TestExecKeepAndError(t *testing.T) {
+	t.Parallel()
+
 	input := newTestInput(true)
 	defer input.Stop()
 
@@ -359,6 +375,8 @@ func TestExecKeepAndError(t *testing.T) {
 
 // test access path generation for oracles.
 func Test_KeeperGetOracleAccessPath(t *testing.T) {
+	t.Parallel()
+
 	input := newTestInput(true)
 	defer input.Stop()
 

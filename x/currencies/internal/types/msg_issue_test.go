@@ -55,7 +55,7 @@ func TestCurrenciesMsg_IssueCurrency_ValidateBasic(t *testing.T) {
 	}
 }
 
-// Test MsgIssueCurrency sdk.Msg params.
+// Test MsgIssueCurrency implements msmodule.MsMsg interface.
 func TestCurrenciesMsg_IssueCurrency_MsgInterface(t *testing.T) {
 	t.Parallel()
 

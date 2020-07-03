@@ -85,7 +85,14 @@ func NewIDFromUint64(id uint64) ID {
 	return ID(sdk.NewUint(id))
 }
 
-func NewIDFromString(str string) (ID, error) {
+func NewIDFromString(str string) (retID ID, retErr error) {
+	// sdk.NewUintFromString might panic
+	defer func() {
+		if r := recover(); r != nil {
+			retErr = fmt.Errorf("%q cannot be converted to big.Int", str)
+		}
+	}()
+
 	if str == "" {
 		return ID{}, fmt.Errorf("empty")
 	}

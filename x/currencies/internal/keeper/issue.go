@@ -63,7 +63,7 @@ func (k Keeper) GetIssue(ctx sdk.Context, id string) (types.Issue, error) {
 	return k.getIssue(ctx, id), nil
 }
 
-// GetIssue returns issue from the storage.
+// getIssue returns issue from the storage.
 func (k Keeper) getIssue(ctx sdk.Context, id string) types.Issue {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetIssuesKey(id))

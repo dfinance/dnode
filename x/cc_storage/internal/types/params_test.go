@@ -10,6 +10,8 @@ import (
 
 // Test keeper CreateCurrency method.
 func TestCCS_CurrencyParams_Validate(t *testing.T) {
+	t.Parallel()
+
 	// ok
 	{
 		param := CurrencyParams{0, "0102", "AABB"}

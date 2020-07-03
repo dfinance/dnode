@@ -10,6 +10,8 @@ import (
 )
 
 func TestMarkets_MsgCreateMarket_Valid(t *testing.T) {
+	t.Parallel()
+
 	addr := sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h")
 
 	msg := NewMsgCreateMarket(addr, "btc", "dfi")
@@ -17,6 +19,8 @@ func TestMarkets_MsgCreateMarket_Valid(t *testing.T) {
 }
 
 func TestMarkets_MsgCreateMarket_Invalid(t *testing.T) {
+	t.Parallel()
+
 	// empty from
 	{
 		msg := NewMsgCreateMarket(sdk.AccAddress{}, "btc", "dfi")

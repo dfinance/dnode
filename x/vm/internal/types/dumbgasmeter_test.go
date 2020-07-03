@@ -10,6 +10,8 @@ import (
 
 // Tests for dumb gas meter.
 func TestNewDumbGasMeter(t *testing.T) {
+	t.Parallel()
+
 	gasMeter := NewDumbGasMeter()
 	require.Zero(t, gasMeter.Limit())
 	require.Zero(t, gasMeter.GasConsumed())

@@ -17,7 +17,7 @@ import (
 	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	ccTypes "github.com/dfinance/dnode/x/currencies"
 	marketTypes "github.com/dfinance/dnode/x/markets"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
@@ -108,27 +108,27 @@ func (ct *CLITester) RestQueryCurrenciesWithdraws(page, limit *int) (*RestReques
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryMultiSigCalls() (*RestRequest, *msTypes.CallsResp) {
-	reqSubPath := fmt.Sprintf("%s/calls", msTypes.ModuleName)
-	respMsg := &msTypes.CallsResp{}
+func (ct *CLITester) RestQueryMultiSigCalls() (*RestRequest, *multisig.CallsResp) {
+	reqSubPath := fmt.Sprintf("%s/calls", multisig.ModuleName)
+	respMsg := &multisig.CallsResp{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryMultiSigCall(callID uint64) (*RestRequest, *msTypes.CallResp) {
-	reqSubPath := fmt.Sprintf("%s/call/%d", msTypes.ModuleName, callID)
-	respMsg := &msTypes.CallResp{}
+func (ct *CLITester) RestQueryMultiSigCall(callID dnTypes.ID) (*RestRequest, *multisig.CallResp) {
+	reqSubPath := fmt.Sprintf("%s/call/%s", multisig.ModuleName, callID.String())
+	respMsg := &multisig.CallResp{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryMultiSigUnique(uniqueID string) (*RestRequest, *msTypes.CallResp) {
-	reqSubPath := fmt.Sprintf("%s/unique/%s", msTypes.ModuleName, uniqueID)
-	respMsg := &msTypes.CallResp{}
+func (ct *CLITester) RestQueryMultiSigUnique(uniqueID string) (*RestRequest, *multisig.CallResp) {
+	reqSubPath := fmt.Sprintf("%s/unique/%s", multisig.ModuleName, uniqueID)
+	respMsg := &multisig.CallResp{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 

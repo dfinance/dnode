@@ -142,29 +142,32 @@ func (ct *CLITester) TxOraclePostPrice(nomineeAddress, assetCode string, price s
 		nomineeAddress,
 		assetCode,
 		price.String(),
-		strconv.FormatInt(receivedAt.Unix(), 10))
+		strconv.FormatInt(receivedAt.Unix(), 10),
+	)
 
 	return r
 }
 
-func (ct *CLITester) TxMultiSigConfirmCall(fromAddress string, callID uint64) *TxRequest {
+func (ct *CLITester) TxMultiSigConfirmCall(fromAddress string, callID dnTypes.ID) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"multisig",
 		fromAddress,
 		"confirm-call",
-		strconv.FormatUint(callID, 10))
+		callID.String(),
+	)
 
 	return r
 }
 
-func (ct *CLITester) TxMultiSigRevokeConfirm(fromAddress string, callID uint64) *TxRequest {
+func (ct *CLITester) TxMultiSigRevokeConfirm(fromAddress string, callID dnTypes.ID) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"multisig",
 		fromAddress,
 		"revoke-confirm",
-		strconv.FormatUint(callID, 10))
+		callID.String(),
+	)
 
 	return r
 }

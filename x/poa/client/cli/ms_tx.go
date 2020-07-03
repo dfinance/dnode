@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"os"
 
-	msMsg "github.com/dfinance/dnode/x/multisig/msgs"
-	"github.com/dfinance/dnode/x/poa/msgs"
-
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
+
+	msExport "github.com/dfinance/dnode/x/multisig/export"
+	"github.com/dfinance/dnode/x/poa/msgs"
 )
 
 // Add new validator via multisignature.
@@ -40,7 +40,7 @@ func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 			}
 
 			addVldrMsg := msgs.NewMsgAddValidator(validatorAddress, ethAddress, cliCtx.GetFromAddress())
-			msMsg := msMsg.NewMsgSubmitCall(addVldrMsg, args[2], cliCtx.GetFromAddress())
+			msMsg := msExport.NewMsgSubmitCall(addVldrMsg, args[2], cliCtx.GetFromAddress())
 
 			if err := msMsg.ValidateBasic(); err != nil {
 				return err
@@ -75,7 +75,7 @@ func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msgRmvVal := msgs.NewMsgRemoveValidator(validatorAddress, cliCtx.GetFromAddress())
-			msMsg := msMsg.NewMsgSubmitCall(msgRmvVal, args[1], cliCtx.GetFromAddress())
+			msMsg := msExport.NewMsgSubmitCall(msgRmvVal, args[1], cliCtx.GetFromAddress())
 
 			if err := msMsg.ValidateBasic(); err != nil {
 				return err
@@ -117,7 +117,7 @@ func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 			ethAddress := args[2]
 
 			msgReplVal := msgs.NewMsgReplaceValidator(oldValidator, newValidator, ethAddress, cliCtx.GetFromAddress())
-			msMsg := msMsg.NewMsgSubmitCall(msgReplVal, args[3], cliCtx.GetFromAddress())
+			msMsg := msExport.NewMsgSubmitCall(msgReplVal, args[3], cliCtx.GetFromAddress())
 
 			if err := msMsg.ValidateBasic(); err != nil {
 				return err

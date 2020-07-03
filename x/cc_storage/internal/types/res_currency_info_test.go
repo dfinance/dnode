@@ -13,6 +13,8 @@ import (
 
 // Test NewCurrencyInfo.
 func TestCCS_NewCurrencyInfo(t *testing.T) {
+	t.Parallel()
+
 	currency := NewCurrency("test", sdk.NewIntFromUint64(100), 8)
 
 	// ok: stdlib

@@ -320,10 +320,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	// Initializing multisignature router.
 	app.msKeeper = multisig.NewKeeper(
-		keys[multisig.StoreKey],
 		cdc,
-		app.msRouter,
+		keys[multisig.StoreKey],
 		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
+		app.msRouter,
+		app.poaKeeper,
 	)
 
 	// Initializing oracle module.
@@ -384,7 +385,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		poa.NewAppMsModule(app.poaKeeper),
 		ccsTypes.NewAppModule(app.ccsKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
-		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
+		multisig.NewAppModule(app.msKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),

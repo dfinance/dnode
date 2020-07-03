@@ -12,6 +12,8 @@ import (
 
 // Test checks balance resource lcs marshalling.
 func TestCCS_ResBalance(t *testing.T) {
+	t.Parallel()
+
 	inRes := ResBalance{Value: sdk.NewIntFromUint64(1234567890).BigInt()}
 
 	inBz, err := inRes.Bytes()
@@ -25,6 +27,8 @@ func TestCCS_ResBalance(t *testing.T) {
 
 // Test check balance creation.
 func TestCCS_Balance(t *testing.T) {
+	t.Parallel()
+
 	res := ResBalance{Value: sdk.NewIntFromUint64(1234567890).BigInt()}
 	resBz, err := res.Bytes()
 	require.NoError(t, err)
@@ -69,6 +73,8 @@ func TestCCS_Balance(t *testing.T) {
 
 // Test check balances function.
 func TestCCS_Balances(t *testing.T) {
+	t.Parallel()
+
 	balances := Balances{
 		Balance{
 			Denom:      "testa",

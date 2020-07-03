@@ -86,20 +86,20 @@ func (q *QueryRequest) CheckFailedWithSDKError(err error) {
 
 	code, stdout, stderr := q.cmd.Execute()
 	require.NotEqual(q.t, 0, code, "%s: succeeded", q.String())
-	stdout, stderr = trimCliOutput(stdout), trimCliOutput(stderr)
+	trimmedStdout, trimmedStderr := trimCliOutput(stdout), trimCliOutput(stderr)
 
 	qResponse := struct {
 		Codespace string `json:"codespace"`
 		Code      uint32 `json:"code"`
 	}{"", 0}
 
-	if err := q.cdc.UnmarshalJSON(stdout, &qResponse); err == nil {
+	if err := q.cdc.UnmarshalJSON(trimmedStdout, &qResponse); err == nil {
 		require.Equal(q.t, sdkErr.Codespace(), qResponse.Codespace, "%s: codespace", q.String())
 		require.Equal(q.t, sdkErr.ABCICode(), qResponse.Code, "%s: code", q.String())
 		return
 	}
 
-	if err := q.cdc.UnmarshalJSON(stderr, &qResponse); err == nil {
+	if err := q.cdc.UnmarshalJSON(trimmedStderr, &qResponse); err == nil {
 		require.Equal(q.t, sdkErr.Codespace(), qResponse.Codespace, "%s: codespace", q.String())
 		require.Equal(q.t, sdkErr.ABCICode(), qResponse.Code, "%s: code", q.String())
 		return

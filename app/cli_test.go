@@ -20,7 +20,7 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccTypes "github.com/dfinance/dnode/x/currencies"
 	marketTypes "github.com/dfinance/dnode/x/markets"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
@@ -32,6 +32,7 @@ const (
 
 func TestCurrencies_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, true)
 	defer ct.Close()
 
@@ -231,6 +232,7 @@ func TestCurrencies_CLI(t *testing.T) {
 
 func TestOracle_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -517,6 +519,7 @@ func TestOracle_CLI(t *testing.T) {
 
 func TestPoa_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -765,6 +768,7 @@ func TestPoa_CLI(t *testing.T) {
 
 func TestMS_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -786,7 +790,7 @@ func TestMS_CLI(t *testing.T) {
 	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], callUniqueId1, ccDenom1, ccCurAmount, ccDecimals1).CheckSucceeded()
 	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], callUniqueId2, ccDenom2, ccCurAmount, ccDecimals2).SetGas(300000).CheckSucceeded()
 
-	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
+	checkCall := func(call multisig.CallResp, approved bool, callID dnTypes.ID, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))
 		for i := range call.Votes {
 			require.Equal(t, call.Votes[i].String(), votesAddr[i])
@@ -799,7 +803,7 @@ func TestMS_CLI(t *testing.T) {
 		require.Empty(t, call.Call.Error)
 		require.Equal(t, creatorAddr, call.Call.Creator.String())
 		require.NotNil(t, call.Call.Msg)
-		require.Equal(t, callID, call.Call.MsgID)
+		require.Equal(t, callID.String(), call.Call.ID.String())
 		require.Equal(t, uniqueID, call.Call.UniqueID)
 		require.NotEmpty(t, call.Call.MsgRoute)
 		require.NotEmpty(t, call.Call.MsgType)
@@ -811,35 +815,35 @@ func TestMS_CLI(t *testing.T) {
 		q.CheckSucceeded()
 
 		require.Len(t, *calls, 2)
-		checkCall((*calls)[0], false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
-		checkCall((*calls)[1], false, 1, callUniqueId2, ccRecipients[1], ccRecipients[1])
+		checkCall((*calls)[0], false, dnTypes.NewIDFromUint64(0), callUniqueId1, ccRecipients[0], ccRecipients[0])
+		checkCall((*calls)[1], false, dnTypes.NewIDFromUint64(1), callUniqueId2, ccRecipients[1], ccRecipients[1])
 	}
 
 	// check call query
 	{
-		q, call := ct.QueryMultiSigCall(0)
+		q, call := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 		q.CheckSucceeded()
 
-		checkCall(*call, false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
+		checkCall(*call, false, dnTypes.NewIDFromUint64(0), callUniqueId1, ccRecipients[0], ccRecipients[0])
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				q, _ := ct.QueryMultiSigCall(0)
+				q, _ := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 				q.RemoveCmdArg("0")
 				q.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid callID
 			{
-				q, _ := ct.QueryMultiSigCall(0)
+				q, _ := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 				q.ChangeCmdArg("0", "abc")
-				q.CheckFailedWithErrorSubstring("id")
+				q.CheckFailedWithErrorSubstring("abc")
 			}
 			// non-existing callID
 			{
-				q, _ := ct.QueryMultiSigCall(2)
-				q.CheckFailedWithSDKError(msTypes.ErrWrongCallId)
+				q, _ := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(2))
+				q.CheckFailedWithSDKError(multisig.ErrWrongCallId)
 			}
 		}
 	}
@@ -849,7 +853,7 @@ func TestMS_CLI(t *testing.T) {
 		q, call := ct.QueryMultiSigUnique(callUniqueId1)
 		q.CheckSucceeded()
 
-		checkCall(*call, false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
+		checkCall(*call, false, dnTypes.NewIDFromUint64(0), callUniqueId1, ccRecipients[0], ccRecipients[0])
 
 		// check incorrect inputs
 		{
@@ -862,7 +866,7 @@ func TestMS_CLI(t *testing.T) {
 			// non-existing uniqueID
 			{
 				q, _ := ct.QueryMultiSigUnique("non_existing_uniqueID")
-				q.CheckFailedWithSDKError(msTypes.ErrNotFoundUniqueID)
+				q.CheckFailedWithSDKError(multisig.ErrWrongCallUniqueId)
 			}
 		}
 	}
@@ -872,13 +876,13 @@ func TestMS_CLI(t *testing.T) {
 		q, lastId := ct.QueryMultiLastId()
 		q.CheckSucceeded()
 
-		require.Equal(t, uint64(1), lastId.LastId)
+		require.EqualValues(t, 1, lastId.LastID.UInt64())
 	}
 
 	// check confirm call Tx
 	{
-		// add votes for existing call from an other senders
-		callID, callUniqueID := uint64(0), callUniqueId1
+		// add votes for existing call from other senders
+		callID, callUniqueID := dnTypes.NewIDFromUint64(0), callUniqueId1
 		votes := []string{ccRecipients[0]}
 		for i := 1; i < len(ccRecipients)/2+1; i++ {
 			ct.TxMultiSigConfirmCall(ccRecipients[i], callID).CheckSucceeded()
@@ -896,7 +900,7 @@ func TestMS_CLI(t *testing.T) {
 			// invalid number of args
 			{
 				tx := ct.TxMultiSigConfirmCall(ccRecipients[0], callID)
-				tx.RemoveCmdArg(strconv.FormatUint(callID, 10))
+				tx.RemoveCmdArg(callID.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// non-existing fromAddress
@@ -907,7 +911,7 @@ func TestMS_CLI(t *testing.T) {
 			// invalid callID
 			{
 				tx := ct.TxMultiSigConfirmCall(ccRecipients[0], callID)
-				tx.ChangeCmdArg(strconv.FormatUint(callID, 10), "not_int")
+				tx.ChangeCmdArg(callID.String(), "not_int")
 				tx.CheckFailedWithErrorSubstring("not_int")
 			}
 		}
@@ -915,30 +919,32 @@ func TestMS_CLI(t *testing.T) {
 
 	// check revoke confirm Tx
 	{
-		ct.TxMultiSigRevokeConfirm(ccRecipients[1], 1).CheckSucceeded()
+		ct.TxMultiSigRevokeConfirm(ccRecipients[1], dnTypes.NewIDFromUint64(1)).CheckSucceeded()
 
 		// check call removed
-		q, _ := ct.QueryMultiSigCall(1)
-		q.CheckFailedWithSDKError(msTypes.ErrWrongCallId)
+		q, resp := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(1))
+		q.CheckSucceeded()
+
+		require.Len(t, resp.Votes, 0)
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], 0)
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], dnTypes.NewIDFromUint64(0))
 				tx.RemoveCmdArg(strconv.FormatUint(0, 10))
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// non-existing fromAddress
 			{
-				tx := ct.TxMultiSigRevokeConfirm(nonExistingAddress.String(), 0)
+				tx := ct.TxMultiSigRevokeConfirm(nonExistingAddress.String(), dnTypes.NewIDFromUint64(0))
 				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid callID
 			{
-				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], 0)
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], dnTypes.NewIDFromUint64(0))
 				tx.ChangeCmdArg(strconv.FormatUint(0, 10), "not_int")
-				tx.CheckFailedWithErrorSubstring("callId")
+				tx.CheckFailedWithErrorSubstring("not_int")
 			}
 		}
 	}
@@ -946,6 +952,7 @@ func TestMS_CLI(t *testing.T) {
 
 func TestMarkets_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -1064,6 +1071,8 @@ func TestMarkets_CLI(t *testing.T) {
 }
 
 func TestOrders_CLI(t *testing.T) {
+	t.Parallel()
+
 	const (
 		DecimalsDFI = "1000000000000000000"
 		DecimalsETH = "1000000000000000000"
@@ -1092,7 +1101,6 @@ func TestOrders_CLI(t *testing.T) {
 		{Name: "client2", Balances: accountBalances},
 	}
 
-	t.Parallel()
 	ct := cliTester.New(
 		t,
 		false,
@@ -1388,6 +1396,7 @@ func TestOrders_CLI(t *testing.T) {
 
 func Test_RestServer(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 

@@ -12,6 +12,8 @@ import (
 )
 
 func TestMarkets_Params_Valid(t *testing.T) {
+	t.Parallel()
+
 	params := Params{
 		Markets: Markets{
 			Market{
@@ -30,6 +32,8 @@ func TestMarkets_Params_Valid(t *testing.T) {
 }
 
 func TestMarkets_Params_Invalid(t *testing.T) {
+	t.Parallel()
+
 	// invalid ID
 	{
 		params := Params{

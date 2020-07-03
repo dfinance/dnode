@@ -28,6 +28,7 @@ const (
 	ParamTypeCliFlag   ParamType = "flag"
 	ParamTypeCliArg    ParamType = "argument"
 	ParamTypeRestQuery ParamType = "query param"
+	ParamTypeRestPath  ParamType = "path param"
 )
 
 func GetTxCmdCtx(cdc *codec.Codec, cmdInputBuf io.Reader) (cliCtx cliCtx.CLIContext, txBuilder authTypes.TxBuilder) {

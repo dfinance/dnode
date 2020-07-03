@@ -452,7 +452,7 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 
 	// send confirms
 	for i := 0; i < requiredVotes-len(call.Votes); i++ {
-		ct.TxMultiSigConfirmCall(validatorAddrs[i], call.Call.MsgID).CheckSucceeded()
+		ct.TxMultiSigConfirmCall(validatorAddrs[i], call.Call.ID).CheckSucceeded()
 	}
 	ct.WaitForNextBlocks(1)
 

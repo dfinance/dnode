@@ -12,6 +12,8 @@ import (
 
 // Test set/get account with empty balances.
 func TestVMAuthKeeper_SetAccountEmptyBalance(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 	keeper, ccsStorage, ctx := input.accountKeeper, input.ccsStorage, input.ctx
 	inAcc := input.CreateAccount(t, nil)
@@ -28,6 +30,8 @@ func TestVMAuthKeeper_SetAccountEmptyBalance(t *testing.T) {
 
 // Test set/get new account with different balances.
 func TestVMAuthKeeper_SetAccount(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 	keeper, ccsStorage, ctx := input.accountKeeper, input.ccsStorage, input.ctx
 	acc := input.CreateAccount(t, sdk.NewCoins(sdk.NewCoin("dfi", sdk.OneInt())))
@@ -125,6 +129,8 @@ func TestVMAuthKeeper_SetAccount(t *testing.T) {
 
 // Test account resources exists, but account is not.
 func TestVMAuthKeeper_GetExistingAccount(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 	keeper, ccsStorage, ctx := input.accountKeeper, input.ccsStorage, input.ctx
 
@@ -144,6 +150,8 @@ func TestVMAuthKeeper_GetExistingAccount(t *testing.T) {
 
 // Check removing account with balance resources.
 func TestVMAuthKeeper_RemoveAccount(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 	keeper, ccsStorage, ctx := input.accountKeeper, input.ccsStorage, input.ctx
 
@@ -178,6 +186,8 @@ func TestVMAuthKeeper_RemoveAccount(t *testing.T) {
 
 // Test get signer acc.
 func TestVMAccountKeeper_GetSignerAcc(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 	keeper, ctx := input.accountKeeper, input.ctx
 	acc := input.CreateAccount(t, nil)
@@ -194,6 +204,8 @@ func TestVMAccountKeeper_GetSignerAcc(t *testing.T) {
 
 // Test removing balance resource without keeper involvement.
 func TestVMAccountKeeper_RemoveBalance(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 	keeper, ccsStorage, vmStorage, ctx := input.accountKeeper, input.ccsStorage, input.vmStorage, input.ctx
 
@@ -222,6 +234,8 @@ func TestVMAccountKeeper_RemoveBalance(t *testing.T) {
 
 // Test balance resource modification without keeper involvement.
 func TestVMAccountKeeper_ModifyBalance(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 	keeper, ccsStorage, vmStorage, ctx := input.accountKeeper, input.ccsStorage, input.vmStorage, input.ctx
 
@@ -253,6 +267,8 @@ func TestVMAccountKeeper_ModifyBalance(t *testing.T) {
 
 // Check bank - vmauth integration works.
 func TestVMAccountKeeper_SendBankKeeper(t *testing.T) {
+	t.Parallel()
+
 	input := NewTestInput(t)
 	keeper, bank, ccsStorage, ctx := input.accountKeeper, input.bankKeeper, input.ccsStorage, input.ctx
 

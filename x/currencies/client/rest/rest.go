@@ -29,11 +29,11 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // GetCurrency godoc
 // @Tags currencies
 // @Summary Get currency
-// @Description Get currency by symbol
+// @Description Get currency by denom
 // @ID currenciesGetCurrency
 // @Accept  json
 // @Produce json
-// @Param denom path string true "currency denom"
+// @Param denom path string true "currency denomination symbol"
 // @Success 200 {object} CCRespGetCurrency
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
@@ -42,8 +42,8 @@ func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs and prepare request
 		vars := mux.Vars(r)
-		req := types.CurrencyReq{Denom: vars[Denom]}
 
+		req := types.CurrencyReq{Denom: vars[Denom]}
 		bz, err := cliCtx.Codec.MarshalJSON(req)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -77,8 +77,8 @@ func getIssue(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs and prepare request
 		vars := mux.Vars(r)
-		req := types.IssueReq{ID: vars[IssueID]}
 
+		req := types.IssueReq{ID: vars[IssueID]}
 		bz, err := cliCtx.Codec.MarshalJSON(req)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -125,7 +125,6 @@ func getWithdraws(cliCtx context.CLIContext) http.HandlerFunc {
 			Page:  page,
 			Limit: limit,
 		}
-
 		bz, err := cliCtx.Codec.MarshalJSON(req)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())

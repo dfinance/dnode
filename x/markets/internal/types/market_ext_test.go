@@ -39,6 +39,8 @@ func checkBaseToQuoteQuantityInputs(t *testing.T, inputs []BaseToQuoteQuantityIn
 }
 
 func TestMarkets_BaseToQuoteQuantity(t *testing.T) {
+	t.Parallel()
+
 	marketNoDecimals := MarketExtended{
 		BaseCurrency:  ccsTypes.Currency{Decimals: 0},
 		QuoteCurrency: ccsTypes.Currency{Decimals: 0},

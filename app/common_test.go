@@ -33,13 +33,14 @@ import (
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	vmConfig "github.com/dfinance/dnode/cmd/config"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/genaccounts"
-	msMsgs "github.com/dfinance/dnode/x/multisig/msgs"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	msExport "github.com/dfinance/dnode/x/multisig/export"
 )
 
 const (
@@ -295,8 +296,8 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 			PoAValidators: validators,
 		})
 
-		genesisState[msTypes.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, msTypes.GenesisState{
-			Parameters: msTypes.Params{
+		genesisState[multisig.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, multisig.GenesisState{
+			Parameters: multisig.Params{
 				IntervalToExecute: 50,
 			},
 		})
@@ -543,11 +544,11 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 	require.Less(t, submitAccIdx, uint(len(accs)), "invalid input: submitAccIdx >= len(accs)")
 	require.LessOrEqual(t, confirmCnt, len(accs), "invalid input: confirmations count > len(accs)")
 
-	callMsgID := uint64(0)
+	callMsgID := dnTypes.ID{}
 	{
 		// submit message
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, accs[submitAccIdx].Address), privKeys[submitAccIdx]
-		submitMsg := msMsgs.NewMsgSubmitCall(msMsg, msMsgID, senderAcc.GetAddress())
+		submitMsg := msExport.NewMsgSubmitCall(msMsg, msMsgID, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		if doChecks {
 			CheckDeliverTx(t, app, tx)
@@ -556,11 +557,11 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 		}
 
 		// check vote added
-		calls := msTypes.CallsResp{}
+		calls := multisig.CallsResp{}
 		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
 		require.Equal(t, 1, len(calls[0].Votes))
 
-		callMsgID = calls[0].Call.MsgID
+		callMsgID = calls[0].Call.ID
 	}
 
 	// cut submit message sender from accounts
@@ -572,7 +573,7 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 	for idx := 0; idx < confirmCnt-2; idx++ {
 		// confirm message
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, accsFixed[idx].Address), privKeysFixed[idx]
-		confirmMsg := msMsgs.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
+		confirmMsg := msExport.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		if doChecks {
 			CheckDeliverTx(t, app, tx)
@@ -581,7 +582,7 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 		}
 
 		// check vote added / call removed
-		calls := msTypes.CallsResp{}
+		calls := multisig.CallsResp{}
 		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
 		require.Equal(t, idx+2, len(calls[0].Votes))
 	}
@@ -591,7 +592,7 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 		// confirm message
 		idx := len(accsFixed) - 1
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, accsFixed[idx].Address), privKeysFixed[idx]
-		confirmMsg := msMsgs.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
+		confirmMsg := msExport.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		if doChecks {
 			CheckDeliverTx(t, app, tx)
@@ -600,7 +601,7 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 		}
 
 		// check call removed
-		calls := msTypes.CallsResp{}
+		calls := multisig.CallsResp{}
 		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
 		require.Equal(t, 0, len(calls))
 	}

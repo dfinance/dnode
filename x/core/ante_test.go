@@ -100,6 +100,8 @@ func checkValidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, tx
 // nolint:errcheck
 // Test when no fees provided in transaction.
 func TestAnteHandler_WrongZeroFee(t *testing.T) {
+	t.Parallel()
+
 	input := setupTestInput()
 
 	priv, _, addr := vestTypes.KeyTestPubAddr()
@@ -124,6 +126,8 @@ func TestAnteHandler_WrongZeroFee(t *testing.T) {
 // nolint:errcheck
 // Test when wrong denom is provided in transaction.
 func TestAnteHandler_WrongFeeDenom(t *testing.T) {
+	t.Parallel()
+
 	input := setupTestInput()
 
 	priv, _, addr := vestTypes.KeyTestPubAddr()
@@ -148,6 +152,8 @@ func TestAnteHandler_WrongFeeDenom(t *testing.T) {
 // nolint:errcheck
 // Test for correct transaction with correct fees.
 func TestAnteHandler_CorrectDenomFees(t *testing.T) {
+	t.Parallel()
+
 	input := setupTestInput()
 
 	priv, _, addr := vestTypes.KeyTestPubAddr()

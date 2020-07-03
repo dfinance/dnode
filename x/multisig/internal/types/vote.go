@@ -1,7 +1,6 @@
-// Vote types (addresses slice).
 package types
 
 import "github.com/cosmos/cosmos-sdk/types"
 
-// Votes type is addresses array
+// Votes is an addresses array of call voters.
 type Votes []types.AccAddress

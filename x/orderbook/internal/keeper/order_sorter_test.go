@@ -14,6 +14,8 @@ import (
 )
 
 func TestOB_Sorter(t *testing.T) {
+	t.Parallel()
+
 	orders := orderTypes.Orders{
 		orderTypes.Order{ID: dnTypes.NewIDFromUint64(1), Price: sdk.NewUint(100)},
 		orderTypes.Order{ID: dnTypes.NewIDFromUint64(0), Price: sdk.NewUint(50)},

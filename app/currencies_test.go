@@ -15,7 +15,7 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
 	ccTypes "github.com/dfinance/dnode/x/currencies"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig"
 )
 
 const (
@@ -28,6 +28,7 @@ const (
 // Checks that currencies module supports only multisig calls for issue msg (using MSRouter).
 func TestCurrenciesApp_MultisigHandler(t *testing.T) {
 	t.Parallel()
+
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -48,6 +49,7 @@ func TestCurrenciesApp_MultisigHandler(t *testing.T) {
 // Test currencies module queries.
 func TestCurrenciesApp_Queries(t *testing.T) {
 	t.Parallel()
+
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -130,6 +132,7 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 // Test currency issue logic with failure scenarios.
 func TestCurrenciesApp_Issue(t *testing.T) {
 	t.Parallel()
+
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -187,13 +190,14 @@ func TestCurrenciesApp_Issue(t *testing.T) {
 		msgId, issueId := "1", "non-existing-issue"
 
 		res, err := issueCurrency(t, app, denom, amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, msTypes.ErrNotUniqueID, res, err)
+		CheckResultError(t, multisig.ErrWrongCallUniqueId, res, err)
 	}
 }
 
 // Test maximum bank supply level (DVM has u128 limit).
 func TestCurrenciesApp_IssueHugeAmount(t *testing.T) {
 	t.Parallel()
+
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -240,6 +244,7 @@ func TestCurrenciesApp_IssueHugeAmount(t *testing.T) {
 // Test issue/withdraw currency with decimals.
 func TestCurrenciesApp_Decimals(t *testing.T) {
 	t.Parallel()
+
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
@@ -291,6 +296,7 @@ func TestCurrenciesApp_Decimals(t *testing.T) {
 // Test withdraw currency with fail scenarios.
 func TestCurrenciesApp_Withdraw(t *testing.T) {
 	t.Parallel()
+
 	app, server := newTestDnApp()
 	defer app.CloseConnections()
 	defer server.Stop()
