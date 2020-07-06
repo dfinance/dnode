@@ -11,9 +11,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/olekukonko/tablewriter"
 	"github.com/stretchr/testify/require"
-	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 )
 
 type History struct {
@@ -37,8 +37,8 @@ type BlockInfo struct {
 }
 
 type MarketInfo struct {
-	BaseCurrency  ccsTypes.Currency
-	QuoteCurrency ccsTypes.Currency
+	BaseCurrency  cc_storage.Currency
+	QuoteCurrency cc_storage.Currency
 }
 
 type HistoryItem struct {
@@ -156,7 +156,7 @@ func (h *History) String(stats, balances, blockDurations bool) string {
 	return buf.String()
 }
 
-func (h *History) HandleOrderPostEvent(event coreTypes.ResultEvent) {
+func (h *History) HandleOrderPostEvent(event tmCoreTypes.ResultEvent) {
 	marketOrders := findEventAttrMarketIDOrders("orders.post.", event)
 	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
@@ -173,7 +173,7 @@ func (h *History) HandleOrderPostEvent(event coreTypes.ResultEvent) {
 	}
 }
 
-func (h *History) HandleOrderCancelEvent(event coreTypes.ResultEvent) {
+func (h *History) HandleOrderCancelEvent(event tmCoreTypes.ResultEvent) {
 	marketOrders := findEventAttrMarketIDOrders("orders.cancel.", event)
 	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
@@ -195,7 +195,7 @@ func (h *History) HandleOrderCancelEvent(event coreTypes.ResultEvent) {
 	}
 }
 
-func (h *History) HandleOrderFullFillEvent(event coreTypes.ResultEvent) {
+func (h *History) HandleOrderFullFillEvent(event tmCoreTypes.ResultEvent) {
 	marketOrders := findEventAttrMarketIDOrders("orders.full_fill.", event)
 	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
@@ -217,7 +217,7 @@ func (h *History) HandleOrderFullFillEvent(event coreTypes.ResultEvent) {
 	}
 }
 
-func (h *History) HandleOrderPartialFillEvent(event coreTypes.ResultEvent) {
+func (h *History) HandleOrderPartialFillEvent(event tmCoreTypes.ResultEvent) {
 	marketOrders, ordersQuantity := findEventAttrMarketIDOrdersQuantity("orders.partial_fill.", event)
 	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
@@ -244,7 +244,7 @@ func (h *History) HandleOrderPartialFillEvent(event coreTypes.ResultEvent) {
 	}
 }
 
-func (h *History) HandleOrderBookClearanceEvent(event coreTypes.ResultEvent) {
+func (h *History) HandleOrderBookClearanceEvent(event tmCoreTypes.ResultEvent) {
 	marketPrices, ok := findEventAttrPrices(event)
 	require.True(h.t, ok, "price not found: %v", event)
 
@@ -256,7 +256,7 @@ func (h *History) HandleOrderBookClearanceEvent(event coreTypes.ResultEvent) {
 	}
 }
 
-func (h *History) HandleNewBlockEvent(event coreTypes.ResultEvent) {
+func (h *History) HandleNewBlockEvent(event tmCoreTypes.ResultEvent) {
 	curBlockTS := time.Now()
 
 	h.Lock()
@@ -272,7 +272,7 @@ func (h *History) HandleNewBlockEvent(event coreTypes.ResultEvent) {
 	h.prevBlockTS = curBlockTS
 }
 
-func findEventAttrMarketIDOrders(prefix string, event coreTypes.ResultEvent) (marketOrders map[string][]string) {
+func findEventAttrMarketIDOrders(prefix string, event tmCoreTypes.ResultEvent) (marketOrders map[string][]string) {
 	marketOrders = make(map[string][]string)
 
 	eventTypeMarketQuery := prefix + "market_id"
@@ -296,7 +296,7 @@ func findEventAttrMarketIDOrders(prefix string, event coreTypes.ResultEvent) (ma
 	return
 }
 
-func findEventAttrMarketIDOrdersQuantity(prefix string, event coreTypes.ResultEvent) (marketOrders map[string][]string, ordersQuantity map[string]sdk.Uint) {
+func findEventAttrMarketIDOrdersQuantity(prefix string, event tmCoreTypes.ResultEvent) (marketOrders map[string][]string, ordersQuantity map[string]sdk.Uint) {
 	marketOrders = make(map[string][]string)
 	ordersQuantity = make(map[string]sdk.Uint)
 
@@ -326,7 +326,7 @@ func findEventAttrMarketIDOrdersQuantity(prefix string, event coreTypes.ResultEv
 	return
 }
 
-func findEventAttrPrices(event coreTypes.ResultEvent) (marketPrices map[string]sdk.Uint, ok bool) {
+func findEventAttrPrices(event tmCoreTypes.ResultEvent) (marketPrices map[string]sdk.Uint, ok bool) {
 	ok = true
 	var marketsStr, pricesStr []string
 

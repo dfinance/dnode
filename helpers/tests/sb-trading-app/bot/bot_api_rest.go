@@ -8,14 +8,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
+	"github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 type ApiRest struct {
 	sync.Mutex
-	tester         *cliTester.CLITester
+	tester         *clitester.CLITester
 	accountName    string
 	accountAddress sdk.AccAddress
 	accountNumber  uint64
@@ -50,7 +50,7 @@ func (a *ApiRest) GetAccount() (sequence uint64, baseBalance, quoteBalance sdk.U
 	return
 }
 
-func (a *ApiRest) PostOrder(price, quantity sdk.Uint, direction orderTypes.Direction) (txHash string, retErr error) {
+func (a *ApiRest) PostOrder(price, quantity sdk.Uint, direction orders.Direction) (txHash string, retErr error) {
 	const maxRetries = 10
 
 	if price.IsZero() || quantity.IsZero() {
@@ -125,7 +125,7 @@ func (a *ApiRest) PostOrder(price, quantity sdk.Uint, direction orderTypes.Direc
 	return
 }
 
-func (a *ApiRest) GetOrder(id dnTypes.ID) (order *orderTypes.Order, retErr error) {
+func (a *ApiRest) GetOrder(id dnTypes.ID) (order *orders.Order, retErr error) {
 	req, orderPtr := a.tester.RestQueryOrder(id)
 	if err := a.executeQuery(req); err != nil {
 		if strings.Contains(err.Error(), "wrong orderID") {
@@ -140,7 +140,7 @@ func (a *ApiRest) GetOrder(id dnTypes.ID) (order *orderTypes.Order, retErr error
 	return
 }
 
-func (a *ApiRest) executeQuery(req *cliTester.RestRequest) error {
+func (a *ApiRest) executeQuery(req *clitester.RestRequest) error {
 	const initialTimeoutInMs = 10
 	const timeoutMultiplier = 1.05
 	const maxRetryAttempts = 50
@@ -166,7 +166,7 @@ func (a *ApiRest) executeQuery(req *cliTester.RestRequest) error {
 	return fmt.Errorf("retry failed: %v", lastErr)
 }
 
-func NewApiRest(tester *cliTester.CLITester, accNumber uint64, accName, accAddress string, marketID dnTypes.ID, baseDenom, quoteDenom string, orderTtlInSec int) *ApiRest {
+func NewApiRest(tester *clitester.CLITester, accNumber uint64, accName, accAddress string, marketID dnTypes.ID, baseDenom, quoteDenom string, orderTtlInSec int) *ApiRest {
 	addr, _ := sdk.AccAddressFromBech32(accAddress)
 
 	return &ApiRest{

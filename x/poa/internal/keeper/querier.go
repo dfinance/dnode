@@ -6,7 +6,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	types "github.com/dfinance/dnode/x/poa/internal/types"
+	"github.com/dfinance/dnode/x/poa/internal/types"
 )
 
 // NewQuerier return keeper querier.

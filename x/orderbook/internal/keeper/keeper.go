@@ -7,18 +7,18 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 // Module keeper object.
 type Keeper struct {
 	cdc         *codec.Codec
 	storeKey    sdk.StoreKey
-	orderKeeper orderTypes.Keeper
+	orderKeeper orders.Keeper
 }
 
 // NewKeeper creates keeper object.
-func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, ok orderTypes.Keeper) Keeper {
+func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, ok orders.Keeper) Keeper {
 	return Keeper{
 		cdc:         cdc,
 		storeKey:    storeKey,
@@ -37,6 +37,6 @@ func (k Keeper) GetOrderIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // ProcessOrderFills passes order fills to the orders module.
-func (k Keeper) ProcessOrderFills(ctx sdk.Context, orderFills orderTypes.OrderFills) {
+func (k Keeper) ProcessOrderFills(ctx sdk.Context, orderFills orders.OrderFills) {
 	k.orderKeeper.ExecuteOrderFills(ctx, orderFills)
 }

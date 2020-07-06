@@ -16,10 +16,10 @@ import (
 
 	"github.com/dfinance/dnode/helpers/logger"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
-	marketTypes "github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 type MatchingPoolInput struct {
@@ -39,7 +39,7 @@ type MatchingPoolMarketInput struct {
 type MatchingPoolOrderInput struct {
 	MarketID  uint64
 	OrderID   uint64
-	Direction orderTypes.Direction
+	Direction orders.Direction
 	Price     uint64
 	// Order initial quantity.
 	InQuantity uint64
@@ -55,17 +55,17 @@ func (i *MatchingPoolInput) PostOrders(t *testing.T, pool *MatcherPool) {
 	i.bidMarketOrders = make(map[uint64]int)
 	i.askMarketOrders = make(map[uint64]int)
 
-	extMarkets := make([]marketTypes.MarketExtended, 0, len(i.Markets))
+	extMarkets := make([]markets.MarketExtended, 0, len(i.Markets))
 	for id, input := range i.Markets {
-		baseCurrency := ccsTypes.Currency{Denom: input.BaseDenom, Decimals: input.BaseDecimals}
-		quoteCurrency := ccsTypes.Currency{Denom: input.QuoteDenom, Decimals: input.QuoteDecimals}
-		market := marketTypes.NewMarket(dnTypes.NewIDFromUint64(uint64(id)), input.BaseDenom, input.QuoteDenom)
-		marketExt := marketTypes.NewMarketExtended(market, baseCurrency, quoteCurrency)
+		baseCurrency := cc_storage.Currency{Denom: input.BaseDenom, Decimals: input.BaseDecimals}
+		quoteCurrency := cc_storage.Currency{Denom: input.QuoteDenom, Decimals: input.QuoteDecimals}
+		market := markets.NewMarket(dnTypes.NewIDFromUint64(uint64(id)), input.BaseDenom, input.QuoteDenom)
+		marketExt := markets.NewMarketExtended(market, baseCurrency, quoteCurrency)
 		extMarkets = append(extMarkets, marketExt)
 	}
 
 	for _, input := range i.Orders {
-		order := orderTypes.Order{
+		order := orders.Order{
 			ID:        dnTypes.NewIDFromUint64(input.OrderID),
 			Market:    extMarkets[input.MarketID],
 			Direction: input.Direction,
@@ -77,7 +77,7 @@ func (i *MatchingPoolInput) PostOrders(t *testing.T, pool *MatcherPool) {
 			t.Fatalf("AddOrder: %v", err)
 		}
 
-		if order.Direction == orderTypes.BidDirection {
+		if order.Direction == orders.BidDirection {
 			i.bidMarketOrders[input.MarketID]++
 		} else {
 			i.askMarketOrders[input.MarketID]++
@@ -157,7 +157,7 @@ func (i *MatchingPoolInput) PrintResults(results types.MatcherResults) {
 
 		if iItem.Direction != jItem.Direction {
 			if iItem.MarketID == jItem.MarketID {
-				if iItem.Direction == orderTypes.BidDirection {
+				if iItem.Direction == orders.BidDirection {
 					return false
 				}
 				return true
@@ -238,15 +238,15 @@ func TestOB_Matching_XARExample(t *testing.T) {
 			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 5, Price: 12, InQuantity: 100, OutQuantity: 100},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 6, Price: 10, InQuantity: 50, OutQuantity: 42},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 4, Price: 10, InQuantity: 50, OutQuantity: 42},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 3, Price: 12, InQuantity: 100, OutQuantity: 100},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 2, Price: 8, InQuantity: 100, OutQuantity: 84},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 10, Price: 14, InQuantity: 100, OutQuantity: 0},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 7, Price: 14, InQuantity: 50, OutQuantity: 50},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 8, Price: 11, InQuantity: 100, OutQuantity: 82},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 1, Price: 10, InQuantity: 100, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 5, Price: 12, InQuantity: 100, OutQuantity: 100},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 6, Price: 10, InQuantity: 50, OutQuantity: 42},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 4, Price: 10, InQuantity: 50, OutQuantity: 42},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 3, Price: 12, InQuantity: 100, OutQuantity: 100},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 2, Price: 8, InQuantity: 100, OutQuantity: 84},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 10, Price: 14, InQuantity: 100, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 7, Price: 14, InQuantity: 50, OutQuantity: 50},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 8, Price: 11, InQuantity: 100, OutQuantity: 82},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 1, Price: 10, InQuantity: 100, OutQuantity: 0},
 		},
 	}
 
@@ -268,15 +268,15 @@ func TestOB_Matching_NotionExample(t *testing.T) {
 			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 1, Price: 50, InQuantity: 150, OutQuantity: 101},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 2, Price: 40, InQuantity: 90, OutQuantity: 61},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 3, Price: 55, InQuantity: 80, OutQuantity: 80},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 4, Price: 70, InQuantity: 50, OutQuantity: 50},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 5, Price: 30, InQuantity: 150, OutQuantity: 0},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 6, Price: 70, InQuantity: 200, OutQuantity: 0},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 7, Price: 55, InQuantity: 100, OutQuantity: 100},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 8, Price: 40, InQuantity: 100, OutQuantity: 68},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 9, Price: 20, InQuantity: 200, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 1, Price: 50, InQuantity: 150, OutQuantity: 101},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 2, Price: 40, InQuantity: 90, OutQuantity: 61},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 3, Price: 55, InQuantity: 80, OutQuantity: 80},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 4, Price: 70, InQuantity: 50, OutQuantity: 50},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 5, Price: 30, InQuantity: 150, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 6, Price: 70, InQuantity: 200, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 7, Price: 55, InQuantity: 100, OutQuantity: 100},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 8, Price: 40, InQuantity: 100, OutQuantity: 68},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 9, Price: 20, InQuantity: 200, OutQuantity: 0},
 		},
 	}
 
@@ -299,12 +299,12 @@ func TestOB_Matching_ProRata(t *testing.T) {
 			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 7, Price: 50, InQuantity: 100, OutQuantity: 0},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 5, Price: 50, InQuantity: 50, OutQuantity: 0},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 6, Price: 50, InQuantity: 50, OutQuantity: 0},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 0, Price: 50, InQuantity: 50, OutQuantity: 0},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 1, Price: 50, InQuantity: 25, OutQuantity: 0},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 2, Price: 50, InQuantity: 25, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 7, Price: 50, InQuantity: 100, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 5, Price: 50, InQuantity: 50, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 6, Price: 50, InQuantity: 50, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 0, Price: 50, InQuantity: 50, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 1, Price: 50, InQuantity: 25, OutQuantity: 0},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 2, Price: 50, InQuantity: 25, OutQuantity: 0},
 		},
 	}
 
@@ -329,17 +329,17 @@ func TestOB_Matching_FillPriority(t *testing.T) {
 			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 0, Price: 50, InQuantity: 25, OutFillSeq: 2},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 1, Price: 50, InQuantity: 5, OutFillSeq: 3},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 2, Price: 75, InQuantity: 30, OutFillSeq: 4},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 3, Price: 75, InQuantity: 20, OutFillSeq: 5},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 4, Price: 75, InQuantity: 10, OutFillSeq: 6},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 5, Price: 100, InQuantity: 50},
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 6, Price: 150, InQuantity: 50},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 0, Price: 50, InQuantity: 25, OutFillSeq: 2},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 1, Price: 50, InQuantity: 5, OutFillSeq: 3},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 2, Price: 75, InQuantity: 30, OutFillSeq: 4},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 3, Price: 75, InQuantity: 20, OutFillSeq: 5},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 4, Price: 75, InQuantity: 10, OutFillSeq: 6},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 5, Price: 100, InQuantity: 50},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 6, Price: 150, InQuantity: 50},
 
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 10, Price: 40, InQuantity: 75},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 11, Price: 65, InQuantity: 55},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 12, Price: 120, InQuantity: 25, OutFillSeq: 1},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 10, Price: 40, InQuantity: 75},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 11, Price: 65, InQuantity: 55},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 12, Price: 120, InQuantity: 25, OutFillSeq: 1},
 		},
 	}
 
@@ -362,8 +362,8 @@ func TestOB_Matching_TwoOrders(t *testing.T) {
 			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
-			{MarketID: 0, Direction: orderTypes.AskDirection, OrderID: 0, Price: 50, InQuantity: 50, OutQuantity: 50},
-			{MarketID: 0, Direction: orderTypes.BidDirection, OrderID: 1, Price: 100, InQuantity: 50, OutQuantity: 50},
+			{MarketID: 0, Direction: orders.AskDirection, OrderID: 0, Price: 50, InQuantity: 50, OutQuantity: 50},
+			{MarketID: 0, Direction: orders.BidDirection, OrderID: 1, Price: 100, InQuantity: 50, OutQuantity: 50},
 		},
 	}
 

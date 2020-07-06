@@ -11,7 +11,7 @@ import (
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 // Matcher object defined for every market.
@@ -26,8 +26,8 @@ type Matcher struct {
 
 // MatcherOrders stores bid/ask orders in sorted slices.
 type MatcherOrders struct {
-	bid orderTypes.Orders
-	ask orderTypes.Orders
+	bid orders.Orders
+	ask orders.Orders
 }
 
 // MatcherAggregates stores bid/ask aggregates.
@@ -37,7 +37,7 @@ type MatcherAggregates struct {
 }
 
 // AddOrder validates the input order and adds it to the corresponding queue.
-func (m *Matcher) AddOrder(order *orderTypes.Order) error {
+func (m *Matcher) AddOrder(order *orders.Order) error {
 	const MaxUint = ^uint(0)
 	const MaxInt = int(MaxUint >> 1)
 
@@ -54,22 +54,22 @@ func (m *Matcher) AddOrder(order *orderTypes.Order) error {
 		return sdkErrors.Wrap(types.ErrInternal, "zero quantity")
 	}
 
-	var orders *orderTypes.Orders
+	var matcherOrders *orders.Orders
 	switch order.Direction {
-	case orderTypes.BidDirection:
-		orders = &m.orders.bid
-	case orderTypes.AskDirection:
-		orders = &m.orders.ask
+	case orders.BidDirection:
+		matcherOrders = &m.orders.bid
+	case orders.AskDirection:
+		matcherOrders = &m.orders.ask
 	default:
 		return fmt.Errorf("unknown order direction: %s", order.Direction)
 	}
 
 	// =) Check added just for fun
-	if len(*orders) == MaxInt {
+	if len(*matcherOrders) == MaxInt {
 		return fmt.Errorf("max orders len reached")
 	}
 
-	*orders = append(*orders, *order)
+	*matcherOrders = append(*matcherOrders, *order)
 
 	return nil
 }
@@ -155,10 +155,10 @@ func (m *Matcher) Match() (result types.MatcherResult, retErr error) {
 }
 
 // getBidOrderFills fills up bid orders in reverse order (from highest target price and lower order IDs).
-func (m *Matcher) getBidOrderFills(clearanceState types.ClearanceState) (fills orderTypes.OrderFills, matchedVolume sdk.Dec) {
+func (m *Matcher) getBidOrderFills(clearanceState types.ClearanceState) (fills orders.OrderFills, matchedVolume sdk.Dec) {
 	// fills stores result order fills
 	// matchedVolume stores current matched volume (should be <= clearanceState.MaxBidVolume
-	fills, matchedVolume = make(orderTypes.OrderFills, 0, len(m.orders.bid)), sdk.ZeroDec()
+	fills, matchedVolume = make(orders.OrderFills, 0, len(m.orders.bid)), sdk.ZeroDec()
 
 	proRataGTOne := clearanceState.ProRata.GT(sdk.OneDec())
 	for i := len(m.orders.bid) - 1; i >= 0; i-- {
@@ -187,7 +187,7 @@ func (m *Matcher) getBidOrderFills(clearanceState types.ClearanceState) (fills o
 		}
 		matchedVolume = matchedVolume.Add(sdk.NewDecFromBigInt(fillQuantity.BigInt()))
 
-		fills = append(fills, orderTypes.OrderFill{
+		fills = append(fills, orders.OrderFill{
 			Order:            *order,
 			ClearancePrice:   clearanceState.Price,
 			QuantityFilled:   fillQuantity,
@@ -199,10 +199,10 @@ func (m *Matcher) getBidOrderFills(clearanceState types.ClearanceState) (fills o
 }
 
 // getAskOrderFills fills up ask orders in direct order (from lowest target price and lower order IDs).
-func (m *Matcher) getAskOrderFills(clearanceState types.ClearanceState) (fills orderTypes.OrderFills, matchedVolume sdk.Dec) {
+func (m *Matcher) getAskOrderFills(clearanceState types.ClearanceState) (fills orders.OrderFills, matchedVolume sdk.Dec) {
 	// fills stores result order fills
 	// matchedVolume stores current matched volume (should be <= clearanceState.MaxBidVolume
-	fills, matchedVolume = make(orderTypes.OrderFills, 0, len(m.orders.ask)), sdk.ZeroDec()
+	fills, matchedVolume = make(orders.OrderFills, 0, len(m.orders.ask)), sdk.ZeroDec()
 
 	proRataGTOne := clearanceState.ProRata.GT(sdk.OneDec())
 	for i := 0; i < len(m.orders.ask); i++ {
@@ -231,7 +231,7 @@ func (m *Matcher) getAskOrderFills(clearanceState types.ClearanceState) (fills o
 		}
 		matchedVolume = matchedVolume.Add(sdk.NewDecFromBigInt(fillQuantity.BigInt()))
 
-		fills = append(fills, orderTypes.OrderFill{
+		fills = append(fills, orders.OrderFill{
 			Order:            *order,
 			ClearancePrice:   clearanceState.Price,
 			QuantityFilled:   fillQuantity,

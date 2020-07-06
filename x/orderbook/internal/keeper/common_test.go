@@ -20,7 +20,7 @@ import (
 
 	"github.com/dfinance/dnode/helpers/tests"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
@@ -52,7 +52,7 @@ type TestInput struct {
 	accountKeeper auth.AccountKeeper
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
-	ccsKeeper     ccsTypes.Keeper
+	ccsKeeper     cc_storage.Keeper
 	marketKeeper  markets.Keeper
 	orderKeeper   orders.Keeper
 	paramsKeeper  params.Keeper
@@ -67,7 +67,7 @@ func NewTestInput(t *testing.T) TestInput {
 		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
 		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
 		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
-		keyCCS:     sdk.NewKVStoreKey(ccsTypes.StoreKey),
+		keyCCS:     sdk.NewKVStoreKey(cc_storage.StoreKey),
 		keyOrders:  sdk.NewKVStoreKey(orders.StoreKey),
 		keyOB:      sdk.NewKVStoreKey(types.StoreKey),
 		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
@@ -110,7 +110,7 @@ func NewTestInput(t *testing.T) TestInput {
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
-	input.ccsKeeper = ccsTypes.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccsTypes.DefaultParamspace), input.vmStorage)
+	input.ccsKeeper = cc_storage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(cc_storage.DefaultParamspace), input.vmStorage)
 	input.marketKeeper = markets.NewKeeper(input.cdc, input.paramsKeeper.Subspace(markets.DefaultParamspace), input.ccsKeeper)
 	input.orderKeeper = orders.NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
 	input.keeper = NewKeeper(input.keyOB, input.cdc, input.orderKeeper)

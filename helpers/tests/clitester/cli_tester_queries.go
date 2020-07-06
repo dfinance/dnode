@@ -8,16 +8,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
-	marketTypes "github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	orderTypes "github.com/dfinance/dnode/x/orders"
-	poaTypes "github.com/dfinance/dnode/x/poa"
+	"github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -29,8 +29,8 @@ func (ct *CLITester) QueryTx(txHash string) (*QueryRequest, *sdk.TxResponse) {
 	return q, resObj
 }
 
-func (ct *CLITester) QueryStatus() (*QueryRequest, *ctypes.ResultStatus) {
-	resObj := &ctypes.ResultStatus{}
+func (ct *CLITester) QueryStatus() (*QueryRequest, *tmCoreTypes.ResultStatus) {
+	resObj := &tmCoreTypes.ResultStatus{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("status")
 	q.RemoveCmdArg("query")
@@ -38,24 +38,24 @@ func (ct *CLITester) QueryStatus() (*QueryRequest, *ctypes.ResultStatus) {
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesIssue(id string) (*QueryRequest, *ccTypes.Issue) {
-	resObj := &ccTypes.Issue{}
+func (ct *CLITester) QueryCurrenciesIssue(id string) (*QueryRequest, *currencies.Issue) {
+	resObj := &currencies.Issue{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("currencies", "issue", id)
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesWithdraw(id dnTypes.ID) (*QueryRequest, *ccTypes.Withdraw) {
-	resObj := &ccTypes.Withdraw{}
+func (ct *CLITester) QueryCurrenciesWithdraw(id dnTypes.ID) (*QueryRequest, *currencies.Withdraw) {
+	resObj := &currencies.Withdraw{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("currencies", "withdraw", id.String())
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesWithdraws(page, limit int) (*QueryRequest, *ccTypes.Withdraws) {
-	resObj := &ccTypes.Withdraws{}
+func (ct *CLITester) QueryCurrenciesWithdraws(page, limit int) (*QueryRequest, *currencies.Withdraws) {
+	resObj := &currencies.Withdraws{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("currencies", "withdraws")
 
@@ -69,8 +69,8 @@ func (ct *CLITester) QueryCurrenciesWithdraws(page, limit int) (*QueryRequest, *
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesCurrency(denom string) (*QueryRequest, *ccsTypes.Currency) {
-	resObj := &ccsTypes.Currency{}
+func (ct *CLITester) QueryCurrenciesCurrency(denom string) (*QueryRequest, *cc_storage.Currency) {
+	resObj := &cc_storage.Currency{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("currencies", "currency", denom)
 
@@ -108,24 +108,24 @@ func (ct *CLITester) QueryOraclePrice(assetCode string) (*QueryRequest, *oracle.
 	return q, resObj
 }
 
-func (ct *CLITester) QueryPoaValidators() (*QueryRequest, *poaTypes.ValidatorsConfirmationsResp) {
-	resObj := &poaTypes.ValidatorsConfirmationsResp{}
+func (ct *CLITester) QueryPoaValidators() (*QueryRequest, *poa.ValidatorsConfirmationsResp) {
+	resObj := &poa.ValidatorsConfirmationsResp{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("poa", "validators")
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryPoaValidator(address string) (*QueryRequest, *poaTypes.Validator) {
-	resObj := &poaTypes.Validator{}
+func (ct *CLITester) QueryPoaValidator(address string) (*QueryRequest, *poa.Validator) {
+	resObj := &poa.Validator{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("poa", "validator", address)
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryPoaMinMax() (*QueryRequest, *poaTypes.Params) {
-	resObj := &poaTypes.Params{}
+func (ct *CLITester) QueryPoaMinMax() (*QueryRequest, *poa.Params) {
+	resObj := &poa.Params{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("poa", "minmax")
 
@@ -208,16 +208,16 @@ func (ct *CLITester) QueryAuthAccount(address string) (*QueryRequest, *auth.Base
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOrdersOrder(id dnTypes.ID) (*QueryRequest, *orderTypes.Order) {
-	resObj := &orderTypes.Order{}
+func (ct *CLITester) QueryOrdersOrder(id dnTypes.ID) (*QueryRequest, *orders.Order) {
+	resObj := &orders.Order{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("orders", "order", id.String())
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orderTypes.Direction, ownerFilter *string) (*QueryRequest, *orderTypes.Orders) {
-	resObj := &orderTypes.Orders{}
+func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orders.Direction, ownerFilter *string) (*QueryRequest, *orders.Orders) {
+	resObj := &orders.Orders{}
 
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("orders", "list")
@@ -241,16 +241,16 @@ func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMarketsMarket(id dnTypes.ID) (*QueryRequest, *marketTypes.Market) {
-	resObj := &marketTypes.Market{}
+func (ct *CLITester) QueryMarketsMarket(id dnTypes.ID) (*QueryRequest, *markets.Market) {
+	resObj := &markets.Market{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("markets", "market", id.String())
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMarketsList(page, limit int, baseDenom, quoteDenom *string) (*QueryRequest, *marketTypes.Markets) {
-	resObj := &marketTypes.Markets{}
+func (ct *CLITester) QueryMarketsList(page, limit int, baseDenom, quoteDenom *string) (*QueryRequest, *markets.Markets) {
+	resObj := &markets.Markets{}
 
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("markets", "list")

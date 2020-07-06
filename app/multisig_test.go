@@ -12,7 +12,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/multisig"
 	msExport "github.com/dfinance/dnode/x/multisig/export"
 	"github.com/dfinance/dnode/x/poa"
@@ -224,7 +224,7 @@ func TestMSApp_BlockHeight(t *testing.T) {
 		app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
 		// generate submit message
 		issueId, msgId := fmt.Sprintf("issue%d", curIssueIdx), strconv.Itoa(curIssueIdx)
-		issueMsg := ccTypes.NewMsgIssueCurrency(issueId, currency1Denom, amount, 0, senderAddr)
+		issueMsg := currencies.NewMsgIssueCurrency(issueId, currency1Denom, amount, 0, senderAddr)
 		submitMsg := msExport.NewMsgSubmitCall(issueMsg, msgId, senderAddr)
 		// emit transaction
 		senderAcc := GetAccount(app, senderAddr)

@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
 
-	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
+	"github.com/dfinance/dnode/helpers/tests/clitester"
 	"github.com/dfinance/dnode/helpers/tests/sb-trading-app/bot"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 )
 
 type Watcher struct {
@@ -27,7 +27,7 @@ type Watcher struct {
 
 type Config struct {
 	T             *testing.T
-	Tester        *cliTester.CLITester
+	Tester        *clitester.CLITester
 	MinBots       uint
 	MaxBots       uint
 	WorkDurtInSec int
@@ -50,8 +50,8 @@ type Market struct {
 type MarketState struct {
 	Market
 	id            dnTypes.ID
-	baseCurrency  ccsTypes.Currency
-	quoteCurrency ccsTypes.Currency
+	baseCurrency  cc_storage.Currency
+	quoteCurrency cc_storage.Currency
 	bots          []*bot.Bot
 }
 

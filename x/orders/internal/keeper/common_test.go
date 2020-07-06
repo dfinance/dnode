@@ -20,7 +20,7 @@ import (
 
 	"github.com/dfinance/dnode/helpers/tests"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orders/internal/types"
@@ -50,7 +50,7 @@ type TestInput struct {
 	accountKeeper auth.AccountKeeper
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
-	ccsKeeper     ccsTypes.Keeper
+	ccsKeeper     cc_storage.Keeper
 	marketKeeper  markets.Keeper
 	paramsKeeper  params.Keeper
 	keeper        Keeper
@@ -64,7 +64,7 @@ func NewTestInput(t *testing.T) TestInput {
 		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
 		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
 		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
-		keyCCS:     sdk.NewKVStoreKey(ccsTypes.StoreKey),
+		keyCCS:     sdk.NewKVStoreKey(cc_storage.StoreKey),
 		keyOrders:  sdk.NewKVStoreKey(types.StoreKey),
 		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
 		tKeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
@@ -104,7 +104,7 @@ func NewTestInput(t *testing.T) TestInput {
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
-	input.ccsKeeper = ccsTypes.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccsTypes.DefaultParamspace), input.vmStorage)
+	input.ccsKeeper = cc_storage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(cc_storage.DefaultParamspace), input.vmStorage)
 	input.marketKeeper = markets.NewKeeper(input.cdc, input.paramsKeeper.Subspace(markets.DefaultParamspace), input.ccsKeeper)
 	input.keeper = NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
 
@@ -140,11 +140,11 @@ func NewBtcDfiMockOrder(direction types.Direction) types.Order {
 		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"),
 		Market: markets.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(0),
-			BaseCurrency: ccsTypes.Currency{
+			BaseCurrency: cc_storage.Currency{
 				Denom:    "btc",
 				Decimals: 8,
 			},
-			QuoteCurrency: ccsTypes.Currency{
+			QuoteCurrency: cc_storage.Currency{
 				Denom:    "dfi",
 				Decimals: 18,
 			},
@@ -166,11 +166,11 @@ func NewEthDfiMockOrder(direction types.Direction) types.Order {
 		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07i"),
 		Market: markets.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(1),
-			BaseCurrency: ccsTypes.Currency{
+			BaseCurrency: cc_storage.Currency{
 				Denom:    "eth",
 				Decimals: 18,
 			},
-			QuoteCurrency: ccsTypes.Currency{
+			QuoteCurrency: cc_storage.Currency{
 				Denom:    "dfi",
 				Decimals: 18,
 			},
@@ -185,7 +185,7 @@ func NewEthDfiMockOrder(direction types.Direction) types.Order {
 }
 
 func CompareOrders(t *testing.T, order1, order2 types.Order) {
-	compareCurrency := func(logMsg string, c1, c2 ccsTypes.Currency) {
+	compareCurrency := func(logMsg string, c1, c2 cc_storage.Currency) {
 		require.Equal(t, c1.Denom, c2.Denom, "%s: Denom", logMsg)
 		require.Equal(t, c1.Decimals, c2.Decimals, "%s: Decimals", logMsg)
 	}

@@ -32,7 +32,7 @@ import (
 
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/currencies"
@@ -71,7 +71,7 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		poa.AppModuleBasic{},
-		ccsTypes.AppModuleBasic{},
+		cc_storage.AppModuleBasic{},
 		currencies.AppModuleBasic{},
 		multisig.AppModuleBasic{},
 		oracle.AppModuleBasic{},
@@ -111,7 +111,7 @@ type DnServiceApp struct {
 	distrKeeper     distribution.Keeper
 	slashingKeeper  slashing.Keeper
 	poaKeeper       poa.Keeper
-	ccsKeeper       ccsTypes.Keeper
+	ccsKeeper       cc_storage.Keeper
 	ccKeeper        currencies.Keeper
 	msKeeper        multisig.Keeper
 	vmKeeper        vm.Keeper
@@ -184,7 +184,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		distribution.StoreKey,
 		slashing.StoreKey,
 		poa.StoreKey,
-		ccsTypes.StoreKey,
+		cc_storage.StoreKey,
 		currencies.StoreKey,
 		multisig.StoreKey,
 		vm.StoreKey,
@@ -232,10 +232,10 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	// Initializing currencies storage keeper.
-	app.ccsKeeper = ccsTypes.NewKeeper(
+	app.ccsKeeper = cc_storage.NewKeeper(
 		cdc,
-		keys[ccsTypes.StoreKey],
-		app.paramsKeeper.Subspace(ccsTypes.DefaultParamspace),
+		keys[cc_storage.StoreKey],
+		app.paramsKeeper.Subspace(cc_storage.DefaultParamspace),
 		app.vmKeeper,
 	)
 
@@ -382,7 +382,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
-		ccsTypes.NewAppModule(app.ccsKeeper),
+		cc_storage.NewAppModule(app.ccsKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
 		multisig.NewAppModule(app.msKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
@@ -412,7 +412,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
 		vm.ModuleName,
-		ccsTypes.ModuleName,
+		cc_storage.ModuleName,
 		genaccounts.ModuleName,
 		distribution.ModuleName,
 		staking.ModuleName,

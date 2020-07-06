@@ -1,7 +1,7 @@
 package rest
 
 import (
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
@@ -23,7 +23,7 @@ type (
 	}
 
 	CCRespGetCurrency struct {
-		Height int64             `json:"height"`
-		Result ccsTypes.Currency `json:"result"`
+		Height int64               `json:"height"`
+		Result cc_storage.Currency `json:"result"`
 	}
 )

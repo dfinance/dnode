@@ -13,16 +13,16 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/multisig"
 )
 
 const (
-	queryCurrencyIssuePath     = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryIssue
-	queryCurrencyCurrencyPath  = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryCurrency
-	queryCurrencyWithdrawsPath = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryWithdraws
-	queryCurrencyWithdrawPath  = "/custom/" + ccTypes.ModuleName + "/" + ccTypes.QueryWithdraw
+	queryCurrencyIssuePath     = "/custom/" + currencies.ModuleName + "/" + currencies.QueryIssue
+	queryCurrencyCurrencyPath  = "/custom/" + currencies.ModuleName + "/" + currencies.QueryCurrency
+	queryCurrencyWithdrawsPath = "/custom/" + currencies.ModuleName + "/" + currencies.QueryWithdraws
+	queryCurrencyWithdrawPath  = "/custom/" + currencies.ModuleName + "/" + currencies.QueryWithdraw
 )
 
 // Checks that currencies module supports only multisig calls for issue msg (using MSRouter).
@@ -40,7 +40,7 @@ func TestCurrenciesApp_MultisigHandler(t *testing.T) {
 
 	{
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
-		issueMsg := ccTypes.NewMsgIssueCurrency(issue1ID, currency1Denom, amount, 0, senderAcc.GetAddress())
+		issueMsg := currencies.NewMsgIssueCurrency(issue1ID, currency1Denom, amount, 0, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{issueMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, sdkErrors.ErrUnauthorized)
 	}
@@ -61,7 +61,7 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
 
-	checkWithdrawQueryObj := func(obj ccTypes.Withdraw, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress) {
+	checkWithdrawQueryObj := func(obj currencies.Withdraw, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress) {
 		require.Equal(t, id, obj.ID.UInt64())
 		require.Equal(t, denom, obj.Denom)
 		require.True(t, obj.Amount.Equal(amount))
@@ -101,8 +101,8 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 	{
 		// page 1
 		{
-			withdraws := ccTypes.Withdraws{}
-			reqParams := ccTypes.WithdrawsReq{Page: sdk.NewUint(1), Limit: sdk.NewUint(2)}
+			withdraws := currencies.Withdraws{}
+			reqParams := currencies.WithdrawsReq{Page: sdk.NewUint(1), Limit: sdk.NewUint(2)}
 			CheckRunQuery(t, app, reqParams, queryCurrencyWithdrawsPath, &withdraws)
 
 			require.Len(t, withdraws, 2)
@@ -112,8 +112,8 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 
 		// page 2
 		{
-			withdraws := ccTypes.Withdraws{}
-			reqParams := ccTypes.WithdrawsReq{Page: sdk.NewUint(2), Limit: sdk.NewUint(2)}
+			withdraws := currencies.Withdraws{}
+			reqParams := currencies.WithdrawsReq{Page: sdk.NewUint(2), Limit: sdk.NewUint(2)}
 			CheckRunQuery(t, app, reqParams, queryCurrencyWithdrawsPath, &withdraws)
 
 			require.Len(t, withdraws, 1)
@@ -174,7 +174,7 @@ func TestCurrenciesApp_Issue(t *testing.T) {
 		msgId, issueId := "3", "issue3"
 
 		res, err := issueCurrency(t, app, denom, sdk.OneInt(), curDecimals+1, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, ccTypes.ErrIncorrectDecimals, res, err)
+		CheckResultError(t, currencies.ErrIncorrectDecimals, res, err)
 	}
 
 	// fail: currency issue with the same issueID
@@ -182,7 +182,7 @@ func TestCurrenciesApp_Issue(t *testing.T) {
 		msgId, issueId := "non-existing-msgID", "issue1"
 
 		res, err := issueCurrency(t, app, denom, amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, ccTypes.ErrWrongIssueID, res, err)
+		CheckResultError(t, currencies.ErrWrongIssueID, res, err)
 	}
 
 	// fail: currency issue with already existing uniqueMsgID
@@ -350,7 +350,7 @@ func TestCurrenciesApp_Withdraw(t *testing.T) {
 		wrongDenom := currency2Denom
 
 		res, err := withdrawCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
-		CheckResultError(t, ccsTypes.ErrWrongDenom, res, err)
+		CheckResultError(t, cc_storage.ErrWrongDenom, res, err)
 	}
 }
 
@@ -359,7 +359,7 @@ func createCurrency(t *testing.T, app *DnServiceApp, ccDenom string, ccDecimals 
 	_, balancePathHex := GenerateRandomBytes(10)
 	_, infoPathHex := GenerateRandomBytes(10)
 
-	params := ccsTypes.CurrencyParams{
+	params := cc_storage.CurrencyParams{
 		Decimals:       ccDecimals,
 		BalancePathHex: balancePathHex,
 		InfoPathHex:    infoPathHex,
@@ -377,7 +377,7 @@ func issueCurrency(t *testing.T, app *DnServiceApp,
 	ccDenom string, ccAmount sdk.Int, ccDecimals uint8, msgID, issueID string,
 	recipientAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
 
-	issueMsg := ccTypes.NewMsgIssueCurrency(issueID, ccDenom, ccAmount, ccDecimals, accs[recipientAccIdx].Address)
+	issueMsg := currencies.NewMsgIssueCurrency(issueID, ccDenom, ccAmount, ccDecimals, accs[recipientAccIdx].Address)
 	return MSMsgSubmitAndVote(t, app, msgID, issueMsg, recipientAccIdx, accs, privKeys, doCheck)
 }
 
@@ -387,7 +387,7 @@ func withdrawCurrency(t *testing.T, app *DnServiceApp,
 	spenderAddr sdk.AccAddress, spenderPrivKey crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
 
 	spenderAcc := GetAccountCheckTx(app, spenderAddr)
-	withdrawMsg := ccTypes.NewMsgWithdrawCurrency(ccDenom, ccAmount, spenderAcc.GetAddress(), spenderAcc.GetAddress().String(), chainID)
+	withdrawMsg := currencies.NewMsgWithdrawCurrency(ccDenom, ccAmount, spenderAcc.GetAddress(), spenderAcc.GetAddress().String(), chainID)
 	tx := genTx([]sdk.Msg{withdrawMsg}, []uint64{spenderAcc.GetAccountNumber()}, []uint64{spenderAcc.GetSequence()}, spenderPrivKey)
 
 	res, err := DeliverTx(app, tx)
@@ -400,8 +400,8 @@ func withdrawCurrency(t *testing.T, app *DnServiceApp,
 
 // checkCurrencyExists checks currency exists.
 func checkCurrencyExists(t *testing.T, app *DnServiceApp, denom string, supply sdk.Int, decimals uint8) {
-	currencyObj := ccsTypes.Currency{}
-	CheckRunQuery(t, app, ccTypes.CurrencyReq{Denom: denom}, queryCurrencyCurrencyPath, &currencyObj)
+	currencyObj := cc_storage.Currency{}
+	CheckRunQuery(t, app, currencies.CurrencyReq{Denom: denom}, queryCurrencyCurrencyPath, &currencyObj)
 
 	require.Equal(t, denom, currencyObj.Denom, "denom")
 	require.Equal(t, decimals, currencyObj.Decimals, "decimals")
@@ -410,8 +410,8 @@ func checkCurrencyExists(t *testing.T, app *DnServiceApp, denom string, supply s
 
 // checkIssueExists checks issue exists.
 func checkIssueExists(t *testing.T, app *DnServiceApp, issueID, denom string, amount sdk.Int, payeeAddr sdk.AccAddress) {
-	issue := ccTypes.Issue{}
-	CheckRunQuery(t, app, ccTypes.IssueReq{ID: issueID}, queryCurrencyIssuePath, &issue)
+	issue := currencies.Issue{}
+	CheckRunQuery(t, app, currencies.IssueReq{ID: issueID}, queryCurrencyIssuePath, &issue)
 
 	require.Equal(t, denom, issue.Denom, "symbol")
 	require.True(t, issue.Amount.Equal(amount), "amount")
@@ -420,8 +420,8 @@ func checkIssueExists(t *testing.T, app *DnServiceApp, issueID, denom string, am
 
 // checkWithdrawExists checks withdraw exists.
 func checkWithdrawExists(t *testing.T, app *DnServiceApp, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress, pzSpender string) {
-	withdraw := ccTypes.Withdraw{}
-	CheckRunQuery(t, app, ccTypes.WithdrawReq{ID: dnTypes.NewIDFromUint64(id)}, queryCurrencyWithdrawPath, &withdraw)
+	withdraw := currencies.Withdraw{}
+	CheckRunQuery(t, app, currencies.WithdrawReq{ID: dnTypes.NewIDFromUint64(id)}, queryCurrencyWithdrawPath, &withdraw)
 
 	require.Equal(t, id, withdraw.ID.UInt64())
 	require.Equal(t, denom, withdraw.Denom)

@@ -5,12 +5,12 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
-func findEventAttrOrderID(prefix string, event coreTypes.ResultEvent) ([]dnTypes.ID, bool) {
+func findEventAttrOrderID(prefix string, event tmCoreTypes.ResultEvent) ([]dnTypes.ID, bool) {
 	ids := make([]dnTypes.ID, 0)
 
 	orderIdType := prefix + "order_id"
@@ -36,7 +36,7 @@ func findEventAttrOrderID(prefix string, event coreTypes.ResultEvent) ([]dnTypes
 	return []dnTypes.ID{}, false
 }
 
-func findEventAttrClearancePrice(event coreTypes.ResultEvent) (sdk.Uint, bool) {
+func findEventAttrClearancePrice(event tmCoreTypes.ResultEvent) (sdk.Uint, bool) {
 	for eventType, eventValues := range event.Events {
 		if eventType == "orderbook.clearance.price" {
 			if len(eventValues) != 1 {
@@ -50,7 +50,7 @@ func findEventAttrClearancePrice(event coreTypes.ResultEvent) (sdk.Uint, bool) {
 	return sdk.Uint{}, false
 }
 
-func (b *Bot) handleOrderPost(event coreTypes.ResultEvent) {
+func (b *Bot) handleOrderPost(event tmCoreTypes.ResultEvent) {
 	orderIDs, ok := findEventAttrOrderID("orders.post.", event)
 	require.True(b.cfg.T, ok, "order_id not found: %v", event)
 
@@ -74,7 +74,7 @@ func (b *Bot) handleOrderPost(event coreTypes.ResultEvent) {
 	}
 }
 
-func (b *Bot) handleOrderCancel(event coreTypes.ResultEvent) {
+func (b *Bot) handleOrderCancel(event tmCoreTypes.ResultEvent) {
 	orderIDs, ok := findEventAttrOrderID("orders.cancel.", event)
 	require.True(b.cfg.T, ok, "order_id not found: %v", event)
 
@@ -89,7 +89,7 @@ func (b *Bot) handleOrderCancel(event coreTypes.ResultEvent) {
 	b.onOrderCloseMarketMakeMaking("order(s) cancel event")
 }
 
-func (b *Bot) handleOrderFullFill(event coreTypes.ResultEvent) {
+func (b *Bot) handleOrderFullFill(event tmCoreTypes.ResultEvent) {
 	orderIDs, ok := findEventAttrOrderID("orders.full_fill.", event)
 	require.True(b.cfg.T, ok, "order_id not found: %v", event)
 
@@ -104,7 +104,7 @@ func (b *Bot) handleOrderFullFill(event coreTypes.ResultEvent) {
 	b.onOrderCloseMarketMakeMaking("order(s) full fill event")
 }
 
-func (b *Bot) handleOrderPartialFill(event coreTypes.ResultEvent) {
+func (b *Bot) handleOrderPartialFill(event tmCoreTypes.ResultEvent) {
 	orderIDs, ok := findEventAttrOrderID("orders.partial_fill.", event)
 	require.True(b.cfg.T, ok, "order_id not found: %v", event)
 
@@ -129,7 +129,7 @@ func (b *Bot) handleOrderPartialFill(event coreTypes.ResultEvent) {
 	b.onOrderCloseMarketMakeMaking("order(s) partially fill event")
 }
 
-func (b *Bot) handleOrderBookClearance(event coreTypes.ResultEvent) {
+func (b *Bot) handleOrderBookClearance(event tmCoreTypes.ResultEvent) {
 	price, ok := findEventAttrClearancePrice(event)
 	require.True(b.cfg.T, ok, "price not found: %v", event)
 

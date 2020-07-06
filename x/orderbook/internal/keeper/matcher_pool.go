@@ -7,7 +7,7 @@ import (
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 // MatcherPool objects stores matchers for market IDs.
@@ -17,7 +17,7 @@ type MatcherPool struct {
 }
 
 // AddOrder adds order to the corresponding matcher (by marketID).
-func (mp *MatcherPool) AddOrder(order orderTypes.Order) error {
+func (mp *MatcherPool) AddOrder(order orders.Order) error {
 	marketID := order.Market.ID
 	matcher, ok := mp.pool[marketID.String()]
 	if !ok {

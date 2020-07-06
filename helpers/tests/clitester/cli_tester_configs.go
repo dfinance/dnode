@@ -13,7 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 
 	"github.com/dfinance/dnode/cmd/config"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/orders"
 )
 
@@ -80,8 +80,8 @@ type CurrencyInfo struct {
 func NewCurrencyMap(cdc *codec.Codec, state GenesisState) map[string]CurrencyInfo {
 	currencies := make(map[string]CurrencyInfo)
 
-	var ccsGenesis ccsTypes.GenesisState
-	cdc.MustUnmarshalJSON(state[ccsTypes.ModuleName], &ccsGenesis)
+	var ccsGenesis cc_storage.GenesisState
+	cdc.MustUnmarshalJSON(state[cc_storage.ModuleName], &ccsGenesis)
 
 	for denom, params := range ccsGenesis.CurrenciesParams {
 		currencies[denom] = CurrencyInfo{

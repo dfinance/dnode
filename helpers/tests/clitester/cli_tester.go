@@ -20,7 +20,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
-	tmCTypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmRPCTypes "github.com/tendermint/tendermint/rpc/lib/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
@@ -391,7 +391,7 @@ func (ct *CLITester) GetCurrentBlockHeight() (int64, error) {
 		return -1, fmt.Errorf("body unmarshal: %w", err)
 	}
 
-	resultBlock := tmCTypes.ResultBlock{}
+	resultBlock := tmCoreTypes.ResultBlock{}
 	if err := ct.Cdc.UnmarshalJSON(resultResp.Result, &resultBlock); err != nil {
 		return -1, fmt.Errorf("result unmarshal: %w", err)
 	}

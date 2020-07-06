@@ -19,7 +19,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/dfinance/dnode/helpers/tests"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm"
 )
@@ -36,7 +36,7 @@ type TestInput struct {
 	//
 	paramsKeeper  params.Keeper
 	bankKeeper    bank.BaseKeeper
-	ccsStorage    ccsTypes.Keeper
+	ccsStorage    cc_storage.Keeper
 	accountKeeper VMAccountKeeper
 	//
 	vmStorage common_vm.VMStorage
@@ -63,7 +63,7 @@ func NewTestInput(t *testing.T) TestInput {
 		cdc:        codec.New(),
 		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
 		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
-		keyCCS:     sdk.NewKVStoreKey(ccsTypes.StoreKey),
+		keyCCS:     sdk.NewKVStoreKey(cc_storage.StoreKey),
 		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
 		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 	}
@@ -91,7 +91,7 @@ func NewTestInput(t *testing.T) TestInput {
 
 	// create target and dependant keepers
 	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
-	input.ccsStorage = ccsTypes.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccsTypes.DefaultParamspace), input.vmStorage)
+	input.ccsStorage = cc_storage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(cc_storage.DefaultParamspace), input.vmStorage)
 	input.accountKeeper = NewKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), input.ccsStorage, auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), make(map[string]bool))
 

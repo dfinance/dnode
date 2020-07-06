@@ -16,7 +16,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkRest "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/stretchr/testify/require"
-	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type RestRequest struct {
@@ -130,9 +130,9 @@ func (r *RestRequest) Execute() error {
 			return nil
 		}
 
-		if _, ok := r.responseValue.(*coreTypes.ResultBlock); ok {
+		if _, ok := r.responseValue.(*tmCoreTypes.ResultBlock); ok {
 			if err := r.cdc.UnmarshalJSON(respBody, r.responseValue); err != nil {
-				return fmt.Errorf("%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
+				return fmt.Errorf("%s: unmarshal tmCoreTypes.ResultBlock: %s", r.String(), string(respBody))
 			}
 
 			return nil

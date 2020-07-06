@@ -16,11 +16,11 @@ import (
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
-	marketTypes "github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -55,7 +55,7 @@ func TestCurrency_REST(t *testing.T) {
 			// non-existing issueID
 			{
 				req, _ := ct.RestQueryCurrenciesIssue("non_existing_ID")
-				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongIssueID)
+				req.CheckFailed(http.StatusInternalServerError, currencies.ErrWrongIssueID)
 			}
 		}
 	}
@@ -74,7 +74,7 @@ func TestCurrency_REST(t *testing.T) {
 			// non-existing symbol
 			{
 				req, _ := ct.RestQueryCurrenciesCurrency("non_existing_symbol")
-				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongDenom)
+				req.CheckFailed(http.StatusInternalServerError, currencies.ErrWrongDenom)
 			}
 		}
 	}
@@ -116,7 +116,7 @@ func TestCurrency_REST(t *testing.T) {
 			// non-existing withdrawID
 			{
 				req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(1))
-				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongWithdrawID)
+				req.CheckFailed(http.StatusInternalServerError, currencies.ErrWrongWithdrawID)
 			}
 		}
 	}
@@ -477,13 +477,13 @@ func TestMarkets_REST(t *testing.T) {
 		// non-existing currency
 		{
 			r, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, "atom")
-			r.CheckFailed(http.StatusOK, marketTypes.ErrWrongAssetDenom)
+			r.CheckFailed(http.StatusOK, markets.ErrWrongAssetDenom)
 		}
 
 		// already existing market
 		{
 			r, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, cliTester.DenomDFI)
-			r.CheckFailed(http.StatusOK, marketTypes.ErrMarketExists)
+			r.CheckFailed(http.StatusOK, markets.ErrMarketExists)
 		}
 	}
 
@@ -492,7 +492,7 @@ func TestMarkets_REST(t *testing.T) {
 		// non-existing marketID
 		{
 			r, _ := ct.RestQueryMarket(dnTypes.NewIDFromUint64(10))
-			r.CheckFailed(http.StatusInternalServerError, marketTypes.ErrWrongID)
+			r.CheckFailed(http.StatusInternalServerError, markets.ErrWrongID)
 		}
 
 		// existing marketID (btc-dfi)
@@ -629,8 +629,8 @@ func TestOrders_REST(t *testing.T) {
 	{
 		// invalid marketID
 		{
-			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.NewIDFromUint64(2), orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
-			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongMarketID)
+			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.NewIDFromUint64(2), orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			r.CheckFailed(http.StatusOK, orders.ErrWrongMarketID)
 		}
 	}
 
@@ -639,7 +639,7 @@ func TestOrders_REST(t *testing.T) {
 		MarketID     dnTypes.ID
 		OwnerName    string
 		OwnerAddress string
-		Direction    orderTypes.Direction
+		Direction    orders.Direction
 		Price        sdk.Uint
 		Quantity     sdk.Uint
 		TtlInSec     uint64
@@ -648,7 +648,7 @@ func TestOrders_REST(t *testing.T) {
 			MarketID:     marketID0,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.BidDirection,
+			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
 			Quantity:     sdk.NewUintFromString("100000000"),
 			TtlInSec:     60,
@@ -657,7 +657,7 @@ func TestOrders_REST(t *testing.T) {
 			MarketID:     marketID0,
 			OwnerName:    ownerName2,
 			OwnerAddress: ownerAddr2,
-			Direction:    orderTypes.BidDirection,
+			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("20000000000000000000"),
 			Quantity:     sdk.NewUintFromString("200000000"),
 			TtlInSec:     90,
@@ -666,7 +666,7 @@ func TestOrders_REST(t *testing.T) {
 			MarketID:     marketID0,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("50000000000000000000"),
 			Quantity:     sdk.NewUintFromString("500000000"),
 			TtlInSec:     60,
@@ -675,7 +675,7 @@ func TestOrders_REST(t *testing.T) {
 			MarketID:     marketID0,
 			OwnerName:    ownerName2,
 			OwnerAddress: ownerAddr2,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("60000000000000000000"),
 			Quantity:     sdk.NewUintFromString("600000000"),
 			TtlInSec:     90,
@@ -684,7 +684,7 @@ func TestOrders_REST(t *testing.T) {
 			MarketID:     marketID1,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
 			Quantity:     sdk.NewUintFromString("100000000"),
 			TtlInSec:     30,
@@ -770,21 +770,21 @@ func TestOrders_REST(t *testing.T) {
 		{
 			askCount, bidCount := 0, 0
 			for _, input := range inputOrders {
-				if input.Direction.Equal(orderTypes.AskDirection) {
+				if input.Direction.Equal(orders.AskDirection) {
 					askCount++
 				}
-				if input.Direction.Equal(orderTypes.BidDirection) {
+				if input.Direction.Equal(orders.BidDirection) {
 					bidCount++
 				}
 			}
 
-			askDirection := orderTypes.AskDirection
+			askDirection := orders.AskDirection
 			qAsk, ordersAsk := ct.RestQueryOrders(-1, -1, nil, &askDirection, nil)
 			qAsk.CheckSucceeded()
 
 			require.Len(t, *ordersAsk, askCount)
 
-			bidDirection := orderTypes.BidDirection
+			bidDirection := orders.BidDirection
 			qBid, ordersBid := ct.RestQueryOrders(-1, -1, nil, &bidDirection, nil)
 			qBid.CheckSucceeded()
 
@@ -818,7 +818,7 @@ func TestOrders_REST(t *testing.T) {
 		{
 			marketID := marketID0
 			owner := ownerAddr1
-			direction := orderTypes.AskDirection
+			direction := orders.AskDirection
 			count := 0
 			for _, input := range inputOrders {
 				if input.MarketID.Equal(marketID) && input.OwnerAddress == owner && input.Direction == direction {
@@ -842,7 +842,7 @@ func TestOrders_REST(t *testing.T) {
 		r.CheckSucceeded()
 
 		q, _ := ct.RestQueryOrder(orderID)
-		q.CheckFailed(http.StatusInternalServerError, orderTypes.ErrWrongOrderID)
+		q.CheckFailed(http.StatusInternalServerError, orders.ErrWrongOrderID)
 		inputOrders = inputOrders[:len(inputOrders)-2]
 	}
 
@@ -851,13 +851,13 @@ func TestOrders_REST(t *testing.T) {
 		// non-existing orderID
 		{
 			r, _ := ct.RestTxOrdersRevokeOrder(ownerName1, dnTypes.NewIDFromUint64(10))
-			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongOrderID)
+			r.CheckFailed(http.StatusOK, orders.ErrWrongOrderID)
 		}
 
 		// wrong owner (not an order owner)
 		{
 			r, _ := ct.RestTxOrdersRevokeOrder("validator1", dnTypes.NewIDFromUint64(0))
-			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongOwner)
+			r.CheckFailed(http.StatusOK, orders.ErrWrongOwner)
 		}
 	}
 }

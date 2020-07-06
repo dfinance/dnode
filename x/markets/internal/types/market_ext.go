@@ -9,7 +9,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 )
 
 // MarketExtended is a Market object extended with currency info from currencies module.
@@ -18,9 +18,9 @@ type MarketExtended struct {
 	// Market unique ID
 	ID dnTypes.ID `json:"id" yaml:"id" swaggertype:"string" example:"0"`
 	// Base asset currency (for ex. btc)
-	BaseCurrency ccsTypes.Currency
+	BaseCurrency cc_storage.Currency
 	// Quote asset currency (for ex. dfi)
-	QuoteCurrency ccsTypes.Currency
+	QuoteCurrency cc_storage.Currency
 }
 
 // BaseToQuoteQuantity converts base asset price and quantity to quote asset quantity.
@@ -98,7 +98,7 @@ func (m MarketExtended) TableValues() []string {
 	}
 }
 
-func NewMarketExtended(market Market, baseCurrency, quoteCurrency ccsTypes.Currency) MarketExtended {
+func NewMarketExtended(market Market, baseCurrency, quoteCurrency cc_storage.Currency) MarketExtended {
 	return MarketExtended{
 		ID:            market.ID,
 		BaseCurrency:  baseCurrency,

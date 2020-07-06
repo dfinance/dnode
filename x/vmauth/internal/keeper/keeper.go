@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	codec "github.com/tendermint/go-amino"
 
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 )
 
 // Module keeper object.
@@ -17,7 +17,7 @@ type VMAccountKeeper struct {
 	auth.AccountKeeper
 
 	cdc       *codec.Codec
-	ccsKeeper ccsTypes.Keeper
+	ccsKeeper cc_storage.Keeper
 }
 
 // SetAccount stores account resources to VM storage and updates std keeper.
@@ -85,7 +85,7 @@ func (k VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Account) {
 }
 
 // Create new keeper.
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Subspace, ccsKeeper ccsTypes.Keeper, proto func() exported.Account) VMAccountKeeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Subspace, ccsKeeper cc_storage.Keeper, proto func() exported.Account) VMAccountKeeper {
 	authKeeper := auth.NewAccountKeeper(cdc, key, paramstore, proto)
 
 	return VMAccountKeeper{

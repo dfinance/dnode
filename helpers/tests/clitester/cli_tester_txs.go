@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 func (ct *CLITester) TxCurrenciesIssue(payeeAddr, fromAddr, issueID, denom string, amount sdk.Int, decimals uint8) *TxRequest {
@@ -191,7 +191,7 @@ func (ct *CLITester) TxVmExecuteScript(fromAddress, filePath string, args ...str
 	return r
 }
 
-func (ct *CLITester) TxOrdersPost(ownerAddress string, marketID dnTypes.ID, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec int) *TxRequest {
+func (ct *CLITester) TxOrdersPost(ownerAddress string, marketID dnTypes.ID, direction orders.Direction, price, quantity sdk.Uint, ttlInSec int) *TxRequest {
 	cmdArgs := []string{
 		"post",
 		marketID.String(),

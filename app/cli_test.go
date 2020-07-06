@@ -18,12 +18,12 @@ import (
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies"
-	marketTypes "github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	orderTypes "github.com/dfinance/dnode/x/orders"
-	poaTypes "github.com/dfinance/dnode/x/poa"
+	"github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/poa"
 )
 
 const (
@@ -171,7 +171,7 @@ func TestCurrencies_CLI(t *testing.T) {
 			// non-existing issueID
 			{
 				q, _ := ct.QueryCurrenciesIssue("non_existing")
-				q.CheckFailedWithSDKError(ccTypes.ErrWrongIssueID)
+				q.CheckFailedWithSDKError(currencies.ErrWrongIssueID)
 			}
 		}
 	}
@@ -523,11 +523,11 @@ func TestPOA_CLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	curValidators := make([]poaTypes.Validator, 0)
+	curValidators := make([]poa.Validator, 0)
 	addValidator := func(address, ethAddress string) {
 		sdkAddr, err := sdk.AccAddressFromBech32(address)
 		require.NoError(t, err, "converting account address")
-		curValidators = append(curValidators, poaTypes.Validator{
+		curValidators = append(curValidators, poa.Validator{
 			Address:    sdkAddr,
 			EthAddress: ethAddress,
 		})
@@ -727,8 +727,8 @@ func TestPOA_CLI(t *testing.T) {
 		q, params := ct.QueryPoaMinMax()
 		q.CheckSucceeded()
 
-		poaGenesis := poaTypes.GenesisState{}
-		require.NoError(t, ct.Cdc.UnmarshalJSON(ct.GenesisState()[poaTypes.ModuleName], &poaGenesis))
+		poaGenesis := poa.GenesisState{}
+		require.NoError(t, ct.Cdc.UnmarshalJSON(ct.GenesisState()[poa.ModuleName], &poaGenesis))
 		require.Equal(t, poaGenesis.Parameters.MaxValidators, params.MaxValidators)
 		require.Equal(t, poaGenesis.Parameters.MinValidators, params.MinValidators)
 	}
@@ -965,13 +965,13 @@ func TestMarkets_CLI(t *testing.T) {
 		// non-existing currency
 		{
 			tx := ct.TxMarketsAdd(ownerAddr, cliTester.DenomBTC, "atom")
-			tx.CheckFailedWithSDKError(marketTypes.ErrWrongAssetDenom)
+			tx.CheckFailedWithSDKError(markets.ErrWrongAssetDenom)
 		}
 
 		// already existing market
 		{
 			tx := ct.TxMarketsAdd(ownerAddr, cliTester.DenomBTC, cliTester.DenomDFI)
-			tx.CheckFailedWithSDKError(marketTypes.ErrMarketExists)
+			tx.CheckFailedWithSDKError(markets.ErrMarketExists)
 		}
 	}
 
@@ -1128,33 +1128,33 @@ func TestOrders_CLI(t *testing.T) {
 	{
 		// invalid owner
 		{
-			tx := ct.TxOrdersPost("invalid_address", marketID0, orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			tx := ct.TxOrdersPost("invalid_address", marketID0, orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
 			tx.CheckFailedWithErrorSubstring("keyring")
 		}
 
 		// invalid marketID
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, dnTypes.NewIDFromUint64(2), orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
-			tx.CheckFailedWithSDKError(orderTypes.ErrWrongMarketID)
+			tx := ct.TxOrdersPost(ownerAddr1, dnTypes.NewIDFromUint64(2), orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			tx.CheckFailedWithSDKError(orders.ErrWrongMarketID)
 		}
 
 		// invalid direction
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, marketID0, orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			tx := ct.TxOrdersPost(ownerAddr1, marketID0, orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
 			tx.ChangeCmdArg("ask", "invalid")
 			tx.CheckFailedWithErrorSubstring("direction")
 		}
 
 		// invalid price
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, marketID0, orderTypes.AskDirection, sdk.ZeroUint(), sdk.OneUint(), 60)
+			tx := ct.TxOrdersPost(ownerAddr1, marketID0, orders.AskDirection, sdk.ZeroUint(), sdk.OneUint(), 60)
 			tx.ChangeCmdArg("0", "invalid")
 			tx.CheckFailedWithErrorSubstring("convert")
 		}
 
 		// invalid quantity
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, marketID0, orderTypes.AskDirection, sdk.OneUint(), sdk.ZeroUint(), 60)
+			tx := ct.TxOrdersPost(ownerAddr1, marketID0, orders.AskDirection, sdk.OneUint(), sdk.ZeroUint(), 60)
 			tx.ChangeCmdArg("0", "invalid")
 			tx.CheckFailedWithErrorSubstring("convert")
 		}
@@ -1164,7 +1164,7 @@ func TestOrders_CLI(t *testing.T) {
 	inputOrders := []struct {
 		MarketID     dnTypes.ID
 		OwnerAddress string
-		Direction    orderTypes.Direction
+		Direction    orders.Direction
 		Price        sdk.Uint
 		Quantity     sdk.Uint
 		TtlInSec     int
@@ -1172,7 +1172,7 @@ func TestOrders_CLI(t *testing.T) {
 		{
 			MarketID:     marketID0,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.BidDirection,
+			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
 			Quantity:     sdk.NewUintFromString("100000000"),
 			TtlInSec:     60,
@@ -1180,7 +1180,7 @@ func TestOrders_CLI(t *testing.T) {
 		{
 			MarketID:     marketID0,
 			OwnerAddress: ownerAddr2,
-			Direction:    orderTypes.BidDirection,
+			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("20000000000000000000"),
 			Quantity:     sdk.NewUintFromString("200000000"),
 			TtlInSec:     90,
@@ -1188,7 +1188,7 @@ func TestOrders_CLI(t *testing.T) {
 		{
 			MarketID:     marketID0,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("50000000000000000000"),
 			Quantity:     sdk.NewUintFromString("500000000"),
 			TtlInSec:     60,
@@ -1196,7 +1196,7 @@ func TestOrders_CLI(t *testing.T) {
 		{
 			MarketID:     marketID0,
 			OwnerAddress: ownerAddr2,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("60000000000000000000"),
 			Quantity:     sdk.NewUintFromString("600000000"),
 			TtlInSec:     90,
@@ -1204,7 +1204,7 @@ func TestOrders_CLI(t *testing.T) {
 		{
 			MarketID:     marketID1,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
 			Quantity:     sdk.NewUintFromString("100000000"),
 			TtlInSec:     30,
@@ -1289,21 +1289,21 @@ func TestOrders_CLI(t *testing.T) {
 		{
 			askCount, bidCount := 0, 0
 			for _, input := range inputOrders {
-				if input.Direction.Equal(orderTypes.AskDirection) {
+				if input.Direction.Equal(orders.AskDirection) {
 					askCount++
 				}
-				if input.Direction.Equal(orderTypes.BidDirection) {
+				if input.Direction.Equal(orders.BidDirection) {
 					bidCount++
 				}
 			}
 
-			askDirection := orderTypes.AskDirection
+			askDirection := orders.AskDirection
 			qAsk, ordersAsk := ct.QueryOrdersList(-1, -1, nil, &askDirection, nil)
 			qAsk.CheckSucceeded()
 
 			require.Len(t, *ordersAsk, askCount)
 
-			bidDirection := orderTypes.BidDirection
+			bidDirection := orders.BidDirection
 			qBid, ordersBid := ct.QueryOrdersList(-1, -1, nil, &bidDirection, nil)
 			qBid.CheckSucceeded()
 
@@ -1337,7 +1337,7 @@ func TestOrders_CLI(t *testing.T) {
 		{
 			marketID := marketID0
 			owner := ownerAddr1
-			direction := orderTypes.AskDirection
+			direction := orders.AskDirection
 			count := 0
 			for _, input := range inputOrders {
 				if input.MarketID.Equal(marketID) && input.OwnerAddress == owner && input.Direction == direction {
@@ -1360,7 +1360,7 @@ func TestOrders_CLI(t *testing.T) {
 		ct.TxOrdersRevoke(inputOrder.OwnerAddress, orderID).CheckSucceeded()
 
 		q, _ := ct.QueryOrdersOrder(orderID)
-		q.CheckFailedWithSDKError(orderTypes.ErrWrongOrderID)
+		q.CheckFailedWithSDKError(orders.ErrWrongOrderID)
 		inputOrders = inputOrders[:len(inputOrders)-2]
 	}
 
@@ -1375,13 +1375,13 @@ func TestOrders_CLI(t *testing.T) {
 		// non-existing orderID
 		{
 			tx := ct.TxOrdersRevoke(ownerAddr1, dnTypes.NewIDFromUint64(10))
-			tx.CheckFailedWithSDKError(orderTypes.ErrWrongOrderID)
+			tx.CheckFailedWithSDKError(orders.ErrWrongOrderID)
 		}
 
 		// wrong owner (not an order owner)
 		{
 			tx := ct.TxOrdersRevoke(ct.Accounts["validator1"].Address, dnTypes.NewIDFromUint64(0))
-			tx.CheckFailedWithSDKError(orderTypes.ErrWrongOwner)
+			tx.CheckFailedWithSDKError(orders.ErrWrongOwner)
 		}
 	}
 }

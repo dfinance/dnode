@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/olekukonko/tablewriter"
 
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 // OrderAggregate type stores aggregated quantity (relative to price) for bid/ask orders.
@@ -43,7 +43,7 @@ func (a *OrderAggregates) String() string {
 // NewBidOrderAggregates groups bid orders by price summing quantities.
 // Contract: orders must be price sorted (ASC).
 // Result is price sorted (ASC).
-func NewBidOrderAggregates(orders orderTypes.Orders) OrderAggregates {
+func NewBidOrderAggregates(orders orders.Orders) OrderAggregates {
 	aggs := make(OrderAggregates, 0, len(orders))
 	lastIdx := len(orders) - 1
 	if lastIdx < 0 {
@@ -77,7 +77,7 @@ func NewBidOrderAggregates(orders orderTypes.Orders) OrderAggregates {
 // NewAskOrderAggregates groups ask orders by price summing quantities.
 // Contract: orders must be price sorted (ASC).
 // Result is price sorted (ASC).
-func NewAskOrderAggregates(orders orderTypes.Orders) OrderAggregates {
+func NewAskOrderAggregates(orders orders.Orders) OrderAggregates {
 	aggs := make(OrderAggregates, 0, len(orders))
 	if len(orders) < 1 {
 		return aggs

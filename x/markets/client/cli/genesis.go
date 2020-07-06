@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
@@ -36,8 +36,8 @@ func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome stri
 			}
 
 			// retrieve the genesis
-			var genesisCCS ccsTypes.GenesisState
-			cdc.MustUnmarshalJSON(appState[ccsTypes.ModuleName], &genesisCCS)
+			var genesisCCS cc_storage.GenesisState
+			cdc.MustUnmarshalJSON(appState[cc_storage.ModuleName], &genesisCCS)
 
 			// retrieve the markets genesis
 			var genesisMarket types.GenesisState

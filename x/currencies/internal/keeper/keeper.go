@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/tendermint/tendermint/libs/log"
 
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
@@ -16,7 +16,7 @@ type Keeper struct {
 	cdc        *cdcCodec.Codec
 	storeKey   sdk.StoreKey
 	bankKeeper bank.Keeper
-	ccsKeeper  ccsTypes.Keeper
+	ccsKeeper  cc_storage.Keeper
 }
 
 // GetLogger gets logger with keeper context.
@@ -25,7 +25,7 @@ func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
 }
 
 // Create new currency keeper.
-func NewKeeper(cdc *cdcCodec.Codec, storeKey sdk.StoreKey, bankKeeper bank.Keeper, ccsKeeper ccsTypes.Keeper) Keeper {
+func NewKeeper(cdc *cdcCodec.Codec, storeKey sdk.StoreKey, bankKeeper bank.Keeper, ccsKeeper cc_storage.Keeper) Keeper {
 	return Keeper{
 		cdc:        cdc,
 		storeKey:   storeKey,

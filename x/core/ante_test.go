@@ -21,7 +21,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/cc_storage"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
 )
@@ -36,7 +36,7 @@ type testInput struct {
 	paramsKeeper params.Keeper
 	supplyKeeper authTypes.SupplyKeeper
 	vmStorage    vm.Keeper
-	ccsStorage   ccsTypes.Keeper
+	ccsStorage   cc_storage.Keeper
 	accKeeper    vmauth.Keeper
 }
 
@@ -54,7 +54,7 @@ func setupTestInput() testInput {
 	// create storage keys
 	keyParams := sdk.NewKVStoreKey(params.StoreKey)
 	vmKey := sdk.NewKVStoreKey(vm.StoreKey)
-	ccsKey := sdk.NewKVStoreKey(ccsTypes.StoreKey)
+	ccsKey := sdk.NewKVStoreKey(cc_storage.StoreKey)
 	accKey := sdk.NewKVStoreKey(authTypes.StoreKey)
 	tkeyParams := sdk.NewTransientStoreKey(params.TStoreKey)
 
@@ -71,7 +71,7 @@ func setupTestInput() testInput {
 	// create target and dependant keepers
 	input.paramsKeeper = params.NewKeeper(input.cdc, keyParams, tkeyParams)
 	input.vmStorage = vm.NewKeeper(vmKey, input.cdc, nil, nil, nil)
-	input.ccsStorage = ccsTypes.NewKeeper(input.cdc, ccsKey, input.paramsKeeper.Subspace(ccsTypes.DefaultParamspace), input.vmStorage)
+	input.ccsStorage = cc_storage.NewKeeper(input.cdc, ccsKey, input.paramsKeeper.Subspace(cc_storage.DefaultParamspace), input.vmStorage)
 	input.accKeeper = vmauth.NewKeeper(input.cdc, accKey, input.paramsKeeper.Subspace(auth.DefaultParamspace), input.ccsStorage, authTypes.ProtoBaseAccount)
 	input.supplyKeeper = mock.NewDummySupplyKeeper(input.accKeeper.AccountKeeper)
 

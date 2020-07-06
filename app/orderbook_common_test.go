@@ -13,10 +13,10 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccsTypes "github.com/dfinance/dnode/x/cc_storage"
-	marketTypes "github.com/dfinance/dnode/x/markets"
-	obTypes "github.com/dfinance/dnode/x/orderbook"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/orderbook"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 const (
@@ -32,9 +32,9 @@ type OrderBookTester struct {
 	// clients slice
 	Clients []*ClientTestState
 	// markets maps (key: ID)
-	Markets map[string]marketTypes.Market
+	Markets map[string]markets.Market
 	// currencies info map (key: denom)
-	Currencies map[string]ccsTypes.Currency
+	Currencies map[string]cc_storage.Currency
 }
 
 type ClientTestState struct {
@@ -59,7 +59,7 @@ type OrderTestState struct {
 
 type OrderInput struct {
 	MarketID  dnTypes.ID
-	Direction orderTypes.Direction
+	Direction orders.Direction
 	Price     sdk.Uint
 	Quantity  sdk.Uint
 	CreatedAt time.Time
@@ -78,8 +78,8 @@ func NewOrderBookTester(t *testing.T, app *DnServiceApp) OrderBookTester {
 	tester := OrderBookTester{
 		t:          t,
 		app:        app,
-		Markets:    make(map[string]marketTypes.Market, 0),
-		Currencies: make(map[string]ccsTypes.Currency, 0),
+		Markets:    make(map[string]markets.Market, 0),
+		Currencies: make(map[string]cc_storage.Currency, 0),
 		Clients:    make([]*ClientTestState, 0),
 	}
 
@@ -123,7 +123,7 @@ func (tester *OrderBookTester) RegisterMarket(ownerAddr sdk.AccAddress, baseDeno
 		_, balancePathHex := GenerateRandomBytes(10)
 		_, infoPathHex := GenerateRandomBytes(10)
 
-		ccParams := ccsTypes.CurrencyParams{
+		ccParams := cc_storage.CurrencyParams{
 			Decimals:       decimals,
 			BalancePathHex: balancePathHex,
 			InfoPathHex:    infoPathHex,
@@ -217,13 +217,13 @@ func (tester *OrderBookTester) SetClientOutputCoin(clientAddr sdk.AccAddress, de
 
 // Add a bid order for client.
 func (tester *OrderBookTester) AddBuyOrder(clientAddr sdk.AccAddress, marketID dnTypes.ID, price, quantity sdk.Uint, ttlInSec uint64) (orderID dnTypes.ID) {
-	orderState := tester.addOrder(clientAddr, orderTypes.BidDirection, marketID, price, quantity, ttlInSec)
+	orderState := tester.addOrder(clientAddr, orders.BidDirection, marketID, price, quantity, ttlInSec)
 	return orderState.ID
 }
 
 // Add an ask order for client.
 func (tester *OrderBookTester) AddSellOrder(clientAddr sdk.AccAddress, marketID dnTypes.ID, price, quantity sdk.Uint, ttlInSec uint64) (orderID dnTypes.ID) {
-	orderState := tester.addOrder(clientAddr, orderTypes.AskDirection, marketID, price, quantity, ttlInSec)
+	orderState := tester.addOrder(clientAddr, orders.AskDirection, marketID, price, quantity, ttlInSec)
 	return orderState.ID
 }
 
@@ -298,13 +298,13 @@ func (tester *OrderBookTester) CheckOrdersOutput() {
 	tester.t.Log()
 
 	ctx := GetContext(tester.app, true)
-	orders, err := tester.app.orderKeeper.GetList(ctx)
+	ordersList, err := tester.app.orderKeeper.GetList(ctx)
 	require.NoError(tester.t, err, "getting orders list")
 
 	// build orders map (to optimize search)
-	ordersMap := make(map[string]*orderTypes.Order, len(orders))
-	for i := 0; i < len(orders); i++ {
-		ordersMap[orders[i].ID.String()] = &orders[i]
+	ordersMap := make(map[string]*orders.Order, len(ordersList))
+	for i := 0; i < len(ordersList); i++ {
+		ordersMap[ordersList[i].ID.String()] = &ordersList[i]
 	}
 
 	// iterate over all clients
@@ -330,7 +330,7 @@ func (tester *OrderBookTester) CheckOrdersOutput() {
 func (tester *OrderBookTester) PrintHistoryItems() {
 	ctx := GetContext(tester.app, true)
 
-	historyItems := obTypes.HistoryItems{}
+	historyItems := orderbook.HistoryItems{}
 	for _, m := range tester.Markets {
 		historyItem, err := tester.app.orderBookKeeper.GetHistoryItem(ctx, m.ID, ctx.BlockHeight()-1)
 		require.NoError(tester.t, err, "getting historyItem for block: %d", ctx.BlockHeight()-1)
@@ -340,7 +340,7 @@ func (tester *OrderBookTester) PrintHistoryItems() {
 	tester.t.Logf("\n%s", historyItems.String())
 }
 
-func (tester *OrderBookTester) checkOrder(clientSt *ClientTestState, market marketTypes.MarketExtended, orderSt *OrderTestState, historyItem obTypes.HistoryItem, orderOut *orderTypes.Order) {
+func (tester *OrderBookTester) checkOrder(clientSt *ClientTestState, market markets.MarketExtended, orderSt *OrderTestState, historyItem orderbook.HistoryItem, orderOut *orders.Order) {
 	// print logs
 	tester.t.Logf("  Order %s (%s):", orderSt.ID, orderSt.Input.Direction)
 	tester.t.Logf("    quantity: %s (%s)", orderSt.Input.Quantity, market.BaseCurrency.UintToDec(orderSt.Input.Quantity))
@@ -357,7 +357,7 @@ func (tester *OrderBookTester) checkOrder(clientSt *ClientTestState, market mark
 		quoteDenom := string(market.QuoteCurrency.Denom)
 
 		// process locked coins
-		if orderSt.Input.Direction == orderTypes.BidDirection {
+		if orderSt.Input.Direction == orders.BidDirection {
 			quoteQuantity, _ := market.BaseToQuoteQuantity(orderSt.Input.Price, orderSt.Input.Quantity)
 			quoteCoin := clientSt.EstimatedCoins[quoteDenom]
 			clientSt.EstimatedCoins[quoteDenom] = quoteCoin.Sub(sdk.Int(quoteQuantity))
@@ -374,7 +374,7 @@ func (tester *OrderBookTester) checkOrder(clientSt *ClientTestState, market mark
 		}
 		if !baseFilledQuantity.IsZero() {
 			// if order was filled
-			if orderSt.Input.Direction == orderTypes.BidDirection {
+			if orderSt.Input.Direction == orders.BidDirection {
 				// client should get baseAssets
 				clientSt.EstimatedCoins[baseDenom] = baseCoin.Add(sdk.Int(baseFilledQuantity))
 			}
@@ -385,7 +385,7 @@ func (tester *OrderBookTester) checkOrder(clientSt *ClientTestState, market mark
 		if !baseFilledQuantity.IsZero() {
 			// if order was filled
 			quoteFilledQuantity, _ := market.BaseToQuoteQuantity(historyItem.ClearancePrice, baseFilledQuantity)
-			if orderSt.Input.Direction == orderTypes.BidDirection {
+			if orderSt.Input.Direction == orders.BidDirection {
 				if historyItem.ClearancePrice.LT(orderSt.Input.Price) {
 					// client should get refund
 					priceDiff := orderSt.Input.Price.Sub(historyItem.ClearancePrice)
@@ -414,7 +414,7 @@ func (tester *OrderBookTester) checkOrder(clientSt *ClientTestState, market mark
 	}
 }
 
-func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orderTypes.Direction, mID dnTypes.ID, p, q sdk.Uint, ttlInSec uint64) (orderState *OrderTestState) {
+func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orders.Direction, mID dnTypes.ID, p, q sdk.Uint, ttlInSec uint64) (orderState *OrderTestState) {
 	ctx := GetContext(tester.app, false)
 
 	clientState := tester.findClient(owner)

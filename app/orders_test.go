@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 const (
@@ -61,8 +61,8 @@ func TestOrders_Ttl(t *testing.T) {
 
 	// check orders exist
 	{
-		request := orderTypes.OrdersReq{Page: 1, Limit: 10}
-		response := orderTypes.Orders{}
+		request := orders.OrdersReq{Page: 1, Limit: 10}
+		response := orders.Orders{}
 		CheckRunQuery(t, app, request, queryOrdersListPath, &response)
 
 		require.Len(t, response, 2)
@@ -76,8 +76,8 @@ func TestOrders_Ttl(t *testing.T) {
 		tester.BeginBlockWithDuration(2 * time.Second)
 		tester.EndBlock()
 
-		request := orderTypes.OrdersReq{Page: 1, Limit: 10}
-		response := orderTypes.Orders{}
+		request := orders.OrdersReq{Page: 1, Limit: 10}
+		response := orders.Orders{}
 		CheckRunQuery(t, app, request, queryOrdersListPath, &response)
 
 		require.Len(t, response, 1)

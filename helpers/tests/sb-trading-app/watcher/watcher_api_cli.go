@@ -3,8 +3,8 @@ package watcher
 import (
 	"fmt"
 
-	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
-	marketTypes "github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/helpers/tests/clitester"
+	"github.com/dfinance/dnode/x/markets"
 )
 
 type Api interface {
@@ -12,11 +12,11 @@ type Api interface {
 }
 
 type ApiCli struct {
-	tester               *cliTester.CLITester
+	tester               *clitester.CLITester
 	marketCreatorAccName string
 }
 
-func (a *ApiCli) AddMarket(baseDenom, quoteDenom string) (*marketTypes.Market, error) {
+func (a *ApiCli) AddMarket(baseDenom, quoteDenom string) (*markets.Market, error) {
 	r := a.tester.TxMarketsAdd(a.marketCreatorAccName, baseDenom, quoteDenom)
 	if _, err := r.Execute(); err != nil {
 		return nil, fmt.Errorf("AddMarket: creating: %w", err)
@@ -34,7 +34,7 @@ func (a *ApiCli) AddMarket(baseDenom, quoteDenom string) (*marketTypes.Market, e
 	return &market, nil
 }
 
-func NewApiCli(tester *cliTester.CLITester, marketCreatorAccName string) *ApiCli {
+func NewApiCli(tester *clitester.CLITester, marketCreatorAccName string) *ApiCli {
 	return &ApiCli{
 		tester:               tester,
 		marketCreatorAccName: marketCreatorAccName,

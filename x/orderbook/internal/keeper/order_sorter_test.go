@@ -10,19 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 func TestOB_Sorter(t *testing.T) {
 	t.Parallel()
 
-	orders := orderTypes.Orders{
-		orderTypes.Order{ID: dnTypes.NewIDFromUint64(1), Price: sdk.NewUint(100)},
-		orderTypes.Order{ID: dnTypes.NewIDFromUint64(0), Price: sdk.NewUint(50)},
-		orderTypes.Order{ID: dnTypes.NewIDFromUint64(2), Price: sdk.NewUint(50)},
-		orderTypes.Order{ID: dnTypes.NewIDFromUint64(6), Price: sdk.NewUint(200)},
-		orderTypes.Order{ID: dnTypes.NewIDFromUint64(5), Price: sdk.NewUint(100)},
-		orderTypes.Order{ID: dnTypes.NewIDFromUint64(7), Price: sdk.NewUint(25)},
+	orders := orders.Orders{
+		orders.Order{ID: dnTypes.NewIDFromUint64(1), Price: sdk.NewUint(100)},
+		orders.Order{ID: dnTypes.NewIDFromUint64(0), Price: sdk.NewUint(50)},
+		orders.Order{ID: dnTypes.NewIDFromUint64(2), Price: sdk.NewUint(50)},
+		orders.Order{ID: dnTypes.NewIDFromUint64(6), Price: sdk.NewUint(200)},
+		orders.Order{ID: dnTypes.NewIDFromUint64(5), Price: sdk.NewUint(100)},
+		orders.Order{ID: dnTypes.NewIDFromUint64(7), Price: sdk.NewUint(25)},
 	}
 
 	sort.Sort(ByPriceAscIDDesc(orders))
