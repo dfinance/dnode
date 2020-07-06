@@ -25,7 +25,8 @@ const (
 	queryMsGetUniqueCall = "/custom/" + multisig.ModuleName + "/" + multisig.QueryCallByUnique
 )
 
-func TestMS_Queries(t *testing.T) {
+// Test multisig module queries.
+func TestMSApp_Queries(t *testing.T) {
 	t.Parallel()
 
 	app, server := newTestDnApp()
@@ -37,14 +38,15 @@ func TestMS_Queries(t *testing.T) {
 	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
-	// check call by non-existing uniqueId query
+	// check call by non-existing uniqueID query
 	{
 		request := multisig.CallByUniqueIdReq{UniqueID: "non-existing-unique-id"}
 		CheckRunQuerySpecificError(t, app, request, queryMsGetUniqueCall, multisig.ErrWrongCallUniqueId)
 	}
 }
 
-func TestMS_Voting(t *testing.T) {
+// Multisig votings scenarios.
+func TestMSApp_Voting(t *testing.T) {
 	t.Parallel()
 
 	app, server := newTestDnApp()
@@ -114,14 +116,14 @@ func TestMS_Voting(t *testing.T) {
 		require.Equal(t, senderAcc.GetAddress(), calls[0].Votes[1])
 	}
 
-	// check call lastId query
+	// check call lastID query
 	{
 		response := multisig.LastCallIdResp{}
 		CheckRunQuery(t, app, nil, queryMsGetCallLastId, &response)
 		require.Equal(t, callMsgId.UInt64(), response.LastID.UInt64())
 	}
 
-	// check call by uniqueId query (with votes)
+	// check call by uniqueID query (with votes)
 	{
 		request := multisig.CallByUniqueIdReq{UniqueID: callUniqueId}
 		response := multisig.CallResp{}
@@ -198,7 +200,8 @@ func TestMS_Voting(t *testing.T) {
 	}
 }
 
-func TestMS_BlockHeight(t *testing.T) {
+// Check calls rejecting with blockHeight timeouts.
+func TestMSApp_BlockHeight(t *testing.T) {
 	t.Parallel()
 
 	app, server := newTestDnApp()

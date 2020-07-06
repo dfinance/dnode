@@ -354,6 +354,7 @@ func TestCurrenciesApp_Withdraw(t *testing.T) {
 	}
 }
 
+// createCurrency creates currency with random VM paths.
 func createCurrency(t *testing.T, app *DnServiceApp, ccDenom string, ccDecimals uint8) {
 	_, balancePathHex := GenerateRandomBytes(10)
 	_, infoPathHex := GenerateRandomBytes(10)
@@ -371,6 +372,7 @@ func createCurrency(t *testing.T, app *DnServiceApp, ccDenom string, ccDecimals 
 	app.Commit()
 }
 
+// issueCurrency creates currency issue multisig message and confirms it.
 func issueCurrency(t *testing.T, app *DnServiceApp,
 	ccDenom string, ccAmount sdk.Int, ccDecimals uint8, msgID, issueID string,
 	recipientAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
@@ -379,6 +381,7 @@ func issueCurrency(t *testing.T, app *DnServiceApp,
 	return MSMsgSubmitAndVote(t, app, msgID, issueMsg, recipientAccIdx, accs, privKeys, doCheck)
 }
 
+// withdrawCurrency creates withdraw currency multisig message and confirms it.
 func withdrawCurrency(t *testing.T, app *DnServiceApp,
 	chainID, ccDenom string, ccAmount sdk.Int,
 	spenderAddr sdk.AccAddress, spenderPrivKey crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
@@ -395,6 +398,7 @@ func withdrawCurrency(t *testing.T, app *DnServiceApp,
 	return res, err
 }
 
+// checkCurrencyExists checks currency exists.
 func checkCurrencyExists(t *testing.T, app *DnServiceApp, denom string, supply sdk.Int, decimals uint8) {
 	currencyObj := ccsTypes.Currency{}
 	CheckRunQuery(t, app, ccTypes.CurrencyReq{Denom: denom}, queryCurrencyCurrencyPath, &currencyObj)
@@ -404,6 +408,7 @@ func checkCurrencyExists(t *testing.T, app *DnServiceApp, denom string, supply s
 	require.True(t, currencyObj.Supply.Equal(supply), "supply")
 }
 
+// checkIssueExists checks issue exists.
 func checkIssueExists(t *testing.T, app *DnServiceApp, issueID, denom string, amount sdk.Int, payeeAddr sdk.AccAddress) {
 	issue := ccTypes.Issue{}
 	CheckRunQuery(t, app, ccTypes.IssueReq{ID: issueID}, queryCurrencyIssuePath, &issue)
@@ -413,6 +418,7 @@ func checkIssueExists(t *testing.T, app *DnServiceApp, issueID, denom string, am
 	require.Equal(t, payeeAddr, issue.Payee)
 }
 
+// checkWithdrawExists checks withdraw exists.
 func checkWithdrawExists(t *testing.T, app *DnServiceApp, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress, pzSpender string) {
 	withdraw := ccTypes.Withdraw{}
 	CheckRunQuery(t, app, ccTypes.WithdrawReq{ID: dnTypes.NewIDFromUint64(id)}, queryCurrencyWithdrawPath, &withdraw)
@@ -425,6 +431,7 @@ func checkWithdrawExists(t *testing.T, app *DnServiceApp, id uint64, denom strin
 	require.Equal(t, chainID, withdraw.PegZoneChainID)
 }
 
+// checkRecipientCoins checks account balance.
 func checkRecipientCoins(t *testing.T, app *DnServiceApp, recipientAddr sdk.AccAddress, denom string, amount sdk.Int, decimals uint8) {
 	checkBalance := amount
 

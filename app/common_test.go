@@ -37,13 +37,19 @@ import (
 	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/multisig"
+	msExport "github.com/dfinance/dnode/x/multisig/export"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
-	msExport "github.com/dfinance/dnode/x/multisig/export"
 )
 
 const (
+	DefaultMockVMAddress  = "127.0.0.1:0" // Default virtual machine address to connect from Cosmos SDK.
+	DefaultMockDataListen = "127.0.0.1:0" // Default data server address to listen for connections from VM.
+	//
+	FlagVMMockAddress = "vm.mock.address"
+	FlagDSMockListen  = "ds.mock.listen"
+	//
 	defGasAmount = 500000
 )
 
@@ -68,18 +74,20 @@ var (
 		"0xe0FC04FA2d34a66B779fd5CEe748268032a146c0",
 	}
 	bufferSize = 1024 * 1024
+	//
+	vmMockAddress  *string
+	dataListenMock *string
 )
 
-// Type that combines an Address with the privKey and pubKey to that address
+// AddrKeys combines Address with the privKey and pubKey.
 type AddrKeys struct {
 	Address sdk.AccAddress
 	PubKey  crypto.PubKey
 	PrivKey crypto.PrivKey
 }
 
-func NewAddrKeys(address sdk.AccAddress, pubKey crypto.PubKey,
-	privKey crypto.PrivKey) AddrKeys {
-
+// NewAddrKeys builds AddrKeys.
+func NewAddrKeys(address sdk.AccAddress, pubKey crypto.PubKey, privKey crypto.PrivKey) AddrKeys {
 	return AddrKeys{
 		Address: address,
 		PubKey:  pubKey,
@@ -87,14 +95,13 @@ func NewAddrKeys(address sdk.AccAddress, pubKey crypto.PubKey,
 	}
 }
 
-// implement `Interface` in sort package.
+// AddrKeysSlice implements sorter interface in lexographically order by Address.
 type AddrKeysSlice []AddrKeys
 
 func (b AddrKeysSlice) Len() int {
 	return len(b)
 }
 
-// Sorts lexographically by Address
 func (b AddrKeysSlice) Less(i, j int) bool {
 	// bytes package already implements Comparable for []byte.
 	switch bytes.Compare(b[i].Address.Bytes(), b[j].Address.Bytes()) {
@@ -111,13 +118,11 @@ func (b AddrKeysSlice) Swap(i, j int) {
 	b[j], b[i] = b[i], b[j]
 }
 
-// CreateGenAccounts generates genesis accounts loaded with coins, and returns
-// their addresses, pubkeys, and privkeys.
+// CreateGenAccounts generates genesis accounts loaded with coins, and returns their addresses, pubkeys, and privkeys.
 func CreateGenAccounts(numAccs int, genCoins sdk.Coins) (genAccs []*auth.BaseAccount,
 	addrs []sdk.AccAddress, pubKeys []crypto.PubKey, privKeys []crypto.PrivKey) {
 
 	addrKeysSlice := AddrKeysSlice{}
-
 	for i := 0; i < numAccs; i++ {
 		privKey := secp256k1.GenPrivKey()
 		pubKey := privKey.PubKey()
@@ -127,7 +132,6 @@ func CreateGenAccounts(numAccs int, genCoins sdk.Coins) (genAccs []*auth.BaseAcc
 	}
 
 	sort.Sort(addrKeysSlice)
-
 	for i := range addrKeysSlice {
 		addrs = append(addrs, addrKeysSlice[i].Address)
 		pubKeys = append(pubKeys, addrKeysSlice[i].PubKey)
@@ -143,19 +147,7 @@ func CreateGenAccounts(numAccs int, genCoins sdk.Coins) (genAccs []*auth.BaseAcc
 	return
 }
 
-const (
-	DefaultMockVMAddress  = "127.0.0.1:0" // Default virtual machine address to connect from Cosmos SDK.
-	DefaultMockDataListen = "127.0.0.1:0" // Default data server address to listen for connections from VM.
-
-	FlagVMMockAddress = "vm.mock.address"
-	FlagDSMockListen  = "ds.mock.listen"
-)
-
-var (
-	vmMockAddress  *string
-	dataListenMock *string
-)
-
+// MockVMConfig builds VM config.
 func MockVMConfig() *vmConfig.VMConfig {
 	return &vmConfig.VMConfig{
 		Address:    *vmMockAddress,
@@ -163,22 +155,14 @@ func MockVMConfig() *vmConfig.VMConfig {
 	}
 }
 
-func init() {
-	if flag.Lookup(FlagVMMockAddress) == nil {
-		vmMockAddress = flag.String(FlagVMMockAddress, DefaultMockVMAddress, "mocked address of virtual machine server client/server")
-	}
-
-	if flag.Lookup(FlagDSMockListen) == nil {
-		dataListenMock = flag.String(FlagDSMockListen, DefaultMockDataListen, "address of mocked data server to launch/connect")
-	}
-}
-
+// VMServer aggregates gRPC VM services.
 type VMServer struct {
 	vm_grpc.UnimplementedVMCompilerServer
 	vm_grpc.UnimplementedVMModulePublisherServer
 	vm_grpc.UnimplementedVMScriptExecutorServer
 }
 
+// newTestDnApp creates dnode app and VM server/
 func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
 	config := MockVMConfig()
 
@@ -206,6 +190,7 @@ func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
 	return NewDnServiceApp(logger, dbm.NewMemDB(), config), server
 }
 
+// getGenesis builds genesis state for dnode app.
 func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseAccount) ([]byte, error) {
 	// generate node validator account
 	var nodeAcc *auth.BaseAccount
@@ -375,6 +360,7 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	return stateBytes, nil
 }
 
+// setGenesis adds genesis to the block.
 func setGenesis(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) (sdk.Context, error) {
 	ctx := app.NewContext(true, abci.Header{})
 
@@ -394,7 +380,7 @@ func setGenesis(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) (sdk.
 	return ctx, nil
 }
 
-// GenTx generates a signed mock transaction.
+// genTx generates a signed mock transaction.
 func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKey) auth.StdTx {
 	sigs := make([]auth.StdSignature, len(priv))
 	memo := "testmemotestmemo"
@@ -419,6 +405,7 @@ func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	return auth.NewStdTx(msgs, fee, sigs, memo)
 }
 
+// GenDefCoins returns Coins with dfi amount.
 func GenDefCoins(t *testing.T) sdk.Coins {
 	coins, err := sdk.ParseCoins("1000000000000000000000" + dnConfig.MainDenom)
 	if t != nil {
@@ -428,6 +415,7 @@ func GenDefCoins(t *testing.T) sdk.Coins {
 	return coins
 }
 
+// DeliverTx adds Tx to block.
 func DeliverTx(app *DnServiceApp, tx auth.StdTx) (*sdk.Result, error) {
 	if _, res, err := app.Simulate(app.cdc.MustMarshalJSON(tx), tx); err != nil {
 		return res, err
@@ -444,7 +432,7 @@ func DeliverTx(app *DnServiceApp, tx auth.StdTx) (*sdk.Result, error) {
 	return res, nil
 }
 
-// DeliverTx and success check
+// CheckDeliverTx checks Tx is delivered.
 func CheckDeliverTx(t *testing.T, app *DnServiceApp, tx auth.StdTx) {
 	res, err := DeliverTx(app, tx)
 
@@ -456,7 +444,7 @@ func CheckDeliverTx(t *testing.T, app *DnServiceApp, tx auth.StdTx) {
 	require.NoError(t, err, "res.Log %q: %v", resLog, err)
 }
 
-// DeliverTx and fail check
+// CheckDeliverErrorTx checks Tx delivery failed.
 func CheckDeliverErrorTx(t *testing.T, app *DnServiceApp, tx auth.StdTx) {
 	res, err := DeliverTx(app, tx)
 
@@ -468,12 +456,13 @@ func CheckDeliverErrorTx(t *testing.T, app *DnServiceApp, tx auth.StdTx) {
 	require.Error(t, err, resLog)
 }
 
-// DeliverTx and fail check with specific error
+// CheckDeliverSpecificErrorTx checks Tx delivery failed with specific error.
 func CheckDeliverSpecificErrorTx(t *testing.T, app *DnServiceApp, tx auth.StdTx, expectedErr error) {
 	res, err := DeliverTx(app, tx)
 	CheckResultError(t, expectedErr, res, err)
 }
 
+// RunQuery runs query request and parses response.
 func RunQuery(t *testing.T, app *DnServiceApp, requestData interface{}, path string, responseValue interface{}) abci.ResponseQuery {
 	resp := app.Query(abci.RequestQuery{
 		Data: codec.MustMarshalJSONIndent(app.cdc, requestData),
@@ -487,13 +476,13 @@ func RunQuery(t *testing.T, app *DnServiceApp, requestData interface{}, path str
 	return resp
 }
 
-// RunQuery and success check
+// CheckRunQuery checks query executed.
 func CheckRunQuery(t *testing.T, app *DnServiceApp, requestData interface{}, path string, responseValue interface{}) {
 	resp := RunQuery(t, app, requestData, path, responseValue)
 	require.True(t, resp.IsOK())
 }
 
-// RunQuery and fail check with specific error
+// CheckRunQuerySpecificError checks query failed with specific error.
 func CheckRunQuerySpecificError(t *testing.T, app *DnServiceApp, requestData interface{}, path string, expectedErr error) {
 	expectedSdkErr, ok := expectedErr.(*sdkErrors.Error)
 	require.True(t, ok, "expectedErr not a SDK error")
@@ -504,19 +493,22 @@ func CheckRunQuerySpecificError(t *testing.T, app *DnServiceApp, requestData int
 	require.Equal(t, expectedSdkErr.ABCICode(), resp.Code, "Code: %s", resp.Log)
 }
 
+// GetContext returns context for CheckTx / DeliverTx.
 func GetContext(app *DnServiceApp, isCheckTx bool) sdk.Context {
 	return app.NewContext(isCheckTx, abci.Header{Height: app.LastBlockHeight() + 1})
 }
 
+// GetAccountCheckTx returns account with CheckTx.
 func GetAccountCheckTx(app *DnServiceApp, address sdk.AccAddress) authExported.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(true, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
+// GetAccount returns account with DeliverTx.
 func GetAccount(app *DnServiceApp, address sdk.AccAddress) authExported.Account {
 	return app.accountKeeper.GetAccount(app.NewContext(false, abci.Header{Height: app.LastBlockHeight() + 1}), address)
 }
 
-// Check if expected / received tx results are equal
+// CheckResultError checks if expected / received Tx results are equal.
 func CheckResultError(t *testing.T, expectedErr error, receivedRes *sdk.Result, receivedErr error) {
 	expectedSdkErr, ok := expectedErr.(*sdkErrors.Error)
 	require.True(t, ok, "expectedErr not a SDK error: %T", expectedErr)
@@ -526,6 +518,7 @@ func CheckResultError(t *testing.T, expectedErr error, receivedRes *sdk.Result, 
 	require.True(t, expectedSdkErr.Is(receivedErr), resMsg)
 }
 
+// ResultErrorMsg returns Tx result string.
 func ResultErrorMsg(res *sdk.Result, err error) string {
 	resLog := ""
 	if res != nil {
@@ -535,6 +528,7 @@ func ResultErrorMsg(res *sdk.Result, err error) string {
 	return fmt.Sprintf("result with log %q: %v", resLog, err)
 }
 
+// MSMsgSubmitAndVote submits multi signature message call and confirms it.
 func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg msmodule.MsMsg, submitAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
 	confirmCnt := int(app.poaKeeper.GetEnoughConfirmations(GetContext(app, true)))
 
@@ -609,6 +603,7 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 	return nil, nil
 }
 
+// GenerateRandomBytes generates random []byte slice of {length}.
 func GenerateRandomBytes(length int) ([]byte, string) {
 	rndBytes := make([]byte, length)
 
@@ -617,4 +612,14 @@ func GenerateRandomBytes(length int) ([]byte, string) {
 	}
 
 	return rndBytes, hex.EncodeToString(rndBytes)
+}
+
+func init() {
+	if flag.Lookup(FlagVMMockAddress) == nil {
+		vmMockAddress = flag.String(FlagVMMockAddress, DefaultMockVMAddress, "mocked address of virtual machine server client/server")
+	}
+
+	if flag.Lookup(FlagDSMockListen) == nil {
+		dataListenMock = flag.String(FlagDSMockListen, DefaultMockDataListen, "address of mocked data server to launch/connect")
+	}
 }
