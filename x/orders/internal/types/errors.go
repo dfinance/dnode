@@ -18,4 +18,6 @@ var (
 	ErrWrongDirection = sdkErrors.Register(ModuleName, 106, "wrong direction")
 	// Order not exists.
 	ErrWrongOrderID = sdkErrors.Register(ModuleName, 107, "wrong orderID")
+	// Asset code not exists.
+	ErrWrongAssetCode = sdkErrors.Register(ModuleName, 108, "wrong asset code")
 )

@@ -17,13 +17,23 @@ type MarketReq struct {
 // Client request for markets.
 type MarketsReq struct {
 	// Page number
-	Page  int
+	Page int
 	// Items per page
 	Limit int
 	// BaseAsset denom filter
 	BaseAssetDenom string
 	// QuoteAsset denom filter
 	QuoteAssetDenom string
+	// AssetCode filter
+	AssetCode string
+}
+
+// NewMarketsFilter returned MarketsReq object with filled required fields page and limit.
+func NewMarketsFilter(page, limit int) MarketsReq {
+	return MarketsReq{
+		Page:  page,
+		Limit: limit,
+	}
 }
 
 // BaseDenomFilter check if BaseAssetDenom filter is enabled.
@@ -34,4 +44,9 @@ func (r MarketsReq) BaseDenomFilter() bool {
 // QuoteDenomFilter check if QuoteAssetDenom filter is enabled.
 func (r MarketsReq) QuoteDenomFilter() bool {
 	return r.QuoteAssetDenom != ""
+}
+
+// AssetCodeFilter check if AssetCode filter is enabled.
+func (r MarketsReq) AssetCodeFilter() bool {
+	return r.AssetCode != ""
 }

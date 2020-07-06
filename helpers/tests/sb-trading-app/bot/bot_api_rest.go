@@ -67,12 +67,13 @@ func (a *ApiRest) PostOrder(price, quantity sdk.Uint, direction orderTypes.Direc
 	}()
 
 	sendTx := func() (verificationFailed, stop bool, unhandledErr error) {
+		assetCode := dnTypes.AssetCode(a.baseDenom + "_" + a.quoteDenom)
 		req, tx := a.tester.RestTxOrdersPostOrderRaw(
 			a.accountName,
 			a.accountAddress,
 			a.accountNumber,
 			a.sequenceNumber,
-			a.marketID,
+			assetCode,
 			direction,
 			price,
 			quantity,

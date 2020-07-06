@@ -66,7 +66,7 @@ func (a *ApiCli) PostOrder(price, quantity sdk.Uint, direction orderTypes.Direct
 	}()
 
 	sendTx := func() (verificationFailed, stop bool, unhandledErr error) {
-		txCmd := a.tester.TxOrdersPost(a.accountAddress, a.marketID, direction, price, quantity, a.orderTtlInSec)
+		txCmd := a.tester.TxOrdersPost(a.accountAddress, dnTypes.AssetCode(a.baseDenom+"_"+a.quoteDenom), direction, price, quantity, a.orderTtlInSec)
 		txCmd.DisableBroadcastMode()
 		txCmd.SetAccountNumber(a.accountNumber)
 		txCmd.SetSequenceNumber(a.sequenceNumber)

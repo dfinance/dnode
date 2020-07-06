@@ -611,6 +611,7 @@ func Test_OrdersREST(t *testing.T) {
 	ownerName1, ownerName2 := accountOpts[0].Name, accountOpts[1].Name
 	ownerAddr1, ownerAddr2 := ct.Accounts[ownerName1].Address, ct.Accounts[ownerName2].Address
 	marketID0, marketID1 := dnTypes.NewIDFromUint64(0), dnTypes.NewIDFromUint64(1)
+	assetCode0, assetCode1 := dnTypes.AssetCode("btc_dfi"), dnTypes.AssetCode("eth_dfi")
 
 	// add market
 	{
@@ -622,16 +623,17 @@ func Test_OrdersREST(t *testing.T) {
 
 	// check AddOrder Tx
 	{
-		// invalid marketID
+		// invalid AssetCode
 		{
-			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.NewIDFromUint64(2), orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
-			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongMarketID)
+			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.AssetCode("usd_dfi"), orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongAssetCode)
 		}
 	}
 
 	// add orders
 	inputOrders := []struct {
 		MarketID     dnTypes.ID
+		AssetCode    dnTypes.AssetCode
 		OwnerName    string
 		OwnerAddress string
 		Direction    orderTypes.Direction
@@ -641,6 +643,7 @@ func Test_OrdersREST(t *testing.T) {
 	}{
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
 			Direction:    orderTypes.BidDirection,
@@ -650,6 +653,7 @@ func Test_OrdersREST(t *testing.T) {
 		},
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerName:    ownerName2,
 			OwnerAddress: ownerAddr2,
 			Direction:    orderTypes.BidDirection,
@@ -659,6 +663,7 @@ func Test_OrdersREST(t *testing.T) {
 		},
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
 			Direction:    orderTypes.AskDirection,
@@ -668,6 +673,7 @@ func Test_OrdersREST(t *testing.T) {
 		},
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerName:    ownerName2,
 			OwnerAddress: ownerAddr2,
 			Direction:    orderTypes.AskDirection,
@@ -677,6 +683,7 @@ func Test_OrdersREST(t *testing.T) {
 		},
 		{
 			MarketID:     marketID1,
+			AssetCode:    assetCode1,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
 			Direction:    orderTypes.AskDirection,
@@ -686,7 +693,7 @@ func Test_OrdersREST(t *testing.T) {
 		},
 	}
 	for _, input := range inputOrders {
-		r, _ := ct.RestTxOrdersPostOrder(input.OwnerName, input.MarketID, input.Direction, input.Price, input.Quantity, input.TtlInSec)
+		r, _ := ct.RestTxOrdersPostOrder(input.OwnerName, input.AssetCode, input.Direction, input.Price, input.Quantity, input.TtlInSec)
 		r.CheckSucceeded()
 	}
 

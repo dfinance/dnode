@@ -29,6 +29,7 @@ var (
 	ValidateGenesis     = types.ValidateGenesis
 	DefaultParams       = types.DefaultParams
 	NewMarket           = types.NewMarket
+	NewMarketsFilter    = types.NewMarketsFilter
 	NewMarketExtended   = types.NewMarketExtended
 	NewKeeper           = keeper.NewKeeper
 	NewQuerier          = keeper.NewQuerier
