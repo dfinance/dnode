@@ -43,7 +43,6 @@ import (
 	"github.com/dfinance/dnode/x/orderbook"
 	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/poa"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
 )
@@ -310,9 +309,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	// Initializing validators module.
 	app.poaKeeper = poa.NewKeeper(
-		keys[poa.StoreKey],
 		cdc,
-		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
+		keys[poa.StoreKey],
+		app.paramsKeeper.Subspace(poa.DefaultParamspace),
 	)
 
 	// Initializing multisignature router.

@@ -1,131 +1,154 @@
-// Operations with validators via multisignature calls by CLI.
 package cli
 
 import (
-	"bufio"
-	"fmt"
 	"os"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 
+	"github.com/dfinance/dnode/helpers"
 	msExport "github.com/dfinance/dnode/x/multisig/export"
-	"github.com/dfinance/dnode/x/poa/msgs"
+	"github.com/dfinance/dnode/x/poa/internal/types"
 )
 
-// Add new validator via multisignature.
+// PostMsAddValidator returns tx command which post a new multisig add validator request.
 func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "ms-add-validator [address] [ethAddress] [uniqueID]",
-		Short: "adding new validator to validator list by multisig",
-		Args:  cobra.ExactArgs(3),
+	cmd := &cobra.Command{
+		Use:     "ms-add-validator [uniqueID] [address] [ethAddress]",
+		Short:   "Add a new PoA validator to the validator list via multisignature",
+		Example: "ms-add-validator add1 {validatorAccount} 0x6adaF04f4E2BA9CDdE3ec143bdcF02AD830c1b7d --from {account}",
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
-			}
-
-			ethAddress := args[1]
-			validatorAddress, err := sdk.AccAddressFromBech32(args[0])
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "address", args[0], err)
+				return err
 			}
 
-			addVldrMsg := msgs.NewMsgAddValidator(validatorAddress, ethAddress, cliCtx.GetFromAddress())
-			msMsg := msExport.NewMsgSubmitCall(addVldrMsg, args[2], cliCtx.GetFromAddress())
+			sdkAddr, err := helpers.ParseSdkAddressParam("address", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
 
-			if err := msMsg.ValidateBasic(); err != nil {
+			ethAddr, err := helpers.ParseEthereumAddressParam("ethAddress", args[2], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			// prepare and send multisig message
+			msg := types.NewMsgAddValidator(sdkAddr, ethAddr, fromAddr)
+			callMsg := msExport.NewMsgSubmitCall(msg, args[0], fromAddr)
+			if err := callMsg.ValidateBasic(); err != nil {
 				return err
 			}
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msMsg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{callMsg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"unique multi signature call ID",
+		"validator SDK address",
+		"validator Ethereum address",
+	})
+
+	return cmd
 }
 
-// Remove validator via multisignature.
+// PostMsRemoveValidator returns tx command which post a new multisig remove validator request.
 func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "ms-remove-validator [address] [uniqueID]",
-		Short: "remove poa validator by multisig",
-		Args:  cobra.ExactArgs(2),
+	cmd := &cobra.Command{
+		Use:     "ms-remove-validator [uniqueID] [address]",
+		Short:   "Remove a PoA validator from the validator list via multisignature",
+		Example: "ms-remove-validator remove1 {validatorAccount} --from {account}",
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
-			}
-
-			validatorAddress, err := sdk.AccAddressFromBech32(args[0])
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "address", args[0], err)
+				return err
 			}
 
-			msgRmvVal := msgs.NewMsgRemoveValidator(validatorAddress, cliCtx.GetFromAddress())
-			msMsg := msExport.NewMsgSubmitCall(msgRmvVal, args[1], cliCtx.GetFromAddress())
+			sdkAddr, err := helpers.ParseSdkAddressParam("address", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
 
+			// prepare and send multisig message
+			msg := types.NewMsgRemoveValidator(sdkAddr, fromAddr)
+			msMsg := msExport.NewMsgSubmitCall(msg, args[0], fromAddr)
 			if err := msMsg.ValidateBasic(); err != nil {
 				return err
 			}
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msMsg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msMsg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"unique multi signature call ID",
+		"validator SDK address",
+	})
+
+	return cmd
 }
 
-// Replace validator via multisignature.
+// PostMsReplaceValidator returns tx command which post a new multisig replace validator request.
 func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "ms-replace-validator [oldValidator] [newValidator] [ethAddress] [uniqueID]",
-		Short: "replace poa validator by multisignature",
+	cmd := &cobra.Command{
+		Use:   "ms-replace-validator [uniqueID] [oldValidator] [newValidator] [ethAddress]",
+		Short: "Replace an old PoA validator with the new one via multisignature",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
-			}
-
-			oldValidator, err := sdk.AccAddressFromBech32(args[0])
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "oldValidator", args[0], err)
+				return err
 			}
 
-			newValidator, err := sdk.AccAddressFromBech32(args[1])
+			sdkAddrOld, err := helpers.ParseSdkAddressParam("oldValidator", args[1], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "newValidator", args[1], err)
+				return err
 			}
 
-			ethAddress := args[2]
+			sdkAddrNew, err := helpers.ParseSdkAddressParam("newValidator", args[2], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
 
-			msgReplVal := msgs.NewMsgReplaceValidator(oldValidator, newValidator, ethAddress, cliCtx.GetFromAddress())
-			msMsg := msExport.NewMsgSubmitCall(msgReplVal, args[3], cliCtx.GetFromAddress())
+			ethAddr, err := helpers.ParseEthereumAddressParam("ethAddress", args[3], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
 
+			// prepare and send multisig message
+			msg := types.NewMsgReplaceValidator(sdkAddrOld, sdkAddrNew, ethAddr, fromAddr)
+			msMsg := msExport.NewMsgSubmitCall(msg, args[0], fromAddr)
 			if err := msMsg.ValidateBasic(); err != nil {
 				return err
 			}
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msMsg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msMsg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"unique multi signature call ID",
+		"old validator SDK address to replace",
+		"new validator SDK address to replace",
+		"new validator Ethereum address",
+	})
+
+	return cmd
 }

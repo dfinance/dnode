@@ -171,10 +171,11 @@ func (r *TxRequest) CheckFailedWithErrorSubstring(subStr string) (output string)
 		return
 	}
 
-	if strings.Contains(stdoutStr, subStr) || strings.Contains(stderrErr, subStr) {
-		return
-	}
-	r.t.Fatalf("%s: stdout/stderr doesn't contain %q sub string: %s", r.String(), subStr, output)
+	require.True(r.t,
+		strings.Contains(stdoutStr, subStr) || strings.Contains(stderrErr, subStr),
+		"%s: stdout/stderr doesn't contain %q sub string: %s",
+		r.String(), subStr, output,
+	)
 
 	return
 }

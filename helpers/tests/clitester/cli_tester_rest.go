@@ -20,7 +20,7 @@ import (
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	poaTypes "github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -135,9 +135,9 @@ func (ct *CLITester) RestQueryMultiSigUnique(uniqueID string) (*RestRequest, *mu
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryPoaValidators() (*RestRequest, *poaTypes.ValidatorsConfirmations) {
-	reqSubPath := fmt.Sprintf("%s/validators", poaTypes.ModuleName)
-	respMsg := &poaTypes.ValidatorsConfirmations{}
+func (ct *CLITester) RestQueryPoaValidators() (*RestRequest, *poaTypes.ValidatorsConfirmationsResp) {
+	reqSubPath := fmt.Sprintf("%s/%s", poaTypes.ModuleName, poaTypes.QueryValidators)
+	respMsg := &poaTypes.ValidatorsConfirmationsResp{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 

@@ -84,7 +84,7 @@ func NewTestInput(t *testing.T) TestInput {
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
-	input.poaKeeper = poa.NewKeeper(input.keyPOA, input.cdc, input.paramsKeeper.Subspace(poa.DefaultParamspace))
+	input.poaKeeper = poa.NewKeeper(input.cdc, input.keyPOA, input.paramsKeeper.Subspace(poa.DefaultParamspace))
 
 	// init multisig router
 	input.msRouter = msmodule.NewMsRouter()

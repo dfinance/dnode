@@ -28,7 +28,7 @@ func NewQuerier(k Keeper) sdk.Querier {
 	}
 }
 
-// queryGetCalls handles getCalls query which return call objects.
+// queryGetCalls handles getCalls query which returns call objects.
 func queryGetCalls(k Keeper, ctx sdk.Context) ([]byte, error) {
 	resps := types.CallsResp{}
 
@@ -73,7 +73,7 @@ func queryGetCalls(k Keeper, ctx sdk.Context) ([]byte, error) {
 	return bz, nil
 }
 
-// queryGetCall handles getCall query which return call object.
+// queryGetCall handles getCall query which returns call object.
 func queryGetCall(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, error) {
 	var params types.CallReq
 	if err := types.ModuleCdc.UnmarshalJSON(req.Data, &params); err != nil {
@@ -103,7 +103,7 @@ func queryGetCall(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, err
 	return bz, nil
 }
 
-// queryGetUnique handles QueryCallByUnique query which return call object by its uniqueID.
+// queryGetUnique handles QueryCallByUnique query which returns call object by its uniqueID.
 // Process query to get call by unique id.
 func queryGetUnique(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, error) {
 	var params types.CallByUniqueIdReq
@@ -139,7 +139,7 @@ func queryGetUnique(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, e
 	return bz, nil
 }
 
-// queryGetLastID handles getGetLastID query which return last callID.
+// queryGetLastID handles getGetLastID query which returns last callID.
 func queryGetLastID(k Keeper, ctx sdk.Context) ([]byte, error) {
 	resp := types.LastCallIdResp{LastID: k.GetLastCallID(ctx)}
 

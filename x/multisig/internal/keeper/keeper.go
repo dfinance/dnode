@@ -50,13 +50,11 @@ func (k Keeper) GetPoaMinConfirmationsCount(ctx sdk.Context) uint16 {
 
 // Create new currency keeper.
 func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramStore params.Subspace, router msmodule.MsRouter, poaKeeper poa.Keeper) Keeper {
-	keeper := Keeper{
+	return Keeper{
 		cdc:        cdc,
 		storeKey:   storeKey,
 		paramStore: paramStore.WithKeyTable(types.ParamKeyTable()),
 		router:     router,
 		poaKeeper:  poaKeeper,
 	}
-
-	return keeper
 }

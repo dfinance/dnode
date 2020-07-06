@@ -15,7 +15,7 @@ func NewMsHandler(keeper keeper.Keeper) msmodule.MsHandler {
 		case MsgIssueCurrency:
 			return handleMsMsgIssueCurrency(ctx, keeper, msg)
 		default:
-			return sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized currencies multisig msg type: %v", msg.Type())
+			return sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized %s module multisig msg type: %v", ModuleName, msg.Type())
 		}
 	}
 }

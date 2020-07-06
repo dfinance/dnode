@@ -138,6 +138,14 @@ func ParseSdkAddressParam(argName, argValue string, paramType ParamType) (sdk.Ac
 	return sdk.AccAddress{}, fmt.Errorf("%s %s %q: parsing Bech32 / HEX account address: failed", argName, paramType, argValue)
 }
 
+func ParseEthereumAddressParam(argName, argValue string, paramType ParamType) (string, error) {
+	if !IsEthereumAddress(argValue) {
+		return "", fmt.Errorf("%s %s %q: ethereum address validation failed", argName, paramType, argValue)
+	}
+
+	return argValue, nil
+}
+
 func ParseDnIDParam(argName, argValue string, paramType ParamType) (dnTypes.ID, error) {
 	id, err := dnTypes.NewIDFromString(argValue)
 	if err != nil {

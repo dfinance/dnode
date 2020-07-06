@@ -73,8 +73,11 @@ type Withdraws []Withdraw
 
 func (list Withdraws) String() string {
 	var s strings.Builder
-	for _, d := range list {
-		s.WriteString(d.String() + "\n")
+	for i, d := range list {
+		s.WriteString(d.String())
+		if i < len(list)-1 {
+			s.WriteString("\n")
+		}
 	}
 
 	return s.String()

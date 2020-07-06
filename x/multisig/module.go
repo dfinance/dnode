@@ -19,7 +19,6 @@ import (
 	"github.com/dfinance/dnode/x/multisig/client"
 	"github.com/dfinance/dnode/x/multisig/client/rest"
 	"github.com/dfinance/dnode/x/multisig/internal/keeper"
-	"github.com/dfinance/dnode/x/multisig/internal/types"
 )
 
 var (
@@ -32,12 +31,12 @@ type AppModuleBasic struct{}
 
 // Name gets module name.
 func (AppModuleBasic) Name() string {
-	return types.ModuleName
+	return ModuleName
 }
 
 // RegisterCodec registers module codec.
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
-	types.RegisterCodec(cdc)
+	RegisterCodec(cdc)
 }
 
 // DefaultGenesis gets default module genesis state.
@@ -74,7 +73,7 @@ type AppModule struct {
 	keeper keeper.Keeper
 }
 
-// NewAppMsModule creates new AppMsModule object.
+// NewAppModule creates new AppModule object.
 func NewAppModule(keeper keeper.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},

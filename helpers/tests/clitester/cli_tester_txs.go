@@ -55,41 +55,44 @@ func (ct *CLITester) TxOracleAddAsset(nomineeAddress, assetCode string, oracleAd
 	return r
 }
 
-func (ct *CLITester) TxPoaAddValidator(fromAddr, address, ethAddress, issueId string) *TxRequest {
+func (ct *CLITester) TxPoaAddValidator(fromAddr, address, ethAddress, issueID string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"poa",
 		fromAddr,
 		"ms-add-validator",
+		issueID,
 		address,
 		ethAddress,
-		issueId)
+	)
 
 	return r
 }
 
-func (ct *CLITester) TxPoaRemoveValidator(fromAddr, address, issueId string) *TxRequest {
+func (ct *CLITester) TxPoaRemoveValidator(fromAddr, address, issueID string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"poa",
 		fromAddr,
 		"ms-remove-validator",
+		issueID,
 		address,
-		issueId)
+	)
 
 	return r
 }
 
-func (ct *CLITester) TxPoaReplaceValidator(fromAddr, targetAddress, address, ethAddress, issueId string) *TxRequest {
+func (ct *CLITester) TxPoaReplaceValidator(fromAddr, targetAddress, address, ethAddress, issueID string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"poa",
 		fromAddr,
 		"ms-replace-validator",
+		issueID,
 		targetAddress,
 		address,
 		ethAddress,
-		issueId)
+	)
 
 	return r
 }

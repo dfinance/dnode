@@ -164,7 +164,7 @@ func TestCurrency_REST(t *testing.T) {
 	}
 }
 
-func TestMS_Rest(t *testing.T) {
+func TestMS_REST(t *testing.T) {
 	t.Parallel()
 
 	ct := cliTester.New(t, false)
@@ -257,7 +257,7 @@ func TestMS_Rest(t *testing.T) {
 	}
 }
 
-func TestOracle_Rest(t *testing.T) {
+func TestOracle_REST(t *testing.T) {
 	t.Parallel()
 
 	ct := cliTester.New(t, false)
@@ -378,7 +378,7 @@ func TestOracle_Rest(t *testing.T) {
 	}
 }
 
-func TestPOA_Rest(t *testing.T) {
+func TestPOA_REST(t *testing.T) {
 	t.Parallel()
 
 	ct := cliTester.New(t, false)
@@ -409,7 +409,7 @@ func TestPOA_Rest(t *testing.T) {
 	}
 }
 
-func TestVM_Rest(t *testing.T) {
+func TestVM_REST(t *testing.T) {
 	t.Parallel()
 
 	ct := cliTester.New(t, false)

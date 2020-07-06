@@ -23,7 +23,7 @@ import (
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	poaTypes "github.com/dfinance/dnode/x/poa"
 )
 
 const (
@@ -517,7 +517,7 @@ func TestOracle_CLI(t *testing.T) {
 	}
 }
 
-func TestPoa_CLI(t *testing.T) {
+func TestPOA_CLI(t *testing.T) {
 	t.Parallel()
 
 	ct := cliTester.New(t, false)
@@ -615,14 +615,12 @@ func TestPoa_CLI(t *testing.T) {
 		ct.Accounts[newValidatorAccName].IsPOAValidator = false
 
 		// check validator removed
-		q, validators := ct.QueryPoaValidators()
-		q.CheckSucceeded()
-		q, rcvV := ct.QueryPoaValidator(newValidatorAcc.Address)
-		q.CheckSucceeded()
+		qValidators, validators := ct.QueryPoaValidators()
+		qValidators.CheckSucceeded()
+		qValidator, _ := ct.QueryPoaValidator(newValidatorAcc.Address)
+		qValidator.CheckFailedWithErrorSubstring("not found")
 
 		require.Len(t, (*validators).Validators, len(curValidators))
-		require.True(t, rcvV.Address.Empty())
-		require.Empty(t, rcvV.EthAddress)
 
 		// check incorrect inputs
 		{
@@ -747,20 +745,14 @@ func TestPoa_CLI(t *testing.T) {
 			}
 			// invalid address
 			{
-				// non-existing assetCode
-				{
-					q, _ := ct.QueryPoaValidator("invalid_address")
-					q.CheckFailedWithErrorSubstring("address")
-				}
+				q, _ := ct.QueryPoaValidator("invalid_address")
+				q.CheckFailedWithErrorSubstring("address")
 			}
 			// non-existing validator
 			{
 				addr := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
-				q, rcvV := ct.QueryPoaValidator(addr.String())
-				q.CheckSucceeded()
-
-				require.Empty(t, rcvV.EthAddress)
-				require.True(t, rcvV.Address.Empty())
+				q, _ := ct.QueryPoaValidator(addr.String())
+				q.CheckFailedWithErrorSubstring("not found")
 			}
 		}
 	}

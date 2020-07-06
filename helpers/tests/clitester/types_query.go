@@ -123,10 +123,11 @@ func (q *QueryRequest) CheckFailedWithErrorSubstring(subStr string) (output stri
 		return
 	}
 
-	if strings.Contains(stdoutStr, subStr) || strings.Contains(stderrStr, subStr) {
-		return
-	}
-	q.t.Fatalf("%s: stdout/stderr doesn't contain %q sub string:\n%s", q.String(), subStr, output)
+	require.True(q.t,
+		strings.Contains(stdoutStr, subStr) || strings.Contains(stderrStr, subStr),
+		"%s: stdout/stderr doesn't contain %q sub string:\n%s",
+		q.String(), subStr, output,
+	)
 
 	return
 }

@@ -6,29 +6,29 @@ import (
 	amino "github.com/tendermint/go-amino"
 
 	"github.com/dfinance/dnode/x/poa/client/cli"
-	"github.com/dfinance/dnode/x/poa/types"
+	types2 "github.com/dfinance/dnode/x/poa/internal/types"
 )
 
-// Return query commands for PoA module.
+// GetQueryCmd returns module query commands.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
-		Use:   types.ModuleName,
-		Short: "PoA commands for the validators module",
+		Use:   types2.ModuleName,
+		Short: "Querying commands for the PoA module",
 	}
 
 	queryCmd.AddCommand(sdkClient.GetCommands(
-		cli.GetValidator(types.ModuleName, cdc),
-		cli.GetValidators(types.ModuleName, cdc),
-		cli.GetMinMax(types.ModuleName, cdc),
+		cli.GetValidator(types2.ModuleName, cdc),
+		cli.GetValidators(types2.ModuleName, cdc),
+		cli.GetMinMax(types2.ModuleName, cdc),
 	)...)
 
 	return queryCmd
 }
 
-// Returns transactions commands for this module.
+// GetTxCmd returns module tx commands.
 func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
-		Use:   types.ModuleName,
+		Use:   types2.ModuleName,
 		Short: "PoA transactions subcommands",
 	}
 

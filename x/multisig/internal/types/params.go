@@ -13,7 +13,7 @@ const (
 	MinIntervalToExecute = 10
 )
 
-// Parameter store key
+// Parameter store key.
 var (
 	ParamStoreKeyIntervalToExecute = []byte("intervalToExecute")
 )
@@ -47,7 +47,10 @@ func (p Params) Validate() error {
 }
 
 func (p Params) String() string {
-	return fmt.Sprintf("\tIntervalToExecute: %d", p.IntervalToExecute)
+	return fmt.Sprintf("Params:\n"+
+		"IntervalToExecute: %d",
+		p.IntervalToExecute,
+	)
 }
 
 // NewParams creates a new module Params.

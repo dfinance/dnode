@@ -17,7 +17,7 @@ import (
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	poaTypes "github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -108,8 +108,8 @@ func (ct *CLITester) QueryOraclePrice(assetCode string) (*QueryRequest, *oracle.
 	return q, resObj
 }
 
-func (ct *CLITester) QueryPoaValidators() (*QueryRequest, *poaTypes.ValidatorsConfirmations) {
-	resObj := &poaTypes.ValidatorsConfirmations{}
+func (ct *CLITester) QueryPoaValidators() (*QueryRequest, *poaTypes.ValidatorsConfirmationsResp) {
+	resObj := &poaTypes.ValidatorsConfirmationsResp{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("poa", "validators")
 

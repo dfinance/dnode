@@ -58,7 +58,7 @@ func (p AddCurrencyProposal) String() string {
 	b.WriteString(fmt.Sprintf("  Denom: %s\n", p.Denom))
 	b.WriteString(fmt.Sprintf("  Decimals: %d\n", p.Decimals))
 	b.WriteString(fmt.Sprintf("  VmBalancePathHex: 0x%s\n", p.VmBalancePathHex))
-	b.WriteString(fmt.Sprintf("  VmInfoPathHex: %s\n", p.VmInfoPathHex))
+	b.WriteString(fmt.Sprintf("  VmInfoPathHex: %s", p.VmInfoPathHex))
 
 	return b.String()
 }

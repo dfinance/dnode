@@ -10,9 +10,9 @@ var ModuleCdc *codec.Codec
 
 // RegisterCodec registers module specific messages.
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgSubmitCall{}, "multisig/submit-call", nil)
-	cdc.RegisterConcrete(MsgConfirmCall{}, "multisig/confirm-call", nil)
-	cdc.RegisterConcrete(MsgRevokeConfirm{}, "multisig/revoke-confirm", nil)
+	cdc.RegisterConcrete(MsgSubmitCall{}, ModuleName+"/SubmitCall", nil)
+	cdc.RegisterConcrete(MsgConfirmCall{}, ModuleName+"/ConfirmCall", nil)
+	cdc.RegisterConcrete(MsgRevokeConfirm{}, ModuleName+"/RevokeConfirm", nil)
 
 	cdc.RegisterInterface((*msmodule.MsMsg)(nil), nil)
 }

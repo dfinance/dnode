@@ -14,7 +14,7 @@ import (
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
-// GetCurrency returns query command that return currency by denom.
+// GetCurrency returns query command that returns currency by denom.
 func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "currency [denom]",
@@ -51,7 +51,7 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-// GetIssue returns query command that return issue by id.
+// GetIssue returns query command that returns issue by id.
 func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "issue [issueID]",
@@ -131,7 +131,7 @@ func GetWithdraws(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-// GetWithdraw returns query command that return withdraw by id.
+// GetWithdraw returns query command that returns withdraw by id.
 func GetWithdraw(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "withdraw [withdrawID]",

@@ -1,4 +1,3 @@
-// Multisignature handler for processing multisignature messages like: add, remove, replace validator.
 package poa
 
 import (
@@ -6,75 +5,49 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/core/msmodule"
-	"github.com/dfinance/dnode/x/poa/msgs"
-	"github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/poa/internal/keeper"
 )
 
-// New multisignature message handler for PoA module.
-func NewMsHandler(keeper Keeper) msmodule.MsHandler {
+// NewMsHandler creates core.MsMsg type messages handler.
+func NewMsHandler(k keeper.Keeper) msmodule.MsHandler {
 	return func(ctx sdk.Context, msg msmodule.MsMsg) error {
 		switch msg := msg.(type) {
-		case msgs.MsgAddValidator:
-			return handleMsMsgAddValidator(ctx, keeper, msg)
-
-		case msgs.MsgReplaceValidator:
-			return handleMsMsgReplaceValidator(ctx, keeper, msg)
-
-		case msgs.MsgRemoveValidator:
-			return handleMsMsgRemoveValidator(ctx, keeper, msg)
-
+		case MsgAddValidator:
+			return handleMsMsgAddValidator(ctx, k, msg)
+		case MsgRemoveValidator:
+			return handleMsMsgRemoveValidator(ctx, k, msg)
+		case MsgReplaceValidator:
+			return handleMsMsgReplaceValidator(ctx, k, msg)
 		default:
-			return sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized nameservice Msg type: %v", msg.Type())
+			return sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized %s module multisig msg type: %v", ModuleName, msg.Type())
 		}
 	}
 }
 
-// Handle MsgAddValidator for add new validator.
-func handleMsMsgAddValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgAddValidator) error {
-	if keeper.HasValidator(ctx, msg.Address) {
-		return sdkErrors.Wrap(types.ErrValidatorExists, msg.Address.String())
+// handleMsMsgAddValidator hanldes MsgAddValidator multisig message.
+func handleMsMsgAddValidator(ctx sdk.Context, k keeper.Keeper, msg MsgAddValidator) error {
+	if err := k.AddValidator(ctx, msg.Address, msg.EthAddress); err != nil {
+		return err
 	}
 
-	maxValidators := keeper.GetMaxValidators(ctx)
-	amount := keeper.GetValidatorAmount(ctx)
-
-	if amount+1 > maxValidators {
-		return sdkErrors.Wrapf(types.ErrMaxValidatorsReached, "%d",maxValidators)
-	}
-
-	keeper.AddValidator(ctx, msg.Address, msg.EthAddress)
 	return nil
 }
 
+// handleMsMsgRemoveValidator hanldes MsgRemoveValidator multisig message.
 // Handle MsgRemoveValidator for remove validator.
-func handleMsMsgRemoveValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgRemoveValidator) error {
-	if !keeper.HasValidator(ctx, msg.Address) {
-		return sdkErrors.Wrap(types.ErrValidatorDoesntExists, msg.Address.String())
+func handleMsMsgRemoveValidator(ctx sdk.Context, k keeper.Keeper, msg MsgRemoveValidator) error {
+	if err := k.RemoveValidator(ctx, msg.Address); err != nil {
+		return err
 	}
-
-	minValidators := keeper.GetMinValidators(ctx)
-	amount := keeper.GetValidatorAmount(ctx)
-
-	if amount-1 < minValidators {
-		return sdkErrors.Wrapf(types.ErrMinValidatorsReached, "%d", minValidators)
-	}
-
-	keeper.RemoveValidator(ctx, msg.Address)
 
 	return nil
 }
 
-// Handle MsgReplaceValidator for replace validator.
-func handleMsMsgReplaceValidator(ctx sdk.Context, keeper Keeper, msg msgs.MsgReplaceValidator) error {
-	if !keeper.HasValidator(ctx, msg.OldValidator) {
-		return sdkErrors.Wrap(types.ErrValidatorDoesntExists, msg.OldValidator.String())
+// handleMsMsgReplaceValidator hanldes MsgReplaceValidator multisig message.
+func handleMsMsgReplaceValidator(ctx sdk.Context, k keeper.Keeper, msg MsgReplaceValidator) error {
+	if err := k.ReplaceValidator(ctx, msg.OldValidator, msg.NewValidator, msg.EthAddress); err != nil {
+		return err
 	}
-
-	if keeper.HasValidator(ctx, msg.NewValidator) {
-		return sdkErrors.Wrap(types.ErrValidatorExists, msg.NewValidator.String())
-	}
-
-	keeper.ReplaceValidator(ctx, msg.OldValidator, msg.NewValidator, msg.EthAddress)
 
 	return nil
 }

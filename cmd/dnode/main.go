@@ -70,7 +70,7 @@ func main() {
 		genaccsCli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		// Allows user to poa genesis validator
 		ccsCli.AddGenesisCurrencyInfo(ctx, cdc, app.DefaultNodeHome),
-		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
+		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc, app.DefaultNodeHome),
 		vmCli.GenesisWSFromFile(ctx, cdc),
 		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),

@@ -15,7 +15,7 @@ import (
 	ccTypes "github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/multisig"
 	msExport "github.com/dfinance/dnode/x/multisig/export"
-	poaMsgs "github.com/dfinance/dnode/x/poa/msgs"
+	"github.com/dfinance/dnode/x/poa"
 )
 
 const (
@@ -75,7 +75,7 @@ func TestMSApp_Voting(t *testing.T) {
 	{
 		// create call
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, nonExistingValidator.Address), nonExistingValidatorPrivKey
-		addMsg := poaMsgs.NewMsgAddValidator(targetValidator.Address, ethAddresses[0], senderAcc.GetAddress())
+		addMsg := poa.NewMsgAddValidator(targetValidator.Address, ethAddresses[0], senderAcc.GetAddress())
 		msgID := fmt.Sprintf("addValidator:%s", targetValidator.Address)
 		submitMsg := msExport.NewMsgSubmitCall(addMsg, msgID, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -86,7 +86,7 @@ func TestMSApp_Voting(t *testing.T) {
 	{
 		// create call
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
-		addMsg := poaMsgs.NewMsgAddValidator(targetValidator.Address, ethAddresses[0], senderAcc.GetAddress())
+		addMsg := poa.NewMsgAddValidator(targetValidator.Address, ethAddresses[0], senderAcc.GetAddress())
 		callUniqueId = fmt.Sprintf("addValidator:%s", targetValidator.Address)
 		submitMsg := msExport.NewMsgSubmitCall(addMsg, callUniqueId, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)

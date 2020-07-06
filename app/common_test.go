@@ -40,7 +40,7 @@ import (
 	msExport "github.com/dfinance/dnode/x/multisig/export"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/poa"
 )
 
 const (
@@ -272,13 +272,13 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 
 		genesisState[genaccounts.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, genAccounts)
 
-		validators := make(poaTypes.Validators, len(accs))
+		validators := make(poa.Validators, len(accs))
 		for idx, acc := range accs {
-			validators[idx] = poaTypes.Validator{Address: acc.Address, EthAddress: "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615"}
+			validators[idx] = poa.Validator{Address: acc.Address, EthAddress: "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615"}
 		}
-		genesisState[poaTypes.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, poaTypes.GenesisState{
-			Parameters:    poaTypes.DefaultParams(),
-			PoAValidators: validators,
+		genesisState[poa.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, poa.GenesisState{
+			Parameters: poa.DefaultParams(),
+			Validators: validators,
 		})
 
 		genesisState[multisig.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, multisig.GenesisState{

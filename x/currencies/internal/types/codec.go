@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 )
@@ -11,9 +9,9 @@ var ModuleCdc *codec.Codec
 
 // RegisterCodec registers module specific messages.
 func RegisterCodec(cdc *codec.Codec) {
-	cdc.RegisterConcrete(MsgIssueCurrency{}, fmt.Sprintf("%s/issue-currency", ModuleName), nil)
-	cdc.RegisterConcrete(MsgWithdrawCurrency{}, fmt.Sprintf("%s/withdraw-currency", ModuleName), nil)
-	cdc.RegisterConcrete(AddCurrencyProposal{}, fmt.Sprintf("%s/AddCurrencyProposal", ModuleName), nil)
+	cdc.RegisterConcrete(MsgIssueCurrency{}, ModuleName+"/IssueCurrency", nil)
+	cdc.RegisterConcrete(MsgWithdrawCurrency{}, ModuleName+"/WithdrawCurrency", nil)
+	cdc.RegisterConcrete(AddCurrencyProposal{}, ModuleName+"/AddCurrencyProposal", nil)
 }
 
 func init() {
