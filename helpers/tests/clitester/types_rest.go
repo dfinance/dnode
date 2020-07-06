@@ -3,6 +3,7 @@ package clitester
 import (
 	"bytes"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -135,6 +136,22 @@ func (r *RestRequest) Execute() error {
 				return fmt.Errorf("%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
 			}
 
+			return nil
+		}
+
+		if _, ok := r.responseValue.(*auth.StdTx); ok {
+			respMsg := struct {
+				Type  string     `json:"type"`
+				Value auth.StdTx `json:"value"`
+			}{}
+
+			if err := r.cdc.UnmarshalJSON(respBody, &respMsg); err != nil {
+				return fmt.Errorf("%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
+			}
+
+			r.responseValue.(*auth.StdTx).Msgs = respMsg.Value.Msgs
+			r.responseValue.(*auth.StdTx).Fee = respMsg.Value.Fee
+			r.responseValue.(*auth.StdTx).Memo = respMsg.Value.Memo
 			return nil
 		}
 

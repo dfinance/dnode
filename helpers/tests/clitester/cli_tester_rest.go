@@ -2,6 +2,7 @@ package clitester
 
 import (
 	"fmt"
+	"github.com/dfinance/dnode/x/orders/client/rest"
 	"net/url"
 	"strconv"
 	"time"
@@ -248,6 +249,20 @@ func (ct *CLITester) RestQueryOrder(id dnTypes.ID) (*RestRequest, *orderTypes.Or
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOrderPost(rq rest.PostOrderReq) (*RestRequest, *auth.StdTx) {
+	reqSubPath := fmt.Sprintf("%s/%s", orderTypes.ModuleName, "post")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOrderRevoke(rq rest.RevokeOrderReq) (*RestRequest, *auth.StdTx) {
+	reqSubPath := fmt.Sprintf("%s/%s", orderTypes.ModuleName, "revoke")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
 	return r, respMsg
 }
 

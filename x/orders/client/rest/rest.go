@@ -20,7 +20,7 @@ const (
 	OrderMarketID  = "marketID"
 )
 
-type postOrderReq struct {
+type PostOrderReq struct {
 	BaseReq   rest.BaseReq      `json:"base_req" yaml:"base_req"`
 	AssetCode dnTypes.AssetCode `json:"asset_code" example:"btc_dfi"`
 	Direction types.Direction   `json:"direction" example:"ask"`
@@ -29,7 +29,7 @@ type postOrderReq struct {
 	TtlInSec  string            `json:"ttl_in_sec" example:"3"`
 }
 
-type revokeOrderReq struct {
+type RevokeOrderReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	OrderId string       `json:"order_id" yaml:"order_id"`
 }
@@ -172,14 +172,14 @@ func getOrder(cliCtx context.CLIContext) http.HandlerFunc {
 // @ID ordersPostOrder
 // @Accept  json
 // @Produce json
-// @Param postRequest body postOrderReq true "PostOrder request with signed transaction"
+// @Param postRequest body PostOrderReq true "PostOrder request with signed transaction"
 // @Success 200 {object} OrdersRespPostOrder
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /orders/post [put]
 func postOrder(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req postOrderReq
+		var req PostOrderReq
 
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
@@ -242,14 +242,14 @@ func postOrder(cliCtx context.CLIContext) http.HandlerFunc {
 // @ID ordersRevokeOrder
 // @Accept  json
 // @Produce json
-// @Param postRequest body revokeOrderReq true "RevokeOrder request with signed transaction"
+// @Param postRequest body RevokeOrderReq true "RevokeOrder request with signed transaction"
 // @Success 200 {object} OrdersRespRevokeOrder
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /orders/revoke [put]
 func revokeOrder(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req revokeOrderReq
+		var req RevokeOrderReq
 
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
