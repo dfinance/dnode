@@ -36,6 +36,21 @@ func (keeper Keeper) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 	return keeper.getValue(ctx, accessPath)
 }
 
+// GetValue with middleware context-dependant processing.
+func (keeper Keeper) GetValueWithMiddlewares(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
+	for _, f := range keeper.dsServer.dataMiddlewares {
+		data, err := f(ctx, accessPath)
+		if err != nil {
+			return nil
+		}
+		if data != nil {
+			return data
+		}
+	}
+
+	return keeper.GetValue(ctx, accessPath)
+}
+
 // Public set value.
 func (keeper Keeper) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 	keeper.setValue(ctx, accessPath, value)

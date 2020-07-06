@@ -3,7 +3,6 @@
 package app
 
 import (
-	"encoding/hex"
 	"fmt"
 	restTypes "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/dfinance/dnode/x/orders/client/rest"
@@ -449,20 +448,6 @@ func Test_VMRest(t *testing.T) {
 			// invalid path
 			{
 				req, _ := ct.RestQueryVMGetData(writeSet.Address, "non-valid-path")
-				req.CheckFailed(http.StatusUnprocessableEntity, nil)
-			}
-
-			// restricted path
-			{
-				path := writeSet.Path
-
-				pathBytes, err := hex.DecodeString(path)
-				require.NoError(t, err, "decoding path HEX string")
-
-				pathBytes[0] = 0x1
-				path = hex.EncodeToString(pathBytes)
-
-				req, _ := ct.RestQueryVMGetData(writeSet.Address, path)
 				req.CheckFailed(http.StatusUnprocessableEntity, nil)
 			}
 		}

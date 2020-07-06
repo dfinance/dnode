@@ -11,6 +11,8 @@ import (
 func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
 	logger := keeper.Logger(ctx)
 
+	keeper.SetDSContext(ctx)
+
 	keeper.IterateProposalsQueue(ctx, func(id uint64, pProposal PlannedProposal) {
 		if !pProposal.GetPlan().ShouldExecute(ctx) {
 			return

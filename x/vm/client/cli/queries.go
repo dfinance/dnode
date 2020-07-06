@@ -105,8 +105,6 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("can't parse address: %s\n, check address format, it could be libra hex or bech32", rawAddress)
 				}
-
-				address = common_vm.Bech32ToLibra(address)
 			}
 
 			path, err := hex.DecodeString(args[1])
@@ -115,7 +113,7 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			bz, err := cdc.MarshalJSON(types.QueryAccessPath{
-				Address: address,
+				Address: common_vm.Bech32ToLibra(address),
 				Path:    path,
 			})
 			if err != nil {
