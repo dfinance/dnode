@@ -20,6 +20,7 @@ import (
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
+	ordersRest "github.com/dfinance/dnode/x/orders/client/rest"
 	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
@@ -256,14 +257,14 @@ func (ct *CLITester) RestQueryOrder(id dnTypes.ID) (*RestRequest, *orders.Order)
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOrderPost(rq rest.PostOrderReq) (*RestRequest, *auth.StdTx) {
+func (ct *CLITester) RestQueryOrderPost(rq ordersRest.PostOrderReq) (*RestRequest, *auth.StdTx) {
 	reqSubPath := fmt.Sprintf("%s/%s", orders.ModuleName, "post")
 	respMsg := &auth.StdTx{}
 	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOrderRevoke(rq rest.RevokeOrderReq) (*RestRequest, *auth.StdTx) {
+func (ct *CLITester) RestQueryOrderRevoke(rq ordersRest.RevokeOrderReq) (*RestRequest, *auth.StdTx) {
 	reqSubPath := fmt.Sprintf("%s/%s", orders.ModuleName, "revoke")
 	respMsg := &auth.StdTx{}
 	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
@@ -316,8 +317,8 @@ func (ct *CLITester) RestTxOrdersRevokeOrder(accName string, id dnTypes.ID) (*Re
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }
 
-func (ct *CLITester) RestTxOrdersPostOrderRaw(accName string, accAddress sdk.AccAddress, accNumber, accSequence uint64, assetCode dnTypes.AssetCode, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
-	msg := orderTypes.MsgPostOrder{
+func (ct *CLITester) RestTxOrdersPostOrderRaw(accName string, accAddress sdk.AccAddress, accNumber, accSequence uint64, assetCode dnTypes.AssetCode, direction orders.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
+	msg := orders.MsgPostOrder{
 		Owner:     accAddress,
 		AssetCode: assetCode,
 		Direction: direction,

@@ -1150,14 +1150,14 @@ func TestOrders_CLI(t *testing.T) {
 		{
 			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orders.AskDirection, sdk.ZeroUint(), sdk.OneUint(), 60)
 			tx.ChangeCmdArg("0", "invalid")
-			tx.CheckFailedWithErrorSubstring("convert")
+			tx.CheckFailedWithErrorSubstring("price")
 		}
 
 		// invalid quantity
 		{
 			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orders.AskDirection, sdk.OneUint(), sdk.ZeroUint(), 60)
 			tx.ChangeCmdArg("0", "invalid")
-			tx.CheckFailedWithErrorSubstring("convert")
+			tx.CheckFailedWithErrorSubstring("quantity")
 		}
 	}
 

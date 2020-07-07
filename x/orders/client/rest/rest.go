@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/dfinance/dnode/helpers"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
@@ -32,7 +33,7 @@ type PostOrderReq struct {
 
 type RevokeOrderReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
-	OrderId string       `json:"order_id" yaml:"order_id"`
+	OrderID string       `json:"order_id" yaml:"order_id"`
 }
 
 // RegisterRoutes adds endpoint to REST router.
@@ -168,8 +169,8 @@ func getOrder(cliCtx context.CLIContext) http.HandlerFunc {
 // @Router /orders/post [put]
 func postOrder(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs
 		var req PostOrderReq
-
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
@@ -180,41 +181,44 @@ func postOrder(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		addr, err := sdk.AccAddressFromBech32(baseReq.From)
+		fromAddr, err := helpers.ParseSdkAddressParam("from", baseReq.From, helpers.ParamTypeRestRequest)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
 		if err := req.AssetCode.Validate(); err != nil {
+			err := helpers.BuildError("asset_code", req.AssetCode.String(), helpers.ParamTypeRestRequest, err.Error())
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
 		if !req.Direction.IsValid() {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, types.ErrWrongDirection.Error())
+			err := helpers.BuildError("direction", req.Direction.String(), helpers.ParamTypeRestRequest, types.ErrWrongDirection.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		price, err := sdk.ParseUint(req.Price)
+		price, err := helpers.ParseSdkUintParam("price", req.Price, helpers.ParamTypeRestRequest)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("something wrong with price value: %s", err.Error()))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		quantity, err := sdk.ParseUint(req.Quantity)
+		quantity, err := helpers.ParseSdkUintParam("quantity", req.Quantity, helpers.ParamTypeRestRequest)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("something wrong with quantity value: %s", err.Error()))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		ttl := sdk.NewUintFromString(req.TtlInSec)
-		if ttl.IsZero() {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "something wrong with ttl value")
+		ttl, err := helpers.ParseUint64Param("ttl_in_sec", req.TtlInSec, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.NewMsgPost(addr, req.AssetCode, req.Direction, price, quantity, ttl.Uint64())
+		// prepare and send msg
+		msg := types.NewMsgPost(fromAddr, req.AssetCode, req.Direction, price, quantity, ttl)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -238,8 +242,8 @@ func postOrder(cliCtx context.CLIContext) http.HandlerFunc {
 // @Router /orders/revoke [put]
 func revokeOrder(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs
 		var req RevokeOrderReq
-
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
@@ -250,19 +254,20 @@ func revokeOrder(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		addr, err := sdk.AccAddressFromBech32(baseReq.From)
+		fromAddr, err := helpers.ParseSdkAddressParam("from", baseReq.From, helpers.ParamTypeRestRequest)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		id, err := dnTypes.NewIDFromString(req.OrderId)
+		id, err := helpers.ParseDnIDParam("order_id", req.OrderID, helpers.ParamTypeRestRequest)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("%q param parsing: %v", OrderID, err))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		msg := types.NewMsgRevokeOrder(addr, id)
+		// prepare and send msg
+		msg := types.NewMsgRevokeOrder(fromAddr, id)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

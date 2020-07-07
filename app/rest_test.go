@@ -22,6 +22,7 @@ import (
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders/client/rest"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -631,7 +632,7 @@ func TestOrders_REST(t *testing.T) {
 	{
 		// invalid AssetCode
 		{
-			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.NewIDFromUint64(2), orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.AssetCode("invalid"), orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
 			r.CheckFailed(http.StatusOK, orders.ErrWrongAssetCode)
 		}
 	}
@@ -884,7 +885,7 @@ func TestOrders_REST(t *testing.T) {
 					},
 				},
 				AssetCode: dnTypes.AssetCode("btc_dfi"),
-				Direction: orderTypes.Direction("ask"),
+				Direction: orders.Direction("ask"),
 				Price:     "100",
 				Quantity:  "10",
 				TtlInSec:  "3",
@@ -894,7 +895,7 @@ func TestOrders_REST(t *testing.T) {
 			q.CheckSucceeded()
 
 			require.Len(t, orderStructure.Msgs, 1)
-			msg := orderStructure.Msgs[0].(orderTypes.MsgPostOrder)
+			msg := orderStructure.Msgs[0].(orders.MsgPostOrder)
 
 			require.Equal(t, rq.AssetCode, msg.AssetCode)
 			require.Equal(t, rq.Direction, msg.Direction)
@@ -919,16 +920,16 @@ func TestOrders_REST(t *testing.T) {
 						},
 					},
 				},
-				OrderId: orderID.String(),
+				OrderID: orderID.String(),
 			}
 
 			q, orderStructure := ct.RestQueryOrderRevoke(rq)
 			q.CheckSucceeded()
 
 			require.Len(t, orderStructure.Msgs, 1)
-			msg := orderStructure.Msgs[0].(orderTypes.MsgRevokeOrder)
+			msg := orderStructure.Msgs[0].(orders.MsgRevokeOrder)
 
-			require.Equal(t, rq.OrderId, msg.OrderID.String())
+			require.Equal(t, rq.OrderID, msg.OrderID.String())
 			require.Equal(t, rq.BaseReq.From, msg.Owner.String())
 		}
 	}

@@ -25,10 +25,11 @@ import (
 type ParamType string
 
 const (
-	ParamTypeCliFlag   ParamType = "flag"
-	ParamTypeCliArg    ParamType = "argument"
-	ParamTypeRestQuery ParamType = "query param"
-	ParamTypeRestPath  ParamType = "path param"
+	ParamTypeCliFlag     ParamType = "flag"
+	ParamTypeCliArg      ParamType = "argument"
+	ParamTypeRestQuery   ParamType = "query param"
+	ParamTypeRestPath    ParamType = "path param"
+	ParamTypeRestRequest ParamType = "request param"
 )
 
 // GetTxCmdCtx context from CLI Tx commands.
@@ -192,6 +193,16 @@ func ParseHexStringParam(argName, argValue string, paramType ParamType) (string,
 	}
 
 	return argValueNorm, nil
+}
+
+// ParseAssetCodeParam parses assetCode and validates.
+func ParseAssetCodeParam(argName, argValue string, paramType ParamType) (dnTypes.AssetCode, error) {
+	assetCode := dnTypes.AssetCode(strings.ToLower(argValue))
+	if err := assetCode.Validate(); err != nil {
+		return "", fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+	}
+
+	return assetCode, nil
 }
 
 // BuildError builds an error in unified error style.

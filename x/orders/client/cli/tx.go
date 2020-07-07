@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dfinance/dnode/helpers"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
@@ -30,9 +29,9 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			assetCode := dnTypes.AssetCode(strings.ToLower(args[0]))
-			if err := assetCode.Validate(); err != nil {
-				return fmt.Errorf("argument %q: parsing: %w", "asset_code", err)
+			assetCode, err := helpers.ParseAssetCodeParam("asset_code", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
 			}
 
 			direction := types.Direction(strings.ToLower(args[1]))
