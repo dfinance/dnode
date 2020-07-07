@@ -2,7 +2,6 @@ package clitester
 
 import (
 	"fmt"
-	"github.com/dfinance/dnode/x/orders/client/rest"
 	"net/url"
 	"strconv"
 	"time"
@@ -20,6 +19,7 @@ import (
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders/client/rest"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
 )

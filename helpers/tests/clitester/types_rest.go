@@ -3,7 +3,6 @@ package clitester
 import (
 	"bytes"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -16,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkRest "github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
 )

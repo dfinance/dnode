@@ -2,15 +2,17 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/gorilla/mux"
+
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orders/internal/types"
-	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
 )
 
 const (

@@ -4,8 +4,6 @@ package app
 
 import (
 	"fmt"
-	restTypes "github.com/cosmos/cosmos-sdk/types/rest"
-	"github.com/dfinance/dnode/x/orders/client/rest"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -14,6 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+	restTypes "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/stretchr/testify/require"
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
@@ -23,6 +22,7 @@ import (
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders/client/rest"
 	"github.com/dfinance/dnode/x/vm"
 )
 
