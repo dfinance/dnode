@@ -119,7 +119,6 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 func SetDefaultFeeForTxCmd(cmd *cobra.Command) {
 	if feesFlag := cmd.Flag(flags.FlagFees); feesFlag != nil {
 		feesFlag.DefValue = dnConfig.DefaultFee
-		feesFlag.NoOptDefVal = dnConfig.DefaultFee
 		feesFlag.Usage = "Fees to pay along with transaction; eg: " + dnConfig.DefaultFee
 
 		if feesFlag.Value.String() == "" {
