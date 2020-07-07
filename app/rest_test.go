@@ -12,6 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+	restTypes "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/stretchr/testify/require"
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
@@ -616,6 +617,7 @@ func TestOrders_REST(t *testing.T) {
 	ownerName1, ownerName2 := accountOpts[0].Name, accountOpts[1].Name
 	ownerAddr1, ownerAddr2 := ct.Accounts[ownerName1].Address, ct.Accounts[ownerName2].Address
 	marketID0, marketID1 := dnTypes.NewIDFromUint64(0), dnTypes.NewIDFromUint64(1)
+	assetCode0, assetCode1 := dnTypes.AssetCode("btc_dfi"), dnTypes.AssetCode("eth_dfi")
 
 	// add market
 	{
@@ -627,16 +629,17 @@ func TestOrders_REST(t *testing.T) {
 
 	// check AddOrder Tx
 	{
-		// invalid marketID
+		// invalid AssetCode
 		{
-			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.NewIDFromUint64(2), orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
-			r.CheckFailed(http.StatusOK, orders.ErrWrongMarketID)
+			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.NewIDFromUint64(2), orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			r.CheckFailed(http.StatusOK, orders.ErrWrongAssetCode)
 		}
 	}
 
 	// add orders
 	inputOrders := []struct {
 		MarketID     dnTypes.ID
+		AssetCode    dnTypes.AssetCode
 		OwnerName    string
 		OwnerAddress string
 		Direction    orders.Direction
@@ -646,6 +649,7 @@ func TestOrders_REST(t *testing.T) {
 	}{
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
 			Direction:    orders.BidDirection,
@@ -655,6 +659,7 @@ func TestOrders_REST(t *testing.T) {
 		},
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerName:    ownerName2,
 			OwnerAddress: ownerAddr2,
 			Direction:    orders.BidDirection,
@@ -664,6 +669,7 @@ func TestOrders_REST(t *testing.T) {
 		},
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
 			Direction:    orders.AskDirection,
@@ -673,6 +679,7 @@ func TestOrders_REST(t *testing.T) {
 		},
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerName:    ownerName2,
 			OwnerAddress: ownerAddr2,
 			Direction:    orders.AskDirection,
@@ -682,6 +689,7 @@ func TestOrders_REST(t *testing.T) {
 		},
 		{
 			MarketID:     marketID1,
+			AssetCode:    assetCode1,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
 			Direction:    orders.AskDirection,
@@ -691,7 +699,7 @@ func TestOrders_REST(t *testing.T) {
 		},
 	}
 	for _, input := range inputOrders {
-		r, _ := ct.RestTxOrdersPostOrder(input.OwnerName, input.MarketID, input.Direction, input.Price, input.Quantity, input.TtlInSec)
+		r, _ := ct.RestTxOrdersPostOrder(input.OwnerName, input.AssetCode, input.Direction, input.Price, input.Quantity, input.TtlInSec)
 		r.CheckSucceeded()
 	}
 
@@ -858,6 +866,70 @@ func TestOrders_REST(t *testing.T) {
 		{
 			r, _ := ct.RestTxOrdersRevokeOrder("validator1", dnTypes.NewIDFromUint64(0))
 			r.CheckFailed(http.StatusOK, orders.ErrWrongOwner)
+		}
+	}
+
+	// check post order
+	{
+		{
+			rq := rest.PostOrderReq{
+				BaseReq: restTypes.BaseReq{
+					ChainID: ct.IDs.ChainID,
+					From:    ownerAddr1,
+					Fees: sdk.Coins{
+						sdk.Coin{
+							Denom:  "dfi",
+							Amount: sdk.NewIntFromUint64(1),
+						},
+					},
+				},
+				AssetCode: dnTypes.AssetCode("btc_dfi"),
+				Direction: orderTypes.Direction("ask"),
+				Price:     "100",
+				Quantity:  "10",
+				TtlInSec:  "3",
+			}
+
+			q, orderStructure := ct.RestQueryOrderPost(rq)
+			q.CheckSucceeded()
+
+			require.Len(t, orderStructure.Msgs, 1)
+			msg := orderStructure.Msgs[0].(orderTypes.MsgPostOrder)
+
+			require.Equal(t, rq.AssetCode, msg.AssetCode)
+			require.Equal(t, rq.Direction, msg.Direction)
+			require.Equal(t, rq.BaseReq.From, msg.Owner.String())
+		}
+	}
+
+	// check revoke order
+	{
+		{
+			orderIdx := len(inputOrders) - 1
+			orderID := dnTypes.NewIDFromUint64(uint64(orderIdx))
+
+			rq := rest.RevokeOrderReq{
+				BaseReq: restTypes.BaseReq{
+					ChainID: ct.IDs.ChainID,
+					From:    ownerAddr1,
+					Fees: sdk.Coins{
+						sdk.Coin{
+							Denom:  "dfi",
+							Amount: sdk.NewIntFromUint64(1),
+						},
+					},
+				},
+				OrderId: orderID.String(),
+			}
+
+			q, orderStructure := ct.RestQueryOrderRevoke(rq)
+			q.CheckSucceeded()
+
+			require.Len(t, orderStructure.Msgs, 1)
+			msg := orderStructure.Msgs[0].(orderTypes.MsgRevokeOrder)
+
+			require.Equal(t, rq.OrderId, msg.OrderID.String())
+			require.Equal(t, rq.BaseReq.From, msg.Owner.String())
 		}
 	}
 }

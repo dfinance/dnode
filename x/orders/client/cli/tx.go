@@ -10,14 +10,15 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dfinance/dnode/helpers"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
 // GetCmdPostOrder returns tx command which post a new order.
 func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "post [market_id] [direction] [price] [quantity] [TTL_in_sec]",
-		Example: "post 0 bid 100 100000000 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
+		Use:     "post [asset_code] [direction] [price] [quantity] [TTL_in_sec]",
+		Example: "post btc_dfi bid 100 100000000 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
 		Short:   "Post a new order",
 		Args:    cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -29,9 +30,9 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			marketID, err := helpers.ParseDnIDParam("market_id", args[0], helpers.ParamTypeCliArg)
-			if err != nil {
-				return err
+			assetCode := dnTypes.AssetCode(strings.ToLower(args[0]))
+			if err := assetCode.Validate(); err != nil {
+				return fmt.Errorf("argument %q: parsing: %w", "asset_code", err)
 			}
 
 			direction := types.Direction(strings.ToLower(args[1]))
@@ -55,7 +56,7 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// prepare and send message
-			msg := types.NewMsgPost(fromAddr, marketID, direction, price, quantity, ttlInSec)
+			msg := types.NewMsgPost(fromAddr, assetCode, direction, price, quantity, ttlInSec)
 
 			cliCtx.WithOutput(os.Stdout)
 
@@ -63,7 +64,7 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 	helpers.BuildCmdHelp(cmd, []string{
-		"market ID [uint]",
+		"asset code in {base denomination_symbol}_{quote_denomination_symbol} format",
 		"order type [bid/ask]",
 		"price with decimals (1.0 BTC with 8 decimals -> 100000000)",
 		"quantity with decimals",

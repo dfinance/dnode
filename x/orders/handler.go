@@ -23,7 +23,7 @@ func NewHandler(k Keeper) sdk.Handler {
 
 // handleMsgPostOrder handles MsgPostOrder message which creates a new order.
 func handleMsgPostOrder(ctx sdk.Context, k Keeper, msg MsgPostOrder) (*sdk.Result, error) {
-	order, err := k.PostOrder(ctx, msg.Owner, msg.MarketID, msg.Direction, msg.Price, msg.Quantity, msg.TtlInSec)
+	order, err := k.PostOrder(ctx, msg.Owner, msg.AssetCode, msg.Direction, msg.Price, msg.Quantity, msg.TtlInSec)
 	if err != nil {
 		return nil, err
 	}

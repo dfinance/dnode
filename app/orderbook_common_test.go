@@ -418,7 +418,7 @@ func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orders.Directi
 	ctx := GetContext(tester.app, false)
 
 	clientState := tester.findClient(owner)
-	_, ok := tester.Markets[mID.String()]
+	m, ok := tester.Markets[mID.String()]
 	require.True(tester.t, ok, "market not found: %s", mID)
 
 	// post order
@@ -427,7 +427,7 @@ func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orders.Directi
 		order, err := tester.app.orderKeeper.PostOrder(
 			ctx,
 			owner,
-			mID,
+			m.GetAssetCode(),
 			dir,
 			p,
 			q,

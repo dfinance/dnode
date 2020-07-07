@@ -1103,6 +1103,7 @@ func TestOrders_CLI(t *testing.T) {
 	ownerAddr1 := ct.Accounts[accountOpts[0].Name].Address
 	ownerAddr2 := ct.Accounts[accountOpts[1].Name].Address
 	marketID0, marketID1 := dnTypes.NewIDFromUint64(0), dnTypes.NewIDFromUint64(1)
+	assetCode0, assetCode1 := dnTypes.AssetCode("btc_dfi"), dnTypes.AssetCode("eth_dfi")
 
 	wsPostQuery := fmt.Sprintf("orders.post.owner='%s'", ownerAddr1)
 	wsStop, wsChan := ct.CheckWSSubscribed(false, "Test_OrdersCLI", wsPostQuery, 10)
@@ -1128,33 +1129,33 @@ func TestOrders_CLI(t *testing.T) {
 	{
 		// invalid owner
 		{
-			tx := ct.TxOrdersPost("invalid_address", marketID0, orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			tx := ct.TxOrdersPost("invalid_address", assetCode0, orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
 			tx.CheckFailedWithErrorSubstring("keyring")
 		}
 
 		// invalid marketID
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, dnTypes.NewIDFromUint64(2), orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
-			tx.CheckFailedWithSDKError(orders.ErrWrongMarketID)
+			tx := ct.TxOrdersPost(ownerAddr1, dnTypes.AssetCode("wrong_code"), orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			tx.CheckFailedWithSDKError(orders.ErrWrongAssetCode)
 		}
 
 		// invalid direction
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, marketID0, orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
 			tx.ChangeCmdArg("ask", "invalid")
 			tx.CheckFailedWithErrorSubstring("direction")
 		}
 
 		// invalid price
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, marketID0, orders.AskDirection, sdk.ZeroUint(), sdk.OneUint(), 60)
+			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orders.AskDirection, sdk.ZeroUint(), sdk.OneUint(), 60)
 			tx.ChangeCmdArg("0", "invalid")
 			tx.CheckFailedWithErrorSubstring("convert")
 		}
 
 		// invalid quantity
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, marketID0, orders.AskDirection, sdk.OneUint(), sdk.ZeroUint(), 60)
+			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orders.AskDirection, sdk.OneUint(), sdk.ZeroUint(), 60)
 			tx.ChangeCmdArg("0", "invalid")
 			tx.CheckFailedWithErrorSubstring("convert")
 		}
@@ -1163,6 +1164,7 @@ func TestOrders_CLI(t *testing.T) {
 	// add orders
 	inputOrders := []struct {
 		MarketID     dnTypes.ID
+		AssetCode    dnTypes.AssetCode
 		OwnerAddress string
 		Direction    orders.Direction
 		Price        sdk.Uint
@@ -1171,6 +1173,7 @@ func TestOrders_CLI(t *testing.T) {
 	}{
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerAddress: ownerAddr1,
 			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
@@ -1179,6 +1182,7 @@ func TestOrders_CLI(t *testing.T) {
 		},
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerAddress: ownerAddr2,
 			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("20000000000000000000"),
@@ -1187,6 +1191,7 @@ func TestOrders_CLI(t *testing.T) {
 		},
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerAddress: ownerAddr1,
 			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("50000000000000000000"),
@@ -1195,6 +1200,7 @@ func TestOrders_CLI(t *testing.T) {
 		},
 		{
 			MarketID:     marketID0,
+			AssetCode:    assetCode0,
 			OwnerAddress: ownerAddr2,
 			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("60000000000000000000"),
@@ -1203,6 +1209,7 @@ func TestOrders_CLI(t *testing.T) {
 		},
 		{
 			MarketID:     marketID1,
+			AssetCode:    assetCode1,
 			OwnerAddress: ownerAddr1,
 			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
@@ -1211,7 +1218,7 @@ func TestOrders_CLI(t *testing.T) {
 		},
 	}
 	for _, input := range inputOrders {
-		ct.TxOrdersPost(input.OwnerAddress, input.MarketID, input.Direction, input.Price, input.Quantity, input.TtlInSec).CheckSucceeded()
+		ct.TxOrdersPost(input.OwnerAddress, input.AssetCode, input.Direction, input.Price, input.Quantity, input.TtlInSec).CheckSucceeded()
 	}
 
 	// check orders added

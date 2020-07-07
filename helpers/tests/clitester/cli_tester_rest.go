@@ -256,6 +256,20 @@ func (ct *CLITester) RestQueryOrder(id dnTypes.ID) (*RestRequest, *orders.Order)
 	return r, respMsg
 }
 
+func (ct *CLITester) RestQueryOrderPost(rq rest.PostOrderReq) (*RestRequest, *auth.StdTx) {
+	reqSubPath := fmt.Sprintf("%s/%s", orders.ModuleName, "post")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOrderRevoke(rq rest.RevokeOrderReq) (*RestRequest, *auth.StdTx) {
+	reqSubPath := fmt.Sprintf("%s/%s", orders.ModuleName, "revoke")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
 func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.Int, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
 	accInfo := ct.Accounts[accName]
 	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
@@ -268,7 +282,7 @@ func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }
 
-func (ct *CLITester) RestTxOrdersPostOrder(accName string, marketID dnTypes.ID, direction orders.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
+func (ct *CLITester) RestTxOrdersPostOrder(accName string, assetCode dnTypes.AssetCode, direction orders.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
 	accInfo := ct.Accounts[accName]
 	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
 
@@ -277,7 +291,7 @@ func (ct *CLITester) RestTxOrdersPostOrder(accName string, marketID dnTypes.ID, 
 
 	msg := orders.MsgPostOrder{
 		Owner:     acc.Address,
-		MarketID:  marketID,
+		AssetCode: assetCode,
 		Direction: direction,
 		Price:     price,
 		Quantity:  quantity,
@@ -302,10 +316,10 @@ func (ct *CLITester) RestTxOrdersRevokeOrder(accName string, id dnTypes.ID) (*Re
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }
 
-func (ct *CLITester) RestTxOrdersPostOrderRaw(accName string, accAddress sdk.AccAddress, accNumber, accSequence uint64, marketID dnTypes.ID, direction orders.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
-	msg := orders.MsgPostOrder{
+func (ct *CLITester) RestTxOrdersPostOrderRaw(accName string, accAddress sdk.AccAddress, accNumber, accSequence uint64, assetCode dnTypes.AssetCode, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
+	msg := orderTypes.MsgPostOrder{
 		Owner:     accAddress,
-		MarketID:  marketID,
+		AssetCode: assetCode,
 		Direction: direction,
 		Price:     price,
 		Quantity:  quantity,

@@ -39,4 +39,5 @@ var (
 	ErrWrongTtl       = types.ErrWrongTtl
 	ErrWrongDirection = types.ErrWrongDirection
 	ErrWrongOrderID   = types.ErrWrongOrderID
+	ErrWrongAssetCode = types.ErrWrongAssetCode
 )

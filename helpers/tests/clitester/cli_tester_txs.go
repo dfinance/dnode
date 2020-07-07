@@ -191,10 +191,10 @@ func (ct *CLITester) TxVmExecuteScript(fromAddress, filePath string, args ...str
 	return r
 }
 
-func (ct *CLITester) TxOrdersPost(ownerAddress string, marketID dnTypes.ID, direction orders.Direction, price, quantity sdk.Uint, ttlInSec int) *TxRequest {
+func (ct *CLITester) TxOrdersPost(ownerAddress string, assetCode dnTypes.AssetCode, direction orders.Direction, price, quantity sdk.Uint, ttlInSec int) *TxRequest {
 	cmdArgs := []string{
 		"post",
-		marketID.String(),
+		assetCode.String(),
 		direction.String(),
 		price.String(),
 		quantity.String(),
