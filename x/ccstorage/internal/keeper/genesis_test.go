@@ -18,7 +18,7 @@ func TestCCSKeeper_InitGenesis(t *testing.T) {
 	ctx, keeper := input.ctx, input.keeper
 
 	defGenesis := types.DefaultGenesisState()
-	params := keeper.getCurrenciesParams(ctx)
+	params := keeper.GetCurrenciesParams(ctx)
 	require.Equal(t, len(defGenesis.CurrenciesParams), len(params))
 
 	for denom, genParams := range defGenesis.CurrenciesParams {

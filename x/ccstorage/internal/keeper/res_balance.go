@@ -46,7 +46,7 @@ func (k Keeper) GetAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddress)
 	addrLibra := common_vm.Bech32ToLibra(addr)
 	balances := make(types.Balances, 0)
 
-	for denom, params := range k.getCurrenciesParams(ctx) {
+	for denom, params := range k.GetCurrenciesParams(ctx) {
 		accessPath := &vm_grpc.VMAccessPath{
 			Address: addrLibra,
 			Path:    params.BalancePath(),
@@ -67,7 +67,7 @@ func (k Keeper) GetAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddress)
 func (k Keeper) RemoveAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddress) {
 	addrLibra := common_vm.Bech32ToLibra(addr)
 
-	for _, params := range k.getCurrenciesParams(ctx) {
+	for _, params := range k.GetCurrenciesParams(ctx) {
 		accessPath := &vm_grpc.VMAccessPath{
 			Address: addrLibra,
 			Path:    params.BalancePath(),
@@ -116,7 +116,7 @@ func (k Keeper) newBalances(ctx sdk.Context, addr sdk.AccAddress, coins sdk.Coin
 
 	// iterate over all registered currencies and if not found above, add to del slice
 	emptyBalances = make(types.Balances, 0)
-	for denom := range k.getCurrenciesParams(ctx) {
+	for denom := range k.GetCurrenciesParams(ctx) {
 		if !foundAccDenoms[denom] {
 			balance, err := k.newBalance(ctx, addr, sdk.NewCoin(denom, sdk.ZeroInt()))
 			if err != nil {

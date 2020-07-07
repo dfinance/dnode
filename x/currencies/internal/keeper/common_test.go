@@ -95,6 +95,7 @@ func NewTestInput(t *testing.T) TestInput {
 	sdk.RegisterCodec(input.cdc)
 	auth.RegisterCodec(input.cdc)
 	bank.RegisterCodec(input.cdc)
+	supply.RegisterCodec(input.cdc)
 	staking.RegisterCodec(input.cdc)
 	codec.RegisterCrypto(input.cdc)
 	multisig.RegisterCodec(input.cdc)
@@ -126,13 +127,14 @@ func NewTestInput(t *testing.T) TestInput {
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
 	input.ccsStorage = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccstorage.DefaultParamspace), input.vmStorage)
-	input.keeper = NewKeeper(input.cdc, input.keyCC, input.bankKeeper, input.ccsStorage)
+	input.keeper = NewKeeper(input.cdc, input.keyCC, input.bankKeeper, input.supplyKeeper, input.ccsStorage)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
 
 	// init genesis
 	input.ccsStorage.InitDefaultGenesis(input.ctx)
+	input.supplyKeeper.SetSupply(input.ctx, supply.NewSupply(sdk.NewCoins()))
 
 	return input
 }

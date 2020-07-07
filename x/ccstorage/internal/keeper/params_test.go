@@ -43,7 +43,7 @@ func TestCCSKeeper_Params(t *testing.T) {
 	// check set / get
 	{
 		keeper.setCurrenciesParams(ctx, inParams)
-		check(keeper.getCurrenciesParams(ctx))
+		check(keeper.GetCurrenciesParams(ctx))
 	}
 	
 	// check update
@@ -57,6 +57,6 @@ func TestCCSKeeper_Params(t *testing.T) {
 		keeper.updateCurrenciesParams(ctx, newDenom, newParams)
 
 		inParams[newDenom] = newParams
-		check(keeper.getCurrenciesParams(ctx))
+		check(keeper.GetCurrenciesParams(ctx))
 	}
 }

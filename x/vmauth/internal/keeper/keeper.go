@@ -2,6 +2,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -22,6 +24,14 @@ type VMAccountKeeper struct {
 
 // SetAccount stores account resources to VM storage and updates std keeper.
 func (k VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
+	if stdAcc := k.AccountKeeper.GetAccount(ctx, acc.GetAddress()); stdAcc == nil {
+		for _, coin := range acc.GetCoins() {
+			if err := k.ccsKeeper.IncreaseCurrencySupply(ctx, coin.Denom, coin.Amount); err != nil {
+				panic(fmt.Errorf("increasing currency %q supply for new account %q: %v", coin.Denom, acc.GetAddress(), err))
+			}
+		}
+	}
+
 	// update balances extracted from account coins
 	if err := k.ccsKeeper.SetAccountBalanceResources(ctx, acc); err != nil {
 		panic(err)

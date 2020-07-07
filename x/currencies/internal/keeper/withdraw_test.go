@@ -49,6 +49,10 @@ func TestCurrenciesKeeper_WithdrawCurrency(t *testing.T) {
 		curInfo, err := input.ccsStorage.GetResStdCurrencyInfo(ctx, defDenom)
 		require.NoError(t, err)
 		require.Equal(t, curInfo.TotalSupply.String(), "0")
+
+		// check supply mod supply decreased
+		supply := input.supplyKeeper.GetSupply(ctx)
+		require.Empty(t, supply.GetTotal())
 	}
 
 	// fail: insufficient coins (balance is 0)

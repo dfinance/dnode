@@ -3,11 +3,15 @@
 package app
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authExported "github.com/cosmos/cosmos-sdk/x/auth/exported"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -24,6 +28,17 @@ const (
 	queryCurrencyWithdrawsPath = "/custom/" + currencies.ModuleName + "/" + currencies.QueryWithdraws
 	queryCurrencyWithdrawPath  = "/custom/" + currencies.ModuleName + "/" + currencies.QueryWithdraw
 )
+
+type CalculatedSupply struct {
+	Denom    string
+	Supply   sdk.Int
+	Accounts []AccountBalance
+}
+
+type AccountBalance struct {
+	Name   string
+	Amount sdk.Int
+}
 
 // Checks that currencies module supports only multisig calls for issue msg (using MSRouter).
 func TestCurrenciesApp_MultisigHandler(t *testing.T) {
@@ -351,6 +366,159 @@ func TestCurrenciesApp_Withdraw(t *testing.T) {
 
 		res, err := withdrawCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
 		CheckResultError(t, ccstorage.ErrWrongDenom, res, err)
+	}
+}
+
+// Test issues and destroys currency and verifies that supply (via supply module) stays up-to-date.
+func TestCurrenciesApp_Supply(t *testing.T) {
+	t.Parallel()
+
+	app, server := newTestDnApp()
+	defer app.CloseConnections()
+	defer server.Stop()
+
+	genAccs, _, _, genPrivKeys := CreateGenAccounts(10, GenDefCoins(t))
+
+	_, err := setGenesis(t, app, genAccs)
+	require.NoError(t, err)
+
+	getCalculatedSupplies := func() map[string]CalculatedSupply {
+		supplies := make(map[string]CalculatedSupply, 0)
+		app.accountKeeper.IterateAccounts(GetContext(app, true), func(acc authExported.Account) bool {
+			accName := ""
+			if modAcc, ok := acc.(*supply.ModuleAccount); ok {
+				accName = modAcc.GetName()
+			} else {
+				accName = acc.GetAddress().String()
+			}
+
+			for _, coin := range acc.GetCoins() {
+				denomSupply, ok := supplies[coin.Denom]
+				if !ok {
+					denomSupply = CalculatedSupply{
+						Denom:    coin.Denom,
+						Supply:   sdk.ZeroInt(),
+						Accounts: make([]AccountBalance, 0),
+					}
+				}
+
+				accBalance := AccountBalance{Name: accName, Amount: coin.Amount}
+
+				denomSupply.Supply = denomSupply.Supply.Add(coin.Amount)
+				denomSupply.Accounts = append(denomSupply.Accounts, accBalance)
+
+				supplies[coin.Denom] = denomSupply
+			}
+
+			return false
+		})
+		return supplies
+	}
+
+	getModuleSupplies := func() map[string]sdk.Int {
+		supplies := make(map[string]sdk.Int, 0)
+		for _, coin := range app.supplyKeeper.GetSupply(GetContext(app, true)).GetTotal() {
+			supplies[coin.Denom] = coin.Amount
+		}
+		return supplies
+	}
+
+	getCCSupplies := func() map[string]sdk.Int {
+		supplies := make(map[string]sdk.Int, 0)
+		for denom := range app.ccsKeeper.GetCurrenciesParams(GetContext(app, true)) {
+			currency, err := app.ccsKeeper.GetCurrency(GetContext(app, true), denom)
+			require.NoError(t, err, "requesting ccStorage for %q currency", denom)
+
+			supplies[denom] = currency.Supply
+		}
+		return supplies
+	}
+
+	checkSupplies := func(testID string) {
+		calcSupplies := getCalculatedSupplies()
+		modSupplies := getModuleSupplies()
+		ccSupplies := getCCSupplies()
+
+		for denom, ccSupply := range ccSupplies {
+			errBuilder := strings.Builder{}
+
+			modSupply, modFound := modSupplies[denom]
+			if !modFound {
+				modSupply = sdk.ZeroInt()
+			}
+
+			calcSupply, calcFound := calcSupplies[denom]
+			if !calcFound {
+				calcSupply.Supply = sdk.ZeroInt()
+			}
+
+			errBuilder.WriteString(fmt.Sprintf(">> %s: denom: %s\n", testID, denom))
+			errBuilder.WriteString(fmt.Sprintf("\tmod supply:  %s\n", modSupply.String()))
+			errBuilder.WriteString(fmt.Sprintf("\tccs supply:  %s\n", ccSupply.String()))
+			errBuilder.WriteString(fmt.Sprintf("\tcalc supply: %s\n", calcSupply.Supply.String()))
+
+			for _, acc := range calcSupply.Accounts {
+				errBuilder.WriteString(fmt.Sprintf("\t-%s: %s\n", acc.Name, acc.Amount.String()))
+			}
+
+			allEqual := false
+			if modSupply.Equal(calcSupply.Supply) && modSupply.Equal(ccSupply) {
+				allEqual = true
+				errBuilder.WriteString("\t-> OK\n")
+			} else {
+				errBuilder.WriteString(fmt.Sprintf("\t-> Not equal, mod/calc diff: %s\n", modSupply.Sub(calcSupply.Supply).String()))
+				errBuilder.WriteString(fmt.Sprintf("\t-> Not equal: mod/ccs diff:  %s\n", modSupply.Sub(ccSupply).String()))
+			}
+
+			require.True(t, allEqual, errBuilder.String())
+		}
+	}
+
+	// initial check
+	{
+		checkSupplies("initial")
+	}
+
+	// issue 50.0 dfi to account1
+	{
+		amount, _ := sdk.NewIntFromString("50000000000000000000")
+		issueCurrency(t, app, "dfi", amount, 18, "1", issue1ID, uint(0), genAccs, genPrivKeys, true)
+
+		checkSupplies("50.0 dfi issued to acc #1")
+	}
+
+	// issue 5.0 btc to account2
+	{
+		amount, _ := sdk.NewIntFromString("500000000")
+		issueCurrency(t, app, "btc", amount, 8, "2", issue2ID, uint(1), genAccs, genPrivKeys, true)
+
+		checkSupplies("5.0 btc issued to acc #2")
+	}
+
+	// withdraw 2.5 btc from account2
+	{
+		recipientAddr, recipientPrivKey := genAccs[1].Address, genPrivKeys[1]
+		amount, _ := sdk.NewIntFromString("250000000")
+		withdrawCurrency(t, app, chainID, "btc", amount, recipientAddr, recipientPrivKey, true)
+
+		checkSupplies("2.5 btc destroyed from acc #2")
+	}
+
+	// transfer 1.0 btc from account2 to account1
+	{
+		coin := sdk.NewCoin("btc", sdk.NewInt(100000000))
+		coins := sdk.NewCoins(coin)
+		payerAddr, payeeAddr := genAccs[1].Address, genAccs[0].Address
+
+		app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
+		ctx := GetContext(app, false)
+
+		require.NoError(t, app.bankKeeper.SendCoins(ctx, payerAddr, payeeAddr, coins))
+
+		app.EndBlock(abci.RequestEndBlock{})
+		app.Commit()
+
+		checkSupplies("transfer 1.0 btc from acc #2 to acc #1")
 	}
 }
 

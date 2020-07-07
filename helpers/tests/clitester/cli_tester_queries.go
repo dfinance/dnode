@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
@@ -300,6 +301,24 @@ func (ct *CLITester) QueryGovProposals(page, limit int, depositorFilter, voterFi
 	if voterFilter != nil {
 		q.cmd.AddArg("voter", *voterFilter)
 	}
+
+	return q, resObj
+}
+
+func (ct *CLITester) QuerySupply(denom string) (*QueryRequest, *sdk.Int) {
+	resObj := &sdk.Int{}
+
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("supply", "total", denom)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryStakingValidators() (*QueryRequest, *staking.Validators) {
+	resObj := &staking.Validators{}
+
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("staking", "validators")
 
 	return q, resObj
 }

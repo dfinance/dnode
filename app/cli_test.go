@@ -780,7 +780,7 @@ func TestMS_CLI(t *testing.T) {
 
 	// create calls
 	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], callUniqueId1, ccDenom1, ccCurAmount, ccDecimals1).CheckSucceeded()
-	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], callUniqueId2, ccDenom2, ccCurAmount, ccDecimals2).SetGas(300000).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], callUniqueId2, ccDenom2, ccCurAmount, ccDecimals2).CheckSucceeded()
 
 	checkCall := func(call multisig.CallResp, approved bool, callID dnTypes.ID, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))

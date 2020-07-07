@@ -22,10 +22,6 @@ func (k Keeper) WithdrawCurrency(ctx sdk.Context, denom string, amount sdk.Int, 
 		return err
 	}
 
-	if err := k.ccsKeeper.DecreaseCurrencySupply(ctx, denom, amount); err != nil {
-		return err
-	}
-
 	// store withdraw
 	newId := k.getNextWithdrawID(ctx)
 	withdraw := types.NewWithdraw(newId, denom, amount, spender, recipient, chainID, ctx.BlockHeader().Time.Unix(), ctx.TxBytes())
@@ -35,9 +31,19 @@ func (k Keeper) WithdrawCurrency(ctx sdk.Context, denom string, amount sdk.Int, 
 
 	// update account balance
 	newCoin := sdk.NewCoin(denom, amount)
-	if _, err := k.bankKeeper.SubtractCoins(ctx, spender, sdk.Coins{newCoin}); err != nil {
+	newCoins := sdk.NewCoins(newCoin)
+	if _, err := k.bankKeeper.SubtractCoins(ctx, spender, newCoins); err != nil {
 		return err
 	}
+
+	// decrease supply
+	if err := k.ccsKeeper.DecreaseCurrencySupply(ctx, denom, amount); err != nil {
+		return err
+	}
+
+	curSupply := k.supplyKeeper.GetSupply(ctx)
+	curSupply = curSupply.SetTotal(curSupply.GetTotal().Sub(newCoins))
+	k.supplyKeeper.SetSupply(ctx, curSupply)
 
 	return
 }

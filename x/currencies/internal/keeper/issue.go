@@ -30,10 +30,6 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id, denom string, amount sdk.Int,
 		return sdkErrors.Wrapf(types.ErrIncorrectDecimals, "currency %q decimals: %d", denom, currency.Decimals)
 	}
 
-	if err := k.ccsKeeper.IncreaseCurrencySupply(ctx, denom, amount); err != nil {
-		return err
-	}
-
 	// store issue
 	issue := types.NewIssue(denom, amount, payee)
 	k.storeIssue(ctx, id, issue)
@@ -43,6 +39,15 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id, denom string, amount sdk.Int,
 	if _, err := k.bankKeeper.AddCoins(ctx, payee, sdk.Coins{newCoin}); err != nil {
 		return sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q: %v", payee, err)
 	}
+
+	// increase supply
+	if err := k.ccsKeeper.IncreaseCurrencySupply(ctx, denom, amount); err != nil {
+		return err
+	}
+
+	curSupply := k.supplyKeeper.GetSupply(ctx)
+	curSupply = curSupply.SetTotal(curSupply.GetTotal().Add(newCoin))
+	k.supplyKeeper.SetSupply(ctx, curSupply)
 
 	return
 }

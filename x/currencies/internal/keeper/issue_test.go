@@ -34,6 +34,14 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 		curInfo, err := input.ccsStorage.GetResStdCurrencyInfo(ctx, defDenom)
 		require.NoError(t, err)
 		require.Equal(t, curInfo.TotalSupply.String(), defAmount.String())
+
+		// check supply mod supply increased
+		supply := input.supplyKeeper.GetSupply(ctx)
+		for _, coin := range supply.GetTotal() {
+			if coin.Denom == defDenom {
+				require.Equal(t, coin.Amount.String(), defAmount.String())
+			}
+		}
 	}
 
 	// fail: existing issueID

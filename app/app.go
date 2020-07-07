@@ -277,6 +277,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		cdc,
 		keys[currencies.StoreKey],
 		app.bankKeeper,
+		app.supplyKeeper,
 		app.ccsKeeper,
 	)
 
