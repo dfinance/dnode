@@ -12,6 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+	restTypes "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/stretchr/testify/require"
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
@@ -21,6 +22,7 @@ import (
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders/client/rest"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -860,6 +862,70 @@ func Test_OrdersREST(t *testing.T) {
 		{
 			r, _ := ct.RestTxOrdersRevokeOrder("validator1", dnTypes.NewIDFromUint64(0))
 			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongOwner)
+		}
+	}
+
+	// check post order
+	{
+		{
+			rq := rest.PostOrderReq{
+				BaseReq: restTypes.BaseReq{
+					ChainID: ct.IDs.ChainID,
+					From:    ownerAddr1,
+					Fees: sdk.Coins{
+						sdk.Coin{
+							Denom:  "dfi",
+							Amount: sdk.NewIntFromUint64(1),
+						},
+					},
+				},
+				AssetCode: dnTypes.AssetCode("btc_dfi"),
+				Direction: orderTypes.Direction("ask"),
+				Price:     "100",
+				Quantity:  "10",
+				TtlInSec:  "3",
+			}
+
+			q, orderStructure := ct.RestQueryOrderPost(rq)
+			q.CheckSucceeded()
+
+			require.Len(t, orderStructure.Msgs, 1)
+			msg := orderStructure.Msgs[0].(orderTypes.MsgPostOrder)
+
+			require.Equal(t, rq.AssetCode, msg.AssetCode)
+			require.Equal(t, rq.Direction, msg.Direction)
+			require.Equal(t, rq.BaseReq.From, msg.Owner.String())
+		}
+	}
+
+	// check revoke order
+	{
+		{
+			orderIdx := len(inputOrders) - 1
+			orderID := dnTypes.NewIDFromUint64(uint64(orderIdx))
+
+			rq := rest.RevokeOrderReq{
+				BaseReq: restTypes.BaseReq{
+					ChainID: ct.IDs.ChainID,
+					From:    ownerAddr1,
+					Fees: sdk.Coins{
+						sdk.Coin{
+							Denom:  "dfi",
+							Amount: sdk.NewIntFromUint64(1),
+						},
+					},
+				},
+				OrderId: orderID.String(),
+			}
+
+			q, orderStructure := ct.RestQueryOrderRevoke(rq)
+			q.CheckSucceeded()
+
+			require.Len(t, orderStructure.Msgs, 1)
+			msg := orderStructure.Msgs[0].(orderTypes.MsgRevokeOrder)
+
+			require.Equal(t, rq.OrderId, msg.OrderID.String())
+			require.Equal(t, rq.BaseReq.From, msg.Owner.String())
 		}
 	}
 }

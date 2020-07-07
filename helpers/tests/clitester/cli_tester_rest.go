@@ -19,6 +19,7 @@ import (
 	msTypes "github.com/dfinance/dnode/x/multisig/types"
 	"github.com/dfinance/dnode/x/oracle"
 	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders/client/rest"
 	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
 )
@@ -248,6 +249,20 @@ func (ct *CLITester) RestQueryOrder(id dnTypes.ID) (*RestRequest, *orderTypes.Or
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOrderPost(rq rest.PostOrderReq) (*RestRequest, *auth.StdTx) {
+	reqSubPath := fmt.Sprintf("%s/%s", orderTypes.ModuleName, "post")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryOrderRevoke(rq rest.RevokeOrderReq) (*RestRequest, *auth.StdTx) {
+	reqSubPath := fmt.Sprintf("%s/%s", orderTypes.ModuleName, "revoke")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
 	return r, respMsg
 }
 

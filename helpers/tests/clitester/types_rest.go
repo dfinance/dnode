@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkRest "github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -135,6 +136,20 @@ func (r *RestRequest) Execute() error {
 				return fmt.Errorf("%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
 			}
 
+			return nil
+		}
+
+		if _, ok := r.responseValue.(*auth.StdTx); ok {
+			respMsg := struct {
+				Type  string     `json:"type"`
+				Value auth.StdTx `json:"value"`
+			}{}
+
+			if err := r.cdc.UnmarshalJSON(respBody, &respMsg); err != nil {
+				return fmt.Errorf("%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
+			}
+
+			*r.responseValue.(*auth.StdTx) = respMsg.Value
 			return nil
 		}
 
