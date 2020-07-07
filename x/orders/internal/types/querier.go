@@ -19,9 +19,9 @@ type OrderReq struct {
 // Client request for markets.
 type OrdersReq struct {
 	// Page number
-	Page  int
+	Page  sdk.Uint
 	// Items per page
-	Limit int
+	Limit sdk.Uint
 	// Owner filter
 	Owner sdk.AccAddress
 	// Direction filter

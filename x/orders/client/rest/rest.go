@@ -3,14 +3,13 @@ package rest
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
@@ -40,29 +39,17 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // @Param direction query string false "direction filter (bid/ask)"
 // @Param marketID query string false "marketID filter (bid/ask)"
 // @Success 200 {object} OrdersRespGetOrders
-// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query/path params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /orders [get]
 func getOrdersWithParams(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs
-		page := r.URL.Query().Get("page")
-		if page == "" {
-			page = "1"
-		}
-		parsedPage, err := strconv.ParseInt(page, 10, 32)
+		pageStr := r.URL.Query().Get("page")
+		limitStr := r.URL.Query().Get("limit")
+		page, limit, err := helpers.ParsePaginationParams(pageStr, limitStr, helpers.ParamTypeRestQuery)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("%q query param: %v", "page", err))
-			return
-		}
-
-		limit := r.URL.Query().Get("limit")
-		if limit == "" {
-			limit = "100"
-		}
-		parsedLimit, err := strconv.ParseInt(limit, 10, 32)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("%q query param: %v", "limit", err))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -82,8 +69,8 @@ func getOrdersWithParams(cliCtx context.CLIContext) http.HandlerFunc {
 
 		// prepare request
 		req := types.OrdersReq{
-			Page:      int(parsedPage),
-			Limit:     int(parsedLimit),
+			Page:      page,
+			Limit:     limit,
 			Owner:     ownerFilter,
 			Direction: types.NewDirectionRaw(directionFilterStr),
 			MarketID:  marketIDFitler,
@@ -115,16 +102,16 @@ func getOrdersWithParams(cliCtx context.CLIContext) http.HandlerFunc {
 // @Produce json
 // @Param orderID path string true "orderID"
 // @Success 200 {object} OrdersRespGetOrder
-// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query/path params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /orders/{orderID} [get]
 func getOrder(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs
 		vars := mux.Vars(r)
-		id, err := dnTypes.NewIDFromString(vars[OrderID])
+		id, err := helpers.ParseDnIDParam(OrderID, vars[OrderID], helpers.ParamTypeRestPath)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("%q param parsing: %v", OrderID, err))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 

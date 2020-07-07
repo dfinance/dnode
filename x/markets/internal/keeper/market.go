@@ -3,10 +3,10 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/dfinance/dnode/helpers"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
@@ -107,8 +107,8 @@ func (k Keeper) GetListFiltered(ctx sdk.Context, params types.MarketsReq) types.
 		}
 	}
 
-	start, end := client.Paginate(len(filteredMarkets), params.Page, params.Limit, 100)
-	if start < 0 || end < 0 {
+	start, end, err := helpers.PaginateSlice(len(filteredMarkets), params.Page, params.Limit)
+	if err != nil {
 		return types.Markets{}
 	}
 

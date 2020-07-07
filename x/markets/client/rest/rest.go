@@ -3,13 +3,12 @@ package rest
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
@@ -43,23 +42,11 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 func getMarketsWithParams(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs
-		page := r.URL.Query().Get("page")
-		if page == "" {
-			page = "1"
-		}
-		parsedPage, err := strconv.ParseInt(page, 10, 32)
+		pageStr := r.URL.Query().Get("page")
+		limitStr := r.URL.Query().Get("limit")
+		page, limit, err := helpers.ParsePaginationParams(pageStr, limitStr, helpers.ParamTypeRestQuery)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("%q query param: %v", "page", err))
-			return
-		}
-
-		limit := r.URL.Query().Get("limit")
-		if limit == "" {
-			limit = "100"
-		}
-		parsedLimit, err := strconv.ParseInt(limit, 10, 32)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("%q query param: %v", "limit", err))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -68,8 +55,8 @@ func getMarketsWithParams(cliCtx context.CLIContext) http.HandlerFunc {
 
 		// prepare request
 		req := types.MarketsReq{
-			Page:            int(parsedPage),
-			Limit:           int(parsedLimit),
+			Page:            page,
+			Limit:           limit,
 			BaseAssetDenom:  baseDenomFilter,
 			QuoteAssetDenom: quoteDenomFilter,
 		}
@@ -107,9 +94,9 @@ func getMarket(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs
 		vars := mux.Vars(r)
-		id, err := dnTypes.NewIDFromString(vars[MarketID])
+		id, err := helpers.ParseDnIDParam(MarketID, vars[MarketID], helpers.ParamTypeRestPath)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("%q param parsing: %v", MarketID, err))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 

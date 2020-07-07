@@ -5,6 +5,7 @@ package keeper
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
@@ -94,8 +95,8 @@ func TestMarketsKeeper_List(t *testing.T) {
 		// check limit
 		{
 			params := types.MarketsReq{
-				Page:  1,
-				Limit: 1,
+				Page:  sdk.NewUint(1),
+				Limit: sdk.NewUint(1),
 			}
 			list := input.keeper.GetListFiltered(input.ctx, params)
 			require.Len(t, list, 1)
@@ -104,7 +105,8 @@ func TestMarketsKeeper_List(t *testing.T) {
 		// check quote filtering
 		{
 			params := types.MarketsReq{
-				Page:            1,
+				Page:            sdk.NewUint(1),
+				Limit:           sdk.NewUint(100),
 				QuoteAssetDenom: input.quoteDenom,
 			}
 			list := input.keeper.GetListFiltered(input.ctx, params)
@@ -116,7 +118,8 @@ func TestMarketsKeeper_List(t *testing.T) {
 		// check base filtering
 		{
 			params := types.MarketsReq{
-				Page:           1,
+				Page:           sdk.NewUint(1),
+				Limit:          sdk.NewUint(100),
 				BaseAssetDenom: input.baseEthDenom,
 			}
 			list := input.keeper.GetListFiltered(input.ctx, params)
@@ -127,7 +130,8 @@ func TestMarketsKeeper_List(t *testing.T) {
 		// check no-result filtering
 		{
 			params := types.MarketsReq{
-				Page:           1,
+				Page:           sdk.NewUint(1),
+				Limit:          sdk.NewUint(100),
 				BaseAssetDenom: "base",
 			}
 			list := input.keeper.GetListFiltered(input.ctx, params)

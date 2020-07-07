@@ -1,105 +1,110 @@
 package cli
 
 import (
-	"bufio"
-	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/spf13/cobra"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
 // GetCmdPostOrder returns tx command which post a new order.
 func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "post [market_id] [direction] [price] [quantity] [TTL_in_sec]",
-		Example: "dncli orders post 0 bid 100 100000000 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
+		Example: "post 0 bid 100 100000000 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
 		Short:   "Post a new order",
 		Args:    cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := auth.NewAccountRetriever(cliCtx)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
 			// parse inputs
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
+			if err != nil {
+				return err
 			}
 
-			marketID, err := dnTypes.NewIDFromString(args[0])
+			marketID, err := helpers.ParseDnIDParam("market_id", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("%s argument %q parse error: %w", "market_id", args[0], err)
+				return err
 			}
 
 			direction := types.Direction(strings.ToLower(args[1]))
 			if !direction.IsValid() {
-				return fmt.Errorf("argument %q: invalid (bid / ask)", "direction")
+				return helpers.BuildError("direction", args[1], helpers.ParamTypeCliArg, "invalid (bid / ask)")
 			}
 
-			price, err := sdk.ParseUint(args[2])
+			price, err := helpers.ParseSdkUintParam("price", args[2], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("argument %q: parsing uint: %w", "price", err)
+				return err
 			}
 
-			quantity, err := sdk.ParseUint(args[3])
+			quantity, err := helpers.ParseSdkUintParam("quantity", args[3], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("argument %q: parsing uint: %w", "quantity", err)
+				return err
 			}
 
-			ttlInSec, err := strconv.ParseUint(args[4], 10, 64)
+			ttlInSec, err := helpers.ParseUint64Param("TTL_in_sec", args[4], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("argument %q: parsing uint: %w", "TTL_in_sec", err)
+				return err
 			}
 
 			// prepare and send message
-			msg := types.NewMsgPost(cliCtx.GetFromAddress(), marketID, direction, price, quantity, ttlInSec)
+			msg := types.NewMsgPost(fromAddr, marketID, direction, price, quantity, ttlInSec)
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"market ID [uint]",
+		"order type [bid/ask]",
+		"price with decimals (1.0 BTC with 8 decimals -> 100000000)",
+		"quantity with decimals",
+		"order TTL [s]",
+	})
+
+	return cmd
 }
 
 // GetCmdRevokeOrder returns tx command which revokes an order.
 func GetCmdRevokeOrder(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "revoke [order-id]",
-		Short: "Revoke an order",
-		Example: "dncli orders revoke 0 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
-		Args:  cobra.ExactArgs(1),
+	cmd := &cobra.Command{
+		Use:     "revoke [order_id]",
+		Short:   "Revoke an order",
+		Example: "revoke 0 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := auth.NewAccountRetriever(cliCtx)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
 			// parse inputs
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
+			if err != nil {
+				return err
 			}
 
-			orderID, err := dnTypes.NewIDFromString(args[0])
+			orderID, err := helpers.ParseDnIDParam("order_id", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("%s argument %q parse error: %w", "order", args[0], err)
+				return err
 			}
 
 			// prepare and send message
-			msg := types.NewMsgRevokeOrder(cliCtx.GetFromAddress(), orderID)
+			msg := types.NewMsgRevokeOrder(fromAddr, orderID)
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"order ID [uint]",
+	})
+
+	return cmd
 }

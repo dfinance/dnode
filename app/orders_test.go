@@ -61,7 +61,7 @@ func TestOrders_Ttl(t *testing.T) {
 
 	// check orders exist
 	{
-		request := orders.OrdersReq{Page: 1, Limit: 10}
+		request := orders.OrdersReq{Page: sdk.NewUint(1), Limit: sdk.NewUint(10)}
 		response := orders.Orders{}
 		CheckRunQuery(t, app, request, queryOrdersListPath, &response)
 
@@ -76,7 +76,7 @@ func TestOrders_Ttl(t *testing.T) {
 		tester.BeginBlockWithDuration(2 * time.Second)
 		tester.EndBlock()
 
-		request := orders.OrdersReq{Page: 1, Limit: 10}
+		request := orders.OrdersReq{Page: sdk.NewUint(1), Limit: sdk.NewUint(10)}
 		response := orders.Orders{}
 		CheckRunQuery(t, app, request, queryOrdersListPath, &response)
 

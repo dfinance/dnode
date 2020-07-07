@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
 
+	"github.com/dfinance/dnode/helpers"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/markets/internal/types"
@@ -18,15 +19,22 @@ import (
 // AddMarketGenCmd adds market to app genesis state.
 func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-market-gen [base_denom] [quote_denom]",
-		Short: "Add market to genesis.json",
-		Args:  cobra.ExactArgs(2),
+		Use:     "add-market-gen [base_denom] [quote_denom]",
+		Short:   "Add market to genesis.json",
+		Example: "add-market-gen dfi eth",
+		Args:    cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
 			// parse inputs
 			baseDenom, quoteDenom := args[0], args[1]
+			if err := helpers.ValidateDenomParam("base_denom", baseDenom, helpers.ParamTypeCliArg); err != nil {
+				return err
+			}
+			if err := helpers.ValidateDenomParam("quote_denom", quoteDenom, helpers.ParamTypeCliArg); err != nil {
+				return err
+			}
 
 			// retrieve the app state
 			genFile := config.GenesisFile()
@@ -85,7 +93,11 @@ func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome stri
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		},
 	}
-
+	helpers.BuildCmdHelp(cmd, []string{
+		"base currency denomination symbol",
+		"quote currency denomination symbol",
+	})
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
+
 	return cmd
 }
