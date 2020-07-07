@@ -46,9 +46,7 @@ var (
 	ErrNoValidPrice     = types.ErrNoValidPrice
 	ErrInvalidAsset     = types.ErrInvalidAsset
 	ErrInvalidOracle    = types.ErrInvalidOracle
-	NewGenesisState     = types.NewGenesisState
 	DefaultGenesisState = types.DefaultGenesisState
-	ValidateGenesis     = types.ValidateGenesis
 	NewMsgPostPrice     = types.NewMsgPostPrice
 	ParamKeyTable       = types.ParamKeyTable
 	NewParams           = types.NewParams

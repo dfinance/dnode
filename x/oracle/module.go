@@ -1,7 +1,9 @@
+// Oracle module receiving data from external exchange rate providers.
 package oracle
 
 import (
 	"encoding/json"
+	"github.com/tendermint/go-amino"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -14,7 +16,6 @@ import (
 	"github.com/dfinance/dnode/x/oracle/client"
 	"github.com/dfinance/dnode/x/oracle/client/rest"
 	"github.com/dfinance/dnode/x/oracle/internal/keeper"
-	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 var (
@@ -25,55 +26,51 @@ var (
 // AppModuleBasic app module basics object
 type AppModuleBasic struct{}
 
-var _ module.AppModuleBasic = AppModuleBasic{}
-
-// Name get module name
+// Name gets module name.
 func (AppModuleBasic) Name() string {
 	return ModuleName
 }
 
-// RegisterCodec register module codec
+// RegisterCodec registers module codec.
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 	RegisterCodec(cdc)
 }
 
-// DefaultGenesis default genesis state
+// DefaultGenesis gets default module genesis state.
 func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return ModuleCdc.MustMarshalJSON(types.DefaultGenesisState())
+	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
 }
 
-// ValidateGenesis module validate genesis
+// ValidateGenesis validates module genesis state.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	var data types.GenesisState
-	if err := ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
-		return err
-	}
+	state := GenesisState{}
+	ModuleCdc.MustUnmarshalJSON(bz, &state)
 
-	return types.ValidateGenesis(data)
+	return state.Validate()
 }
 
-// RegisterRESTRoutes registers the REST routes for the bank module.
-func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
-	rest.RegisterRoutes(ctx, rtr, StoreKey)
+// RegisterRESTRoutes registers module REST routes.
+func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
+	rest.RegisterRoutes(ctx, r, StoreKey)
 }
 
-// GetTxCmd returns the root tx command for the bank module.
+// GetTxCmd returns module root tx command.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return client.GetTxCmd(cdc)
 }
 
-// GetQueryCmd returns no root query command for the bank module.
-func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+// GetQueryCmd returns module root query command.
+func (AppModuleBasic) GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	return client.GetQueryCmd(cdc)
 }
 
-// AppModule app module type
+// AppModule is a app module type.
 type AppModule struct {
 	AppModuleBasic
 	keeper Keeper
 }
 
-// NewAppModule creates a new AppModule object
+// NewAppModule creates new AppModule object.
 func NewAppModule(keeper Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -81,54 +78,50 @@ func NewAppModule(keeper Keeper) AppModule {
 	}
 }
 
-// Name module name
-func (AppModule) Name() string {
+// Name gets module name.
+func (app AppModule) Name() string {
 	return ModuleName
 }
 
-// RegisterInvariants register module invariants
-func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+// RegisterInvariants registers module invariants.
+func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Route module message route name
-func (AppModule) Route() string {
-	return ModuleName
+// Route returns module messages route.
+func (app AppModule) Route() string {
+	return RouterKey
 }
 
-// NewHandler module handler
-func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+// NewHandler returns module messages handler.
+func (app AppModule) NewHandler() sdk.Handler {
+	return NewHandler(app.keeper)
 }
 
-// QuerierRoute module querier route name
-func (AppModule) QuerierRoute() string {
-	return ModuleName
+// QuerierRoute returns module querier route.
+func (app AppModule) QuerierRoute() string {
+	return RouterKey
 }
 
-// NewQuerierHandler module querier
-func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return keeper.NewQuerier(am.keeper)
+// NewQuerierHandler creates module querier.
+func (app AppModule) NewQuerierHandler() sdk.Querier {
+	return keeper.NewQuerier(app.keeper)
 }
 
-// InitGenesis module init-genesis
-func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	var genesisState types.GenesisState
-	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-	InitGenesis(ctx, am.keeper, genesisState)
+// InitGenesis inits module-genesis state.
+func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	app.keeper.InitGenesis(ctx, data)
 
 	return []abci.ValidatorUpdate{}
 }
 
-// ExportGenesis module export genesis
-func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	gs := ExportGenesis(ctx, am.keeper)
-	return ModuleCdc.MustMarshalJSON(gs)
+// ExportGenesis exports module genesis state.
+func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
+	return app.keeper.ExportGenesis(ctx)
 }
 
-// BeginBlock performs a no-op.
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+// BeginBlock performs module actions at a block start.
+func (app AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
-// EndBlock returns the end blocker for the bank module. It returns no validator
-// updates.
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, am.keeper)
+// EndBlock performs module actions at a block end.
+func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+	return EndBlocker(ctx, app.keeper)
 }
