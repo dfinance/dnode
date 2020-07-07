@@ -149,9 +149,7 @@ func (r *RestRequest) Execute() error {
 				return fmt.Errorf("%s: unmarshal coreTypes.ResultBlock: %s", r.String(), string(respBody))
 			}
 
-			r.responseValue.(*auth.StdTx).Msgs = respMsg.Value.Msgs
-			r.responseValue.(*auth.StdTx).Fee = respMsg.Value.Fee
-			r.responseValue.(*auth.StdTx).Memo = respMsg.Value.Memo
+			*r.responseValue.(*auth.StdTx) = respMsg.Value
 			return nil
 		}
 
