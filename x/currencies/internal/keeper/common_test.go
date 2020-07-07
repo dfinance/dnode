@@ -19,7 +19,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/dfinance/dnode/helpers/tests"
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 	"github.com/dfinance/dnode/x/multisig"
@@ -56,7 +56,7 @@ type TestInput struct {
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
 	paramsKeeper  params.Keeper
-	ccsStorage    cc_storage.Keeper
+	ccsStorage    ccstorage.Keeper
 	keeper        Keeper
 	//
 	vmStorage common_vm.VMStorage
@@ -85,7 +85,7 @@ func NewTestInput(t *testing.T) TestInput {
 		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
 		keyPoa:     sdk.NewKVStoreKey(poa.StoreKey),
 		keyMS:      sdk.NewKVStoreKey(multisig.StoreKey),
-		keyCCS:     sdk.NewKVStoreKey(cc_storage.StoreKey),
+		keyCCS:     sdk.NewKVStoreKey(ccstorage.StoreKey),
 		keyCC:      sdk.NewKVStoreKey(types.StoreKey),
 		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
 		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
@@ -125,7 +125,7 @@ func NewTestInput(t *testing.T) TestInput {
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
-	input.ccsStorage = cc_storage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(cc_storage.DefaultParamspace), input.vmStorage)
+	input.ccsStorage = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccstorage.DefaultParamspace), input.vmStorage)
 	input.keeper = NewKeeper(input.cdc, input.keyCC, input.bankKeeper, input.ccsStorage)
 
 	// create context

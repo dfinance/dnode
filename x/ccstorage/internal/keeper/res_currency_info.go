@@ -8,7 +8,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/dfinance/lcs"
 
-	"github.com/dfinance/dnode/x/cc_storage/internal/types"
+	"github.com/dfinance/dnode/x/ccstorage/internal/types"
 	"github.com/dfinance/dnode/x/common_vm"
 )
 

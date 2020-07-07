@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	ModuleName        = "cc_storage"
+	ModuleName        = "ccstorage"
 	StoreKey          = ModuleName
 	DefaultParamspace = ModuleName
 )

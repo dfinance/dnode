@@ -13,7 +13,7 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/multisig"
 )
@@ -350,7 +350,7 @@ func TestCurrenciesApp_Withdraw(t *testing.T) {
 		wrongDenom := currency2Denom
 
 		res, err := withdrawCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
-		CheckResultError(t, cc_storage.ErrWrongDenom, res, err)
+		CheckResultError(t, ccstorage.ErrWrongDenom, res, err)
 	}
 }
 
@@ -359,7 +359,7 @@ func createCurrency(t *testing.T, app *DnServiceApp, ccDenom string, ccDecimals 
 	_, balancePathHex := GenerateRandomBytes(10)
 	_, infoPathHex := GenerateRandomBytes(10)
 
-	params := cc_storage.CurrencyParams{
+	params := ccstorage.CurrencyParams{
 		Decimals:       ccDecimals,
 		BalancePathHex: balancePathHex,
 		InfoPathHex:    infoPathHex,
@@ -400,7 +400,7 @@ func withdrawCurrency(t *testing.T, app *DnServiceApp,
 
 // checkCurrencyExists checks currency exists.
 func checkCurrencyExists(t *testing.T, app *DnServiceApp, denom string, supply sdk.Int, decimals uint8) {
-	currencyObj := cc_storage.Currency{}
+	currencyObj := ccstorage.Currency{}
 	CheckRunQuery(t, app, currencies.CurrencyReq{Denom: denom}, queryCurrencyCurrencyPath, &currencyObj)
 
 	require.Equal(t, denom, currencyObj.Denom, "denom")

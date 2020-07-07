@@ -16,7 +16,7 @@ import (
 
 	"github.com/dfinance/dnode/helpers/logger"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
 	"github.com/dfinance/dnode/x/orders"
@@ -57,8 +57,8 @@ func (i *MatchingPoolInput) PostOrders(t *testing.T, pool *MatcherPool) {
 
 	extMarkets := make([]markets.MarketExtended, 0, len(i.Markets))
 	for id, input := range i.Markets {
-		baseCurrency := cc_storage.Currency{Denom: input.BaseDenom, Decimals: input.BaseDecimals}
-		quoteCurrency := cc_storage.Currency{Denom: input.QuoteDenom, Decimals: input.QuoteDecimals}
+		baseCurrency := ccstorage.Currency{Denom: input.BaseDenom, Decimals: input.BaseDecimals}
+		quoteCurrency := ccstorage.Currency{Denom: input.QuoteDenom, Decimals: input.QuoteDecimals}
 		market := markets.NewMarket(dnTypes.NewIDFromUint64(uint64(id)), input.BaseDenom, input.QuoteDenom)
 		marketExt := markets.NewMarketExtended(market, baseCurrency, quoteCurrency)
 		extMarkets = append(extMarkets, marketExt)

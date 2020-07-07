@@ -14,7 +14,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/dfinance/dnode/helpers/tests"
-	"github.com/dfinance/dnode/x/cc_storage/internal/types"
+	"github.com/dfinance/dnode/x/ccstorage/internal/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm"
 )

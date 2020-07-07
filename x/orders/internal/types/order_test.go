@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/markets"
 )
 
@@ -22,11 +22,11 @@ func NewMockOrder() Order {
 		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"),
 		Market: markets.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(0),
-			BaseCurrency: cc_storage.Currency{
+			BaseCurrency: ccstorage.Currency{
 				Denom:    "btc",
 				Decimals: 8,
 			},
-			QuoteCurrency: cc_storage.Currency{
+			QuoteCurrency: ccstorage.Currency{
 				Denom:    "dfi",
 				Decimals: 18,
 			},

@@ -35,7 +35,7 @@ import (
 	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/tests"
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/vm/internal/types"
@@ -157,7 +157,7 @@ type testInput struct {
 	pk params.Keeper
 	vk Keeper
 	ok oracle.Keeper
-	cs cc_storage.Keeper
+	cs ccstorage.Keeper
 
 	keyMain    *sdk.KVStoreKey
 	keyAccount *sdk.KVStoreKey
@@ -203,7 +203,7 @@ func newTestInput(launchMock bool) testInput {
 		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
 		keyAccount: sdk.NewKVStoreKey(authTypes.StoreKey),
 		keyOracle:  sdk.NewKVStoreKey(oracle.StoreKey),
-		keyCCS:     sdk.NewKVStoreKey(cc_storage.StoreKey),
+		keyCCS:     sdk.NewKVStoreKey(ccstorage.StoreKey),
 		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 		keyVM:      sdk.NewKVStoreKey(types.StoreKey),
 	}
@@ -279,7 +279,7 @@ func newTestInput(launchMock bool) testInput {
 	// create keepers
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
 	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
-	input.cs = cc_storage.NewKeeper(input.cdc, input.keyCCS, input.pk.Subspace(cc_storage.DefaultParamspace), input.vk)
+	input.cs = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.pk.Subspace(ccstorage.DefaultParamspace), input.vk)
 	input.ak = vmauth.NewKeeper(input.cdc, input.keyAccount, input.pk.Subspace(auth.DefaultParamspace), input.cs, auth.ProtoBaseAccount)
 	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
 

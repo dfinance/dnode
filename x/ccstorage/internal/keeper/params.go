@@ -3,7 +3,7 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/dfinance/dnode/x/cc_storage/internal/types"
+	"github.com/dfinance/dnode/x/ccstorage/internal/types"
 )
 
 // setCurrenciesParams sets currencies parameters (initialized from genesis) to the params storage.

@@ -23,7 +23,7 @@ import (
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/logger"
-	ccsCli "github.com/dfinance/dnode/x/cc_storage/client/cli"
+	ccsCli "github.com/dfinance/dnode/x/ccstorage/client/cli"
 	"github.com/dfinance/dnode/x/genaccounts"
 	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
 	marketsCli "github.com/dfinance/dnode/x/markets/client/cli"

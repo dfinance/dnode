@@ -13,7 +13,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orderbook"
 	"github.com/dfinance/dnode/x/orders"
@@ -34,7 +34,7 @@ type OrderBookTester struct {
 	// markets maps (key: ID)
 	Markets map[string]markets.Market
 	// currencies info map (key: denom)
-	Currencies map[string]cc_storage.Currency
+	Currencies map[string]ccstorage.Currency
 }
 
 type ClientTestState struct {
@@ -79,7 +79,7 @@ func NewOrderBookTester(t *testing.T, app *DnServiceApp) OrderBookTester {
 		t:          t,
 		app:        app,
 		Markets:    make(map[string]markets.Market, 0),
-		Currencies: make(map[string]cc_storage.Currency, 0),
+		Currencies: make(map[string]ccstorage.Currency, 0),
 		Clients:    make([]*ClientTestState, 0),
 	}
 
@@ -123,7 +123,7 @@ func (tester *OrderBookTester) RegisterMarket(ownerAddr sdk.AccAddress, baseDeno
 		_, balancePathHex := GenerateRandomBytes(10)
 		_, infoPathHex := GenerateRandomBytes(10)
 
-		ccParams := cc_storage.CurrencyParams{
+		ccParams := ccstorage.CurrencyParams{
 			Decimals:       decimals,
 			BalancePathHex: balancePathHex,
 			InfoPathHex:    infoPathHex,

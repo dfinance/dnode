@@ -15,7 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/markets"
@@ -75,7 +75,7 @@ var ModuleBasics = module.NewBasicManager(
 	slashing.AppModuleBasic{},
 	supply.AppModuleBasic{},
 	poa.AppModuleBasic{},
-	cc_storage.AppModuleBasic{},
+	ccstorage.AppModuleBasic{},
 	currencies.AppModuleBasic{},
 	multisig.AppModuleBasic{},
 	oracle.AppModuleBasic{},

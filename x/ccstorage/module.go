@@ -1,6 +1,6 @@
 // Currencies storage module is used to store currencies and VM resources (CurrencyInfo, Balances).
 // Module is useless by itself and should be used only as a dependency (currencies, vmauth modules for example).
-package cc_storage
+package ccstorage
 
 import (
 	"encoding/json"

@@ -9,7 +9,7 @@ import (
 
 	"github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/orders"
 )
 
@@ -33,8 +33,8 @@ type Config struct {
 	Name                   string
 	Address                string
 	Number                 uint64
-	BaseCurrency           cc_storage.Currency
-	QuoteCurrency          cc_storage.Currency
+	BaseCurrency           ccstorage.Currency
+	QuoteCurrency          ccstorage.Currency
 	MarketID               dnTypes.ID
 	MMakingMinPrice        sdk.Uint
 	MMakingMaxPrice        sdk.Uint

@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
-	"github.com/dfinance/dnode/x/cc_storage/internal/types"
+	"github.com/dfinance/dnode/x/ccstorage/internal/types"
 	"github.com/dfinance/dnode/x/common_vm"
 )
 

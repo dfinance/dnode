@@ -1,8 +1,8 @@
-package cc_storage
+package ccstorage
 
 import (
-	"github.com/dfinance/dnode/x/cc_storage/internal/keeper"
-	"github.com/dfinance/dnode/x/cc_storage/internal/types"
+	"github.com/dfinance/dnode/x/ccstorage/internal/keeper"
+	"github.com/dfinance/dnode/x/ccstorage/internal/types"
 )
 
 type (

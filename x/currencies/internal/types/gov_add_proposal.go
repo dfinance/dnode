@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 )
 
 const (
@@ -42,8 +42,8 @@ func (p AddCurrencyProposal) ValidateBasic() error {
 	return nil
 }
 
-func (p AddCurrencyProposal) GetCurrencyParams() cc_storage.CurrencyParams {
-	return cc_storage.CurrencyParams{
+func (p AddCurrencyProposal) GetCurrencyParams() ccstorage.CurrencyParams {
+	return ccstorage.CurrencyParams{
 		Decimals:       p.Decimals,
 		BalancePathHex: p.VmBalancePathHex,
 		InfoPathHex:    p.VmInfoPathHex,

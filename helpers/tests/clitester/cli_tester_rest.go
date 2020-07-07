@@ -14,7 +14,7 @@ import (
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/cc_storage"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
@@ -72,9 +72,9 @@ func (ct *CLITester) RestQueryCurrenciesIssue(id string) (*RestRequest, *currenc
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *cc_storage.Currency) {
+func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *ccstorage.Currency) {
 	reqSubPath := fmt.Sprintf("%s/%s/%s", currencies.ModuleName, currencies.QueryCurrency, symbol)
-	respMsg := &cc_storage.Currency{}
+	respMsg := &ccstorage.Currency{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
