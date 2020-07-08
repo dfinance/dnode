@@ -18,137 +18,146 @@ import (
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies/types"
-	marketTypes "github.com/dfinance/dnode/x/markets"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	orderTypes "github.com/dfinance/dnode/x/orders"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/poa"
 )
 
 const (
 	NotFoundErrSubString = "The specified item could not be found in the keyring"
 )
 
-func Test_CurrencyCLI(t *testing.T) {
+func TestCurrencies_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	ccSymbol, ccCurAmount, ccDecimals, ccRecipient := "btc", sdk.NewInt(1000), int8(1), ct.Accounts["validator1"].Address
+	ccDenom := "btc"
+	ccDecimals := ct.Currencies[ccDenom].Decimals
+	ccCurAmount, ccRecipient := sdk.NewInt(1000), ct.Accounts["validator1"].Address
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 	issueID := "issue1"
 
-	// check issue currency multisig Tx
+	// check issue currency multisig Tx, issue Query, currency Query
 	{
 		// submit & confirm call
-		ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID).CheckSucceeded()
-		ct.ConfirmCall(issueID)
-		// check currency issued
-		q, issue := ct.QueryCurrenciesIssue(issueID)
-		q.CheckSucceeded()
-		require.Equal(t, ccSymbol, issue.Symbol)
-		require.True(t, ccCurAmount.Equal(issue.Amount))
-		require.Equal(t, ccRecipient, issue.Recipient.String())
+		{
+			ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount).CheckSucceeded()
+			ct.ConfirmCall(issueID)
+		}
 
-		// check incorrect inputs
+		// check issue appeared
+		{
+			q, currency := ct.QueryCurrenciesCurrency(ccDenom)
+			q.CheckSucceeded()
+
+			require.Equal(t, ccDenom, currency.Denom)
+			require.True(t, ccCurAmount.Equal(currency.Supply))
+			require.Equal(t, ccDecimals, currency.Decimals)
+		}
+
+		// check currency issued
+		{
+			q, issue := ct.QueryCurrenciesIssue(issueID)
+			q.CheckSucceeded()
+
+			require.Equal(t, ccDenom, issue.Coin.Denom)
+			require.True(t, ccCurAmount.Equal(issue.Coin.Amount))
+			require.Equal(t, ccRecipient, issue.Payee.String())
+		}
+
+		// incorrect inputs
 		{
 			// wrong number of args
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount)
 				tx.RemoveCmdArg(issueID)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// from non-existing account
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, nonExistingAddress.String(), ccSymbol, ccCurAmount, ccDecimals, issueID)
+				tx := ct.TxCurrenciesIssue(ccRecipient, nonExistingAddress.String(), issueID, ccDenom, ccCurAmount)
 				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid amount
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID)
-				tx.ChangeCmdArg(ccCurAmount.String(), "invalid_amount")
-				tx.CheckFailedWithErrorSubstring("not a number")
-			}
-			// invalid decimals
-			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID)
-				tx.ChangeCmdArg(strconv.Itoa(int(ccDecimals)), "invalid_decimals")
-				tx.CheckFailedWithErrorSubstring("not a number")
+				coin := sdk.NewCoin(ccDenom, ccCurAmount)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount)
+				tx.ChangeCmdArg(coin.String(), "invalid_amount" + ccDenom)
+				tx.CheckFailedWithErrorSubstring("parsing coin")
 			}
 			// invalid recipient
 			{
-				tx := ct.TxCurrenciesIssue("invalid_addr", ccRecipient, ccSymbol, ccCurAmount, ccDecimals, issueID)
-				tx.CheckFailedWithErrorSubstring("decoding bech32 failed")
+				tx := ct.TxCurrenciesIssue("invalid_addr", ccRecipient, issueID, ccDenom, ccCurAmount)
+				tx.CheckFailedWithErrorSubstring("Bech32 / HEX")
 			}
 			// MsgIssueCurrency ValidateBasic
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, ccSymbol, sdk.ZeroInt(), ccDecimals, issueID)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, sdk.ZeroInt())
 				tx.CheckFailedWithErrorSubstring("wrong amount")
 			}
 		}
 	}
 
-	// check destroy currency Tx
+	// check withdraw currency Tx
 	{
 		// reduce amount
-		destroyAmount := sdk.NewInt(100)
-		ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, destroyAmount).CheckSucceeded()
-		ccCurAmount = ccCurAmount.Sub(destroyAmount)
-		// check destroy
-		q, destroy := ct.QueryCurrenciesDestroy(sdk.ZeroInt())
-		q.CheckSucceeded()
-		require.True(t, sdk.ZeroInt().Equal(destroy.ID))
-		require.Equal(t, ccSymbol, destroy.Symbol)
-		require.Equal(t, ct.IDs.ChainID, destroy.ChainID)
-		require.Equal(t, ccRecipient, destroy.Recipient)
-		require.Equal(t, ccRecipient, destroy.Spender.String())
-		require.True(t, destroyAmount.Equal(destroy.Amount))
+		withdrawAmount := sdk.NewInt(100)
+		{
+			ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, withdrawAmount).CheckSucceeded()
+			ccCurAmount = ccCurAmount.Sub(withdrawAmount)
+		}
 
-		// check incorrect inputs
+		// check withdraw appeared
+		{
+			id := dnTypes.NewIDFromUint64(0)
+			q, withdraw := ct.QueryCurrenciesWithdraw(id)
+			q.CheckSucceeded()
+
+			require.True(t, withdraw.ID.Equal(id))
+			require.Equal(t, ccDenom, withdraw.Coin.Denom)
+			require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
+			require.Equal(t, ccRecipient, withdraw.PegZoneSpender)
+			require.Equal(t, ccRecipient, withdraw.Spender.String())
+			require.True(t, withdrawAmount.Equal(withdraw.Coin.Amount))
+		}
+
+		// incorrect inputs
 		{
 			// wrong number of args
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, sdk.OneInt())
-				tx.RemoveCmdArg(ccSymbol)
+				coin := sdk.NewCoin(ccDenom, sdk.OneInt())
+				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, sdk.OneInt())
+				tx.RemoveCmdArg(coin.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// from non-existing account
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, nonExistingAddress.String(), ccSymbol, sdk.OneInt())
+				tx := ct.TxCurrenciesWithdraw(ccRecipient, nonExistingAddress.String(), ccDenom, sdk.OneInt())
 				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid amount
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, ccCurAmount)
-				tx.ChangeCmdArg(ccCurAmount.String(), "invalid_amount")
-				tx.CheckFailedWithErrorSubstring("amount")
+				coin := sdk.NewCoin(ccDenom, ccCurAmount)
+				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, ccCurAmount)
+				tx.ChangeCmdArg(coin.String(), "invalid_amount" + ccDenom)
+				tx.CheckFailedWithErrorSubstring("parsing coin")
 			}
-			// MsgIssueCurrency ValidateBasic
+			// MsgWithdrawCurrency ValidateBasic
 			{
-				tx := ct.TxCurrenciesDestroy(ccRecipient, ccRecipient, ccSymbol, sdk.ZeroInt())
+				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, sdk.ZeroInt())
 				tx.CheckFailedWithErrorSubstring("wrong amount")
 			}
-		}
-	}
-
-	// check balance
-	{
-		q, acc := ct.QueryAccount(ccRecipient)
-		q.CheckSucceeded()
-		require.Len(t, acc.Coins, 2)
-		for _, coin := range acc.Coins {
-			if coin.Denom != ccSymbol {
-				continue
-			}
-
-			require.True(t, ccCurAmount.Equal(coin.Amount))
 		}
 	}
 
 	// check issue Query
 	{
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// invalid number of args
 			{
@@ -159,78 +168,68 @@ func Test_CurrencyCLI(t *testing.T) {
 			// non-existing issueID
 			{
 				q, _ := ct.QueryCurrenciesIssue("non_existing")
-				q.CheckFailedWithSDKError(ccTypes.ErrWrongIssueID)
+				q.CheckFailedWithSDKError(currencies.ErrWrongIssueID)
 			}
 		}
 	}
 
 	// check currency Query
 	{
-		q, currency := ct.QueryCurrenciesCurrency(ccSymbol)
-		q.CheckSucceeded()
-
-		require.True(t, currency.CurrencyId.IsZero())
-		require.Equal(t, ccSymbol, currency.Symbol)
-		require.True(t, ccCurAmount.Equal(currency.Supply))
-		require.Equal(t, ccDecimals, currency.Decimals)
-
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// invalid number of args
 			{
-				q, _ := ct.QueryCurrenciesCurrency(ccSymbol)
-				q.RemoveCmdArg(ccSymbol)
+				q, _ := ct.QueryCurrenciesCurrency(ccDenom)
+				q.RemoveCmdArg(ccDenom)
 				q.CheckFailedWithErrorSubstring("arg(s)")
 			}
 		}
 	}
 
-	// check destroy Query
+	// check withdraw Query
 	{
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// invalid number of args
 			{
-				q, _ := ct.QueryCurrenciesCurrency(ccSymbol)
-				q.RemoveCmdArg(ccSymbol)
+				q, _ := ct.QueryCurrenciesCurrency(ccDenom)
+				q.RemoveCmdArg(ccDenom)
 				q.CheckFailedWithErrorSubstring("arg(s)")
 			}
-			// non-existing destroyID
+			// non-existing withdrawID
 			{
-				q, _ := ct.QueryCurrenciesDestroy(sdk.OneInt())
+				q, _ := ct.QueryCurrenciesWithdraw(dnTypes.NewIDFromUint64(1))
 				q.ChangeCmdArg("1", "non_int")
 				q.CheckFailedWithErrorSubstring("")
 			}
 		}
 	}
 
-	// check destroys Query
+	// check withdraws Query
 	{
-		q, destroys := ct.QueryCurrenciesDestroys(1, 10)
+		q, withdraws := ct.QueryCurrenciesWithdraws(1, 10)
 		q.CheckSucceeded()
-		require.Len(t, *destroys, 1)
+		require.Len(t, *withdraws, 1)
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
-			// wrong number of args
-			{
-				q, _ := ct.QueryCurrenciesDestroys(1, 10)
-				q.RemoveCmdArg("10")
-				q.CheckFailedWithErrorSubstring("arg(s)")
-			}
 			// page / limit
 			{
-				q, _ := ct.QueryCurrenciesDestroys(-1, 10)
+				q, _ := ct.QueryCurrenciesWithdraws(1, 10)
+				q.ChangeCmdArg("--page=1", "--page=-1")
 				q.CheckFailedWithErrorSubstring("")
-				q, _ = ct.QueryCurrenciesDestroys(1, -1)
+
+				q, _ = ct.QueryCurrenciesWithdraws(1, 10)
+				q.ChangeCmdArg("--limit=10", "--limit=abc")
 				q.CheckFailedWithErrorSubstring("")
 			}
 		}
 	}
 }
 
-func Test_OracleCLI(t *testing.T) {
+func TestOracle_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -515,16 +514,17 @@ func Test_OracleCLI(t *testing.T) {
 	}
 }
 
-func Test_PoaCLI(t *testing.T) {
+func TestPOA_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	curValidators := make([]poaTypes.Validator, 0)
+	curValidators := make([]poa.Validator, 0)
 	addValidator := func(address, ethAddress string) {
 		sdkAddr, err := sdk.AccAddressFromBech32(address)
 		require.NoError(t, err, "converting account address")
-		curValidators = append(curValidators, poaTypes.Validator{
+		curValidators = append(curValidators, poa.Validator{
 			Address:    sdkAddr,
 			EthAddress: ethAddress,
 		})
@@ -612,14 +612,12 @@ func Test_PoaCLI(t *testing.T) {
 		ct.Accounts[newValidatorAccName].IsPOAValidator = false
 
 		// check validator removed
-		q, validators := ct.QueryPoaValidators()
-		q.CheckSucceeded()
-		q, rcvV := ct.QueryPoaValidator(newValidatorAcc.Address)
-		q.CheckSucceeded()
+		qValidators, validators := ct.QueryPoaValidators()
+		qValidators.CheckSucceeded()
+		qValidator, _ := ct.QueryPoaValidator(newValidatorAcc.Address)
+		qValidator.CheckFailedWithErrorSubstring("not found")
 
 		require.Len(t, (*validators).Validators, len(curValidators))
-		require.True(t, rcvV.Address.Empty())
-		require.Empty(t, rcvV.EthAddress)
 
 		// check incorrect inputs
 		{
@@ -726,8 +724,8 @@ func Test_PoaCLI(t *testing.T) {
 		q, params := ct.QueryPoaMinMax()
 		q.CheckSucceeded()
 
-		poaGenesis := poaTypes.GenesisState{}
-		require.NoError(t, ct.Cdc.UnmarshalJSON(ct.GenesisState()[poaTypes.ModuleName], &poaGenesis))
+		poaGenesis := poa.GenesisState{}
+		require.NoError(t, ct.Cdc.UnmarshalJSON(ct.GenesisState()[poa.ModuleName], &poaGenesis))
 		require.Equal(t, poaGenesis.Parameters.MaxValidators, params.MaxValidators)
 		require.Equal(t, poaGenesis.Parameters.MinValidators, params.MinValidators)
 	}
@@ -744,32 +742,27 @@ func Test_PoaCLI(t *testing.T) {
 			}
 			// invalid address
 			{
-				// non-existing assetCode
-				{
-					q, _ := ct.QueryPoaValidator("invalid_address")
-					q.CheckFailedWithErrorSubstring("address")
-				}
+				q, _ := ct.QueryPoaValidator("invalid_address")
+				q.CheckFailedWithErrorSubstring("address")
 			}
 			// non-existing validator
 			{
 				addr := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
-				q, rcvV := ct.QueryPoaValidator(addr.String())
-				q.CheckSucceeded()
-
-				require.Empty(t, rcvV.EthAddress)
-				require.True(t, rcvV.Address.Empty())
+				q, _ := ct.QueryPoaValidator(addr.String())
+				q.CheckFailedWithErrorSubstring("not found")
 			}
 		}
 	}
 }
 
-func Test_MultiSigCLI(t *testing.T) {
+func TestMS_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
-	ccSymbol1, ccSymbol2 := "btc", "usdt"
-	ccCurAmount, ccDecimals := sdk.NewInt(1000), int8(1)
+	ccDenom1, ccDenom2 := "btc", "eth"
+	ccCurAmount := sdk.NewInt(1000)
 	callUniqueId1, callUniqueId2 := "issue1", "issue2"
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
 
@@ -782,10 +775,10 @@ func Test_MultiSigCLI(t *testing.T) {
 	}
 
 	// create calls
-	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], ccSymbol1, ccCurAmount, ccDecimals, callUniqueId1).CheckSucceeded()
-	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], ccSymbol2, ccCurAmount, ccDecimals, callUniqueId2).SetGas(300000).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], callUniqueId1, ccDenom1, ccCurAmount).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], callUniqueId2, ccDenom2, ccCurAmount).CheckSucceeded()
 
-	checkCall := func(call msTypes.CallResp, approved bool, callID uint64, uniqueID, creatorAddr string, votesAddr ...string) {
+	checkCall := func(call multisig.CallResp, approved bool, callID dnTypes.ID, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))
 		for i := range call.Votes {
 			require.Equal(t, call.Votes[i].String(), votesAddr[i])
@@ -798,7 +791,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		require.Empty(t, call.Call.Error)
 		require.Equal(t, creatorAddr, call.Call.Creator.String())
 		require.NotNil(t, call.Call.Msg)
-		require.Equal(t, callID, call.Call.MsgID)
+		require.Equal(t, callID.String(), call.Call.ID.String())
 		require.Equal(t, uniqueID, call.Call.UniqueID)
 		require.NotEmpty(t, call.Call.MsgRoute)
 		require.NotEmpty(t, call.Call.MsgType)
@@ -810,35 +803,35 @@ func Test_MultiSigCLI(t *testing.T) {
 		q.CheckSucceeded()
 
 		require.Len(t, *calls, 2)
-		checkCall((*calls)[0], false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
-		checkCall((*calls)[1], false, 1, callUniqueId2, ccRecipients[1], ccRecipients[1])
+		checkCall((*calls)[0], false, dnTypes.NewIDFromUint64(0), callUniqueId1, ccRecipients[0], ccRecipients[0])
+		checkCall((*calls)[1], false, dnTypes.NewIDFromUint64(1), callUniqueId2, ccRecipients[1], ccRecipients[1])
 	}
 
 	// check call query
 	{
-		q, call := ct.QueryMultiSigCall(0)
+		q, call := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 		q.CheckSucceeded()
 
-		checkCall(*call, false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
+		checkCall(*call, false, dnTypes.NewIDFromUint64(0), callUniqueId1, ccRecipients[0], ccRecipients[0])
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				q, _ := ct.QueryMultiSigCall(0)
+				q, _ := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 				q.RemoveCmdArg("0")
 				q.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid callID
 			{
-				q, _ := ct.QueryMultiSigCall(0)
+				q, _ := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 				q.ChangeCmdArg("0", "abc")
-				q.CheckFailedWithErrorSubstring("id")
+				q.CheckFailedWithErrorSubstring("abc")
 			}
 			// non-existing callID
 			{
-				q, _ := ct.QueryMultiSigCall(2)
-				q.CheckFailedWithSDKError(msTypes.ErrWrongCallId)
+				q, _ := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(2))
+				q.CheckFailedWithSDKError(multisig.ErrWrongCallId)
 			}
 		}
 	}
@@ -848,7 +841,7 @@ func Test_MultiSigCLI(t *testing.T) {
 		q, call := ct.QueryMultiSigUnique(callUniqueId1)
 		q.CheckSucceeded()
 
-		checkCall(*call, false, 0, callUniqueId1, ccRecipients[0], ccRecipients[0])
+		checkCall(*call, false, dnTypes.NewIDFromUint64(0), callUniqueId1, ccRecipients[0], ccRecipients[0])
 
 		// check incorrect inputs
 		{
@@ -861,7 +854,7 @@ func Test_MultiSigCLI(t *testing.T) {
 			// non-existing uniqueID
 			{
 				q, _ := ct.QueryMultiSigUnique("non_existing_uniqueID")
-				q.CheckFailedWithSDKError(msTypes.ErrNotFoundUniqueID)
+				q.CheckFailedWithSDKError(multisig.ErrWrongCallUniqueId)
 			}
 		}
 	}
@@ -871,13 +864,13 @@ func Test_MultiSigCLI(t *testing.T) {
 		q, lastId := ct.QueryMultiLastId()
 		q.CheckSucceeded()
 
-		require.Equal(t, uint64(1), lastId.LastId)
+		require.EqualValues(t, 1, lastId.LastID.UInt64())
 	}
 
 	// check confirm call Tx
 	{
-		// add votes for existing call from an other senders
-		callID, callUniqueID := uint64(0), callUniqueId1
+		// add votes for existing call from other senders
+		callID, callUniqueID := dnTypes.NewIDFromUint64(0), callUniqueId1
 		votes := []string{ccRecipients[0]}
 		for i := 1; i < len(ccRecipients)/2+1; i++ {
 			ct.TxMultiSigConfirmCall(ccRecipients[i], callID).CheckSucceeded()
@@ -895,7 +888,7 @@ func Test_MultiSigCLI(t *testing.T) {
 			// invalid number of args
 			{
 				tx := ct.TxMultiSigConfirmCall(ccRecipients[0], callID)
-				tx.RemoveCmdArg(strconv.FormatUint(callID, 10))
+				tx.RemoveCmdArg(callID.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// non-existing fromAddress
@@ -906,7 +899,7 @@ func Test_MultiSigCLI(t *testing.T) {
 			// invalid callID
 			{
 				tx := ct.TxMultiSigConfirmCall(ccRecipients[0], callID)
-				tx.ChangeCmdArg(strconv.FormatUint(callID, 10), "not_int")
+				tx.ChangeCmdArg(callID.String(), "not_int")
 				tx.CheckFailedWithErrorSubstring("not_int")
 			}
 		}
@@ -914,37 +907,40 @@ func Test_MultiSigCLI(t *testing.T) {
 
 	// check revoke confirm Tx
 	{
-		ct.TxMultiSigRevokeConfirm(ccRecipients[1], 1).CheckSucceeded()
+		ct.TxMultiSigRevokeConfirm(ccRecipients[1], dnTypes.NewIDFromUint64(1)).CheckSucceeded()
 
 		// check call removed
-		q, _ := ct.QueryMultiSigCall(1)
-		q.CheckFailedWithSDKError(msTypes.ErrWrongCallId)
+		q, resp := ct.QueryMultiSigCall(dnTypes.NewIDFromUint64(1))
+		q.CheckSucceeded()
+
+		require.Len(t, resp.Votes, 0)
 
 		// check incorrect inputs
 		{
 			// invalid number of args
 			{
-				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], 0)
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], dnTypes.NewIDFromUint64(0))
 				tx.RemoveCmdArg(strconv.FormatUint(0, 10))
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// non-existing fromAddress
 			{
-				tx := ct.TxMultiSigRevokeConfirm(nonExistingAddress.String(), 0)
+				tx := ct.TxMultiSigRevokeConfirm(nonExistingAddress.String(), dnTypes.NewIDFromUint64(0))
 				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid callID
 			{
-				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], 0)
+				tx := ct.TxMultiSigRevokeConfirm(ccRecipients[0], dnTypes.NewIDFromUint64(0))
 				tx.ChangeCmdArg(strconv.FormatUint(0, 10), "not_int")
-				tx.CheckFailedWithErrorSubstring("callId")
+				tx.CheckFailedWithErrorSubstring("not_int")
 			}
 		}
 	}
 }
 
-func Test_MarketsCLI(t *testing.T) {
+func TestMarkets_CLI(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
@@ -965,13 +961,13 @@ func Test_MarketsCLI(t *testing.T) {
 		// non-existing currency
 		{
 			tx := ct.TxMarketsAdd(ownerAddr, cliTester.DenomBTC, "atom")
-			tx.CheckFailedWithSDKError(marketTypes.ErrWrongAssetDenom)
+			tx.CheckFailedWithSDKError(markets.ErrWrongAssetDenom)
 		}
 
 		// already existing market
 		{
 			tx := ct.TxMarketsAdd(ownerAddr, cliTester.DenomBTC, cliTester.DenomDFI)
-			tx.CheckFailedWithSDKError(marketTypes.ErrMarketExists)
+			tx.CheckFailedWithSDKError(markets.ErrMarketExists)
 		}
 	}
 
@@ -1062,7 +1058,9 @@ func Test_MarketsCLI(t *testing.T) {
 	}
 }
 
-func Test_OrdersCLI(t *testing.T) {
+func TestOrders_CLI(t *testing.T) {
+	t.Parallel()
+
 	const (
 		DecimalsDFI = "1000000000000000000"
 		DecimalsETH = "1000000000000000000"
@@ -1091,7 +1089,6 @@ func Test_OrdersCLI(t *testing.T) {
 		{Name: "client2", Balances: accountBalances},
 	}
 
-	t.Parallel()
 	ct := cliTester.New(
 		t,
 		false,
@@ -1128,35 +1125,35 @@ func Test_OrdersCLI(t *testing.T) {
 	{
 		// invalid owner
 		{
-			tx := ct.TxOrdersPost("invalid_address", assetCode0, orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			tx := ct.TxOrdersPost("invalid_address", assetCode0, orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
 			tx.CheckFailedWithErrorSubstring("keyring")
 		}
 
 		// invalid marketID
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, dnTypes.AssetCode("wrong_code"), orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
-			tx.CheckFailedWithSDKError(orderTypes.ErrWrongAssetCode)
+			tx := ct.TxOrdersPost(ownerAddr1, dnTypes.AssetCode("wrong_code"), orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			tx.CheckFailedWithSDKError(orders.ErrWrongAssetCode)
 		}
 
 		// invalid direction
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
 			tx.ChangeCmdArg("ask", "invalid")
 			tx.CheckFailedWithErrorSubstring("direction")
 		}
 
 		// invalid price
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orderTypes.AskDirection, sdk.ZeroUint(), sdk.OneUint(), 60)
+			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orders.AskDirection, sdk.ZeroUint(), sdk.OneUint(), 60)
 			tx.ChangeCmdArg("0", "invalid")
-			tx.CheckFailedWithErrorSubstring("convert")
+			tx.CheckFailedWithErrorSubstring("price")
 		}
 
 		// invalid quantity
 		{
-			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orderTypes.AskDirection, sdk.OneUint(), sdk.ZeroUint(), 60)
+			tx := ct.TxOrdersPost(ownerAddr1, assetCode0, orders.AskDirection, sdk.OneUint(), sdk.ZeroUint(), 60)
 			tx.ChangeCmdArg("0", "invalid")
-			tx.CheckFailedWithErrorSubstring("convert")
+			tx.CheckFailedWithErrorSubstring("quantity")
 		}
 	}
 
@@ -1165,7 +1162,7 @@ func Test_OrdersCLI(t *testing.T) {
 		MarketID     dnTypes.ID
 		AssetCode    dnTypes.AssetCode
 		OwnerAddress string
-		Direction    orderTypes.Direction
+		Direction    orders.Direction
 		Price        sdk.Uint
 		Quantity     sdk.Uint
 		TtlInSec     int
@@ -1174,7 +1171,7 @@ func Test_OrdersCLI(t *testing.T) {
 			MarketID:     marketID0,
 			AssetCode:    assetCode0,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.BidDirection,
+			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
 			Quantity:     sdk.NewUintFromString("100000000"),
 			TtlInSec:     60,
@@ -1183,7 +1180,7 @@ func Test_OrdersCLI(t *testing.T) {
 			MarketID:     marketID0,
 			AssetCode:    assetCode0,
 			OwnerAddress: ownerAddr2,
-			Direction:    orderTypes.BidDirection,
+			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("20000000000000000000"),
 			Quantity:     sdk.NewUintFromString("200000000"),
 			TtlInSec:     90,
@@ -1192,7 +1189,7 @@ func Test_OrdersCLI(t *testing.T) {
 			MarketID:     marketID0,
 			AssetCode:    assetCode0,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("50000000000000000000"),
 			Quantity:     sdk.NewUintFromString("500000000"),
 			TtlInSec:     60,
@@ -1201,7 +1198,7 @@ func Test_OrdersCLI(t *testing.T) {
 			MarketID:     marketID0,
 			AssetCode:    assetCode0,
 			OwnerAddress: ownerAddr2,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("60000000000000000000"),
 			Quantity:     sdk.NewUintFromString("600000000"),
 			TtlInSec:     90,
@@ -1210,7 +1207,7 @@ func Test_OrdersCLI(t *testing.T) {
 			MarketID:     marketID1,
 			AssetCode:    assetCode1,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
 			Quantity:     sdk.NewUintFromString("100000000"),
 			TtlInSec:     30,
@@ -1295,21 +1292,21 @@ func Test_OrdersCLI(t *testing.T) {
 		{
 			askCount, bidCount := 0, 0
 			for _, input := range inputOrders {
-				if input.Direction.Equal(orderTypes.AskDirection) {
+				if input.Direction.Equal(orders.AskDirection) {
 					askCount++
 				}
-				if input.Direction.Equal(orderTypes.BidDirection) {
+				if input.Direction.Equal(orders.BidDirection) {
 					bidCount++
 				}
 			}
 
-			askDirection := orderTypes.AskDirection
+			askDirection := orders.AskDirection
 			qAsk, ordersAsk := ct.QueryOrdersList(-1, -1, nil, &askDirection, nil)
 			qAsk.CheckSucceeded()
 
 			require.Len(t, *ordersAsk, askCount)
 
-			bidDirection := orderTypes.BidDirection
+			bidDirection := orders.BidDirection
 			qBid, ordersBid := ct.QueryOrdersList(-1, -1, nil, &bidDirection, nil)
 			qBid.CheckSucceeded()
 
@@ -1343,7 +1340,7 @@ func Test_OrdersCLI(t *testing.T) {
 		{
 			marketID := marketID0
 			owner := ownerAddr1
-			direction := orderTypes.AskDirection
+			direction := orders.AskDirection
 			count := 0
 			for _, input := range inputOrders {
 				if input.MarketID.Equal(marketID) && input.OwnerAddress == owner && input.Direction == direction {
@@ -1366,7 +1363,7 @@ func Test_OrdersCLI(t *testing.T) {
 		ct.TxOrdersRevoke(inputOrder.OwnerAddress, orderID).CheckSucceeded()
 
 		q, _ := ct.QueryOrdersOrder(orderID)
-		q.CheckFailedWithSDKError(orderTypes.ErrWrongOrderID)
+		q.CheckFailedWithSDKError(orders.ErrWrongOrderID)
 		inputOrders = inputOrders[:len(inputOrders)-2]
 	}
 
@@ -1381,19 +1378,20 @@ func Test_OrdersCLI(t *testing.T) {
 		// non-existing orderID
 		{
 			tx := ct.TxOrdersRevoke(ownerAddr1, dnTypes.NewIDFromUint64(10))
-			tx.CheckFailedWithSDKError(orderTypes.ErrWrongOrderID)
+			tx.CheckFailedWithSDKError(orders.ErrWrongOrderID)
 		}
 
 		// wrong owner (not an order owner)
 		{
 			tx := ct.TxOrdersRevoke(ct.Accounts["validator1"].Address, dnTypes.NewIDFromUint64(0))
-			tx.CheckFailedWithSDKError(orderTypes.ErrWrongOwner)
+			tx.CheckFailedWithSDKError(orders.ErrWrongOwner)
 		}
 	}
 }
 
 func Test_RestServer(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 

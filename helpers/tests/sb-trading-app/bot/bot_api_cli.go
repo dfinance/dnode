@@ -8,14 +8,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
+	"github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 type ApiCli struct {
 	sync.Mutex
-	tester         *cliTester.CLITester
+	tester         *clitester.CLITester
 	accountAddress string
 	accountNumber  uint64
 	sequenceNumber uint64
@@ -49,7 +49,7 @@ func (a *ApiCli) GetAccount() (sequence uint64, baseBalance, quoteBalance sdk.Ui
 	return
 }
 
-func (a *ApiCli) PostOrder(price, quantity sdk.Uint, direction orderTypes.Direction) (txHash string, retErr error) {
+func (a *ApiCli) PostOrder(price, quantity sdk.Uint, direction orders.Direction) (txHash string, retErr error) {
 	const maxRetries = 10
 
 	if price.IsZero() || quantity.IsZero() {
@@ -121,7 +121,7 @@ func (a *ApiCli) PostOrder(price, quantity sdk.Uint, direction orderTypes.Direct
 	return
 }
 
-func (a *ApiCli) GetOrder(id dnTypes.ID) (order *orderTypes.Order, retErr error) {
+func (a *ApiCli) GetOrder(id dnTypes.ID) (order *orders.Order, retErr error) {
 	q, orderPtr := a.tester.QueryOrdersOrder(id)
 	if err := a.executeQuery(q); err != nil {
 		if strings.Contains(err.Error(), "wrong orderID") {
@@ -136,7 +136,7 @@ func (a *ApiCli) GetOrder(id dnTypes.ID) (order *orderTypes.Order, retErr error)
 	return
 }
 
-func (a *ApiCli) executeQuery(req *cliTester.QueryRequest) error {
+func (a *ApiCli) executeQuery(req *clitester.QueryRequest) error {
 	const initialTimeoutInMs = 10
 	const timeoutMultiplier = 1.05
 	const maxRetryAttempts = 50
@@ -163,7 +163,7 @@ func (a *ApiCli) executeQuery(req *cliTester.QueryRequest) error {
 	return fmt.Errorf("retry failed: %v", lastErr)
 }
 
-func NewApiCli(tester *cliTester.CLITester, accNumber uint64, accAddress string, marketID dnTypes.ID, baseDenom, quoteDenom string, orderTtlInSec int) *ApiCli {
+func NewApiCli(tester *clitester.CLITester, accNumber uint64, accAddress string, marketID dnTypes.ID, baseDenom, quoteDenom string, orderTtlInSec int) *ApiCli {
 	return &ApiCli{
 		tester:         tester,
 		accountAddress: accAddress,

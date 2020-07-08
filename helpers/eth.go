@@ -16,6 +16,10 @@ func isHex(s string) bool {
 
 // Check if it's ethereum address.
 func IsEthereumAddress(address string) bool {
+	if len(address) < 2 {
+		return false
+	}
+
 	s := address[2:]
 	return len(s) == 2*EthAddressLength && isHex(s)
 }

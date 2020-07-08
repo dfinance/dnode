@@ -8,10 +8,8 @@ To add new validator use next command:
 
     dncli tx poa ms-add-validator [validator-address] [eth-address] --validator-1
 
-Where:
-
-* **[validator-address]** - DN bench32 validator address
-* **[eth-address]** - validator ethereum address
+* **[validator-address]** - DN bench32 validator address;
+* **[eth-address]** - validator ethereum address;
 
 To remove:
 
@@ -63,23 +61,15 @@ To get calls amount:
 
 To issue new currency:
 
-    dncli tx currencies ms-issue-currency [currencyId] [symbol] [amount] [decimals] [recipient] [issueID] [uniqueID]  --from validators1
+    dncli tx currencies ms-issue [issueID] [coin] [recipient]  --from validators1
 
-Where:
+* **issueID** - call unique ID, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex;
+* **coin** - issue denomination symbol and amount in coin format (100dfi);
+* **recipient** - DN address of account who's receiving coins;
 
-| parameter | desc                                                                                                                        |
-|----------------|-----------------------------------------------------------------------------------------------------------------------------|
-| **currencyId** | Currency ID.                                                                                                                |
-| **symbol**     | Currency symbol/denom to issue.                                                                                             |
-| **amount**     | Amount to issue.                                                                                                            |
-| **decimals**   | Currency decimals, maximum is 8.                                                                                            |
-| **recipient**  | DN address of account who's receiving coins.                                                                            |
-| **issueID**    | Any issue id, usually transaction id.                                                                                       |
-| **uniqueID**   | Call unique id, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex. |
+To withdraw currency from any account call:
 
-To destroy currency from any account call:
-
-    dncli tx currencies destroy-currency [symbol] [amount] [recipient] --from account
+    dncli tx currencies withdraw [denom] [coin] [pegZoneSpender] --from account
 
 To get issued currencies demons/symbols:
 
@@ -89,19 +79,15 @@ To get specific issue info:
 
     dncli query currencies issue [issueID]
 
-To get destroys list:
+To get withdraw list:
 
-    dncli query currencies destroys [page] [limit]
+    dncli query currencies withdraws --page=1 --limit=100
 
-Where:
+* **[page]** - page number (optional)
+* **[limit]** - limit of objects per page (optional)
 
-* **[page]** - page number
-* **[limit]** - limit of destroys per page
+To get withdraw by ID:
 
-To get destroy by ID:
+    dncli query currencies withdraw [withdrawID]
 
-    dncli query currencies destroy [destroyID]
-
-Where:
-
-* **[destroyID]** - destroy ID, usually just from 0 to N.
+* **[withdrawID]** - withdraw ID, usually just from 0 to N.

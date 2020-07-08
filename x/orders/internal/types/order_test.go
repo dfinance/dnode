@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/currencies_register"
-	marketTypes "github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/ccstorage"
+	"github.com/dfinance/dnode/x/markets"
 )
 
 func NewMockOrder() Order {
@@ -20,14 +20,14 @@ func NewMockOrder() Order {
 	return Order{
 		ID:    dnTypes.NewIDFromUint64(0),
 		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"),
-		Market: marketTypes.MarketExtended{
+		Market: markets.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(0),
-			BaseCurrency: currencies_register.CurrencyInfo{
-				Denom:    []byte("btc"),
+			BaseCurrency: ccstorage.Currency{
+				Denom:    "btc",
 				Decimals: 8,
 			},
-			QuoteCurrency: currencies_register.CurrencyInfo{
-				Denom:    []byte("dfi"),
+			QuoteCurrency: ccstorage.Currency{
+				Denom:    "dfi",
 				Decimals: 18,
 			},
 		},
@@ -40,7 +40,7 @@ func NewMockOrder() Order {
 	}
 }
 
-func Test_Order_ValidatePriceQuantity(t *testing.T) {
+func TestOrders_Order_ValidatePriceQuantity(t *testing.T) {
 	orderOk := NewMockOrder()
 
 	// ok
@@ -61,7 +61,7 @@ func Test_Order_ValidatePriceQuantity(t *testing.T) {
 	}
 }
 
-func Test_Order_LockCoin(t *testing.T) {
+func TestOrders_Order_LockCoin(t *testing.T) {
 	order := NewMockOrder()
 
 	// bid order

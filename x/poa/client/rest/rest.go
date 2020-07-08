@@ -8,10 +8,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
-	"github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/poa/internal/types"
 )
 
-// Registering routes for REST API.
+// RegisterRoutes adds endpoint to REST router.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/validators", types.ModuleName), getValidators(cliCtx)).Methods("GET")
 }
@@ -19,7 +19,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // GetValidators godoc
 // @Tags poa
 // @Summary Get validators
-// @Description Get validator objects
+// @Description Get validator objects and required confirmations count
 // @ID poaValidators
 // @Accept  json
 // @Produce json
@@ -28,8 +28,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // @Router /poa/validators [get]
 func getValidators(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/validators", types.ModuleName), nil)
-
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryValidators), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

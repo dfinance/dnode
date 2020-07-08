@@ -17,6 +17,8 @@ import (
 
 // TestKeeper_SetGetAsset tests adding assets to the oracle, getting assets from the store
 func TestKeeper_SetGetAsset(t *testing.T) {
+	t.Parallel()
+
 	helper := getMockApp(t, 0, types.GenesisState{}, nil)
 	header := abci.Header{
 		Height: helper.mApp.LastBlockHeight() + 1,
@@ -56,6 +58,8 @@ func TestKeeper_SetGetAsset(t *testing.T) {
 // nolint:errcheck
 // TestKeeper_SetGetAsset tests adding assets to the oracle, getting assets from the store
 func TestKeeper_SetAddAsset(t *testing.T) {
+	t.Parallel()
+
 	helper := getMockApp(t, 2, types.GenesisState{}, nil)
 	header := abci.Header{
 		Height: helper.mApp.LastBlockHeight() + 1,
@@ -102,6 +106,8 @@ func TestKeeper_SetAddAsset(t *testing.T) {
 
 // TestKeeper_GetSetPrice Test Posting the price by an oracle
 func TestKeeper_GetSetPrice(t *testing.T) {
+	t.Parallel()
+
 	helper := getMockApp(t, 2, types.GenesisState{}, nil)
 	header := abci.Header{
 		Height: helper.mApp.LastBlockHeight() + 1,
@@ -158,6 +164,8 @@ func TestKeeper_GetSetPrice(t *testing.T) {
 // nolint:errcheck
 // TestKeeper_GetSetCurrentPrice Test Setting the median price of an Asset
 func TestKeeper_GetSetCurrentPrice(t *testing.T) {
+	t.Parallel()
+
 	helper := getMockApp(t, 4, types.GenesisState{}, nil)
 	header := abci.Header{
 		Height: helper.mApp.LastBlockHeight() + 1,
@@ -213,6 +221,8 @@ func TestKeeper_GetSetCurrentPrice(t *testing.T) {
 }
 
 func TestKeeper_checkPriceReceivedAtTimestamp(t *testing.T) {
+	t.Parallel()
+
 	helper := getMockApp(t, 2, types.GenesisState{}, nil)
 
 	header := abci.Header{Height: helper.mApp.LastBlockHeight() + 1, Time: tmtime.Now()}

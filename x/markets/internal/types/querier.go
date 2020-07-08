@@ -1,6 +1,8 @@
 package types
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
@@ -17,9 +19,9 @@ type MarketReq struct {
 // Client request for markets.
 type MarketsReq struct {
 	// Page number
-	Page int
+	Page sdk.Uint
 	// Items per page
-	Limit int
+	Limit sdk.Uint
 	// BaseAsset denom filter
 	BaseAssetDenom string
 	// QuoteAsset denom filter
@@ -29,10 +31,10 @@ type MarketsReq struct {
 }
 
 // NewMarketsFilter returned MarketsReq object with filled required fields page and limit.
-func NewMarketsFilter(page, limit int) MarketsReq {
+func NewMarketsFilter(page, limit uint64) MarketsReq {
 	return MarketsReq{
-		Page:  page,
-		Limit: limit,
+		Page:  sdk.NewUint(page),
+		Limit: sdk.NewUint(limit),
 	}
 }
 

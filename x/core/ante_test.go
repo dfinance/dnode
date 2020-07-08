@@ -11,15 +11,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	vestTypes"github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/mock"
-	"github.com/cosmos/cosmos-sdk/x/params/subspace"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
-	log "github.com/tendermint/tendermint/libs/log"
+	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
 )
@@ -29,43 +31,58 @@ var (
 )
 
 type testInput struct {
-	cdc *codec.Codec
-	ctx sdk.Context
-	ak  vmauth.VMAccountKeeper
-	sk  types.SupplyKeeper
+	cdc          *codec.Codec
+	ctx          sdk.Context
+	paramsKeeper params.Keeper
+	supplyKeeper authTypes.SupplyKeeper
+	vmStorage    vm.Keeper
+	ccsStorage   ccstorage.Keeper
+	accKeeper    vmauth.Keeper
 }
 
 // nolint:errcheck
 func setupTestInput() testInput {
+	input := testInput{
+		cdc: codec.New(),
+	}
+
+	// register codec
+	vestTypes.RegisterCodec(input.cdc)
+	vmauth.RegisterCodec(input.cdc)
+	codec.RegisterCrypto(input.cdc)
+
+	// create storage keys
+	keyParams := sdk.NewKVStoreKey(params.StoreKey)
+	vmKey := sdk.NewKVStoreKey(vm.StoreKey)
+	ccsKey := sdk.NewKVStoreKey(ccstorage.StoreKey)
+	accKey := sdk.NewKVStoreKey(authTypes.StoreKey)
+	tkeyParams := sdk.NewTransientStoreKey(params.TStoreKey)
+
+	// init in-memory DB
 	db := dbm.NewMemDB()
-
-	cdc := codec.New()
-	types.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-
-	authCapKey := sdk.NewKVStoreKey("authCapKey")
-	vmCapKey := sdk.NewKVStoreKey("vmCapKey")
-	keyParams := sdk.NewKVStoreKey("subspace")
-	tkeyParams := sdk.NewTransientStoreKey("transient_subspace")
-
 	ms := store.NewCommitMultiStore(db)
-	ms.MountStoreWithDB(authCapKey, sdk.StoreTypeIAVL, db)
-	ms.MountStoreWithDB(vmCapKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(keyParams, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(vmKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(ccsKey, sdk.StoreTypeIAVL, db)
+	ms.MountStoreWithDB(accKey, sdk.StoreTypeIAVL, db)
 	ms.MountStoreWithDB(tkeyParams, sdk.StoreTypeTransient, db)
 	ms.LoadLatestVersion()
 
-	vmk := vm.NewKeeper(vmCapKey, cdc, nil, nil, nil)
+	// create target and dependant keepers
+	input.paramsKeeper = params.NewKeeper(input.cdc, keyParams, tkeyParams)
+	input.vmStorage = vm.NewKeeper(vmKey, input.cdc, nil, nil, nil)
+	input.ccsStorage = ccstorage.NewKeeper(input.cdc, ccsKey, input.paramsKeeper.Subspace(ccstorage.DefaultParamspace), input.vmStorage)
+	input.accKeeper = vmauth.NewKeeper(input.cdc, accKey, input.paramsKeeper.Subspace(auth.DefaultParamspace), input.ccsStorage, authTypes.ProtoBaseAccount)
+	input.supplyKeeper = mock.NewDummySupplyKeeper(input.accKeeper.AccountKeeper)
 
-	ps := subspace.NewSubspace(cdc, keyParams, tkeyParams, types.DefaultParamspace)
-	ak := vmauth.NewVMAccountKeeper(cdc, authCapKey, ps, vmk, types.ProtoBaseAccount)
-	sk := mock.NewDummySupplyKeeper(*ak.AccountKeeper)
+	// create context
+	input.ctx = sdk.NewContext(ms, abci.Header{ChainID: "test-chain-id", Height: 1}, false, log.NewNopLogger())
 
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain-id", Height: 1}, false, log.NewNopLogger())
+	// init genesis and params
+	input.ccsStorage.InitDefaultGenesis(input.ctx)
+	input.accKeeper.SetParams(input.ctx, authTypes.DefaultParams())
 
-	ak.SetParams(ctx, types.DefaultParams())
-
-	return testInput{cdc: cdc, ctx: ctx, ak: ak, sk: sk}
+	return input
 }
 
 // run the tx through the anteHandler and ensure it fails with the given code.
@@ -81,73 +98,79 @@ func checkValidTx(t *testing.T, anteHandler sdk.AnteHandler, ctx sdk.Context, tx
 }
 
 // nolint:errcheck
-// test when no fees provided in transaction.
-func TestAnteHandlerWrongZeroFee(t *testing.T) {
+// Test when no fees provided in transaction.
+func TestAnteHandler_WrongZeroFee(t *testing.T) {
+	t.Parallel()
+
 	input := setupTestInput()
 
-	priv, _, addr := types.KeyTestPubAddr()
-	acc := input.ak.NewAccountWithAddress(input.ctx, addr)
+	priv, _, addr := vestTypes.KeyTestPubAddr()
+	acc := input.accKeeper.NewAccountWithAddress(input.ctx, addr)
 
 	acc.SetCoins(DefaultFees)
-	input.ak.SetAccount(input.ctx, acc)
+	input.accKeeper.SetAccount(input.ctx, acc)
 
-	msg := types.NewTestMsg(addr)
+	msg := vestTypes.NewTestMsg(addr)
 	fee := auth.StdFee{Gas: 10000}
 
 	msgs := []sdk.Msg{msg}
 
 	// test empty fees
 	privs, accNums, seqs := []crypto.PrivKey{priv}, []uint64{0}, []uint64{0}
-	tx := types.NewTestTx(input.ctx, msgs, privs, accNums, seqs, fee)
+	tx := authTypes.NewTestTx(input.ctx, msgs, privs, accNums, seqs, fee)
 
-	ah := NewAnteHandler(input.ak, input.sk, auth.DefaultSigVerificationGasConsumer)
+	ah := NewAnteHandler(input.accKeeper, input.supplyKeeper, auth.DefaultSigVerificationGasConsumer)
 	checkInvalidTx(t, ah, input.ctx, tx, true, ErrFeeRequired)
 }
 
 // nolint:errcheck
-// test when wrong denom provided in transaction.
-func TestAnteHandlerWrongFeeDenom(t *testing.T) {
+// Test when wrong denom is provided in transaction.
+func TestAnteHandler_WrongFeeDenom(t *testing.T) {
+	t.Parallel()
+
 	input := setupTestInput()
 
-	priv, _, addr := types.KeyTestPubAddr()
-	acc := input.ak.NewAccountWithAddress(input.ctx, addr)
+	priv, _, addr := vestTypes.KeyTestPubAddr()
+	acc := input.accKeeper.NewAccountWithAddress(input.ctx, addr)
 	acc.SetCoins(DefaultFees)
 
-	input.ak.SetAccount(input.ctx, acc)
+	input.accKeeper.SetAccount(input.ctx, acc)
 
-	msg := types.NewTestMsg(addr)
+	msg := vestTypes.NewTestMsg(addr)
 	fee := auth.StdFee{Gas: 10000, Amount: WrongFees}
 
 	msgs := []sdk.Msg{msg}
 
 	// test wrong fees denom.
 	privs, accNums, seqs := []crypto.PrivKey{priv}, []uint64{0}, []uint64{0}
-	tx := types.NewTestTx(input.ctx, msgs, privs, accNums, seqs, fee)
+	tx := authTypes.NewTestTx(input.ctx, msgs, privs, accNums, seqs, fee)
 
-	ah := NewAnteHandler(input.ak, input.sk, auth.DefaultSigVerificationGasConsumer)
+	ah := NewAnteHandler(input.accKeeper, input.supplyKeeper, auth.DefaultSigVerificationGasConsumer)
 	checkInvalidTx(t, ah, input.ctx, tx, true, ErrWrongFeeDenom)
 }
 
 // nolint:errcheck
-// test for correct transaction with correct fees.
-func TestCorrectDenomFees(t *testing.T) {
+// Test for correct transaction with correct fees.
+func TestAnteHandler_CorrectDenomFees(t *testing.T) {
+	t.Parallel()
+
 	input := setupTestInput()
 
-	priv, _, addr := types.KeyTestPubAddr()
-	acc := input.ak.NewAccountWithAddress(input.ctx, addr)
+	priv, _, addr := vestTypes.KeyTestPubAddr()
+	acc := input.accKeeper.NewAccountWithAddress(input.ctx, addr)
 
 	acc.SetCoins(DefaultFees)
 
-	input.ak.SetAccount(input.ctx, acc)
-	msg := types.NewTestMsg(addr)
+	input.accKeeper.SetAccount(input.ctx, acc)
+	msg := vestTypes.NewTestMsg(addr)
 	fee := auth.StdFee{Gas: 10000, Amount: DefaultFees}
 
 	msgs := []sdk.Msg{msg}
 
 	// test correct fees denom.
 	privs, accNums, seqs := []crypto.PrivKey{priv}, []uint64{0}, []uint64{0}
-	tx := types.NewTestTx(input.ctx, msgs, privs, accNums, seqs, fee)
+	tx := authTypes.NewTestTx(input.ctx, msgs, privs, accNums, seqs, fee)
 
-	ah := NewAnteHandler(input.ak, input.sk, auth.DefaultSigVerificationGasConsumer)
+	ah := NewAnteHandler(input.accKeeper, input.supplyKeeper, auth.DefaultSigVerificationGasConsumer)
 	checkValidTx(t, ah, input.ctx, tx, true)
 }

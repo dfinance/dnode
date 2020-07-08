@@ -1,6 +1,8 @@
 package rest
 
-import "github.com/dfinance/dnode/x/multisig/types"
+import (
+	"github.com/dfinance/dnode/x/multisig/internal/types"
+)
 
 //nolint:deadcode,unused
 type (

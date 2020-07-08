@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
@@ -22,17 +22,20 @@ const (
 func GetCmdListMarkets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
-		Args:    cobra.ExactArgs(0),
-		Example: "dncli markets list --page=1 --limit=10 --base-asset-denom=btc",
 		Short:   "Lists all markets by limit and page",
+		Example: "list --page=1 --limit=10 --base-asset-denom=btc",
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.NewCLIContext().WithCodec(cdc)
 
 			// parse inputs
 			baseDenomFilter := viper.GetString(flagMarketBaseDenom)
 			quoteDenomFilter := viper.GetString(flagMarketQuoteDenom)
-			page := viper.GetInt(flags.FlagPage)
-			limit := viper.GetInt(flags.FlagLimit)
+			pageStr, limitStr := viper.GetString(flags.FlagPage), viper.GetString(flags.FlagLimit)
+			page, limit, err := helpers.ParsePaginationParams(pageStr, limitStr, helpers.ParamTypeCliFlag)
+			if err != nil {
+				return err
+			}
 
 			// prepare request
 			req := types.MarketsReq{
@@ -59,8 +62,7 @@ func GetCmdListMarkets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return ctx.PrintOutput(out)
 		},
 	}
-	cmd.Flags().Int(flags.FlagPage, 1, "pagination page of markets to to query for")
-	cmd.Flags().Int(flags.FlagLimit, 100, "pagination limit of markets to query for")
+	helpers.AddPaginationCmdFlags(cmd)
 	cmd.Flags().String(flagMarketBaseDenom, "", "(optional) filter by baseAsset denom")
 	cmd.Flags().String(flagMarketQuoteDenom, "", "(optional) filter by quoteAsset denom")
 
@@ -69,7 +71,7 @@ func GetCmdListMarkets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 // GetCmdMarket returns query command that returns market by id.
 func GetCmdMarket(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "market [id]",
 		Example: "dncli markets market 1",
 		Short:   "Get market by id",
@@ -78,9 +80,10 @@ func GetCmdMarket(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			ctx := context.NewCLIContext().WithCodec(cdc)
 
 			// parse inputs
-			id, err := dnTypes.NewIDFromString(args[0])
+			// parse inputs
+			id, err := helpers.ParseDnIDParam("id", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("%s argument %q parse error: %w", "id", args[0], err)
+				return err
 			}
 
 			// prepare request
@@ -105,4 +108,9 @@ func GetCmdMarket(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return ctx.PrintOutput(out)
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"market ID [uint]",
+	})
+
+	return cmd
 }

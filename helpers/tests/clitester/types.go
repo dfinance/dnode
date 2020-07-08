@@ -15,8 +15,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/currencies"
-	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
@@ -33,7 +33,7 @@ const (
 	DenomBTC  = "btc"
 	DenomUSDT = "usdt"
 	//
-	DefaultGas = 300000
+	DefaultGas = 500000
 )
 
 type StringPair struct {
@@ -75,10 +75,10 @@ var ModuleBasics = module.NewBasicManager(
 	slashing.AppModuleBasic{},
 	supply.AppModuleBasic{},
 	poa.AppModuleBasic{},
+	ccstorage.AppModuleBasic{},
 	currencies.AppModuleBasic{},
 	multisig.AppModuleBasic{},
 	oracle.AppModuleBasic{},
-	currencies_register.AppModuleBasic{},
 	vm.AppModuleBasic{},
 	orders.AppModuleBasic{},
 	markets.AppModuleBasic{},

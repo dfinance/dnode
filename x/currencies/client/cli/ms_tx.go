@@ -1,64 +1,65 @@
-// Multisignature currency module commands for CLI.
 package cli
 
 import (
-	"bufio"
-	"fmt"
 	"os"
-	"strconv"
 
-	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 
-	"github.com/dfinance/dnode/x/currencies/msgs"
-	msMsg "github.com/dfinance/dnode/x/multisig/msgs"
+	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/currencies/internal/types"
+	msExport "github.com/dfinance/dnode/x/multisig/export"
 )
 
-// Issue new currency command.
+// PostMsIssueCurrency returns tx command which post a new multisig issue request.
 func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "ms-issue-currency [symbol] [amount] [decimals] [recipient] [issueID]",
-		Short: "issue new currency via multisignature",
-		Args:  cobra.ExactArgs(5),
+	cmd := &cobra.Command{
+		Use:     "ms-issue [issueID] [coin] [payee]",
+		Short:   "Issue new currency via multi signature, increasing payee coin balance",
+		Example: "ms-issue issue1 100dfi {account} --from {account}",
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
-			}
-
-			amount, isOk := sdk.NewIntFromString(args[1])
-			if !isOk {
-				return fmt.Errorf("%s argument %q is not a number, can't parse int", "amount", args[1])
-			}
-
-			decimals, err := strconv.ParseInt(args[2], 10, 8)
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
 			if err != nil {
-				return fmt.Errorf("%s argument %q is not a number, can't parse int", "decimals", args[2])
+				return err
 			}
 
-			recipient, err := sdk.AccAddressFromBech32(args[3])
+			coin, err := helpers.ParseCoinParam("coin", args[1], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "recipient", args[3], err)
+				return err
 			}
 
-			msgIssCurr := msgs.NewMsgIssueCurrency(args[0], amount, int8(decimals), recipient, args[4])
-			msg := msMsg.NewMsgSubmitCall(msgIssCurr, args[4], cliCtx.GetFromAddress())
+			payee, err := helpers.ParseSdkAddressParam("payee", args[2], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
 
-			if err = msg.ValidateBasic(); err != nil {
+			// prepare and send multisig message
+			msg := types.NewMsgIssueCurrency(args[0], coin, payee)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			callMsg := msExport.NewMsgSubmitCall(msg, args[0], fromAddr)
+			if err := callMsg.ValidateBasic(); err != nil {
 				return err
 			}
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{callMsg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"unique multi signature call ID",
+		"currency denomination symbol and amount in Coin format (1.0 btc with 8 decimals -> 100000000btc)",
+		"payee address",
+	})
+
+	return cmd
 }

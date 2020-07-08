@@ -36,7 +36,7 @@ func (r *TxRequest) SetCmd(module, fromAddress string, args ...string) {
 	}
 	r.cmd.AddArg("broadcast-mode", "block")
 	r.cmd.AddArg("node", r.nodeRpcAddress)
-	r.cmd.AddArg("fees", "1"+config.MainDenom)
+	r.cmd.AddArg("fees", config.DefaultFee)
 	r.cmd.AddArg("gas", strconv.FormatUint(r.gas, 10))
 	r.cmd.AddArg("", "--yes")
 }
@@ -171,10 +171,11 @@ func (r *TxRequest) CheckFailedWithErrorSubstring(subStr string) (output string)
 		return
 	}
 
-	if strings.Contains(stdoutStr, subStr) || strings.Contains(stderrErr, subStr) {
-		return
-	}
-	r.t.Fatalf("%s: stdout/stderr doesn't contain %q sub string: %s", r.String(), subStr, output)
+	require.True(r.t,
+		strings.Contains(stdoutStr, subStr) || strings.Contains(stderrErr, subStr),
+		"%s: stdout/stderr doesn't contain %q sub string: %s",
+		r.String(), subStr, output,
+	)
 
 	return
 }

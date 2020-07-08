@@ -8,13 +8,13 @@ import (
 
 	"github.com/dfinance/dnode/helpers/tests/sb-trading-app/utils"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 type Api interface {
 	GetAccount() (sequence uint64, baseBalance, quoteBalance sdk.Uint, retErr error)
-	PostOrder(price, quantity sdk.Uint, direction orderTypes.Direction) (txHash string, retErr error)
-	GetOrder(id dnTypes.ID) (order *orderTypes.Order, retErr error)
+	PostOrder(price, quantity sdk.Uint, direction orders.Direction) (txHash string, retErr error)
+	GetOrder(id dnTypes.ID) (order *orders.Order, retErr error)
 }
 
 func (b *Bot) updateBalances() (baseBalance, quoteBalance sdk.Uint) {
@@ -32,14 +32,14 @@ func (b *Bot) updateBalances() (baseBalance, quoteBalance sdk.Uint) {
 }
 
 func (b *Bot) postBuyOrder(price, quantity sdk.Uint) bool {
-	return b.postOrder(price, quantity, orderTypes.BidDirection)
+	return b.postOrder(price, quantity, orders.BidDirection)
 }
 
 func (b *Bot) postSellOrder(price, quantity sdk.Uint) bool {
-	return b.postOrder(price, quantity, orderTypes.AskDirection)
+	return b.postOrder(price, quantity, orders.AskDirection)
 }
 
-func (b *Bot) postOrders(price, quantity []sdk.Uint, direction orderTypes.Direction) uint {
+func (b *Bot) postOrders(price, quantity []sdk.Uint, direction orders.Direction) uint {
 	count := uint(0)
 	for i := uint(0); i < uint(len(price)); i++ {
 		if b.postOrder(price[i], quantity[i], direction) {
@@ -49,7 +49,7 @@ func (b *Bot) postOrders(price, quantity []sdk.Uint, direction orderTypes.Direct
 	return count
 }
 
-func (b *Bot) postOrder(price, quantity sdk.Uint, direction orderTypes.Direction) (posted bool) {
+func (b *Bot) postOrder(price, quantity sdk.Uint, direction orders.Direction) (posted bool) {
 	txHash, err := b.api.PostOrder(price, quantity, direction)
 	require.NoError(b.cfg.T, err)
 

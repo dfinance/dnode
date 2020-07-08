@@ -17,27 +17,30 @@ import (
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies/types"
-	marketTypes "github.com/dfinance/dnode/x/markets"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/orders/client/rest"
 	"github.com/dfinance/dnode/x/vm"
 )
 
-func Test_CurrencyRest(t *testing.T) {
+func TestCurrency_REST(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
 
+	ccDenom := "btc"
+	ccDecimals := ct.Currencies[ccDenom].Decimals
 	recipientAddr := ct.Accounts["validator1"].Address
-	curAmount, curDecimals, denom, issueId := sdk.NewInt(100), int8(0), "btc", "issue1"
-	destroyAmounts := make([]sdk.Int, 0)
+	curAmount, issueId := sdk.NewInt(100), "issue1"
+	withdrawAmounts := make([]sdk.Int, 0)
 
 	// issue currency
-	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, denom, curAmount, curDecimals, issueId).CheckSucceeded()
+	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, issueId, ccDenom, curAmount).CheckSucceeded()
 	ct.ConfirmCall(issueId)
 
 	// check getIssue endpoint
@@ -45,130 +48,127 @@ func Test_CurrencyRest(t *testing.T) {
 		req, respMsg := ct.RestQueryCurrenciesIssue(issueId)
 		req.CheckSucceeded()
 
-		require.Equal(t, denom, respMsg.Symbol)
-		require.True(t, respMsg.Amount.Equal(curAmount))
-		require.Equal(t, recipientAddr, respMsg.Recipient.String())
+		require.Equal(t, ccDenom, respMsg.Coin.Denom)
+		require.True(t, curAmount.Equal(respMsg.Coin.Amount))
+		require.Equal(t, recipientAddr, respMsg.Payee.String())
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// non-existing issueID
 			{
 				req, _ := ct.RestQueryCurrenciesIssue("non_existing_ID")
-				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrWrongIssueID)
+				req.CheckFailed(http.StatusInternalServerError, currencies.ErrWrongIssueID)
 			}
 		}
 	}
 
 	// check getCurrency endpoint
 	{
-		req, respMsg := ct.RestQueryCurrenciesCurrency(denom)
+		req, respMsg := ct.RestQueryCurrenciesCurrency(ccDenom)
 		req.CheckSucceeded()
 
-		require.Equal(t, denom, respMsg.Symbol)
+		require.Equal(t, ccDenom, respMsg.Denom)
 		require.True(t, respMsg.Supply.Equal(curAmount))
-		require.Equal(t, curDecimals, respMsg.Decimals)
+		require.Equal(t, ccDecimals, respMsg.Decimals)
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// non-existing symbol
 			{
 				req, _ := ct.RestQueryCurrenciesCurrency("non_existing_symbol")
-				req.CheckFailed(http.StatusInternalServerError, ccTypes.ErrNotExistCurrency)
+				req.CheckFailed(http.StatusInternalServerError, currencies.ErrWrongDenom)
 			}
 		}
 	}
 
-	// check getDestroys endpoint (no destroys)
+	// check getWithdraws endpoint (no withdraws)
 	{
-		req, respMsg := ct.RestQueryCurrenciesDestroys(1, nil)
+		req, respMsg := ct.RestQueryCurrenciesWithdraws(nil, nil)
 		req.CheckSucceeded()
 
 		require.Len(t, *respMsg, 0)
 	}
 
-	// destroy currency
+	// withdraw currency
 	newAmount := sdk.NewInt(50)
 	curAmount = curAmount.Sub(newAmount)
-	ct.TxCurrenciesDestroy(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
-	destroyAmounts = append(destroyAmounts, newAmount)
+	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, ccDenom, newAmount).CheckSucceeded()
+	withdrawAmounts = append(withdrawAmounts, newAmount)
 
-	// check getDestroy endpoint
+	// check getWithdraw endpoint
 	{
-		req, respMsg := ct.RestQueryCurrenciesDestroy(sdk.NewInt(0))
+		req, respMsg := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(0))
 		req.CheckSucceeded()
 
-		require.Equal(t, int64(0), respMsg.ID.Int64())
-		require.Equal(t, ct.IDs.ChainID, respMsg.ChainID)
-		require.Equal(t, denom, respMsg.Symbol)
-		require.True(t, respMsg.Amount.Equal(newAmount))
+		require.Equal(t, ct.IDs.ChainID, respMsg.PegZoneChainID)
+		require.Equal(t, ccDenom, respMsg.Coin.Denom)
+		require.True(t, newAmount.Equal(respMsg.Coin.Amount))
 		require.Equal(t, recipientAddr, respMsg.Spender.String())
-		require.Equal(t, recipientAddr, respMsg.Recipient)
+		require.Equal(t, recipientAddr, respMsg.PegZoneSpender)
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
-			// invalid destroyID
+			// invalid withdrawID
 			{
-				req, _ := ct.RestQueryCurrenciesDestroy(sdk.NewInt(0))
+				req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(0))
 				req.ModifySubPath("0", "abc")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}
 
-			// non-existing destroyID
+			// non-existing withdrawID
 			{
-				req, respMsg := ct.RestQueryCurrenciesDestroy(sdk.NewInt(1))
-				req.CheckSucceeded()
-
-				require.Empty(t, respMsg.ChainID)
-				require.Empty(t, respMsg.Symbol)
-				require.True(t, respMsg.Amount.IsZero())
+				req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(1))
+				req.CheckFailed(http.StatusInternalServerError, currencies.ErrWrongWithdrawID)
 			}
 		}
 	}
 
-	// destroy currency once more
+	// withdraw currency once more
 	newAmount = sdk.NewInt(25)
 	curAmount = curAmount.Sub(newAmount)
-	ct.TxCurrenciesDestroy(recipientAddr, recipientAddr, denom, newAmount).CheckSucceeded()
-	destroyAmounts = append(destroyAmounts, newAmount)
+	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, ccDenom, newAmount).CheckSucceeded()
+	withdrawAmounts = append(withdrawAmounts, newAmount)
 
-	// check getDestroys endpoint
+	// check getWithdraws endpoint
 	{
-		req, respMsg := ct.RestQueryCurrenciesDestroys(1, nil)
+		page := 1
+		req, respMsg := ct.RestQueryCurrenciesWithdraws(&page, nil)
 		req.CheckSucceeded()
 
-		require.Len(t, *respMsg, len(destroyAmounts))
-		for i, amount := range destroyAmounts {
-			destroy := (*respMsg)[i]
-			require.Equal(t, int64(i), destroy.ID.Int64())
-			require.Equal(t, ct.IDs.ChainID, destroy.ChainID)
-			require.Equal(t, denom, destroy.Symbol)
-			require.True(t, destroy.Amount.Equal(amount))
-			require.Equal(t, recipientAddr, destroy.Spender.String())
-			require.Equal(t, recipientAddr, destroy.Recipient)
+		require.Len(t, *respMsg, len(withdrawAmounts))
+		for i, amount := range withdrawAmounts {
+			withdraw := (*respMsg)[i]
+			require.Equal(t, uint64(i), withdraw.ID.UInt64())
+			require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
+			require.Equal(t, ccDenom, withdraw.Coin.Denom)
+			require.True(t, amount.Equal(withdraw.Coin.Amount))
+			require.Equal(t, recipientAddr, withdraw.Spender.String())
+			require.Equal(t, recipientAddr, withdraw.PegZoneSpender)
 		}
 
-		// check incorrect inputs
+		// incorrect inputs
 		{
 			// invalid "page" value
 			{
-				req, _ := ct.RestQueryCurrenciesDestroys(1, nil)
-				req.ModifySubPath("1", "abc")
+				req, _ := ct.RestQueryCurrenciesWithdraws(&page, nil)
+				req.ModifyUrlValues("page", "abc")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}
 
 			// invalid "limit" value
 			{
 				limit := 1
-				req, _ := ct.RestQueryCurrenciesDestroys(1, &limit)
-				req.ModifyUrlValues("limit", "abc")
+				req, _ := ct.RestQueryCurrenciesWithdraws(&page, &limit)
+				req.ModifyUrlValues("limit", "-1")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}
 		}
 	}
 }
 
-func Test_MSRest(t *testing.T) {
+func TestMS_REST(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -203,7 +203,7 @@ func Test_MSRest(t *testing.T) {
 		for i, call := range *respMsg {
 			require.Len(t, call.Votes, 1)
 			require.Equal(t, senderAddr, call.Votes[0].String())
-			require.Equal(t, uint64(i), call.Call.MsgID)
+			require.EqualValues(t, i, call.Call.ID.UInt64())
 			require.Equal(t, senderAddr, call.Call.Creator.String())
 			require.Equal(t, msgIDs[i], call.Call.UniqueID)
 		}
@@ -211,12 +211,12 @@ func Test_MSRest(t *testing.T) {
 
 	// check getCall endpoint
 	{
-		req, respMsg := ct.RestQueryMultiSigCall(0)
+		req, respMsg := ct.RestQueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 		req.CheckSucceeded()
 
 		require.Len(t, respMsg.Votes, 1)
 		require.Equal(t, senderAddr, respMsg.Votes[0].String())
-		require.Equal(t, uint64(0), respMsg.Call.MsgID)
+		require.EqualValues(t, 0, respMsg.Call.ID.UInt64())
 		require.Equal(t, senderAddr, respMsg.Call.Creator.String())
 		require.Equal(t, msgIDs[0], respMsg.Call.UniqueID)
 
@@ -224,15 +224,15 @@ func Test_MSRest(t *testing.T) {
 		{
 			// invalid "id"
 			{
-				req, _ := ct.RestQueryMultiSigCall(0)
+				req, _ := ct.RestQueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 				req.ModifySubPath("0", "-1")
 				req.CheckFailed(http.StatusInternalServerError, nil)
 			}
 
 			// non-existing "id"
 			{
-				req, _ := ct.RestQueryMultiSigCall(2)
-				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrWrongCallId)
+				req, _ := ct.RestQueryMultiSigCall(dnTypes.NewIDFromUint64(2))
+				req.CheckFailed(http.StatusInternalServerError, multisig.ErrWrongCallId)
 			}
 		}
 	}
@@ -244,7 +244,7 @@ func Test_MSRest(t *testing.T) {
 
 		require.Len(t, respMsg.Votes, 1)
 		require.Equal(t, senderAddr, respMsg.Votes[0].String())
-		require.Equal(t, uint64(0), respMsg.Call.MsgID)
+		require.EqualValues(t, 0, respMsg.Call.ID.UInt64())
 		require.Equal(t, senderAddr, respMsg.Call.Creator.String())
 		require.Equal(t, msgIDs[0], respMsg.Call.UniqueID)
 
@@ -253,14 +253,15 @@ func Test_MSRest(t *testing.T) {
 			// non-existing "unique"
 			{
 				req, _ := ct.RestQueryMultiSigUnique("non-existing-UNIQUE")
-				req.CheckFailed(http.StatusInternalServerError, msTypes.ErrNotFoundUniqueID)
+				req.CheckFailed(http.StatusInternalServerError, multisig.ErrWrongCallUniqueId)
 			}
 		}
 	}
 }
 
-func Test_OracleRest(t *testing.T) {
+func TestOracle_REST(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -379,8 +380,9 @@ func Test_OracleRest(t *testing.T) {
 	}
 }
 
-func Test_POARest(t *testing.T) {
+func TestPOA_REST(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -409,8 +411,9 @@ func Test_POARest(t *testing.T) {
 	}
 }
 
-func Test_VMRest(t *testing.T) {
+func TestVM_REST(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -454,8 +457,9 @@ func Test_VMRest(t *testing.T) {
 	}
 }
 
-func Test_MarketsREST(t *testing.T) {
+func TestMarkets_REST(t *testing.T) {
 	t.Parallel()
+
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 	ct.StartRestServer(false)
@@ -475,13 +479,13 @@ func Test_MarketsREST(t *testing.T) {
 		// non-existing currency
 		{
 			r, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, "atom")
-			r.CheckFailed(http.StatusOK, marketTypes.ErrWrongAssetDenom)
+			r.CheckFailed(http.StatusOK, markets.ErrWrongAssetDenom)
 		}
 
 		// already existing market
 		{
 			r, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, cliTester.DenomDFI)
-			r.CheckFailed(http.StatusOK, marketTypes.ErrMarketExists)
+			r.CheckFailed(http.StatusOK, markets.ErrMarketExists)
 		}
 	}
 
@@ -490,7 +494,7 @@ func Test_MarketsREST(t *testing.T) {
 		// non-existing marketID
 		{
 			r, _ := ct.RestQueryMarket(dnTypes.NewIDFromUint64(10))
-			r.CheckFailed(http.StatusInternalServerError, marketTypes.ErrWrongID)
+			r.CheckFailed(http.StatusInternalServerError, markets.ErrWrongID)
 		}
 
 		// existing marketID (btc-dfi)
@@ -572,7 +576,9 @@ func Test_MarketsREST(t *testing.T) {
 	}
 }
 
-func Test_OrdersREST(t *testing.T) {
+func TestOrders_REST(t *testing.T) {
+	t.Parallel()
+
 	const (
 		DecimalsDFI = "1000000000000000000"
 		DecimalsETH = "1000000000000000000"
@@ -601,7 +607,6 @@ func Test_OrdersREST(t *testing.T) {
 		{Name: "client2", Balances: accountBalances},
 	}
 
-	t.Parallel()
 	ct := cliTester.New(
 		t,
 		false,
@@ -627,8 +632,8 @@ func Test_OrdersREST(t *testing.T) {
 	{
 		// invalid AssetCode
 		{
-			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.AssetCode("usd_dfi"), orderTypes.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
-			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongAssetCode)
+			r, _ := ct.RestTxOrdersPostOrder(ownerName1, dnTypes.AssetCode("invalid"), orders.AskDirection, sdk.OneUint(), sdk.OneUint(), 60)
+			r.CheckFailed(http.StatusOK, orders.ErrWrongAssetCode)
 		}
 	}
 
@@ -638,7 +643,7 @@ func Test_OrdersREST(t *testing.T) {
 		AssetCode    dnTypes.AssetCode
 		OwnerName    string
 		OwnerAddress string
-		Direction    orderTypes.Direction
+		Direction    orders.Direction
 		Price        sdk.Uint
 		Quantity     sdk.Uint
 		TtlInSec     uint64
@@ -648,7 +653,7 @@ func Test_OrdersREST(t *testing.T) {
 			AssetCode:    assetCode0,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.BidDirection,
+			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
 			Quantity:     sdk.NewUintFromString("100000000"),
 			TtlInSec:     60,
@@ -658,7 +663,7 @@ func Test_OrdersREST(t *testing.T) {
 			AssetCode:    assetCode0,
 			OwnerName:    ownerName2,
 			OwnerAddress: ownerAddr2,
-			Direction:    orderTypes.BidDirection,
+			Direction:    orders.BidDirection,
 			Price:        sdk.NewUintFromString("20000000000000000000"),
 			Quantity:     sdk.NewUintFromString("200000000"),
 			TtlInSec:     90,
@@ -668,7 +673,7 @@ func Test_OrdersREST(t *testing.T) {
 			AssetCode:    assetCode0,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("50000000000000000000"),
 			Quantity:     sdk.NewUintFromString("500000000"),
 			TtlInSec:     60,
@@ -678,7 +683,7 @@ func Test_OrdersREST(t *testing.T) {
 			AssetCode:    assetCode0,
 			OwnerName:    ownerName2,
 			OwnerAddress: ownerAddr2,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("60000000000000000000"),
 			Quantity:     sdk.NewUintFromString("600000000"),
 			TtlInSec:     90,
@@ -688,7 +693,7 @@ func Test_OrdersREST(t *testing.T) {
 			AssetCode:    assetCode1,
 			OwnerName:    ownerName1,
 			OwnerAddress: ownerAddr1,
-			Direction:    orderTypes.AskDirection,
+			Direction:    orders.AskDirection,
 			Price:        sdk.NewUintFromString("10000000000000000000"),
 			Quantity:     sdk.NewUintFromString("100000000"),
 			TtlInSec:     30,
@@ -774,21 +779,21 @@ func Test_OrdersREST(t *testing.T) {
 		{
 			askCount, bidCount := 0, 0
 			for _, input := range inputOrders {
-				if input.Direction.Equal(orderTypes.AskDirection) {
+				if input.Direction.Equal(orders.AskDirection) {
 					askCount++
 				}
-				if input.Direction.Equal(orderTypes.BidDirection) {
+				if input.Direction.Equal(orders.BidDirection) {
 					bidCount++
 				}
 			}
 
-			askDirection := orderTypes.AskDirection
+			askDirection := orders.AskDirection
 			qAsk, ordersAsk := ct.RestQueryOrders(-1, -1, nil, &askDirection, nil)
 			qAsk.CheckSucceeded()
 
 			require.Len(t, *ordersAsk, askCount)
 
-			bidDirection := orderTypes.BidDirection
+			bidDirection := orders.BidDirection
 			qBid, ordersBid := ct.RestQueryOrders(-1, -1, nil, &bidDirection, nil)
 			qBid.CheckSucceeded()
 
@@ -822,7 +827,7 @@ func Test_OrdersREST(t *testing.T) {
 		{
 			marketID := marketID0
 			owner := ownerAddr1
-			direction := orderTypes.AskDirection
+			direction := orders.AskDirection
 			count := 0
 			for _, input := range inputOrders {
 				if input.MarketID.Equal(marketID) && input.OwnerAddress == owner && input.Direction == direction {
@@ -846,7 +851,7 @@ func Test_OrdersREST(t *testing.T) {
 		r.CheckSucceeded()
 
 		q, _ := ct.RestQueryOrder(orderID)
-		q.CheckFailed(http.StatusInternalServerError, orderTypes.ErrWrongOrderID)
+		q.CheckFailed(http.StatusInternalServerError, orders.ErrWrongOrderID)
 		inputOrders = inputOrders[:len(inputOrders)-2]
 	}
 
@@ -855,13 +860,13 @@ func Test_OrdersREST(t *testing.T) {
 		// non-existing orderID
 		{
 			r, _ := ct.RestTxOrdersRevokeOrder(ownerName1, dnTypes.NewIDFromUint64(10))
-			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongOrderID)
+			r.CheckFailed(http.StatusOK, orders.ErrWrongOrderID)
 		}
 
 		// wrong owner (not an order owner)
 		{
 			r, _ := ct.RestTxOrdersRevokeOrder("validator1", dnTypes.NewIDFromUint64(0))
-			r.CheckFailed(http.StatusOK, orderTypes.ErrWrongOwner)
+			r.CheckFailed(http.StatusOK, orders.ErrWrongOwner)
 		}
 	}
 
@@ -880,7 +885,7 @@ func Test_OrdersREST(t *testing.T) {
 					},
 				},
 				AssetCode: dnTypes.AssetCode("btc_dfi"),
-				Direction: orderTypes.Direction("ask"),
+				Direction: orders.Direction("ask"),
 				Price:     "100",
 				Quantity:  "10",
 				TtlInSec:  "3",
@@ -890,7 +895,7 @@ func Test_OrdersREST(t *testing.T) {
 			q.CheckSucceeded()
 
 			require.Len(t, orderStructure.Msgs, 1)
-			msg := orderStructure.Msgs[0].(orderTypes.MsgPostOrder)
+			msg := orderStructure.Msgs[0].(orders.MsgPostOrder)
 
 			require.Equal(t, rq.AssetCode, msg.AssetCode)
 			require.Equal(t, rq.Direction, msg.Direction)
@@ -915,16 +920,16 @@ func Test_OrdersREST(t *testing.T) {
 						},
 					},
 				},
-				OrderId: orderID.String(),
+				OrderID: orderID.String(),
 			}
 
 			q, orderStructure := ct.RestQueryOrderRevoke(rq)
 			q.CheckSucceeded()
 
 			require.Len(t, orderStructure.Msgs, 1)
-			msg := orderStructure.Msgs[0].(orderTypes.MsgRevokeOrder)
+			msg := orderStructure.Msgs[0].(orders.MsgRevokeOrder)
 
-			require.Equal(t, rq.OrderId, msg.OrderID.String())
+			require.Equal(t, rq.OrderID, msg.OrderID.String())
 			require.Equal(t, rq.BaseReq.From, msg.Owner.String())
 		}
 	}

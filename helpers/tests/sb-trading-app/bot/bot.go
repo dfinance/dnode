@@ -7,10 +7,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
+	"github.com/dfinance/dnode/helpers/tests/clitester"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	crTypes "github.com/dfinance/dnode/x/currencies_register"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/ccstorage"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 type Bot struct {
@@ -20,7 +20,7 @@ type Bot struct {
 	baseBalance        sdk.Uint
 	quoteBalance       sdk.Uint
 	marketPrice        sdk.Uint
-	orders             map[string]orderTypes.Order
+	orders             map[string]orders.Order
 	lastPostedAskPrice sdk.Uint
 	lastPostedBidPrice sdk.Uint
 	api                Api
@@ -29,12 +29,12 @@ type Bot struct {
 
 type Config struct {
 	T                      *testing.T
-	Tester                 *cliTester.CLITester
+	Tester                 *clitester.CLITester
 	Name                   string
 	Address                string
 	Number                 uint64
-	BaseCurrency           crTypes.CurrencyInfo
-	QuoteCurrency          crTypes.CurrencyInfo
+	BaseCurrency           ccstorage.Currency
+	QuoteCurrency          ccstorage.Currency
 	MarketID               dnTypes.ID
 	MMakingMinPrice        sdk.Uint
 	MMakingMaxPrice        sdk.Uint
@@ -65,7 +65,7 @@ func New(logger log.Logger, cfg Config) *Bot {
 		baseBalance:        sdk.ZeroUint(),
 		quoteBalance:       sdk.ZeroUint(),
 		marketPrice:        sdk.ZeroUint(),
-		orders:             make(map[string]orderTypes.Order),
+		orders:             make(map[string]orders.Order),
 		lastPostedAskPrice: sdk.ZeroUint(),
 		lastPostedBidPrice: sdk.ZeroUint(),
 	}

@@ -7,11 +7,13 @@ import (
 	"path"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 
 	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/orders"
 )
 
@@ -68,37 +70,27 @@ func NewTestBinaryPathConfig() BinaryPathConfig {
 }
 
 type CurrencyInfo struct {
-	Decimals int8
-	Path     string
-	Supply   sdk.Int
+	Decimals       uint8
+	BalancePathHex string
+	BalancePath    []byte
+	InfoPathHex    string
+	InfoPath       []byte
 }
 
-func NewCurrencyMap() map[string]CurrencyInfo {
+func NewCurrencyMap(cdc *codec.Codec, state GenesisState) map[string]CurrencyInfo {
 	currencies := make(map[string]CurrencyInfo)
 
-	dfiSupply, _ := sdk.NewIntFromString("100000000000000000000000000")
-	ethSupply, _ := sdk.NewIntFromString("100000000000000000000000000")
-	btcSupply, _ := sdk.NewIntFromString("100000000000000")
-	usdtSupply, _ := sdk.NewIntFromString("10000000000000")
-	currencies[DenomDFI] = CurrencyInfo{
-		Decimals: 18,
-		Supply:   dfiSupply,
-		Path:     "01f3a1f15d7b13931f3bd5f957ad154b5cbaa0e1a2c3d4d967f286e8800eeb510d",
-	}
-	currencies[DenomETH] = CurrencyInfo{
-		Decimals: 18,
-		Supply:   ethSupply,
-		Path:     "012a00668b5325f832c28a24eb83dffa8295170c80345fbfbf99a5263f962c76f4",
-	}
-	currencies[DenomUSDT] = CurrencyInfo{
-		Decimals: 6,
-		Supply:   usdtSupply,
-		Path:     "01d058943a984bc02bc4a8547e7c0d780c59334e9aa415b90c87e70d140b2137b8",
-	}
-	currencies[DenomBTC] = CurrencyInfo{
-		Decimals: 8,
-		Supply:   btcSupply,
-		Path:     "019fdf92aeba5356ec5455b1246c2e1b71d5c7192c6e5a1b50444dafaedc1c40c9",
+	var ccsGenesis ccstorage.GenesisState
+	cdc.MustUnmarshalJSON(state[ccstorage.ModuleName], &ccsGenesis)
+
+	for denom, params := range ccsGenesis.CurrenciesParams {
+		currencies[denom] = CurrencyInfo{
+			Decimals:       params.Decimals,
+			BalancePathHex: params.BalancePathHex,
+			BalancePath:    params.BalancePath(),
+			InfoPathHex:    params.InfoPathHex,
+			InfoPath:       params.InfoPath(),
+		}
 	}
 
 	return currencies

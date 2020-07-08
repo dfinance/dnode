@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/require"
@@ -34,8 +35,8 @@ import (
 	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 	"github.com/dfinance/dnode/x/vmauth"
@@ -97,7 +98,7 @@ var (
 	bufferSize = 1024 * 1024
 )
 
-type vmServer struct {}
+type vmServer struct{}
 
 func (server vmServer) PublishModule(context.Context, *vm_grpc.VMPublishModule) (*vm_grpc.VMExecuteResponse, error) {
 	values := make([]*vm_grpc.VMValue, 1)
@@ -152,19 +153,19 @@ type testInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
 
-	ak vmauth.VMAccountKeeper
+	ak vmauth.Keeper
 	pk params.Keeper
 	vk Keeper
 	ok oracle.Keeper
-	cr currencies_register.Keeper
+	cs ccstorage.Keeper
 
-	keyMain      *sdk.KVStoreKey
-	keyAccount   *sdk.KVStoreKey
-	keyOracle    *sdk.KVStoreKey
-	keyCRegister *sdk.KVStoreKey
-	keyParams    *sdk.KVStoreKey
-	tkeyParams   *sdk.TransientStoreKey
-	keyVM        *sdk.KVStoreKey
+	keyMain    *sdk.KVStoreKey
+	keyAccount *sdk.KVStoreKey
+	keyOracle  *sdk.KVStoreKey
+	keyCCS     *sdk.KVStoreKey
+	keyParams  *sdk.KVStoreKey
+	tkeyParams *sdk.TransientStoreKey
+	keyVM      *sdk.KVStoreKey
 
 	pathBytes    []byte
 	codeBytes    []byte
@@ -199,14 +200,12 @@ func (i *testInput) Stop() {
 func newTestInput(launchMock bool) testInput {
 	input := testInput{
 		cdc:        codec.New(),
-		keyMain:    sdk.NewKVStoreKey("main"),
-		keyAccount: sdk.NewKVStoreKey("acc"),
-		//keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
-		keyOracle:    sdk.NewKVStoreKey("oracle"),
-		keyParams:    sdk.NewKVStoreKey("params"),
-		keyCRegister: sdk.NewKVStoreKey("coins_register"),
-		tkeyParams:   sdk.NewTransientStoreKey("transient_params"),
-		keyVM:        sdk.NewKVStoreKey("vm"),
+		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
+		keyAccount: sdk.NewKVStoreKey(authTypes.StoreKey),
+		keyOracle:  sdk.NewKVStoreKey(oracle.StoreKey),
+		keyCCS:     sdk.NewKVStoreKey(ccstorage.StoreKey),
+		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
+		keyVM:      sdk.NewKVStoreKey(types.StoreKey),
 	}
 
 	types.RegisterCodec(input.cdc)
@@ -218,11 +217,10 @@ func newTestInput(launchMock bool) testInput {
 
 	db := dbm.NewMemDB()
 	mstore := store.NewCommitMultiStore(db)
-	mstore.MountStoreWithDB(input.keyMain, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyOracle, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyCRegister, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyCCS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
 	mstore.MountStoreWithDB(input.keyVM, sdk.StoreTypeIAVL, db)
 	err := mstore.LoadLatestVersion()
@@ -270,6 +268,7 @@ func newTestInput(launchMock bool) testInput {
 		}
 	}
 
+	// create logger with VM module enabled logs
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	logger, err = tmflags.ParseLogLevel("x/vm:info,x/vm/dsserver:info", logger, cfg.DefaultLogLevel())
 	if err != nil {
@@ -277,16 +276,15 @@ func newTestInput(launchMock bool) testInput {
 	}
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, logger)
 
-	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
-	input.cr = currencies_register.NewKeeper(input.cdc, input.keyCRegister, input.vk)
+	// create keepers
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
-	input.ak = vmauth.NewVMAccountKeeper(input.cdc, input.keyAccount, input.pk.Subspace(auth.DefaultParamspace), input.vk, auth.ProtoBaseAccount)
+	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
+	input.cs = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.pk.Subspace(ccstorage.DefaultParamspace), input.vk)
+	input.ak = vmauth.NewKeeper(input.cdc, input.keyAccount, input.pk.Subspace(auth.DefaultParamspace), input.cs, auth.ProtoBaseAccount)
 	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
 
-	err = input.cr.InitGenesis(input.ctx, []byte(CoinsInfo))
-	if err != nil {
-		panic(err)
-	}
+	// init genesis
+	input.cs.InitDefaultGenesis(input.ctx)
 
 	input.addressBytes, err = hex.DecodeString(accountHex)
 	if err != nil {

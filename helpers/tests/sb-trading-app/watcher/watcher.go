@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
 
-	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
+	"github.com/dfinance/dnode/helpers/tests/clitester"
 	"github.com/dfinance/dnode/helpers/tests/sb-trading-app/bot"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/currencies_register"
+	"github.com/dfinance/dnode/x/ccstorage"
 )
 
 type Watcher struct {
@@ -27,7 +27,7 @@ type Watcher struct {
 
 type Config struct {
 	T             *testing.T
-	Tester        *cliTester.CLITester
+	Tester        *clitester.CLITester
 	MinBots       uint
 	MaxBots       uint
 	WorkDurtInSec int
@@ -50,8 +50,8 @@ type Market struct {
 type MarketState struct {
 	Market
 	id            dnTypes.ID
-	baseCurrency  currencies_register.CurrencyInfo
-	quoteCurrency currencies_register.CurrencyInfo
+	baseCurrency  ccstorage.Currency
+	quoteCurrency ccstorage.Currency
 	bots          []*bot.Bot
 }
 
@@ -80,11 +80,11 @@ func New(logger log.Logger, cfg Config) *Watcher {
 		require.Len(w.cfg.T, *markets, 1, "market not created")
 		marketState.id = (*markets)[0].ID
 
-		q, baseInfo := w.cfg.Tester.QueryCurrencyInfo(marketState.BaseDenom)
+		q, baseInfo := w.cfg.Tester.QueryCurrenciesCurrency(marketState.BaseDenom)
 		q.CheckSucceeded()
 		marketState.baseCurrency = *baseInfo
 
-		q, quoteInfo := w.cfg.Tester.QueryCurrencyInfo(marketState.QuoteDenom)
+		q, quoteInfo := w.cfg.Tester.QueryCurrenciesCurrency(marketState.QuoteDenom)
 		q.CheckSucceeded()
 		marketState.quoteCurrency = *quoteInfo
 

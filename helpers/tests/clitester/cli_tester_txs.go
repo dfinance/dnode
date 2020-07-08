@@ -10,34 +10,31 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
-func (ct *CLITester) TxCurrenciesIssue(recipientAddr, fromAddr, symbol string, amount sdk.Int, decimals int8, issueID string) *TxRequest {
+func (ct *CLITester) TxCurrenciesIssue(payeeAddr, fromAddr, issueID, denom string, amount sdk.Int) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"currencies",
 		fromAddr,
-		"ms-issue-currency",
-		symbol,
-		amount.String(),
-		strconv.Itoa(int(decimals)),
-		recipientAddr,
-		issueID)
+		"ms-issue",
+		issueID,
+		sdk.NewCoin(denom, amount).String(),
+		payeeAddr)
 
 	return r
 }
 
-func (ct *CLITester) TxCurrenciesDestroy(recipientAddr, fromAddr, symbol string, amount sdk.Int) *TxRequest {
+func (ct *CLITester) TxCurrenciesWithdraw(recipientAddr, fromAddr, denom string, amount sdk.Int) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"currencies",
 		fromAddr,
-		"destroy-currency",
-		ct.IDs.ChainID,
-		symbol,
-		amount.String(),
-		recipientAddr)
+		"withdraw",
+		sdk.NewCoin(denom, amount).String(),
+		recipientAddr,
+		ct.IDs.ChainID)
 
 	return r
 }
@@ -55,41 +52,44 @@ func (ct *CLITester) TxOracleAddAsset(nomineeAddress, assetCode string, oracleAd
 	return r
 }
 
-func (ct *CLITester) TxPoaAddValidator(fromAddr, address, ethAddress, issueId string) *TxRequest {
+func (ct *CLITester) TxPoaAddValidator(fromAddr, address, ethAddress, issueID string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"poa",
 		fromAddr,
 		"ms-add-validator",
+		issueID,
 		address,
 		ethAddress,
-		issueId)
+	)
 
 	return r
 }
 
-func (ct *CLITester) TxPoaRemoveValidator(fromAddr, address, issueId string) *TxRequest {
+func (ct *CLITester) TxPoaRemoveValidator(fromAddr, address, issueID string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"poa",
 		fromAddr,
 		"ms-remove-validator",
+		issueID,
 		address,
-		issueId)
+	)
 
 	return r
 }
 
-func (ct *CLITester) TxPoaReplaceValidator(fromAddr, targetAddress, address, ethAddress, issueId string) *TxRequest {
+func (ct *CLITester) TxPoaReplaceValidator(fromAddr, targetAddress, address, ethAddress, issueID string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"poa",
 		fromAddr,
 		"ms-replace-validator",
+		issueID,
 		targetAddress,
 		address,
 		ethAddress,
-		issueId)
+	)
 
 	return r
 }
@@ -142,29 +142,32 @@ func (ct *CLITester) TxOraclePostPrice(nomineeAddress, assetCode string, price s
 		nomineeAddress,
 		assetCode,
 		price.String(),
-		strconv.FormatInt(receivedAt.Unix(), 10))
+		strconv.FormatInt(receivedAt.Unix(), 10),
+	)
 
 	return r
 }
 
-func (ct *CLITester) TxMultiSigConfirmCall(fromAddress string, callID uint64) *TxRequest {
+func (ct *CLITester) TxMultiSigConfirmCall(fromAddress string, callID dnTypes.ID) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"multisig",
 		fromAddress,
 		"confirm-call",
-		strconv.FormatUint(callID, 10))
+		callID.String(),
+	)
 
 	return r
 }
 
-func (ct *CLITester) TxMultiSigRevokeConfirm(fromAddress string, callID uint64) *TxRequest {
+func (ct *CLITester) TxMultiSigRevokeConfirm(fromAddress string, callID dnTypes.ID) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"multisig",
 		fromAddress,
 		"revoke-confirm",
-		strconv.FormatUint(callID, 10))
+		callID.String(),
+	)
 
 	return r
 }
@@ -185,7 +188,7 @@ func (ct *CLITester) TxVmExecuteScript(fromAddress, filePath string, args ...str
 	return r
 }
 
-func (ct *CLITester) TxOrdersPost(ownerAddress string, assetCode dnTypes.AssetCode, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec int) *TxRequest {
+func (ct *CLITester) TxOrdersPost(ownerAddress string, assetCode dnTypes.AssetCode, direction orders.Direction, price, quantity sdk.Uint, ttlInSec int) *TxRequest {
 	cmdArgs := []string{
 		"post",
 		assetCode.String(),
@@ -269,19 +272,19 @@ func (ct *CLITester) TxVmStdlibUpdateProposal(fromAddress, filePath, sourceUrl, 
 	return r
 }
 
-func (ct *CLITester) TxCRAddCurrencyProposal(fromAddress, denom, path string, decimals uint8, totalSupply sdk.Int, deposit sdk.Coin) *TxRequest {
+func (ct *CLITester) TxCCAddCurrencyProposal(fromAddress, denom, balancePath, infoPath string, decimals uint8, deposit sdk.Coin) *TxRequest {
 	cmdArgs := []string{
 		"add-currency-proposal",
 		denom,
 		strconv.FormatUint(uint64(decimals), 10),
-		totalSupply.String(),
-		path,
+		balancePath,
+		infoPath,
 		fmt.Sprintf("--deposit=%s", deposit.String()),
 	}
 
 	r := ct.newTxRequest()
 	r.SetCmd(
-		"currencies_register",
+		"currencies",
 		fromAddress,
 		cmdArgs...)
 

@@ -8,62 +8,33 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/markets/internal/types"
+	"github.com/dfinance/dnode/x/vm"
 )
-
-// Mock VM storage implementation.
-type VMStorage struct {
-	storeKey sdk.StoreKey
-}
-
-func NewVMStorage(storeKey sdk.StoreKey) VMStorage {
-	return VMStorage{
-		storeKey: storeKey,
-	}
-}
-
-func (storage VMStorage) GetOracleAccessPath(_ string) *vm_grpc.VMAccessPath {
-	return &vm_grpc.VMAccessPath{}
-}
-
-func (storage VMStorage) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
-	store := ctx.KVStore(storage.storeKey)
-	store.Set(common_vm.MakePathKey(accessPath), value)
-}
-
-func (storage VMStorage) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
-	store := ctx.KVStore(storage.storeKey)
-	return store.Get(common_vm.MakePathKey(accessPath))
-}
-
-func (storage VMStorage) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
-	store := ctx.KVStore(storage.storeKey)
-	store.Delete(common_vm.MakePathKey(accessPath))
-}
-
-func (storage VMStorage) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
-	store := ctx.KVStore(storage.storeKey)
-	return store.Has(common_vm.MakePathKey(accessPath))
-}
 
 // Module keeper tests input.
 type TestInput struct {
 	cdc *codec.Codec
 	ctx sdk.Context
 	//
-	keyParams    *sdk.KVStoreKey
-	keyCR        *sdk.KVStoreKey
-	keyVMStorage *sdk.KVStoreKey
-	tKeyParams   *sdk.TransientStoreKey
+	keyParams  *sdk.KVStoreKey
+	keyAccount *sdk.KVStoreKey
+	keySupply  *sdk.KVStoreKey
+	keyCCS     *sdk.KVStoreKey
+	keyVMS     *sdk.KVStoreKey
+	tKeyParams *sdk.TransientStoreKey
 	//
 	baseBtcDenom    string
 	baseBtcDecimals uint8
@@ -72,19 +43,25 @@ type TestInput struct {
 	quoteDenom      string
 	quoteDecimals   uint8
 	//
-	vmStorage    common_vm.VMStorage
-	paramsKeeper params.Keeper
-	crKeeper     currencies_register.Keeper
-	keeper       Keeper
+	accountKeeper auth.AccountKeeper
+	bankKeeper    bank.Keeper
+	supplyKeeper  supply.Keeper
+	ccsStorage    ccstorage.Keeper
+	paramsKeeper  params.Keeper
+	keeper        Keeper
+	//
+	vmStorage common_vm.VMStorage
 }
 
 func NewTestInput(t *testing.T) TestInput {
 	input := TestInput{
-		cdc:          codec.New(),
-		keyParams:    sdk.NewKVStoreKey("key_params"),
-		keyCR:        sdk.NewKVStoreKey("key_cr"),
-		keyVMStorage: sdk.NewKVStoreKey("key_vm_storage"),
-		tKeyParams:   sdk.NewTransientStoreKey("tkey_params"),
+		cdc:        codec.New(),
+		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
+		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
+		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
+		keyCCS:     sdk.NewKVStoreKey(ccstorage.StoreKey),
+		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
+		tKeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 		//
 		baseBtcDenom:    "btc",
 		baseBtcDecimals: 8,
@@ -101,61 +78,28 @@ func NewTestInput(t *testing.T) TestInput {
 	// init in-memory DB
 	db := dbm.NewMemDB()
 	mstore := store.NewCommitMultiStore(db)
+	mstore.MountStoreWithDB(input.keyVMS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyCR, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyVMStorage, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyCCS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tKeyParams, sdk.StoreTypeTransient, db)
 	require.NoError(t, mstore.LoadLatestVersion(), "in-memory DB init")
 
 	// create target and dependant keepers
-	input.vmStorage = NewVMStorage(input.keyVMStorage)
+	input.vmStorage = tests.NewVMStorage(input.keyVMS)
 	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tKeyParams)
-	input.crKeeper = currencies_register.NewKeeper(input.cdc, input.keyCR, input.vmStorage)
-	input.keeper = NewKeeper(input.cdc, input.paramsKeeper.Subspace(types.DefaultParamspace), input.crKeeper)
+	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
+	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
+	input.ccsStorage = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccstorage.DefaultParamspace), input.vmStorage)
+	input.keeper = NewKeeper(input.cdc, input.paramsKeeper.Subspace(types.DefaultParamspace), input.ccsStorage)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
 
-	// init params
+	// init genesis / params
+	input.ccsStorage.InitDefaultGenesis(input.ctx)
 	input.keeper.SetParams(input.ctx, types.DefaultParams())
-
-	// init currencies
-	baseSupply, ok := sdk.NewIntFromString("100000000000000")
-	require.True(t, ok)
-	quoteSupply, ok := sdk.NewIntFromString("100000000000000000000000000")
-	require.True(t, ok)
-
-	ownerAddr := make([]byte, common_vm.VMAddressLength)
-
-	err := input.crKeeper.AddCurrencyInfo(
-		input.ctx,
-		input.baseBtcDenom,
-		input.baseBtcDecimals,
-		false,
-		ownerAddr,
-		baseSupply,
-		[]byte("01fe7c965b1c008c5974c7750959fa10189e803225d5057207563553922a09f906"))
-	require.NoError(t, err)
-
-	err = input.crKeeper.AddCurrencyInfo(
-		input.ctx,
-		input.baseEthDenom,
-		input.baseEthDecimals,
-		false,
-		ownerAddr,
-		baseSupply,
-		[]byte("01f8799f504905a182aff8d5fc102da1d73b8bec199147bb5512af6e99006baeb6"))
-	require.NoError(t, err)
-
-	err = input.crKeeper.AddCurrencyInfo(
-		input.ctx,
-		input.quoteDenom,
-		input.quoteDecimals,
-		false,
-		ownerAddr,
-		quoteSupply,
-		[]byte("018bfc024222e94fbed60ff0c9c1cf48c5b2809d83c82f513b2c385e21ba8a2d35"))
-	require.NoError(t, err)
 
 	return input
 }

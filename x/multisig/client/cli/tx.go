@@ -1,78 +1,85 @@
-// Implements TX queries for modules.
 package cli
 
 import (
-	"bufio"
-	"fmt"
 	"os"
-	"strconv"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 
-	msMsg "github.com/dfinance/dnode/x/multisig/msgs"
+	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/multisig/internal/types"
 )
 
-// Post confirmation for multisig call via CLI.
+// PostConfirmCall returns tx command which confirms an existing call.
 func PostConfirmCall(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "confirm-call [callId]",
-		Short: "confirm call by multisig",
+	cmd := &cobra.Command{
+		Use:   "confirm-call [callID]",
+		Short: "Confirm call by multi signature",
+		Example: "confirm-call 100",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
-			}
-
-			callId, err := strconv.ParseUint(args[0], 10, 8)
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
 			if err != nil {
-				return fmt.Errorf("%s argument %q: parsing uint: %w", "callId", args[0], err)
+				return err
 			}
 
-			msg := msMsg.NewMsgConfirmCall(callId, cliCtx.GetFromAddress())
+			callID, err := helpers.ParseDnIDParam("callID", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			// prepare and send message
+			msg := types.NewMsgConfirmCall(callID, fromAddr)
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"callID [uint]",
+	})
+
+	return cmd
 }
 
-// Post revoke confirmation for multisig call via CLI.
+// PostRevokeConfirm returns tx command which revokes an existing call's vote.
 func PostRevokeConfirm(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "revoke-confirm [callId]",
-		Short: "revoke confirmation from call by id",
+	cmd := &cobra.Command{
+		Use:   "revoke-confirm [callID]",
+		Short: "Revoke confirmation for call by ID",
+		Example: "revoke-confirm 100",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("fromAddress: %w", err)
-			}
-
-			callId, err := strconv.ParseUint(args[0], 10, 8)
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
 			if err != nil {
-				return fmt.Errorf("%s argument %q: parsing uint: %w", "callId", args[0], err)
+				return err
 			}
 
-			msg := msMsg.NewMsgRevokeConfirm(callId, cliCtx.GetFromAddress())
+			callID, err := helpers.ParseDnIDParam("callID", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			// prepare and send message
+			msg := types.NewMsgRevokeConfirm(callID, fromAddr)
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"callID [uint]",
+	})
+
+	return cmd
 }

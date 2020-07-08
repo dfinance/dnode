@@ -1,3 +1,6 @@
+// Currencies module issues and withdraws currencies.
+// Module is integrated with currencies storage module for CurrencyInfo and Balance resources.
+// Issue is a multisig operation.
 package currencies
 
 import (
@@ -11,107 +14,110 @@ import (
 	codec "github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/currencies/client"
 	"github.com/dfinance/dnode/x/currencies/client/rest"
-	types "github.com/dfinance/dnode/x/currencies/types"
+	"github.com/dfinance/dnode/x/currencies/internal/keeper"
 )
 
 var (
-	_ core.AppMsModule      = AppModule{}
+	_ msmodule.AppMsModule  = AppModule{}
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
+// AppModuleBasic app module basics object.
 type AppModuleBasic struct{}
 
-// Module name.
+// Name gets module name.
 func (AppModuleBasic) Name() string {
-	return types.ModuleName
+	return ModuleName
 }
 
-// Registering codecs.
-func (module AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
+// RegisterCodec registers module codec.
+func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 	RegisterCodec(cdc)
 }
 
-// Validate exists genesis.
-func (AppModuleBasic) ValidateGenesis(json.RawMessage) error {
-	return nil
-}
+// DefaultGenesis gets default module genesis state.
+func (AppModuleBasic) DefaultGenesis() json.RawMessage { return nil }
 
-// Generate default genesis.
-func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return nil
-}
+// ValidateGenesis validates module genesis state.
+func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error { return nil }
 
-// Register REST routes.
+// RegisterRESTRoutes registers module REST routes.
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
 	rest.RegisterRoutes(ctx, r)
 }
 
-// Get transaction commands for CLI.
+// GetTxCmd returns module root tx command.
 func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return client.GetTxCmd(cdc)
 }
 
-// Get query commands for CLI.
+// GetQueryCmd returns module root query command.
 func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 	return client.GetQueryCmd(cdc)
 }
 
-// PoA module.
+// AppModule is a app module type.
 type AppModule struct {
 	AppModuleBasic
-	ccKeeper Keeper
+	ccKeeper keeper.Keeper
 }
 
-// Create new PoA module.
-func NewAppMsModule(ccKeeper Keeper) core.AppMsModule {
+// NewAppMsModule creates new AppMsModule object.
+func NewAppMsModule(ccKeeper keeper.Keeper) msmodule.AppMsModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		ccKeeper:       ccKeeper,
 	}
 }
 
-// Get name of module.
+// Name gets module name.
 func (AppModule) Name() string {
-	return types.ModuleName
+	return ModuleName
 }
 
-// Register module invariants.
-func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+// RegisterInvariants registers module invariants.
+func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Base route of module (for handler).
-func (AppModule) Route() string { return types.Router }
+// Route returns module messages route.
+func (app AppModule) Route() string {
+	return RouterKey
+}
 
-// Create new handler.
-func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.ccKeeper) }
+// NewHandler returns module messages handler.
+func (app AppModule) NewHandler() sdk.Handler {
+	return NewHandler(app.ccKeeper)
+}
 
-// Create new multisignature handler.
-func (app AppModule) NewMsHandler() core.MsHandler { return NewMsHandler(app.ccKeeper) }
+// NewMsHandler returns module multisig messages handler.
+func (app AppModule) NewMsHandler() msmodule.MsHandler {
+	return NewMsHandler(app.ccKeeper)
+}
 
-// Get route for querier.
-func (AppModule) QuerierRoute() string { return types.RouterKey }
+// QuerierRoute returns module querier route.
+func (app AppModule) QuerierRoute() string {
+	return RouterKey
+}
 
-// Get new querier for PoA module.
+// NewQuerierHandler creates module querier.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(app.ccKeeper)
+	return keeper.NewQuerier(app.ccKeeper)
 }
 
-// Process begin block (abci).
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
-
-// Process end block (abci).
-func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return []abci.ValidatorUpdate{}
-}
-
-// Initialize genesis.
+// InitGenesis inits module-genesis state.
 func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }
 
-// Export genesis.
-func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return nil
+// ExportGenesis exports module genesis state.
+func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage { return nil }
+
+// BeginBlock performs module actions at a block start.
+func (app AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+
+// EndBlock performs module actions at a block end.
+func (app AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+	return []abci.ValidatorUpdate{}
 }

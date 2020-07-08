@@ -1,20 +1,19 @@
-// Returns queries and txs for multisig CLI.
 package client
 
 import (
 	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 
 	"github.com/dfinance/dnode/x/multisig/client/cli"
-	"github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/multisig/internal/types"
 )
 
-// Returns get commands for this module.
+// GetQueryCmd returns module query commands.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
 		Use:   types.ModuleName,
-		Short: "Multisig commands for the validators module",
+		Short: "Querying commands for the multisig module",
 	}
 
 	queryCmd.AddCommand(sdkClient.GetCommands(
@@ -27,7 +26,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	return queryCmd
 }
 
-// GetTxCmd returns the transaction commands for this module.
+// GetTxCmd returns module tx commands.
 func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:   types.ModuleName,

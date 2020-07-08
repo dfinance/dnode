@@ -126,8 +126,8 @@ func Test_Order_List(t *testing.T) {
 		// check limit
 		{
 			params := types.OrdersReq{
-				Page:  1,
-				Limit: 1,
+				Page:  sdk.NewUint(1),
+				Limit: sdk.NewUint(1),
 			}
 
 			outOrders, err := input.keeper.GetListFiltered(input.ctx, params)
@@ -138,7 +138,8 @@ func Test_Order_List(t *testing.T) {
 		// owner filter
 		{
 			params := types.OrdersReq{
-				Page:  1,
+				Page:  sdk.NewUint(1),
+				Limit: sdk.NewUint(100),
 				Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07i"),
 			}
 
@@ -152,7 +153,8 @@ func Test_Order_List(t *testing.T) {
 		// direction filter
 		{
 			params := types.OrdersReq{
-				Page:  1,
+				Page:  sdk.NewUint(1),
+				Limit: sdk.NewUint(100),
 				Direction: types.Bid,
 			}
 
@@ -166,7 +168,8 @@ func Test_Order_List(t *testing.T) {
 		// marketID filter
 		{
 			params := types.OrdersReq{
-				Page:  1,
+				Page:  sdk.NewUint(1),
+				Limit: sdk.NewUint(100),
 				MarketID: "0",
 			}
 
@@ -180,7 +183,8 @@ func Test_Order_List(t *testing.T) {
 		// check no match
 		{
 			params := types.OrdersReq{
-				Page:  1,
+				Page:  sdk.NewUint(1),
+				Limit: sdk.NewUint(100),
 				MarketID: "2",
 			}
 

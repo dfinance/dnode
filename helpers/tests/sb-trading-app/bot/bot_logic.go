@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 func (b *Bot) Start(wg *sync.WaitGroup, stopCh chan bool) {
@@ -64,11 +64,11 @@ func (b *Bot) onMarketPriceChangeMarketMaking() {
 }
 
 func (b *Bot) newBalanceBasedOrder() (posted bool, retDirection string){
-	var direction orderTypes.Direction
+	var direction orders.Direction
 
 	defer func() {
 		if posted {
-			if direction == orderTypes.AskDirection {
+			if direction == orders.AskDirection {
 				retDirection = "Sell"
 			} else {
 				retDirection = "Buy"
@@ -82,7 +82,7 @@ func (b *Bot) newBalanceBasedOrder() (posted bool, retDirection string){
 	b.RLock()
 	marketPrice = b.marketPrice
 	for _, o := range b.orders {
-		if o.Direction == orderTypes.BidDirection {
+		if o.Direction == orders.BidDirection {
 			curBuyOrders++
 		} else {
 			curSellOrders++
@@ -95,21 +95,21 @@ func (b *Bot) newBalanceBasedOrder() (posted bool, retDirection string){
 	}
 
 	if curBuyOrders > curSellOrders {
-		direction = orderTypes.AskDirection
+		direction = orders.AskDirection
 	} else if curSellOrders > curBuyOrders {
-		direction = orderTypes.BidDirection
+		direction = orders.BidDirection
 	} else {
 		if coinDrop := rand.Uint32() % 2; coinDrop == 0 {
-			direction = orderTypes.AskDirection
+			direction = orders.AskDirection
 		} else {
-			direction = orderTypes.BidDirection
+			direction = orders.BidDirection
 		}
 	}
 
 	baseBalance, quoteBalance := b.updateBalances()
 
 	switch direction {
-	case orderTypes.BidDirection:
+	case orders.BidDirection:
 		if quoteBalance.IsZero() {
 			return
 		}
@@ -123,7 +123,7 @@ func (b *Bot) newBalanceBasedOrder() (posted bool, retDirection string){
 		quantity := quoteBalance.Quo(dampedPrice)
 
 		posted = b.postBuyOrder(dampedPrice, quantity)
-	case orderTypes.AskDirection:
+	case orders.AskDirection:
 		if baseBalance.IsZero() {
 			return
 		}
@@ -213,7 +213,7 @@ func (b *Bot) generateSellOrders(balance, minPrice, maxPrice, minVolume sdk.Uint
 		}
 	}
 
-	return b.postOrders(ordersPrice, ordersQuantity, orderTypes.AskDirection)
+	return b.postOrders(ordersPrice, ordersQuantity, orders.AskDirection)
 }
 
 func (b *Bot) generateBuyOrders(balance, minPrice, maxPrice, minVolume sdk.Uint, maxOrders uint64) uint {
@@ -246,5 +246,5 @@ func (b *Bot) generateBuyOrders(balance, minPrice, maxPrice, minVolume sdk.Uint,
 		}
 	}
 
-	return b.postOrders(ordersPrice, ordersQuantity, orderTypes.BidDirection)
+	return b.postOrders(ordersPrice, ordersQuantity, orders.BidDirection)
 }

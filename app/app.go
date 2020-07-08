@@ -32,9 +32,10 @@ import (
 
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/core"
+	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/currencies"
-	"github.com/dfinance/dnode/x/currencies_register"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
@@ -42,7 +43,6 @@ import (
 	"github.com/dfinance/dnode/x/orderbook"
 	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/poa"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vmauth"
 )
@@ -71,8 +71,8 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		poa.AppModuleBasic{},
+		ccstorage.AppModuleBasic{},
 		currencies.AppModuleBasic{},
-		currencies_register.AppModuleBasic{},
 		multisig.AppModuleBasic{},
 		oracle.AppModuleBasic{},
 		gov.AppModuleBasic{},
@@ -97,13 +97,13 @@ type DnServiceApp struct {
 	*BaseApp
 
 	cdc       *codec.Codec
-	msRouter  core.Router
+	msRouter  msmodule.MsRouter
 	govRouter govTypes.Router
 
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 
-	accountKeeper   vmauth.VMAccountKeeper
+	accountKeeper   vmauth.Keeper
 	bankKeeper      bank.Keeper
 	supplyKeeper    supply.Keeper
 	paramsKeeper    params.Keeper
@@ -111,9 +111,9 @@ type DnServiceApp struct {
 	distrKeeper     distribution.Keeper
 	slashingKeeper  slashing.Keeper
 	poaKeeper       poa.Keeper
+	ccsKeeper       ccstorage.Keeper
 	ccKeeper        currencies.Keeper
 	msKeeper        multisig.Keeper
-	crKeeper        currencies_register.Keeper
 	vmKeeper        vm.Keeper
 	oracleKeeper    oracle.Keeper
 	govKeeper       gov.Keeper
@@ -121,7 +121,7 @@ type DnServiceApp struct {
 	orderKeeper     orders.Keeper
 	orderBookKeeper orderbook.Keeper
 
-	mm *core.MsManager
+	mm *msmodule.MsManager
 
 	// vm connection
 	vmConn     *grpc.ClientConn
@@ -184,8 +184,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		distribution.StoreKey,
 		slashing.StoreKey,
 		poa.StoreKey,
+		ccstorage.StoreKey,
 		currencies.StoreKey,
-		currencies_register.StoreKey,
 		multisig.StoreKey,
 		vm.StoreKey,
 		oracle.StoreKey,
@@ -214,6 +214,13 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// 1 dfi == 1000000000000000000
 	sdk.PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
+	// The ParamsKeeper handles parameter storage for the application.
+	app.paramsKeeper = params.NewKeeper(
+		app.cdc,
+		keys[params.StoreKey],
+		tkeys[params.TStoreKey],
+	)
+
 	// Initializing vm keeper.
 	var err error
 	app.vmKeeper = vm.NewKeeper(
@@ -224,19 +231,20 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		config,
 	)
 
-	// The ParamsKeeper handles parameter storage for the application.
-	app.paramsKeeper = params.NewKeeper(
-		app.cdc,
-		keys[params.StoreKey],
-		tkeys[params.TStoreKey],
+	// Initializing currencies storage keeper.
+	app.ccsKeeper = ccstorage.NewKeeper(
+		cdc,
+		keys[ccstorage.StoreKey],
+		app.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
+		app.vmKeeper,
 	)
 
 	// The AccountKeeper handles address -> account lookups.
-	app.accountKeeper = vmauth.NewVMAccountKeeper(
+	app.accountKeeper = vmauth.NewKeeper(
 		cdc,
 		keys[auth.StoreKey],
 		app.paramsKeeper.Subspace(auth.DefaultParamspace),
-		app.vmKeeper,
+		app.ccsKeeper,
 		auth.ProtoBaseAccount,
 	)
 
@@ -248,7 +256,13 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	// The SupplyKeeper collects transaction fees and renders them to the fee distribution module.
-	app.supplyKeeper = supply.NewKeeper(cdc, keys[supply.StoreKey], app.accountKeeper, app.bankKeeper, maccPerms)
+	app.supplyKeeper = supply.NewKeeper(
+		cdc,
+		keys[supply.StoreKey],
+		app.accountKeeper,
+		app.bankKeeper,
+		maccPerms,
+	)
 
 	// Initializing staking keeper.
 	stakingKeeper := staking.NewKeeper(
@@ -260,16 +274,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	// Initialize currency keeper.
 	app.ccKeeper = currencies.NewKeeper(
-		app.bankKeeper,
-		keys[currencies.StoreKey],
 		cdc,
-	)
-
-	// Initialize currency_register keeper.
-	app.crKeeper = currencies_register.NewKeeper(
-		app.cdc,
-		keys[currencies_register.StoreKey],
-		app.vmKeeper,
+		keys[currencies.StoreKey],
+		app.bankKeeper,
+		app.supplyKeeper,
+		app.ccsKeeper,
 	)
 
 	// Initializing distribution keeper.
@@ -301,20 +310,21 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	// Initializing validators module.
 	app.poaKeeper = poa.NewKeeper(
-		keys[poa.StoreKey],
 		cdc,
-		app.paramsKeeper.Subspace(poaTypes.DefaultParamspace),
+		keys[poa.StoreKey],
+		app.paramsKeeper.Subspace(poa.DefaultParamspace),
 	)
 
 	// Initializing multisignature router.
-	app.msRouter = core.NewRouter()
+	app.msRouter = msmodule.NewMsRouter()
 
 	// Initializing multisignature router.
 	app.msKeeper = multisig.NewKeeper(
-		keys[multisig.StoreKey],
 		cdc,
-		app.msRouter,
+		keys[multisig.StoreKey],
 		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
+		app.msRouter,
+		app.poaKeeper,
 	)
 
 	// Initializing oracle module.
@@ -328,7 +338,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// The Governance keeper.
 	app.govRouter = gov.NewRouter()
 	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
-	app.govRouter.AddRoute(currencies_register.GovRouterKey, currencies_register.NewGovHandler(app.crKeeper))
+	app.govRouter.AddRoute(currencies.GovRouterKey, currencies.NewGovHandler(app.ccKeeper))
 
 	app.govKeeper = gov.NewKeeper(
 		cdc,
@@ -343,7 +353,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	app.marketKeeper = markets.NewKeeper(
 		cdc,
 		app.paramsKeeper.Subspace(markets.DefaultParamspace),
-		app.crKeeper,
+		app.ccsKeeper,
 	)
 
 	// Initializing orders module.
@@ -362,8 +372,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.orderKeeper,
 	)
 
-	// Initializing multisignature manager.
-	app.mm = core.NewMsManager(
+	// Initializing multi signature manager.
+	app.mm = msmodule.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		vmauth.NewAppModule(app.accountKeeper),
@@ -373,9 +383,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
+		ccstorage.NewAppModule(app.ccsKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
-		currencies_register.NewAppModule(app.crKeeper),
-		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
+		multisig.NewAppModule(app.msKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
@@ -403,6 +413,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
 		vm.ModuleName,
+		ccstorage.ModuleName,
 		genaccounts.ModuleName,
 		distribution.ModuleName,
 		staking.ModuleName,
@@ -412,11 +423,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		gov.ModuleName,
 		supply.ModuleName,
 		poa.ModuleName,
-		currencies.ModuleName,
 		multisig.ModuleName,
-		vm.ModuleName,
+		currencies.ModuleName,
 		oracle.ModuleName,
-		currencies_register.ModuleName,
 		markets.ModuleName,
 		orders.ModuleName,
 		orderbook.ModuleName,

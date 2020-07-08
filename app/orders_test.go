@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 const (
 	queryOrdersListPath = "/custom/orders/list"
 )
 
-func Test_Orders_Ttl(t *testing.T) {
+func TestOrders_Ttl(t *testing.T) {
 	baseDenom, quoteDenom := "base", "quote"
 	baseDecimals, quoteDecimals := uint8(0), uint8(0)
 	baseSupply, quoteSupply := sdk.NewInt(1000), sdk.NewInt(1000)
@@ -43,6 +43,9 @@ func Test_Orders_Ttl(t *testing.T) {
 		tester.AddClient(clientAddr, baseSupply, quoteSupply)
 
 		tester.EndBlock()
+
+		acc := app.accountKeeper.GetAccount(GetContext(app, true), clientAddr)
+		t.Logf("acc %q: %v", clientAddr.String(), acc.GetCoins())
 	}
 
 	var longTtlOrderID dnTypes.ID
@@ -58,8 +61,8 @@ func Test_Orders_Ttl(t *testing.T) {
 
 	// check orders exist
 	{
-		request := orderTypes.OrdersReq{Page: 1, Limit: 10}
-		response := orderTypes.Orders{}
+		request := orders.OrdersReq{Page: sdk.NewUint(1), Limit: sdk.NewUint(10)}
+		response := orders.Orders{}
 		CheckRunQuery(t, app, request, queryOrdersListPath, &response)
 
 		require.Len(t, response, 2)
@@ -67,11 +70,14 @@ func Test_Orders_Ttl(t *testing.T) {
 
 	// emulate TTL and recheck orders existence
 	{
+		acc := app.accountKeeper.GetAccount(GetContext(app, true), clientAddr)
+		t.Logf("acc %q: %v", clientAddr.String(), acc.GetCoins())
+
 		tester.BeginBlockWithDuration(2 * time.Second)
 		tester.EndBlock()
 
-		request := orderTypes.OrdersReq{Page: 1, Limit: 10}
-		response := orderTypes.Orders{}
+		request := orders.OrdersReq{Page: sdk.NewUint(1), Limit: sdk.NewUint(10)}
+		response := orders.Orders{}
 		CheckRunQuery(t, app, request, queryOrdersListPath, &response)
 
 		require.Len(t, response, 1)

@@ -109,6 +109,8 @@ func SignCheckDeliver(
 }
 
 func TestApp_PostPrice(t *testing.T) {
+	t.Parallel()
+
 	// Setup
 	mapp, keeper := setUpMockAppWithoutGenesis()
 	genAccs, addrs, _, privKeys := mock.CreateGenAccounts(1, cs(c("uftm", 100)))

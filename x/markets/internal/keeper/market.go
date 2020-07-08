@@ -3,10 +3,10 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/dfinance/dnode/helpers"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
@@ -43,12 +43,12 @@ func (k Keeper) GetExtended(ctx sdk.Context, id dnTypes.ID) (retMarket types.Mar
 		return
 	}
 
-	baseCurrency, err := k.ccRegisterKeeper.GetCurrencyInfo(ctx, market.BaseAssetDenom)
+	baseCurrency, err := k.ccsStorage.GetCurrency(ctx, market.BaseAssetDenom)
 	if err != nil {
 		retErr = sdkErrors.Wrap(err, "BaseAsset")
 	}
 
-	quoteCurrency, err := k.ccRegisterKeeper.GetCurrencyInfo(ctx, market.QuoteAssetDenom)
+	quoteCurrency, err := k.ccsStorage.GetCurrency(ctx, market.QuoteAssetDenom)
 	if err != nil {
 		retErr = sdkErrors.Wrap(err, "QuoteAsset")
 	}
@@ -68,10 +68,10 @@ func (k Keeper) Add(ctx sdk.Context, baseAsset, quoteAsset string) (types.Market
 		}
 	}
 
-	if !k.ccRegisterKeeper.ExistsCurrencyInfo(ctx, baseAsset) {
+	if !k.ccsStorage.HasCurrency(ctx, baseAsset) {
 		return types.Market{}, sdkErrors.Wrap(types.ErrWrongAssetDenom, "BaseAsset not registered")
 	}
-	if !k.ccRegisterKeeper.ExistsCurrencyInfo(ctx, quoteAsset) {
+	if !k.ccsStorage.HasCurrency(ctx, quoteAsset) {
 		return types.Market{}, sdkErrors.Wrap(types.ErrWrongAssetDenom, "QuoteAsset not registered")
 	}
 
@@ -110,8 +110,8 @@ func (k Keeper) GetListFiltered(ctx sdk.Context, params types.MarketsReq) types.
 		}
 	}
 
-	start, end := client.Paginate(len(filteredMarkets), params.Page, params.Limit, 100)
-	if start < 0 || end < 0 {
+	start, end, err := helpers.PaginateSlice(len(filteredMarkets), params.Page, params.Limit)
+	if err != nil {
 		return types.Markets{}
 	}
 

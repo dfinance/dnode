@@ -1,11 +1,11 @@
 package keeper
 
 import (
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 // ByPriceAscIDDesc is a type wrapper used to sort orders slice by Price ASC (1st priority) and ID DESC (2nd priority).
-type ByPriceAscIDDesc orderTypes.Orders
+type ByPriceAscIDDesc orders.Orders
 
 // Implements sort.Interface.
 func (s ByPriceAscIDDesc) Len() int {
@@ -27,7 +27,7 @@ func (s ByPriceAscIDDesc) Swap(i, j int) {
 }
 
 // ByPriceAscIDAsc is a type wrapper used to sort orders slice by Price ASC (1st priority) and ID ASC (2nd priority).
-type ByPriceAscIDAsc orderTypes.Orders
+type ByPriceAscIDAsc orders.Orders
 
 // Implements sort.Interface.
 func (s ByPriceAscIDAsc) Len() int {

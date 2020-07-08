@@ -23,7 +23,7 @@ import (
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers/logger"
-	crCli "github.com/dfinance/dnode/x/currencies_register/client/cli"
+	ccsCli "github.com/dfinance/dnode/x/ccstorage/client/cli"
 	"github.com/dfinance/dnode/x/genaccounts"
 	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
 	marketsCli "github.com/dfinance/dnode/x/markets/client/cli"
@@ -69,12 +69,12 @@ func main() {
 		// AddGenesisAccountCmd allows users to add accounts to the genesis file
 		genaccsCli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		// Allows user to poa genesis validator
-		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc),
+		ccsCli.AddGenesisCurrencyInfo(ctx, cdc, app.DefaultNodeHome),
+		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc, app.DefaultNodeHome),
 		vmCli.GenesisWSFromFile(ctx, cdc),
 		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		marketsCli.AddMarketGenCmd(ctx, cdc, app.DefaultNodeHome),
-		crCli.AddGenesisCurrencyInfo(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 

@@ -1,21 +1,24 @@
-// Multisig AppModule and AppModuleBasic implementation.
+// Module provides multi signature messages routing and handling with submit, confirm and revoke functions.
+// Once message call is submitted it should be confirmed by 2/3 of POA validators, that changes call status to approved.
+// An approved call executes message handler (via multisig router).
+// Call has a TTL level in blocks, which changes its state to rejected if call isn't approved withing defined period.
 package multisig
 
 import (
 	"encoding/json"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/x/multisig/client"
 	"github.com/dfinance/dnode/x/multisig/client/rest"
-	"github.com/dfinance/dnode/x/multisig/types"
-	"github.com/dfinance/dnode/x/poa"
+	"github.com/dfinance/dnode/x/multisig/internal/keeper"
 )
 
 var (
@@ -23,116 +26,105 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
+// AppModuleBasic app module basics object.
 type AppModuleBasic struct{}
 
-// Module name.
+// Name gets module name.
 func (AppModuleBasic) Name() string {
-	return types.ModuleName
+	return ModuleName
 }
 
-// Registering codecs.
-func (module AppModuleBasic) RegisterCodec(cdc *amino.Codec) {
+// RegisterCodec registers module codec.
+func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 	RegisterCodec(cdc)
 }
 
-// Validate exists genesis.
+// DefaultGenesis gets default module genesis state.
+func (AppModuleBasic) DefaultGenesis() json.RawMessage {
+	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
+}
+
+// ValidateGenesis validates module genesis state.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	var genesisState types.GenesisState
-	err := ModuleCdc.UnmarshalJSON(bz, &genesisState)
-	if err != nil {
-		return err
-	}
+	state := GenesisState{}
+	ModuleCdc.MustUnmarshalJSON(bz, &state)
 
-	params := genesisState.Parameters
-	if err = params.Validate(); err != nil {
-		return err
-	}
-
-	return nil
+	return state.Validate()
 }
 
-// Generate default genesis.
-func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return ModuleCdc.MustMarshalJSON(types.GenesisState{
-		Parameters: types.DefaultParams(),
-	})
-}
-
-// Register REST routes.
+// RegisterRESTRoutes registers module REST routes.
 func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
 	rest.RegisterRoutes(ctx, r)
 }
 
-// Get transaction commands for CLI.
+// GetTxCmd returns module root tx command.
 func (AppModuleBasic) GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	return client.GetTxCmd(cdc)
 }
 
-// Get query commands for CLI.
+// GetQueryCmd returns module root query command.
 func (AppModuleBasic) GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	return client.GetQueryCmd(cdc)
 }
 
+// AppModule is a app module type.
 type AppModule struct {
 	AppModuleBasic
-	msKeeper  Keeper
-	poaKeeper poa.Keeper
+	keeper keeper.Keeper
 }
 
-// Create new PoA module.
-func NewAppModule(msKeeper Keeper, poaKeeper poa.Keeper) AppModule {
+// NewAppModule creates new AppModule object.
+func NewAppModule(keeper keeper.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		msKeeper:       msKeeper,
-		poaKeeper:      poaKeeper,
+		keeper:         keeper,
 	}
 }
 
-// Get name of module.
-func (AppModule) Name() string {
-	return types.ModuleName
+// Name gets module name.
+func (app AppModule) Name() string {
+	return ModuleName
 }
 
-// Register module invariants.
-func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+// RegisterInvariants registers module invariants.
+func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Base route of module (for handler).
-func (AppModule) Route() string { return types.RouterKey }
+// Route returns module messages route.
+func (app AppModule) Route() string {
+	return RouterKey
+}
 
-// Create new handler.
-func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.msKeeper, app.poaKeeper) }
+// NewHandler returns module messages handler.
+func (app AppModule) NewHandler() sdk.Handler {
+	return NewHandler(app.keeper)
+}
 
-// Get route for querier.
-func (AppModule) QuerierRoute() string { return types.RouterKey }
+// QuerierRoute returns module querier route.
+func (app AppModule) QuerierRoute() string {
+	return RouterKey
+}
 
-// Get new querier for PoA module.
+// NewQuerierHandler creates module querier.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(app.msKeeper)
+	return keeper.NewQuerier(app.keeper)
 }
 
-// Process begin block (abci).
-func (AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {
-}
-
-// Process end block (abci).
-func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	EndBlocker(ctx, app.msKeeper, app.poaKeeper)
-	return []abci.ValidatorUpdate{}
-}
-
-// Initialize genesis.
+// InitGenesis inits module-genesis state.
 func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	var genesisState types.GenesisState
-
-	ModuleCdc.MustUnmarshalJSON(data, &genesisState)
-
-	app.msKeeper.InitGenesis(ctx, genesisState)
+	app.keeper.InitGenesis(ctx, data)
 
 	return []abci.ValidatorUpdate{}
 }
 
-// Export genesis.
+// ExportGenesis exports module genesis state.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	genesisState := app.msKeeper.ExportGenesis(ctx)
-	return ModuleCdc.MustMarshalJSON(genesisState)
+	return app.keeper.ExportGenesis(ctx)
+}
+
+// BeginBlock performs module actions at a block start.
+func (app AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+
+// EndBlock performs module actions at a block end.
+func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+	return EndBlocker(ctx, app.keeper)
 }

@@ -18,7 +18,7 @@ func newMockOrderFill() OrderFill {
 	}
 }
 
-func Test_OrderFill_FillCoin(t *testing.T) {
+func TestOrders_OrderFill_FillCoin(t *testing.T) {
 	fill := newMockOrderFill()
 
 	// bid order
@@ -65,7 +65,7 @@ func Test_OrderFill_FillCoin(t *testing.T) {
 	}
 }
 
-func Test_OrderFill_RefundCoin(t *testing.T) {
+func TestOrders_OrderFill_RefundCoin(t *testing.T) {
 	fill := newMockOrderFill()
 
 	// bid order

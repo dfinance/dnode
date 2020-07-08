@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_Direction_Validity(t *testing.T) {
+func TestOrders_Direction_Validity(t *testing.T) {
 	// ok
 	require.True(t, Bid.IsValid())
 	require.True(t, Ask.IsValid())

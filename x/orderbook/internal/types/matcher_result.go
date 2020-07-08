@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 // MatcherResult stores matcher results.
@@ -25,7 +25,7 @@ type MatcherResult struct {
 	// Sum of matched ask orders volume
 	MatchedAskVolume sdk.Dec
 	// Fully / partially filled orders with some meta
-	OrderFills orderTypes.OrderFills
+	OrderFills orders.OrderFills
 }
 
 // Strings returns multi-line text object representation.

@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
@@ -25,7 +25,7 @@ func GetCmdListOrders(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Args:    cobra.ExactArgs(0),
-		Example: "dncli orders list",
+		Example: "list",
 		Short:   "Lists all orders",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.NewCLIContext().WithCodec(cdc)
@@ -34,8 +34,11 @@ func GetCmdListOrders(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			ownerFilterStr := viper.GetString(flagOrderOwner)
 			directionFilterStr := viper.GetString(flagOrderDirection)
 			marketIDFilter := viper.GetString(flagOrderMarketID)
-			page := viper.GetInt(flags.FlagPage)
-			limit := viper.GetInt(flags.FlagLimit)
+			pageStr, limitStr := viper.GetString(flags.FlagPage), viper.GetString(flags.FlagLimit)
+			page, limit, err := helpers.ParsePaginationParams(pageStr, limitStr, helpers.ParamTypeCliFlag)
+			if err != nil {
+				return err
+			}
 
 			ownerFilter := sdk.AccAddress{}
 			if ownerFilterStr != "" {
@@ -72,9 +75,8 @@ func GetCmdListOrders(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return ctx.PrintOutput(out)
 		},
 	}
-	cmd.Flags().Int(flags.FlagPage, 1, "pagination page of markets to to query for")
-	cmd.Flags().Int(flags.FlagLimit, 100, "pagination limit of markets to query for")
-	cmd.Flags().String(flagOrderOwner, "", "(optional) filter by owner")
+	helpers.AddPaginationCmdFlags(cmd)
+	cmd.Flags().String(flagOrderOwner, "", "(optional) filter by owner address")
 	cmd.Flags().String(flagOrderDirection, "", "(optional) filter by direction (bid/ask)")
 	cmd.Flags().String(flagOrderMarketID, "", "(optional) filter by marketID")
 
@@ -83,23 +85,23 @@ func GetCmdListOrders(queryRoute string, cdc *codec.Codec) *cobra.Command {
 
 // GetCmdOrder returns query command that returns order by id.
 func GetCmdOrder(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "order [id]",
-		Example: "dncli orders order 1",
+		Example: "order 1",
 		Short:   "Get order by id",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.NewCLIContext().WithCodec(cdc)
 
 			// parse inputs
-			id, err := dnTypes.NewIDFromString(args[0])
+			orderID, err := helpers.ParseDnIDParam("id", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("%s argument %q parse error: %w", "id", args[0], err)
+				return err
 			}
 
 			// prepare request
 			req := types.OrderReq{
-				ID: id,
+				ID: orderID,
 			}
 
 			bz, err := ctx.Codec.MarshalJSON(req)
@@ -119,4 +121,9 @@ func GetCmdOrder(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return ctx.PrintOutput(out)
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"order ID [uint]",
+	})
+
+	return cmd
 }

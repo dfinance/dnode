@@ -16,11 +16,11 @@ import (
 // Call next AnteHandler if fees successfully deducted
 // CONTRACT: Tx must implement FeeTx interface to use DeductFeeDecorator
 type DeductFeeDecorator struct {
-	ak           vmauth.VMAccountKeeper
+	ak           vmauth.Keeper
 	supplyKeeper types.SupplyKeeper
 }
 
-func NewDeductFeeDecorator(ak vmauth.VMAccountKeeper, sk types.SupplyKeeper) DeductFeeDecorator {
+func NewDeductFeeDecorator(ak vmauth.Keeper, sk types.SupplyKeeper) DeductFeeDecorator {
 	return DeductFeeDecorator{
 		ak:           ak,
 		supplyKeeper: sk,

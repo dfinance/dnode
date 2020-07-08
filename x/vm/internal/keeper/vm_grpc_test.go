@@ -64,6 +64,8 @@ func newArgInputs() []types.ScriptArg {
 
 // Get free gas calculations.
 func TestGetFreeGas(t *testing.T) {
+	t.Parallel()
+
 	var gasLimit uint64 = 1000
 
 	db := dbm.NewMemDB()
@@ -95,6 +97,8 @@ func TestGetFreeGas(t *testing.T) {
 
 // Check creation of new contract instance.
 func TestNewContract(t *testing.T) {
+	t.Parallel()
+
 	addr := sdk.AccAddress(randomValue(common_vm.VMAddressLength))
 	code := randomValue(1024)
 	argInputs := newArgInputs()
@@ -121,6 +125,8 @@ func TestNewContract(t *testing.T) {
 
 // Create new deploy request.
 func TestNewDeployRequest(t *testing.T) {
+	t.Parallel()
+
 	addr := secp256k1.GenPrivKey().PubKey().Address().Bytes()
 	code := randomValue(1024)
 

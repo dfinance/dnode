@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
-	tmdTypes "github.com/tendermint/tendermint/types"
+	tmTypes "github.com/tendermint/tendermint/types"
 
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
@@ -47,7 +47,7 @@ func GenesisWSFromFile(ctx *server.Context, cdc *codec.Codec) *cobra.Command {
 			}
 
 			genFile := config.GenesisFile()
-			genDoc, err := tmdTypes.GenesisDocFromFile(genFile)
+			genDoc, err := tmTypes.GenesisDocFromFile(genFile)
 			if err != nil {
 				return err
 			}

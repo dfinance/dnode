@@ -19,7 +19,7 @@ var (
 
 // GetSignerAcc returns an account for a given address that is expected to sign
 // a transaction.
-func GetSignerAcc(ctx sdk.Context, ak vmauth.VMAccountKeeper, addr sdk.AccAddress) (exported.Account, error) {
+func GetSignerAcc(ctx sdk.Context, ak vmauth.Keeper, addr sdk.AccAddress) (exported.Account, error) {
 	if acc := ak.GetAccount(ctx, addr); acc != nil {
 		return acc, nil
 	}

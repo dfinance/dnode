@@ -8,11 +8,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	orderTypes "github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 type AggInput struct {
-	Input  orderTypes.Orders
+	Input  orders.Orders
 	Output OrderAggregates
 }
 
@@ -24,18 +24,20 @@ func (aggInput AggInput) Check(t *testing.T, agg OrderAggregates) {
 	}
 }
 
-func Test_OrderAggregate_Bid(t *testing.T) {
+func TestOB_OrderAggregate_Bid(t *testing.T) {
+	t.Parallel()
+
 	// zero input
 	{
-		agg := NewBidOrderAggregates(orderTypes.Orders{})
+		agg := NewBidOrderAggregates(orders.Orders{})
 		require.Len(t, agg, 0)
 	}
 
 	// one input
 	{
 		input := AggInput{
-			Input: orderTypes.Orders{
-				orderTypes.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
+			Input: orders.Orders{
+				orders.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
 			},
 			Output: OrderAggregates{
 				OrderAggregate{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
@@ -47,15 +49,15 @@ func Test_OrderAggregate_Bid(t *testing.T) {
 	// norm input
 	{
 		input := AggInput{
-			Input: orderTypes.Orders{
-				orderTypes.Order{Price: sdk.NewUint(10), Quantity: sdk.NewUint(50)},
-				orderTypes.Order{Price: sdk.NewUint(10), Quantity: sdk.NewUint(50)},
-				orderTypes.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
-				orderTypes.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(150)},
-				orderTypes.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(50)},
-				orderTypes.Order{Price: sdk.NewUint(75), Quantity: sdk.NewUint(150)},
-				orderTypes.Order{Price: sdk.NewUint(150), Quantity: sdk.NewUint(200)},
-				orderTypes.Order{Price: sdk.NewUint(150), Quantity: sdk.NewUint(100)},
+			Input: orders.Orders{
+				orders.Order{Price: sdk.NewUint(10), Quantity: sdk.NewUint(50)},
+				orders.Order{Price: sdk.NewUint(10), Quantity: sdk.NewUint(50)},
+				orders.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
+				orders.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(150)},
+				orders.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(50)},
+				orders.Order{Price: sdk.NewUint(75), Quantity: sdk.NewUint(150)},
+				orders.Order{Price: sdk.NewUint(150), Quantity: sdk.NewUint(200)},
+				orders.Order{Price: sdk.NewUint(150), Quantity: sdk.NewUint(100)},
 			},
 			Output: OrderAggregates{
 				OrderAggregate{Price: sdk.NewUint(10), Quantity: sdk.NewUint(850)},
@@ -68,18 +70,20 @@ func Test_OrderAggregate_Bid(t *testing.T) {
 	}
 }
 
-func Test_OrderAggregate_Ask(t *testing.T) {
+func TestOB_OrderAggregate_Ask(t *testing.T) {
+	t.Parallel()
+
 	// zero input
 	{
-		agg := NewAskOrderAggregates(orderTypes.Orders{})
+		agg := NewAskOrderAggregates(orders.Orders{})
 		require.Len(t, agg, 0)
 	}
 
 	// one input
 	{
 		input := AggInput{
-			Input: orderTypes.Orders{
-				orderTypes.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
+			Input: orders.Orders{
+				orders.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
 			},
 			Output: OrderAggregates{
 				OrderAggregate{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
@@ -91,15 +95,15 @@ func Test_OrderAggregate_Ask(t *testing.T) {
 	// norm input
 	{
 		input := AggInput{
-			Input: orderTypes.Orders{
-				orderTypes.Order{Price: sdk.NewUint(10), Quantity: sdk.NewUint(50)},
-				orderTypes.Order{Price: sdk.NewUint(10), Quantity: sdk.NewUint(50)},
-				orderTypes.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
-				orderTypes.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(150)},
-				orderTypes.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(50)},
-				orderTypes.Order{Price: sdk.NewUint(75), Quantity: sdk.NewUint(150)},
-				orderTypes.Order{Price: sdk.NewUint(150), Quantity: sdk.NewUint(200)},
-				orderTypes.Order{Price: sdk.NewUint(150), Quantity: sdk.NewUint(100)},
+			Input: orders.Orders{
+				orders.Order{Price: sdk.NewUint(10), Quantity: sdk.NewUint(50)},
+				orders.Order{Price: sdk.NewUint(10), Quantity: sdk.NewUint(50)},
+				orders.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(100)},
+				orders.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(150)},
+				orders.Order{Price: sdk.NewUint(50), Quantity: sdk.NewUint(50)},
+				orders.Order{Price: sdk.NewUint(75), Quantity: sdk.NewUint(150)},
+				orders.Order{Price: sdk.NewUint(150), Quantity: sdk.NewUint(200)},
+				orders.Order{Price: sdk.NewUint(150), Quantity: sdk.NewUint(100)},
 			},
 			Output: OrderAggregates{
 				OrderAggregate{Price: sdk.NewUint(10), Quantity: sdk.NewUint(100)},

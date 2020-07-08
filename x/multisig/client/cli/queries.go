@@ -1,26 +1,26 @@
-// Implements CLI queries multisig modules.
 package cli
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	"github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/multisig/internal/types"
 )
 
-// Get calls from CLI.
+// GetCalls returns query command that return calls.
 func GetCalls(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "calls",
-		Short: "get active calls to confirm",
+		Short: "Get active calls to confirm",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/calls", queryRoute), nil)
+			// query and parse the result
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryCalls), nil)
 			if err != nil {
 				return err
 			}
@@ -33,84 +33,102 @@ func GetCalls(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// Get amount of calls from CLI.
+// GetCall returns query command that return call by callID.
+func GetCall(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "call [id]",
+		Short:   "Get call by ID",
+		Example: "call 100",
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			// parse inputs
+			callID, err := helpers.ParseDnIDParam("id", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			// prepare request
+			req := types.CallReq{CallID: callID}
+			bz, err := cliCtx.Codec.MarshalJSON(req)
+			if err != nil {
+				return err
+			}
+
+			// query and parse the result
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryCall), bz)
+			if err != nil {
+				return err
+			}
+
+			var out types.CallResp
+			cdc.MustUnmarshalJSON(res, &out)
+
+			return cliCtx.PrintOutput(out)
+		},
+	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"callID [uint]",
+	})
+
+	return cmd
+}
+
+// GetCallByUniqueID returns query command that return call by call uniqueID.
+func GetCallByUniqueID(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "unique [uniqueID]",
+		Short:   "get call by unique id",
+		Example: "unique issue1",
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			// prepare request
+			req := types.CallByUniqueIdReq{UniqueID: args[0]}
+			bz, err := cliCtx.Codec.MarshalJSON(req)
+			if err != nil {
+				return err
+			}
+
+			// query and parse the result
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryCallByUnique), bz)
+			if err != nil {
+				return err
+			}
+
+			var out types.CallResp
+			cdc.MustUnmarshalJSON(res, &out)
+
+			return cliCtx.PrintOutput(out)
+		},
+	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"call uniqueID [string]",
+	})
+
+	return cmd
+}
+
+// GetLastId returns query command that return last call ID.
 func GetLastId(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "lastId",
-		Short: "get last call id",
+		Short: "Get last call ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/lastId", queryRoute), nil)
+			// query and parse the result
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryLastId), nil)
 			if err != nil {
 				return err
 			}
 
-			var resp types.LastIdRes
-			cdc.MustUnmarshalJSON(res, &resp)
+			var out types.LastCallIdResp
+			cdc.MustUnmarshalJSON(res, &out)
 
-			return cliCtx.PrintOutput(resp)
-		},
-	}
-}
-
-// Get call by id from CLI.
-func GetCall(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "call [id]",
-		Short: "get call by id",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			callId, err := strconv.ParseUint(args[0], 10, 64)
-			if err != nil {
-				return fmt.Errorf("%s argument %q: parsing uint: %w", "id", args[0], err)
-			}
-
-			callReq := types.CallReq{CallId: callId}
-			bz, err := cliCtx.Codec.MarshalJSON(callReq)
-			if err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/call", queryRoute), bz)
-			if err != nil {
-				return err
-			}
-
-			var resp types.CallResp
-			cdc.MustUnmarshalJSON(res, &resp)
-
-			return cliCtx.PrintOutput(resp)
-		},
-	}
-}
-
-//Get call by unique id from CLI.
-func GetCallByUniqueID(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "unique [unique_id]",
-		Short: "get call by unique id",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			callReq := types.UniqueReq{UniqueId: args[0]}
-			bz, err := cliCtx.Codec.MarshalJSON(callReq)
-			if err != nil {
-				return err
-			}
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/unique", queryRoute), bz)
-			if err != nil {
-				return err
-			}
-
-			var resp types.CallResp
-			cdc.MustUnmarshalJSON(res, &resp)
-
-			return cliCtx.PrintOutput(resp)
+			return cliCtx.PrintOutput(out)
 		},
 	}
 }

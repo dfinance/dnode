@@ -1,78 +1,58 @@
-// Multisignature message handler implementation.
 package multisig
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/dfinance/dnode/x/multisig/msgs"
-	"github.com/dfinance/dnode/x/multisig/types"
-	"github.com/dfinance/dnode/x/poa"
+	"github.com/dfinance/dnode/x/multisig/internal/keeper"
+	"github.com/dfinance/dnode/x/multisig/internal/types"
 )
 
-// Handle messages for multisig module.
-func NewHandler(keeper Keeper, poaKeeper poa.Keeper) sdk.Handler {
+// NewHandler creates sdk.Msg type messages handler.
+func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
-		case msgs.MsgSubmitCall:
-			return handleMsgSubmitCall(ctx, keeper, poaKeeper, msg)
-
-		case msgs.MsgConfirmCall:
-			return handleMsgConfirmCall(ctx, keeper, poaKeeper, msg)
-
-		case msgs.MsgRevokeConfirm:
-			return handleMsgRevokeConfirm(ctx, keeper, msg)
-
+		case types.MsgSubmitCall:
+			return handleMsgSubmitCall(ctx, k, msg)
+		case types.MsgConfirmCall:
+			return handleMsgConfirmCall(ctx, k, msg)
+		case types.MsgRevokeConfirm:
+			return handleMsgRevokeConfirm(ctx, k, msg)
 		default:
-			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized multisig msg type: %v", msg.Type())
+			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized currencies msg type: %v", msg.Type())
 		}
 	}
 }
 
-// Handle message (MsgSubmitCall) to submit new call.
-func handleMsgSubmitCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, msg msgs.MsgSubmitCall) (*sdk.Result, error) {
-	if !poaKeeper.HasValidator(ctx, msg.Sender) {
-		return nil, sdkErrors.Wrap(types.ErrNotValidator, msg.Sender.String())
+// handleMsgSubmitCall handles MsgSubmitCall message.
+func handleMsgSubmitCall(ctx sdk.Context, k keeper.Keeper, msg types.MsgSubmitCall) (*sdk.Result, error) {
+	if err := k.CheckAddressIsPoaValidator(ctx, msg.Creator); err != nil {
+		return nil, err
 	}
 
-	if err := keeper.SubmitCall(ctx, msg.Msg, msg.UniqueID, msg.Sender); err != nil {
+	if err := k.SubmitCall(ctx, msg.Msg, msg.UniqueID, msg.Creator); err != nil {
 		return nil, err
 	}
 
 	return &sdk.Result{}, nil
 }
 
-// Handle message (MsgConfirmCall) to confirm call.
-func handleMsgConfirmCall(ctx sdk.Context, keeper Keeper, poaKeeper poa.Keeper, msg msgs.MsgConfirmCall) (*sdk.Result, error) {
-	if !poaKeeper.HasValidator(ctx, msg.Sender) {
-		return nil, sdkErrors.Wrap(types.ErrNotValidator, msg.Sender.String())
+// handleMsgConfirmCall handles MsgConfirmCall message.
+func handleMsgConfirmCall(ctx sdk.Context, k keeper.Keeper, msg types.MsgConfirmCall) (*sdk.Result, error) {
+	if err := k.CheckAddressIsPoaValidator(ctx, msg.Sender); err != nil {
+		return nil, err
 	}
 
-	has, err := keeper.HasVote(ctx, msg.MsgId, msg.Sender)
-
-	if has {
-		if err != nil {
-			return nil, err
-		}
-		return nil, sdkErrors.Wrapf(types.ErrCallAlreadyApproved, "%d by %s", msg.MsgId, msg.Sender.String())
-	}
-
-	if err := keeper.Confirm(ctx, msg.MsgId, msg.Sender); err != nil {
+	if err := k.ConfirmCall(ctx, msg.CallID, msg.Sender); err != nil {
 		return nil, err
 	}
 
 	return &sdk.Result{}, nil
 }
 
-// Handle message (MsgRevokeConfirm) to revoke call confirmation.
-func handleMsgRevokeConfirm(ctx sdk.Context, keeper Keeper, msg msgs.MsgRevokeConfirm) (*sdk.Result, error) {
-	if has, err := keeper.HasVote(ctx, msg.MsgId, msg.Sender); err != nil {
-		return nil, err
-	} else if !has {
-		return nil, sdkErrors.Wrapf(types.ErrCallNotApproved, "%d by %s", msg.MsgId, msg.Sender.String())
-	}
-
-	if err := keeper.RevokeConfirmation(ctx, msg.MsgId, msg.Sender); err != nil {
+// handleMsgRevokeConfirm handles MsgRevokeConfirm message.
+func handleMsgRevokeConfirm(ctx sdk.Context, k keeper.Keeper, msg types.MsgRevokeConfirm) (*sdk.Result, error) {
+	if err := k.RevokeConfirmation(ctx, msg.CallID, msg.Sender); err != nil {
 		return nil, err
 	}
 

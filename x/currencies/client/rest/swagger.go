@@ -1,17 +1,20 @@
 package rest
 
-import "github.com/dfinance/dnode/x/currencies/types"
+import (
+	"github.com/dfinance/dnode/x/ccstorage"
+	"github.com/dfinance/dnode/x/currencies/internal/types"
+)
 
 //nolint:deadcode,unused
 type (
-	CCRespGetDestroys struct {
-		Height int64          `json:"height"`
-		Result types.Destroys `json:"result"`
+	CCRespGetWithdraws struct {
+		Height int64           `json:"height"`
+		Result types.Withdraws `json:"result"`
 	}
 
-	CCRespGetDestroy struct {
-		Height int64         `json:"height"`
-		Result types.Destroy `json:"result"`
+	CCRespGetWithdraw struct {
+		Height int64          `json:"height"`
+		Result types.Withdraw `json:"result"`
 	}
 
 	CCRespGetIssue struct {
@@ -20,7 +23,7 @@ type (
 	}
 
 	CCRespGetCurrency struct {
-		Height int64          `json:"height"`
-		Result types.Currency `json:"result"`
+		Height int64              `json:"height"`
+		Result ccstorage.Currency `json:"result"`
 	}
 )

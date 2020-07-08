@@ -20,7 +20,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
-	tmCTypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmRPCTypes "github.com/tendermint/tendermint/rpc/lib/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
@@ -66,7 +66,6 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 	ct := CLITester{
 		IDs:               NewTestNodeIdConfig(),
 		BinaryPath:        NewTestBinaryPathConfig(),
-		Currencies:        NewCurrencyMap(),
 		VMCommunication:   NewTestVMCommunicationConfig(),
 		ConsensusTimings:  NewTestConsensusTimingConfig(),
 		GovernanceConfig:  NewGovernanceConfig(),
@@ -105,6 +104,8 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 	ct.startDemon(true, printDaemonLogs)
 
 	ct.UpdateAccountsBalance()
+
+	ct.Currencies = NewCurrencyMap(ct.Cdc, ct.GenesisState())
 
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
 
@@ -390,7 +391,7 @@ func (ct *CLITester) GetCurrentBlockHeight() (int64, error) {
 		return -1, fmt.Errorf("body unmarshal: %w", err)
 	}
 
-	resultBlock := tmCTypes.ResultBlock{}
+	resultBlock := tmCoreTypes.ResultBlock{}
 	if err := ct.Cdc.UnmarshalJSON(resultResp.Result, &resultBlock); err != nil {
 		return -1, fmt.Errorf("result unmarshal: %w", err)
 	}
@@ -451,7 +452,7 @@ func (ct *CLITester) ConfirmCall(uniqueID string) {
 
 	// send confirms
 	for i := 0; i < requiredVotes-len(call.Votes); i++ {
-		ct.TxMultiSigConfirmCall(validatorAddrs[i], call.Call.MsgID).CheckSucceeded()
+		ct.TxMultiSigConfirmCall(validatorAddrs[i], call.Call.ID).CheckSucceeded()
 	}
 	ct.WaitForNextBlocks(1)
 
@@ -576,11 +577,11 @@ func (ct *CLITester) CreateAccount(name string, balances ...StringPair) {
 		amount, ok := sdk.NewIntFromString(amountStr)
 		require.True(ct.t, ok, "invalid amount: %s", amountStr)
 
-		currency, ok := ct.Currencies[denom]
-		require.True(ct.t, ok, "currency with %q denom: not found", denom)
+		_, ccExists := ct.Currencies[denom]
+		require.True(ct.t, ccExists, "currency with %q denom: not found", denom)
 
 		validator1Address := ct.Accounts["validator1"].Address
-		ct.TxCurrenciesIssue(account.Address, validator1Address, denom, amount, currency.Decimals, issueID).CheckSucceeded()
+		ct.TxCurrenciesIssue(account.Address, validator1Address, issueID, denom, amount).CheckSucceeded()
 
 		ct.ConfirmCall(issueID)
 	}

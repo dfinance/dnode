@@ -7,17 +7,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies/types"
-	"github.com/dfinance/dnode/x/currencies_register"
-	marketTypes "github.com/dfinance/dnode/x/markets"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/ccstorage"
+	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	orderTypes "github.com/dfinance/dnode/x/orders"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/orders"
+	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -29,8 +30,8 @@ func (ct *CLITester) QueryTx(txHash string) (*QueryRequest, *sdk.TxResponse) {
 	return q, resObj
 }
 
-func (ct *CLITester) QueryStatus() (*QueryRequest, *ctypes.ResultStatus) {
-	resObj := &ctypes.ResultStatus{}
+func (ct *CLITester) QueryStatus() (*QueryRequest, *tmCoreTypes.ResultStatus) {
+	resObj := &tmCoreTypes.ResultStatus{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("status")
 	q.RemoveCmdArg("query")
@@ -38,34 +39,41 @@ func (ct *CLITester) QueryStatus() (*QueryRequest, *ctypes.ResultStatus) {
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesIssue(issueID string) (*QueryRequest, *ccTypes.Issue) {
-	resObj := &ccTypes.Issue{}
+func (ct *CLITester) QueryCurrenciesIssue(id string) (*QueryRequest, *currencies.Issue) {
+	resObj := &currencies.Issue{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies", "issue", issueID)
+	q.SetCmd("currencies", "issue", id)
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesDestroy(id sdk.Int) (*QueryRequest, *ccTypes.Destroy) {
-	resObj := &ccTypes.Destroy{}
+func (ct *CLITester) QueryCurrenciesWithdraw(id dnTypes.ID) (*QueryRequest, *currencies.Withdraw) {
+	resObj := &currencies.Withdraw{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies", "destroy", id.String())
+	q.SetCmd("currencies", "withdraw", id.String())
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesDestroys(page, limit int) (*QueryRequest, *ccTypes.Destroys) {
-	resObj := &ccTypes.Destroys{}
+func (ct *CLITester) QueryCurrenciesWithdraws(page, limit int) (*QueryRequest, *currencies.Withdraws) {
+	resObj := &currencies.Withdraws{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies", "destroys", strconv.Itoa(page), strconv.Itoa(limit))
+	q.SetCmd("currencies", "withdraws")
+
+	if page > 0 {
+		q.cmd.AddArg("page", strconv.FormatInt(int64(page), 10))
+	}
+	if limit > 0 {
+		q.cmd.AddArg("limit", strconv.FormatInt(int64(limit), 10))
+	}
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryCurrenciesCurrency(symbol string) (*QueryRequest, *ccTypes.Currency) {
-	resObj := &ccTypes.Currency{}
+func (ct *CLITester) QueryCurrenciesCurrency(denom string) (*QueryRequest, *ccstorage.Currency) {
+	resObj := &ccstorage.Currency{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies", "currency", symbol)
+	q.SetCmd("currencies", "currency", denom)
 
 	return q, resObj
 }
@@ -101,56 +109,56 @@ func (ct *CLITester) QueryOraclePrice(assetCode string) (*QueryRequest, *oracle.
 	return q, resObj
 }
 
-func (ct *CLITester) QueryPoaValidators() (*QueryRequest, *poaTypes.ValidatorsConfirmations) {
-	resObj := &poaTypes.ValidatorsConfirmations{}
+func (ct *CLITester) QueryPoaValidators() (*QueryRequest, *poa.ValidatorsConfirmationsResp) {
+	resObj := &poa.ValidatorsConfirmationsResp{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("poa", "validators")
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryPoaValidator(address string) (*QueryRequest, *poaTypes.Validator) {
-	resObj := &poaTypes.Validator{}
+func (ct *CLITester) QueryPoaValidator(address string) (*QueryRequest, *poa.Validator) {
+	resObj := &poa.Validator{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("poa", "validator", address)
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryPoaMinMax() (*QueryRequest, *poaTypes.Params) {
-	resObj := &poaTypes.Params{}
+func (ct *CLITester) QueryPoaMinMax() (*QueryRequest, *poa.Params) {
+	resObj := &poa.Params{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("poa", "minmax")
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMultiSigUnique(uniqueID string) (*QueryRequest, *msTypes.CallResp) {
-	resObj := &msTypes.CallResp{}
+func (ct *CLITester) QueryMultiSigUnique(uniqueID string) (*QueryRequest, *multisig.CallResp) {
+	resObj := &multisig.CallResp{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("multisig", "unique", uniqueID)
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMultiSigCall(callID uint64) (*QueryRequest, *msTypes.CallResp) {
-	resObj := &msTypes.CallResp{}
+func (ct *CLITester) QueryMultiSigCall(callID dnTypes.ID) (*QueryRequest, *multisig.CallResp) {
+	resObj := &multisig.CallResp{}
 	q := ct.newQueryRequest(resObj)
-	q.SetCmd("multisig", "call", strconv.FormatUint(callID, 10))
+	q.SetCmd("multisig", "call", callID.String())
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMultiSigCalls() (*QueryRequest, *msTypes.CallsResp) {
-	resObj := &msTypes.CallsResp{}
+func (ct *CLITester) QueryMultiSigCalls() (*QueryRequest, *multisig.CallsResp) {
+	resObj := &multisig.CallsResp{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("multisig", "calls")
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *msTypes.LastIdRes) {
-	resObj := &msTypes.LastIdRes{}
+func (ct *CLITester) QueryMultiLastId() (*QueryRequest, *multisig.LastCallIdResp) {
+	resObj := &multisig.LastCallIdResp{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("multisig", "lastId")
 
@@ -201,16 +209,16 @@ func (ct *CLITester) QueryAuthAccount(address string) (*QueryRequest, *auth.Base
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOrdersOrder(id dnTypes.ID) (*QueryRequest, *orderTypes.Order) {
-	resObj := &orderTypes.Order{}
+func (ct *CLITester) QueryOrdersOrder(id dnTypes.ID) (*QueryRequest, *orders.Order) {
+	resObj := &orders.Order{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("orders", "order", id.String())
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orderTypes.Direction, ownerFilter *string) (*QueryRequest, *orderTypes.Orders) {
-	resObj := &orderTypes.Orders{}
+func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orders.Direction, ownerFilter *string) (*QueryRequest, *orders.Orders) {
+	resObj := &orders.Orders{}
 
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("orders", "list")
@@ -234,16 +242,16 @@ func (ct *CLITester) QueryOrdersList(page, limit int, marketIDFilter *dnTypes.ID
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMarketsMarket(id dnTypes.ID) (*QueryRequest, *marketTypes.Market) {
-	resObj := &marketTypes.Market{}
+func (ct *CLITester) QueryMarketsMarket(id dnTypes.ID) (*QueryRequest, *markets.Market) {
+	resObj := &markets.Market{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("markets", "market", id.String())
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryMarketsList(page, limit int, baseDenom, quoteDenom *string) (*QueryRequest, *marketTypes.Markets) {
-	resObj := &marketTypes.Markets{}
+func (ct *CLITester) QueryMarketsList(page, limit int, baseDenom, quoteDenom *string) (*QueryRequest, *markets.Markets) {
+	resObj := &markets.Markets{}
 
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd("markets", "list")
@@ -260,14 +268,6 @@ func (ct *CLITester) QueryMarketsList(page, limit int, baseDenom, quoteDenom *st
 	if quoteDenom != nil {
 		q.cmd.AddArg("quote-asset-denom", *quoteDenom)
 	}
-
-	return q, resObj
-}
-
-func (ct *CLITester) QueryCurrencyInfo(denom string) (*QueryRequest, *currencies_register.CurrencyInfo) {
-	resObj := &currencies_register.CurrencyInfo{}
-	q := ct.newQueryRequest(resObj)
-	q.SetCmd("currencies_register", "info", denom)
 
 	return q, resObj
 }
@@ -301,6 +301,24 @@ func (ct *CLITester) QueryGovProposals(page, limit int, depositorFilter, voterFi
 	if voterFilter != nil {
 		q.cmd.AddArg("voter", *voterFilter)
 	}
+
+	return q, resObj
+}
+
+func (ct *CLITester) QuerySupply(denom string) (*QueryRequest, *sdk.Int) {
+	resObj := &sdk.Int{}
+
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("supply", "total", denom)
+
+	return q, resObj
+}
+
+func (ct *CLITester) QueryStakingValidators() (*QueryRequest, *staking.Validators) {
+	resObj := &staking.Validators{}
+
+	q := ct.newQueryRequest(resObj)
+	q.SetCmd("staking", "validators")
 
 	return q, resObj
 }

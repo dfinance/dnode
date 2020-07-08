@@ -14,4 +14,6 @@ var (
 	ErrFeeRequired = sdkErrors.Register(Codespace, 101, "tx must contain fees")
 	// StdTx Fee.Amount wrong denom
 	ErrWrongFeeDenom = sdkErrors.Register(Codespace, 102, "tx must contain fees with a different denom")
+	// Module doesn't support multi signature
+	ErrOnlyMultisigMsgs = sdkErrors.Register(Codespace, 200, "module supports only multisig messages")
 )

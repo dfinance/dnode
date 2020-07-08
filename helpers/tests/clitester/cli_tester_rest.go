@@ -10,17 +10,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/stretchr/testify/require"
-	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccTypes "github.com/dfinance/dnode/x/currencies/types"
-	marketTypes "github.com/dfinance/dnode/x/markets"
-	msTypes "github.com/dfinance/dnode/x/multisig/types"
+	"github.com/dfinance/dnode/x/ccstorage"
+	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	orderTypes "github.com/dfinance/dnode/x/orders"
-	"github.com/dfinance/dnode/x/orders/client/rest"
-	poaTypes "github.com/dfinance/dnode/x/poa/types"
+	"github.com/dfinance/dnode/x/orders"
+	ordersRest "github.com/dfinance/dnode/x/orders/client/rest"
+	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -63,37 +64,41 @@ func (ct *CLITester) newRestTxRequestRaw(accName string, accNumber, accSequence 
 	return
 }
 
-func (ct *CLITester) RestQueryCurrenciesIssue(issueId string) (*RestRequest, *ccTypes.Issue) {
-	reqSubPath := fmt.Sprintf("%s/issue/%s", ccTypes.ModuleName, issueId)
-	respMsg := &ccTypes.Issue{}
+func (ct *CLITester) RestQueryCurrenciesIssue(id string) (*RestRequest, *currencies.Issue) {
+	reqSubPath := fmt.Sprintf("%s/%s/%s", currencies.ModuleName, currencies.QueryIssue, id)
+	respMsg := &currencies.Issue{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *ccTypes.Currency) {
-	reqSubPath := fmt.Sprintf("%s/currency/%s", ccTypes.ModuleName, symbol)
-	respMsg := &ccTypes.Currency{}
+func (ct *CLITester) RestQueryCurrenciesCurrency(symbol string) (*RestRequest, *ccstorage.Currency) {
+	reqSubPath := fmt.Sprintf("%s/%s/%s", currencies.ModuleName, currencies.QueryCurrency, symbol)
+	respMsg := &ccstorage.Currency{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesDestroy(id sdk.Int) (*RestRequest, *ccTypes.Destroy) {
-	reqSubPath := fmt.Sprintf("%s/destroy/%d", ccTypes.ModuleName, id.Int64())
-	respMsg := &ccTypes.Destroy{}
+func (ct *CLITester) RestQueryCurrenciesWithdraw(id sdk.Int) (*RestRequest, *currencies.Withdraw) {
+	reqSubPath := fmt.Sprintf("%s/%s/%d", currencies.ModuleName, currencies.QueryWithdraw, id.Int64())
+	respMsg := &currencies.Withdraw{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryCurrenciesDestroys(page int, limit *int) (*RestRequest, *ccTypes.Destroys) {
-	reqSubPath := fmt.Sprintf("%s/destroys/%d", ccTypes.ModuleName, page)
-	respMsg := &ccTypes.Destroys{}
+func (ct *CLITester) RestQueryCurrenciesWithdraws(page, limit *int) (*RestRequest, *currencies.Withdraws) {
+	reqSubPath := fmt.Sprintf("%s/%s", currencies.ModuleName, currencies.QueryWithdraws)
+	respMsg := &currencies.Withdraws{}
 	var reqValues url.Values
+	if page != nil {
+		reqValues = url.Values{}
+		reqValues.Set("page", strconv.Itoa(*page))
+	}
 	if limit != nil {
 		reqValues = url.Values{}
 		reqValues.Set("limit", strconv.Itoa(*limit))
@@ -104,36 +109,36 @@ func (ct *CLITester) RestQueryCurrenciesDestroys(page int, limit *int) (*RestReq
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryMultiSigCalls() (*RestRequest, *msTypes.CallsResp) {
-	reqSubPath := fmt.Sprintf("%s/calls", msTypes.ModuleName)
-	respMsg := &msTypes.CallsResp{}
+func (ct *CLITester) RestQueryMultiSigCalls() (*RestRequest, *multisig.CallsResp) {
+	reqSubPath := fmt.Sprintf("%s/calls", multisig.ModuleName)
+	respMsg := &multisig.CallsResp{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryMultiSigCall(callID uint64) (*RestRequest, *msTypes.CallResp) {
-	reqSubPath := fmt.Sprintf("%s/call/%d", msTypes.ModuleName, callID)
-	respMsg := &msTypes.CallResp{}
+func (ct *CLITester) RestQueryMultiSigCall(callID dnTypes.ID) (*RestRequest, *multisig.CallResp) {
+	reqSubPath := fmt.Sprintf("%s/call/%s", multisig.ModuleName, callID.String())
+	respMsg := &multisig.CallResp{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryMultiSigUnique(uniqueID string) (*RestRequest, *msTypes.CallResp) {
-	reqSubPath := fmt.Sprintf("%s/unique/%s", msTypes.ModuleName, uniqueID)
-	respMsg := &msTypes.CallResp{}
+func (ct *CLITester) RestQueryMultiSigUnique(uniqueID string) (*RestRequest, *multisig.CallResp) {
+	reqSubPath := fmt.Sprintf("%s/unique/%s", multisig.ModuleName, uniqueID)
+	respMsg := &multisig.CallResp{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryPoaValidators() (*RestRequest, *poaTypes.ValidatorsConfirmations) {
-	reqSubPath := fmt.Sprintf("%s/validators", poaTypes.ModuleName)
-	respMsg := &poaTypes.ValidatorsConfirmations{}
+func (ct *CLITester) RestQueryPoaValidators() (*RestRequest, *poa.ValidatorsConfirmationsResp) {
+	reqSubPath := fmt.Sprintf("%s/%s", poa.ModuleName, poa.QueryValidators)
+	respMsg := &poa.ValidatorsConfirmationsResp{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
@@ -185,18 +190,18 @@ func (ct *CLITester) RestQueryAuthAccount(address string) (*RestRequest, *auth.B
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryMarket(id dnTypes.ID) (*RestRequest, *marketTypes.Market) {
+func (ct *CLITester) RestQueryMarket(id dnTypes.ID) (*RestRequest, *markets.Market) {
 	reqSubPath := fmt.Sprintf("markets/%s", id.String())
-	respMsg := &marketTypes.Market{}
+	respMsg := &markets.Market{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryMarkets(page, limit int, baseDenom, quoteDenom *string) (*RestRequest, *marketTypes.Markets) {
+func (ct *CLITester) RestQueryMarkets(page, limit int, baseDenom, quoteDenom *string) (*RestRequest, *markets.Markets) {
 	reqSubPath := "markets"
-	respMsg := &marketTypes.Markets{}
+	respMsg := &markets.Markets{}
 
 	reqValues := url.Values{}
 	if page != -1 {
@@ -217,9 +222,9 @@ func (ct *CLITester) RestQueryMarkets(page, limit int, baseDenom, quoteDenom *st
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOrders(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orderTypes.Direction, ownerFilter *string) (*RestRequest, *orderTypes.Orders) {
+func (ct *CLITester) RestQueryOrders(page, limit int, marketIDFilter *dnTypes.ID, directionFilter *orders.Direction, ownerFilter *string) (*RestRequest, *orders.Orders) {
 	reqSubPath := "orders"
-	respMsg := &orderTypes.Orders{}
+	respMsg := &orders.Orders{}
 
 	reqValues := url.Values{}
 	if page != -1 {
@@ -243,24 +248,24 @@ func (ct *CLITester) RestQueryOrders(page, limit int, marketIDFilter *dnTypes.ID
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOrder(id dnTypes.ID) (*RestRequest, *orderTypes.Order) {
-	reqSubPath := fmt.Sprintf("%s/%s", orderTypes.ModuleName, id.String())
-	respMsg := &orderTypes.Order{}
+func (ct *CLITester) RestQueryOrder(id dnTypes.ID) (*RestRequest, *orders.Order) {
+	reqSubPath := fmt.Sprintf("%s/%s", orders.ModuleName, id.String())
+	respMsg := &orders.Order{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOrderPost(rq rest.PostOrderReq) (*RestRequest, *auth.StdTx) {
-	reqSubPath := fmt.Sprintf("%s/%s", orderTypes.ModuleName, "post")
+func (ct *CLITester) RestQueryOrderPost(rq ordersRest.PostOrderReq) (*RestRequest, *auth.StdTx) {
+	reqSubPath := fmt.Sprintf("%s/%s", orders.ModuleName, "post")
 	respMsg := &auth.StdTx{}
 	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOrderRevoke(rq rest.RevokeOrderReq) (*RestRequest, *auth.StdTx) {
-	reqSubPath := fmt.Sprintf("%s/%s", orderTypes.ModuleName, "revoke")
+func (ct *CLITester) RestQueryOrderRevoke(rq ordersRest.RevokeOrderReq) (*RestRequest, *auth.StdTx) {
+	reqSubPath := fmt.Sprintf("%s/%s", orders.ModuleName, "revoke")
 	respMsg := &auth.StdTx{}
 	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
 	return r, respMsg
@@ -278,14 +283,14 @@ func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }
 
-func (ct *CLITester) RestTxOrdersPostOrder(accName string, assetCode dnTypes.AssetCode, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
+func (ct *CLITester) RestTxOrdersPostOrder(accName string, assetCode dnTypes.AssetCode, direction orders.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
 	accInfo := ct.Accounts[accName]
 	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
 
 	accQuery, acc := ct.QueryAccount(accInfo.Address)
 	accQuery.CheckSucceeded()
 
-	msg := orderTypes.MsgPostOrder{
+	msg := orders.MsgPostOrder{
 		Owner:     acc.Address,
 		AssetCode: assetCode,
 		Direction: direction,
@@ -304,7 +309,7 @@ func (ct *CLITester) RestTxOrdersRevokeOrder(accName string, id dnTypes.ID) (*Re
 	accQuery, acc := ct.QueryAccount(accInfo.Address)
 	accQuery.CheckSucceeded()
 
-	msg := orderTypes.MsgRevokeOrder{
+	msg := orders.MsgRevokeOrder{
 		Owner:   acc.Address,
 		OrderID: id,
 	}
@@ -312,8 +317,8 @@ func (ct *CLITester) RestTxOrdersRevokeOrder(accName string, id dnTypes.ID) (*Re
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }
 
-func (ct *CLITester) RestTxOrdersPostOrderRaw(accName string, accAddress sdk.AccAddress, accNumber, accSequence uint64, assetCode dnTypes.AssetCode, direction orderTypes.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
-	msg := orderTypes.MsgPostOrder{
+func (ct *CLITester) RestTxOrdersPostOrderRaw(accName string, accAddress sdk.AccAddress, accNumber, accSequence uint64, assetCode dnTypes.AssetCode, direction orders.Direction, price, quantity sdk.Uint, ttlInSec uint64) (*RestRequest, *sdk.TxResponse) {
+	msg := orders.MsgPostOrder{
 		Owner:     accAddress,
 		AssetCode: assetCode,
 		Direction: direction,
@@ -332,7 +337,7 @@ func (ct *CLITester) RestTxMarketsAdd(accName, baseDenom, quoteDenom string) (*R
 	accQuery, acc := ct.QueryAccount(accInfo.Address)
 	accQuery.CheckSucceeded()
 
-	msg := marketTypes.MsgCreateMarket{
+	msg := markets.MsgCreateMarket{
 		From:            acc.Address,
 		BaseAssetDenom:  baseDenom,
 		QuoteAssetDenom: quoteDenom,
@@ -341,9 +346,9 @@ func (ct *CLITester) RestTxMarketsAdd(accName, baseDenom, quoteDenom string) (*R
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }
 
-func (ct *CLITester) RestLatestBlock() (*RestRequest, *coreTypes.ResultBlock) {
+func (ct *CLITester) RestLatestBlock() (*RestRequest, *tmCoreTypes.ResultBlock) {
 	reqSubPath := "blocks/latest"
-	respMsg := &coreTypes.ResultBlock{}
+	respMsg := &tmCoreTypes.ResultBlock{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 

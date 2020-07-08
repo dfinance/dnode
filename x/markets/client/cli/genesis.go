@@ -10,23 +10,31 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
 
+	"github.com/dfinance/dnode/helpers"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	ccrTypes "github.com/dfinance/dnode/x/currencies_register"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/markets/internal/types"
 )
 
 // AddMarketGenCmd adds market to app genesis state.
 func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-market-gen [base_denom] [quote_denom]",
-		Short: "Add market to genesis.json",
-		Args:  cobra.ExactArgs(2),
+		Use:     "add-market-gen [base_denom] [quote_denom]",
+		Short:   "Add market to genesis.json",
+		Example: "add-market-gen dfi eth",
+		Args:    cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
 			// parse inputs
 			baseDenom, quoteDenom := args[0], args[1]
+			if err := helpers.ValidateDenomParam("base_denom", baseDenom, helpers.ParamTypeCliArg); err != nil {
+				return err
+			}
+			if err := helpers.ValidateDenomParam("quote_denom", quoteDenom, helpers.ParamTypeCliArg); err != nil {
+				return err
+			}
 
 			// retrieve the app state
 			genFile := config.GenesisFile()
@@ -35,22 +43,22 @@ func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome stri
 				return err
 			}
 
-			// retrive the currencies_register genesis
-			var genesisCCRegister ccrTypes.GenesisState
-			cdc.MustUnmarshalJSON(appState[ccrTypes.ModuleName], &genesisCCRegister)
+			// retrieve the genesis
+			var genesisCCS ccstorage.GenesisState
+			cdc.MustUnmarshalJSON(appState[ccstorage.ModuleName], &genesisCCS)
 
 			// retrieve the markets genesis
 			var genesisMarket types.GenesisState
 			cdc.MustUnmarshalJSON(appState[types.ModuleName], &genesisMarket)
 
-			// check if base/quote denom do exist in currencies_register genesis
+			// check if base/quote denom do exist in currencies genesis
 			baseFound, quoteFound := false, false
-			for _, ccInfo := range genesisCCRegister.Currencies {
-				if ccInfo.Denom == baseDenom {
+			for denom := range genesisCCS.CurrenciesParams {
+				if denom == baseDenom {
 					baseFound = true
 					continue
 				}
-				if ccInfo.Denom == quoteDenom {
+				if denom == quoteDenom {
 					quoteFound = true
 					continue
 				}
@@ -85,7 +93,11 @@ func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome stri
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		},
 	}
-
+	helpers.BuildCmdHelp(cmd, []string{
+		"base currency denomination symbol",
+		"quote currency denomination symbol",
+	})
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
+
 	return cmd
 }
