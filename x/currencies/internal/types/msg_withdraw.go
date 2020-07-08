@@ -11,10 +11,8 @@ import (
 
 // Client message to reduce currency balance.
 type MsgWithdrawCurrency struct {
-	// Target currency denom
-	Denom string `json:"denom"`
-	// Withdraw amount
-	Amount sdk.Int `json:"amount"`
+	// Target currency withdraw coin
+	Coin sdk.Coin `json:"coin"`
 	// Target account
 	Spender sdk.AccAddress `json:"spender"`
 	// Second blockchain: spender account
@@ -35,12 +33,12 @@ func (msg MsgWithdrawCurrency) Type() string {
 
 // Implements sdk.Msg interface.
 func (msg MsgWithdrawCurrency) ValidateBasic() error {
-	if err := dnTypes.DenomFilter(msg.Denom); err != nil {
+	if err := dnTypes.DenomFilter(msg.Coin.Denom); err != nil {
 		return sdkErrors.Wrap(ErrWrongDenom, err.Error())
 	}
 
-	if msg.Amount.IsZero() {
-		return sdkErrors.Wrap(ErrWrongAmount, "zero")
+	if msg.Coin.Amount.LTE(sdk.ZeroInt()) {
+		return sdkErrors.Wrap(ErrWrongAmount, "LTE to zero")
 	}
 
 	if msg.Spender.Empty() {
@@ -50,9 +48,6 @@ func (msg MsgWithdrawCurrency) ValidateBasic() error {
 	if len(msg.PegZoneRecipient) == 0 {
 		return sdkErrors.Wrap(ErrWrongPegZoneSpender, "empty")
 	}
-
-	// check sdk.Coin is creatable
-	sdk.NewCoin(msg.Denom, msg.Amount)
 
 	return nil
 }
@@ -73,10 +68,9 @@ func (msg MsgWithdrawCurrency) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgWithdrawCurrency creates a new MsgWithdrawCurrency message.
-func NewMsgWithdrawCurrency(denom string, amount sdk.Int, spender sdk.AccAddress, pzSpender, pzChainID string) MsgWithdrawCurrency {
+func NewMsgWithdrawCurrency(coin sdk.Coin, spender sdk.AccAddress, pzSpender, pzChainID string) MsgWithdrawCurrency {
 	return MsgWithdrawCurrency{
-		Denom:            denom,
-		Amount:           amount,
+		Coin:             coin,
 		Spender:          spender,
 		PegZoneRecipient: pzSpender,
 		PegZoneChainID:   pzChainID,

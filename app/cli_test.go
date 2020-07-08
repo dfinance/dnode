@@ -33,7 +33,7 @@ const (
 func TestCurrencies_CLI(t *testing.T) {
 	t.Parallel()
 
-	ct := cliTester.New(t, true)
+	ct := cliTester.New(t, false)
 	defer ct.Close()
 
 	ccDenom := "btc"
@@ -46,7 +46,7 @@ func TestCurrencies_CLI(t *testing.T) {
 	{
 		// submit & confirm call
 		{
-			ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals).CheckSucceeded()
+			ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount).CheckSucceeded()
 			ct.ConfirmCall(issueID)
 		}
 
@@ -65,8 +65,8 @@ func TestCurrencies_CLI(t *testing.T) {
 			q, issue := ct.QueryCurrenciesIssue(issueID)
 			q.CheckSucceeded()
 
-			require.Equal(t, ccDenom, issue.Denom)
-			require.True(t, ccCurAmount.Equal(issue.Amount))
+			require.Equal(t, ccDenom, issue.Coin.Denom)
+			require.True(t, ccCurAmount.Equal(issue.Coin.Amount))
 			require.Equal(t, ccRecipient, issue.Payee.String())
 		}
 
@@ -74,35 +74,30 @@ func TestCurrencies_CLI(t *testing.T) {
 		{
 			// wrong number of args
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount)
 				tx.RemoveCmdArg(issueID)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// from non-existing account
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, nonExistingAddress.String(), issueID, ccDenom, ccCurAmount, ccDecimals)
+				tx := ct.TxCurrenciesIssue(ccRecipient, nonExistingAddress.String(), issueID, ccDenom, ccCurAmount)
 				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
 			}
 			// invalid amount
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals)
-				tx.ChangeCmdArg(ccCurAmount.String(), "invalid_amount")
-				tx.CheckFailedWithErrorSubstring("parsing Int")
-			}
-			// invalid decimals
-			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals)
-				tx.ChangeCmdArg(strconv.Itoa(int(ccDecimals)), "invalid_decimals")
-				tx.CheckFailedWithErrorSubstring("uint8 parsing")
+				coin := sdk.NewCoin(ccDenom, ccCurAmount)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount)
+				tx.ChangeCmdArg(coin.String(), "invalid_amount" + ccDenom)
+				tx.CheckFailedWithErrorSubstring("parsing coin")
 			}
 			// invalid recipient
 			{
-				tx := ct.TxCurrenciesIssue("invalid_addr", ccRecipient, issueID, ccDenom, ccCurAmount, ccDecimals)
+				tx := ct.TxCurrenciesIssue("invalid_addr", ccRecipient, issueID, ccDenom, ccCurAmount)
 				tx.CheckFailedWithErrorSubstring("Bech32 / HEX")
 			}
 			// MsgIssueCurrency ValidateBasic
 			{
-				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, sdk.ZeroInt(), ccDecimals)
+				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, sdk.ZeroInt())
 				tx.CheckFailedWithErrorSubstring("wrong amount")
 			}
 		}
@@ -124,19 +119,20 @@ func TestCurrencies_CLI(t *testing.T) {
 			q.CheckSucceeded()
 
 			require.True(t, withdraw.ID.Equal(id))
-			require.Equal(t, ccDenom, withdraw.Denom)
+			require.Equal(t, ccDenom, withdraw.Coin.Denom)
 			require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
 			require.Equal(t, ccRecipient, withdraw.PegZoneSpender)
 			require.Equal(t, ccRecipient, withdraw.Spender.String())
-			require.True(t, withdrawAmount.Equal(withdraw.Amount))
+			require.True(t, withdrawAmount.Equal(withdraw.Coin.Amount))
 		}
 
 		// incorrect inputs
 		{
 			// wrong number of args
 			{
+				coin := sdk.NewCoin(ccDenom, sdk.OneInt())
 				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, sdk.OneInt())
-				tx.RemoveCmdArg(ccDenom)
+				tx.RemoveCmdArg(coin.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// from non-existing account
@@ -146,9 +142,10 @@ func TestCurrencies_CLI(t *testing.T) {
 			}
 			// invalid amount
 			{
+				coin := sdk.NewCoin(ccDenom, ccCurAmount)
 				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, ccCurAmount)
-				tx.ChangeCmdArg(ccCurAmount.String(), "invalid_amount")
-				tx.CheckFailedWithErrorSubstring("parsing Int")
+				tx.ChangeCmdArg(coin.String(), "invalid_amount" + ccDenom)
+				tx.CheckFailedWithErrorSubstring("parsing coin")
 			}
 			// MsgWithdrawCurrency ValidateBasic
 			{
@@ -765,7 +762,6 @@ func TestMS_CLI(t *testing.T) {
 	defer ct.Close()
 
 	ccDenom1, ccDenom2 := "btc", "eth"
-	ccDecimals1, ccDecimals2 := ct.Currencies[ccDenom1].Decimals, ct.Currencies[ccDenom2].Decimals
 	ccCurAmount := sdk.NewInt(1000)
 	callUniqueId1, callUniqueId2 := "issue1", "issue2"
 	nonExistingAddress := secp256k1.GenPrivKey().PubKey().Address()
@@ -779,8 +775,8 @@ func TestMS_CLI(t *testing.T) {
 	}
 
 	// create calls
-	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], callUniqueId1, ccDenom1, ccCurAmount, ccDecimals1).CheckSucceeded()
-	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], callUniqueId2, ccDenom2, ccCurAmount, ccDecimals2).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[0], ccRecipients[0], callUniqueId1, ccDenom1, ccCurAmount).CheckSucceeded()
+	ct.TxCurrenciesIssue(ccRecipients[1], ccRecipients[1], callUniqueId2, ccDenom2, ccCurAmount).CheckSucceeded()
 
 	checkCall := func(call multisig.CallResp, approved bool, callID dnTypes.ID, uniqueID, creatorAddr string, votesAddr ...string) {
 		require.Len(t, call.Votes, len(votesAddr))

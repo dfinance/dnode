@@ -50,12 +50,12 @@ func (k Keeper) GetCurrency(ctx sdk.Context, denom string) (types.Currency, erro
 }
 
 // IncreaseCurrencySupply increases currency supply and updates VM resources.
-func (k Keeper) IncreaseCurrencySupply(ctx sdk.Context, denom string, amount sdk.Int) error {
-	currency, err := k.GetCurrency(ctx, denom)
+func (k Keeper) IncreaseCurrencySupply(ctx sdk.Context, coin sdk.Coin) error {
+	currency, err := k.GetCurrency(ctx, coin.Denom)
 	if err != nil {
 		return err
 	}
-	currency.Supply = currency.Supply.Add(amount)
+	currency.Supply = currency.Supply.Add(coin.Amount)
 
 	k.storeCurrency(ctx, currency)
 	k.storeResStdCurrencyInfo(ctx, currency)
@@ -64,12 +64,12 @@ func (k Keeper) IncreaseCurrencySupply(ctx sdk.Context, denom string, amount sdk
 }
 
 // DecreaseCurrencySupply reduces currency supply and updates VM resources.
-func (k Keeper) DecreaseCurrencySupply(ctx sdk.Context, denom string, amount sdk.Int) error {
-	currency, err := k.GetCurrency(ctx, denom)
+func (k Keeper) DecreaseCurrencySupply(ctx sdk.Context, coin sdk.Coin) error {
+	currency, err := k.GetCurrency(ctx, coin.Denom)
 	if err != nil {
 		return err
 	}
-	currency.Supply = currency.Supply.Sub(amount)
+	currency.Supply = currency.Supply.Sub(coin.Amount)
 
 	k.storeCurrency(ctx, currency)
 	k.storeResStdCurrencyInfo(ctx, currency)

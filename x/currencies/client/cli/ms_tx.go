@@ -16,10 +16,10 @@ import (
 // PostMsIssueCurrency returns tx command which post a new multisig issue request.
 func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ms-issue-currency [issueID] [denom] [amount] [decimals] [payee]",
-		Short: "Issue new currency via multisignature, increasing payee coin balance",
-		Example: "ms-issue-currency issue1 dfi 100 18 {account} --from {account}",
-		Args:  cobra.ExactArgs(5),
+		Use:     "ms-issue [issueID] [coin] [payee]",
+		Short:   "Issue new currency via multi signature, increasing payee coin balance",
+		Example: "ms-issue issue1 100dfi {account} --from {account}",
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
@@ -29,23 +29,18 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			amount, err := helpers.ParseSdkIntParam("amount", args[2], helpers.ParamTypeCliArg)
+			coin, err := helpers.ParseCoinParam("coin", args[1], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
-			decimals, err := helpers.ParseUint8Param("decimals", args[3], helpers.ParamTypeCliArg)
-			if err != nil {
-				return err
-			}
-
-			payee, err := helpers.ParseSdkAddressParam("payee", args[4], helpers.ParamTypeCliArg)
+			payee, err := helpers.ParseSdkAddressParam("payee", args[2], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
 			// prepare and send multisig message
-			msg := types.NewMsgIssueCurrency(args[0], args[1], amount, decimals, payee)
+			msg := types.NewMsgIssueCurrency(args[0], coin, payee)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -62,9 +57,7 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	}
 	helpers.BuildCmdHelp(cmd, []string{
 		"unique multi signature call ID",
-		"currency denomination symbol",
-		"increase coin amount",
-		"currency decimals count",
+		"currency denomination symbol and amount in Coin format (1.0 btc with 8 decimals -> 100000000btc)",
 		"payee address",
 	})
 

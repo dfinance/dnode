@@ -577,11 +577,11 @@ func (ct *CLITester) CreateAccount(name string, balances ...StringPair) {
 		amount, ok := sdk.NewIntFromString(amountStr)
 		require.True(ct.t, ok, "invalid amount: %s", amountStr)
 
-		currency, ok := ct.Currencies[denom]
-		require.True(ct.t, ok, "currency with %q denom: not found", denom)
+		_, ccExists := ct.Currencies[denom]
+		require.True(ct.t, ccExists, "currency with %q denom: not found", denom)
 
 		validator1Address := ct.Accounts["validator1"].Address
-		ct.TxCurrenciesIssue(account.Address, validator1Address, issueID, denom, amount, currency.Decimals).CheckSucceeded()
+		ct.TxCurrenciesIssue(account.Address, validator1Address, issueID, denom, amount).CheckSucceeded()
 
 		ct.ConfirmCall(issueID)
 	}

@@ -29,13 +29,13 @@ import (
 
 const (
 	defDenom    = "btc"
-	defDecimals = 8
 	defIssueID1 = "issue1"
 	defIssueID2 = "issue2"
 )
 
 var (
 	defAmount = sdk.NewInt(10)
+	defCoin   = sdk.NewCoin(defDenom, defAmount)
 )
 
 type TestInput struct {

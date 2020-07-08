@@ -17,10 +17,10 @@ import (
 // PostWithdrawCurrency returns tx command which post a new withdraw request.
 func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "withdraw-currency [denom] [amount] [pegZoneSpender] [pegZoneChainID]",
+		Use:     "withdraw [coin] [pegZoneSpender] [pegZoneChainID]",
 		Short:   "Withdraw issued currency, reducing spender balance",
-		Example: "withdraw-currency dfi 100 {account} testnet --from {account}",
-		Args:    cobra.ExactArgs(4),
+		Example: "withdraw 100dfi {account} testnet --from {account}",
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
@@ -30,13 +30,13 @@ func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			amount, err := helpers.ParseSdkIntParam("amount", args[1], helpers.ParamTypeCliArg)
+			coin, err := helpers.ParseCoinParam("coin", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
 			// prepare and send message
-			msg := types.NewMsgWithdrawCurrency(args[0], amount, fromAddr, args[2], args[3])
+			msg := types.NewMsgWithdrawCurrency(coin, fromAddr, args[1], args[2])
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -47,8 +47,7 @@ func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 		},
 	}
 	helpers.BuildCmdHelp(cmd, []string{
-		"currency denomination symbol",
-		"reduce coin amount",
+		"currency denomination symbol and amount in Coin format (1.0 btc with 8 decimals -> 100000000btc)",
 		"spender address for PegZone",
 		"chainID for PegZone blockchain",
 	})

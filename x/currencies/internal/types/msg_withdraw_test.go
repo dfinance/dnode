@@ -13,7 +13,8 @@ import (
 func TestCurrenciesMsg_WithdrawCurrency_ValidateBasic(t *testing.T) {
 	t.Parallel()
 
-	target := NewMsgWithdrawCurrency("symbol", sdk.NewInt(10), sdk.AccAddress("addr1"), "recipient", "chainID")
+	coin := sdk.NewCoin("symbol", sdk.NewInt(10))
+	target := NewMsgWithdrawCurrency(coin, sdk.AccAddress("addr1"), "recipient", "chainID")
 	// ok
 	{
 		require.NoError(t, target.ValidateBasic())
@@ -22,14 +23,14 @@ func TestCurrenciesMsg_WithdrawCurrency_ValidateBasic(t *testing.T) {
 	// invalid: denom
 	{
 		invalidTarget := target
-		invalidTarget.Denom = ""
+		invalidTarget.Coin.Denom = ""
 		require.Error(t, invalidTarget.ValidateBasic())
 	}
 
 	// invalid: amount
 	{
 		invalidTarget := target
-		invalidTarget.Amount = sdk.NewInt(0)
+		invalidTarget.Coin.Amount = sdk.NewInt(0)
 		require.Error(t, invalidTarget.ValidateBasic())
 	}
 
@@ -52,7 +53,8 @@ func TestCurrenciesMsg_WithdrawCurrency_ValidateBasic(t *testing.T) {
 func TestCurrenciesMsg_WithdrawCurrency_MsgInterface(t *testing.T) {
 	t.Parallel()
 
-	target := NewMsgWithdrawCurrency("symbol", sdk.NewInt(10), sdk.AccAddress("addr1"), "recipient", "chainID")
+	coin := sdk.NewCoin("symbol", sdk.NewInt(10))
+	target := NewMsgWithdrawCurrency(coin, sdk.AccAddress("addr1"), "recipient", "chainID")
 	require.Equal(t, "withdraw_currency", target.Type())
 	require.Equal(t, RouterKey, target.Route())
 	require.True(t, len(target.GetSignBytes()) > 0)

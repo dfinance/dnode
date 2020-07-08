@@ -9,7 +9,7 @@ import (
 
 // IssueCurrency issues a new currency and increases payee coin balance.
 // Issue is a multisig operation.
-func (k Keeper) IssueCurrency(ctx sdk.Context, id, denom string, amount sdk.Int, decimals uint8, payee sdk.AccAddress) (retErr error) {
+func (k Keeper) IssueCurrency(ctx sdk.Context, id string, coin sdk.Coin, payee sdk.AccAddress) (retErr error) {
 	// bankKeeper might panic
 	defer func() {
 		if r := recover(); r != nil {
@@ -22,31 +22,26 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id, denom string, amount sdk.Int,
 	}
 
 	// check and update currency
-	currency, err := k.ccsKeeper.GetCurrency(ctx, denom)
-	if err != nil {
+	if _, err := k.ccsKeeper.GetCurrency(ctx, coin.Denom); err != nil {
 		return err
-	}
-	if currency.Decimals != decimals {
-		return sdkErrors.Wrapf(types.ErrIncorrectDecimals, "currency %q decimals: %d", denom, currency.Decimals)
 	}
 
 	// store issue
-	issue := types.NewIssue(denom, amount, payee)
+	issue := types.NewIssue(coin, payee)
 	k.storeIssue(ctx, id, issue)
 
 	// update account balance
-	newCoin := sdk.NewCoin(denom, amount)
-	if _, err := k.bankKeeper.AddCoins(ctx, payee, sdk.Coins{newCoin}); err != nil {
+	if _, err := k.bankKeeper.AddCoins(ctx, payee, sdk.Coins{coin}); err != nil {
 		return sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q: %v", payee, err)
 	}
 
 	// increase supply
-	if err := k.ccsKeeper.IncreaseCurrencySupply(ctx, denom, amount); err != nil {
+	if err := k.ccsKeeper.IncreaseCurrencySupply(ctx, coin); err != nil {
 		return err
 	}
 
 	curSupply := k.supplyKeeper.GetSupply(ctx)
-	curSupply = curSupply.SetTotal(curSupply.GetTotal().Add(newCoin))
+	curSupply = curSupply.SetTotal(curSupply.GetTotal().Add(coin))
 	k.supplyKeeper.SetSupply(ctx, curSupply)
 
 	return

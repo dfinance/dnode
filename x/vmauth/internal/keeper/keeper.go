@@ -26,7 +26,7 @@ type VMAccountKeeper struct {
 func (k VMAccountKeeper) SetAccount(ctx sdk.Context, acc exported.Account) {
 	if stdAcc := k.AccountKeeper.GetAccount(ctx, acc.GetAddress()); stdAcc == nil {
 		for _, coin := range acc.GetCoins() {
-			if err := k.ccsKeeper.IncreaseCurrencySupply(ctx, coin.Denom, coin.Amount); err != nil {
+			if err := k.ccsKeeper.IncreaseCurrencySupply(ctx, coin); err != nil {
 				panic(fmt.Errorf("increasing currency %q supply for new account %q: %v", coin.Denom, acc.GetAddress(), err))
 			}
 		}

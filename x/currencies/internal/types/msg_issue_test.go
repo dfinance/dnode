@@ -13,7 +13,8 @@ import (
 func TestCurrenciesMsg_IssueCurrency_ValidateBasic(t *testing.T) {
 	t.Parallel()
 
-	target := NewMsgIssueCurrency("issue1", "symbol", sdk.NewInt(10), 0, sdk.AccAddress([]byte("addr1")))
+	coin := sdk.NewCoin("symbol", sdk.NewInt(10))
+	target := NewMsgIssueCurrency("issue1", coin, sdk.AccAddress([]byte("addr1")))
 	// ok
 	{
 		require.NoError(t, target.ValidateBasic())
@@ -29,22 +30,22 @@ func TestCurrenciesMsg_IssueCurrency_ValidateBasic(t *testing.T) {
 	// invalid: denom
 	{
 		invalidTarget := target
-		invalidTarget.Denom = ""
+		invalidTarget.Coin.Denom = ""
 		require.Error(t, invalidTarget.ValidateBasic())
 	}
 
 	// invalid: amount (zero)
 	{
 		invalidTarget := target
-		invalidTarget.Amount = sdk.NewInt(0)
+		invalidTarget.Coin.Amount = sdk.NewInt(0)
 		require.Error(t, invalidTarget.ValidateBasic())
 	}
 
 	// invalid: amount (negative)
 	{
 		invalidTarget := target
-		invalidTarget.Amount = sdk.NewInt(-1)
-		require.Panics(t, func() { invalidTarget.ValidateBasic() })
+		invalidTarget.Coin.Amount = sdk.NewInt(-1)
+		require.Error(t, invalidTarget.ValidateBasic())
 	}
 
 	// invalid: payee
@@ -59,7 +60,8 @@ func TestCurrenciesMsg_IssueCurrency_ValidateBasic(t *testing.T) {
 func TestCurrenciesMsg_IssueCurrency_MsgInterface(t *testing.T) {
 	t.Parallel()
 
-	target := NewMsgIssueCurrency("issue1", "symbol", sdk.NewInt(10), 0, sdk.AccAddress([]byte("addr1")))
+	coin := sdk.NewCoin("symbol", sdk.NewInt(10))
+	target := NewMsgIssueCurrency("issue1", coin, sdk.AccAddress([]byte("addr1")))
 	require.Equal(t, "issue_currency", target.Type())
 	require.Equal(t, RouterKey, target.Route())
 	require.True(t, len(target.GetSignBytes()) > 0)

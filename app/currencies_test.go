@@ -55,7 +55,7 @@ func TestCurrenciesApp_MultisigHandler(t *testing.T) {
 
 	{
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
-		issueMsg := currencies.NewMsgIssueCurrency(issue1ID, currency1Denom, amount, 0, senderAcc.GetAddress())
+		issueMsg := currencies.NewMsgIssueCurrency(issue1ID, coin1, senderAcc.GetAddress())
 		tx := genTx([]sdk.Msg{issueMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, sdkErrors.ErrUnauthorized)
 	}
@@ -76,10 +76,10 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 
 	recipientIdx, recipientAddr, recipientPrivKey := uint(0), genAccs[0].Address, genPrivKeys[0]
 
-	checkWithdrawQueryObj := func(obj currencies.Withdraw, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress) {
+	checkWithdrawQueryObj := func(obj currencies.Withdraw, id uint64, coin sdk.Coin, spenderAddr sdk.AccAddress) {
 		require.Equal(t, id, obj.ID.UInt64())
-		require.Equal(t, denom, obj.Denom)
-		require.True(t, obj.Amount.Equal(amount))
+		require.Equal(t, coin.Denom, obj.Coin.Denom)
+		require.True(t, coin.Amount.Equal(obj.Coin.Amount))
 		require.Equal(t, spenderAddr, obj.Spender)
 		require.Equal(t, chainID, obj.PegZoneChainID)
 	}
@@ -88,9 +88,9 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 	createCurrency(t, app, currency1Denom, 0)
 	createCurrency(t, app, currency2Denom, 0)
 	createCurrency(t, app, currency3Denom, 0)
-	issueCurrency(t, app, currency1Denom, amount, 0, "msg1", issue1ID, recipientIdx, genAccs, genPrivKeys, true)
-	issueCurrency(t, app, currency2Denom, amount, 0, "msg2", issue2ID, recipientIdx, genAccs, genPrivKeys, true)
-	issueCurrency(t, app, currency3Denom, amount, 0, "msg3", issue3ID, recipientIdx, genAccs, genPrivKeys, true)
+	issueCurrency(t, app, coin1, "msg1", issue1ID, recipientIdx, genAccs, genPrivKeys, true)
+	issueCurrency(t, app, coin2, "msg2", issue2ID, recipientIdx, genAccs, genPrivKeys, true)
+	issueCurrency(t, app, coin3, "msg3", issue3ID, recipientIdx, genAccs, genPrivKeys, true)
 
 	// check getCurrency query
 	{
@@ -101,16 +101,17 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 
 	// check getIssue query
 	{
-		checkIssueExists(t, app, issue1ID, currency1Denom, amount, recipientAddr)
-		checkIssueExists(t, app, issue2ID, currency2Denom, amount, recipientAddr)
-		checkIssueExists(t, app, issue3ID, currency3Denom, amount, recipientAddr)
+		checkIssueExists(t, app, issue1ID, coin1, recipientAddr)
+		checkIssueExists(t, app, issue2ID, coin2, recipientAddr)
+		checkIssueExists(t, app, issue3ID, coin3, recipientAddr)
 	}
 
 	// withdraw currencies
 	withdrawAmount := amount.QuoRaw(3)
-	withdrawCurrency(t, app, chainID, currency3Denom, withdrawAmount, recipientAddr, recipientPrivKey, true)
-	withdrawCurrency(t, app, chainID, currency3Denom, withdrawAmount, recipientAddr, recipientPrivKey, true)
-	withdrawCurrency(t, app, chainID, currency3Denom, withdrawAmount, recipientAddr, recipientPrivKey, true)
+	withdrawCoin := sdk.NewCoin(currency3Denom, withdrawAmount)
+	withdrawCurrency(t, app, chainID, withdrawCoin, recipientAddr, recipientPrivKey, true)
+	withdrawCurrency(t, app, chainID, withdrawCoin, recipientAddr, recipientPrivKey, true)
+	withdrawCurrency(t, app, chainID, withdrawCoin, recipientAddr, recipientPrivKey, true)
 
 	// check getWithdraws query with pagination
 	{
@@ -121,8 +122,8 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 			CheckRunQuery(t, app, reqParams, queryCurrencyWithdrawsPath, &withdraws)
 
 			require.Len(t, withdraws, 2)
-			checkWithdrawQueryObj(withdraws[0], 0, currency3Denom, withdrawAmount, recipientAddr)
-			checkWithdrawQueryObj(withdraws[1], 1, currency3Denom, withdrawAmount, recipientAddr)
+			checkWithdrawQueryObj(withdraws[0], 0, withdrawCoin, recipientAddr)
+			checkWithdrawQueryObj(withdraws[1], 1, withdrawCoin, recipientAddr)
 		}
 
 		// page 2
@@ -132,15 +133,15 @@ func TestCurrenciesApp_Queries(t *testing.T) {
 			CheckRunQuery(t, app, reqParams, queryCurrencyWithdrawsPath, &withdraws)
 
 			require.Len(t, withdraws, 1)
-			checkWithdrawQueryObj(withdraws[0], 2, currency3Denom, withdrawAmount, recipientAddr)
+			checkWithdrawQueryObj(withdraws[0], 2, withdrawCoin, recipientAddr)
 		}
 	}
 
 	// check getWithdraw query
 	{
-		checkWithdrawExists(t, app, 0, currency3Denom, withdrawAmount, recipientAddr, recipientAddr.String())
-		checkWithdrawExists(t, app, 1, currency3Denom, withdrawAmount, recipientAddr, recipientAddr.String())
-		checkWithdrawExists(t, app, 2, currency3Denom, withdrawAmount, recipientAddr, recipientAddr.String())
+		checkWithdrawExists(t, app, 0, withdrawCoin, recipientAddr, recipientAddr.String())
+		checkWithdrawExists(t, app, 1, withdrawCoin, recipientAddr, recipientAddr.String())
+		checkWithdrawExists(t, app, 2, withdrawCoin, recipientAddr, recipientAddr.String())
 	}
 }
 
@@ -165,46 +166,42 @@ func TestCurrenciesApp_Issue(t *testing.T) {
 	// ok: currency is issued
 	{
 		msgId, issueId := "1", "issue1"
+		coin := sdk.NewCoin(denom, curAmount)
 
-		issueCurrency(t, app, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
-		checkIssueExists(t, app, issueId, denom, curAmount, recipientAddr)
+		issueCurrency(t, app, coin, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
+		checkIssueExists(t, app, issueId, coin, recipientAddr)
 		checkCurrencyExists(t, app, denom, curAmount, curDecimals)
-		checkRecipientCoins(t, app, recipientAddr, denom, curAmount, curDecimals)
+		checkRecipientCoins(t, app, recipientAddr, denom, curAmount)
 	}
 
 	// ok currency supply increased
 	{
 		msgId, issueId := "2", "issue2"
 		newAmount := sdk.NewInt(200)
+		coin := sdk.NewCoin(denom, newAmount)
 		curAmount = curAmount.Add(newAmount)
 
-		issueCurrency(t, app, denom, newAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
-		checkIssueExists(t, app, issueId, denom, newAmount, recipientAddr)
+		issueCurrency(t, app, coin, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
+		checkIssueExists(t, app, issueId, coin, recipientAddr)
 		checkCurrencyExists(t, app, denom, curAmount, curDecimals)
-		checkRecipientCoins(t, app, recipientAddr, denom, curAmount, curDecimals)
-	}
-
-	// fail: currency issue for existing currency with different decimals
-	{
-		msgId, issueId := "3", "issue3"
-
-		res, err := issueCurrency(t, app, denom, sdk.OneInt(), curDecimals+1, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, currencies.ErrIncorrectDecimals, res, err)
+		checkRecipientCoins(t, app, recipientAddr, denom, curAmount)
 	}
 
 	// fail: currency issue with the same issueID
 	{
 		msgId, issueId := "non-existing-msgID", "issue1"
+		coin := sdk.NewCoin(denom, amount)
 
-		res, err := issueCurrency(t, app, denom, amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		res, err := issueCurrency(t, app, coin, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
 		CheckResultError(t, currencies.ErrWrongIssueID, res, err)
 	}
 
 	// fail: currency issue with already existing uniqueMsgID
 	{
 		msgId, issueId := "1", "non-existing-issue"
+		coin := sdk.NewCoin(denom, amount)
 
-		res, err := issueCurrency(t, app, denom, amount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
+		res, err := issueCurrency(t, app, coin, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
 		CheckResultError(t, multisig.ErrWrongCallUniqueId, res, err)
 	}
 }
@@ -230,12 +227,13 @@ func TestCurrenciesApp_IssueHugeAmount(t *testing.T) {
 
 		hugeAmount, ok := sdk.NewIntFromString("100000000000000000000000000000000000000")
 		require.True(t, ok)
+		coin := sdk.NewCoin(denom, hugeAmount)
 
 		createCurrency(t, app, denom, 0)
-		issueCurrency(t, app, denom, hugeAmount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
-		checkIssueExists(t, app, issueId, denom, hugeAmount, recipientAddr)
+		issueCurrency(t, app, coin, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
+		checkIssueExists(t, app, issueId, coin, recipientAddr)
 		checkCurrencyExists(t, app, denom, hugeAmount, 0)
-		checkRecipientCoins(t, app, recipientAddr, denom, hugeAmount, 0)
+		checkRecipientCoins(t, app, recipientAddr, denom, hugeAmount)
 	}
 
 	// check huge amount currency issue (that worked before u128)
@@ -244,10 +242,11 @@ func TestCurrenciesApp_IssueHugeAmount(t *testing.T) {
 
 		hugeAmount, ok := sdk.NewIntFromString("1000000000000000000000000000000000000000000000")
 		require.True(t, ok)
+		coin := sdk.NewCoin(denom, hugeAmount)
 
 		createCurrency(t, app, denom, 0)
-		issueCurrency(t, app, denom, hugeAmount, 0, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
-		checkIssueExists(t, app, issueId, denom, hugeAmount, recipientAddr)
+		issueCurrency(t, app, coin, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
+		checkIssueExists(t, app, issueId, coin, recipientAddr)
 		checkCurrencyExists(t, app, denom, hugeAmount, 0)
 
 		require.Panics(t, func() {
@@ -277,11 +276,12 @@ func TestCurrenciesApp_Decimals(t *testing.T) {
 	// issue currency amount with decimals
 	{
 		msgId, issueId := "1", "issue1"
+		coin := sdk.NewCoin(denom, curAmount)
 
-		issueCurrency(t, app, denom, curAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
-		checkIssueExists(t, app, issueId, denom, curAmount, recipientAddr)
+		issueCurrency(t, app, coin, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
+		checkIssueExists(t, app, issueId, coin, recipientAddr)
 		checkCurrencyExists(t, app, denom, curAmount, curDecimals)
-		checkRecipientCoins(t, app, recipientAddr, denom, curAmount, curDecimals)
+		checkRecipientCoins(t, app, recipientAddr, denom, curAmount)
 	}
 
 	// increase currency amount with decimals
@@ -289,22 +289,24 @@ func TestCurrenciesApp_Decimals(t *testing.T) {
 		msgId, issueId := "2", "issue2"
 
 		newAmount := sdk.OneInt()
+		coin := sdk.NewCoin(denom, newAmount)
 		curAmount = curAmount.Add(newAmount)
 
-		issueCurrency(t, app, denom, newAmount, curDecimals, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
-		checkIssueExists(t, app, issueId, denom, newAmount, recipientAddr)
+		issueCurrency(t, app, coin, msgId, issueId, recipientIdx, genAccs, genPrivKeys, true)
+		checkIssueExists(t, app, issueId, coin, recipientAddr)
 		checkCurrencyExists(t, app, denom, curAmount, curDecimals)
-		checkRecipientCoins(t, app, recipientAddr, denom, curAmount, curDecimals)
+		checkRecipientCoins(t, app, recipientAddr, denom, curAmount)
 	}
 
 	// decrease currency amount with decimals
 	{
 		newAmount := sdk.OneInt()
+		coin := sdk.NewCoin(denom, newAmount)
 		curAmount = curAmount.Sub(newAmount)
 
-		withdrawCurrency(t, app, chainID, denom, newAmount, recipientAddr, recipientPrivKey, true)
+		withdrawCurrency(t, app, chainID, coin, recipientAddr, recipientPrivKey, true)
 		checkCurrencyExists(t, app, denom, curAmount, curDecimals)
-		checkRecipientCoins(t, app, recipientAddr, denom, curAmount, curDecimals)
+		checkRecipientCoins(t, app, recipientAddr, denom, curAmount)
 	}
 }
 
@@ -328,43 +330,48 @@ func TestCurrenciesApp_Withdraw(t *testing.T) {
 
 	// issue currency
 	{
-		issueCurrency(t, app, denom, curSupply, 0, "1", issue1ID, recipientIdx, genAccs, genPrivKeys, true)
-		checkIssueExists(t, app, issue1ID, denom, curSupply, recipientAddr)
+		coin := sdk.NewCoin(denom, curSupply)
+		issueCurrency(t, app, coin, "1", issue1ID, recipientIdx, genAccs, genPrivKeys, true)
+		checkIssueExists(t, app, issue1ID, coin, recipientAddr)
 		checkCurrencyExists(t, app, denom, curSupply, 0)
-		checkRecipientCoins(t, app, recipientAddr, denom, curSupply, 0)
+		checkRecipientCoins(t, app, recipientAddr, denom, curSupply)
 	}
 
 	// ok: withdraw currency
 	{
+		coin := sdk.NewCoin(denom, amount)
 		curSupply = curSupply.Sub(amount)
-		withdrawCurrency(t, app, chainID, denom, amount, recipientAddr, recipientPrivKey, true)
-		checkWithdrawExists(t, app, 0, denom, amount, recipientAddr, recipientAddr.String())
+		withdrawCurrency(t, app, chainID, coin, recipientAddr, recipientPrivKey, true)
+		checkWithdrawExists(t, app, 0, coin, recipientAddr, recipientAddr.String())
 		checkCurrencyExists(t, app, denom, curSupply, 0)
-		checkRecipientCoins(t, app, recipientAddr, denom, curSupply, 0)
+		checkRecipientCoins(t, app, recipientAddr, denom, curSupply)
 	}
 
 	// ok: withdraw currency (currency supply is 0)
 	{
+		coin := sdk.NewCoin(denom, amount)
 		curSupply = curSupply.Sub(amount)
 		require.True(t, curSupply.IsZero())
 
-		withdrawCurrency(t, app, chainID, denom, amount, recipientAddr, recipientPrivKey, true)
-		checkWithdrawExists(t, app, 1, denom, amount, recipientAddr, recipientAddr.String())
+		withdrawCurrency(t, app, chainID, coin, recipientAddr, recipientPrivKey, true)
+		checkWithdrawExists(t, app, 1, coin, recipientAddr, recipientAddr.String())
 		checkCurrencyExists(t, app, denom, curSupply, 0)
-		checkRecipientCoins(t, app, recipientAddr, denom, curSupply, 0)
+		checkRecipientCoins(t, app, recipientAddr, denom, curSupply)
 	}
 
 	// fail: currency withdraw over the limit
 	{
-		res, err := withdrawCurrency(t, app, chainID, denom, sdk.OneInt(), recipientAddr, recipientPrivKey, false)
+		coin := sdk.NewCoin(denom, sdk.OneInt())
+		res, err := withdrawCurrency(t, app, chainID, coin, recipientAddr, recipientPrivKey, false)
 		CheckResultError(t, sdkErrors.ErrInsufficientFunds, res, err)
 	}
 
 	// fail: currency withdraw with denom account doesn't have
 	{
 		wrongDenom := currency2Denom
+		coin := sdk.NewCoin(wrongDenom, sdk.OneInt())
 
-		res, err := withdrawCurrency(t, app, chainID, wrongDenom, amount, recipientAddr, recipientPrivKey, false)
+		res, err := withdrawCurrency(t, app, chainID, coin, recipientAddr, recipientPrivKey, false)
 		CheckResultError(t, ccstorage.ErrWrongDenom, res, err)
 	}
 }
@@ -482,7 +489,8 @@ func TestCurrenciesApp_Supply(t *testing.T) {
 	// issue 50.0 dfi to account1
 	{
 		amount, _ := sdk.NewIntFromString("50000000000000000000")
-		issueCurrency(t, app, "dfi", amount, 18, "1", issue1ID, uint(0), genAccs, genPrivKeys, true)
+		coin := sdk.NewCoin("dfi", amount)
+		issueCurrency(t, app, coin, "1", issue1ID, uint(0), genAccs, genPrivKeys, true)
 
 		checkSupplies("50.0 dfi issued to acc #1")
 	}
@@ -490,7 +498,8 @@ func TestCurrenciesApp_Supply(t *testing.T) {
 	// issue 5.0 btc to account2
 	{
 		amount, _ := sdk.NewIntFromString("500000000")
-		issueCurrency(t, app, "btc", amount, 8, "2", issue2ID, uint(1), genAccs, genPrivKeys, true)
+		coin := sdk.NewCoin("btc", amount)
+		issueCurrency(t, app, coin, "2", issue2ID, uint(1), genAccs, genPrivKeys, true)
 
 		checkSupplies("5.0 btc issued to acc #2")
 	}
@@ -499,7 +508,8 @@ func TestCurrenciesApp_Supply(t *testing.T) {
 	{
 		recipientAddr, recipientPrivKey := genAccs[1].Address, genPrivKeys[1]
 		amount, _ := sdk.NewIntFromString("250000000")
-		withdrawCurrency(t, app, chainID, "btc", amount, recipientAddr, recipientPrivKey, true)
+		coin := sdk.NewCoin("btc", amount)
+		withdrawCurrency(t, app, chainID, coin, recipientAddr, recipientPrivKey, true)
 
 		checkSupplies("2.5 btc destroyed from acc #2")
 	}
@@ -542,20 +552,20 @@ func createCurrency(t *testing.T, app *DnServiceApp, ccDenom string, ccDecimals 
 
 // issueCurrency creates currency issue multisig message and confirms it.
 func issueCurrency(t *testing.T, app *DnServiceApp,
-	ccDenom string, ccAmount sdk.Int, ccDecimals uint8, msgID, issueID string,
+	coin sdk.Coin, msgID, issueID string,
 	recipientAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
 
-	issueMsg := currencies.NewMsgIssueCurrency(issueID, ccDenom, ccAmount, ccDecimals, accs[recipientAccIdx].Address)
+	issueMsg := currencies.NewMsgIssueCurrency(issueID, coin, accs[recipientAccIdx].Address)
 	return MSMsgSubmitAndVote(t, app, msgID, issueMsg, recipientAccIdx, accs, privKeys, doCheck)
 }
 
 // withdrawCurrency creates withdraw currency multisig message and confirms it.
 func withdrawCurrency(t *testing.T, app *DnServiceApp,
-	chainID, ccDenom string, ccAmount sdk.Int,
+	chainID string, coin sdk.Coin,
 	spenderAddr sdk.AccAddress, spenderPrivKey crypto.PrivKey, doCheck bool) (*sdk.Result, error) {
 
 	spenderAcc := GetAccountCheckTx(app, spenderAddr)
-	withdrawMsg := currencies.NewMsgWithdrawCurrency(ccDenom, ccAmount, spenderAcc.GetAddress(), spenderAcc.GetAddress().String(), chainID)
+	withdrawMsg := currencies.NewMsgWithdrawCurrency(coin, spenderAcc.GetAddress(), spenderAcc.GetAddress().String(), chainID)
 	tx := genTx([]sdk.Msg{withdrawMsg}, []uint64{spenderAcc.GetAccountNumber()}, []uint64{spenderAcc.GetSequence()}, spenderPrivKey)
 
 	res, err := DeliverTx(app, tx)
@@ -577,30 +587,30 @@ func checkCurrencyExists(t *testing.T, app *DnServiceApp, denom string, supply s
 }
 
 // checkIssueExists checks issue exists.
-func checkIssueExists(t *testing.T, app *DnServiceApp, issueID, denom string, amount sdk.Int, payeeAddr sdk.AccAddress) {
+func checkIssueExists(t *testing.T, app *DnServiceApp, issueID string, coin sdk.Coin, payeeAddr sdk.AccAddress) {
 	issue := currencies.Issue{}
 	CheckRunQuery(t, app, currencies.IssueReq{ID: issueID}, queryCurrencyIssuePath, &issue)
 
-	require.Equal(t, denom, issue.Denom, "symbol")
-	require.True(t, issue.Amount.Equal(amount), "amount")
+	require.Equal(t, coin.Denom, issue.Coin.Denom, "coin.Denom")
+	require.True(t, coin.Amount.Equal(issue.Coin.Amount), "coin.Amount")
 	require.Equal(t, payeeAddr, issue.Payee)
 }
 
 // checkWithdrawExists checks withdraw exists.
-func checkWithdrawExists(t *testing.T, app *DnServiceApp, id uint64, denom string, amount sdk.Int, spenderAddr sdk.AccAddress, pzSpender string) {
+func checkWithdrawExists(t *testing.T, app *DnServiceApp, id uint64, coin sdk.Coin, spenderAddr sdk.AccAddress, pzSpender string) {
 	withdraw := currencies.Withdraw{}
 	CheckRunQuery(t, app, currencies.WithdrawReq{ID: dnTypes.NewIDFromUint64(id)}, queryCurrencyWithdrawPath, &withdraw)
 
 	require.Equal(t, id, withdraw.ID.UInt64())
-	require.Equal(t, denom, withdraw.Denom)
-	require.True(t, withdraw.Amount.Equal(amount))
+	require.Equal(t, coin.Denom, withdraw.Coin.Denom)
+	require.True(t, coin.Amount.Equal(withdraw.Coin.Amount))
 	require.Equal(t, spenderAddr, withdraw.Spender)
 	require.Equal(t, pzSpender, withdraw.PegZoneSpender)
 	require.Equal(t, chainID, withdraw.PegZoneChainID)
 }
 
 // checkRecipientCoins checks account balance.
-func checkRecipientCoins(t *testing.T, app *DnServiceApp, recipientAddr sdk.AccAddress, denom string, amount sdk.Int, decimals uint8) {
+func checkRecipientCoins(t *testing.T, app *DnServiceApp, recipientAddr sdk.AccAddress, denom string, amount sdk.Int) {
 	checkBalance := amount
 
 	coins := app.bankKeeper.GetCoins(GetContext(app, true), recipientAddr)

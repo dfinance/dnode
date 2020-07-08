@@ -62,6 +62,9 @@ var (
 	issue2ID       = "issue2"
 	issue3ID       = "issue3"
 	amount         = sdk.NewInt(100)
+	coin1          = sdk.NewCoin(currency1Denom, amount)
+	coin2          = sdk.NewCoin(currency2Denom, amount)
+	coin3          = sdk.NewCoin(currency3Denom, amount)
 	ethAddresses   = []string{
 		"0x82A978B3f5962A5b0957d9ee9eEf472EE55B42F1",
 		"0x7d577a597B2742b498Cb5Cf0C26cDCD726d39E6e",

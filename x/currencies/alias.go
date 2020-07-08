@@ -48,6 +48,5 @@ var (
 	ErrWrongIssueID        = types.ErrWrongIssueID
 	ErrWrongWithdrawID     = types.ErrWrongWithdrawID
 	ErrWrongPegZoneSpender = types.ErrWrongPegZoneSpender
-	ErrIncorrectDecimals   = types.ErrIncorrectDecimals
 	ErrGovInvalidProposal  = types.ErrGovInvalidProposal
 )

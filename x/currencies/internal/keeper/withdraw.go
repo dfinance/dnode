@@ -9,7 +9,7 @@ import (
 )
 
 // WithdrawCurrency lowers payee coin balance.
-func (k Keeper) WithdrawCurrency(ctx sdk.Context, denom string, amount sdk.Int, spender sdk.AccAddress, recipient, chainID string) (retErr error) {
+func (k Keeper) WithdrawCurrency(ctx sdk.Context, coin sdk.Coin, spender sdk.AccAddress, recipient, chainID string) (retErr error) {
 	// bankKeeper might panic
 	defer func() {
 		if r := recover(); r != nil {
@@ -18,26 +18,25 @@ func (k Keeper) WithdrawCurrency(ctx sdk.Context, denom string, amount sdk.Int, 
 	}()
 
 	// check and update currency
-	if _, err := k.ccsKeeper.GetCurrency(ctx, denom); err != nil {
+	if _, err := k.ccsKeeper.GetCurrency(ctx, coin.Denom); err != nil {
 		return err
 	}
 
 	// store withdraw
 	newId := k.getNextWithdrawID(ctx)
-	withdraw := types.NewWithdraw(newId, denom, amount, spender, recipient, chainID, ctx.BlockHeader().Time.Unix(), ctx.TxBytes())
+	withdraw := types.NewWithdraw(newId, coin, spender, recipient, chainID, ctx.BlockHeader().Time.Unix(), ctx.TxBytes())
 
 	k.storeWithdraw(ctx, withdraw)
 	k.setLastWithdrawID(ctx, newId)
 
 	// update account balance
-	newCoin := sdk.NewCoin(denom, amount)
-	newCoins := sdk.NewCoins(newCoin)
+	newCoins := sdk.NewCoins(coin)
 	if _, err := k.bankKeeper.SubtractCoins(ctx, spender, newCoins); err != nil {
 		return err
 	}
 
 	// decrease supply
-	if err := k.ccsKeeper.DecreaseCurrencySupply(ctx, denom, amount); err != nil {
+	if err := k.ccsKeeper.DecreaseCurrencySupply(ctx, coin); err != nil {
 		return err
 	}
 

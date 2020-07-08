@@ -13,12 +13,8 @@ import (
 type MsgIssueCurrency struct {
 	// Issue unique ID (could be txHash of transaction in another blockchain)
 	ID string `json:"id"`
-	// Target currency denom
-	Denom string `json:"denom"`
-	// Issue amount
-	Amount sdk.Int `json:"amount"`
-	// Target currency decimals
-	Decimals uint8 `json:"decimals"`
+	// Target currency issue coin
+	Coin sdk.Coin `json:"coin"`
 	// Target account
 	Payee sdk.AccAddress `json:"Payee"`
 }
@@ -39,20 +35,17 @@ func (msg MsgIssueCurrency) ValidateBasic() error {
 		return sdkErrors.Wrap(ErrWrongIssueID, "empty")
 	}
 
-	if err := dnTypes.DenomFilter(msg.Denom); err != nil {
+	if err := dnTypes.DenomFilter(msg.Coin.Denom); err != nil {
 		return sdkErrors.Wrap(ErrWrongDenom, err.Error())
 	}
 
-	if msg.Amount.IsZero() {
-		return sdkErrors.Wrap(ErrWrongAmount, "zero")
+	if msg.Coin.Amount.LTE(sdk.ZeroInt()) {
+		return sdkErrors.Wrap(ErrWrongAmount, "LTE to zero")
 	}
 
 	if msg.Payee.Empty() {
 		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "payee: empty")
 	}
-
-	// check sdk.Coin is creatable
-	sdk.NewCoin(msg.Denom, msg.Amount)
 
 	return nil
 }
@@ -74,12 +67,10 @@ func (msg MsgIssueCurrency) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgIssueCurrency creates a new MsgIssueCurrency message.
-func NewMsgIssueCurrency(id, denom string, amount sdk.Int, decimals uint8, payee sdk.AccAddress) MsgIssueCurrency {
+func NewMsgIssueCurrency(id string, coin sdk.Coin, payee sdk.AccAddress) MsgIssueCurrency {
 	return MsgIssueCurrency{
-		ID:       id,
-		Denom:    denom,
-		Amount:   amount,
-		Decimals: decimals,
-		Payee:    payee,
+		ID:    id,
+		Coin:  coin,
+		Payee: payee,
 	}
 }

@@ -195,7 +195,7 @@ func ParseHexStringParam(argName, argValue string, paramType ParamType) (string,
 	return argValueNorm, nil
 }
 
-// ParseAssetCodeParam parses assetCode and validates.
+// ParseAssetCodeParam parses assetCode and validates it.
 func ParseAssetCodeParam(argName, argValue string, paramType ParamType) (dnTypes.AssetCode, error) {
 	assetCode := dnTypes.AssetCode(strings.ToLower(argValue))
 	if err := assetCode.Validate(); err != nil {
@@ -203,6 +203,30 @@ func ParseAssetCodeParam(argName, argValue string, paramType ParamType) (dnTypes
 	}
 
 	return assetCode, nil
+}
+
+// ParseCoinParam parses sdk.Coin param and validates it.
+func ParseCoinParam(argName, argValue string, paramType ParamType) (retCoin sdk.Coin, retErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			retErr = fmt.Errorf("%s %s %q: parsing coin failed", argName, paramType, argValue)
+		}
+	}()
+
+	coin, err := sdk.ParseCoin(argValue)
+	if err != nil {
+		return sdk.Coin{}, fmt.Errorf("%s %s %q: parsing coin: %v", argName, paramType, argValue, err)
+	}
+
+	if err := dnTypes.DenomFilter(coin.Denom); err != nil {
+		return sdk.Coin{}, fmt.Errorf("%s %s %q: validating denom: %v", argName, paramType, argValue, err)
+	}
+
+	if coin.Amount.LT(sdk.ZeroInt()) {
+		return sdk.Coin{}, fmt.Errorf("%s %s %q: amount is LT zero", argName, paramType, argValue)
+	}
+
+	return coin, nil
 }
 
 // BuildError builds an error in unified error style.

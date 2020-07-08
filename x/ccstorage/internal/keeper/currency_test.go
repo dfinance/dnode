@@ -121,9 +121,10 @@ func TestCCSKeeper_Supply(t *testing.T) {
 	// ok: increase
 	{
 		amount := sdk.NewIntFromUint64(100)
+		coin := sdk.NewCoin(denom, amount)
 		curAmount = curAmount.Add(amount)
 
-		err := keeper.IncreaseCurrencySupply(ctx, denom, amount)
+		err := keeper.IncreaseCurrencySupply(ctx, coin)
 		require.NoError(t, err)
 
 		currency, err := keeper.GetCurrency(ctx, denom)
@@ -140,7 +141,8 @@ func TestCCSKeeper_Supply(t *testing.T) {
 		amount := sdk.NewIntFromUint64(50)
 		curAmount = curAmount.Sub(amount)
 
-		err := keeper.DecreaseCurrencySupply(ctx, denom, amount)
+		coin := sdk.NewCoin(denom, amount)
+		err := keeper.DecreaseCurrencySupply(ctx, coin)
 		require.NoError(t, err)
 
 		currency, err := keeper.GetCurrency(ctx, denom)
@@ -154,8 +156,9 @@ func TestCCSKeeper_Supply(t *testing.T) {
 
 	// fail: non-existing currency
 	{
-		require.Error(t, keeper.IncreaseCurrencySupply(ctx, "invalid", sdk.OneInt()))
+		coin := sdk.NewCoin("invalid", sdk.OneInt())
 
-		require.Error(t, keeper.DecreaseCurrencySupply(ctx, "invalid", sdk.OneInt()))
+		require.Error(t, keeper.IncreaseCurrencySupply(ctx, coin))
+		require.Error(t, keeper.DecreaseCurrencySupply(ctx, coin))
 	}
 }

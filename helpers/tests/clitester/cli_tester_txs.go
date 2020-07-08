@@ -13,16 +13,14 @@ import (
 	"github.com/dfinance/dnode/x/orders"
 )
 
-func (ct *CLITester) TxCurrenciesIssue(payeeAddr, fromAddr, issueID, denom string, amount sdk.Int, decimals uint8) *TxRequest {
+func (ct *CLITester) TxCurrenciesIssue(payeeAddr, fromAddr, issueID, denom string, amount sdk.Int) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"currencies",
 		fromAddr,
-		"ms-issue-currency",
+		"ms-issue",
 		issueID,
-		denom,
-		amount.String(),
-		strconv.Itoa(int(decimals)),
+		sdk.NewCoin(denom, amount).String(),
 		payeeAddr)
 
 	return r
@@ -33,9 +31,8 @@ func (ct *CLITester) TxCurrenciesWithdraw(recipientAddr, fromAddr, denom string,
 	r.SetCmd(
 		"currencies",
 		fromAddr,
-		"withdraw-currency",
-		denom,
-		amount.String(),
+		"withdraw",
+		sdk.NewCoin(denom, amount).String(),
 		recipientAddr,
 		ct.IDs.ChainID)
 

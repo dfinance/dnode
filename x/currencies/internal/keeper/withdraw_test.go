@@ -24,17 +24,18 @@ func TestCurrenciesKeeper_WithdrawCurrency(t *testing.T) {
 
 	// fail: unknown currency
 	{
-		require.Error(t, keeper.WithdrawCurrency(ctx, "test", defAmount, addr, recipient.String(), ctx.ChainID()))
+		coin := sdk.NewCoin("test", sdk.NewInt(100))
+		require.Error(t, keeper.WithdrawCurrency(ctx, coin, addr, recipient.String(), ctx.ChainID()))
 	}
 
 	// issue currency
-	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defDenom, defAmount, defDecimals, addr))
+	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defCoin, addr))
 
 	// ok
 	{
 		withdrawID := keeper.getNextWithdrawID(ctx)
 		require.False(t, keeper.HasWithdraw(ctx, withdrawID))
-		require.NoError(t, keeper.WithdrawCurrency(ctx, defDenom, defAmount, addr, recipient.String(), ctx.ChainID()))
+		require.NoError(t, keeper.WithdrawCurrency(ctx, defCoin, addr, recipient.String(), ctx.ChainID()))
 		require.True(t, keeper.HasWithdraw(ctx, withdrawID))
 
 		// check account balance changed
@@ -57,12 +58,7 @@ func TestCurrenciesKeeper_WithdrawCurrency(t *testing.T) {
 
 	// fail: insufficient coins (balance is 0)
 	{
-		require.Error(t, keeper.WithdrawCurrency(ctx, defDenom, defAmount, addr, recipient.String(), ctx.ChainID()))
-	}
-
-	// fail: insufficient coins (account doesn't have denom currency)
-	{
-		require.Error(t, keeper.WithdrawCurrency(ctx, "otherdenom", defAmount, addr, recipient.String(), ctx.ChainID()))
+		require.Error(t, keeper.WithdrawCurrency(ctx, defCoin, addr, recipient.String(), ctx.ChainID()))
 	}
 }
 
@@ -77,10 +73,10 @@ func TestCurrenciesKeeper_GetWithdraw(t *testing.T) {
 	recipient := sdk.AccAddress("addr2")
 
 	// issue currency
-	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defDenom, defAmount, defDecimals, addr))
+	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defCoin, addr))
 
 	// withdraw currency
-	require.NoError(t, keeper.WithdrawCurrency(ctx, defDenom, defAmount, addr, recipient.String(), ctx.ChainID()))
+	require.NoError(t, keeper.WithdrawCurrency(ctx, defCoin, addr, recipient.String(), ctx.ChainID()))
 
 	// ok
 	{
@@ -89,8 +85,7 @@ func TestCurrenciesKeeper_GetWithdraw(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, id.String(), withdraw.ID.String())
-		require.Equal(t, defDenom, withdraw.Denom)
-		require.True(t, withdraw.Amount.Equal(defAmount))
+		require.True(t, defCoin.IsEqual(withdraw.Coin))
 		require.Equal(t, addr.String(), withdraw.Spender.String())
 		require.Equal(t, recipient.String(), withdraw.PegZoneSpender)
 		require.Equal(t, ctx.ChainID(), withdraw.PegZoneChainID)
@@ -118,11 +113,13 @@ func TestCurrenciesKeeper_GetWithdrawsFiltered(t *testing.T) {
 	withdrawAmount := amount.QuoRaw(int64(withdrawCount))
 
 	// issue currency
-	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defDenom, amount, defDecimals, addr))
+	coin := sdk.NewCoin(defDenom, amount)
+	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, coin, addr))
 
 	// multiple withdraws
 	for i := 0; i < withdrawCount; i++ {
-		require.NoError(t, keeper.WithdrawCurrency(ctx, defDenom, withdrawAmount, addr, recipient.String(), ctx.ChainID()))
+		coin := sdk.NewCoin(defDenom, withdrawAmount)
+		require.NoError(t, keeper.WithdrawCurrency(ctx, coin, addr, recipient.String(), ctx.ChainID()))
 	}
 
 	// request all

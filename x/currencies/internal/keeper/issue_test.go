@@ -20,7 +20,7 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 	// ok
 	{
 		require.False(t, keeper.HasIssue(ctx, defIssueID1))
-		require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defDenom, defAmount, defDecimals, addr))
+		require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defCoin, addr))
 
 		// check account balance changed
 		require.True(t, input.bankKeeper.GetCoins(ctx, addr).AmountOf(defDenom).Equal(defAmount))
@@ -46,12 +46,7 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 
 	// fail: existing issueID
 	{
-		require.Error(t, keeper.IssueCurrency(ctx, defIssueID1, defDenom, defAmount, defDecimals, addr))
-	}
-
-	// fail: wrong decimals
-	{
-		require.Error(t, keeper.IssueCurrency(ctx, defIssueID2, defDenom, defAmount, 2, addr))
+		require.Error(t, keeper.IssueCurrency(ctx, defIssueID1, defCoin, addr))
 	}
 
 	// ok: issue existing currency, increasing supply
@@ -59,7 +54,7 @@ func TestCurrenciesKeeper_IssueCurrency(t *testing.T) {
 		newAmount := defAmount.MulRaw(2)
 
 		require.False(t, keeper.HasIssue(ctx, defIssueID2))
-		require.NoError(t, keeper.IssueCurrency(ctx, defIssueID2, defDenom, defAmount, defDecimals, addr))
+		require.NoError(t, keeper.IssueCurrency(ctx, defIssueID2, defCoin, addr))
 
 		// check account balance changed
 		require.True(t, input.bankKeeper.GetCoins(ctx, addr).AmountOf(defDenom).Equal(newAmount))
@@ -85,14 +80,13 @@ func TestCurrenciesKeeper_GetIssue(t *testing.T) {
 	ctx, keeper := input.ctx, input.keeper
 
 	// issue currency
-	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defDenom, defAmount, defDecimals, addr))
+	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defCoin, addr))
 
 	// ok
 	{
 		issue, err := keeper.GetIssue(ctx, defIssueID1)
 		require.NoError(t, err)
-		require.Equal(t, defDenom, issue.Denom)
-		require.True(t, issue.Amount.Equal(defAmount))
+		require.True(t, defCoin.IsEqual(issue.Coin))
 		require.Equal(t, addr.String(), issue.Payee.String())
 		require.True(t, keeper.HasIssue(ctx, defIssueID1))
 	}
@@ -115,7 +109,8 @@ func TestCurrenciesKeeper_IssueHugeAmount(t *testing.T) {
 
 	amount, ok := sdk.NewIntFromString("1000000000000000000000000000000000000000000000")
 	require.True(t, ok)
+	coin := sdk.NewCoin(defDenom, amount)
 
-	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, defDenom, amount, defDecimals, addr))
+	require.NoError(t, keeper.IssueCurrency(ctx, defIssueID1, coin, addr))
 	require.True(t, input.bankKeeper.GetCoins(ctx, addr).AmountOf(defDenom).Equal(amount))
 }

@@ -22,5 +22,5 @@ func NewMsHandler(keeper keeper.Keeper) msmodule.MsHandler {
 
 // handleMsMsgIssueCurrency hanldes MsgIssueCurrency multisig message.
 func handleMsMsgIssueCurrency(ctx sdk.Context, keeper keeper.Keeper, msg MsgIssueCurrency) error {
-	return keeper.IssueCurrency(ctx, msg.ID, msg.Denom, msg.Amount, msg.Decimals, msg.Payee)
+	return keeper.IssueCurrency(ctx, msg.ID, msg.Coin, msg.Payee)
 }

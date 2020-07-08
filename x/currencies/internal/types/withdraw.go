@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
@@ -16,12 +16,10 @@ import (
 type Withdraw struct {
 	// Withdraw unique ID
 	ID dnTypes.ID `json:"id" swaggertype:"string" example:"0"`
-	// Target currency denom
-	Denom string `json:"denom" example:"dfi"`
-	// Amount of coins spender balance is decreased to
-	Amount types.Int `json:"amount" swaggertype:"string" example:"100"`
+	// Target currency Coin
+	Coin sdk.Coin `json:"coin" swaggertype:"string" example:"100dfi"`
 	// Target account for reducing coin balance
-	Spender types.AccAddress `json:"spender" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	Spender sdk.AccAddress `json:"spender" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Second blockchain: spender account
 	PegZoneSpender string `json:"pegzone_spender" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Second blockchain: ID
@@ -35,16 +33,14 @@ type Withdraw struct {
 func (withdraw Withdraw) String() string {
 	return fmt.Sprintf("Withdraw:\n"+
 		"  ID:             %s\n"+
-		"  Denom:          %s\n"+
-		"  Amount:         %s\n"+
+		"  Coin:           %s\n"+
 		"  Spender:        %s\n"+
 		"  PegZoneSpender: %s\n"+
 		"  PegZoneChainID: %s\n"+
 		"  Timestamp:      %d\n"+
 		"  TxHash:         %s",
 		withdraw.ID,
-		withdraw.Denom,
-		withdraw.Amount,
+		withdraw.Coin.String(),
 		withdraw.Spender,
 		withdraw.PegZoneSpender,
 		withdraw.PegZoneChainID,
@@ -54,12 +50,11 @@ func (withdraw Withdraw) String() string {
 }
 
 // NewWithdraw creates a new Withdraw object.
-func NewWithdraw(id dnTypes.ID, denom string, amount types.Int, spender types.AccAddress, pzSpender, pzChainID string, timestamp int64, txBytes []byte) Withdraw {
+func NewWithdraw(id dnTypes.ID, coin sdk.Coin, spender sdk.AccAddress, pzSpender, pzChainID string, timestamp int64, txBytes []byte) Withdraw {
 	hash := sha256.Sum256(txBytes)
 	return Withdraw{
 		ID:             id,
-		Denom:          denom,
-		Amount:         amount,
+		Coin:           coin,
 		Spender:        spender,
 		PegZoneSpender: pzSpender,
 		PegZoneChainID: pzChainID,

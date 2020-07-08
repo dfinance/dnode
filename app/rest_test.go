@@ -40,7 +40,7 @@ func TestCurrency_REST(t *testing.T) {
 	withdrawAmounts := make([]sdk.Int, 0)
 
 	// issue currency
-	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, issueId, ccDenom, curAmount, ccDecimals).CheckSucceeded()
+	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, issueId, ccDenom, curAmount).CheckSucceeded()
 	ct.ConfirmCall(issueId)
 
 	// check getIssue endpoint
@@ -48,8 +48,8 @@ func TestCurrency_REST(t *testing.T) {
 		req, respMsg := ct.RestQueryCurrenciesIssue(issueId)
 		req.CheckSucceeded()
 
-		require.Equal(t, ccDenom, respMsg.Denom)
-		require.True(t, respMsg.Amount.Equal(curAmount))
+		require.Equal(t, ccDenom, respMsg.Coin.Denom)
+		require.True(t, curAmount.Equal(respMsg.Coin.Amount))
 		require.Equal(t, recipientAddr, respMsg.Payee.String())
 
 		// incorrect inputs
@@ -101,8 +101,8 @@ func TestCurrency_REST(t *testing.T) {
 		req.CheckSucceeded()
 
 		require.Equal(t, ct.IDs.ChainID, respMsg.PegZoneChainID)
-		require.Equal(t, ccDenom, respMsg.Denom)
-		require.True(t, respMsg.Amount.Equal(newAmount))
+		require.Equal(t, ccDenom, respMsg.Coin.Denom)
+		require.True(t, newAmount.Equal(respMsg.Coin.Amount))
 		require.Equal(t, recipientAddr, respMsg.Spender.String())
 		require.Equal(t, recipientAddr, respMsg.PegZoneSpender)
 
@@ -140,8 +140,8 @@ func TestCurrency_REST(t *testing.T) {
 			withdraw := (*respMsg)[i]
 			require.Equal(t, uint64(i), withdraw.ID.UInt64())
 			require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
-			require.Equal(t, ccDenom, withdraw.Denom)
-			require.True(t, withdraw.Amount.Equal(amount))
+			require.Equal(t, ccDenom, withdraw.Coin.Denom)
+			require.True(t, amount.Equal(withdraw.Coin.Amount))
 			require.Equal(t, recipientAddr, withdraw.Spender.String())
 			require.Equal(t, recipientAddr, withdraw.PegZoneSpender)
 		}

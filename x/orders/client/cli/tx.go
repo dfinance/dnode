@@ -65,8 +65,8 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 	helpers.BuildCmdHelp(cmd, []string{
 		"asset code in {base denomination_symbol}_{quote_denomination_symbol} format",
 		"order type [bid/ask]",
-		"price with decimals (1.0 BTC with 8 decimals -> 100000000)",
-		"quantity with decimals",
+		"quoteAsset price with decimals (1.0 DFI with 18 decimals -> 1000000000000000000)",
+		"baseAsset quantity with decimals (1.0 BTC with 8 decimals -> 100000000)",
 		"order TTL [s]",
 	})
 
