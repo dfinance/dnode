@@ -7,6 +7,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/dfinance/dnode/x/ccstorage/internal/types"
+	vmExport "github.com/dfinance/dnode/x/vm/export"
 )
 
 // GetCurrencyBalancePath returns VM balance path for currency.
@@ -46,7 +47,7 @@ func (k Keeper) getPathData(ctx sdk.Context, key []byte) ([]byte, bool) {
 		return nil, false
 	}
 
-	data := types.PathData{}
+	data := vmExport.PathData{}
 	bz := storage.Get(key)
 	if err := k.cdc.UnmarshalBinaryBare(bz, &data); err != nil {
 		panic(fmt.Errorf("unmarshal PathData: %v", err))
@@ -59,7 +60,7 @@ func (k Keeper) getPathData(ctx sdk.Context, key []byte) ([]byte, bool) {
 func (k Keeper) storePathData(ctx sdk.Context, key, path []byte) {
 	storage := ctx.KVStore(k.storeKey)
 
-	data := types.PathData{Path: path}
+	data := vmExport.PathData{Path: path}
 	bz, err := k.cdc.MarshalBinaryBare(data)
 	if err != nil {
 		panic(fmt.Errorf("marshal PathData: %v", err))
