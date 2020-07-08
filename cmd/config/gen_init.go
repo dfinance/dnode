@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -99,6 +100,14 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
 			stakingGenState.Params.BondDenom = MainDenom
 			appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
+
+			// Change default mint stake.
+			mintDataBz := appGenState[mint.ModuleName]
+			var mintGenState mint.GenesisState
+
+			cdc.MustUnmarshalJSON(mintDataBz, &mintGenState)
+			mintGenState.Params.MintDenom = MainDenom
+			appGenState[mint.ModuleName] = cdc.MustMarshalJSON(mintGenState)
 
 			// Change default minimal governance deposit coin.
 			govDataBz := appGenState[gov.ModuleName]

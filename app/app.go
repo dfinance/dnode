@@ -19,6 +19,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -66,6 +67,7 @@ var (
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
 		staking.AppModuleBasic{},
+		mint.AppModuleBasic{},
 		distribution.AppModuleBasic{},
 		params.AppModuleBasic{},
 		slashing.AppModuleBasic{},
@@ -85,6 +87,7 @@ var (
 	maccPerms = map[string][]string{
 		auth.FeeCollectorName:     nil,
 		distribution.ModuleName:   nil,
+		mint.ModuleName:           {supply.Minter},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		gov.ModuleName:            {supply.Burner},
@@ -108,6 +111,7 @@ type DnServiceApp struct {
 	supplyKeeper    supply.Keeper
 	paramsKeeper    params.Keeper
 	stakingKeeper   staking.Keeper
+	mintKeeper      mint.Keeper
 	distrKeeper     distribution.Keeper
 	slashingKeeper  slashing.Keeper
 	poaKeeper       poa.Keeper
@@ -132,13 +136,13 @@ type DnServiceApp struct {
 func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
-	app.Logger().Info(fmt.Sprintf("Waiting for VM connection, address: %s", addr))
+	app.Logger().Info(fmt.Sprintf("Creating connection to VM, address: %s", addr))
 	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1*time.Second)
 	if err != nil {
 		panic(err)
 	}
 
-	app.Logger().Info(fmt.Sprintf("Successful connected to VM, connection status: %d", app.vmConn.GetState()))
+	app.Logger().Info(fmt.Sprintf("Non-blocking connection initialized, status: %s", app.vmConn.GetState()))
 }
 
 // Close VM connection and DS server stops.
@@ -181,6 +185,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		supply.StoreKey,
 		params.StoreKey,
 		staking.StoreKey,
+		mint.StoreKey,
 		distribution.StoreKey,
 		slashing.StoreKey,
 		poa.StoreKey,
@@ -270,6 +275,15 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		keys[staking.StoreKey],
 		app.supplyKeeper,
 		app.paramsKeeper.Subspace(staking.DefaultParamspace),
+	)
+
+	// Mint keeper (inflation).
+	app.mintKeeper = mint.NewKeeper(
+		cdc, keys[mint.StoreKey],
+		app.paramsKeeper.Subspace(mint.DefaultParamspace),
+		stakingKeeper,
+		app.supplyKeeper,
+		auth.FeeCollectorName,
 	)
 
 	// Initialize currency keeper.
@@ -382,6 +396,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		mint.NewAppModule(app.mintKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
 		ccstorage.NewAppModule(app.ccsKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
@@ -395,6 +410,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	)
 
 	app.mm.SetOrderBeginBlockers(
+		mint.ModuleName,
 		distribution.ModuleName,
 		slashing.ModuleName,
 		vm.ModuleName,
@@ -421,7 +437,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		bank.ModuleName,
 		slashing.ModuleName,
 		gov.ModuleName,
-		supply.ModuleName,
 		poa.ModuleName,
 		multisig.ModuleName,
 		currencies.ModuleName,
@@ -429,6 +444,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		markets.ModuleName,
 		orders.ModuleName,
 		orderbook.ModuleName,
+		mint.ModuleName,
+		supply.ModuleName, // should be after all modules related to account balances.
 		genutil.ModuleName,
 	)
 
