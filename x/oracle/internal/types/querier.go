@@ -9,18 +9,15 @@ import (
 // assets Returns []Assets in the oracle system
 
 const (
-	// QueryCurrentPrice command for current price queries
-	QueryCurrentPrice = "price"
-	// QueryRawPrices command for raw price queries
-	QueryRawPrices = "rawprices"
-	// QueryAssets command for assets query
-	QueryAssets = "assets"
+	QueryPrice     = "price"     // QueryPrice command for current price queries
+	QueryRawPrices = "rawprices" // QueryRawPrices command for raw price queries
+	QueryAssets    = "assets"    // QueryAssets command for assets query
 )
 
-// QueryRawPricesResp response to a rawprice query
+// QueryRawPricesResp response to a rawprice query.
 type QueryRawPricesResp []PostedPrice
 
-// implement fmt.Stringer
+// String implementation of fmt.Stringer.
 func (n QueryRawPricesResp) String() string {
 	strBuilder := strings.Builder{}
 	for _, v := range n {
@@ -29,10 +26,10 @@ func (n QueryRawPricesResp) String() string {
 	return strBuilder.String()
 }
 
-// QueryAssetsResp response to a assets query
+// QueryAssetsResp response to a assets query.
 type QueryAssetsResp []string
 
-// implement fmt.Stringer
+// String implementation of fmt.Stringer.
 func (n QueryAssetsResp) String() string {
 	return strings.Join(n[:], "\n")
 }

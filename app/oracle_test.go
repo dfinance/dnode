@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	queryOracleGetCurrentPricePathFmt = "/custom/oracle/price/%s"
-	queryOracleGetRawPricesPathFmt    = "/custom/oracle/rawprices/%s/%d"
-	queryOracleGetAssetsPath          = "/custom/oracle/assets"
+	queryOracleGetCurrentPricePathFmt = "/custom/" + oracle.ModuleName + "/" + oracle.QueryPrice + "/%s"
+	queryOracleGetRawPricesPathFmt    = "/custom/" + oracle.ModuleName + "/" + oracle.QueryRawPrices + "/%s/%d"
+	queryOracleGetAssetsPath          = "/custom/" + oracle.ModuleName + "/" + oracle.QueryAssets
 )
 
 func TestOracle_Queries(t *testing.T) {

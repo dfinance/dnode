@@ -3,17 +3,16 @@ package oracle
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
-	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
-// NewHandler handles all oracle type messages
+// NewHandler handles all oracle type messages.
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
 		case types.MsgPostPrice:
-			return HandleMsgPostPrice(ctx, k, msg)
+			return handleMsgPostPrice(ctx, k, msg)
 		case types.MsgAddOracle:
 			return handleMsgAddOracle(ctx, k, msg)
 		case types.MsgSetOracles:
@@ -31,8 +30,8 @@ func NewHandler(k Keeper) sdk.Handler {
 // price feed questions:
 // do proposers need to post the round in the message? If not, how do we determine the round?
 
-// HandleMsgPostPrice handles prices posted by oracles
-func HandleMsgPostPrice(ctx sdk.Context, k Keeper, msg types.MsgPostPrice) (*sdk.Result, error) {
+// handleMsgPostPrice handles prices posted by oracles.
+func handleMsgPostPrice(ctx sdk.Context, k Keeper, msg types.MsgPostPrice) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := k.ValidatePostPrice(ctx, msg); err != nil {
 		return nil, err
@@ -49,6 +48,7 @@ func HandleMsgPostPrice(ctx sdk.Context, k Keeper, msg types.MsgPostPrice) (*sdk
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
+// handleMsgAddOracle handles AddOracle message.
 func handleMsgAddOracle(ctx sdk.Context, k Keeper, msg types.MsgAddOracle) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
@@ -66,6 +66,7 @@ func handleMsgAddOracle(ctx sdk.Context, k Keeper, msg types.MsgAddOracle) (*sdk
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
+// handleMsgSetOracles handles SetOracles message.
 func handleMsgSetOracles(ctx sdk.Context, k Keeper, msg types.MsgSetOracles) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
@@ -83,6 +84,7 @@ func handleMsgSetOracles(ctx sdk.Context, k Keeper, msg types.MsgSetOracles) (*s
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
+// handleMsgSetAsset handles SetAsset message.
 func handleMsgSetAsset(ctx sdk.Context, k Keeper, msg types.MsgSetAsset) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
@@ -100,6 +102,7 @@ func handleMsgSetAsset(ctx sdk.Context, k Keeper, msg types.MsgSetAsset) (*sdk.R
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
+//  handleMsgAddAsset handles AddUser message.
 func handleMsgAddAsset(ctx sdk.Context, k Keeper, msg types.MsgAddAsset) (*sdk.Result, error) {
 	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
@@ -115,18 +118,4 @@ func handleMsgAddAsset(ctx sdk.Context, k Keeper, msg types.MsgAddAsset) (*sdk.R
 	}
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
-}
-
-// nolint:errcheck
-// EndBlocker updates the current oracle
-func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
-	// TODO val_state_change.go is relevant if we want to rotate the oracle set
-
-	// Running in the end blocker ensures that prices will update at most once per block,
-	// which seems preferable to having state storage values change in response to multiple transactions
-	// which occur during a block
-	//TODO use an iterator and update the prices for all assets in the store
-	k.SetCurrentPrices(ctx)
-
-	return []abci.ValidatorUpdate{}
 }

@@ -28,7 +28,7 @@ type postPriceReq struct {
 	ReceivedAt string       `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
-// RegisterRoutes - Central function to define routes that get registered by the main application
+// RegisterRoutes Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 	r.HandleFunc(fmt.Sprintf("/%s/rawprices", storeName), postPriceHandler(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/rawprices/{%s}/{%s}", storeName, restName, blockHeightName), getRawPricesHandler(cliCtx, storeName)).Methods("GET")

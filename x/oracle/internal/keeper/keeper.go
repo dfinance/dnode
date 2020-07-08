@@ -11,37 +11,15 @@ import (
 
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/common_vm"
-
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // Keeper struct for oracle module
 type Keeper struct {
-	// The keys used to access the stores from Context
-	storeKey sdk.StoreKey
-	// Codec for binary encoding/decoding
-	cdc *codec.Codec
-	// The reference to the Paramstore to get and set oracle specific params
-	paramstore params.Subspace
-	// Virtual machine keeper
-	vmKeeper common_vm.VMStorage
-}
-
-// NewKeeper returns a new keeper for the oralce module. It handles:
-// - adding oracles
-// - adding/removing assets from the oracle
-func NewKeeper(
-	storeKey sdk.StoreKey,
-	cdc *codec.Codec,
-	paramstore params.Subspace,
-	vmKeeper common_vm.VMStorage,
-) Keeper {
-	return Keeper{
-		paramstore: paramstore.WithKeyTable(types.ParamKeyTable()),
-		storeKey:   storeKey,
-		cdc:        cdc,
-		vmKeeper:   vmKeeper,
-	}
+	storeKey   sdk.StoreKey        // The keys used to access the stores from Context
+	cdc        *codec.Codec        // Codec for binary encoding/decoding
+	paramstore params.Subspace     // The reference to the Paramstore to get and set oracle specific params
+	vmKeeper   common_vm.VMStorage // Virtual machine keeper
 }
 
 // Check PostPrice's ReceivedAt timestamp (algorithm depends on module params)
@@ -215,13 +193,29 @@ func (k Keeper) ValidatePostPrice(ctx sdk.Context, msg types.MsgPostPrice) error
 	return nil
 }
 
+// IsNominee checks is nominee exist in the keeper params.
 func (k Keeper) IsNominee(ctx sdk.Context, nominee string) bool {
-	params := k.GetParams(ctx)
-	nominees := params.Nominees
+	p := k.GetParams(ctx)
+	nominees := p.Nominees
 	for _, v := range nominees {
 		if v == nominee {
 			return true
 		}
 	}
 	return false
+}
+
+// NewKeeper returns a new keeper for the oralce module.
+func NewKeeper(
+	storeKey sdk.StoreKey,
+	cdc *codec.Codec,
+	paramstore params.Subspace,
+	vmKeeper common_vm.VMStorage,
+) Keeper {
+	return Keeper{
+		paramstore: paramstore.WithKeyTable(types.ParamKeyTable()),
+		storeKey:   storeKey,
+		cdc:        cdc,
+		vmKeeper:   vmKeeper,
+	}
 }

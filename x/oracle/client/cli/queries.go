@@ -27,7 +27,7 @@ func GetCmdAssetCodeHex() *cobra.Command {
 	}
 }
 
-// GetCmdCurrentPrice queries the current price of an asset
+// GetCmdCurrentPrice queries the current price of an asset.
 func GetCmdCurrentPrice(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "price [assetCode]",
@@ -36,7 +36,7 @@ func GetCmdCurrentPrice(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			assetCode := args[0]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/price/%s", queryRoute, assetCode), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, types.QueryPrice, assetCode), nil)
 			if err != nil {
 				return err
 			}
@@ -48,7 +48,7 @@ func GetCmdCurrentPrice(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdRawPrices queries the current price of an asset
+// GetCmdRawPrices queries the current price of an asset.
 func GetCmdRawPrices(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "rawprices [assetCode] [blockHeight]",
@@ -64,7 +64,7 @@ func GetCmdRawPrices(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return fmt.Errorf("%s argument %q not a number: %v", "blockHeight", args[1], err)
 			}
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/rawprices/%s/%d", queryRoute, assetCode, blockHeight), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%d", queryRoute, types.QueryRawPrices, assetCode, blockHeight), nil)
 			if err != nil {
 				fmt.Printf("could not get raw prices for - %s/%d \n", assetCode, blockHeight)
 				return nil
@@ -77,14 +77,14 @@ func GetCmdRawPrices(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdAssets queries list of assets in the oracle
+// GetCmdAssets queries list of assets in the oracle.
 func GetCmdAssets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "assets",
 		Short: "get the assets in the oracle",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/assets", queryRoute), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryAssets), nil)
 			if err != nil {
 				fmt.Printf("could not get assets %v", err)
 				return nil

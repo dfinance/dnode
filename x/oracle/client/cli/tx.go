@@ -47,6 +47,7 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// GetCmdAddOracle cli command for create new oracle.
 func GetCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "add-oracle [nominee_key] [denom] [oracle_address]",
@@ -70,6 +71,7 @@ func GetCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// GetCmdSetOracles cli command for set a list of oracles for a denom.
 func GetCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-oracles [nominee_key] [denom] [oracle_addresses]",
@@ -93,6 +95,7 @@ func GetCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// GetCmdAddAsset cli command for create a new asset.
 func GetCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "add-asset [nominee_key] [denom] [oracles]",
@@ -129,6 +132,7 @@ func GetCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+// GetCmdSetAsset cli command for set asset.
 func GetCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set-asset [nominee_key] [denom] [oracles]",

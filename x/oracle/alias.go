@@ -30,9 +30,12 @@ type (
 const (
 	ModuleName        = types.ModuleName
 	RouterKey         = types.RouterKey
-	QuerierRoute      = types.QuerierRoute
 	DefaultParamspace = types.DefaultParamspace
 	StoreKey          = types.StoreKey
+
+	QueryAssets    = types.QueryAssets
+	QueryRawPrices = types.QueryRawPrices
+	QueryPrice     = types.QueryPrice
 )
 
 var (

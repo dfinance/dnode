@@ -17,18 +17,6 @@ var (
 	KeyPostPrice = []byte("oraclepostprice")
 )
 
-// ParamKeyTable Key declaration for parameters
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable().RegisterParamSet(&Params{})
-}
-
-// Params params for oracle. Can be altered via governance
-type Params struct {
-	Assets    Assets          `json:"assets" yaml:"assets"` //  Array containing the assets supported by the oracle
-	Nominees  []string        `json:"nominees" yaml:"nominees"`
-	PostPrice PostPriceParams `json:"post_price" yaml:"post_price"`
-}
-
 // Posting rawPrices from oracles configuration params
 type PostPriceParams struct {
 	// allowed timestamp difference between current block time and oracle's receivedAt (0 - disabled) [sec]
@@ -41,6 +29,13 @@ func (p PostPriceParams) String() string {
 	out.WriteString(fmt.Sprintf("\tReceivedAtDiffInS: %d\n", p.ReceivedAtDiffInS))
 
 	return out.String()
+}
+
+// Params params for oracle. Can be altered via governance
+type Params struct {
+	Assets    Assets          `json:"assets" yaml:"assets"` //  Array containing the assets supported by the oracle
+	Nominees  []string        `json:"nominees" yaml:"nominees"`
+	PostPrice PostPriceParams `json:"post_price" yaml:"post_price"`
 }
 
 // ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
@@ -57,15 +52,6 @@ func (p Params) ParamSetPairs() params.ParamSetPairs {
 	}
 }
 
-// NewParams creates a new AssetParams object
-func NewParams(assets []Asset, nominees []string, postPrice PostPriceParams) Params {
-	return Params{
-		Assets:    assets,
-		Nominees:  nominees,
-		PostPrice: postPrice,
-	}
-}
-
 // DefaultParams default params for oracle
 func DefaultParams() Params {
 	return NewParams(
@@ -75,21 +61,6 @@ func DefaultParams() Params {
 			ReceivedAtDiffInS: 60 * 60,
 		},
 	)
-}
-
-// String implements fmt.stringer
-func (p Params) String() string {
-	out := strings.Builder{}
-	out.WriteString("Params:\n")
-	for i, a := range p.Assets {
-		out.WriteString(fmt.Sprintf("Asset [%d]: %s\n", i, a.String()))
-	}
-	for i, n := range p.Nominees {
-		out.WriteString(fmt.Sprintf("Nominee [%d]: %s\n", i, n))
-	}
-	out.WriteString(p.PostPrice.String())
-
-	return strings.TrimSpace(out.String())
 }
 
 // ParamSubspace defines the expected Subspace interface for parameters
@@ -113,4 +84,33 @@ func (p Params) Validate() error {
 	}
 
 	return nil
+}
+
+// String implements fmt.stringer
+func (p Params) String() string {
+	out := strings.Builder{}
+	out.WriteString("Params:\n")
+	for i, a := range p.Assets {
+		out.WriteString(fmt.Sprintf("Asset [%d]: %s\n", i, a.String()))
+	}
+	for i, n := range p.Nominees {
+		out.WriteString(fmt.Sprintf("Nominee [%d]: %s\n", i, n))
+	}
+	out.WriteString(p.PostPrice.String())
+
+	return strings.TrimSpace(out.String())
+}
+
+// NewParams creates a new AssetParams object
+func NewParams(assets []Asset, nominees []string, postPrice PostPriceParams) Params {
+	return Params{
+		Assets:    assets,
+		Nominees:  nominees,
+		PostPrice: postPrice,
+	}
+}
+
+// ParamKeyTable Key declaration for parameters
+func ParamKeyTable() params.KeyTable {
+	return params.NewKeyTable().RegisterParamSet(&Params{})
 }

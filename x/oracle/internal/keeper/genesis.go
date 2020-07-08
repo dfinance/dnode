@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/json"
+
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
