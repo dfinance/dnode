@@ -18,7 +18,7 @@ import (
 func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "withdraw [coin] [pegZoneSpender] [pegZoneChainID]",
-		Short:   "Withdraw issued currency, reducing spender balance",
+		Short:   "Withdraw issued currency from dfinance chain to pegZone chain, reducing spender balance",
 		Example: "withdraw 100dfi {account} testnet --from {account}",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
