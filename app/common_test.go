@@ -19,6 +19,7 @@ import (
 	authExported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
@@ -294,6 +295,12 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 		app.cdc.MustUnmarshalJSON(genesisState[staking.ModuleName], &stakingGenesis)
 		stakingGenesis.Params.BondDenom = dnConfig.MainDenom
 		genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, stakingGenesis)
+
+		// update mint denom
+		mintGenesis := mint.GenesisState{}
+		app.cdc.MustUnmarshalJSON(genesisState[mint.ModuleName], &mintGenesis)
+		mintGenesis.Params.MintDenom = dnConfig.MainDenom
+		genesisState[mint.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, mintGenesis)
 
 		oracleGenesis := oracle.GenesisState{
 			Params: oracle.Params{

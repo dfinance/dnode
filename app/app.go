@@ -417,7 +417,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		evidence.NewAppModule(app.evidenceKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
 		ccstorage.NewAppModule(app.ccsKeeper),
-		currencies.NewAppMsModule(app.ccKeeper),
+		currencies.NewAppMsModule(app.ccKeeper, app.ccsKeeper),
 		multisig.NewAppModule(app.msKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		vm.NewAppModule(app.vmKeeper),
@@ -429,6 +429,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	app.mm.SetOrderBeginBlockers(
 		mint.ModuleName,
+		currencies.ModuleName, // Must go after mint.
 		distribution.ModuleName,
 		slashing.ModuleName,
 		vm.ModuleName,
