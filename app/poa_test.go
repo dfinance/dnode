@@ -41,7 +41,7 @@ func TestPOAApp_HandlerIsMultisigOnly(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
 		addMsg := poa.NewMsgAddValidator(newValidators[0].Address, ethAddresses[0], genValidators[0].Address)
 		tx := genTx([]sdk.Msg{addMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		CheckDeliverSpecificErrorTx(t, app, tx, core.ErrNotMultisigModule)
+		CheckDeliverSpecificErrorTx(t, app, tx, core.ErrOnlyMultisigMsgs)
 	}
 }
 

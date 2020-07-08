@@ -11,6 +11,6 @@ import (
 // NewHandler creates sdk.Msg type messages handler.
 func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
-		return nil, sdkErrors.Wrap(core.ErrNotMultisigModule, ModuleName)
+		return nil, sdkErrors.Wrap(core.ErrOnlyMultisigMsgs, ModuleName)
 	}
 }
