@@ -16,6 +16,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/evidence"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -71,6 +72,7 @@ var (
 		distribution.AppModuleBasic{},
 		params.AppModuleBasic{},
 		slashing.AppModuleBasic{},
+		evidence.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		poa.AppModuleBasic{},
 		ccstorage.AppModuleBasic{},
@@ -114,6 +116,7 @@ type DnServiceApp struct {
 	mintKeeper      mint.Keeper
 	distrKeeper     distribution.Keeper
 	slashingKeeper  slashing.Keeper
+	evidenceKeeper  evidence.Keeper
 	poaKeeper       poa.Keeper
 	ccsKeeper       ccstorage.Keeper
 	ccKeeper        currencies.Keeper
@@ -169,6 +172,7 @@ func MakeCodec() *codec.Codec {
 	ModuleBasics.RegisterCodec(cdc) // register all module codecs.
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
+	codec.RegisterEvidences(cdc)
 	return cdc
 }
 
@@ -188,6 +192,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		mint.StoreKey,
 		distribution.StoreKey,
 		slashing.StoreKey,
+		evidence.StoreKey,
 		poa.StoreKey,
 		ccstorage.StoreKey,
 		currencies.StoreKey,
@@ -285,6 +290,18 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.supplyKeeper,
 		auth.FeeCollectorName,
 	)
+
+	// Evidence keeper. Catch double sign and provide evidence to confirm Byzantine validators.
+	evidenceKeeper := evidence.NewKeeper(
+		cdc,
+		keys[evidence.StoreKey],
+		app.paramsKeeper.Subspace(evidence.DefaultParamspace),
+		stakingKeeper,
+		app.slashingKeeper,
+	)
+	evidenceRouter := evidence.NewRouter()
+	evidenceKeeper.SetRouter(evidenceRouter)
+	app.evidenceKeeper = *evidenceKeeper
 
 	// Initialize currency keeper.
 	app.ccKeeper = currencies.NewKeeper(
@@ -397,6 +414,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		mint.NewAppModule(app.mintKeeper),
+		evidence.NewAppModule(app.evidenceKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
 		ccstorage.NewAppModule(app.ccsKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
@@ -445,6 +463,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		orders.ModuleName,
 		orderbook.ModuleName,
 		mint.ModuleName,
+		evidence.ModuleName,
 		supply.ModuleName, // should be after all modules related to account balances.
 		genutil.ModuleName,
 	)
