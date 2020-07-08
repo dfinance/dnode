@@ -171,21 +171,17 @@ func (tester *OrderBookTester) AddClient(addr sdk.AccAddress, baseCoinsAmount, q
 
 	// append all markets assets coins to account
 	{
-		acc := tester.app.accountKeeper.GetAccount(ctx, addr)
-		accCoins := acc.GetCoins()
 		for _, market := range tester.Markets {
-			accCoins = append(accCoins, sdk.Coin{
-				Denom:  market.BaseAssetDenom,
-				Amount: baseCoinsAmount,
-			})
-			accCoins = append(accCoins, sdk.Coin{
-				Denom:  market.QuoteAssetDenom,
-				Amount: quoteCoinsAmount,
-			})
-		}
-		require.NoError(tester.t, acc.SetCoins(accCoins), "setting coins for client: %d", clientID)
+			baseIssueID := fmt.Sprintf("%s_%s_base_%s", addr.String(), market.ID.String(), baseCoinsAmount.String())
+			baseCoin := sdk.NewCoin(market.BaseAssetDenom, baseCoinsAmount)
+			baseErr := tester.app.ccKeeper.IssueCurrency(ctx, baseIssueID, baseCoin, addr)
+			require.NoError(tester.t, baseErr, "issue baseCurrency for client: %d", clientID)
 
-		tester.app.accountKeeper.SetAccount(ctx, acc)
+			quoteIssueID := fmt.Sprintf("%s_%s_quote_%s", addr.String(), market.ID.String(), quoteCoinsAmount.String())
+			quoteCoin := sdk.NewCoin(market.QuoteAssetDenom, quoteCoinsAmount)
+			quoteErr := tester.app.ccKeeper.IssueCurrency(ctx, quoteIssueID, quoteCoin, addr)
+			require.NoError(tester.t, quoteErr, "issue quoteCurrency for client: %d", clientID)
+		}
 	}
 
 	// save coins client input

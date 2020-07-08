@@ -38,6 +38,9 @@ const (
 
 	// Default governance params.
 	DefaultGovMinDepositAmount = "100000000000000000000" // 100 dfi
+
+	// Invariants check period for crisis module (in blocks)
+	DefInvCheckPeriod = 10
 )
 
 var (

@@ -175,7 +175,7 @@ func MakeCodec() *codec.Codec {
 }
 
 // NewDnServiceApp is a constructor function for dfinance blockchain.
-func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
+func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
 	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
@@ -211,7 +211,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		keys:    keys,
 		tkeys:   tkeys,
 		//
-		invariantsCheckPeriod: 3,
+		invariantsCheckPeriod: invCheckPeriod,
 	}
 
 	// initialize connections

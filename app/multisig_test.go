@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -53,20 +54,16 @@ func TestMSApp_Voting(t *testing.T) {
 	defer app.CloseConnections()
 	defer server.Stop()
 
-	accs, _, _, privKeys := CreateGenAccounts(9, GenDefCoins(t))
-	genValidators, genPrivKeys := accs[:7], privKeys[:7]
-	targetValidator := accs[7]
-	nonExistingValidator, nonExistingValidatorPrivKey := accs[8], privKeys[8]
+	genValidators, _, _, genPrivKeys := CreateGenAccounts(9, GenDefCoins(t))
+	targetValidator := genValidators[7]
+	nonExistingValidator, nonExistingValidatorPrivKey := genValidators[8], genPrivKeys[8]
 
 	_, err := setGenesis(t, app, genValidators)
 	require.NoError(t, err)
 
-	// create account for non-existing validator
-	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
-	nonExistingValidator.AccountNumber = uint64(len(genValidators))
-	app.accountKeeper.SetAccount(GetContext(app, false), nonExistingValidator)
-	app.EndBlock(abci.RequestEndBlock{})
-	app.Commit()
+	// remove validators making them nonExistingValidator for further test cases
+	removeValidators(t, app, genValidators, []*auth.BaseAccount{targetValidator, nonExistingValidator}, genPrivKeys, true)
+	genValidators, genPrivKeys = genValidators[:7], genPrivKeys[:7]
 
 	var callMsgId dnTypes.ID
 	var callUniqueId string

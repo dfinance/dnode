@@ -190,7 +190,8 @@ func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
 	}
 	logger = log.NewFilter(logger, logOpts...)
 
-	return NewDnServiceApp(logger, dbm.NewMemDB(), config), server
+	// use invariants check period 1 for high pressure tests
+	return NewDnServiceApp(logger, dbm.NewMemDB(), config, 1), server
 }
 
 // getGenesis builds genesis state for dnode app.

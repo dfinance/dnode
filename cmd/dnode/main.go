@@ -103,7 +103,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		panic(err)
 	}
 
-	return app.NewDnServiceApp(logger, db, config)
+	return app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod)
 }
 
 // Exports genesis data and validators.
@@ -116,7 +116,7 @@ func exportAppStateAndTMValidators(
 	}
 
 	if height != -1 {
-		dnApp := app.NewDnServiceApp(logger, db, config)
+		dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod)
 		err := dnApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -124,7 +124,7 @@ func exportAppStateAndTMValidators(
 		return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	dnApp := app.NewDnServiceApp(logger, db, config)
+	dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod)
 	return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }
 
