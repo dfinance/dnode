@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
@@ -16,20 +15,6 @@ var (
 	KeyNominees  = []byte("oraclenominees")
 	KeyPostPrice = []byte("oraclepostprice")
 )
-
-// Posting rawPrices from oracles configuration params
-type PostPriceParams struct {
-	// allowed timestamp difference between current block time and oracle's receivedAt (0 - disabled) [sec]
-	ReceivedAtDiffInS uint32 `json:"received_at_diff_in_s" yaml:"received_at_diff_in_s"`
-}
-
-func (p PostPriceParams) String() string {
-	out := strings.Builder{}
-	out.WriteString("PostPrice:\n")
-	out.WriteString(fmt.Sprintf("\tReceivedAtDiffInS: %d\n", p.ReceivedAtDiffInS))
-
-	return out.String()
-}
 
 // Params params for oracle. Can be altered via governance
 type Params struct {
@@ -61,12 +46,6 @@ func DefaultParams() Params {
 			ReceivedAtDiffInS: 60 * 60,
 		},
 	)
-}
-
-// ParamSubspace defines the expected Subspace interface for parameters
-type ParamSubspace interface {
-	Get(ctx sdk.Context, key []byte, ptr interface{})
-	Set(ctx sdk.Context, key []byte, param interface{})
 }
 
 // Validate ensure that params have valid values
@@ -113,4 +92,18 @@ func NewParams(assets []Asset, nominees []string, postPrice PostPriceParams) Par
 // ParamKeyTable Key declaration for parameters
 func ParamKeyTable() params.KeyTable {
 	return params.NewKeyTable().RegisterParamSet(&Params{})
+}
+
+// Posting rawPrices from oracles configuration params
+type PostPriceParams struct {
+	// allowed timestamp difference between current block time and oracle's receivedAt (0 - disabled) [sec]
+	ReceivedAtDiffInS uint32 `json:"received_at_diff_in_s" yaml:"received_at_diff_in_s"`
+}
+
+func (p PostPriceParams) String() string {
+	out := strings.Builder{}
+	out.WriteString("PostPrice:\n")
+	out.WriteString(fmt.Sprintf("\tReceivedAtDiffInS: %d\n", p.ReceivedAtDiffInS))
+
+	return out.String()
 }

@@ -9,7 +9,6 @@ type (
 	GenesisState       = types.GenesisState
 	MsgPostPrice       = types.MsgPostPrice
 	Params             = types.Params
-	ParamSubspace      = types.ParamSubspace
 	QueryRawPricesResp = types.QueryRawPricesResp
 	QueryAssetsResp    = types.QueryAssetsResp
 	Asset              = types.Asset
