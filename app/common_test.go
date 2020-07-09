@@ -238,9 +238,9 @@ func NewTestDnAppDVM(t *testing.T, logOpts ...log.Option) (*DnServiceApp, string
 	config := &vmConfig.VMConfig{
 		Address:           dvmAddr,
 		DataListen:        dsAddr,
-		MaxAttempts:       5,
-		InitialBackoff:    300,
-		MaxBackoff:        1000,
+		MaxAttempts:       10,
+		InitialBackoff:    500,
+		MaxBackoff:        1500,
 		BackoffMultiplier: 0.1,
 	}
 
@@ -260,7 +260,7 @@ func NewTestDnAppDVM(t *testing.T, logOpts ...log.Option) (*DnServiceApp, string
 	app.vmKeeper.StartDSServer(dsContext)
 
 	// start DVM
-	dvmStop := tests.LaunchDVMWithNetTransport(t, dvmPort, dsPort, true)
+	dvmStop := tests.LaunchDVMWithNetTransport(t, dvmPort, dsPort, false)
 
 	stopFunc := func() {
 		dvmStop()

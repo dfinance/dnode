@@ -133,7 +133,7 @@ func (s AllSupplies) GetDiffString(s2 AllSupplies) []string {
 			before sdk.Int
 			after  sdk.Int
 		}
-		accDiffs := make(map[string]accDiff, 0)
+		accDiffs := make(map[string]accDiff)
 		for _, acc := range calcSupply1.Accounts {
 			diff, ok := accDiffs[acc.Name]
 			if !ok {
@@ -169,7 +169,7 @@ func (s AllSupplies) GetDiffString(s2 AllSupplies) []string {
 // GetAllSupplies returns supply levels for each denom from supply, currencies and vmauth keepers.
 func GetAllSupplies(t *testing.T, app *DnServiceApp, ctx sdk.Context) AllSupplies {
 	getCalculatedSupplies := func() CalculatedSupplies {
-		supplies := make(CalculatedSupplies, 0)
+		supplies := make(CalculatedSupplies)
 		app.accountKeeper.IterateAccounts(ctx, func(acc authExported.Account) bool {
 			accName := ""
 			if modAcc, ok := acc.(*supply.ModuleAccount); ok {
@@ -201,7 +201,7 @@ func GetAllSupplies(t *testing.T, app *DnServiceApp, ctx sdk.Context) AllSupplie
 	}
 
 	getModuleSupplies := func() ModuleSupplies {
-		supplies := make(ModuleSupplies, 0)
+		supplies := make(ModuleSupplies)
 		for _, coin := range app.supplyKeeper.GetSupply(ctx).GetTotal() {
 			supplies[coin.Denom] = coin.Amount
 		}
@@ -209,7 +209,7 @@ func GetAllSupplies(t *testing.T, app *DnServiceApp, ctx sdk.Context) AllSupplie
 	}
 
 	getCCSupplies := func() ModuleSupplies {
-		supplies := make(ModuleSupplies, 0)
+		supplies := make(ModuleSupplies)
 		for denom := range app.ccsKeeper.GetCurrenciesParams(ctx) {
 			currency, err := app.ccsKeeper.GetCurrency(ctx, denom)
 			require.NoError(t, err, "requesting ccStorage for %q currency", denom)

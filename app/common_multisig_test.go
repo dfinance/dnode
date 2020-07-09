@@ -24,7 +24,7 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 	require.Less(t, submitAccIdx, uint(len(accs)), "invalid input: submitAccIdx >= len(accs)")
 	require.LessOrEqual(t, confirmCnt, len(accs), "invalid input: confirmations count > len(accs)")
 
-	callMsgID := dnTypes.ID{}
+	var callMsgID dnTypes.ID
 	{
 		// submit message
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, accs[submitAccIdx].Address), privKeys[submitAccIdx]

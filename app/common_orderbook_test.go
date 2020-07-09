@@ -74,8 +74,8 @@ func NewOrderBookTester(t *testing.T, app *DnServiceApp) OrderBookTester {
 	tester := OrderBookTester{
 		t:          t,
 		app:        app,
-		Markets:    make(map[string]markets.Market, 0),
-		Currencies: make(map[string]ccstorage.Currency, 0),
+		Markets:    make(map[string]markets.Market),
+		Currencies: make(map[string]ccstorage.Currency),
 		Clients:    make([]*ClientTestState, 0),
 	}
 
@@ -107,8 +107,6 @@ func (tester *OrderBookTester) BeginBlockWithDuration(dur time.Duration) {
 func (tester *OrderBookTester) EndBlock() {
 	tester.app.EndBlock(abci.RequestEndBlock{})
 	tester.app.Commit()
-
-	return
 }
 
 // Add new currencies and register a corresponding market.
@@ -185,9 +183,9 @@ func (tester *OrderBookTester) AddClient(addr sdk.AccAddress, baseCoinsAmount, q
 		acc := tester.app.accountKeeper.GetAccount(ctx, addr)
 		clientState := &ClientTestState{
 			Address:        addr,
-			InputCoins:     make(map[string]sdk.Int, 0),
-			OutputCoins:    make(map[string]sdk.Int, 0),
-			EstimatedCoins: make(map[string]sdk.Int, 0),
+			InputCoins:     make(map[string]sdk.Int),
+			OutputCoins:    make(map[string]sdk.Int),
+			EstimatedCoins: make(map[string]sdk.Int),
 			Orders:         make([]*OrderTestState, 0),
 		}
 
@@ -414,7 +412,7 @@ func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orders.Directi
 	require.True(tester.t, ok, "market not found: %s", mID)
 
 	// post order
-	orderID := dnTypes.ID{}
+	var orderID dnTypes.ID
 	{
 		order, err := tester.app.orderKeeper.PostOrder(
 			ctx,
