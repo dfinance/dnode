@@ -8,6 +8,19 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
+// GetAsset returns the asset if it is in the oracle system.
+func (k Keeper) GetAsset(ctx sdk.Context, assetCode string) (types.Asset, bool) {
+	assets := k.GetAssetParams(ctx)
+
+	for i := range assets {
+		if assets[i].AssetCode == assetCode {
+			return assets[i], true
+		}
+	}
+	return types.Asset{}, false
+
+}
+
 // SetAsset overwrites existing asset for specific assetCode.
 func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode string, asset types.Asset) error {
 	if !k.IsNominee(ctx, nominee) {
@@ -53,17 +66,4 @@ func (k Keeper) AddAsset(ctx sdk.Context, nominee string, assetCode string, asse
 	k.SetParams(ctx, params)
 
 	return nil
-}
-
-// GetAsset returns the asset if it is in the oracle system.
-func (k Keeper) GetAsset(ctx sdk.Context, assetCode string) (types.Asset, bool) {
-	assets := k.GetAssetParams(ctx)
-
-	for i := range assets {
-		if assets[i].AssetCode == assetCode {
-			return assets[i], true
-		}
-	}
-	return types.Asset{}, false
-
 }

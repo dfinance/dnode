@@ -9,6 +9,25 @@ import (
 	"time"
 )
 
+// GetCurrentPrice fetches the current median price of all oracles for a specific asset
+func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode string) types.CurrentPrice {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get([]byte(types.CurrentPricePrefix + assetCode))
+	// TODO panic or return error if not found
+	var price types.CurrentPrice
+	k.cdc.MustUnmarshalBinaryBare(bz, &price)
+	return price
+}
+
+// GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight
+func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode string, blockHeight int64) []types.PostedPrice {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
+	var prices []types.PostedPrice
+	k.cdc.MustUnmarshalBinaryBare(bz, &prices)
+	return prices
+}
+
 // Check PostPrice's ReceivedAt timestamp (algorithm depends on module params)
 func (k Keeper) CheckPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.Time) error {
 	cfg := k.GetPostPriceParams(ctx)
@@ -143,25 +162,6 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 	}
 
 	return nil
-}
-
-// GetCurrentPrice fetches the current median price of all oracles for a specific asset
-func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode string) types.CurrentPrice {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get([]byte(types.CurrentPricePrefix + assetCode))
-	// TODO panic or return error if not found
-	var price types.CurrentPrice
-	k.cdc.MustUnmarshalBinaryBare(bz, &price)
-	return price
-}
-
-// GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight
-func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode string, blockHeight int64) []types.PostedPrice {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
-	var prices []types.PostedPrice
-	k.cdc.MustUnmarshalBinaryBare(bz, &prices)
-	return prices
 }
 
 // ValidatePostPrice makes sure the person posting the price is an oracle
