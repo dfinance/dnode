@@ -94,6 +94,17 @@ func (k VMAccountKeeper) RemoveAccount(ctx sdk.Context, acc exported.Account) {
 	k.ccsKeeper.RemoveAccountBalanceResources(ctx, acc.GetAddress())
 }
 
+// IterateAccounts iterates over all the stored accounts and performs a callback function.
+// We wrap user's handler to use VMAccountKeeper.GetAccount with real balances from VM resources.
+func (k VMAccountKeeper) IterateAccounts(ctx sdk.Context, cb func(account exported.Account) (stop bool)) {
+	vmWrappedHandler := func(account exported.Account) (stop bool) {
+		acc := k.GetAccount(ctx, account.GetAddress())
+		return cb(acc)
+	}
+
+	k.AccountKeeper.IterateAccounts(ctx, vmWrappedHandler)
+}
+
 // Create new keeper.
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramstore params.Subspace, ccsKeeper ccstorage.Keeper, proto func() exported.Account) VMAccountKeeper {
 	authKeeper := auth.NewAccountKeeper(cdc, key, paramstore, proto)

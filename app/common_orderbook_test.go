@@ -1,5 +1,3 @@
-// +build unit
-
 package app
 
 import (
@@ -20,8 +18,6 @@ import (
 )
 
 const (
-	queryMarketsListPath = "/custom/markets/list"
-	//
 	ascDistribution  = 1
 	descDistribution = 2
 )

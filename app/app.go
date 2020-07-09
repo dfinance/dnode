@@ -452,7 +452,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		genutil.ModuleName,
 	)
 
-	app.mm.RegisterInvariants(&app.crisisKeeper)
+	app.mm.RegisterInvariants(&app.crisisKeeper, supply.ModuleName)
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
 	app.mm.RegisterMsRoutes(app.msRouter)
 

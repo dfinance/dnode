@@ -15,21 +15,14 @@ import (
 	"github.com/dfinance/dnode/x/oracle"
 )
 
-const (
-	queryOracleGetCurrentPricePathFmt = "/custom/oracle/price/%s"
-	queryOracleGetRawPricesPathFmt    = "/custom/oracle/rawprices/%s/%d"
-	queryOracleGetAssetsPath          = "/custom/oracle/assets"
-)
-
 func TestOracle_Queries(t *testing.T) {
 	t.Parallel()
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
-	_, err := setGenesis(t, app, genAccs)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genAccs)
 
 	assetCodePrefix := "asset_"
 
@@ -107,7 +100,7 @@ func TestOracle_Queries(t *testing.T) {
 				ReceivedAt: priceTimestamps[0],
 			}
 
-			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			_, res, err := app.Deliver(tx)
 			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
@@ -121,7 +114,7 @@ func TestOracle_Queries(t *testing.T) {
 				ReceivedAt: priceTimestamps[1],
 			}
 
-			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			_, res, err := app.Deliver(tx)
 			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
@@ -135,7 +128,7 @@ func TestOracle_Queries(t *testing.T) {
 				ReceivedAt: priceTimestamps[2],
 			}
 
-			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			_, res, err := app.Deliver(tx)
 			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
@@ -176,13 +169,12 @@ func TestOracle_Queries(t *testing.T) {
 
 func TestOracle_AddOracle(t *testing.T) {
 	t.Parallel()
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
-	_, err := setGenesis(t, app, genAccs)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genAccs)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
 
@@ -220,7 +212,7 @@ func TestOracle_AddOracle(t *testing.T) {
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
 		CheckDeliverTx(t, app, tx)
 	}
 
@@ -233,7 +225,7 @@ func TestOracle_AddOracle(t *testing.T) {
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
 		CheckDeliverTx(t, app, tx)
 	}
 
@@ -261,13 +253,12 @@ func TestOracle_AddOracle(t *testing.T) {
 
 func TestOracle_SetOracles(t *testing.T) {
 	t.Parallel()
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
-	_, err := setGenesis(t, app, genAccs)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genAccs)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "db2db"
 
@@ -308,7 +299,7 @@ func TestOracle_SetOracles(t *testing.T) {
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
 		CheckDeliverTx(t, app, tx)
 	}
 
@@ -321,7 +312,7 @@ func TestOracle_SetOracles(t *testing.T) {
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
 		CheckDeliverTx(t, app, tx)
 
 		oracles, err := app.oracleKeeper.GetOracles(GetContext(app, true), assetCode)
@@ -337,13 +328,12 @@ func TestOracle_SetOracles(t *testing.T) {
 
 func TestOracle_AddAsset(t *testing.T) {
 	t.Parallel()
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
-	_, err := setGenesis(t, app, genAccs)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genAccs)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn_dn"
 
@@ -383,7 +373,7 @@ func TestOracle_AddAsset(t *testing.T) {
 		}
 		senderAcc := GetAccountCheckTx(app, genAccs[0].Address)
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
 		CheckDeliverTx(t, app, tx)
 
 		// check the new one added
@@ -413,7 +403,7 @@ func TestOracle_AddAsset(t *testing.T) {
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
 		// TODO: add specific error check
 		CheckDeliverErrorTx(t, app, tx)
 	}
@@ -421,13 +411,12 @@ func TestOracle_AddAsset(t *testing.T) {
 
 func TestOracle_SetAsset(t *testing.T) {
 	t.Parallel()
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
-	_, err := setGenesis(t, app, genAccs)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genAccs)
 
 	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn_dn"
 
@@ -478,7 +467,7 @@ func TestOracle_SetAsset(t *testing.T) {
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
 		CheckDeliverTx(t, app, tx)
 
 		asset, found := app.oracleKeeper.GetAsset(GetContext(app, true), updAssetCode)
@@ -493,13 +482,12 @@ func TestOracle_SetAsset(t *testing.T) {
 
 func TestOracle_PostPrices(t *testing.T) {
 	t.Parallel()
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
-	_, err := setGenesis(t, app, genAccs)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genAccs)
 
 	assetCode := "dn2dn"
 
@@ -536,7 +524,7 @@ func TestOracle_PostPrices(t *testing.T) {
 			ReceivedAt: time.Now(),
 		}
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		// TODO: add specific error check
 		CheckDeliverErrorTx(t, app, tx)
 	}
@@ -552,7 +540,7 @@ func TestOracle_PostPrices(t *testing.T) {
 			ReceivedAt: time.Now(),
 		}
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		// TODO: add specific error check
 		CheckDeliverErrorTx(t, app, tx)
 	}
@@ -567,7 +555,7 @@ func TestOracle_PostPrices(t *testing.T) {
 			Denom:   assetCode,
 		}
 
-		tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)
 	}
 
@@ -589,7 +577,7 @@ func TestOracle_PostPrices(t *testing.T) {
 				ReceivedAt: priceTimestamp1,
 			}
 
-			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			_, res, err := app.Deliver(tx)
 			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
@@ -603,7 +591,7 @@ func TestOracle_PostPrices(t *testing.T) {
 				ReceivedAt: priceTimestamp2,
 			}
 
-			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			_, res, err := app.Deliver(tx)
 			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
@@ -647,7 +635,7 @@ func TestOracle_PostPrices(t *testing.T) {
 				ReceivedAt: priceTimestamps[0],
 			}
 
-			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			_, res, err := app.Deliver(tx)
 			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
@@ -661,7 +649,7 @@ func TestOracle_PostPrices(t *testing.T) {
 				ReceivedAt: priceTimestamps[1],
 			}
 
-			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			_, res, err := app.Deliver(tx)
 			require.NoError(t, err, ResultErrorMsg(res, err))
 		}
@@ -675,7 +663,7 @@ func TestOracle_PostPrices(t *testing.T) {
 				ReceivedAt: priceTimestamps[2],
 			}
 
-			tx := genTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			_, res, err := app.Deliver(tx)
 			require.NoError(t, err, ResultErrorMsg(res, err))
 		}

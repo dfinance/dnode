@@ -3,44 +3,33 @@
 package app
 
 import (
-	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/libs/rand"
 
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/poa"
-)
-
-const (
-	queryPoaGetValidatorsPath   = "/custom/" + poa.ModuleName + "/" + poa.QueryValidators
-	queryPoaGetValidatorPath    = "/custom/" + poa.ModuleName + "/" + poa.QueryValidator
-	queryPoaGetMinMaxParamsPath = "/custom/" + poa.ModuleName + "/" + poa.QueryMinMax
 )
 
 // Checks that poa module supports only multisig calls for validator msgs (using MSRouter).
 func TestPOAApp_HandlerIsMultisigOnly(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	accs, _, _, privKeys := CreateGenAccounts(8, GenDefCoins(t))
 	genValidators, genPrivKeys, newValidators := accs[:7], privKeys[:7], accs[7:]
 
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genValidators)
 
 	// check module supports only multisig calls (using MSRouter)
 	{
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
 		addMsg := poa.NewMsgAddValidator(newValidators[0].Address, ethAddresses[0], genValidators[0].Address)
-		tx := genTx([]sdk.Msg{addMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{addMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, core.ErrOnlyMultisigMsgs)
 	}
 }
@@ -49,14 +38,11 @@ func TestPOAApp_HandlerIsMultisigOnly(t *testing.T) {
 func TestPOAApp_Queries(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	genValidators, _, _, _ := CreateGenAccounts(7, GenDefCoins(t))
-
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genValidators)
 
 	validators := app.poaKeeper.GetValidators(GetContext(app, true))
 
@@ -92,20 +78,17 @@ func TestPOAApp_Queries(t *testing.T) {
 func TestPOAApp_ValidatorsAdd(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	accs, _, _, privKeys := CreateGenAccounts(11, GenDefCoins(t))
 	genValidators, genPrivKeys, newValidators := accs[:7], privKeys[:7], accs[7:]
-
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genValidators)
 
 	// add new validators
 	curConfirmCnt := app.poaKeeper.GetEnoughConfirmations(GetContext(app, true))
 	{
-		addValidators(t, app, genValidators, newValidators, genPrivKeys, true)
+		AddValidators(t, app, genValidators, newValidators, genPrivKeys, true)
 
 		added := 0
 		validators := app.poaKeeper.GetValidators(GetContext(app, true))
@@ -139,7 +122,7 @@ func TestPOAApp_ValidatorsAdd(t *testing.T) {
 
 	// add already existing validator
 	{
-		res, err := addValidators(t, app, genValidators, []*auth.BaseAccount{newValidators[0]}, genPrivKeys, false)
+		res, err := AddValidators(t, app, genValidators, []*auth.BaseAccount{newValidators[0]}, genPrivKeys, false)
 		CheckResultError(t, poa.ErrValidatorExists, res, err)
 	}
 }
@@ -148,24 +131,21 @@ func TestPOAApp_ValidatorsAdd(t *testing.T) {
 func TestPOAApp_ValidatorsRemove(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	accs, _, _, privKeys := CreateGenAccounts(11, GenDefCoins(t))
 	genValidators, genPrivKeys, targetValidators := accs[:7], privKeys[:7], accs[7:]
-
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genValidators)
 
 	// add validators to remove later
-	addValidators(t, app, genValidators, targetValidators, genPrivKeys, true)
+	AddValidators(t, app, genValidators, targetValidators, genPrivKeys, true)
 	require.Equal(t, len(genValidators)+len(targetValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
 	curConfirmCnt := app.poaKeeper.GetEnoughConfirmations(GetContext(app, true))
 
 	// remove validators
 	{
-		removeValidators(t, app, genValidators, targetValidators, genPrivKeys, true)
+		RemoveValidators(t, app, genValidators, targetValidators, genPrivKeys, true)
 		require.Equal(t, len(genValidators), int(app.poaKeeper.GetValidatorAmount(GetContext(app, true))))
 
 		// check requested rmValidators were removed
@@ -198,7 +178,7 @@ func TestPOAApp_ValidatorsRemove(t *testing.T) {
 
 	// remove non-existing validator
 	{
-		res, err := removeValidators(t, app, genValidators, []*auth.BaseAccount{targetValidators[0]}, genPrivKeys, false)
+		res, err := RemoveValidators(t, app, genValidators, []*auth.BaseAccount{targetValidators[0]}, genPrivKeys, false)
 		CheckResultError(t, poa.ErrValidatorNotExists, res, err)
 	}
 }
@@ -207,21 +187,18 @@ func TestPOAApp_ValidatorsRemove(t *testing.T) {
 func TestPOAApp_ValidatorsReplace(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	accs, _, _, privKeys := CreateGenAccounts(8, GenDefCoins(t))
 	genValidators, genPrivKeys, targetValidators := accs[:7], privKeys[:7], accs[7:]
-
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genValidators)
 
 	oldValidator, newValidator := genValidators[len(genValidators)-1], targetValidators[0]
 
 	// replace
 	{
-		replaceValidator(t, app, genValidators, oldValidator.Address, newValidator.Address, genPrivKeys, true)
+		ReplaceValidator(t, app, genValidators, oldValidator.Address, newValidator.Address, genPrivKeys, true)
 	}
 
 	// check "new" validator was added ("old" replaced)
@@ -243,27 +220,24 @@ func TestPOAApp_ValidatorsReplace(t *testing.T) {
 func TestPOAApp_ValidatorsReplaceExisting(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	accs, _, _, privKeys := CreateGenAccounts(8, GenDefCoins(t))
 	genValidators, genPrivKeys, targetValidators := accs[:7], privKeys[:7], accs[7:]
-
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genValidators)
 
 	// replace existing with existing validator
 	{
 		oldValidator, newValidator := genValidators[0], genValidators[1]
-		res, err := replaceValidator(t, app, genValidators, oldValidator.Address, newValidator.Address, genPrivKeys, false)
+		res, err := ReplaceValidator(t, app, genValidators, oldValidator.Address, newValidator.Address, genPrivKeys, false)
 		CheckResultError(t, poa.ErrValidatorExists, res, err)
 	}
 
 	// replace non-existing with existing validator
 	{
 		nonExistingValidator, newValidator := targetValidators[0], genValidators[1]
-		res, err := replaceValidator(t, app, genValidators, nonExistingValidator.Address, newValidator.Address, genPrivKeys, false)
+		res, err := ReplaceValidator(t, app, genValidators, nonExistingValidator.Address, newValidator.Address, genPrivKeys, false)
 		CheckResultError(t, poa.ErrValidatorNotExists, res, err)
 	}
 }
@@ -272,16 +246,13 @@ func TestPOAApp_ValidatorsReplaceExisting(t *testing.T) {
 func TestPOAApp_MinMaxRange(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	defMinValidators, defMaxValidators := poa.DefaultMinValidators, poa.DefaultMaxValidators
 	accs, _, _, privKeys := CreateGenAccounts(int(defMaxValidators)+1, GenDefCoins(t))
 	genValidators, genPrivKeys, targetValidators := accs[:defMaxValidators], privKeys[:defMaxValidators], accs[defMaxValidators:]
-
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genValidators)
 
 	// check module params are set to default values
 	require.Equal(t, defMinValidators, app.poaKeeper.GetMinValidators(GetContext(app, true)))
@@ -290,7 +261,7 @@ func TestPOAApp_MinMaxRange(t *testing.T) {
 	// check adding (defMaxValidators + 1) validator
 	{
 		newValidator := targetValidators[0]
-		res, err := addValidators(t, app, genValidators, []*auth.BaseAccount{newValidator}, genPrivKeys, false)
+		res, err := AddValidators(t, app, genValidators, []*auth.BaseAccount{newValidator}, genPrivKeys, false)
 		CheckResultError(t, poa.ErrMaxValidatorsReached, res, err)
 	}
 
@@ -300,55 +271,13 @@ func TestPOAApp_MinMaxRange(t *testing.T) {
 		curValidators, curPrivKeys := genValidators, genPrivKeys
 		for len(curValidators) != int(defMinValidators) {
 			delValidator := curValidators[len(curValidators)-1]
-			removeValidators(t, app, curValidators, []*auth.BaseAccount{delValidator}, curPrivKeys, true)
+			RemoveValidators(t, app, curValidators, []*auth.BaseAccount{delValidator}, curPrivKeys, true)
 			curValidators, curPrivKeys = curValidators[:len(curValidators)-1], curPrivKeys[:len(curPrivKeys)-1]
 		}
 
 		// remove the last one
 		delValidator := genValidators[len(curValidators)-1]
-		res, err := removeValidators(t, app, curValidators, []*auth.BaseAccount{delValidator}, curPrivKeys, false)
+		res, err := RemoveValidators(t, app, curValidators, []*auth.BaseAccount{delValidator}, curPrivKeys, false)
 		CheckResultError(t, poa.ErrMinValidatorsReached, res, err)
 	}
-}
-
-// addValidators creates poa add validator multisig message and confirms it.
-func addValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, newValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
-	for _, v := range newValidators {
-		addMsg := poa.NewMsgAddValidator(v.Address, ethAddresses[0], genAccs[0].Address)
-		msgID := fmt.Sprintf("addValidator:%s:%d", v.Address, rand.Uint16())
-
-		res, err := MSMsgSubmitAndVote(t, app, msgID, addMsg, 0, genAccs, privKeys, doChecks)
-		if doChecks {
-			require.NoError(t, err)
-		} else if err != nil {
-			return res, err
-		}
-	}
-
-	return nil, nil
-}
-
-// replaceValidator creates poa replace validator multisig message and confirms it.
-func replaceValidator(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, oldValidatorAddr, newValidatorAddr sdk.AccAddress, oldPrivKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
-	replaceMsg := poa.NewMsgReplaceValidator(oldValidatorAddr, newValidatorAddr, ethAddresses[0], genAccs[0].GetAddress())
-	msgID := fmt.Sprintf("replaceValidator:%s", newValidatorAddr)
-
-	return MSMsgSubmitAndVote(t, app, msgID, replaceMsg, 0, genAccs, oldPrivKeys, doChecks)
-}
-
-// removeValidators creates poa remove validator multisig message and confirms it.
-func removeValidators(t *testing.T, app *DnServiceApp, genAccs []*auth.BaseAccount, rmValidators []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
-	for _, v := range rmValidators {
-		removeMsg := poa.NewMsgRemoveValidator(v.Address, genAccs[0].Address)
-		msgID := fmt.Sprintf("removeValidator:%s:%d", v.Address, rand.Uint16())
-
-		res, err := MSMsgSubmitAndVote(t, app, msgID, removeMsg, 0, genAccs, privKeys, doChecks)
-		if doChecks {
-			require.NoError(t, err)
-		} else if err != nil {
-			return res, err
-		}
-	}
-
-	return nil, nil
 }

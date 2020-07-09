@@ -18,18 +18,17 @@ const (
 )
 
 func TestOrders_Ttl(t *testing.T) {
+	t.Parallel()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
+
+	genValidators, _, _, _ := CreateGenAccounts(3, GenDefCoins(t))
+	CheckSetGenesisMockVM(t, app, genValidators)
+
 	baseDenom, quoteDenom := "base", "quote"
 	baseDecimals, quoteDecimals := uint8(0), uint8(0)
 	baseSupply, quoteSupply := sdk.NewInt(1000), sdk.NewInt(1000)
-
-	t.Parallel()
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
-
-	genValidators, _, _, _ := CreateGenAccounts(3, GenDefCoins(t))
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
 
 	clientAddr := genValidators[0].Address
 	tester := NewOrderBookTester(t, app)
