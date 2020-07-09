@@ -17,9 +17,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/evidence"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -71,6 +73,8 @@ var (
 		bank.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		staking.AppModuleBasic{},
+		mint.AppModuleBasic{},
+		evidence.AppModuleBasic{},
 		distribution.AppModuleBasic{},
 		slashing.AppModuleBasic{},
 		currencies.AppModuleBasic{},
@@ -88,6 +92,7 @@ var (
 		auth.FeeCollectorName:     nil,
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		mint.ModuleName:           {supply.Minter},
 		distribution.ModuleName:   nil,
 		orders.ModuleName:         {supply.Burner},
 		gov.ModuleName:            {supply.Burner},
@@ -112,6 +117,8 @@ type DnServiceApp struct {
 	bankKeeper      bank.Keeper
 	supplyKeeper    supply.Keeper
 	stakingKeeper   staking.Keeper
+	mintKeeper      mint.Keeper
+	evidenceKeeper  evidence.Keeper
 	distrKeeper     distribution.Keeper
 	slashingKeeper  slashing.Keeper
 	ccKeeper        currencies.Keeper
@@ -138,13 +145,13 @@ type DnServiceApp struct {
 func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
 
-	app.Logger().Info(fmt.Sprintf("Waiting for VM connection, address: %s", addr))
+	app.Logger().Info(fmt.Sprintf("Creating connection to VM, address: %s", addr))
 	app.vmConn, err = helpers.GetGRpcClientConnection(addr, 1*time.Second)
 	if err != nil {
 		panic(err)
 	}
 
-	app.Logger().Info(fmt.Sprintf("Successful connected to VM, connection status: %d", app.vmConn.GetState()))
+	app.Logger().Info(fmt.Sprintf("Non-blocking connection initialized, status: %s", app.vmConn.GetState()))
 }
 
 // Close VM connection and DS server stops.
@@ -171,6 +178,7 @@ func MakeCodec() *codec.Codec {
 	ModuleBasics.RegisterCodec(cdc) // register all module codecs.
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
+	codec.RegisterEvidences(cdc)
 	return cdc
 }
 
@@ -187,6 +195,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		auth.StoreKey,
 		supply.StoreKey,
 		staking.StoreKey,
+		mint.StoreKey,
+		evidence.StoreKey,
 		distribution.StoreKey,
 		slashing.StoreKey,
 		gov.StoreKey,
@@ -281,6 +291,36 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		app.paramsKeeper.Subspace(staking.DefaultParamspace),
 	)
 
+	// MintKeeper adds inflation.
+	app.mintKeeper = mint.NewKeeper(
+		cdc, keys[mint.StoreKey],
+		app.paramsKeeper.Subspace(mint.DefaultParamspace),
+		stakingKeeper,
+		app.supplyKeeper,
+		auth.FeeCollectorName,
+	)
+
+	// EvidenceKeeper catchs double sign and provide evidence to confirm Byzantine validators.
+	evidenceKeeper := evidence.NewKeeper(
+		cdc,
+		keys[evidence.StoreKey],
+		app.paramsKeeper.Subspace(evidence.DefaultParamspace),
+		stakingKeeper,
+		app.slashingKeeper,
+	)
+	evidenceRouter := evidence.NewRouter()
+	evidenceKeeper.SetRouter(evidenceRouter)
+	app.evidenceKeeper = *evidenceKeeper
+
+	// Initialize currency keeper.
+	app.ccKeeper = currencies.NewKeeper(
+		cdc,
+		keys[currencies.StoreKey],
+		app.bankKeeper,
+		app.supplyKeeper,
+		app.ccsKeeper,
+	)
+
 	// DistributionKeeper distributes rewards between Proof-of-Stake validators and delegators.
 	app.distrKeeper = distribution.NewKeeper(
 		cdc,
@@ -306,15 +346,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 			app.distrKeeper.Hooks(),
 			app.slashingKeeper.Hooks(),
 		),
-	)
-
-	// CurrenciesKeeper adds PegZone integration increasing/decreasing currency supply.
-	app.ccKeeper = currencies.NewKeeper(
-		cdc,
-		keys[currencies.StoreKey],
-		app.bankKeeper,
-		app.supplyKeeper,
-		app.ccsKeeper,
 	)
 
 	// PoaKeeper stores list of Proof-of-Authority validators used by multisig system.
@@ -399,6 +430,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
+		mint.NewAppModule(app.mintKeeper),
+		evidence.NewAppModule(app.evidenceKeeper),
 		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		currencies.NewAppMsModule(app.ccKeeper),
@@ -413,6 +446,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	)
 
 	app.mm.SetOrderBeginBlockers(
+		mint.ModuleName,
+		currencies.ModuleName, // Must go after mint.
 		distribution.ModuleName,
 		slashing.ModuleName,
 		vm.ModuleName,
@@ -440,7 +475,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		bank.ModuleName,
 		slashing.ModuleName,
 		gov.ModuleName,
-		supply.ModuleName,
 		crisis.ModuleName,
 		poa.ModuleName,
 		multisig.ModuleName,
@@ -449,6 +483,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		markets.ModuleName,
 		orders.ModuleName,
 		orderbook.ModuleName,
+		mint.ModuleName,
+		evidence.ModuleName,
+		supply.ModuleName,
 		genutil.ModuleName,
 	)
 
