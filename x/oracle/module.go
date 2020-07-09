@@ -15,7 +15,6 @@ import (
 
 	"github.com/dfinance/dnode/x/oracle/client"
 	"github.com/dfinance/dnode/x/oracle/client/rest"
-	"github.com/dfinance/dnode/x/oracle/internal/keeper"
 )
 
 var (
@@ -103,7 +102,7 @@ func (app AppModule) QuerierRoute() string {
 
 // NewQuerierHandler creates module querier.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return keeper.NewQuerier(app.keeper)
+	return NewQuerier(app.keeper)
 }
 
 // InitGenesis inits module-genesis state.

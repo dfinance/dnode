@@ -1,3 +1,4 @@
+// Oracle module keeper creates and stores assets, prices and oracle objects.
 package keeper
 
 import (

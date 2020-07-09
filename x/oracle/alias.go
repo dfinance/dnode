@@ -46,8 +46,10 @@ var (
 	ErrEmptyInput       = types.ErrEmptyInput
 	ErrExpired          = types.ErrExpired
 	ErrNoValidPrice     = types.ErrNoValidPrice
+	ErrExistingAsset    = types.ErrExistingAsset
 	ErrInvalidAsset     = types.ErrInvalidAsset
 	ErrInvalidOracle    = types.ErrInvalidOracle
+	ErrInternal         = types.ErrInternal
 	DefaultGenesisState = types.DefaultGenesisState
 	NewMsgPostPrice     = types.NewMsgPostPrice
 	ParamKeyTable       = types.ParamKeyTable

@@ -3,12 +3,10 @@ package oracle
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/dfinance/dnode/x/oracle/internal/keeper"
 )
 
 // EndBlocker processes active, rejected calls and their confirmations.
-func EndBlocker(ctx sdk.Context, k keeper.Keeper) []abci.ValidatorUpdate {
+func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 	// TODO val_state_change.go is relevant if we want to rotate the oracle set
 
 	// Running in the end blocker ensures that prices will update at most once per block,

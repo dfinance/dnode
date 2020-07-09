@@ -11,10 +11,6 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
-// price Takes an [assetcode] and returns CurrentPrice for that asset
-// oracle Takes an [assetcode] and returns the raw []PostedPrice for that asset
-// assets Returns []Assets in the oracle system
-
 // NewQuerier is the module level router for state queries
 func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err error) {
@@ -31,7 +27,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 	}
 }
 
-// queryCurrentPrice handles currentPrice query.
+// queryCurrentPrice handles currentPrice query. Takes an [assetcode] and returns CurrentPrice for that asset.
 func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
 	assetCode := path[0]
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
@@ -47,7 +43,7 @@ func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	return bz, nil
 }
 
-// queryRawPrices handles rawPrice query.
+// queryRawPrices handles rawPrice query. Takes an [assetcode] and returns the raw []PostedPrice for that asset.
 func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
 	assetCode := path[0]
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
@@ -68,7 +64,7 @@ func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	return bz, nil
 }
 
-// queryAssets handles assets query.
+// queryAssets handles assets query, returns []Assets in the oracle system.
 func queryAssets(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	assets := keeper.GetAssetParams(ctx)
 	bz := codec.MustMarshalJSONIndent(keeper.cdc, &assets)
