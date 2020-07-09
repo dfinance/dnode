@@ -434,7 +434,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		evidence.NewAppModule(app.evidenceKeeper),
 		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		currencies.NewAppMsModule(app.ccKeeper),
+		currencies.NewAppMsModule(app.ccKeeper, app.ccsKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
 		multisig.NewAppModule(app.msKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
