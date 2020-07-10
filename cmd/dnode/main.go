@@ -103,7 +103,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		panic(err)
 	}
 
-	return app.NewDnServiceApp(logger, db, config)
+	return app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod)
 }
 
 // Exports genesis data and validators.
@@ -116,7 +116,7 @@ func exportAppStateAndTMValidators(
 	}
 
 	if height != -1 {
-		dnApp := app.NewDnServiceApp(logger, db, config)
+		dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod)
 		err := dnApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -124,15 +124,13 @@ func exportAppStateAndTMValidators(
 		return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	dnApp := app.NewDnServiceApp(logger, db, config)
+	dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod)
 	return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }
 
 // Init cmd together with VM configruation.
 // nolint
-func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
-	defaultNodeHome string) *cobra.Command { // nolint: golint
-	//cmd := genutilCli.InitCmd(ctx, cdc, mbm, defaultNodeHome)
+func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager, defaultNodeHome string) *cobra.Command { // nolint: golint
 	cmd := dnConfig.InitCmd(ctx, cdc, mbm, defaultNodeHome)
 
 	cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {

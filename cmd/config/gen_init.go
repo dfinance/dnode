@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -116,6 +117,16 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			cdc.MustUnmarshalJSON(govDataBz, &govGenState)
 			govGenState.DepositParams.MinDeposit = sdk.NewCoins(GovMinDeposit)
 			appGenState[gov.ModuleName] = cdc.MustMarshalJSON(govGenState)
+
+			// Change default crisis constant fee
+			crisisDataBz := appGenState[crisis.ModuleName]
+			var crisisGenState crisis.GenesisState
+
+			cdc.MustUnmarshalJSON(crisisDataBz, &crisisGenState)
+			defFeeAmount, _ := sdk.NewIntFromString(DefaultFeeAmount)
+			crisisGenState.ConstantFee.Denom = MainDenom
+			crisisGenState.ConstantFee.Amount = defFeeAmount
+			appGenState[crisis.ModuleName] = cdc.MustMarshalJSON(crisisGenState)
 
 			appState, err := codec.MarshalJSONIndent(cdc, appGenState)
 			if err != nil {

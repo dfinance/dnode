@@ -38,6 +38,7 @@ var (
 	RegisterCodec          = types.RegisterCodec
 	NewKeeper              = keeper.NewKeeper
 	NewQuerier             = keeper.NewQuerier
+	RegisterInvariants     = keeper.RegisterInvariants
 	NewMsgIssueCurrency    = types.NewMsgIssueCurrency
 	NewMsgWithdrawCurrency = types.NewMsgWithdrawCurrency
 	NewAddCurrencyProposal = types.NewAddCurrencyProposal

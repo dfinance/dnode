@@ -17,6 +17,7 @@ type (
 	Keeper           = keeper.Keeper
 	MsgDeployModule  = types.MsgDeployModule
 	MsgExecuteScript = types.MsgExecuteScript
+	ScriptArg        = types.ScriptArg
 
 	GenesisState    = types.GenesisState
 	QueryAccessPath = types.QueryAccessPath

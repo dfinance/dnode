@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/evidence"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -65,35 +66,36 @@ var (
 	ModuleBasics = module.NewBasicManager(
 		genaccounts.AppModuleBasic{},
 		genutil.AppModuleBasic{},
+		params.AppModuleBasic{},
+		vm.AppModuleBasic{},
+		ccstorage.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
+		supply.AppModuleBasic{},
 		staking.AppModuleBasic{},
 		mint.AppModuleBasic{},
-		distribution.AppModuleBasic{},
-		params.AppModuleBasic{},
-		slashing.AppModuleBasic{},
 		evidence.AppModuleBasic{},
-		supply.AppModuleBasic{},
-		poa.AppModuleBasic{},
-		ccstorage.AppModuleBasic{},
+		distribution.AppModuleBasic{},
+		slashing.AppModuleBasic{},
 		currencies.AppModuleBasic{},
+		poa.AppModuleBasic{},
 		multisig.AppModuleBasic{},
 		oracle.AppModuleBasic{},
-		gov.AppModuleBasic{},
-		vm.AppModuleBasic{},
 		markets.AppModuleBasic{},
 		orders.AppModuleBasic{},
 		orderbook.AppModuleBasic{},
+		crisis.AppModuleBasic{},
+		gov.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
 		auth.FeeCollectorName:     nil,
-		distribution.ModuleName:   nil,
-		mint.ModuleName:           {supply.Minter},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		gov.ModuleName:            {supply.Burner},
+		mint.ModuleName:           {supply.Minter},
+		distribution.ModuleName:   nil,
 		orders.ModuleName:         {supply.Burner},
+		gov.ModuleName:            {supply.Burner},
 	}
 )
 
@@ -108,31 +110,35 @@ type DnServiceApp struct {
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 
+	paramsKeeper    params.Keeper
+	vmKeeper        vm.Keeper
+	ccsKeeper       ccstorage.Keeper
 	accountKeeper   vmauth.Keeper
 	bankKeeper      bank.Keeper
 	supplyKeeper    supply.Keeper
-	paramsKeeper    params.Keeper
 	stakingKeeper   staking.Keeper
 	mintKeeper      mint.Keeper
+	evidenceKeeper  evidence.Keeper
 	distrKeeper     distribution.Keeper
 	slashingKeeper  slashing.Keeper
-	evidenceKeeper  evidence.Keeper
-	poaKeeper       poa.Keeper
-	ccsKeeper       ccstorage.Keeper
 	ccKeeper        currencies.Keeper
+	poaKeeper       poa.Keeper
 	msKeeper        multisig.Keeper
-	vmKeeper        vm.Keeper
 	oracleKeeper    oracle.Keeper
-	govKeeper       gov.Keeper
 	marketKeeper    markets.Keeper
 	orderKeeper     orders.Keeper
 	orderBookKeeper orderbook.Keeper
+	crisisKeeper    crisis.Keeper
+	govKeeper       gov.Keeper
 
 	mm *msmodule.MsManager
 
 	// vm connection
 	vmConn     *grpc.ClientConn
 	vmListener net.Listener
+
+	// params
+	invariantsCheckPeriod uint // in blocks
 }
 
 // Initialize connection to VM server.
@@ -177,7 +183,7 @@ func MakeCodec() *codec.Codec {
 }
 
 // NewDnServiceApp is a constructor function for dfinance blockchain.
-func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
+func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
 	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
@@ -185,21 +191,21 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 
 	keys := sdk.NewKVStoreKeys(
 		bam.MainStoreKey,
+		params.StoreKey,
 		auth.StoreKey,
 		supply.StoreKey,
-		params.StoreKey,
 		staking.StoreKey,
 		mint.StoreKey,
+		evidence.StoreKey,
 		distribution.StoreKey,
 		slashing.StoreKey,
-		evidence.StoreKey,
-		poa.StoreKey,
+		gov.StoreKey,
 		ccstorage.StoreKey,
 		currencies.StoreKey,
+		poa.StoreKey,
 		multisig.StoreKey,
 		vm.StoreKey,
 		oracle.StoreKey,
-		gov.StoreKey,
 		orders.StoreKey,
 		orderbook.StoreKey,
 	)
@@ -214,6 +220,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		cdc:     cdc,
 		keys:    keys,
 		tkeys:   tkeys,
+		//
+		invariantsCheckPeriod: invCheckPeriod,
 	}
 
 	// initialize connections
@@ -224,15 +232,16 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 	// 1 dfi == 1000000000000000000
 	sdk.PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
-	// The ParamsKeeper handles parameter storage for the application.
+	var err error
+
+	// ParamsKeeper handles parameter storage for the application.
 	app.paramsKeeper = params.NewKeeper(
 		app.cdc,
 		keys[params.StoreKey],
 		tkeys[params.TStoreKey],
 	)
 
-	// Initializing vm keeper.
-	var err error
+	// VMKeeper stores VM resources and interacts with DVM.
 	app.vmKeeper = vm.NewKeeper(
 		keys[vm.StoreKey],
 		cdc,
@@ -241,7 +250,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		config,
 	)
 
-	// Initializing currencies storage keeper.
+	// Currencies storage keeper keeps all currencies infos and VM resources.
 	app.ccsKeeper = ccstorage.NewKeeper(
 		cdc,
 		keys[ccstorage.StoreKey],
@@ -249,7 +258,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.vmKeeper,
 	)
 
-	// The AccountKeeper handles address -> account lookups.
+	// VMAuth keeper wraps AccountKeeper and handles address -> account lookups and keeps VM balances updated.
 	app.accountKeeper = vmauth.NewKeeper(
 		cdc,
 		keys[auth.StoreKey],
@@ -258,14 +267,14 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		auth.ProtoBaseAccount,
 	)
 
-	// The BankKeeper allows you perform sdk.Coins interactions.
+	// BankKeeper allows performing sdk.Coins interactions.
 	app.bankKeeper = bank.NewBaseKeeper(
 		app.accountKeeper,
 		app.paramsKeeper.Subspace(bank.DefaultParamspace),
 		app.ModuleAccountAddrs(),
 	)
 
-	// The SupplyKeeper collects transaction fees and renders them to the fee distribution module.
+	// SupplyKeeper collects transaction fees and renders them to the fee distribution module.
 	app.supplyKeeper = supply.NewKeeper(
 		cdc,
 		keys[supply.StoreKey],
@@ -274,7 +283,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		maccPerms,
 	)
 
-	// Initializing staking keeper.
+	// StakingKeeper stores Proof-of-Stake validators info and staking values.
 	stakingKeeper := staking.NewKeeper(
 		cdc,
 		keys[staking.StoreKey],
@@ -282,7 +291,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.paramsKeeper.Subspace(staking.DefaultParamspace),
 	)
 
-	// Mint keeper (inflation).
+	// MintKeeper adds inflation.
 	app.mintKeeper = mint.NewKeeper(
 		cdc, keys[mint.StoreKey],
 		app.paramsKeeper.Subspace(mint.DefaultParamspace),
@@ -291,7 +300,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		auth.FeeCollectorName,
 	)
 
-	// Evidence keeper. Catch double sign and provide evidence to confirm Byzantine validators.
+	// EvidenceKeeper catchs double sign and provide evidence to confirm Byzantine validators.
 	evidenceKeeper := evidence.NewKeeper(
 		cdc,
 		keys[evidence.StoreKey],
@@ -312,7 +321,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.ccsKeeper,
 	)
 
-	// Initializing distribution keeper.
+	// DistributionKeeper distributes rewards between Proof-of-Stake validators and delegators.
 	app.distrKeeper = distribution.NewKeeper(
 		cdc,
 		keys[distribution.StoreKey],
@@ -323,7 +332,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.ModuleAccountAddrs(),
 	)
 
-	// Initialize slashing keeper.
+	// SlashingKeeper adds disincentivize and penalty to Proof-of_Stake mechanism.
 	app.slashingKeeper = slashing.NewKeeper(
 		cdc,
 		keys[slashing.StoreKey],
@@ -331,7 +340,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.paramsKeeper.Subspace(slashing.DefaultParamspace),
 	)
 
-	// Initialize staking keeper.
+	// Initialize StakingKeeper.
 	app.stakingKeeper = *stakingKeeper.SetHooks(
 		staking.NewMultiStakingHooks(
 			app.distrKeeper.Hooks(),
@@ -339,14 +348,14 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		),
 	)
 
-	// Initializing validators module.
+	// PoaKeeper stores list of Proof-of-Authority validators used by multisig system.
 	app.poaKeeper = poa.NewKeeper(
 		cdc,
 		keys[poa.StoreKey],
 		app.paramsKeeper.Subspace(poa.DefaultParamspace),
 	)
 
-	// Initializing multisignature router.
+	// MultisignatureKeeper handles multisig voting and routes message to multisig module.
 	app.msRouter = msmodule.NewMsRouter()
 
 	// Initializing multisignature router.
@@ -358,7 +367,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.poaKeeper,
 	)
 
-	// Initializing oracle module.
+	// OracleKeeper collects asset pair exchange price from various oracles.
 	app.oracleKeeper = oracle.NewKeeper(
 		keys[oracle.StoreKey],
 		cdc,
@@ -366,7 +375,38 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.vmKeeper,
 	)
 
-	// The Governance keeper.
+	// MarketKeeper stores asset pair market used by DEX system.
+	app.marketKeeper = markets.NewKeeper(
+		cdc,
+		app.paramsKeeper.Subspace(markets.DefaultParamspace),
+		app.ccsKeeper,
+	)
+
+	// OrdersKeeper allows posting/revoking DEX system orders.
+	app.orderKeeper = orders.NewKeeper(
+		keys[orders.StoreKey],
+		cdc,
+		app.bankKeeper,
+		app.supplyKeeper,
+		app.marketKeeper,
+	)
+
+	// OrderBookKeeper matches DEX orders and stores match results.
+	app.orderBookKeeper = orderbook.NewKeeper(
+		keys[orderbook.StoreKey],
+		cdc,
+		app.orderKeeper,
+	)
+
+	// CrisisKeeper periodically checks registered module invariants and halt chain on fail.
+	app.crisisKeeper = crisis.NewKeeper(
+		app.paramsKeeper.Subspace(crisis.DefaultParamspace),
+		app.invariantsCheckPeriod,
+		app.supplyKeeper,
+		auth.FeeCollectorName,
+	)
+
+	// GovernanceKeeper allows changing chain module params.
 	app.govRouter = gov.NewRouter()
 	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
 	app.govRouter.AddRoute(currencies.GovRouterKey, currencies.NewGovHandler(app.ccKeeper))
@@ -380,51 +420,29 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		app.govRouter,
 	)
 
-	// Initializing markets module.
-	app.marketKeeper = markets.NewKeeper(
-		cdc,
-		app.paramsKeeper.Subspace(markets.DefaultParamspace),
-		app.ccsKeeper,
-	)
-
-	// Initializing orders module.
-	app.orderKeeper = orders.NewKeeper(
-		keys[orders.StoreKey],
-		cdc,
-		app.bankKeeper,
-		app.supplyKeeper,
-		app.marketKeeper,
-	)
-
-	// Initializing order_bool module.
-	app.orderBookKeeper = orderbook.NewKeeper(
-		keys[orderbook.StoreKey],
-		cdc,
-		app.orderKeeper,
-	)
-
 	// Initializing multi signature manager.
 	app.mm = msmodule.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
+		vm.NewAppModule(app.vmKeeper),
+		ccstorage.NewAppModule(app.ccsKeeper),
 		vmauth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
-		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
-		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		mint.NewAppModule(app.mintKeeper),
 		evidence.NewAppModule(app.evidenceKeeper),
-		poa.NewAppMsModule(app.poaKeeper),
-		ccstorage.NewAppModule(app.ccsKeeper),
+		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
+		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		currencies.NewAppMsModule(app.ccKeeper, app.ccsKeeper),
+		poa.NewAppMsModule(app.poaKeeper),
 		multisig.NewAppModule(app.msKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
-		vm.NewAppModule(app.vmKeeper),
-		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 		markets.NewAppModule(app.marketKeeper),
 		orders.NewAppModule(app.orderKeeper),
 		orderbook.NewAppModule(app.orderBookKeeper),
+		crisis.NewAppModule(&app.crisisKeeper),
+		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(
@@ -435,6 +453,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		vm.ModuleName,
 	)
 	app.mm.SetOrderEndBlockers(
+		crisis.ModuleName,
 		gov.ModuleName,
 		staking.ModuleName,
 		multisig.ModuleName,
@@ -456,6 +475,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		bank.ModuleName,
 		slashing.ModuleName,
 		gov.ModuleName,
+		mint.ModuleName,
+		evidence.ModuleName,
+		supply.ModuleName,
 		poa.ModuleName,
 		multisig.ModuleName,
 		currencies.ModuleName,
@@ -463,12 +485,11 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, base
 		markets.ModuleName,
 		orders.ModuleName,
 		orderbook.ModuleName,
-		mint.ModuleName,
-		evidence.ModuleName,
-		supply.ModuleName, // should be after all modules related to account balances.
+		crisis.ModuleName,
 		genutil.ModuleName,
 	)
 
+	app.mm.RegisterInvariants(&app.crisisKeeper, supply.ModuleName)
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter())
 	app.mm.RegisterMsRoutes(app.msRouter)
 

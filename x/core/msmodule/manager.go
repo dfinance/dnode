@@ -1,6 +1,7 @@
 package msmodule
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 )
 
@@ -53,4 +54,22 @@ func (m *MsManager) RegisterMsRoutes(router MsRouter) {
 	}
 
 	router.Seal()
+}
+
+// RegisterInvariants registers all module routes and module querier routes.
+// {blackList} allows to skip invariants register for specific module names.
+func (m *MsManager) RegisterInvariants(ir sdk.InvariantRegistry, blackList... string) {
+	for _, module := range m.Modules {
+		blackListed := false
+		for _, disabledModuleName := range blackList {
+			if module.Name() == disabledModuleName {
+				blackListed = true
+				break
+			}
+		}
+
+		if !blackListed {
+			module.RegisterInvariants(ir)
+		}
+	}
 }
