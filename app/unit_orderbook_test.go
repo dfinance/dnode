@@ -8,7 +8,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/libs/log"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
@@ -16,18 +15,17 @@ import (
 func TestOB_BasicNoDecimalAssets(t *testing.T) {
 	const defOrderTtl = 60
 
+	t.Parallel()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
+
+	genValidators, _, _, _ := CreateGenAccounts(3, GenDefCoins(t))
+	CheckSetGenesisMockVM(t, app, genValidators)
+
 	baseDenom, quoteDenom := "base", "quote"
 	baseDecimals, quoteDecimals := uint8(0), uint8(0)
 	baseSupply, quoteSupply := sdk.NewInt(1000), sdk.NewInt(1000)
-
-	t.Parallel()
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
-
-	genValidators, _, _, _ := CreateGenAccounts(3, GenDefCoins(t))
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
 
 	client0Addr, client1Addr := genValidators[0].Address, genValidators[1].Address
 	tester := NewOrderBookTester(t, app)
@@ -78,18 +76,17 @@ func TestOB_BasicNoDecimalAssets(t *testing.T) {
 func TestOB_BasicDiffDecimalAssets(t *testing.T) {
 	const defOrderTtl = 60
 
+	t.Parallel()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
+
+	genValidators, _, _, _ := CreateGenAccounts(3, GenDefCoins(t))
+	CheckSetGenesisMockVM(t, app, genValidators)
+
 	baseDenom, quoteDenom := "base", "quote"
 	baseDecimals, quoteDecimals := uint8(1), uint8(3)
 	baseSupply, quoteSupply := sdk.NewInt(1000), sdk.NewInt(1000)
-
-	t.Parallel()
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
-
-	genValidators, _, _, _ := CreateGenAccounts(3, GenDefCoins(t))
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
 
 	client0Addr, client1Addr := genValidators[0].Address, genValidators[1].Address
 	tester := NewOrderBookTester(t, app)
@@ -147,6 +144,14 @@ func TestOB_ManyOrders(t *testing.T) {
 		inputMaxQuoteP   = 1000
 	)
 
+	t.Parallel()
+
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
+
+	genValidators, _, _, _ := CreateGenAccounts(3, GenDefCoins(t))
+	CheckSetGenesisMockVM(t, app, genValidators)
+
 	baseDenom, quoteDenom := "base", "quote"
 	baseDecimals, quoteDecimals := uint8(0), uint8(0)
 
@@ -183,15 +188,6 @@ func TestOB_ManyOrders(t *testing.T) {
 	}
 	t.Logf("BaseAsset supply: %s", baseSupply.String())
 	t.Logf("QuoteAsset supply: %s", quoteSupply.String())
-
-	t.Parallel()
-	app, server := newTestDnApp(log.AllowError())
-	defer app.CloseConnections()
-	defer server.Stop()
-
-	genValidators, _, _, _ := CreateGenAccounts(3, GenDefCoins(t))
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
 
 	client0Addr, client1Addr := genValidators[0].Address, genValidators[1].Address
 	tester := NewOrderBookTester(t, app)

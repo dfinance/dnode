@@ -14,6 +14,7 @@ import (
 	codec "github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/currencies/client"
 	"github.com/dfinance/dnode/x/currencies/client/rest"
@@ -62,14 +63,16 @@ func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 // AppModule is a app module type.
 type AppModule struct {
 	AppModuleBasic
-	ccKeeper keeper.Keeper
+	ccKeeper  keeper.Keeper
+	ccsKeeper ccstorage.Keeper
 }
 
 // NewAppMsModule creates new AppMsModule object.
-func NewAppMsModule(ccKeeper keeper.Keeper) msmodule.AppMsModule {
+func NewAppMsModule(ccKeeper keeper.Keeper, ccsKeeper ccstorage.Keeper) msmodule.AppMsModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		ccKeeper:       ccKeeper,
+		ccsKeeper:      ccsKeeper,
 	}
 }
 
@@ -79,7 +82,9 @@ func (AppModule) Name() string {
 }
 
 // RegisterInvariants registers module invariants.
-func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (app AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
+	RegisterInvariants(ir, app.ccKeeper)
+}
 
 // Route returns module messages route.
 func (app AppModule) Route() string {
@@ -115,7 +120,9 @@ func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.V
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage { return nil }
 
 // BeginBlock performs module actions at a block start.
-func (app AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (app AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
+	BeginBlocker(ctx, app.ccsKeeper)
+}
 
 // EndBlock performs module actions at a block end.
 func (app AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {

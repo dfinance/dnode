@@ -647,7 +647,7 @@ func TestPOA_CLI(t *testing.T) {
 
 		targetValidatorName := "validator2"
 		targetValidatorAcc := ct.Accounts[targetValidatorName]
-		issueID := "replaceValidator"
+		issueID := "ReplaceValidator"
 
 		tx := ct.TxPoaReplaceValidator(senderAddr, targetValidatorAcc.Address, newValidatorAcc.Address, newEthAddress, issueID)
 		tx.CheckSucceeded()

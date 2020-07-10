@@ -16,6 +16,11 @@ type Currency struct {
 	Supply sdk.Int `json:"supply" swaggertype:"string" example:"100"`
 }
 
+// GetSupplyCoin creates sdk.Coin with supply amount.
+func (c Currency) GetSupplyCoin() sdk.Coin {
+	return sdk.NewCoin(c.Denom, c.Supply)
+}
+
 // UintToDec converts sdk.Uint to sdk.Dec using currency decimals.
 func (c Currency) UintToDec(quantity sdk.Uint) sdk.Dec {
 	return sdk.NewDecFromIntWithPrec(sdk.Int(quantity), int64(c.Decimals))

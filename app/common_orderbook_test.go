@@ -1,5 +1,3 @@
-// +build unit
-
 package app
 
 import (
@@ -20,8 +18,6 @@ import (
 )
 
 const (
-	queryMarketsListPath = "/custom/markets/list"
-	//
 	ascDistribution  = 1
 	descDistribution = 2
 )
@@ -78,8 +74,8 @@ func NewOrderBookTester(t *testing.T, app *DnServiceApp) OrderBookTester {
 	tester := OrderBookTester{
 		t:          t,
 		app:        app,
-		Markets:    make(map[string]markets.Market, 0),
-		Currencies: make(map[string]ccstorage.Currency, 0),
+		Markets:    make(map[string]markets.Market),
+		Currencies: make(map[string]ccstorage.Currency),
 		Clients:    make([]*ClientTestState, 0),
 	}
 
@@ -111,8 +107,6 @@ func (tester *OrderBookTester) BeginBlockWithDuration(dur time.Duration) {
 func (tester *OrderBookTester) EndBlock() {
 	tester.app.EndBlock(abci.RequestEndBlock{})
 	tester.app.Commit()
-
-	return
 }
 
 // Add new currencies and register a corresponding market.
@@ -171,21 +165,17 @@ func (tester *OrderBookTester) AddClient(addr sdk.AccAddress, baseCoinsAmount, q
 
 	// append all markets assets coins to account
 	{
-		acc := tester.app.accountKeeper.GetAccount(ctx, addr)
-		accCoins := acc.GetCoins()
 		for _, market := range tester.Markets {
-			accCoins = append(accCoins, sdk.Coin{
-				Denom:  market.BaseAssetDenom,
-				Amount: baseCoinsAmount,
-			})
-			accCoins = append(accCoins, sdk.Coin{
-				Denom:  market.QuoteAssetDenom,
-				Amount: quoteCoinsAmount,
-			})
-		}
-		require.NoError(tester.t, acc.SetCoins(accCoins), "setting coins for client: %d", clientID)
+			baseIssueID := fmt.Sprintf("%s_%s_base_%s", addr.String(), market.ID.String(), baseCoinsAmount.String())
+			baseCoin := sdk.NewCoin(market.BaseAssetDenom, baseCoinsAmount)
+			baseErr := tester.app.ccKeeper.IssueCurrency(ctx, baseIssueID, baseCoin, addr)
+			require.NoError(tester.t, baseErr, "issue baseCurrency for client: %d", clientID)
 
-		tester.app.accountKeeper.SetAccount(ctx, acc)
+			quoteIssueID := fmt.Sprintf("%s_%s_quote_%s", addr.String(), market.ID.String(), quoteCoinsAmount.String())
+			quoteCoin := sdk.NewCoin(market.QuoteAssetDenom, quoteCoinsAmount)
+			quoteErr := tester.app.ccKeeper.IssueCurrency(ctx, quoteIssueID, quoteCoin, addr)
+			require.NoError(tester.t, quoteErr, "issue quoteCurrency for client: %d", clientID)
+		}
 	}
 
 	// save coins client input
@@ -193,9 +183,9 @@ func (tester *OrderBookTester) AddClient(addr sdk.AccAddress, baseCoinsAmount, q
 		acc := tester.app.accountKeeper.GetAccount(ctx, addr)
 		clientState := &ClientTestState{
 			Address:        addr,
-			InputCoins:     make(map[string]sdk.Int, 0),
-			OutputCoins:    make(map[string]sdk.Int, 0),
-			EstimatedCoins: make(map[string]sdk.Int, 0),
+			InputCoins:     make(map[string]sdk.Int),
+			OutputCoins:    make(map[string]sdk.Int),
+			EstimatedCoins: make(map[string]sdk.Int),
 			Orders:         make([]*OrderTestState, 0),
 		}
 
@@ -422,7 +412,7 @@ func (tester *OrderBookTester) addOrder(owner sdk.AccAddress, dir orders.Directi
 	require.True(tester.t, ok, "market not found: %s", mID)
 
 	// post order
-	orderID := dnTypes.ID{}
+	var orderID dnTypes.ID
 	{
 		order, err := tester.app.orderKeeper.PostOrder(
 			ctx,

@@ -22,9 +22,9 @@ const govUpdModuleV1 = `
 	    resource struct U64 {val: u64}
 	    resource struct Address {val: address}
 
-	    public fun store_u64() {
+	    public fun store_u64(sender: &signer) {
 			let value = U64 {val: 1};
-	        move_to_sender<U64>(value);
+	        move_to<U64>(sender, value);
 	    }
 	}
 	}
@@ -36,9 +36,9 @@ const govUpdModuleV2 = `
 	    resource struct U64 {val: u64}
 	    resource struct Address {val: address}
 
-	    public fun store_u64() {
+	    public fun store_u64(sender: &signer) {
 			let value = U64 {val: 2};
-	        move_to_sender<U64>(value);
+	        move_to<U64>(sender, value);
 	    }
 	}
 	}
@@ -47,8 +47,8 @@ const govUpdModuleV2 = `
 const govScript = `
 	script {
 		use 0x1::Foo;
-		fun main() {
-   			Foo::store_u64();
+		fun main(account: &signer) {
+   			Foo::store_u64(account);
 		}
 	}
 `

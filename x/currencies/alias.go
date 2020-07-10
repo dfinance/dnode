@@ -38,6 +38,7 @@ var (
 	RegisterCodec          = types.RegisterCodec
 	NewKeeper              = keeper.NewKeeper
 	NewQuerier             = keeper.NewQuerier
+	RegisterInvariants     = keeper.RegisterInvariants
 	NewMsgIssueCurrency    = types.NewMsgIssueCurrency
 	NewMsgWithdrawCurrency = types.NewMsgWithdrawCurrency
 	NewAddCurrencyProposal = types.NewAddCurrencyProposal
@@ -49,4 +50,8 @@ var (
 	ErrWrongWithdrawID     = types.ErrWrongWithdrawID
 	ErrWrongPegZoneSpender = types.ErrWrongPegZoneSpender
 	ErrGovInvalidProposal  = types.ErrGovInvalidProposal
+
+	// Mint denom and event type when mint happen.
+	MintDenom = types.MintDenom
+	MintEvent = types.MintEventType
 )

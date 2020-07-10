@@ -13,7 +13,8 @@ import (
 
 const (
 	MainDenom            = "dfi"
-	DefaultFee           = "100000000000000" + MainDenom
+	DefaultFeeAmount     = "100000000000000"
+	DefaultFee           = DefaultFeeAmount + MainDenom
 	MainPrefix           = "wallet"                                                                  // Main prefix for all addresses.
 	Bech32PrefixAccAddr  = MainPrefix                                                                // Bech32 prefix for account addresses.
 	Bech32PrefixAccPub   = MainPrefix + sdk.PrefixPublic                                             // Bech32 prefix for accounts pub keys.
@@ -37,6 +38,9 @@ const (
 
 	// Default governance params.
 	DefaultGovMinDepositAmount = "100000000000000000000" // 100 dfi
+
+	// Invariants check period for crisis module (in blocks)
+	DefInvCheckPeriod = 10
 )
 
 var (

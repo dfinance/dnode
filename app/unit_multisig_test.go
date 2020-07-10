@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -18,25 +19,15 @@ import (
 	"github.com/dfinance/dnode/x/poa"
 )
 
-const (
-	queryMsGetCallPath   = "/custom/" + multisig.ModuleName + "/" + multisig.QueryCall
-	queryMsGetCallsPath  = "/custom/" + multisig.ModuleName + "/" + multisig.QueryCalls
-	queryMsGetCallLastId = "/custom/" + multisig.ModuleName + "/" + multisig.QueryLastId
-	queryMsGetUniqueCall = "/custom/" + multisig.ModuleName + "/" + multisig.QueryCallByUnique
-)
-
 // Test multisig module queries.
 func TestMSApp_Queries(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	genValidators, _, _, _ := CreateGenAccounts(7, GenDefCoins(t))
-
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
+	CheckSetGenesisMockVM(t, app, genValidators)
 
 	// check call by non-existing uniqueID query
 	{
@@ -49,24 +40,18 @@ func TestMSApp_Queries(t *testing.T) {
 func TestMSApp_Voting(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
-	accs, _, _, privKeys := CreateGenAccounts(9, GenDefCoins(t))
-	genValidators, genPrivKeys := accs[:7], privKeys[:7]
-	targetValidator := accs[7]
-	nonExistingValidator, nonExistingValidatorPrivKey := accs[8], privKeys[8]
+	genValidators, _, _, genPrivKeys := CreateGenAccounts(9, GenDefCoins(t))
+	CheckSetGenesisMockVM(t, app, genValidators)
 
-	_, err := setGenesis(t, app, genValidators)
-	require.NoError(t, err)
+	targetValidator := genValidators[7]
+	nonExistingValidator, nonExistingValidatorPrivKey := genValidators[8], genPrivKeys[8]
 
-	// create account for non-existing validator
-	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
-	nonExistingValidator.AccountNumber = uint64(len(genValidators))
-	app.accountKeeper.SetAccount(GetContext(app, false), nonExistingValidator)
-	app.EndBlock(abci.RequestEndBlock{})
-	app.Commit()
+	// remove validators making them nonExistingValidator for further test cases
+	RemoveValidators(t, app, genValidators, []*auth.BaseAccount{targetValidator, nonExistingValidator}, genPrivKeys, true)
+	genValidators, genPrivKeys = genValidators[:7], genPrivKeys[:7]
 
 	var callMsgId dnTypes.ID
 	var callUniqueId string
@@ -78,7 +63,7 @@ func TestMSApp_Voting(t *testing.T) {
 		addMsg := poa.NewMsgAddValidator(targetValidator.Address, ethAddresses[0], senderAcc.GetAddress())
 		msgID := fmt.Sprintf("addValidator:%s", targetValidator.Address)
 		submitMsg := msExport.NewMsgSubmitCall(addMsg, msgID, senderAcc.GetAddress())
-		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, multisig.ErrPoaNotValidator)
 	}
 
@@ -89,7 +74,7 @@ func TestMSApp_Voting(t *testing.T) {
 		addMsg := poa.NewMsgAddValidator(targetValidator.Address, ethAddresses[0], senderAcc.GetAddress())
 		callUniqueId = fmt.Sprintf("addValidator:%s", targetValidator.Address)
 		submitMsg := msExport.NewMsgSubmitCall(addMsg, callUniqueId, senderAcc.GetAddress())
-		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)
 
 		// check call added
@@ -106,7 +91,7 @@ func TestMSApp_Voting(t *testing.T) {
 		// confirm call
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[1].Address), genPrivKeys[1]
 		confirmMsg := msExport.MsgConfirmCall{CallID: callMsgId, Sender: senderAcc.GetAddress()}
-		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)
 
 		// check vote added
@@ -139,7 +124,7 @@ func TestMSApp_Voting(t *testing.T) {
 		// confirm call
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[1].Address), genPrivKeys[1]
 		confirmMsg := msExport.MsgConfirmCall{CallID: callMsgId, Sender: senderAcc.GetAddress()}
-		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, multisig.ErrVoteAlreadyConfirmed)
 	}
 
@@ -148,7 +133,7 @@ func TestMSApp_Voting(t *testing.T) {
 		// confirm call
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, nonExistingValidator.Address), nonExistingValidatorPrivKey
 		confirmMsg := msExport.MsgConfirmCall{CallID: callMsgId, Sender: senderAcc.GetAddress()}
-		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, multisig.ErrPoaNotValidator)
 	}
 
@@ -157,7 +142,7 @@ func TestMSApp_Voting(t *testing.T) {
 		// revoke confirm
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, nonExistingValidator.Address), nonExistingValidatorPrivKey
 		revokeMsg := msExport.MsgRevokeConfirm{CallID: callMsgId, Sender: senderAcc.GetAddress()}
-		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverErrorTx(t, app, tx)
 	}
 
@@ -166,7 +151,7 @@ func TestMSApp_Voting(t *testing.T) {
 		// revoke confirm
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[2].Address), genPrivKeys[2]
 		revokeMsg := msExport.MsgRevokeConfirm{CallID: callMsgId, Sender: senderAcc.GetAddress()}
-		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, multisig.ErrVoteNotApproved)
 	}
 
@@ -175,7 +160,7 @@ func TestMSApp_Voting(t *testing.T) {
 		// revoke confirm
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[1].Address), genPrivKeys[1]
 		revokeMsg := msExport.MsgRevokeConfirm{CallID: callMsgId, Sender: senderAcc.GetAddress()}
-		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)
 
 		// check vote removed
@@ -190,7 +175,7 @@ func TestMSApp_Voting(t *testing.T) {
 		// revoke confirm
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genValidators[0].Address), genPrivKeys[0]
 		revokeMsg := msExport.MsgRevokeConfirm{CallID: callMsgId, Sender: senderAcc.GetAddress()}
-		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)
 
 		// check call revoked
@@ -204,16 +189,13 @@ func TestMSApp_Voting(t *testing.T) {
 func TestMSApp_BlockHeight(t *testing.T) {
 	t.Parallel()
 
-	app, server := newTestDnApp()
-	defer app.CloseConnections()
-	defer server.Stop()
+	app, appStop := NewTestDnAppMockVM()
+	defer appStop()
 
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
+	CheckSetGenesisMockVM(t, app, genAccs)
 
-	_, err := setGenesis(t, app, genAccs)
-	require.NoError(t, err)
-
-	createCurrency(t, app, currency1Denom, 0)
+	CreateCurrency(t, app, currency1Denom, 0)
 
 	// generate blocks to reach multisig call reject condition
 	senderAddr, senderPrivKey := genAddrs[0], genPrivKeys[0]
@@ -228,7 +210,7 @@ func TestMSApp_BlockHeight(t *testing.T) {
 		submitMsg := msExport.NewMsgSubmitCall(issueMsg, msgId, senderAddr)
 		// emit transaction
 		senderAcc := GetAccount(app, senderAddr)
-		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		_, res, err := app.Deliver(tx)
 		require.NoError(t, err, ResultErrorMsg(res, err))
 		// commit block
@@ -260,7 +242,7 @@ func TestMSApp_BlockHeight(t *testing.T) {
 		msgId := dnTypes.NewIDFromUint64(0)
 		// emit transaction
 		confirmMsg := msExport.NewMsgConfirmCall(msgId, senderAcc.GetAddress())
-		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, multisig.ErrVoteAlreadyRejected)
 	}
 
@@ -272,7 +254,7 @@ func TestMSApp_BlockHeight(t *testing.T) {
 		for i := 1; i < len(genAccs)/2+1; i++ {
 			senderAcc, senderPrivKey := GetAccountCheckTx(app, genAddrs[i]), genPrivKeys[i]
 			confirmMsg := msExport.NewMsgConfirmCall(msgId, senderAcc.GetAddress())
-			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			CheckDeliverTx(t, app, tx)
 		}
 
@@ -281,7 +263,7 @@ func TestMSApp_BlockHeight(t *testing.T) {
 			idx := len(genAddrs) - 1
 			senderAcc, senderPrivKey := GetAccountCheckTx(app, genAddrs[idx]), genPrivKeys[idx]
 			confirmMsg := msExport.NewMsgConfirmCall(msgId, senderAcc.GetAddress())
-			tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+			tx := GenTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 			CheckDeliverSpecificErrorTx(t, app, tx, multisig.ErrVoteAlreadyApproved)
 		}
 	}
@@ -293,7 +275,7 @@ func TestMSApp_BlockHeight(t *testing.T) {
 		// emit transaction
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genAddrs[0]), genPrivKeys[0]
 		revokeMsg := msExport.MsgRevokeConfirm{CallID: msgId, Sender: senderAcc.GetAddress()}
-		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, multisig.ErrVoteAlreadyRejected)
 	}
 
@@ -304,7 +286,7 @@ func TestMSApp_BlockHeight(t *testing.T) {
 		// emit transaction
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genAddrs[0]), genPrivKeys[0]
 		revokeMsg := msExport.MsgRevokeConfirm{CallID: msgId, Sender: senderAcc.GetAddress()}
-		tx := genTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
+		tx := GenTx([]sdk.Msg{revokeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, multisig.ErrVoteAlreadyApproved)
 	}
 }

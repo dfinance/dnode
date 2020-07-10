@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -100,6 +102,14 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			stakingGenState.Params.BondDenom = MainDenom
 			appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
+			// Change default mint stake.
+			mintDataBz := appGenState[mint.ModuleName]
+			var mintGenState mint.GenesisState
+
+			cdc.MustUnmarshalJSON(mintDataBz, &mintGenState)
+			mintGenState.Params.MintDenom = MainDenom
+			appGenState[mint.ModuleName] = cdc.MustMarshalJSON(mintGenState)
+
 			// Change default minimal governance deposit coin.
 			govDataBz := appGenState[gov.ModuleName]
 			var govGenState gov.GenesisState
@@ -107,6 +117,16 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			cdc.MustUnmarshalJSON(govDataBz, &govGenState)
 			govGenState.DepositParams.MinDeposit = sdk.NewCoins(GovMinDeposit)
 			appGenState[gov.ModuleName] = cdc.MustMarshalJSON(govGenState)
+
+			// Change default crisis constant fee
+			crisisDataBz := appGenState[crisis.ModuleName]
+			var crisisGenState crisis.GenesisState
+
+			cdc.MustUnmarshalJSON(crisisDataBz, &crisisGenState)
+			defFeeAmount, _ := sdk.NewIntFromString(DefaultFeeAmount)
+			crisisGenState.ConstantFee.Denom = MainDenom
+			crisisGenState.ConstantFee.Amount = defFeeAmount
+			appGenState[crisis.ModuleName] = cdc.MustMarshalJSON(crisisGenState)
 
 			appState, err := codec.MarshalJSONIndent(cdc, appGenState)
 			if err != nil {

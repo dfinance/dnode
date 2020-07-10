@@ -135,6 +135,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dfinance/dvm-proto/go v0.0.0-20200619104747-15679c67b8d7 h1:LSj8gyoDKg5XY1vsu2ypXCy4VZ5lzjm+CCmtx2AAf3Q=
 github.com/dfinance/dvm-proto/go v0.0.0-20200619104747-15679c67b8d7/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
+github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26 h1:HjCcumhDVs5KmXxy7AAzcRzHVaHF3msBoWCpSewdFAc=
+github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
 github.com/dfinance/lcs v0.1.7-big h1:z+Pvxcxvr6lKSy1vjYJtM5MnCTQ7DBjPitTywoWO9X0=
 github.com/dfinance/lcs v0.1.7-big/go.mod h1:0Ir8JvbtxibZYvgTrRbbjNjk2EImCEXOJc3WHuUaSzI=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=

@@ -1,5 +1,3 @@
-// +build unit
-
 package app
 
 import (
@@ -7,18 +5,21 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"sort"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authExported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
@@ -33,14 +34,14 @@ import (
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	vmConfig "github.com/dfinance/dnode/cmd/config"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/core/msmodule"
+	"github.com/dfinance/dnode/helpers/tests"
+	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/multisig"
-	msExport "github.com/dfinance/dnode/x/multisig/export"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/poa"
+	"github.com/dfinance/dnode/x/vm"
 )
 
 const (
@@ -51,6 +52,29 @@ const (
 	FlagDSMockListen  = "ds.mock.listen"
 	//
 	defGasAmount = 500000
+)
+
+// Module queries
+const (
+	queryCurrencyIssuePath     = "/custom/" + currencies.ModuleName + "/" + currencies.QueryIssue
+	queryCurrencyCurrencyPath  = "/custom/" + currencies.ModuleName + "/" + currencies.QueryCurrency
+	queryCurrencyWithdrawsPath = "/custom/" + currencies.ModuleName + "/" + currencies.QueryWithdraws
+	queryCurrencyWithdrawPath  = "/custom/" + currencies.ModuleName + "/" + currencies.QueryWithdraw
+	//
+	queryMsGetCallPath   = "/custom/" + multisig.ModuleName + "/" + multisig.QueryCall
+	queryMsGetCallsPath  = "/custom/" + multisig.ModuleName + "/" + multisig.QueryCalls
+	queryMsGetCallLastId = "/custom/" + multisig.ModuleName + "/" + multisig.QueryLastId
+	queryMsGetUniqueCall = "/custom/" + multisig.ModuleName + "/" + multisig.QueryCallByUnique
+	//
+	queryPoaGetValidatorsPath   = "/custom/" + poa.ModuleName + "/" + poa.QueryValidators
+	queryPoaGetValidatorPath    = "/custom/" + poa.ModuleName + "/" + poa.QueryValidator
+	queryPoaGetMinMaxParamsPath = "/custom/" + poa.ModuleName + "/" + poa.QueryMinMax
+	//
+	queryOracleGetCurrentPricePathFmt = "/custom/oracle/price/%s"
+	queryOracleGetRawPricesPathFmt    = "/custom/oracle/rawprices/%s/%d"
+	queryOracleGetAssetsPath          = "/custom/oracle/assets"
+	//
+	queryMarketsListPath = "/custom/markets/list"
 )
 
 var (
@@ -165,8 +189,8 @@ type VMServer struct {
 	vm_grpc.UnimplementedVMScriptExecutorServer
 }
 
-// newTestDnApp creates dnode app and VM server/
-func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
+// NewTestDnAppMockVM creates dnode app and mock VM server.
+func NewTestDnAppMockVM(logOpts ...log.Option) (*DnServiceApp, func()) {
 	config := MockVMConfig()
 
 	vmListener := bufconn.Listen(bufferSize)
@@ -190,11 +214,64 @@ func newTestDnApp(logOpts ...log.Option) (*DnServiceApp, *grpc.Server) {
 	}
 	logger = log.NewFilter(logger, logOpts...)
 
-	return NewDnServiceApp(logger, dbm.NewMemDB(), config), server
+	// use invariants check period 1 for high pressure tests
+	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1)
+
+	stopFunc := func() {
+		app.CloseConnections()
+		server.Stop()
+	}
+
+	return app, stopFunc
 }
 
-// getGenesis builds genesis state for dnode app.
-func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseAccount) ([]byte, error) {
+// NewTestDnAppDVM creates dnode app and starts DVM.
+func NewTestDnAppDVM(t *testing.T, logOpts ...log.Option) (*DnServiceApp, string, func()) {
+	// get free TCP ports for DS server and DVM connection
+	dsAddr, dsPort, dsPortErr := server.FreeTCPAddr()
+	require.NoError(t, dsPortErr, "getting free TCP port for DS server")
+
+	dvmAddr, dvmPort, dvmPortErr := server.FreeTCPAddr()
+	require.NoError(t, dvmPortErr, "getting free TCP port for DVM communication")
+
+	// create VM config
+	config := &vmConfig.VMConfig{
+		Address:           dvmAddr,
+		DataListen:        dsAddr,
+		MaxAttempts:       10,
+		InitialBackoff:    500,
+		MaxBackoff:        1500,
+		BackoffMultiplier: 0.1,
+	}
+
+	// create app
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "sdk/app")
+	if len(logOpts) == 0 {
+		logOpts = append(logOpts, log.AllowAll())
+	}
+	logger = log.NewFilter(logger, logOpts...)
+
+	// use invariants check period 1 for high pressure tests
+	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1)
+
+	// start DS server
+	dsContext := app.GetDSContext()
+	app.vmKeeper.SetDSContext(dsContext)
+	app.vmKeeper.StartDSServer(dsContext)
+
+	// start DVM
+	dvmStop := tests.LaunchDVMWithNetTransport(t, dvmPort, dsPort, false)
+
+	stopFunc := func() {
+		dvmStop()
+		app.vmKeeper.CloseConnections()
+	}
+
+	return app, dvmAddr, stopFunc
+}
+
+// GetGenesis builds genesis state for dnode app.
+func GetGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseAccount) ([]byte, error) {
 	// generate node validator account
 	var nodeAcc *auth.BaseAccount
 	var nodeAccPubKey crypto.PubKey
@@ -295,6 +372,12 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 		stakingGenesis.Params.BondDenom = dnConfig.MainDenom
 		genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, stakingGenesis)
 
+		// update mint denom
+		mintGenesis := mint.GenesisState{}
+		app.cdc.MustUnmarshalJSON(genesisState[mint.ModuleName], &mintGenesis)
+		mintGenesis.Params.MintDenom = dnConfig.MainDenom
+		genesisState[mint.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, mintGenesis)
+
 		oracleGenesis := oracle.GenesisState{
 			Params: oracle.Params{
 				Assets: []oracle.Asset{
@@ -363,28 +446,49 @@ func getGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseA
 	return stateBytes, nil
 }
 
-// setGenesis adds genesis to the block.
-func setGenesis(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) (sdk.Context, error) {
-	ctx := app.NewContext(true, abci.Header{})
-
-	stateBytes, err := getGenesis(app, "", "testMoniker", accs)
-	if err != nil {
-		return ctx, err
-	}
-
-	// initialize the chain
+// SetGenesis adds genesis to the block.
+func SetGenesis(app *DnServiceApp, genesisStateBz []byte) {
 	app.InitChain(
 		abci.RequestInitChain{
-			AppStateBytes: stateBytes,
+			AppStateBytes: genesisStateBz,
 		},
 	)
 	app.Commit()
-
-	return ctx, nil
 }
 
-// genTx generates a signed mock transaction.
-func genTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKey) auth.StdTx {
+// Sets genesis to DnServiceApp with default test genesis.
+func CheckSetGenesisMockVM(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) {
+	genesisStateBz, err := GetGenesis(app, chainID, "test-moniker", accs)
+	require.NoError(t, err, "GetGenesis")
+
+	SetGenesis(app, genesisStateBz)
+}
+
+// Sets genesis to DnServiceApp with default test genesis and VM genesis writeSets.
+func CheckSetGenesisDVM(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) {
+	// get genesis bytes
+	var genesisState GenesisState
+	{
+		stateBytes, err := GetGenesis(app, "", "testMoniker", accs)
+		require.NoError(t, err, "GetGenesis")
+
+		app.cdc.MustUnmarshalJSON(stateBytes, &genesisState)
+	}
+
+	// read VM genesis from file and add to genesisState
+	{
+		vmGenesisPath := os.ExpandEnv("${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json")
+		stateBytes, err := ioutil.ReadFile(vmGenesisPath)
+		require.NoError(t, err, "reading VM genesis file")
+
+		genesisState[vm.ModuleName] = stateBytes
+	}
+
+	SetGenesis(app, app.cdc.MustMarshalJSON(genesisState))
+}
+
+// GenTx generates a signed mock transaction.
+func GenTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKey) auth.StdTx {
 	sigs := make([]auth.StdSignature, len(priv))
 	memo := "testmemotestmemo"
 
@@ -529,81 +633,6 @@ func ResultErrorMsg(res *sdk.Result, err error) string {
 	}
 
 	return fmt.Sprintf("result with log %q: %v", resLog, err)
-}
-
-// MSMsgSubmitAndVote submits multi signature message call and confirms it.
-func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg msmodule.MsMsg, submitAccIdx uint, accs []*auth.BaseAccount, privKeys []crypto.PrivKey, doChecks bool) (*sdk.Result, error) {
-	confirmCnt := int(app.poaKeeper.GetEnoughConfirmations(GetContext(app, true)))
-
-	// lazy input check
-	require.Equal(t, len(accs), len(privKeys), "invalid input: accs / privKeys len mismatch")
-	require.Less(t, submitAccIdx, uint(len(accs)), "invalid input: submitAccIdx >= len(accs)")
-	require.Less(t, submitAccIdx, uint(len(accs)), "invalid input: submitAccIdx >= len(accs)")
-	require.LessOrEqual(t, confirmCnt, len(accs), "invalid input: confirmations count > len(accs)")
-
-	callMsgID := dnTypes.ID{}
-	{
-		// submit message
-		senderAcc, senderPrivKey := GetAccountCheckTx(app, accs[submitAccIdx].Address), privKeys[submitAccIdx]
-		submitMsg := msExport.NewMsgSubmitCall(msMsg, msMsgID, senderAcc.GetAddress())
-		tx := genTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		if doChecks {
-			CheckDeliverTx(t, app, tx)
-		} else if res, err := DeliverTx(app, tx); err != nil {
-			return res, err
-		}
-
-		// check vote added
-		calls := multisig.CallsResp{}
-		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
-		require.Equal(t, 1, len(calls[0].Votes))
-
-		callMsgID = calls[0].Call.ID
-	}
-
-	// cut submit message sender from accounts
-	accsFixed, privKeysFixed := append([]*auth.BaseAccount(nil), accs...), append([]crypto.PrivKey(nil), privKeys...)
-	accsFixed = append(accsFixed[:submitAccIdx], accsFixed[submitAccIdx+1:]...)
-	privKeysFixed = append(privKeysFixed[:submitAccIdx], privKeysFixed[submitAccIdx+1:]...)
-
-	// voting (confirming)
-	for idx := 0; idx < confirmCnt-2; idx++ {
-		// confirm message
-		senderAcc, senderPrivKey := GetAccountCheckTx(app, accsFixed[idx].Address), privKeysFixed[idx]
-		confirmMsg := msExport.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
-		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		if doChecks {
-			CheckDeliverTx(t, app, tx)
-		} else if res, err := DeliverTx(app, tx); err != nil {
-			return res, err
-		}
-
-		// check vote added / call removed
-		calls := multisig.CallsResp{}
-		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
-		require.Equal(t, idx+2, len(calls[0].Votes))
-	}
-
-	// voting (last confirm)
-	{
-		// confirm message
-		idx := len(accsFixed) - 1
-		senderAcc, senderPrivKey := GetAccountCheckTx(app, accsFixed[idx].Address), privKeysFixed[idx]
-		confirmMsg := msExport.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
-		tx := genTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
-		if doChecks {
-			CheckDeliverTx(t, app, tx)
-		} else if res, err := DeliverTx(app, tx); err != nil {
-			return res, err
-		}
-
-		// check call removed
-		calls := multisig.CallsResp{}
-		CheckRunQuery(t, app, nil, queryMsGetCallsPath, &calls)
-		require.Equal(t, 0, len(calls))
-	}
-
-	return nil, nil
 }
 
 // GenerateRandomBytes generates random []byte slice of {length}.
