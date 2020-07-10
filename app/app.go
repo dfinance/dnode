@@ -475,7 +475,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		bank.ModuleName,
 		slashing.ModuleName,
 		gov.ModuleName,
-		crisis.ModuleName,
+		mint.ModuleName,
+		evidence.ModuleName,
+		supply.ModuleName,
 		poa.ModuleName,
 		multisig.ModuleName,
 		currencies.ModuleName,
@@ -483,9 +485,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		markets.ModuleName,
 		orders.ModuleName,
 		orderbook.ModuleName,
-		mint.ModuleName,
-		evidence.ModuleName,
-		supply.ModuleName,
+		crisis.ModuleName,
 		genutil.ModuleName,
 	)
 

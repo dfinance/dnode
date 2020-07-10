@@ -82,7 +82,9 @@ func (AppModule) Name() string {
 }
 
 // RegisterInvariants registers module invariants.
-func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (app AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
+	RegisterInvariants(ir, app.ccKeeper)
+}
 
 // Route returns module messages route.
 func (app AppModule) Route() string {
