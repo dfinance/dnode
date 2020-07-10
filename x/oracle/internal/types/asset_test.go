@@ -10,7 +10,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 )
 
-func Test_NewAsset(t *testing.T) {
+func TestOracleTypes_ValidateAsset(t *testing.T) {
 	t.Parallel()
 
 	oracleAddr := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())

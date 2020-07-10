@@ -8,6 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+const (
+	PriceBytesLimit = 8
+)
+
 // CurrentPrice struct that contains the metadata of a current price for a particular asset in the oracle module.
 type CurrentPrice struct {
 	AssetCode  string    `json:"asset_code" yaml:"asset_code" example:"dfi"` // Denom
@@ -15,7 +19,7 @@ type CurrentPrice struct {
 	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
-// String implement fmt.Stringer for the CurrentPrice.
+// String implement fmt.Stringer for the CurrentPrice type.
 func (cp CurrentPrice) String() string {
 	return strings.TrimSpace(fmt.Sprintf("AssetCode: %s\nPrice: %s\nReceivedAt: %s", cp.AssetCode, cp.Price, cp.ReceivedAt))
 }
@@ -28,7 +32,7 @@ type PostedPrice struct {
 	ReceivedAt    time.Time      `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
-// String implement fmt.Stringer for the PostedPrice.
+// String implement fmt.Stringer for the PostedPrice type.
 func (pp PostedPrice) String() string {
 	return strings.TrimSpace(
 		fmt.Sprintf(
@@ -39,4 +43,14 @@ func (pp PostedPrice) String() string {
 			pp.ReceivedAt,
 		),
 	)
+}
+
+// PendingPriceAsset struct that contains the info about the asset which price is still to be determined.
+type PendingPriceAsset struct {
+	AssetCode string `json:"asset_code"`
+}
+
+// String implement fmt.Stringer for the PendingPriceAsset type.
+func (a PendingPriceAsset) String() string {
+	return strings.TrimSpace(fmt.Sprintf(`AssetCode: %s`, a.AssetCode))
 }

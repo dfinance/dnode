@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// GetCurrentPrice fetches the current median price of all oracles for a specific asset
+// GetCurrentPrice fetches the current median price of all oracles for a specific asset.
 func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode string) types.CurrentPrice {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(types.CurrentPricePrefix + assetCode))
@@ -19,7 +19,7 @@ func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode string) types.Current
 	return price
 }
 
-// GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight
+// GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight.
 func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode string, blockHeight int64) []types.PostedPrice {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
@@ -52,7 +52,7 @@ func (k Keeper) CheckPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.T
 	return nil
 }
 
-// SetPrice updates the posted price for a specific oracle
+// SetPrice updates the posted price for a specific oracle.
 func (k Keeper) SetPrice(
 	ctx sdk.Context,
 	oracle sdk.AccAddress,
@@ -95,7 +95,7 @@ func (k Keeper) SetPrice(
 	return prices[index], nil
 }
 
-// SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs and cleans up previous inputs
+// SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs and cleans up previous inputs.
 func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 	store := ctx.KVStore(k.storeKey)
 	assets := k.GetAssetParams(ctx)
@@ -123,7 +123,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 			// If there's an even number of prices
 			if l%2 == 0 {
 				// TODO make sure this is safe.
-				// Since it's a price and not a blance, division with precision loss is OK.
+				// Since it's a price and not a balance, division with precision loss is OK.
 				price1 := rawPrices[l/2-1].Price
 				price2 := rawPrices[l/2].Price
 				sum := price1.Add(price2)
@@ -164,7 +164,8 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 	return nil
 }
 
-// ValidatePostPrice makes sure the person posting the price is an oracle
+// nolint:errcheck
+// ValidatePostPrice makes sure the person posting the price is an oracle.
 func (k Keeper) ValidatePostPrice(ctx sdk.Context, msg types.MsgPostPrice) error {
 	// TODO implement this
 
