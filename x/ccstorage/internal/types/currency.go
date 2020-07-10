@@ -16,7 +16,7 @@ type Currency struct {
 	Supply sdk.Int `json:"supply" swaggertype:"string" example:"100"`
 }
 
-// GetSupplyCoin creates sdk.Coin with supply amont.
+// GetSupplyCoin creates sdk.Coin with supply amount.
 func (c Currency) GetSupplyCoin() sdk.Coin {
 	return sdk.NewCoin(c.Denom, c.Supply)
 }
