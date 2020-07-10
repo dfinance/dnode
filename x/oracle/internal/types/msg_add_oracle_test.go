@@ -9,18 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOracleMsg_AddAsset(t *testing.T) {
+func TestOracleMsg_AddOracle(t *testing.T) {
 	t.Parallel()
 
 	nominee := sdk.AccAddress([]byte("someName"))
-	assetCode := "btc_dfi"
-	oracles := Oracles([]Oracle{NewOracle(sdk.AccAddress([]byte("someName")))})
-	asset := NewAsset(assetCode, oracles, true)
-	denom := "btc"
+	oracle := sdk.AccAddress([]byte("someOracle"))
+	denom := "uftm"
 
-	t.Run("MsgInterface", func(t *testing.T) {
-		target := NewMsgAddAsset(nominee, denom, asset)
-		require.Equal(t, "add_asset", target.Type())
+	t.Run("GetSign", func(t *testing.T) {
+		target := NewMsgAddOracle(nominee, denom, oracle)
+		require.Equal(t, "add_oracle", target.Type())
 		require.Equal(t, RouterKey, target.Route())
 		require.True(t, len(target.GetSignBytes()) > 0)
 		require.Equal(t, []sdk.AccAddress{nominee}, target.GetSigners())
@@ -29,25 +27,25 @@ func TestOracleMsg_AddAsset(t *testing.T) {
 	t.Run("ValidateBasic", func(t *testing.T) {
 		// ok
 		{
-			msg := NewMsgAddAsset(nominee, denom, asset)
+			msg := NewMsgAddOracle(nominee, denom, oracle)
 			require.NoError(t, msg.ValidateBasic())
 		}
 
 		// fail: invalid denom
 		{
-			msg := NewMsgAddAsset(nominee, "", asset)
+			msg := NewMsgAddOracle(nominee, "", oracle)
+			require.Error(t, msg.ValidateBasic())
+		}
+
+		// fail: invalid oracle
+		{
+			msg := NewMsgAddOracle(nominee, denom, sdk.AccAddress{})
 			require.Error(t, msg.ValidateBasic())
 		}
 
 		// fail: invalid nominee
 		{
-			msg := NewMsgAddAsset(sdk.AccAddress{}, denom, asset)
-			require.Error(t, msg.ValidateBasic())
-		}
-
-		// fail: invalid asset
-		{
-			msg := NewMsgAddAsset(nominee, denom, Asset{})
+			msg := NewMsgAddOracle(sdk.AccAddress{}, denom, oracle)
 			require.Error(t, msg.ValidateBasic())
 		}
 	})

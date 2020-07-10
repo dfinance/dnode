@@ -10,13 +10,12 @@ import (
 )
 
 var (
-	// KeyAssets store key for assets
 	KeyAssets    = []byte("oracleassets")
 	KeyNominees  = []byte("oraclenominees")
 	KeyPostPrice = []byte("oraclepostprice")
 )
 
-// Params params for oracle. Can be altered via governance
+// Params params for oracle. Can be altered via governance.
 type Params struct {
 	Assets    Assets          `json:"assets" yaml:"assets"` //  Array containing the assets supported by the oracle
 	Nominees  []string        `json:"nominees" yaml:"nominees"`
@@ -37,7 +36,7 @@ func (p Params) ParamSetPairs() params.ParamSetPairs {
 	}
 }
 
-// DefaultParams default params for oracle
+// DefaultParams default params for oracle.
 func DefaultParams() Params {
 	return NewParams(
 		Assets{},
@@ -48,7 +47,7 @@ func DefaultParams() Params {
 	)
 }
 
-// Validate ensure that params have valid values
+// Validate ensure that params have valid values.
 func (p Params) Validate() error {
 	for _, asset := range p.Assets {
 		if err := dnTypes.AssetCodeFilter(asset.AssetCode); err != nil {
@@ -65,7 +64,7 @@ func (p Params) Validate() error {
 	return nil
 }
 
-// String implements fmt.stringer
+// String implements fmt.stringer.
 func (p Params) String() string {
 	out := strings.Builder{}
 	out.WriteString("Params:\n")
@@ -80,7 +79,7 @@ func (p Params) String() string {
 	return strings.TrimSpace(out.String())
 }
 
-// NewParams creates a new AssetParams object
+// NewParams creates a new AssetParams object.
 func NewParams(assets []Asset, nominees []string, postPrice PostPriceParams) Params {
 	return Params{
 		Assets:    assets,
@@ -89,17 +88,18 @@ func NewParams(assets []Asset, nominees []string, postPrice PostPriceParams) Par
 	}
 }
 
-// ParamKeyTable Key declaration for parameters
+// ParamKeyTable Key declaration for parameters.
 func ParamKeyTable() params.KeyTable {
 	return params.NewKeyTable().RegisterParamSet(&Params{})
 }
 
-// Posting rawPrices from oracles configuration params
+// PostPriceParams Posting rawPrices from oracles configuration params.
 type PostPriceParams struct {
 	// allowed timestamp difference between current block time and oracle's receivedAt (0 - disabled) [sec]
 	ReceivedAtDiffInS uint32 `json:"received_at_diff_in_s" yaml:"received_at_diff_in_s"`
 }
 
+// String implements fmt.stringer.
 func (p PostPriceParams) String() string {
 	out := strings.Builder{}
 	out.WriteString("PostPrice:\n")

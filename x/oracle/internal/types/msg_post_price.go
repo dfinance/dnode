@@ -7,10 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-const (
-	TypeMsgPostPrice = "post_price"
-)
-
 // MsgPostPrice struct representing a posted price message.
 // Used by oracles to input prices to the oracle
 type MsgPostPrice struct {
@@ -24,7 +20,7 @@ type MsgPostPrice struct {
 func (msg MsgPostPrice) Route() string { return RouterKey }
 
 // Type Implements Msg.
-func (msg MsgPostPrice) Type() string { return TypeMsgPostPrice }
+func (msg MsgPostPrice) Type() string { return "post_price" }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
 func (msg MsgPostPrice) ValidateBasic() error {
@@ -40,7 +36,6 @@ func (msg MsgPostPrice) ValidateBasic() error {
 	if msg.Price.BigInt().BitLen() > PriceBytesLimit*8 {
 		return sdkErrors.Wrapf(ErrInternal, "out of %d bytes limit for price", PriceBytesLimit)
 	}
-	// TODO check coin denoms
 
 	return nil
 }

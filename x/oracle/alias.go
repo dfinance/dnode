@@ -17,7 +17,6 @@ type (
 	Oracles            = types.Oracles
 	CurrentPrice       = types.CurrentPrice
 	PostedPrice        = types.PostedPrice
-	SortDecs           = types.SortDecs
 	Keeper             = keeper.Keeper
 	MsgAddOracle       = types.MsgAddOracle
 	MsgSetOracles      = types.MsgSetOracles
