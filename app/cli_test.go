@@ -761,6 +761,10 @@ func TestMS_CLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestMS_CLI", []string{"message.module='multisig'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "multisig")
+
 	ccDenom1, ccDenom2 := "btc", "eth"
 	ccCurAmount := sdk.NewInt(1000)
 	callUniqueId1, callUniqueId2 := "issue1", "issue2"

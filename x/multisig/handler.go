@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/multisig/internal/keeper"
 	"github.com/dfinance/dnode/x/multisig/internal/types"
 )
@@ -11,6 +12,8 @@ import (
 // NewHandler creates sdk.Msg type messages handler.
 func NewHandler(k keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
+
 		switch msg := msg.(type) {
 		case types.MsgSubmitCall:
 			return handleMsgSubmitCall(ctx, k, msg)
@@ -34,7 +37,9 @@ func handleMsgSubmitCall(ctx sdk.Context, k keeper.Keeper, msg types.MsgSubmitCa
 		return nil, err
 	}
 
-	return &sdk.Result{}, nil
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 // handleMsgConfirmCall handles MsgConfirmCall message.
@@ -47,7 +52,9 @@ func handleMsgConfirmCall(ctx sdk.Context, k keeper.Keeper, msg types.MsgConfirm
 		return nil, err
 	}
 
-	return &sdk.Result{}, nil
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }
 
 // handleMsgRevokeConfirm handles MsgRevokeConfirm message.
@@ -56,5 +63,7 @@ func handleMsgRevokeConfirm(ctx sdk.Context, k keeper.Keeper, msg types.MsgRevok
 		return nil, err
 	}
 
-	return &sdk.Result{}, nil
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

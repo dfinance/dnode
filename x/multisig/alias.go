@@ -31,22 +31,35 @@ const (
 	QueryCall         = types.QueryCall
 	QueryCallByUnique = types.QueryCallByUnique
 	QueryLastId       = types.QueryLastId
+	// Event types, attribute types and values
+	EventTypeSubmitCall  = types.EventTypeSubmitCall
+	EventTypeRemoveCall  = types.EventTypeRemoveCall
+	EventTypeUpdateCall  = types.EventTypeUpdateCall
+	EventTypeConfirmVote = types.EventTypeConfirmVote
+	EventTypeRevokeVote  = types.EventTypeRevokeVote
+	//
+	AttributeMsgType   = types.AttributeMsgType
+	AttributeMsgRoute  = types.AttributeMsgRoute
+	AttributeCallId    = types.AttributeCallId
+	AttributeUniqueId  = types.AttributeUniqueId
+	AttributeSender    = types.AttributeSender
+	AttributeCallState = types.AttributeCallState
+	//
+	AttributeValueApproved = types.AttributeValueApproved
+	AttributeValueRejected = types.AttributeValueRejected
+	AttributeValueFailed   = types.AttributeValueFailed
+	AttributeValueExecuted = types.AttributeValueExecuted
 )
 
 var (
 	// variable aliases
 	ModuleCdc = types.ModuleCdc
 	// function aliases
-	RegisterCodec         = types.RegisterCodec
-	NewKeeper             = keeper.NewKeeper
-	NewQuerier            = keeper.NewQuerier
-	DefaultGenesisState   = types.DefaultGenesisState
-	NewActiveCallsEvent   = types.NewActiveCallsEvent
-	NewRejectedCallsEvent = types.NewRejectedCallsEvent
-	NewExecuteCallEvent   = types.NewExecuteCallEvent
-	NewFailedCallEvent    = types.NewFailedCallEvent
-	NewExecutedCallEvent  = types.NewExecutedCallEvent
-	NewRejectedCallEvent  = types.NewRejectedCallEvent
+	RegisterCodec            = types.RegisterCodec
+	NewKeeper                = keeper.NewKeeper
+	NewQuerier               = keeper.NewQuerier
+	DefaultGenesisState      = types.DefaultGenesisState
+	NewCallStateChangedEvent = types.NewCallStateChangedEvent
 	// errors
 	ErrInternal             = types.ErrInternal
 	ErrWrongCallId          = types.ErrWrongCallId

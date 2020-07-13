@@ -104,6 +104,8 @@ func (k Keeper) createCall(ctx sdk.Context, call types.Call) {
 	store.Set(types.GetUniqueIDKey(call.UniqueID), k.cdc.MustMarshalBinaryLengthPrefixed(call.ID))
 	k.StoreCall(ctx, call)
 	k.addCallToQueue(ctx, call.ID, call.Height)
+
+	ctx.EventManager().EmitEvent(types.NewCallSubmittedEvent(call))
 }
 
 // getCall returns call from the storage.
