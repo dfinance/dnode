@@ -23,7 +23,7 @@ func (k Keeper) GetAsset(ctx sdk.Context, assetCode dnTypes.AssetCode) (types.As
 }
 
 // SetAsset overwrites existing asset for specific assetCode.
-func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, asset types.Asset) error {
+func (k Keeper) SetAsset(ctx sdk.Context, nominee string, asset types.Asset) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
@@ -32,7 +32,7 @@ func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode dnTypes.Asse
 	updateAssets := assets[:0]
 	found := false
 	for _, a := range assets {
-		if assetCode == a.AssetCode {
+		if asset.AssetCode == a.AssetCode {
 			a = asset
 			found = true
 		}
@@ -45,18 +45,17 @@ func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode dnTypes.Asse
 		return nil
 	}
 
-	return fmt.Errorf("asset %q not found", assetCode)
+	return fmt.Errorf("asset %q not found", asset.AssetCode)
 }
 
 // AddAsset adds non-existing asset to the store.
-func (k Keeper) AddAsset(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, asset types.Asset) error {
-	// TODO: assetCode input can be obtained from asset.AssetCode input, so might be excessive
+func (k Keeper) AddAsset(ctx sdk.Context, nominee string, asset types.Asset) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
 
-	if _, exists := k.GetAsset(ctx, assetCode); exists {
-		return fmt.Errorf("asset %q already exists", assetCode)
+	if _, exists := k.GetAsset(ctx, asset.AssetCode); exists {
+		return fmt.Errorf("asset %q already exists", asset.AssetCode)
 	}
 
 	assets := k.GetAssetParams(ctx)

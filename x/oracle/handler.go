@@ -91,7 +91,7 @@ func handleMsgSetAsset(ctx sdk.Context, k Keeper, msg MsgSetAsset) (*sdk.Result,
 		return nil, sdkErrors.Wrap(ErrInvalidAsset, msg.Asset.AssetCode.String())
 	}
 
-	if err := k.SetAsset(ctx, msg.Nominee.String(), msg.Asset.AssetCode, msg.Asset); err != nil {
+	if err := k.SetAsset(ctx, msg.Nominee.String(), msg.Asset); err != nil {
 		return nil, sdkErrors.Wrap(ErrInternal, err.Error())
 	}
 
@@ -108,7 +108,7 @@ func handleMsgAddAsset(ctx sdk.Context, k Keeper, msg MsgAddAsset) (*sdk.Result,
 		return nil, sdkErrors.Wrap(ErrExistingAsset, msg.Asset.AssetCode.String())
 	}
 
-	if err := k.AddAsset(ctx, msg.Nominee.String(), msg.Asset.AssetCode, msg.Asset); err != nil {
+	if err := k.AddAsset(ctx, msg.Nominee.String(), msg.Asset); err != nil {
 		return nil, sdkErrors.Wrap(ErrInternal, err.Error())
 	}
 
