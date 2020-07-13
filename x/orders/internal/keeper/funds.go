@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
@@ -78,22 +79,17 @@ func (k Keeper) ExecuteOrderFills(ctx sdk.Context, orderFills types.OrderFills) 
 		if orderFill.QuantityUnfilled.IsZero() {
 			k.GetLogger(ctx).Info(fmt.Sprintf("order completely filled: %s", orderFill.Order.ID))
 			k.Del(ctx, orderFill.Order.ID)
-			eventManager.EmitEvent(types.NewFullyFilledOrderEvent(
-				orderFill.Order.Owner,
-				orderFill.Order.Market.ID,
-				orderFill.Order.ID,
-			))
+			eventManager.EmitEvent(types.NewFullyFilledOrderEvent(orderFill.Order))
 		} else {
 			k.GetLogger(ctx).Info(fmt.Sprintf("order partially filled: %s", orderFill.Order.ID))
 			orderFill.Order.Quantity = orderFill.QuantityUnfilled
 			orderFill.Order.UpdatedAt = ctx.BlockTime()
 			k.Set(ctx, orderFill.Order)
-			eventManager.EmitEvent(types.NewPartiallyFilledOrderEvent(
-				orderFill.Order.Owner,
-				orderFill.Order.Market.ID,
-				orderFill.Order.ID,
-				orderFill.Order.Quantity,
-			))
+			eventManager.EmitEvent(types.NewPartiallyFilledOrderEvent(orderFill.Order))
 		}
+	}
+
+	if len(orderFills) > 0 {
+		ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(types.ModuleName))
 	}
 }

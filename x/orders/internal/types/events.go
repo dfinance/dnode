@@ -2,8 +2,6 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 const (
@@ -11,49 +9,59 @@ const (
 	EventTypeOrderCancel          = ModuleName + ".cancel"
 	EventTypeFullyFilledOrder     = ModuleName + ".full_fill"
 	EventTypePartiallyFilledOrder = ModuleName + ".partial_fill"
-	EventAttributeKeyOwner        = "owner"
-	EventAttributeKeyOrderID      = "order_id"
-	EventAttributeKeyMarketID     = "market_id"
-	EventAttributeKeyQuantity     = "quantity"
+	//
+	AttributeMarketId  = "market_id"
+	AttributeOrderId   = "order_id"
+	AttributeOwner     = "owner"
+	AttributeDirection = "direction"
+	AttributePrice     = "price"
+	AttributeQuantity  = "quantity"
 )
 
-func NewOrderPostedEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID) sdk.Event {
+func NewOrderPostedEvent(order Order) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeOrderPost,
-		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
-		sdk.NewAttribute(EventAttributeKeyOwner, owner.String()),
-		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
-		sdk.NewAttribute(EventAttributeKeyOrderID, orderID.String()),
+		sdk.NewAttribute(AttributeOwner, order.Owner.String()),
+		sdk.NewAttribute(AttributeMarketId, order.Market.ID.String()),
+		sdk.NewAttribute(AttributeOrderId, order.ID.String()),
+		sdk.NewAttribute(AttributeDirection, order.Direction.String()),
+		sdk.NewAttribute(AttributePrice, order.Price.String()),
+		sdk.NewAttribute(AttributeQuantity, order.Quantity.String()),
 	)
 }
 
-func NewOrderCanceledEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID) sdk.Event {
+func NewOrderCanceledEvent(order Order) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeOrderCancel,
-		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
-		sdk.NewAttribute(EventAttributeKeyOwner, owner.String()),
-		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
-		sdk.NewAttribute(EventAttributeKeyOrderID, orderID.String()),
+		sdk.NewAttribute(AttributeOwner, order.Owner.String()),
+		sdk.NewAttribute(AttributeMarketId, order.Market.ID.String()),
+		sdk.NewAttribute(AttributeOrderId, order.ID.String()),
+		sdk.NewAttribute(AttributeDirection, order.Direction.String()),
+		sdk.NewAttribute(AttributePrice, order.Price.String()),
+		sdk.NewAttribute(AttributeQuantity, order.Quantity.String()),
 	)
 }
 
-func NewFullyFilledOrderEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID) sdk.Event {
+func NewFullyFilledOrderEvent(order Order) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeFullyFilledOrder,
-		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
-		sdk.NewAttribute(EventAttributeKeyOwner, owner.String()),
-		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
-		sdk.NewAttribute(EventAttributeKeyOrderID, orderID.String()),
+		sdk.NewAttribute(AttributeOwner, order.Owner.String()),
+		sdk.NewAttribute(AttributeMarketId, order.Market.ID.String()),
+		sdk.NewAttribute(AttributeOrderId, order.ID.String()),
+		sdk.NewAttribute(AttributeDirection, order.Direction.String()),
+		sdk.NewAttribute(AttributePrice, order.Price.String()),
+		sdk.NewAttribute(AttributeQuantity, order.Quantity.String()),
 	)
 }
 
-func NewPartiallyFilledOrderEvent(owner sdk.AccAddress, marketID, orderID dnTypes.ID, quantity sdk.Uint) sdk.Event {
+func NewPartiallyFilledOrderEvent(order Order) sdk.Event {
 	return sdk.NewEvent(
 		EventTypePartiallyFilledOrder,
-		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
-		sdk.NewAttribute(EventAttributeKeyOwner, owner.String()),
-		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
-		sdk.NewAttribute(EventAttributeKeyOrderID, orderID.String()),
-		sdk.NewAttribute(EventAttributeKeyQuantity, quantity.String()),
+		sdk.NewAttribute(AttributeOwner, order.Owner.String()),
+		sdk.NewAttribute(AttributeMarketId, order.Market.ID.String()),
+		sdk.NewAttribute(AttributeOrderId, order.ID.String()),
+		sdk.NewAttribute(AttributeDirection, order.Direction.String()),
+		sdk.NewAttribute(AttributePrice, order.Price.String()),
+		sdk.NewAttribute(AttributeQuantity, order.Quantity.String()),
 	)
 }

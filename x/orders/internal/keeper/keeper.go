@@ -73,7 +73,7 @@ func (k Keeper) PostOrder(
 	k.Set(ctx, order)
 	k.setID(ctx, id)
 
-	ctx.EventManager().EmitEvent(types.NewOrderPostedEvent(owner, market.ID, id))
+	ctx.EventManager().EmitEvent(types.NewOrderPostedEvent(order))
 
 	k.GetLogger(ctx).Debug(fmt.Sprintf("order %s from %s: posted", id, owner))
 
@@ -92,7 +92,7 @@ func (k Keeper) RevokeOrder(ctx sdk.Context, id dnTypes.ID) error {
 	}
 	k.Del(ctx, id)
 
-	ctx.EventManager().EmitEvent(types.NewOrderCanceledEvent(order.Owner, order.Market.ID, order.ID))
+	ctx.EventManager().EmitEvent(types.NewOrderCanceledEvent(order))
 
 	return nil
 }

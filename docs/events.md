@@ -58,3 +58,54 @@ There are some useful cross module queries:
     Attributes:
     - `call_id` - call ID [uint];
     - `sender` - revoked vote sender address [Bech32 string];
+
+## `Orders` module
+
+* Order posted
+
+    Type: `orders.post`
+    
+    Attributes:
+    - `owner` - Order creator address [Bech32 string];
+    - `market_id` - Market ID [uint];
+    - `order_id` - Order ID [uint];
+    - `direction` - Order type [bid/ask];
+    - `price` - price [uint];
+    - `quantity` - quantity [uint];
+
+* Order canceled (manually revoked or by TTL)
+
+    Type: `orders.cancel`
+    
+    Attributes:
+    - `owner` - Order creator address [Bech32 string];
+    - `market_id` - Market ID [uint];
+    - `order_id` - Order ID [uint];
+    - `direction` - Order type [bid/ask];
+    - `price` - price [uint];
+    - `quantity` - quantity [uint];
+
+* Order fully filled and removed
+
+    Type: `orders.full_fill`
+    
+    Attributes:
+    - `owner` - Order creator address [Bech32 string];
+    - `market_id` - Market ID [uint];
+    - `order_id` - Order ID [uint];
+    - `direction` - Order type [bid/ask];
+    - `price` - price [uint];
+    - `quantity` - quantity [uint];
+
+* Order partially filled, quantity updated
+
+    Type: `orders.partial_fill`
+    
+    Attributes:
+    Attributes:
+    - `owner` - Order creator address [Bech32 string];
+    - `market_id` - Market ID [uint];
+    - `order_id` - Order ID [uint];
+    - `direction` - Order type [bid/ask];
+    - `price` - price [uint];
+    - `quantity` - quantity [uint];

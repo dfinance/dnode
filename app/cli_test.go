@@ -3,7 +3,6 @@
 package app
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -1105,21 +1104,9 @@ func TestOrders_CLI(t *testing.T) {
 	marketID0, marketID1 := dnTypes.NewIDFromUint64(0), dnTypes.NewIDFromUint64(1)
 	assetCode0, assetCode1 := dnTypes.AssetCode("btc_dfi"), dnTypes.AssetCode("eth_dfi")
 
-	wsPostQuery := fmt.Sprintf("orders.post.owner='%s'", ownerAddr1)
-	wsStop, wsChan := ct.CheckWSSubscribed(false, "Test_OrdersCLI", wsPostQuery, 10)
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestOrders_CLI", []string{"message.module='orders'"}, 10)
 	defer wsStop()
-
-	go func() {
-		for {
-			event, ok := <-wsChan
-			if !ok {
-				return
-			}
-
-			t.Logf("Got event: query: %s", event.Query)
-			t.Logf("Got event: events: %v", event.Events)
-		}
-	}()
+	go cliTester.PrintEvents(t, wsChs, "orders")
 
 	// add market
 	ct.TxMarketsAdd(ownerAddr1, cliTester.DenomBTC, cliTester.DenomDFI).CheckSucceeded()
