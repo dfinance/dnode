@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/dfinance/dnode/helpers/tests"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
@@ -43,7 +44,7 @@ func NewVMStorage() VMStorageImpl {
 	return VMStorageImpl{}
 }
 
-func (storage VMStorageImpl) GetOracleAccessPath(_ string) *vm_grpc.VMAccessPath {
+func (storage VMStorageImpl) GetOracleAccessPath(_ dnTypes.AssetCode) *vm_grpc.VMAccessPath {
 	return &vm_grpc.VMAccessPath{}
 }
 
@@ -108,7 +109,7 @@ type TestInput struct {
 	keeper        Keeper
 
 	addresses    []sdk.AccAddress
-	stdAssetCode string
+	stdAssetCode dnTypes.AssetCode
 	stdAssets    types.Assets
 	stdNominee   string
 }
@@ -160,7 +161,7 @@ func NewTestInput(t *testing.T) TestInput {
 
 	input.stdNominee = input.addresses[accountsQuantity-1].String()
 
-	input.stdAssetCode = "btc_dfi"
+	input.stdAssetCode = dnTypes.AssetCode("btc_dfi")
 
 	input.stdAssets = types.Assets{types.NewAsset(input.stdAssetCode, []types.Oracle{}, true)}
 

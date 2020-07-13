@@ -8,7 +8,6 @@ import (
 // MsgPostPrice struct representing a adding asset message.
 type MsgAddAsset struct {
 	Nominee sdk.AccAddress `json:"nominee" yaml:"nominee"`
-	Denom   string         `json:"denom" yaml:"denom"`
 	Asset   Asset          `json:"asset" yaml:"asset"`
 }
 
@@ -22,10 +21,6 @@ func (msg MsgAddAsset) Type() string { return "add_asset" }
 func (msg MsgAddAsset) ValidateBasic() error {
 	if err := msg.Asset.ValidateBasic(); err != nil {
 		return err
-	}
-
-	if msg.Denom == "" {
-		return sdkErrors.Wrap(sdkErrors.ErrInvalidCoins, "empty denom")
 	}
 
 	if msg.Nominee.Empty() {
@@ -48,12 +43,10 @@ func (msg MsgAddAsset) GetSigners() []sdk.AccAddress {
 // NewMsgAddAsset creates a new AddAsset message.
 func NewMsgAddAsset(
 	nominee sdk.AccAddress,
-	denom string,
 	asset Asset,
 ) MsgAddAsset {
 	return MsgAddAsset{
 		Asset:   asset,
-		Denom:   denom,
 		Nominee: nominee,
 	}
 }

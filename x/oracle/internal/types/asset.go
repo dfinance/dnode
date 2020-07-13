@@ -11,9 +11,9 @@ import (
 
 // Asset struct that represents an asset in the oracle.
 type Asset struct {
-	AssetCode string  `json:"asset_code" yaml:"asset_code" example:"dfi"`
-	Oracles   Oracles `json:"oracles" yaml:"oracles"` // List of registered RawPrice sources
-	Active    bool    `json:"active" yaml:"active"`   // Not used ATM
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"dfi"`
+	Oracles   Oracles           `json:"oracles" yaml:"oracles"` // List of registered RawPrice sources
+	Active    bool              `json:"active" yaml:"active"`   // Not used ATM
 }
 
 // String implement fmt.Stringer for the Asset type.
@@ -27,7 +27,7 @@ func (a Asset) String() string {
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
 func (a Asset) ValidateBasic() error {
-	if err := dnTypes.AssetCodeFilter(a.AssetCode); err != nil {
+	if err := a.AssetCode.Validate(); err != nil {
 		return sdkErrors.Wrapf(ErrInternal, "invalid assetCode: value (%s), error (%v)", a.AssetCode, err)
 	}
 
@@ -40,7 +40,7 @@ func (a Asset) ValidateBasic() error {
 
 // NewAsset creates a new asset
 func NewAsset(
-	assetCode string,
+	assetCode dnTypes.AssetCode,
 	oracles Oracles,
 	active bool,
 ) Asset {

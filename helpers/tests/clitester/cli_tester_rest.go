@@ -154,8 +154,8 @@ func (ct *CLITester) RestQueryOracleAssets() (*RestRequest, *oracle.Assets) {
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOracleRawPrices(assetCode string, blockHeight int64) (*RestRequest, *[]oracle.PostedPrice) {
-	reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, assetCode, blockHeight)
+func (ct *CLITester) RestQueryOracleRawPrices(assetCode dnTypes.AssetCode, blockHeight int64) (*RestRequest, *[]oracle.PostedPrice) {
+	reqSubPath := fmt.Sprintf("%s/rawprices/%s/%d", oracle.ModuleName, assetCode.String(), blockHeight)
 	respMsg := &[]oracle.PostedPrice{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
@@ -163,8 +163,8 @@ func (ct *CLITester) RestQueryOracleRawPrices(assetCode string, blockHeight int6
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOraclePrice(assetCode string) (*RestRequest, *oracle.CurrentPrice) {
-	reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, assetCode)
+func (ct *CLITester) RestQueryOraclePrice(assetCode dnTypes.AssetCode) (*RestRequest, *oracle.CurrentPrice) {
+	reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, assetCode.String())
 	respMsg := &oracle.CurrentPrice{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
@@ -271,7 +271,7 @@ func (ct *CLITester) RestQueryOrderRevoke(rq ordersRest.RevokeOrderReq) (*RestRe
 	return r, respMsg
 }
 
-func (ct *CLITester) RestTxOraclePostPrice(accName, assetCode string, price sdk.Int, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
+func (ct *CLITester) RestTxOraclePostPrice(accName string, assetCode dnTypes.AssetCode, price sdk.Int, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
 	accInfo := ct.Accounts[accName]
 	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
 

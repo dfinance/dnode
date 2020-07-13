@@ -4,6 +4,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -14,10 +15,10 @@ func TestOracleMsg_SetOracle(t *testing.T) {
 	nominee := sdk.AccAddress([]byte("someName"))
 	oracle := NewOracle(sdk.AccAddress([]byte("oracle")))
 	oracles := []Oracle{oracle}
-	denom := "uftm"
+	assetCode := dnTypes.AssetCode("btc_dfi")
 
 	t.Run("GetSign", func(t *testing.T) {
-		target := NewMsgSetOracles(nominee, denom, oracles)
+		target := NewMsgSetOracles(nominee, assetCode, oracles)
 		require.Equal(t, "set_oracles", target.Type())
 		require.Equal(t, RouterKey, target.Route())
 		require.True(t, len(target.GetSignBytes()) > 0)
@@ -27,11 +28,11 @@ func TestOracleMsg_SetOracle(t *testing.T) {
 	t.Run("ValidateBasic", func(t *testing.T) {
 		// ok
 		{
-			msg := NewMsgSetOracles(nominee, denom, oracles)
+			msg := NewMsgSetOracles(nominee, assetCode, oracles)
 			require.NoError(t, msg.ValidateBasic())
 		}
 
-		// fail: invalid denom
+		// fail: invalid assetCode
 		{
 			msg := NewMsgSetOracles(nominee, "", oracles)
 			require.Error(t, msg.ValidateBasic())
@@ -39,13 +40,13 @@ func TestOracleMsg_SetOracle(t *testing.T) {
 
 		// fail: invalid oracles
 		{
-			msg := NewMsgSetOracles(nominee, denom, []Oracle{})
+			msg := NewMsgSetOracles(nominee, assetCode, []Oracle{})
 			require.Error(t, msg.ValidateBasic())
 		}
 
 		// fail: invalid nominee
 		{
-			msg := NewMsgSetOracles(sdk.AccAddress{}, denom, oracles)
+			msg := NewMsgSetOracles(sdk.AccAddress{}, assetCode, oracles)
 			require.Error(t, msg.ValidateBasic())
 		}
 	})

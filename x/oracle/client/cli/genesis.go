@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -88,13 +89,19 @@ func AddOracleNomineesCmd(ctx *server.Context, cdc *codec.Codec,
 func AddAssetGenCmd(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-oracle-asset-gen [denom] [oracles]",
+		Use:   "add-oracle-asset-gen [asset_code] [oracles]",
 		Short: "Add oracle asset to genesis.json",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
-			denom := args[0]
-			if len(denom) == 0 {
-				return fmt.Errorf("%s argument %q: empty", "denom", args[0])
+			assetCodeStr := args[0]
+			if len(assetCodeStr) == 0 {
+				return fmt.Errorf("%s argument %q: empty", "assetCode", args[0])
+			}
+
+			assetCode := dnTypes.AssetCode(assetCodeStr)
+			err := assetCode.Validate()
+			if err != nil {
+				return err
 			}
 
 			oracleArgs := strings.Split(args[1], ",")
@@ -127,14 +134,14 @@ func AddAssetGenCmd(ctx *server.Context, cdc *codec.Codec,
 
 			foundIdx := -1
 			for i, asset := range genesisOracle.Params.Assets {
-				if asset.AssetCode == denom {
+				if asset.AssetCode == assetCode {
 					foundIdx = i
 					break
 				}
 			}
 
 			if foundIdx == -1 {
-				genesisOracle.Params.Assets = append(genesisOracle.Params.Assets, types.NewAsset(denom, oracles, true))
+				genesisOracle.Params.Assets = append(genesisOracle.Params.Assets, types.NewAsset(assetCode, oracles, true))
 			} else {
 				genesisOracle.Params.Assets[foundIdx].Oracles = oracles
 			}

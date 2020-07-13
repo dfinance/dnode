@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,10 +23,10 @@ const (
 )
 
 type postPriceReq struct {
-	BaseReq    rest.BaseReq `json:"base_req" yaml:"base_req"`
-	AssetCode  string       `json:"asset_code" example:"dfi"`                                            // Denom
-	Price      string       `json:"price" example:"100"`                                                 // BigInt
-	ReceivedAt string       `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
+	BaseReq    rest.BaseReq      `json:"base_req" yaml:"base_req"`
+	AssetCode  dnTypes.AssetCode `json:"asset_code" example:"dfi"`                                            // AssetCode
+	Price      string            `json:"price" example:"100"`                                                 // BigInt
+	ReceivedAt string            `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
 // RegisterRoutes Central function to define routes that get registered by the main application

@@ -86,25 +86,25 @@ func (ct *CLITester) QueryOracleAssets() (*QueryRequest, *oracle.Assets) {
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOracleRawPrices(assetCode string, blockHeight int64) (*QueryRequest, *[]oracle.PostedPrice) {
+func (ct *CLITester) QueryOracleRawPrices(assetCode dnTypes.AssetCode, blockHeight int64) (*QueryRequest, *[]oracle.PostedPrice) {
 	resObj := &[]oracle.PostedPrice{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd(
 		"oracle",
 		"rawprices",
-		assetCode,
+		assetCode.String(),
 		strconv.FormatInt(blockHeight, 10))
 
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOraclePrice(assetCode string) (*QueryRequest, *oracle.CurrentPrice) {
+func (ct *CLITester) QueryOraclePrice(assetCode dnTypes.AssetCode) (*QueryRequest, *oracle.CurrentPrice) {
 	resObj := &oracle.CurrentPrice{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd(
 		"oracle",
 		"price",
-		assetCode)
+		assetCode.String())
 
 	return q, resObj
 }

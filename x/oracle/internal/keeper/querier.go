@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -29,7 +30,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 
 // queryCurrentPrice handles currentPrice query. Takes an [assetcode] and returns CurrentPrice for that asset.
 func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
-	assetCode := path[0]
+	assetCode := dnTypes.AssetCode(path[0])
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
 		return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "asset not found")
 	}
@@ -45,7 +46,7 @@ func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 
 // queryRawPrices handles rawPrice query. Takes an [assetcode] and returns the raw []PostedPrice for that asset.
 func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
-	assetCode := path[0]
+	assetCode := dnTypes.AssetCode(path[0])
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
 		return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "asset not found")
 	}

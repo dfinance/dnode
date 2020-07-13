@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/dfinance/dnode/helpers/types"
 	"strings"
 )
 
@@ -19,8 +20,8 @@ const (
 )
 
 // GetRawPricesKey Get a key to store PostedPrices for specific assetCode and blockHeight.
-func GetRawPricesKey(assetCode string, blockHeight int64) []byte {
-	return []byte(fmt.Sprintf("%s%s:%d", RawPriceFeedPrefix, assetCode, blockHeight))
+func GetRawPricesKey(assetCode types.AssetCode, blockHeight int64) []byte {
+	return []byte(fmt.Sprintf("%s%s:%d", RawPriceFeedPrefix, assetCode.String(), blockHeight))
 }
 
 // ParseOracles parses coma-separate notation oracle addresses and returns Oracles object.

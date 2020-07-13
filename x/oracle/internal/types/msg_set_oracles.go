@@ -3,13 +3,14 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 // MsgSetOracle struct representing a new nominee based oracle.
 type MsgSetOracles struct {
-	Oracles Oracles        `json:"oracles" yaml:"oracles"`
-	Nominee sdk.AccAddress `json:"nominee" yaml:"nominee"`
-	Denom   string         `json:"denom" yaml:"denom"`
+	Oracles   Oracles           `json:"oracles" yaml:"oracles"`
+	Nominee   sdk.AccAddress    `json:"nominee" yaml:"nominee"`
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code"`
 }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.
@@ -18,8 +19,8 @@ func (msg MsgSetOracles) ValidateBasic() error {
 		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty oracle addresses array")
 	}
 
-	if msg.Denom == "" {
-		return sdkErrors.Wrap(sdkErrors.ErrInvalidCoins, "empty denom")
+	if err := msg.AssetCode.Validate(); err != nil {
+		return err
 	}
 
 	if msg.Nominee.Empty() {
@@ -48,12 +49,12 @@ func (msg MsgSetOracles) GetSigners() []sdk.AccAddress {
 // MsgAddOracle creates a new SetOracle message.
 func NewMsgSetOracles(
 	nominee sdk.AccAddress,
-	denom string,
+	assetCode dnTypes.AssetCode,
 	oracles Oracles,
 ) MsgSetOracles {
 	return MsgSetOracles{
-		Oracles: oracles,
-		Denom:   denom,
-		Nominee: nominee,
+		Oracles:   oracles,
+		AssetCode: assetCode,
+		Nominee:   nominee,
 	}
 }

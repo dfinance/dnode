@@ -87,7 +87,7 @@ func TestCurrencies_CLI(t *testing.T) {
 			{
 				coin := sdk.NewCoin(ccDenom, ccCurAmount)
 				tx := ct.TxCurrenciesIssue(ccRecipient, ccRecipient, issueID, ccDenom, ccCurAmount)
-				tx.ChangeCmdArg(coin.String(), "invalid_amount" + ccDenom)
+				tx.ChangeCmdArg(coin.String(), "invalid_amount"+ccDenom)
 				tx.CheckFailedWithErrorSubstring("parsing coin")
 			}
 			// invalid recipient
@@ -144,7 +144,7 @@ func TestCurrencies_CLI(t *testing.T) {
 			{
 				coin := sdk.NewCoin(ccDenom, ccCurAmount)
 				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, ccCurAmount)
-				tx.ChangeCmdArg(coin.String(), "invalid_amount" + ccDenom)
+				tx.ChangeCmdArg(coin.String(), "invalid_amount"+ccDenom)
 				tx.CheckFailedWithErrorSubstring("parsing coin")
 			}
 			// MsgWithdrawCurrency ValidateBasic
@@ -234,7 +234,7 @@ func TestOracle_CLI(t *testing.T) {
 	defer ct.Close()
 
 	nomineeAddr := ct.Accounts["nominee"].Address
-	assetCode := "eth_dfi"
+	assetCode := dnTypes.AssetCode("eth_dfi")
 	assetOracle1, assetOracle2, assetOracle3 := ct.Accounts["oracle1"].Address, ct.Accounts["oracle2"].Address, ct.Accounts["oracle3"].Address
 
 	// check add asset Tx
@@ -256,23 +256,23 @@ func TestOracle_CLI(t *testing.T) {
 			// invalid number of args
 			{
 				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode, assetOracle1)
-				tx.RemoveCmdArg(assetCode)
+				tx.RemoveCmdArg(assetCode.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
-			// invalid denom
+			// invalid asset_code
 			{
 				tx := ct.TxOracleAddAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
-				tx.CheckFailedWithErrorSubstring("invalid assetCode")
+				tx.CheckFailedWithErrorSubstring("assetCode argument")
 			}
 			// invalid oracles
 			{
 				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode, "123")
 				tx.CheckFailedWithErrorSubstring("")
 			}
-			// empty denom
+			// empty asset_code
 			{
 				tx := ct.TxOracleAddAsset(nomineeAddr, "", assetOracle1)
-				tx.CheckFailedWithErrorSubstring("denom argument")
+				tx.CheckFailedWithErrorSubstring("assetCode argument")
 			}
 			// empty oracles
 			{
@@ -317,7 +317,7 @@ func TestOracle_CLI(t *testing.T) {
 			// empty denom
 			{
 				tx := ct.TxOracleSetAsset(nomineeAddr, "", assetOracle1)
-				tx.CheckFailedWithErrorSubstring("denom argument")
+				tx.CheckFailedWithErrorSubstring("assetCode argument")
 			}
 			// empty oracles
 			{
@@ -331,7 +331,7 @@ func TestOracle_CLI(t *testing.T) {
 	{
 		now := time.Now().Truncate(1 * time.Second).UTC()
 		postPrices := []struct {
-			assetCode  string
+			assetCode  dnTypes.AssetCode
 			sender     string
 			price      sdk.Int
 			receivedAt time.Time
@@ -471,7 +471,7 @@ func TestOracle_CLI(t *testing.T) {
 		// invalid number of args
 		{
 			q, _ := ct.QueryOracleRawPrices(assetCode, 1)
-			q.RemoveCmdArg(assetCode)
+			q.RemoveCmdArg(assetCode.String())
 			q.CheckFailedWithErrorSubstring("arg(s)")
 		}
 		// invalid blockHeight
@@ -502,7 +502,7 @@ func TestOracle_CLI(t *testing.T) {
 			// invalid number of args
 			{
 				q, _ := ct.QueryOraclePrice(assetCode)
-				q.RemoveCmdArg(assetCode)
+				q.RemoveCmdArg(assetCode.String())
 				q.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// non-existing assetCode

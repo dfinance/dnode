@@ -3,13 +3,14 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 // MsgAddOracle struct representing a new nominee based oracle.
 type MsgAddOracle struct {
-	Oracle  sdk.AccAddress `json:"oracle" yaml:"oracle"`
-	Nominee sdk.AccAddress `json:"nominee" yaml:"nominee"`
-	Denom   string         `json:"denom" yaml:"denom"`
+	Oracle    sdk.AccAddress    `json:"oracle" yaml:"oracle"`
+	Nominee   sdk.AccAddress    `json:"nominee" yaml:"nominee"`
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code"`
 }
 
 // Route Implements Msg.
@@ -24,8 +25,8 @@ func (msg MsgAddOracle) ValidateBasic() error {
 		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty oracle address")
 	}
 
-	if msg.Denom == "" {
-		return sdkErrors.Wrap(sdkErrors.ErrInvalidCoins, "empty denom")
+	if err := msg.AssetCode.Validate(); err != nil {
+		return err
 	}
 
 	if msg.Nominee.Empty() {
@@ -50,12 +51,12 @@ func (msg MsgAddOracle) GetSigners() []sdk.AccAddress {
 // MsgAddOracle creates a new AddOracle message.
 func NewMsgAddOracle(
 	nominee sdk.AccAddress,
-	denom string,
+	assetCode dnTypes.AssetCode,
 	oracle sdk.AccAddress,
 ) MsgAddOracle {
 	return MsgAddOracle{
-		Oracle:  oracle,
-		Denom:   denom,
-		Nominee: nominee,
+		Oracle:    oracle,
+		AssetCode: assetCode,
+		Nominee:   nominee,
 	}
 }

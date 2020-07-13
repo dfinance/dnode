@@ -285,7 +285,7 @@ func TestOracle_REST(t *testing.T) {
 
 	now := time.Now()
 	postPrices := []struct {
-		AssetCode     string
+		AssetCode     dnTypes.AssetCode
 		SenderIdx     uint
 		OracleName    string
 		OracleAddress string
@@ -294,7 +294,7 @@ func TestOracle_REST(t *testing.T) {
 		BlockHeight   int64
 	}{
 		{
-			AssetCode:     ct.DefAssetCode,
+			AssetCode:     dnTypes.AssetCode(ct.DefAssetCode),
 			SenderIdx:     0,
 			OracleName:    oracleName1,
 			OracleAddress: oracleAddr1,
@@ -303,7 +303,7 @@ func TestOracle_REST(t *testing.T) {
 			BlockHeight:   0,
 		},
 		{
-			AssetCode:     ct.DefAssetCode,
+			AssetCode:     dnTypes.AssetCode(ct.DefAssetCode),
 			SenderIdx:     1,
 			OracleName:    oracleName2,
 			OracleAddress: oracleAddr2,

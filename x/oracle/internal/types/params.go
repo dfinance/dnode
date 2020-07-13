@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/x/params"
-
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 var (
@@ -50,7 +48,7 @@ func DefaultParams() Params {
 // Validate ensure that params have valid values.
 func (p Params) Validate() error {
 	for _, asset := range p.Assets {
-		if err := dnTypes.AssetCodeFilter(asset.AssetCode); err != nil {
+		if err := asset.AssetCode.Validate(); err != nil {
 			return fmt.Errorf("invalid asset %q: %w", asset.String(), err)
 		}
 	}

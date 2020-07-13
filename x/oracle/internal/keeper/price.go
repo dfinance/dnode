@@ -4,13 +4,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/dfinance/dnode/helpers"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 	"sort"
 	"time"
 )
 
 // GetCurrentPrice fetches the current median price of all oracles for a specific asset.
-func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode string) types.CurrentPrice {
+func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) types.CurrentPrice {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(types.CurrentPricePrefix + assetCode))
 	// TODO panic or return error if not found
@@ -20,7 +21,7 @@ func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode string) types.Current
 }
 
 // GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight.
-func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode string, blockHeight int64) []types.PostedPrice {
+func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode dnTypes.AssetCode, blockHeight int64) []types.PostedPrice {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
 	var prices []types.PostedPrice
@@ -56,7 +57,7 @@ func (k Keeper) CheckPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.T
 func (k Keeper) SetPrice(
 	ctx sdk.Context,
 	oracle sdk.AccAddress,
-	assetCode string,
+	assetCode dnTypes.AssetCode,
 	price sdk.Int,
 	receivedAt time.Time) (types.PostedPrice, error) {
 
@@ -171,7 +172,7 @@ func (k Keeper) ValidatePostPrice(ctx sdk.Context, msg types.MsgPostPrice) error
 
 	_, assetFound := k.GetAsset(ctx, msg.AssetCode)
 	if !assetFound {
-		return sdkErrors.Wrap(types.ErrInvalidAsset, msg.AssetCode)
+		return sdkErrors.Wrap(types.ErrInvalidAsset, msg.AssetCode.String())
 	}
 	_, err := k.GetOracle(ctx, msg.AssetCode, msg.From)
 	if err != nil {

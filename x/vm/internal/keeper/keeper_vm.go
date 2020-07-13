@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"strings"
 
 	"github.com/OneOfOne/xxhash"
@@ -62,9 +63,9 @@ func (keeper Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 }
 
 // Public get path for oracle price.
-func (keeper Keeper) GetOracleAccessPath(assetCode string) *vm_grpc.VMAccessPath {
+func (keeper Keeper) GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.VMAccessPath {
 	seed := xxhash.NewS64(0)
-	if _, err := seed.WriteString(strings.ToLower(assetCode)); err != nil {
+	if _, err := seed.WriteString(strings.ToLower(assetCode.String())); err != nil {
 		panic(err)
 	}
 

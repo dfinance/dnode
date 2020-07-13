@@ -3,6 +3,7 @@
 package types
 
 import (
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"math/big"
 	"testing"
 	"time"
@@ -15,7 +16,7 @@ func TestOracleMsg_PostPrice(t *testing.T) {
 	t.Parallel()
 
 	from := sdk.AccAddress([]byte("someName"))
-	assetCode := "btc_dfi"
+	assetCode := dnTypes.AssetCode("btc_dfi")
 	price := sdk.NewInt(30050000)
 	expiry := time.Now()
 	negativePrice, _ := sdk.NewIntFromString("-1")

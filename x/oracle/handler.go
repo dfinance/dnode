@@ -53,11 +53,11 @@ func handleMsgAddOracle(ctx sdk.Context, k Keeper, msg MsgAddOracle) (*sdk.Resul
 		return nil, err
 	}
 
-	if _, err := k.GetOracle(ctx, msg.Denom, msg.Oracle); err == nil {
+	if _, err := k.GetOracle(ctx, msg.AssetCode, msg.Oracle); err == nil {
 		return nil, sdkErrors.Wrap(ErrInvalidOracle, msg.Oracle.String())
 	}
 
-	if err := k.AddOracle(ctx, msg.Nominee.String(), msg.Denom, msg.Oracle); err != nil {
+	if err := k.AddOracle(ctx, msg.Nominee.String(), msg.AssetCode, msg.Oracle); err != nil {
 		return nil, sdkErrors.Wrap(ErrInternal, err.Error())
 	}
 
@@ -66,16 +66,15 @@ func handleMsgAddOracle(ctx sdk.Context, k Keeper, msg MsgAddOracle) (*sdk.Resul
 
 // handleMsgSetOracles handles SetOracles message.
 func handleMsgSetOracles(ctx sdk.Context, k Keeper, msg MsgSetOracles) (*sdk.Result, error) {
-	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
 
-	if _, found := k.GetAsset(ctx, msg.Denom); !found {
-		return nil, sdkErrors.Wrap(ErrInvalidAsset, msg.Denom)
+	if _, found := k.GetAsset(ctx, msg.AssetCode); !found {
+		return nil, sdkErrors.Wrap(ErrInvalidAsset, msg.AssetCode.String())
 	}
 
-	if err := k.SetOracles(ctx, msg.Nominee.String(), msg.Denom, msg.Oracles); err != nil {
+	if err := k.SetOracles(ctx, msg.Nominee.String(), msg.AssetCode, msg.Oracles); err != nil {
 		return nil, sdkErrors.Wrap(ErrInternal, err.Error())
 	}
 
@@ -84,16 +83,15 @@ func handleMsgSetOracles(ctx sdk.Context, k Keeper, msg MsgSetOracles) (*sdk.Res
 
 // handleMsgSetAsset handles SetAsset message.
 func handleMsgSetAsset(ctx sdk.Context, k Keeper, msg MsgSetAsset) (*sdk.Result, error) {
-	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
 
-	if _, found := k.GetAsset(ctx, msg.Denom); !found {
-		return nil, sdkErrors.Wrap(ErrInvalidAsset, msg.Denom)
+	if _, found := k.GetAsset(ctx, msg.Asset.AssetCode); !found {
+		return nil, sdkErrors.Wrap(ErrInvalidAsset, msg.Asset.AssetCode.String())
 	}
 
-	if err := k.SetAsset(ctx, msg.Nominee.String(), msg.Denom, msg.Asset); err != nil {
+	if err := k.SetAsset(ctx, msg.Nominee.String(), msg.Asset.AssetCode, msg.Asset); err != nil {
 		return nil, sdkErrors.Wrap(ErrInternal, err.Error())
 	}
 
@@ -102,16 +100,15 @@ func handleMsgSetAsset(ctx sdk.Context, k Keeper, msg MsgSetAsset) (*sdk.Result,
 
 //  handleMsgAddAsset handles AddUser message.
 func handleMsgAddAsset(ctx sdk.Context, k Keeper, msg MsgAddAsset) (*sdk.Result, error) {
-	// TODO cleanup message validation and errors
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
 
-	if _, found := k.GetAsset(ctx, msg.Denom); found {
-		return nil, sdkErrors.Wrap(ErrExistingAsset, msg.Denom)
+	if _, found := k.GetAsset(ctx, msg.Asset.AssetCode); found {
+		return nil, sdkErrors.Wrap(ErrExistingAsset, msg.Asset.AssetCode.String())
 	}
 
-	if err := k.AddAsset(ctx, msg.Nominee.String(), msg.Denom, msg.Asset); err != nil {
+	if err := k.AddAsset(ctx, msg.Nominee.String(), msg.Asset.AssetCode, msg.Asset); err != nil {
 		return nil, sdkErrors.Wrap(ErrInternal, err.Error())
 	}
 

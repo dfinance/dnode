@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -9,7 +10,7 @@ import (
 )
 
 // GetAsset returns the asset if it is in the oracle system.
-func (k Keeper) GetAsset(ctx sdk.Context, assetCode string) (types.Asset, bool) {
+func (k Keeper) GetAsset(ctx sdk.Context, assetCode dnTypes.AssetCode) (types.Asset, bool) {
 	assets := k.GetAssetParams(ctx)
 
 	for i := range assets {
@@ -22,7 +23,7 @@ func (k Keeper) GetAsset(ctx sdk.Context, assetCode string) (types.Asset, bool) 
 }
 
 // SetAsset overwrites existing asset for specific assetCode.
-func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode string, asset types.Asset) error {
+func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, asset types.Asset) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
@@ -48,7 +49,7 @@ func (k Keeper) SetAsset(ctx sdk.Context, nominee string, assetCode string, asse
 }
 
 // AddAsset adds non-existing asset to the store.
-func (k Keeper) AddAsset(ctx sdk.Context, nominee string, assetCode string, asset types.Asset) error {
+func (k Keeper) AddAsset(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, asset types.Asset) error {
 	// TODO: assetCode input can be obtained from asset.AssetCode input, so might be excessive
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("%q is not a valid nominee", nominee)

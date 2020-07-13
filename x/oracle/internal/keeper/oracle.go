@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -9,7 +10,7 @@ import (
 )
 
 // GetOracles returns the oracles in the oracle store.
-func (k Keeper) GetOracles(ctx sdk.Context, assetCode string) (types.Oracles, error) {
+func (k Keeper) GetOracles(ctx sdk.Context, assetCode dnTypes.AssetCode) (types.Oracles, error) {
 
 	for _, a := range k.GetAssetParams(ctx) {
 		if assetCode == a.AssetCode {
@@ -21,7 +22,7 @@ func (k Keeper) GetOracles(ctx sdk.Context, assetCode string) (types.Oracles, er
 }
 
 // GetOracle returns the oracle from the store or an error if not found for specific assetCode.
-func (k Keeper) GetOracle(ctx sdk.Context, assetCode string, address sdk.AccAddress) (types.Oracle, error) {
+func (k Keeper) GetOracle(ctx sdk.Context, assetCode dnTypes.AssetCode, address sdk.AccAddress) (types.Oracle, error) {
 	oracles, err := k.GetOracles(ctx, assetCode)
 	if err != nil {
 		return types.Oracle{}, fmt.Errorf("asset %q not found", assetCode)
@@ -35,7 +36,7 @@ func (k Keeper) GetOracle(ctx sdk.Context, assetCode string, address sdk.AccAddr
 }
 
 // AddOracle adds the oracle to the oracle store for specific assetCode.
-func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode string, address sdk.AccAddress) error {
+func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, address sdk.AccAddress) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}
@@ -66,7 +67,7 @@ func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode string, add
 }
 
 // SetOracles sets the oracle store for specific assetCode.
-func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode string, addresses types.Oracles) error {
+func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, addresses types.Oracles) error {
 	if !k.IsNominee(ctx, nominee) {
 		return fmt.Errorf("%q is not a valid nominee", nominee)
 	}

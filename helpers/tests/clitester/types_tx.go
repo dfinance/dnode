@@ -179,6 +179,12 @@ func (r *TxRequest) CheckFailedWithErrorSubstring(subStr string) (output string)
 
 	return
 }
+func (r *TxRequest) CheckFailed() {
+	_, _, stderr := r.Send()
+	require.NotEmpty(r.t, stderr)
+
+	return
+}
 
 func (r *TxRequest) String() string {
 	return fmt.Sprintf("tx %s", r.cmd.String())

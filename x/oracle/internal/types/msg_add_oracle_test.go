@@ -3,6 +3,7 @@
 package types
 
 import (
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,10 +15,10 @@ func TestOracleMsg_AddOracle(t *testing.T) {
 
 	nominee := sdk.AccAddress([]byte("someName"))
 	oracle := sdk.AccAddress([]byte("someOracle"))
-	denom := "uftm"
+	assetCode := dnTypes.AssetCode("btn_dfi")
 
 	t.Run("GetSign", func(t *testing.T) {
-		target := NewMsgAddOracle(nominee, denom, oracle)
+		target := NewMsgAddOracle(nominee, assetCode, oracle)
 		require.Equal(t, "add_oracle", target.Type())
 		require.Equal(t, RouterKey, target.Route())
 		require.True(t, len(target.GetSignBytes()) > 0)
@@ -27,11 +28,11 @@ func TestOracleMsg_AddOracle(t *testing.T) {
 	t.Run("ValidateBasic", func(t *testing.T) {
 		// ok
 		{
-			msg := NewMsgAddOracle(nominee, denom, oracle)
+			msg := NewMsgAddOracle(nominee, assetCode, oracle)
 			require.NoError(t, msg.ValidateBasic())
 		}
 
-		// fail: invalid denom
+		// fail: invalid assetCode
 		{
 			msg := NewMsgAddOracle(nominee, "", oracle)
 			require.Error(t, msg.ValidateBasic())
@@ -39,13 +40,13 @@ func TestOracleMsg_AddOracle(t *testing.T) {
 
 		// fail: invalid oracle
 		{
-			msg := NewMsgAddOracle(nominee, denom, sdk.AccAddress{})
+			msg := NewMsgAddOracle(nominee, assetCode, sdk.AccAddress{})
 			require.Error(t, msg.ValidateBasic())
 		}
 
 		// fail: invalid nominee
 		{
-			msg := NewMsgAddOracle(sdk.AccAddress{}, denom, oracle)
+			msg := NewMsgAddOracle(sdk.AccAddress{}, assetCode, oracle)
 			require.Error(t, msg.ValidateBasic())
 		}
 	})

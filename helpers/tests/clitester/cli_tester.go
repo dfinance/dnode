@@ -2,6 +2,7 @@ package clitester
 
 import (
 	"fmt"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -40,7 +41,7 @@ type CLITester struct {
 	Accounts          map[string]*CLIAccount
 	Currencies        map[string]CurrencyInfo
 	AccountPassphrase string
-	DefAssetCode      string
+	DefAssetCode      dnTypes.AssetCode
 	NodePorts         NodePortConfig
 	VMConnection      VMConnectionConfig
 	VMCommunication   VMCommunicationConfig
