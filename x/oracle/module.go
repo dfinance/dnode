@@ -1,4 +1,4 @@
-// Oracle module receiving data from external exchange rate providers.
+// Oracle module receiving data from external exchange rate providers and provide current exchange rate information.
 package oracle
 
 import (
