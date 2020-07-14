@@ -3,8 +3,9 @@
 package keeper
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestOracleKeeper_IsNominee(t *testing.T) {

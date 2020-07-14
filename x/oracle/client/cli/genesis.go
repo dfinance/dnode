@@ -89,7 +89,7 @@ func AddOracleNomineesCmd(ctx *server.Context, cdc *codec.Codec,
 func AddAssetGenCmd(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-oracle-asset-gen [asset_code] [oracles]",
+		Use:   "add-oracle-asset-gen [assetCode] [oracles]",
 		Short: "Add oracle asset to genesis.json",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {

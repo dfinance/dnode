@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -9,6 +8,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
@@ -28,7 +28,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 	}
 }
 
-// queryCurrentPrice handles currentPrice query. Takes an [assetcode] and returns CurrentPrice for that asset.
+// queryCurrentPrice handles currentPrice query. Takes an [assetCode] and returns CurrentPrice for that asset.
 func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
 	assetCode := dnTypes.AssetCode(path[0])
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
@@ -44,7 +44,7 @@ func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	return bz, nil
 }
 
-// queryRawPrices handles rawPrice query. Takes an [assetcode] and returns the raw []PostedPrice for that asset.
+// queryRawPrices handles rawPrice query. Takes an [assetCode] and [blockHeight], then returns the raw []PostedPrice for that asset.
 func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
 	assetCode := dnTypes.AssetCode(path[0])
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {

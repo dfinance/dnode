@@ -3,10 +3,12 @@
 package keeper
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
-	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestOracleKeeper_Params(t *testing.T) {

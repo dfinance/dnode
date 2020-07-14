@@ -3,11 +3,12 @@
 package types
 
 import (
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 func TestOracleMsg_SetAsset(t *testing.T) {

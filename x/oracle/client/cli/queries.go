@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
@@ -19,8 +20,12 @@ func GetCmdAssetCodeHex() *cobra.Command {
 		Short: "get asset code in hex",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			assetCode := args[0]
-			res := hex.EncodeToString([]byte(assetCode))
+			assetCode := dnTypes.AssetCode(args[0])
+			if err := assetCode.Validate(); err != nil {
+				return err
+			}
+
+			res := hex.EncodeToString([]byte(assetCode.String()))
 			fmt.Printf("Asset code in hex: %s\n", res)
 			return nil
 		},
@@ -35,8 +40,13 @@ func GetCmdCurrentPrice(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			assetCode := args[0]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, types.QueryPrice, assetCode), nil)
+
+			assetCode := dnTypes.AssetCode(args[0])
+			if err := assetCode.Validate(); err != nil {
+				return err
+			}
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", queryRoute, types.QueryPrice, assetCode.String()), nil)
 			if err != nil {
 				return err
 			}

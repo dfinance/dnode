@@ -3,7 +3,6 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -14,13 +13,14 @@ import (
 	"github.com/spf13/cobra"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // GetCmdPostPrice cli command for posting prices.
 func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "postprice [from_key_or_address] [asset_code] [price] [receivedAt]",
+		Use:   "postprice [fromKeyOrAddress] [assetCode] [price] [receivedAt]",
 		Short: "post the latest price for a particular asset",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -56,7 +56,7 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 // GetCmdAddOracle cli command for create new oracle.
 func GetCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "add-oracle [nominee_key] [asset_code] [oracle_address]",
+		Use:     "add-oracle [nomineeKey] [assetCode] [oracle_address]",
 		Example: "dncli oracle add-oracle wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new oracle",
 		Args:    cobra.ExactArgs(3),
@@ -85,7 +85,7 @@ func GetCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetOracles cli command for set a list of oracles for a denom.
 func GetCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "set-oracles [nominee_key] [asset_code] [oracle_addresses]",
+		Use:     "set-oracles [nomineeKey] [assetCode] [oracle_addresses]",
 		Example: "dncli oracle set-oracles wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet10ff6y8gm2re6awfwz5dvesar8jq02tx7vcvuxn,wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Sets a list of oracles for a denom",
 		Args:    cobra.ExactArgs(3),
@@ -114,7 +114,7 @@ func GetCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 // GetCmdAddAsset cli command for create a new asset.
 func GetCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "add-asset [nominee_key] [asset_code] [oracles]",
+		Use:     "add-asset [nomineeKey] [assetCode] [oracles]",
 		Example: "dncli oracle add-asset wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a new asset",
 		Args:    cobra.ExactArgs(3),
@@ -151,7 +151,7 @@ func GetCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetAsset cli command for set asset.
 func GetCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:     "set-asset [nominee_key] [asset_code] [oracles]",
+		Use:     "set-asset [nomineeKey] [assetCode] [oracles]",
 		Example: "dncli oracle set-asset wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
 		Short:   "Create a set asset",
 		Args:    cobra.ExactArgs(3),

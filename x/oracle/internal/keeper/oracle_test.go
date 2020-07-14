@@ -5,8 +5,9 @@ package keeper
 import (
 	"testing"
 
-	"github.com/dfinance/dnode/x/oracle/internal/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 func TestOracleKeeper_AddOracle(t *testing.T) {

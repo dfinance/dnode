@@ -3,11 +3,11 @@
 package keeper
 
 import (
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
@@ -68,7 +68,7 @@ func TestOracleKeeper_AddAsset(t *testing.T) {
 
 	// double add
 	{
-		asset2 := types.NewAsset("btc_usdt", []types.Oracle{}, true)
+		asset2 := types.NewAsset(input.stdAssetCode, []types.Oracle{}, true)
 		err := keeper.AddAsset(ctx, input.stdNominee, asset2)
 		require.Error(t, err)
 	}
