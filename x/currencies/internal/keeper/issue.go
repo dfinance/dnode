@@ -44,6 +44,8 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id string, coin sdk.Coin, payee s
 	curSupply = curSupply.SetTotal(curSupply.GetTotal().Add(coin))
 	k.supplyKeeper.SetSupply(ctx, curSupply)
 
+	ctx.EventManager().EmitEvent(types.NewIssueEvent(id, coin, payee))
+
 	return
 }
 

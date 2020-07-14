@@ -18,6 +18,7 @@ const (
 	AttributeQuantity  = "quantity"
 )
 
+// NewOrderPostedEvent creates an Event on order post (creation).
 func NewOrderPostedEvent(order Order) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeOrderPost,
@@ -30,6 +31,7 @@ func NewOrderPostedEvent(order Order) sdk.Event {
 	)
 }
 
+// NewOrderCanceledEvent creates an Event on order cancel (revoke / TTL).
 func NewOrderCanceledEvent(order Order) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeOrderCancel,
@@ -42,6 +44,7 @@ func NewOrderCanceledEvent(order Order) sdk.Event {
 	)
 }
 
+// NewFullyFilledOrderEvent creates an Event on order fully filled (triggered by Matcher).
 func NewFullyFilledOrderEvent(order Order) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeFullyFilledOrder,
@@ -54,6 +57,7 @@ func NewFullyFilledOrderEvent(order Order) sdk.Event {
 	)
 }
 
+// NewPartiallyFilledOrderEvent creates an Event on order partially filled (triggered by Matcher).
 func NewPartiallyFilledOrderEvent(order Order) sdk.Event {
 	return sdk.NewEvent(
 		EventTypePartiallyFilledOrder,

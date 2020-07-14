@@ -31,7 +31,9 @@ func trimCliOutput(output []byte) []byte {
 	return output
 }
 
-func PrintEvents(t *testing.T, inChs []<-chan coreTypes.ResultEvent, keyFilter string) {
+// PrintEvents reads webSockets channels and prints sorted attributes.
+// If {keyFilters} passed, all attributes are filtered out.
+func PrintEvents(t *testing.T, inChs []<-chan coreTypes.ResultEvent, keyFilters ...string) {
 	eventWg := sync.WaitGroup{}
 	eventCh := make(chan coreTypes.ResultEvent, 100)
 
@@ -40,7 +42,7 @@ func PrintEvents(t *testing.T, inChs []<-chan coreTypes.ResultEvent, keyFilter s
 		go func(ch <-chan coreTypes.ResultEvent) {
 			defer eventWg.Done()
 			for event := range ch {
-				eventCh <-event
+				eventCh <- event
 			}
 		}(inCh)
 	}
@@ -58,11 +60,19 @@ func PrintEvents(t *testing.T, inChs []<-chan coreTypes.ResultEvent, keyFilter s
 		slice.SortStrings(keys)
 
 		for _, key := range keys {
-			if keyFilter != "" && !strings.Contains(key, keyFilter) {
-				continue
+			doPrint := true
+			if len(keyFilters) > 0 {
+				doPrint = false
+				for _, keyFilter := range keyFilters {
+					if strings.Contains(key, keyFilter) {
+						doPrint = true
+					}
+				}
 			}
 
-			t.Logf("  %s: [%s]", key, strings.Join(event.Events[key], ", "))
+			if doPrint {
+				t.Logf("  %s: [%s]", key, strings.Join(event.Events[key], ", "))
+			}
 		}
 	}
 }

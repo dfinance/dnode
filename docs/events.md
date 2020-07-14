@@ -59,6 +59,28 @@ There are some useful cross module queries:
     - `call_id` - call ID [uint];
     - `sender` - revoked vote sender address [Bech32 string];
 
+## `Currencies` module
+
+* Currency issued after multi signature approval
+
+    Type: `currencies.issue`
+    
+    Attributes:
+    - `issue_id` - Issue unique ID [string];
+    - `denom` - Currency denomination symbol [string];
+    - `amount` - Issue amount [uint];
+    - `sender` - payee account [Bech32 string];
+
+* Currency withdraw action
+
+    Type: `currencies.withdraw`
+    
+    Attributes:
+    - `withdraw_id` - Withdraw ID [uint];
+    - `denom` - Currency denomination symbol [string];
+    - `amount` - Withdraw amount [uint];
+    - `sender` - spender account [Bech32 string];
+
 ## `Orders` module
 
 * Order posted

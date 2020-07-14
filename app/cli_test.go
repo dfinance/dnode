@@ -35,6 +35,10 @@ func TestCurrencies_CLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestCurrencies_CLI", []string{"message.module='currencies'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "currencies", "multisig")
+
 	ccDenom := "btc"
 	ccDecimals := ct.Currencies[ccDenom].Decimals
 	ccCurAmount, ccRecipient := sdk.NewInt(1000), ct.Accounts["validator1"].Address

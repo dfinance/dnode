@@ -15,7 +15,6 @@ const (
 func NewClearanceEvent(marketID dnTypes.ID, clearancePrice sdk.Uint) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeClearance,
-		sdk.NewAttribute(dnTypes.DnEventAttrKey, dnTypes.DnEventAttrValue),
 		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
 		sdk.NewAttribute(EventAttributeKeyPrice, clearancePrice.String()),
 	)

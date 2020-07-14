@@ -67,6 +67,8 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) []abci.ValidatorUpdate {
 			} else {
 				// call executed
 				call.Executed = true
+
+				eventManager.EmitEvents(cacheCtx.EventManager().Events())
 				writeCache()
 
 				eventManager.EmitEvent(NewCallStateChangedEvent(callID, AttributeValueExecuted))
