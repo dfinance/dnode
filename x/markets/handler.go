@@ -5,6 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 // NewHandler creates markets type messages handler.
@@ -31,6 +33,8 @@ func handleMsgCreateMarket(ctx sdk.Context, k Keeper, msg MsgCreateMarket) (*sdk
 	if err != nil {
 		return nil, fmt.Errorf("result marshal: %w", err)
 	}
+
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
 
 	return &sdk.Result{
 		Data:   res,

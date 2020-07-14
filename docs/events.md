@@ -92,6 +92,17 @@ There are some useful cross module queries:
     - `amount` - Withdraw amount [uint];
     - `sender` - spender account [Bech32 string];
 
+## `Markets` module
+
+* Market created
+
+    Type: `markets.create`
+    
+    Attributes:
+    - `market_id` - Market ID [uint];
+    - `base_denom` - BaseAsset denomination symbol [string];
+    - `quote_denom` - QuoteAsset denomination symbol [string];
+
 ## `Orders` module
 
 * Order posted

@@ -30,7 +30,7 @@ func (k Keeper) CreateCurrency(ctx sdk.Context, denom string, params types.Curre
 	k.storeResStdCurrencyInfo(ctx, currency)
 	k.updateCurrenciesParams(ctx, denom, params)
 
-	ctx.EventManager().EmitEvent(types.NewCreateEvent(currency, params))
+	ctx.EventManager().EmitEvent(types.NewCCCreatedEvent(currency, params))
 
 	return nil
 }

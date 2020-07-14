@@ -14,8 +14,8 @@ const (
 	AttributeInfoPath = "info_path"
 )
 
-// NewCreateEvent creates an Event on currency creation.
-func NewCreateEvent(currency Currency, params CurrencyParams) sdk.Event {
+// NewCCCreatedEvent creates an Event on currency creation.
+func NewCCCreatedEvent(currency Currency, params CurrencyParams) sdk.Event {
 	return sdk.NewEvent(
 		EventTypesCreate,
 		sdk.NewAttribute(AttributeDenom, currency.Denom),

@@ -17,6 +17,12 @@ type (
 const (
 	ModuleName        = types.ModuleName
 	DefaultParamspace = types.DefaultParamspace
+	// Event types, attribute types and values
+	EventTypeCreate = types.EventTypeCreate
+	//
+	AttributeMarketId   = types.AttributeMarketId
+	AttributeBaseDenom  = types.AttributeBaseDenom
+	AttributeQuoteDenom = types.AttributeQuoteDenom
 )
 
 var (
