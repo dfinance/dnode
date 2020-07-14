@@ -2,20 +2,20 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 const (
-	EventTypeClearance        = ModuleName + ".clearance"
-	EventAttributeKeyMarketID = "market_id"
-	EventAttributeKeyPrice    = "price"
+	EventTypeClearance = ModuleName + ".clearance"
+	//
+	AttributeMarketId = "market_id"
+	AttributePrice    = "price"
 )
 
-func NewClearanceEvent(marketID dnTypes.ID, clearancePrice sdk.Uint) sdk.Event {
+// NewClearanceEvent creates an Event on successful market match.
+func NewClearanceEvent(result MatcherResult) sdk.Event {
 	return sdk.NewEvent(
 		EventTypeClearance,
-		sdk.NewAttribute(EventAttributeKeyMarketID, marketID.String()),
-		sdk.NewAttribute(EventAttributeKeyPrice, clearancePrice.String()),
+		sdk.NewAttribute(AttributeMarketId, result.MarketID.String()),
+		sdk.NewAttribute(AttributePrice, result.ClearanceState.Price.String()),
 	)
 }

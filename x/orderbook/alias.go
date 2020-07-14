@@ -14,6 +14,11 @@ type (
 const (
 	ModuleName = types.ModuleName
 	StoreKey   = types.StoreKey
+	// Event types, attribute types and values
+	EventTypeClearance = types.EventTypeClearance
+	//
+	AttributeMarketId = types.AttributeMarketId
+	AttributePrice    = types.AttributePrice
 )
 
 var (

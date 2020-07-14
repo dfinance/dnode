@@ -146,10 +146,19 @@ There are some useful cross module queries:
     Type: `orders.partial_fill`
     
     Attributes:
-    Attributes:
     - `owner` - Order creator address [Bech32 string];
     - `market_id` - Market ID [uint];
     - `order_id` - Order ID [uint];
     - `direction` - Order type [bid/ask];
     - `price` - price [uint];
     - `quantity` - quantity [uint];
+
+## `Orderbook` module
+
+* ClearanceState updated for Market (matching event)
+
+    Type: `orderbook.clearance`
+    
+    Attributes:
+    - `market_id` - Market ID [uint];
+    - `price` - clearance price [uint];
