@@ -29,6 +29,15 @@ const (
 	QueryWithdraw  = types.QueryWithdraw
 	QueryIssue     = types.QueryIssue
 	QueryCurrency  = types.QueryCurrency
+	// Event types, attribute types and values
+	EventTypesIssue    = types.EventTypesIssue
+	EventTypesWithdraw = types.EventTypesWithdraw
+	//
+	AttributeDenom      = types.AttributeDenom
+	AttributeAmount     = types.AttributeAmount
+	AttributeIssueId    = types.AttributeIssueId
+	AttributeWithdrawId = types.AttributeWithdrawId
+	AttributeSender     = types.AttributeSender
 )
 
 var (

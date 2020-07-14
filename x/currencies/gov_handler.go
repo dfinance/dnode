@@ -7,6 +7,9 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/x/ccstorage"
 )
 
 // NewGovHandler creates proposal type handler for Gov module.
@@ -35,6 +38,8 @@ func handleAddCurrencyProposal(ctx sdk.Context, k Keeper, p AddCurrencyProposal)
 	}
 
 	logger.Info(fmt.Sprintf("proposal executed:\n%s", p.String()))
+
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ccstorage.ModuleName))
 
 	return nil
 }

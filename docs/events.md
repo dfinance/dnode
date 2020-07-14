@@ -59,6 +59,17 @@ There are some useful cross module queries:
     - `call_id` - call ID [uint];
     - `sender` - revoked vote sender address [Bech32 string];
 
+## `Ccstorage` module
+
+* Currency created after gov proposal approval
+
+    Type: `ccstorage.create`
+    
+    Attributes:
+    - `denom` - Currency denomination symbol [string];
+    - `decimals` - Currency decimals count [uint];
+    - `info_path` - VM CurrencyInfo path [HEX string];
+
 ## `Currencies` module
 
 * Currency issued after multi signature approval
