@@ -59,6 +59,24 @@ There are some useful cross module queries:
     - `call_id` - call ID [uint];
     - `sender` - revoked vote sender address [Bech32 string];
 
+## `PoA` module
+
+* Validator added (also triggered on validator replacement)
+
+    Type: `poa.add`
+    
+    Attributes:
+    - `address` - sdk address [Bech32 string];
+    - `eth_address` - Ethereum address [string];
+
+* Validator removed (also triggered on validator replacement)
+
+    Type: `poa.remove`
+    
+    Attributes:
+    - `address` - sdk address [Bech32 string];
+    - `eth_address` - Ethereum address [string];
+
 ## `Ccstorage` module
 
 * Currency created after gov proposal approval

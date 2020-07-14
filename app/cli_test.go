@@ -523,6 +523,10 @@ func TestPOA_CLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestPOA_CLI", []string{"message.module='poa'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "poa")
+
 	curValidators := make([]poa.Validator, 0)
 	addValidator := func(address, ethAddress string) {
 		sdkAddr, err := sdk.AccAddressFromBech32(address)
