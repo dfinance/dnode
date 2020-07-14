@@ -69,8 +69,8 @@ swagger-ui-build:
 	@echo "--> Building Swagger API specificaion, merging it to Cosmos SDK"
 
 	@echo "-> Build swagger.yaml (that takes time)"
-	#swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
-	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go
+	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
+	#swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go
 	cp $(swagger_dir)/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/dn-swagger.yaml
 
 	@echo "-> Build statik FS"
