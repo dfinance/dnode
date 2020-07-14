@@ -306,6 +306,9 @@ func newTestInput(launchMock bool) testInput {
 		panic(err)
 	}
 
+	// clean events from init above
+	input.ctx = input.ctx.WithEventManager(sdk.NewEventManager())
+
 	return input
 }
 

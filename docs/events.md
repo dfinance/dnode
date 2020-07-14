@@ -180,3 +180,63 @@ There are some useful cross module queries:
     Attributes:
     - `market_id` - Market ID [uint];
     - `price` - clearance price [uint];
+
+## `VM` module
+
+Depending on VM execution status, module emits multiple events per Tx with variadic number of attributes.
+
+* VM execution status `keep` received
+
+    * Contract status event ("keep" event)
+    
+        Type: `vm.contract_status`
+    
+        Attributes:
+        - `status` - `keep` [string const];
+
+    * VM events (number of events depends on execution status)
+    
+        Type: `vm.contract_events`
+        
+        Attributes:
+        - `sender_address` - VM event sender address [`0x1` for stdlib / Bech32 string for account resource];
+        - `source` - VM event source [`script` for script source / `{moduleAddress}::{moduleName}` for module source];
+        - `type` - VM event type string representation in Move format [string];
+        - `data` - HEX string VM event data representation [string];
+
+* VM execution status `keep` received (failed with an error)
+
+    1. "keep" event
+        
+        Type: `vm.contract_status`
+    
+        Attributes:
+        - `status` - `keep` [string const];
+
+    2. "error" event
+
+        Type: `vm.contract_status`
+    
+        Attributes:
+        - `status` - `error` [string const];
+        - `major_status` - error majorStatus [uint];
+        - `sub_status` - error subStatus [uint];
+        - `message` - error message [string];
+
+* VM execution status `discard` received
+
+    Type: `vm.contract_status`
+    
+    Attributes:
+    - `status` - `discard` [string const];
+
+* VM execution status `discard` received (failed with an error)
+
+    Type: `vm.contract_status`
+    
+    Attributes:
+    - `status` - `discard` [string const];
+    - `major_status` - error majorStatus [uint];
+    - `sub_status` - error subStatus [uint];
+    - `message` - error message [string];
+ 

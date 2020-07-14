@@ -1,105 +1,107 @@
-// Events types.
 package types
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
-
-	"github.com/dfinance/dnode/x/common_vm"
 )
 
 const (
-	// Event types.
-	EventTypeContractStatus = "contract_status"
-	EventTypeMoveEvent      = "contract_events"
-
-	// Attributes keys.
-	AttrKeyStatus        = "status"
-	AttrKeyMajorStatus   = "major_status"
-	AttrKeySubStatus     = "sub_status"
-	AttrKeyMessage       = "message"
-	AttrKeyType          = "type"
-	AttrKeySenderAddress = "sender_address"
-	AttrKeySource        = "source"
-	AttrKeyData          = "data"
-
-	// Values.
-	StatusDiscard = "discard"
-	StatusKeep    = "keep"
-	StatusError   = "error"
-
-	// Source key options.
-	SourceScript    = "script"
-	SourceModuleFmt = "%s::%s"
+	EventTypeContractStatus = ModuleName + ".contract_status"
+	EventTypeMoveEvent      = ModuleName + ".contract_events"
+	//
+	AttributeStatus         = "status"
+	AttributeErrMajorStatus = "major_status"
+	AttributeErrSubStatus   = "sub_status"
+	AttributeErrMessage     = "message"
+	AttributeVmEventSender  = "sender_address"
+	AttributeVmEventSource  = "source"
+	AttributeVmEventType    = "type"
+	AttributeVmEventData    = "data"
+	//
+	AttributeValueStatusKeep      = "keep"
+	AttributeValueStatusDiscard   = "discard"
+	AttributeValueStatusError     = "error"
+	AttributeValueSourceScript    = "script"
+	AttributeValueSourceModuleFmt = "%s::%s"
 )
 
-// New event with keep status.
-func NewEventKeep() sdk.Event {
-	return sdk.NewEvent(
-		EventTypeContractStatus,
-		sdk.NewAttribute(AttrKeyStatus, StatusKeep),
-	)
-}
-
-// Creating discard/errors statuses.
-func newEventStatus(topic string, vmStatus *vm_grpc.VMStatus) sdk.Event {
-	attributes := make([]sdk.Attribute, 1)
-	attributes[0] = sdk.NewAttribute(AttrKeyStatus, topic)
-	if vmStatus != nil {
-		attributes = append(attributes, sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(vmStatus.MajorStatus, 10)))
-		attributes = append(attributes, sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(vmStatus.SubStatus, 10)))
-		attributes = append(attributes, sdk.NewAttribute(AttrKeyMessage, vmStatus.Message))
+// NewContractEvents creates Events on successful / failed VM execution.
+// "keep" status emits two events, "discard" status emits one event.
+func NewContractEvents(exec *vm_grpc.VMExecuteResponse) sdk.Events {
+	if exec == nil {
+		panic(fmt.Errorf("building contract sdk.Events: exec is nil"))
 	}
 
-	return sdk.NewEvent(
-		EventTypeContractStatus,
-		attributes...,
-	)
-}
+	statusStructAttributes := func() []sdk.Attribute {
+		if exec.StatusStruct == nil {
+			return nil
+		}
 
-// New event with error status.
-func NewEventError(vmStatus *vm_grpc.VMStatus) sdk.Event {
-	return newEventStatus(StatusError, vmStatus)
-}
-
-// New event with discard status.
-func NewEventDiscard(errorStatus *vm_grpc.VMStatus) sdk.Event {
-	return newEventStatus(StatusDiscard, errorStatus)
-}
-
-// Get sender address 0x1 or wallet1...
-func GetSenderAddress(addr []byte) string {
-	if bytes.Equal(addr, common_vm.StdLibAddress) {
-		return common_vm.StdLibAddressShortStr
-	} else {
-		return sdk.AccAddress(addr).String()
-	}
-}
-
-// GetEventSource return VM event source (script / module) serialized to string.
-func GetEventSource(senderModule *vm_grpc.ModuleIdent) string {
-	if senderModule == nil {
-		return SourceScript
+		return []sdk.Attribute{
+			sdk.NewAttribute(AttributeErrMajorStatus, strconv.FormatUint(exec.StatusStruct.MajorStatus, 10)),
+			sdk.NewAttribute(AttributeErrSubStatus, strconv.FormatUint(exec.StatusStruct.SubStatus, 10)),
+			sdk.NewAttribute(AttributeErrMessage, exec.StatusStruct.Message),
+		}
 	}
 
-	return fmt.Sprintf(SourceModuleFmt, GetSenderAddress(senderModule.Address), senderModule.Name)
+	var events sdk.Events
+	switch exec.Status {
+	case vm_grpc.ContractStatus_Keep:
+		// "keep" event
+		events = append(events, sdk.NewEvent(
+			EventTypeContractStatus,
+			sdk.NewAttribute(AttributeStatus, AttributeValueStatusKeep),
+		))
+
+		// "error" event
+		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != VMCodeExecuted {
+			event := sdk.NewEvent(
+				EventTypeContractStatus,
+				sdk.NewAttribute(AttributeStatus, AttributeValueStatusError),
+			)
+			event = event.AppendAttributes(statusStructAttributes()...)
+
+			events = append(events, event)
+		}
+	case vm_grpc.ContractStatus_Discard:
+		// "discard" event
+		event := sdk.NewEvent(
+			EventTypeContractStatus,
+			sdk.NewAttribute(AttributeStatus, AttributeValueStatusDiscard),
+		)
+		event = event.AppendAttributes(statusStructAttributes()...)
+
+		events = append(events, event)
+	}
+
+	return events
 }
 
-// Parse VM event to standard SDK event.
-// In case of event data equal "struct" we don't process struct, and just keep bytes, as for any other type.
-func NewEventFromVM(gasMeter sdk.GasMeter, event *vm_grpc.VMEvent) sdk.Event {
+// NewMoveEvent converts VM event to SDK event.
+// GasMeter is used to prevent long parsing (lots of nested structs).
+func NewMoveEvent(gasMeter sdk.GasMeter, vmEvent *vm_grpc.VMEvent) sdk.Event {
+	if vmEvent == nil {
+		panic(fmt.Errorf("building Move sdk.Event: event is nil"))
+	}
+
 	// eventData: not parsed as it doesn't make sense
-	attrs := []sdk.Attribute{
-		sdk.NewAttribute(AttrKeySenderAddress, GetSenderAddress(event.SenderAddress)),
-		sdk.NewAttribute(AttrKeySource, GetEventSource(event.SenderModule)),
-		sdk.NewAttribute(AttrKeyType, StringifyEventTypePanic(gasMeter, event.EventType)),
-		sdk.NewAttribute(AttrKeyData, hex.EncodeToString(event.EventData)),
+	return sdk.NewEvent(EventTypeMoveEvent,
+		sdk.NewAttribute(AttributeVmEventSender, StringifySenderAddress(vmEvent.SenderAddress)),
+		sdk.NewAttribute(AttributeVmEventSource, GetEventSourceAttribute(vmEvent.SenderModule)),
+		sdk.NewAttribute(AttributeVmEventType, StringifyEventTypePanic(gasMeter, vmEvent.EventType)),
+		sdk.NewAttribute(AttributeVmEventData, hex.EncodeToString(vmEvent.EventData)),
+	)
+}
+
+// GetEventSourceAttribute returns SDK event attribute for VM event source (script / module) serialized to string.
+func GetEventSourceAttribute(senderModule *vm_grpc.ModuleIdent) string {
+	if senderModule == nil {
+		return AttributeValueSourceScript
 	}
 
-	return sdk.NewEvent(EventTypeMoveEvent, attrs...)
+	return fmt.Sprintf(AttributeValueSourceModuleFmt, StringifySenderAddress(senderModule.Address), senderModule.Name)
 }

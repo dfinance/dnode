@@ -2,6 +2,7 @@
 package types
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -342,7 +343,7 @@ func processEventType(gasMeter sdk.GasMeter, tag *vm_grpc.LcsTag, gas, depth uin
 
 	// Struct tag
 	if tag.StructIdent != nil {
-		structType := fmt.Sprintf("%s::%s::%s", GetSenderAddress(tag.StructIdent.Address), tag.StructIdent.Module, tag.StructIdent.Name)
+		structType := fmt.Sprintf("%s::%s::%s", StringifySenderAddress(tag.StructIdent.Address), tag.StructIdent.Module, tag.StructIdent.Name)
 		if len(tag.StructIdent.TypeParams) == 0 {
 			return structType, nil
 		}
@@ -385,4 +386,13 @@ func StringifyEventTypePanic(gasMeter sdk.GasMeter, tag *vm_grpc.LcsTag) string 
 	}
 
 	return eventType
+}
+
+// StringifySenderAddress converts VM address to string (0x1 for stdlib and wallet1... otherwise).
+func StringifySenderAddress(addr []byte) string {
+	if bytes.Equal(addr, common_vm.StdLibAddress) {
+		return common_vm.StdLibAddressShortStr
+	} else {
+		return sdk.AccAddress(addr).String()
+	}
 }

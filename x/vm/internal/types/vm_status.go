@@ -225,7 +225,7 @@ type VMStatus struct {
 func NewVMStatus(status, majorCode, subCode, message string) VMStatus {
 	strCode := ""
 
-	if status != StatusKeep {
+	if status != AttributeValueStatusKeep {
 		strCode = GetStrCode(majorCode)
 	}
 
@@ -303,10 +303,10 @@ func NewVMStatusFromABCILogs(tx types.TxResponse) TxVMStatus {
 
 				for _, attr := range event.Attributes {
 					// find that it's event contains contract status.
-					if attr.Key == AttrKeyStatus {
+					if attr.Key == AttributeStatus {
 						status = attr.Value
 
-						if status == StatusDiscard || status == StatusError {
+						if status == AttributeValueStatusDiscard || status == AttributeValueStatusError {
 							isFound = true
 							break
 						}
@@ -317,13 +317,13 @@ func NewVMStatusFromABCILogs(tx types.TxResponse) TxVMStatus {
 				if isFound {
 					for _, attr := range event.Attributes {
 						switch attr.Key {
-						case AttrKeyMajorStatus:
+						case AttributeErrMajorStatus:
 							majorCode = attr.Value
 
-						case AttrKeySubStatus:
+						case AttributeErrSubStatus:
 							subCode = attr.Value
 
-						case AttrKeyMessage:
+						case AttributeErrMessage:
 							message = attr.Value
 						}
 					}

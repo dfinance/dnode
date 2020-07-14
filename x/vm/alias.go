@@ -11,6 +11,23 @@ const (
 	StoreKey     = types.StoreKey
 	RouterKey    = types.RouterKey
 	GovRouterKey = types.GovRouterKey
+	// Event types, attribute types and values
+	EventTypeContractStatus = types.EventTypeContractStatus
+	EventTypeMoveEvent      = types.EventTypeMoveEvent
+	//
+	AttributeStatus      = types.AttributeStatus
+	AttributeMajorStatus = types.AttributeErrMajorStatus
+	AttributeSubStatus   = types.AttributeErrSubStatus
+	AttributeMessage     = types.AttributeErrMessage
+	AttributeType        = types.AttributeVmEventType
+	AttributeSender      = types.AttributeVmEventSender
+	AttributeSource      = types.AttributeVmEventSource
+	AttributeData        = types.AttributeVmEventData
+	//
+	AttributeValueStatusDiscard = types.AttributeValueStatusDiscard
+	AttributeValueStatusKeep    = types.AttributeValueStatusKeep
+	AttributeValueStatusError   = types.AttributeValueStatusError
+	AttributeValueSourceScript  = types.AttributeValueSourceScript
 )
 
 type (
