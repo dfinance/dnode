@@ -507,7 +507,7 @@ func TestOracle_CLI(t *testing.T) {
 			}
 			// non-existing assetCode
 			{
-				q, _ := ct.QueryOraclePrice("non_existing_assetCode")
+				q, _ := ct.QueryOraclePrice("nonexisting_asset")
 				q.CheckFailedWithSDKError(sdkErrors.ErrUnknownRequest)
 			}
 		}
