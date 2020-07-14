@@ -161,8 +161,8 @@ func GetCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 
 			assetCode := dnTypes.AssetCode(args[1])
-			if len(assetCode) == 0 {
-				return fmt.Errorf("%s argument %q: empty", "assetCode", args[1])
+			if err := assetCode.Validate(); err != nil {
+				return fmt.Errorf("%s argument %q: %w", "assetCode", args[1], err)
 			}
 
 			oracles, err := types.ParseOracles(args[2])

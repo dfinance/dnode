@@ -259,9 +259,9 @@ func TestOracle_CLI(t *testing.T) {
 				tx.RemoveCmdArg(assetCode.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
-			// invalid asset_code
+			// invalid assetCode
 			{
-				tx := ct.TxOracleAddAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
+				tx := ct.TxOracleAddAsset(nomineeAddr, "Wrong_Asset", assetOracle1)
 				tx.CheckFailedWithErrorSubstring("assetCode argument")
 			}
 			// invalid oracles
@@ -269,7 +269,7 @@ func TestOracle_CLI(t *testing.T) {
 				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode, "123")
 				tx.CheckFailedWithErrorSubstring("")
 			}
-			// empty asset_code
+			// empty assetCode
 			{
 				tx := ct.TxOracleAddAsset(nomineeAddr, "", assetOracle1)
 				tx.CheckFailedWithErrorSubstring("assetCode argument")
@@ -304,17 +304,17 @@ func TestOracle_CLI(t *testing.T) {
 				tx.RemoveCmdArg(nomineeAddr)
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
-			// invalid denom
+			// invalid assetCode
 			{
-				tx := ct.TxOracleSetAsset(nomineeAddr, "WRONG_ASSET", assetOracle1)
-				tx.CheckFailedWithErrorSubstring("invalid assetCode")
+				tx := ct.TxOracleSetAsset(nomineeAddr, "wrongasset", assetOracle1)
+				tx.CheckFailedWithErrorSubstring("assetCode argument")
 			}
 			// invalid oracles
 			{
 				tx := ct.TxOracleSetAsset(nomineeAddr, assetCode, "123")
 				tx.CheckFailedWithErrorSubstring("")
 			}
-			// empty denom
+			// empty assetCode
 			{
 				tx := ct.TxOracleSetAsset(nomineeAddr, "", assetOracle1)
 				tx.CheckFailedWithErrorSubstring("assetCode argument")
