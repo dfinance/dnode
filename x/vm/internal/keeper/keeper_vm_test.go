@@ -6,17 +6,16 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
-
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
 // TODO: change listener logic to don't close it here?

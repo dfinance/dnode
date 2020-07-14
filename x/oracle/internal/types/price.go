@@ -2,11 +2,12 @@ package types
 
 import (
 	"fmt"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"strings"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 const (

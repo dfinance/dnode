@@ -20,7 +20,7 @@ func (msg MsgSetOracles) ValidateBasic() error {
 	}
 
 	if err := msg.AssetCode.Validate(); err != nil {
-		return err
+		return sdkErrors.Wrapf(ErrInternal, "invalid assetCode: value (%s), error (%v)", msg.AssetCode, err)
 	}
 
 	if msg.Nominee.Empty() {

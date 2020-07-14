@@ -3,12 +3,12 @@
 package keeper
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dnode/helpers/tests/utils"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )

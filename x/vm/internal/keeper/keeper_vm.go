@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"strings"
 
 	"github.com/OneOfOne/xxhash"
@@ -13,10 +12,10 @@ import (
 	"github.com/tendermint/crypto/sha3"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
-
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
 // Set value in storage by access path.

@@ -28,8 +28,8 @@ func (msg MsgPostPrice) ValidateBasic() error {
 	if msg.From.Empty() {
 		return sdkErrors.Wrap(ErrInternal, "invalid (empty) oracle address")
 	}
-	if len(msg.AssetCode) == 0 {
-		return sdkErrors.Wrap(ErrInternal, "invalid (empty) asset code")
+	if err := msg.AssetCode.Validate(); err != nil {
+		return sdkErrors.Wrapf(ErrInternal, "invalid assetCode: value (%s), error (%v)", msg.AssetCode, err)
 	}
 	if msg.Price.IsNegative() {
 		return sdkErrors.Wrap(ErrInternal, "invalid (negative) price")

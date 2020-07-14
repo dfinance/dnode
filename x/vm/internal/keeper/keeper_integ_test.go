@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,6 +17,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	dnodeConfig "github.com/dfinance/dnode/cmd/config"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/oracle"
 	compilerClient "github.com/dfinance/dnode/x/vm/client"

@@ -2,9 +2,11 @@ package types
 
 import (
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/dfinance/dnode/helpers/types"
 	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/dfinance/dnode/helpers/types"
 )
 
 const (
