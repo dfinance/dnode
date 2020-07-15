@@ -4,6 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 )
 
+var ModuleCdc *codec.Codec
+
 // RegisterCodec registers concrete types on the Amino codec.
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgPostPrice{}, "oracle/MsgPostPrice", nil)
@@ -12,9 +14,6 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgAddAsset{}, "oracle/MsgAddAsset", nil)
 	cdc.RegisterConcrete(MsgSetAsset{}, "oracle/MsgSetAsset", nil)
 }
-
-// generic sealed codec to be used throughout module
-var ModuleCdc *codec.Codec
 
 func init() {
 	cdc := codec.New()

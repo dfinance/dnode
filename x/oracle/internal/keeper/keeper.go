@@ -2,6 +2,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -19,28 +21,23 @@ type Keeper struct {
 }
 
 // IsNominee checks is nominee exist in the keeper params.
-func (k Keeper) IsNominee(ctx sdk.Context, nominee string) bool {
+func (k Keeper) IsNominee(ctx sdk.Context, address string) error {
 	p := k.GetParams(ctx)
-	nominees := p.Nominees
-	for _, v := range nominees {
-		if v == nominee {
-			return true
+	for _, v := range p.Nominees {
+		if v == address {
+			return nil
 		}
 	}
-	return false
+
+	return fmt.Errorf("address %q is not a nominee", address)
 }
 
 // NewKeeper returns a new keeper for the oralce module.
-func NewKeeper(
-	storeKey sdk.StoreKey,
-	cdc *codec.Codec,
-	paramstore params.Subspace,
-	vmKeeper common_vm.VMStorage,
-) Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramStore params.Subspace, vmKeeper common_vm.VMStorage) Keeper {
 	return Keeper{
-		paramstore: paramstore.WithKeyTable(types.ParamKeyTable()),
-		storeKey:   storeKey,
 		cdc:        cdc,
+		storeKey:   storeKey,
+		paramstore: paramStore.WithKeyTable(types.ParamKeyTable()),
 		vmKeeper:   vmKeeper,
 	}
 }

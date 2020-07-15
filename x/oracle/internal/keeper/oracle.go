@@ -9,40 +9,41 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
-// GetOracles returns the oracles in the oracle store.
+// GetOracles returns oracles.
 func (k Keeper) GetOracles(ctx sdk.Context, assetCode dnTypes.AssetCode) (types.Oracles, error) {
-
 	for _, a := range k.GetAssetParams(ctx) {
 		if assetCode == a.AssetCode {
 			return a.Oracles, nil
 		}
 	}
 
-	return types.Oracles{}, fmt.Errorf("asset %q not found", assetCode)
+	return types.Oracles{}, fmt.Errorf("oracles for %q: not found", assetCode)
 }
 
-// GetOracle returns the oracle from the store or an error if not found for specific assetCode.
+// GetOracle returns an oracle for specific assetCode.
 func (k Keeper) GetOracle(ctx sdk.Context, assetCode dnTypes.AssetCode, address sdk.AccAddress) (types.Oracle, error) {
 	oracles, err := k.GetOracles(ctx, assetCode)
 	if err != nil {
-		return types.Oracle{}, fmt.Errorf("asset %q not found", assetCode)
+		return types.Oracle{}, err
 	}
+
 	for _, o := range oracles {
 		if address.Equals(o.Address) {
 			return o, nil
 		}
 	}
-	return types.Oracle{}, fmt.Errorf("oracle %q not found for asset %q", address, assetCode)
+
+	return types.Oracle{}, fmt.Errorf("oracle %q for asset %q: not found", address, assetCode)
 }
 
-// AddOracle adds the oracle to the oracle store for specific assetCode.
+// AddOracle adds an oracle to specific assetCode.
 func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, address sdk.AccAddress) error {
-	if !k.IsNominee(ctx, nominee) {
-		return fmt.Errorf("%q is not a valid nominee", nominee)
+	if err := k.IsNominee(ctx, nominee); err != nil {
+		return err
 	}
 
 	if _, err := k.GetOracle(ctx, assetCode, address); err == nil {
-		return fmt.Errorf("oracle %q already exists for asset %q", address, assetCode)
+		return fmt.Errorf("oracle %q for asset %q: already exists", address, assetCode)
 	}
 
 	assets := k.GetAssetParams(ctx)
@@ -63,13 +64,13 @@ func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode dnTypes.Ass
 		return nil
 	}
 
-	return fmt.Errorf("asset %q not found", assetCode)
+	return fmt.Errorf("asset %q: not found", assetCode)
 }
 
-// SetOracles sets the oracle store for specific assetCode.
+// SetOracles sets (overwrites) oracles for specific assetCode.
 func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, addresses types.Oracles) error {
-	if !k.IsNominee(ctx, nominee) {
-		return fmt.Errorf("%q is not a valid nominee", nominee)
+	if err := k.IsNominee(ctx, nominee); err != nil {
+		return err
 	}
 
 	assets := k.GetAssetParams(ctx)
@@ -89,5 +90,5 @@ func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode dnTypes.As
 		return nil
 	}
 
-	return fmt.Errorf("asset %q not found", assetCode)
+	return fmt.Errorf("asset %q: not found", assetCode)
 }

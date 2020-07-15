@@ -16,9 +16,10 @@ import (
 func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) types.CurrentPrice {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(types.CurrentPricePrefix + assetCode))
-	// TODO panic or return error if not found
+
 	var price types.CurrentPrice
 	k.cdc.MustUnmarshalBinaryBare(bz, &price)
+
 	return price
 }
 
@@ -26,8 +27,10 @@ func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) ty
 func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode dnTypes.AssetCode, blockHeight int64) []types.PostedPrice {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
+
 	var prices []types.PostedPrice
 	k.cdc.MustUnmarshalBinaryBare(bz, &prices)
+
 	return prices
 }
 

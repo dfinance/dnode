@@ -5,7 +5,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// MsgPostPrice struct representing a adding asset message.
+// Client message to add a new asset.
 type MsgAddAsset struct {
 	// Nominee address
 	Nominee sdk.AccAddress `json:"nominee" yaml:"nominee"`
@@ -13,13 +13,13 @@ type MsgAddAsset struct {
 	Asset Asset `json:"asset" yaml:"asset"`
 }
 
-// Route Implements Msg.
+// Implements sdk.Msg interface.
 func (msg MsgAddAsset) Route() string { return RouterKey }
 
-// Type Implements Msg.
+// Implements sdk.Msg interface.
 func (msg MsgAddAsset) Type() string { return "add_asset" }
 
-// ValidateBasic does a simple validation check that doesn't require access to any other information.
+// Implements sdk.Msg interface.
 func (msg MsgAddAsset) ValidateBasic() error {
 	if err := msg.Asset.ValidateBasic(); err != nil {
 		return err
@@ -31,22 +31,19 @@ func (msg MsgAddAsset) ValidateBasic() error {
 	return nil
 }
 
-// GetSignBytes Implements Msg.
+// Implements sdk.Msg interface.
 func (msg MsgAddAsset) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
-// GetSigners Implements Msg.
+// Implements sdk.Msg interface.
 func (msg MsgAddAsset) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Nominee}
 }
 
 // NewMsgAddAsset creates a new AddAsset message.
-func NewMsgAddAsset(
-	nominee sdk.AccAddress,
-	asset Asset,
-) MsgAddAsset {
+func NewMsgAddAsset(nominee sdk.AccAddress, asset Asset, ) MsgAddAsset {
 	return MsgAddAsset{
 		Asset:   asset,
 		Nominee: nominee,

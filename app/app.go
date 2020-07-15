@@ -369,8 +369,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 
 	// OracleKeeper collects asset pair exchange price from various oracles.
 	app.oracleKeeper = oracle.NewKeeper(
-		keys[oracle.StoreKey],
 		cdc,
+		keys[oracle.StoreKey],
 		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
 		app.vmKeeper,
 	)

@@ -19,12 +19,11 @@ type Asset struct {
 	Active bool `json:"active" yaml:"active"`
 }
 
-// String implement fmt.Stringer for the Asset type.
 func (a Asset) String() string {
-	return fmt.Sprintf(`Asset:
-	Asset Code: %s
-	Oracles: %s
-	Active: %t`,
+	return fmt.Sprintf("Asset:\n"+
+		"  AssetCode: %s\n"+
+		"  Oracles: %s\n"+
+		"  Active: %v",
 		a.AssetCode, a.Oracles, a.Active)
 }
 
@@ -42,11 +41,7 @@ func (a Asset) ValidateBasic() error {
 }
 
 // NewAsset creates a new asset
-func NewAsset(
-	assetCode dnTypes.AssetCode,
-	oracles Oracles,
-	active bool,
-) Asset {
+func NewAsset(assetCode dnTypes.AssetCode, oracles Oracles, active bool) Asset {
 	return Asset{
 		AssetCode: assetCode,
 		Oracles:   oracles,
@@ -54,15 +49,19 @@ func NewAsset(
 	}
 }
 
-// Assets array type for oracle.
+// Assets slice type for oracle.
 type Assets []Asset
 
-// String implements fmt.Stringer for the Assets type.
-func (as Assets) String() string {
-	out := "Assets:\n"
-	for _, a := range as {
-		out += fmt.Sprintf("%s\n", a.String())
+func (list Assets) String() string {
+	strBuilder := strings.Builder{}
+
+	strBuilder.WriteString("Assets:\n")
+	for i, asset := range list {
+		strBuilder.WriteString(asset.String())
+		if i < len(list) - 1 {
+			strBuilder.WriteString("\n")
+		}
 	}
 
-	return strings.TrimSpace(out)
+	return strBuilder.String()
 }

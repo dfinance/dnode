@@ -9,23 +9,23 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
-// GetAsset returns the asset if it is in the oracle system.
+// GetAsset returns an asset if exists.
 func (k Keeper) GetAsset(ctx sdk.Context, assetCode dnTypes.AssetCode) (types.Asset, bool) {
 	assets := k.GetAssetParams(ctx)
-
 	for i := range assets {
 		if assets[i].AssetCode == assetCode {
 			return assets[i], true
 		}
 	}
+
 	return types.Asset{}, false
 
 }
 
 // SetAsset overwrites existing asset for specific assetCode.
 func (k Keeper) SetAsset(ctx sdk.Context, nominee string, asset types.Asset) error {
-	if !k.IsNominee(ctx, nominee) {
-		return fmt.Errorf("%q is not a valid nominee", nominee)
+	if err := k.IsNominee(ctx, nominee); err != nil {
+		return err
 	}
 
 	assets := k.GetAssetParams(ctx)
@@ -45,17 +45,17 @@ func (k Keeper) SetAsset(ctx sdk.Context, nominee string, asset types.Asset) err
 		return nil
 	}
 
-	return fmt.Errorf("asset %q not found", asset.AssetCode)
+	return fmt.Errorf("asset %q: not found", asset.AssetCode)
 }
 
-// AddAsset adds non-existing asset to the store.
+// AddAsset adds non-existing asset.
 func (k Keeper) AddAsset(ctx sdk.Context, nominee string, asset types.Asset) error {
-	if !k.IsNominee(ctx, nominee) {
-		return fmt.Errorf("%q is not a valid nominee", nominee)
+	if err := k.IsNominee(ctx, nominee); err != nil {
+		return err
 	}
 
 	if _, exists := k.GetAsset(ctx, asset.AssetCode); exists {
-		return fmt.Errorf("asset %q already exists", asset.AssetCode)
+		return fmt.Errorf("asset %q: already exists", asset.AssetCode)
 	}
 
 	assets := k.GetAssetParams(ctx)

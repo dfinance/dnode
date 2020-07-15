@@ -7,11 +7,11 @@ import (
 )
 
 const (
-	ModuleName         = "oracle"                    // ModuleKey is the name of the module
-	StoreKey           = ModuleName                  // StoreKey is the store key string for gov
-	RouterKey          = ModuleName                  // RouterKey is the message route for gov
-	QuerierRoute       = ModuleName                  // QuerierRoute is the querier route for gov
-	DefaultParamspace  = ModuleName                  // Parameter store default namestore
+	ModuleName         = "oracle"
+	StoreKey           = ModuleName
+	RouterKey          = ModuleName
+	DefaultParamspace  = ModuleName
+	//
 	RawPriceFeedPrefix = StoreKey + ":raw:"          // Store prefix for the raw oracle of an asset
 	CurrentPricePrefix = StoreKey + ":currentprice:" // Store prefix for the current price of an asset
 	AssetPrefix        = StoreKey + ":assets"        // Store Prefix for the assets in the oracle system

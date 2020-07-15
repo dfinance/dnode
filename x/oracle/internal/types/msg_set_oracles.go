@@ -3,10 +3,11 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
-// MsgSetOracle struct representing a new nominee based oracle.
+// Client message to set oracle source for an existing asset.
 type MsgSetOracles struct {
 	// Array of oracles addresses
 	Oracles Oracles `json:"oracles" yaml:"oracles"`
@@ -16,7 +17,13 @@ type MsgSetOracles struct {
 	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code"`
 }
 
-// ValidateBasic does a simple validation check that doesn't require access to any other information.
+// Implements sdk.Msg interface.
+func (msg MsgSetOracles) Route() string { return RouterKey }
+
+// Implements sdk.Msg interface.
+func (msg MsgSetOracles) Type() string { return "set_oracles" }
+
+// Implements sdk.Msg interface.
 func (msg MsgSetOracles) ValidateBasic() error {
 	if len(msg.Oracles) == 0 {
 		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "empty oracle addresses array")
@@ -32,29 +39,19 @@ func (msg MsgSetOracles) ValidateBasic() error {
 	return nil
 }
 
-// Route Implements Msg.
-func (msg MsgSetOracles) Route() string { return RouterKey }
-
-// Type Implements Msg.
-func (msg MsgSetOracles) Type() string { return "set_oracles" }
-
-// GetSignBytes Implements Msg.
+// Implements sdk.Msg interface.
 func (msg MsgSetOracles) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
-// GetSigners Implements Msg.
+// Implements sdk.Msg interface.
 func (msg MsgSetOracles) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Nominee}
 }
 
 // MsgAddOracle creates a new SetOracle message.
-func NewMsgSetOracles(
-	nominee sdk.AccAddress,
-	assetCode dnTypes.AssetCode,
-	oracles Oracles,
-) MsgSetOracles {
+func NewMsgSetOracles(nominee sdk.AccAddress, assetCode dnTypes.AssetCode, oracles Oracles, ) MsgSetOracles {
 	return MsgSetOracles{
 		Oracles:   oracles,
 		AssetCode: assetCode,

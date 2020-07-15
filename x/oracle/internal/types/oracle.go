@@ -7,13 +7,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// Oracle struct that documents which address an oracle is using.
+// Oracle struct contains oracle source meta.
 type Oracle struct {
 	// Address
 	Address sdk.AccAddress `json:"address" yaml:"address"`
 }
 
-// String implements fmt.Stringer.
 func (o Oracle) String() string {
 	return fmt.Sprintf(`Address: %s`, o.Address)
 }
@@ -25,15 +24,19 @@ func NewOracle(address sdk.AccAddress) Oracle {
 	}
 }
 
-// Oracles array type for oracle.
+// Oracles slice type for oracle.
 type Oracles []Oracle
 
-// String implements fmt.Stringer.
-func (os Oracles) String() string {
-	out := "Oracles:\n"
-	for _, o := range os {
-		out += fmt.Sprintf("%s\n", o.String())
+func (list Oracles) String() string {
+	strBuilder := strings.Builder{}
+
+	strBuilder.WriteString("Oracles:\n")
+	for i, oracle := range list {
+		strBuilder.WriteString(oracle.String())
+		if i < len(list) - 1 {
+			strBuilder.WriteString("\n")
+		}
 	}
 
-	return strings.TrimSpace(out)
+	return strBuilder.String()
 }

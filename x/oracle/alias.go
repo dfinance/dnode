@@ -51,7 +51,6 @@ var (
 	DefaultGenesisState = types.DefaultGenesisState
 	DefaultParams       = types.DefaultParams
 	NewParams           = types.NewParams
-	ParamKeyTable       = types.ParamKeyTable
 	NewAsset            = types.NewAsset
 	NewMsgPostPrice     = types.NewMsgPostPrice
 	// errors

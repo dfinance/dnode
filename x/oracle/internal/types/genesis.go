@@ -6,7 +6,6 @@ import (
 
 // GenesisState oracle state that must be provided at genesis.
 type GenesisState struct {
-	// Params object
 	Params Params `json:"asset_params" yaml:"asset_params"`
 }
 

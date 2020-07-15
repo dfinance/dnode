@@ -1,4 +1,5 @@
-// Oracle module receiving data from external exchange rate providers and provide current exchange rate information.
+// Oracle module receives rawPrices data per asset from external exchange rate providers and provides current exchange rate information.
+// Module uses nominee account as an admin account to add/modify assets.
 package oracle
 
 import (
