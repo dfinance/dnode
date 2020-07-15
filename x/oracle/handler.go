@@ -3,6 +3,8 @@ package oracle
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 // NewHandler handles all oracle type messages.
@@ -94,6 +96,12 @@ func handleMsgSetAsset(ctx sdk.Context, k Keeper, msg MsgSetAsset) (*sdk.Result,
 	if err := k.SetAsset(ctx, msg.Nominee.String(), msg.Asset); err != nil {
 		return nil, sdkErrors.Wrap(ErrInternal, err.Error())
 	}
+
+	ctx.EventManager().EmitEvent(types.NewAssetAddedEvent(msg.Asset))
+	ctx.EventManager().EmitEvent(sdk.NewEvent(
+		sdk.EventTypeMessage,
+		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+	))
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

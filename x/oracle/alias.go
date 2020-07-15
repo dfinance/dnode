@@ -30,29 +30,36 @@ const (
 	RouterKey         = types.RouterKey
 	DefaultParamspace = types.DefaultParamspace
 	StoreKey          = types.StoreKey
-
+	//
 	QueryAssets    = types.QueryAssets
 	QueryRawPrices = types.QueryRawPrices
 	QueryPrice     = types.QueryPrice
+	// Event types, attribute types and values
+	EventTypePrice = types.EventTypePrice
+	//
+	AttributeAssetCode  = types.AttributeAssetCode
+	AttributePrice      = types.AttributePrice
+	AttributeReceivedAt = types.AttributeReceivedAt
 )
 
 var (
-	ModuleCdc     = types.ModuleCdc
-	NewKeeper     = keeper.NewKeeper
-	NewAsset      = types.NewAsset
-	RegisterCodec = types.RegisterCodec
+	ModuleCdc = types.ModuleCdc
 	// functions aliases
-	ErrEmptyInput       = types.ErrEmptyInput
-	ErrExpired          = types.ErrExpired
-	ErrNoValidPrice     = types.ErrNoValidPrice
-	ErrExistingAsset    = types.ErrExistingAsset
-	ErrInvalidAsset     = types.ErrInvalidAsset
-	ErrInvalidOracle    = types.ErrInvalidOracle
-	ErrInternal         = types.ErrInternal
-	DefaultGenesisState = types.DefaultGenesisState
-	NewMsgPostPrice     = types.NewMsgPostPrice
-	ParamKeyTable       = types.ParamKeyTable
-	NewParams           = types.NewParams
-	DefaultParams       = types.DefaultParams
+	RegisterCodec       = types.RegisterCodec
+	NewKeeper           = keeper.NewKeeper
 	NewQuerier          = keeper.NewQuerier
+	DefaultGenesisState = types.DefaultGenesisState
+	DefaultParams       = types.DefaultParams
+	NewParams           = types.NewParams
+	ParamKeyTable       = types.ParamKeyTable
+	NewAsset            = types.NewAsset
+	NewMsgPostPrice     = types.NewMsgPostPrice
+	// errors
+	ErrInternal      = types.ErrInternal
+	ErrEmptyInput    = types.ErrEmptyInput
+	ErrExpired       = types.ErrExpired
+	ErrNoValidPrice  = types.ErrNoValidPrice
+	ErrExistingAsset = types.ErrExistingAsset
+	ErrInvalidAsset  = types.ErrInvalidAsset
+	ErrInvalidOracle = types.ErrInvalidOracle
 )

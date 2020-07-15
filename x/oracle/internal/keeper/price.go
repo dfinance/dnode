@@ -1,13 +1,15 @@
 package keeper
 
 import (
+	"sort"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+
 	"github.com/dfinance/dnode/helpers"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
-	"sort"
-	"time"
 )
 
 // GetCurrentPrice fetches the current median price of all oracles for a specific asset.
@@ -101,6 +103,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 	store := ctx.KVStore(k.storeKey)
 	assets := k.GetAssetParams(ctx)
 
+	updatesCnt := 0
 	for _, v := range assets {
 		assetCode := v.AssetCode
 		rawPrices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
@@ -160,6 +163,17 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 		// save price to vm storage
 		accessPath := k.vmKeeper.GetOracleAccessPath(newPrice.AssetCode)
 		k.vmKeeper.SetValue(ctx, accessPath, helpers.BigToBytes(newPrice.Price, types.PriceBytesLimit))
+
+		// emit event
+		updatesCnt++
+		ctx.EventManager().EmitEvent(types.NewPriceEvent(newPrice))
+	}
+
+	if updatesCnt > 0 {
+		ctx.EventManager().EmitEvent(sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
+		))
 	}
 
 	return nil
