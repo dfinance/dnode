@@ -13,6 +13,7 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
+// Check MsgPostPrice validate basic.
 func TestOracleMsg_PostPrice(t *testing.T) {
 	t.Parallel()
 

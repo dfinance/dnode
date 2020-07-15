@@ -35,12 +35,12 @@ func TestOracle_Queries(t *testing.T) {
 		ap := oracle.Params{
 			Assets: oracle.Assets{
 				oracle.Asset{
-					AssetCode: dnTypes.AssetCode(assetCodePrefix + "0"),
+					AssetCode: dnTypes.AssetCode(assetCodePrefix + "a"),
 					Oracles:   oracle.Oracles{{Address: genAddrs[0]}, {Address: genAddrs[1]}, {Address: genAddrs[2]}},
 					Active:    true,
 				},
 				oracle.Asset{
-					AssetCode: dnTypes.AssetCode(assetCodePrefix + "1"),
+					AssetCode: dnTypes.AssetCode(assetCodePrefix + "b"),
 					Oracles:   oracle.Oracles{{Address: genAddrs[1]}},
 					Active:    true,
 				},
@@ -59,20 +59,20 @@ func TestOracle_Queries(t *testing.T) {
 		CheckRunQuery(t, app, nil, queryOracleGetAssetsPath, &response)
 		require.Len(t, response, 2)
 
-		require.Equal(t, assetCodePrefix+"0", response[0].AssetCode.String())
+		require.Equal(t, assetCodePrefix+"a", response[0].AssetCode.String())
 		require.True(t, response[0].Active)
 		require.Len(t, response[0].Oracles, 3)
 		require.Equal(t, response[0].Oracles[0].Address, genAddrs[0])
 		require.Equal(t, response[0].Oracles[1].Address, genAddrs[1])
 		require.Equal(t, response[0].Oracles[2].Address, genAddrs[2])
 
-		require.Equal(t, assetCodePrefix+"1", response[1].AssetCode.String())
+		require.Equal(t, assetCodePrefix+"b", response[1].AssetCode.String())
 		require.True(t, response[1].Active)
 		require.Len(t, response[1].Oracles, 1)
 		require.Equal(t, response[1].Oracles[0].Address, genAddrs[1])
 	}
 
-	assetCode := dnTypes.AssetCode(assetCodePrefix + "0")
+	assetCode := dnTypes.AssetCode(assetCodePrefix + "a")
 
 	// getCurrentPrice query check (no inputs yet)
 	{

@@ -356,8 +356,15 @@ func TestOracle_REST(t *testing.T) {
 
 		// non-existing assetCode
 		{
-			req, _ := ct.RestQueryOracleRawPrices("non_existing_asset", 1)
+			req, _ := ct.RestQueryOracleRawPrices("nonexisting_asset", 1)
 			req.CheckFailed(http.StatusNotFound, sdkErrors.ErrUnknownRequest)
+		}
+
+		// wrong assetCode
+		{
+			req, _ := ct.RestQueryOracleRawPrices("wrong2asset", 1)
+			respCode, _ := req.Request()
+			require.Equal(t, http.StatusBadRequest, respCode)
 		}
 	}
 
@@ -373,8 +380,15 @@ func TestOracle_REST(t *testing.T) {
 		{
 			// non-existing assetCode
 			{
-				req, _ := ct.RestQueryOraclePrice("non_existing_asset")
+				req, _ := ct.RestQueryOraclePrice("nonexisting_asset")
 				req.CheckFailed(http.StatusNotFound, sdkErrors.ErrUnknownRequest)
+			}
+
+			// wrong assetCode
+			{
+				req, _ := ct.RestQueryOraclePrice("wrong2asset")
+				respCode, _ := req.Request()
+				require.Equal(t, http.StatusBadRequest, respCode)
 			}
 		}
 	}

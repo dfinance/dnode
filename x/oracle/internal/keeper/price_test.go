@@ -13,6 +13,7 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
+// Check CheckPriceReceiveTime method with different timestamp sets.
 func TestOracleKeeper_CheckPriceReceiveTime(t *testing.T) {
 	t.Parallel()
 
@@ -42,6 +43,7 @@ func TestOracleKeeper_CheckPriceReceiveTime(t *testing.T) {
 	}
 }
 
+// Check SetPrice method, checking various sets of arguments.
 func TestOracleKeeper_SetPrice(t *testing.T) {
 	t.Parallel()
 
@@ -90,6 +92,7 @@ func TestOracleKeeper_SetPrice(t *testing.T) {
 	}
 }
 
+// Check GetRawPrice method with a valid scenario.
 func TestOracleKeeper_GetRawPrice(t *testing.T) {
 	t.Parallel()
 
@@ -113,6 +116,7 @@ func TestOracleKeeper_GetRawPrice(t *testing.T) {
 	}
 }
 
+// Check CurrentPrice method and finding average price for different numbers of oracles.
 func TestOracleKeeper_CurrentPrice(t *testing.T) {
 	t.Parallel()
 

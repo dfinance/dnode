@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Check MsgAddOracle validate basic.
 func TestOracleMsg_AddOracle(t *testing.T) {
 	t.Parallel()
 

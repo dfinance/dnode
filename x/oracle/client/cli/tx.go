@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"fmt"
+	"github.com/dfinance/dnode/helpers"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -13,23 +14,23 @@ import (
 	"github.com/spf13/cobra"
 	tmtime "github.com/tendermint/tendermint/types/time"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
-// GetCmdPostPrice cli command for posting prices.
+// GetCmdPostPrice returns tx command for posting price for a particular asset.
 func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "postprice [fromKeyOrAddress] [assetCode] [price] [receivedAt]",
-		Short: "post the latest price for a particular asset",
-		Args:  cobra.ExactArgs(4),
+	cmd := &cobra.Command{
+		Use:     "postprice [nomineeKey] [assetCode] [price] [receivedAt]",
+		Example: "dncli oracle postprice wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt 100 1594732456",
+		Short:   "post the latest price for a particular asset",
+		Args:    cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 
-			assetCode := dnTypes.AssetCode(args[1])
-			if err := assetCode.Validate(); err != nil {
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
 				return err
 			}
 
@@ -51,23 +52,32 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+
+	helpers.BuildCmdHelp(cmd, []string{
+		"nomineeKey [string] nominee key or address",
+		"assetCode [string] asset code symbol",
+		"price [uint] uint format price",
+		"receivedAt [uint] unix timestamp",
+	})
+
+	return cmd
 }
 
-// GetCmdAddOracle cli command for create new oracle.
+// GetCmdAddOracle returns tx command for adding new oracle for a particular asset.
 func GetCmdAddOracle(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:     "add-oracle [nomineeKey] [assetCode] [oracle_address]",
+	cmd := &cobra.Command{
+		Use:     "add-oracle [nomineeKey] [assetCode] [oracleAddress]",
 		Example: "dncli oracle add-oracle wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
-		Short:   "Create a new oracle",
+		Short:   "Add a new oracle for a particular asset",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 
-			assetCode := dnTypes.AssetCode(args[1])
-			if err := assetCode.Validate(); err != nil {
-				return fmt.Errorf("%s argument %q: %w", "assetCode", args[1], err)
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
 			}
 
 			oracleAddr, err := sdk.AccAddressFromBech32(args[2])
@@ -80,23 +90,31 @@ func GetCmdAddOracle(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+
+	helpers.BuildCmdHelp(cmd, []string{
+		"nomineeKey [string] nominee key or address",
+		"assetCode [string] asset code symbol",
+		"oracleAddresses [string] oracle address",
+	})
+
+	return cmd
 }
 
-// GetCmdSetOracles cli command for set a list of oracles for a denom.
+// GetCmdSetOracles returns tx command for sets oracles for a particular asset.
 func GetCmdSetOracles(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:     "set-oracles [nomineeKey] [assetCode] [oracle_addresses]",
+	cmd := &cobra.Command{
+		Use:     "set-oracles [nomineeKey] [assetCode] [oracleAddresses]",
 		Example: "dncli oracle set-oracles wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet10ff6y8gm2re6awfwz5dvesar8jq02tx7vcvuxn,wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
-		Short:   "Sets a list of oracles for a denom",
+		Short:   "Sets a list of oracles for a particular asset",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 
-			assetCode := dnTypes.AssetCode(args[1])
-			if err := assetCode.Validate(); err != nil {
-				return fmt.Errorf("%s argument %q: %w", "assetCode", args[1], err)
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
 			}
 
 			oracles, err := types.ParseOracles(args[2])
@@ -109,23 +127,31 @@ func GetCmdSetOracles(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+
+	helpers.BuildCmdHelp(cmd, []string{
+		"nomineeKey [string] nominee key or address",
+		"assetCode [string] asset code symbol",
+		"oracleAddresses [string] comma separated list of oracle addresses",
+	})
+
+	return cmd
 }
 
-// GetCmdAddAsset cli command for create a new asset.
+// GetCmdAddAsset returns tx command for add a new asset for a list of oracles.
 func GetCmdAddAsset(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:     "add-asset [nomineeKey] [assetCode] [oracles]",
+	cmd := &cobra.Command{
+		Use:     "add-asset [nomineeKey] [assetCode] [oracleAddresses]",
 		Example: "dncli oracle add-asset wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
-		Short:   "Create a new asset",
+		Short:   "Add a new asset for a list of oracles",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 
-			assetCode := dnTypes.AssetCode(args[1])
-			if err := assetCode.Validate(); err != nil {
-				return fmt.Errorf("%s argument %q: %w", "assetCode", args[1], err)
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
 			}
 
 			oracles, err := types.ParseOracles(args[2])
@@ -146,23 +172,31 @@ func GetCmdAddAsset(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+
+	helpers.BuildCmdHelp(cmd, []string{
+		"nomineeKey [string] nominee key or address",
+		"assetCode [string] asset code symbol",
+		"oracleAddresses [string] comma separated list of oracle addresses",
+	})
+
+	return cmd
 }
 
-// GetCmdSetAsset cli command for set asset.
+// GetCmdSetAsset returns tx command for set the existing asset for a list of oracles.
 func GetCmdSetAsset(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:     "set-asset [nomineeKey] [assetCode] [oracles]",
+	cmd := &cobra.Command{
+		Use:     "set-asset [nomineeKey] [assetCode] [oracleAddresses]",
 		Example: "dncli oracle set-asset wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m eth_usdt wallet1a7260dyzp487r7wghr99f6r3h2h2z4gk4d740k",
-		Short:   "Create a set asset",
+		Short:   "Set the existing asset for a list of oracles",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			inBuf := bufio.NewReader(cmd.InOrStdin())
 			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContextWithInputAndFrom(inBuf, args[0]).WithCodec(cdc)
 
-			assetCode := dnTypes.AssetCode(args[1])
-			if err := assetCode.Validate(); err != nil {
-				return fmt.Errorf("%s argument %q: %w", "assetCode", args[1], err)
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
 			}
 
 			oracles, err := types.ParseOracles(args[2])
@@ -183,4 +217,12 @@ func GetCmdSetAsset(cdc *codec.Codec) *cobra.Command {
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
+
+	helpers.BuildCmdHelp(cmd, []string{
+		"nomineeKey [string] nominee key or address",
+		"assetCode [string] asset code symbol",
+		"oracleAddresses [string] comma separated list of oracle addresses",
+	})
+
+	return cmd
 }

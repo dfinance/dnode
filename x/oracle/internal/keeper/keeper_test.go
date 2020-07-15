@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Check IsNominee validator method.
 func TestOracleKeeper_IsNominee(t *testing.T) {
 	t.Parallel()
 

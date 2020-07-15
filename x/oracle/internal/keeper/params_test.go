@@ -11,6 +11,7 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
+// Check Params for the set/get and specific methods for the asset, nominee, price parameters.
 func TestOracleKeeper_Params(t *testing.T) {
 	t.Parallel()
 	input := NewTestInput(t)

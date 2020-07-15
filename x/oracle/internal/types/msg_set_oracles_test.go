@@ -11,6 +11,7 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
+// Check MsgSetOracles validate basic.
 func TestOracleMsg_SetOracle(t *testing.T) {
 	t.Parallel()
 

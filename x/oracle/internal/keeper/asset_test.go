@@ -11,6 +11,7 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
+// Check SetAsset method with various sets of arguments.
 func TestOracleKeeper_SetAsset(t *testing.T) {
 	t.Parallel()
 
@@ -42,6 +43,7 @@ func TestOracleKeeper_SetAsset(t *testing.T) {
 	}
 }
 
+// Check AddAsset method with various sets of arguments.
 func TestOracleKeeper_AddAsset(t *testing.T) {
 	t.Parallel()
 
@@ -74,6 +76,7 @@ func TestOracleKeeper_AddAsset(t *testing.T) {
 	}
 }
 
+// Check GetAsset method returning values.
 func TestOracleKeeper_GetAsset(t *testing.T) {
 	t.Parallel()
 

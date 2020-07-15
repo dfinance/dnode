@@ -2,7 +2,7 @@ package rest
 
 import (
 	"fmt"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/helpers"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,22 +18,22 @@ import (
 )
 
 const (
-	restName        = "assetCode"
-	blockHeightName = "blockHeight"
+	assetCodeKey   = "assetCode"
+	blockHeightKey = "blockHeight"
 )
 
 type postPriceReq struct {
-	BaseReq    rest.BaseReq      `json:"base_req" yaml:"base_req"`
-	AssetCode  dnTypes.AssetCode `json:"asset_code" example:"dfi"`                                            // AssetCode
-	Price      string            `json:"price" example:"100"`                                                 // BigInt
-	ReceivedAt string            `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
+	BaseReq    rest.BaseReq `json:"base_req" yaml:"base_req"`
+	AssetCode  string       `json:"asset_code" example:"dfi"`                                            // AssetCode
+	Price      string       `json:"price" example:"100"`                                                 // BigInt
+	ReceivedAt string       `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
 // RegisterRoutes Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 	r.HandleFunc(fmt.Sprintf("/%s/rawprices", storeName), postPriceHandler(cliCtx)).Methods("PUT")
-	r.HandleFunc(fmt.Sprintf("/%s/rawprices/{%s}/{%s}", storeName, restName, blockHeightName), getRawPricesHandler(cliCtx, storeName)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/currentprice/{%s}", storeName, restName), getCurrentPriceHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/rawprices/{%s}/{%s}", storeName, assetCodeKey, blockHeightKey), getRawPricesHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/currentprice/{%s}", storeName, assetCodeKey), getCurrentPriceHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/assets", storeName), getAssetsHandler(cliCtx, storeName)).Methods("GET")
 }
 
@@ -62,6 +62,12 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		assetCode, err := helpers.ParseAssetCodeParam("assetCode", req.AssetCode, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("invalid %s parameter: %v", "assetCode", err))
+			return
+		}
+
 		addr, err := sdk.AccAddressFromBech32(baseReq.From)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -82,7 +88,7 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		receivedAt := tmtime.Canonical(time.Unix(receivedAtInt.Int64(), 0))
 
 		// create the message
-		msg := types.NewMsgPostPrice(addr, req.AssetCode, price, receivedAt)
+		msg := types.NewMsgPostPrice(addr, assetCode, price, receivedAt)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -108,8 +114,14 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		assetCode := vars[restName]
-		blockHeight, err := strconv.ParseInt(vars[blockHeightName], 10, 64)
+
+		assetCode, err := helpers.ParseAssetCodeParam("assetCode", vars[assetCodeKey], helpers.ParamTypeRestPath)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("invalid %s parameter: %v", assetCodeKey, err))
+			return
+		}
+
+		blockHeight, err := strconv.ParseInt(vars[blockHeightKey], 10, 64)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("invalid blockHeight parameter: %v", err))
 			return
@@ -146,13 +158,19 @@ func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.Handl
 func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		paramType := vars[restName]
+
+		assetCode, err := helpers.ParseAssetCodeParam("assetCode", vars[assetCodeKey], helpers.ParamTypeRestPath)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("invalid %s parameter: %v", assetCodeKey, err))
+			return
+		}
+
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {
 			return
 		}
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/price/%s", storeName, paramType), nil)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/price/%s", storeName, assetCode), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return

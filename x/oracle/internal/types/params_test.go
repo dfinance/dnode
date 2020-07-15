@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOracle_Params(t *testing.T) {
+// Check Params validate method.
+func TestOracle_Params_Valid(t *testing.T) {
 	t.Parallel()
 
 	oracles := []Oracle{NewOracle(sdk.AccAddress([]byte("oracle")))}

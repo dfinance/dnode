@@ -11,6 +11,7 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
+// Check querier method queryCurrentPrice.
 func TestOracleKeeper_QueryCurrentPrice(t *testing.T) {
 	t.Parallel()
 
@@ -40,6 +41,7 @@ func TestOracleKeeper_QueryCurrentPrice(t *testing.T) {
 	}
 }
 
+// Check querier method queryRawPrices.
 func TestOracleKeeper_QueryRawPrices(t *testing.T) {
 	t.Parallel()
 
@@ -84,6 +86,7 @@ func TestOracleKeeper_QueryRawPrices(t *testing.T) {
 	}
 }
 
+// Check querier method queryAssets.
 func TestOracleKeeper_QueryAssets(t *testing.T) {
 	t.Parallel()
 

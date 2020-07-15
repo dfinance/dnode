@@ -3,25 +3,25 @@ package cli
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/dfinance/dnode/helpers"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
-// Convert asset code in hex.
+// GetCmdAssetCodeHex returns converted asset code in the hex format.
 func GetCmdAssetCodeHex() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "asset-code-hex [assetCode]",
 		Short: "get asset code in hex",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			assetCode := dnTypes.AssetCode(args[0])
-			if err := assetCode.Validate(); err != nil {
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
 				return err
 			}
 
@@ -30,19 +30,25 @@ func GetCmdAssetCodeHex() *cobra.Command {
 			return nil
 		},
 	}
+
+	helpers.BuildCmdHelp(cmd, []string{
+		"assetCode [string] asset code symbol",
+	})
+
+	return cmd
 }
 
-// GetCmdCurrentPrice queries the current price of an asset.
+// GetCmdCurrentPrice returns the current price of an asset.
 func GetCmdCurrentPrice(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "price [assetCode]",
 		Short: "get the current price of an asset",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			assetCode := dnTypes.AssetCode(args[0])
-			if err := assetCode.Validate(); err != nil {
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
 				return err
 			}
 
@@ -56,9 +62,15 @@ func GetCmdCurrentPrice(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			return cliCtx.PrintOutput(out)
 		},
 	}
+
+	helpers.BuildCmdHelp(cmd, []string{
+		"assetCode [string] asset code symbol",
+	})
+
+	return cmd
 }
 
-// GetCmdRawPrices queries the current price of an asset.
+// GetCmdRawPrices returns the raw price of an asset.
 func GetCmdRawPrices(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "rawprices [assetCode] [blockHeight]",
@@ -67,7 +79,10 @@ func GetCmdRawPrices(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			assetCode := args[0]
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
 
 			blockHeight, err := strconv.ParseInt(args[1], 10, 64)
 			if err != nil {
@@ -87,11 +102,11 @@ func GetCmdRawPrices(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdAssets queries list of assets in the oracle.
+// GetCmdAssets returns the list of assets of an oracle.
 func GetCmdAssets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "assets",
-		Short: "get the assets in the oracle",
+		Short: "get the list of assets in the oracle",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryAssets), nil)

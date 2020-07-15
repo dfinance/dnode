@@ -10,6 +10,7 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
+// Check AddOracle method with various sets of arguments.
 func TestOracleKeeper_AddOracle(t *testing.T) {
 	t.Parallel()
 
@@ -43,6 +44,7 @@ func TestOracleKeeper_AddOracle(t *testing.T) {
 	}
 }
 
+// Check SetOracle method with various sets of arguments.
 func TestOracleKeeper_SetOracle(t *testing.T) {
 	t.Parallel()
 

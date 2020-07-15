@@ -2,7 +2,7 @@ package cli
 
 import (
 	"fmt"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/helpers"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -20,11 +20,11 @@ const (
 	flagClientHome = "home-client"
 )
 
-// AddOracleNomineesCmd returns add-oracle-nomenees cobra Command.
+// AddOracleNomineesCmd returns add-oracle-nominees cobra Command for adding a nominee to genesis.
 func AddOracleNomineesCmd(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-oracle-nominees-gen [address1,address2...]",
+		Use:   "add-oracle-nominees-gen [nomineeAddresses]",
 		Short: "Add oracle nominees to genesis.json",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -80,42 +80,34 @@ func AddOracleNomineesCmd(ctx *server.Context, cdc *codec.Codec,
 		},
 	}
 
+	helpers.BuildCmdHelp(cmd, []string{
+		"nomineeAddresses [string] comma separated list of nominee addresses",
+	})
+
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(flagClientHome, defaultClientHome, "client's home directory")
 	return cmd
 }
 
-// AddAssetGenCmd returns add-asset cobra Command.
+// AddAssetGenCmd returns add-asset cobra Command for adding an asset to genesis.
 func AddAssetGenCmd(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-oracle-asset-gen [assetCode] [oracles]",
+		Use:   "add-oracle-asset-gen [assetCode] [oracleAddresses]",
 		Short: "Add oracle asset to genesis.json",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
-			assetCodeStr := args[0]
-			if len(assetCodeStr) == 0 {
-				return fmt.Errorf("%s argument %q: empty", "assetCode", args[0])
-			}
-
-			assetCode := dnTypes.AssetCode(assetCodeStr)
-			err := assetCode.Validate()
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
-			oracleArgs := strings.Split(args[1], ",")
-			if len(oracleArgs) == 0 {
-				return fmt.Errorf("%s argument: empty slice", "oracles")
+			oracles, err := types.ParseOracles(args[1])
+			if err != nil {
+				return fmt.Errorf("%s argument %q: %v", "oracles", args[1], err)
 			}
-
-			oracles := make(types.Oracles, 0, len(oracleArgs))
-			for i, arg := range oracleArgs {
-				addr, err := sdk.AccAddressFromBech32(arg)
-				if err != nil {
-					return fmt.Errorf("%s argument: %q address at index %d: %w", "oracles", arg, i, err)
-				}
-				oracles = append(oracles, types.Oracle{Address: addr})
+			if len(oracles) == 0 {
+				return fmt.Errorf("%s argument %q: empty slice", "oracles", args[1])
 			}
 
 			config := ctx.Config
@@ -161,6 +153,11 @@ func AddAssetGenCmd(ctx *server.Context, cdc *codec.Codec,
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		},
 	}
+
+	helpers.BuildCmdHelp(cmd, []string{
+		"assetCode [string] asset code symbol",
+		"oracleAddresses [string] comma separated list of oracle addresses",
+	})
 
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(flagClientHome, defaultClientHome, "client's home directory")

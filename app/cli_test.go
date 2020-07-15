@@ -261,7 +261,7 @@ func TestOracle_CLI(t *testing.T) {
 			}
 			// invalid assetCode
 			{
-				tx := ct.TxOracleAddAsset(nomineeAddr, "Wrong_Asset", assetOracle1)
+				tx := ct.TxOracleAddAsset(nomineeAddr, "wrongasset", assetOracle1)
 				tx.CheckFailedWithErrorSubstring("assetCode argument")
 			}
 			// invalid oracles

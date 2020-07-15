@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Check MsgAddAsset validate basic.
 func TestOracleMsg_AddAsset(t *testing.T) {
 	t.Parallel()
 

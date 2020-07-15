@@ -9,14 +9,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	authexported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/mock"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
@@ -26,67 +24,7 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
-
-type testHelper struct {
-	mApp     *mock.App
-	keeper   Keeper
-	addrs    []sdk.AccAddress
-	pubKeys  []crypto.PubKey
-	privKeys []crypto.PrivKey
-}
-
-type VMStorageImpl struct {
-}
-
-func NewVMStorage() VMStorageImpl {
-	return VMStorageImpl{}
-}
-
-func (storage VMStorageImpl) GetOracleAccessPath(_ dnTypes.AssetCode) *vm_grpc.VMAccessPath {
-	return &vm_grpc.VMAccessPath{}
-}
-
-func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
-}
-
-func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
-	return nil
-}
-
-func (storage VMStorageImpl) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
-	return false
-}
-
-func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
-}
-
-func getMockApp(t *testing.T, numGenAccs int, genState types.GenesisState, genAccs []authexported.Account) testHelper {
-	mApp := mock.NewApp()
-	types.RegisterCodec(mApp.Cdc)
-	keyPricefeed := sdk.NewKVStoreKey(types.StoreKey)
-
-	pk := mApp.ParamsKeeper
-	keeper := NewKeeper(keyPricefeed, mApp.Cdc, pk.Subspace(types.DefaultParamspace), NewVMStorage())
-
-	require.NoError(t, mApp.CompleteSetup(keyPricefeed))
-
-	valTokens := sdk.TokensFromConsensusPower(42)
-	var (
-		addrs    []sdk.AccAddress
-		pubKeys  []crypto.PubKey
-		privKeys []crypto.PrivKey
-	)
-
-	if len(genAccs) == 0 {
-		genAccs, addrs, pubKeys, privKeys = mock.CreateGenAccounts(numGenAccs,
-			sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, valTokens)))
-	}
-
-	mock.SetGenesis(mApp, genAccs)
-	return testHelper{mApp, keeper, addrs, pubKeys, privKeys}
-}
 
 type TestInput struct {
 	cdc *codec.Codec
@@ -114,6 +52,7 @@ type TestInput struct {
 	stdNominee   string
 }
 
+// NewTestInput returned mocked object for testing
 func NewTestInput(t *testing.T) TestInput {
 	input := TestInput{
 		cdc:        codec.New(),
