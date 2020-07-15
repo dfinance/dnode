@@ -18,13 +18,13 @@ func TestOracleKeeper_IsNominee(t *testing.T) {
 
 	// is nominee valid
 	{
-		ok := keeper.IsNominee(ctx, input.stdNominee)
-		require.True(t, ok)
+		err := keeper.IsNominee(ctx, input.stdNominee)
+		require.NoError(t, err)
 	}
 
 	// is nominee false
 	{
-		ok := keeper.IsNominee(ctx, "someNominee")
-		require.False(t, ok)
+		err := keeper.IsNominee(ctx, "someNominee")
+		require.Error(t, err)
 	}
 }

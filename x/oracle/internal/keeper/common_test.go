@@ -84,7 +84,7 @@ func NewTestInput(t *testing.T) TestInput {
 	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tKeyParams)
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
-	input.keeper = NewKeeper(input.keyOracle, input.cdc, input.paramsKeeper.Subspace(types.DefaultParamspace), input.vmStorage)
+	input.keeper = NewKeeper(input.cdc, input.keyOracle, input.paramsKeeper.Subspace(types.DefaultParamspace), input.vmStorage)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
