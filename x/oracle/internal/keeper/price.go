@@ -15,7 +15,7 @@ import (
 // GetCurrentPrice fetches the current median price of all oracles for a specific asset.
 func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) types.CurrentPrice {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get([]byte(types.CurrentPricePrefix + assetCode))
+	bz := store.Get(types.GetCurrentPriceKey(assetCode))
 
 	var price types.CurrentPrice
 	k.cdc.MustUnmarshalBinaryBare(bz, &price)
@@ -161,7 +161,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 			ReceivedAt: medianReceivedAt,
 		}
 
-		store.Set([]byte(types.CurrentPricePrefix+assetCode), k.cdc.MustMarshalBinaryBare(newPrice))
+		store.Set(types.GetCurrentPriceKey(assetCode), k.cdc.MustMarshalBinaryBare(newPrice))
 
 		// save price to vm storage
 		accessPath := k.vmKeeper.GetOracleAccessPath(newPrice.AssetCode)

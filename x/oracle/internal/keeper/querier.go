@@ -29,23 +29,23 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 }
 
 // queryCurrentPrice handles currentPrice query. Takes an [assetCode] and returns CurrentPrice for that asset.
-func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
+func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	assetCode := dnTypes.AssetCode(path[0])
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
 		return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "asset not found")
 	}
 	currentPrice := keeper.GetCurrentPrice(ctx, assetCode)
 
-	bz, err2 := codec.MarshalJSONIndent(keeper.cdc, currentPrice)
-	if err2 != nil {
-		panic("could not marshal result to JSON")
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, currentPrice)
+	if err != nil {
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "currentPrice marshal: %v", err)
 	}
 
 	return bz, nil
 }
 
 // queryRawPrices handles rawPrice query. Takes an [assetCode] and [blockHeight], then returns the raw []PostedPrice for that asset.
-func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
+func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	assetCode := dnTypes.AssetCode(path[0])
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
 		return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "asset not found")
@@ -57,9 +57,9 @@ func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	}
 
 	priceList := keeper.GetRawPrices(ctx, assetCode, blockHeight)
-	bz, err2 := codec.MarshalJSONIndent(keeper.cdc, priceList)
-	if err2 != nil {
-		panic("could not marshal result to JSON")
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, priceList)
+	if err != nil {
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "currentPrice marshal: %v", err)
 	}
 
 	return bz, nil
