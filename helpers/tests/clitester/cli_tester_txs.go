@@ -39,19 +39,6 @@ func (ct *CLITester) TxCurrenciesWithdraw(recipientAddr, fromAddr, denom string,
 	return r
 }
 
-func (ct *CLITester) TxOracleAddAsset(nomineeAddress string, assetCode dnTypes.AssetCode, oracleAddresses ...string) *TxRequest {
-	r := ct.newTxRequest()
-	r.SetCmd(
-		"oracle",
-		"",
-		"add-asset",
-		nomineeAddress,
-		assetCode.String(),
-		strings.Join(oracleAddresses, ","))
-
-	return r
-}
-
 func (ct *CLITester) TxPoaAddValidator(fromAddr, address, ethAddress, issueID string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
@@ -94,13 +81,24 @@ func (ct *CLITester) TxPoaReplaceValidator(fromAddr, targetAddress, address, eth
 	return r
 }
 
+func (ct *CLITester) TxOracleAddAsset(nomineeAddress string, assetCode dnTypes.AssetCode, oracleAddresses ...string) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"oracle",
+		nomineeAddress,
+		"add-asset",
+		assetCode.String(),
+		strings.Join(oracleAddresses, ","))
+
+	return r
+}
+
 func (ct *CLITester) TxOracleSetAsset(nomineeAddress string, assetCode dnTypes.AssetCode, oracleAddresses ...string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"oracle",
-		"",
-		"set-asset",
 		nomineeAddress,
+		"set-asset",
 		assetCode.String(),
 		strings.Join(oracleAddresses, ","))
 
@@ -111,9 +109,8 @@ func (ct *CLITester) TxOracleAddOracle(nomineeAddress string, assetCode dnTypes.
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"oracle",
-		"",
-		"add-oracle",
 		nomineeAddress,
+		"add-oracle",
 		assetCode.String(),
 		oracleAddress)
 
@@ -124,9 +121,8 @@ func (ct *CLITester) TxOracleSetOracles(nomineeAddress string, assetCode dnTypes
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"oracle",
-		"",
-		"set-oracles",
 		nomineeAddress,
+		"set-oracles",
 		assetCode.String(),
 		strings.Join(oracleAddresses, ","))
 
@@ -137,9 +133,8 @@ func (ct *CLITester) TxOraclePostPrice(nomineeAddress string, assetCode dnTypes.
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"oracle",
-		"",
-		"postprice",
 		nomineeAddress,
+		"postprice",
 		assetCode.String(),
 		price.String(),
 		strconv.FormatInt(receivedAt.Unix(), 10),

@@ -277,7 +277,7 @@ func TestOracle_CLI(t *testing.T) {
 			// empty oracles
 			{
 				tx := ct.TxOracleAddAsset(nomineeAddr, assetCode)
-				tx.CheckFailedWithErrorSubstring("oracles argument")
+				tx.CheckFailedWithErrorSubstring("oracleAddresses argument")
 			}
 		}
 	}
@@ -301,7 +301,7 @@ func TestOracle_CLI(t *testing.T) {
 			// invalid number of args
 			{
 				tx := ct.TxOracleSetAsset(nomineeAddr, assetCode, assetOracle1)
-				tx.RemoveCmdArg(nomineeAddr)
+				tx.RemoveCmdArg(assetCode.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid assetCode
@@ -322,7 +322,7 @@ func TestOracle_CLI(t *testing.T) {
 			// empty oracles
 			{
 				tx := ct.TxOracleSetAsset(nomineeAddr, assetCode)
-				tx.CheckFailedWithErrorSubstring("oracles argument")
+				tx.CheckFailedWithErrorSubstring("oracleAddresses argument")
 			}
 		}
 	}
@@ -380,21 +380,21 @@ func TestOracle_CLI(t *testing.T) {
 			// invalid number of args
 			{
 				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
-				tx.RemoveCmdArg(assetOracle1)
+				tx.RemoveCmdArg(assetCode.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid price
 			{
 				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
 				tx.ChangeCmdArg(sdk.OneInt().String(), "not_int")
-				tx.CheckFailedWithErrorSubstring("wrong value for price")
+				tx.CheckFailedWithErrorSubstring("parsing Int")
 			}
 			// invalid receivedAt
 			{
 				now := time.Now()
 				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), now)
 				tx.ChangeCmdArg(strconv.FormatInt(now.Unix(), 10), "not_time.Time")
-				tx.CheckFailedWithErrorSubstring("wrong value for time")
+				tx.CheckFailedWithErrorSubstring("parsing Int")
 			}
 			// MsgPostPrice ValidateBasic
 			{
@@ -424,13 +424,13 @@ func TestOracle_CLI(t *testing.T) {
 			// invalid number of args
 			{
 				tx := ct.TxOracleAddOracle(nomineeAddr, assetCode, "invalid_address")
-				tx.RemoveCmdArg(nomineeAddr)
+				tx.RemoveCmdArg(assetCode.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid oracleAddress
 			{
 				tx := ct.TxOracleAddOracle(nomineeAddr, assetCode, "invalid_address")
-				tx.CheckFailedWithErrorSubstring("oracle_address")
+				tx.CheckFailedWithErrorSubstring("oracleAddress argument")
 			}
 		}
 	}
@@ -455,13 +455,13 @@ func TestOracle_CLI(t *testing.T) {
 			// invalid number of args
 			{
 				tx := ct.TxOracleSetOracles(nomineeAddr, assetCode, assetOracle3, assetOracle2, assetOracle1)
-				tx.RemoveCmdArg(nomineeAddr)
+				tx.RemoveCmdArg(assetCode.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid oracles
 			{
 				tx := ct.TxOracleSetOracles(nomineeAddr, assetCode, "123")
-				tx.CheckFailedWithErrorSubstring("")
+				tx.CheckFailedWithErrorSubstring("oracleAddresses argument")
 			}
 		}
 	}

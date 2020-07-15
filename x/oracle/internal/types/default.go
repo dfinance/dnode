@@ -2,9 +2,6 @@ package types
 
 import (
 	"fmt"
-	"strings"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/dfinance/dnode/helpers/types"
 )
@@ -24,35 +21,4 @@ const (
 // GetRawPricesKey Get a key to store PostedPrices for specific assetCode and blockHeight.
 func GetRawPricesKey(assetCode types.AssetCode, blockHeight int64) []byte {
 	return []byte(fmt.Sprintf("%s%s:%d", RawPriceFeedPrefix, assetCode.String(), blockHeight))
-}
-
-// ParseOracles parses coma-separate notation oracle addresses and returns Oracles object.
-func ParseOracles(addresses string) (Oracles, error) {
-	res := make([]Oracle, 0)
-	for _, address := range strings.Split(addresses, ",") {
-		address = strings.TrimSpace(address)
-		if len(address) == 0 {
-			continue
-		}
-		oracleAddress, err := ValidateAddress(address)
-		if err != nil {
-			return nil, err
-		}
-
-		oracle := NewOracle(oracleAddress)
-
-		res = append(res, oracle)
-	}
-
-	return res, nil
-}
-
-// ValidateAddress validates the oracle string-notation address.
-func ValidateAddress(address string) (sdk.AccAddress, error) {
-	oracle, err := sdk.AccAddressFromBech32(address)
-	if err != nil {
-		return nil, err
-	}
-
-	return oracle, nil
 }
