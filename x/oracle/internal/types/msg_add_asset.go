@@ -7,8 +7,10 @@ import (
 
 // MsgPostPrice struct representing a adding asset message.
 type MsgAddAsset struct {
+	// Nominee address
 	Nominee sdk.AccAddress `json:"nominee" yaml:"nominee"`
-	Asset   Asset          `json:"asset" yaml:"asset"`
+	// Asset object
+	Asset Asset `json:"asset" yaml:"asset"`
 }
 
 // Route Implements Msg.

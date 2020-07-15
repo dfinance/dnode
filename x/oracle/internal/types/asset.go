@@ -11,9 +11,12 @@ import (
 
 // Asset struct that represents an asset in the oracle.
 type Asset struct {
-	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"dfi"`
-	Oracles   Oracles           `json:"oracles" yaml:"oracles"` // List of registered RawPrice sources
-	Active    bool              `json:"active" yaml:"active"`   // Not used ATM
+	// Asset code
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_dfi"`
+	// List of registered RawPrice sources
+	Oracles Oracles `json:"oracles" yaml:"oracles"`
+	// Not used ATM
+	Active bool `json:"active" yaml:"active"`
 }
 
 // String implement fmt.Stringer for the Asset type.

@@ -15,8 +15,11 @@ var (
 
 // Params params for oracle. Can be altered via governance.
 type Params struct {
-	Assets    Assets          `json:"assets" yaml:"assets"` //  Array containing the assets supported by the oracle
-	Nominees  []string        `json:"nominees" yaml:"nominees"`
+	// Array containing the assets supported by the oracle
+	Assets Assets `json:"assets" yaml:"assets"`
+	// Nominees addresses array
+	Nominees []string `json:"nominees" yaml:"nominees"`
+	// PostPrice object
 	PostPrice PostPriceParams `json:"post_price" yaml:"post_price"`
 }
 

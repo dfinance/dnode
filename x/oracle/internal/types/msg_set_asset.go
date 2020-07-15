@@ -7,8 +7,10 @@ import (
 
 // MsgSetAsset struct representing a new nominee based oracle.
 type MsgSetAsset struct {
+	// Nominee address
 	Nominee sdk.AccAddress `json:"nominee" yaml:"nominee"`
-	Asset   Asset          `json:"asset" yaml:"asset"`
+	// Asset object
+	Asset Asset `json:"asset" yaml:"asset"`
 }
 
 // ValidateBasic does a simple validation check that doesn't require access to any other information.

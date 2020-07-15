@@ -9,6 +9,7 @@ import (
 
 // Oracle struct that documents which address an oracle is using.
 type Oracle struct {
+	// Address
 	Address sdk.AccAddress `json:"address" yaml:"address"`
 }
 

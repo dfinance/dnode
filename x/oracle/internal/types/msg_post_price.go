@@ -11,10 +11,14 @@ import (
 // MsgPostPrice struct representing a posted price message.
 // Used by oracles to input prices to the oracle
 type MsgPostPrice struct {
-	From       sdk.AccAddress    `json:"from" yaml:"from"`
-	AssetCode  dnTypes.AssetCode `json:"asset_code" yaml:"asset_code"`
-	Price      sdk.Int           `json:"price" yaml:"price"`
-	ReceivedAt time.Time         `json:"received_at" yaml:"received_at"`
+	// Oracle address
+	From sdk.AccAddress `json:"from" yaml:"from"`
+	// Asset code
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code"`
+	// Price in integer notation
+	Price sdk.Int `json:"price" yaml:"price"`
+	// ReceivedAt time in Unix timestamp format
+	ReceivedAt time.Time `json:"received_at" yaml:"received_at"`
 }
 
 // Route Implements Msg.

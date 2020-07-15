@@ -8,8 +8,11 @@ import (
 
 // MsgSetOracle struct representing a new nominee based oracle.
 type MsgSetOracles struct {
-	Oracles   Oracles           `json:"oracles" yaml:"oracles"`
-	Nominee   sdk.AccAddress    `json:"nominee" yaml:"nominee"`
+	// Array of oracles addresses
+	Oracles Oracles `json:"oracles" yaml:"oracles"`
+	// Nominee address
+	Nominee sdk.AccAddress `json:"nominee" yaml:"nominee"`
+	// Asset code
 	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code"`
 }
 

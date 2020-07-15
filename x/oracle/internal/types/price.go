@@ -16,9 +16,12 @@ const (
 
 // CurrentPrice struct that contains the metadata of a current price for a particular asset in the oracle module.
 type CurrentPrice struct {
-	AssetCode  dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"dfi"` // Denom
-	Price      sdk.Int           `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
-	ReceivedAt time.Time         `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
+	// Asset code
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"dfi"`
+	// Price in integer format
+	Price sdk.Int `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
+	// Timestamp Price createdAt
+	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
 
 // String implement fmt.Stringer for the CurrentPrice type.
