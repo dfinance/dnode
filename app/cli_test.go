@@ -236,6 +236,10 @@ func TestOracle_CLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestOracle_CLI", []string{"message.module='oracle'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "oracle")
+
 	nomineeAddr := ct.Accounts["nominee"].Address
 	assetCode := dnTypes.AssetCode("eth_dfi")
 	assetOracle1, assetOracle2, assetOracle3 := ct.Accounts["oracle1"].Address, ct.Accounts["oracle2"].Address, ct.Accounts["oracle3"].Address

@@ -443,8 +443,8 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	checkNoEventErrors(events, t)
 
 	checkEventsContainsEvery(t, events, newKeepEvents())
-	require.Len(t, events, 3)
-	vmEvent := events[2]
+	require.Len(t, events, 5)
+	vmEvent := events[4]
 	require.Len(t, vmEvent.Attributes, 4)
 	// sender
 	{

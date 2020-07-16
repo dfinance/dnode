@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
@@ -98,10 +99,7 @@ func handleMsgSetAsset(ctx sdk.Context, k Keeper, msg MsgSetAsset) (*sdk.Result,
 	}
 
 	ctx.EventManager().EmitEvent(types.NewAssetAddedEvent(msg.Asset))
-	ctx.EventManager().EmitEvent(sdk.NewEvent(
-		sdk.EventTypeMessage,
-		sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-	))
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(types.ModuleName))
 
 	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

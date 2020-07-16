@@ -173,10 +173,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 	}
 
 	if updatesCnt > 0 {
-		ctx.EventManager().EmitEvent(sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.ModuleName),
-		))
+		ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(types.ModuleName))
 	}
 
 	return nil
