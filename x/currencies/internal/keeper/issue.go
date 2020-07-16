@@ -10,6 +10,8 @@ import (
 // IssueCurrency issues a new currency and increases payee coin balance.
 // Issue is a multisig operation.
 func (k Keeper) IssueCurrency(ctx sdk.Context, id string, coin sdk.Coin, payee sdk.AccAddress) (retErr error) {
+	k.modulePerms.AutoCheck(types.PermCCIssue)
+
 	// bankKeeper might panic
 	defer func() {
 		if r := recover(); r != nil {
@@ -51,6 +53,8 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id string, coin sdk.Coin, payee s
 
 // HasIssue checks that issue exists.
 func (k Keeper) HasIssue(ctx sdk.Context, id string) bool {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return store.Has(types.GetIssuesKey(id))
@@ -58,6 +62,8 @@ func (k Keeper) HasIssue(ctx sdk.Context, id string) bool {
 
 // GetIssue returns issue.
 func (k Keeper) GetIssue(ctx sdk.Context, id string) (types.Issue, error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	if !k.HasIssue(ctx, id) {
 		return types.Issue{}, sdkErrors.Wrapf(types.ErrWrongIssueID, "issueID %q: not found", id)
 	}

@@ -239,6 +239,14 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 
 	var err error
 
+	// Fake "app" module is used for app-tests (has all permissions)
+	appModulePerms := func(allPerms perms.Permissions) perms.RequestModulePermissions {
+		return func() (moduleName string, modulePerms perms.Permissions) {
+			moduleName, modulePerms = "app", allPerms
+			return
+		}
+	}
+
 	// ParamsKeeper handles parameter storage for the application.
 	app.paramsKeeper = params.NewKeeper(
 		app.cdc,
@@ -274,12 +282,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		currencies.RequestCCStoragePerms(),
 		vmauth.RequestCCStoragePerms(),
 		markets.RequestCCStoragePerms(),
-		func() (moduleName string, modulePerms perms.Permissions) {
-			// fake "app" module is used for app-tests (has all permissions)
-			moduleName = "app"
-			modulePerms = append(modulePerms, ccstorage.AvailablePermissions...)
-			return
-		},
+		appModulePerms(ccstorage.AvailablePermissions),
 	)
 
 	// VMAuth keeper wraps AccountKeeper and handles address -> account lookups and keeps VM balances updated.
@@ -343,6 +346,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		app.bankKeeper,
 		app.supplyKeeper,
 		app.ccsKeeper,
+		appModulePerms(currencies.AvailablePermissions),
 	)
 
 	// DistributionKeeper distributes rewards between Proof-of-Stake validators and delegators.

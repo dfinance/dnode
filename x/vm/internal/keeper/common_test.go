@@ -279,7 +279,13 @@ func newTestInput(launchMock bool) testInput {
 	// create keepers
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
 	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
-	input.cs = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.pk.Subspace(ccstorage.DefaultParamspace), input.vk)
+	input.cs = ccstorage.NewKeeper(
+		input.cdc,
+		input.keyCCS,
+		input.pk.Subspace(ccstorage.DefaultParamspace),
+		input.vk,
+		vmauth.RequestCCStoragePerms(),
+	)
 	input.ak = vmauth.NewKeeper(input.cdc, input.keyAccount, input.pk.Subspace(auth.DefaultParamspace), input.cs, auth.ProtoBaseAccount)
 	input.ok = oracle.NewKeeper(input.cdc, input.keyOracle, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
 

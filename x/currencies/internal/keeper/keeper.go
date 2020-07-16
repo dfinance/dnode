@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/dfinance/dnode/helpers/perms"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
@@ -19,6 +20,7 @@ type Keeper struct {
 	bankKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
 	ccsKeeper    ccstorage.Keeper
+	modulePerms  perms.ModulePermissions
 }
 
 // GetLogger gets logger with keeper context.
@@ -27,12 +29,25 @@ func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
 }
 
 // Create new currency keeper.
-func NewKeeper(cdc *cdcCodec.Codec, storeKey sdk.StoreKey, bankKeeper bank.Keeper, supplyKeeper supply.Keeper, ccsKeeper ccstorage.Keeper) Keeper {
-	return Keeper{
+func NewKeeper(
+	cdc *cdcCodec.Codec,
+	storeKey sdk.StoreKey,
+	bankKeeper bank.Keeper,
+	supplyKeeper supply.Keeper,
+	ccsKeeper ccstorage.Keeper,
+	permsRequesters ...perms.RequestModulePermissions,
+) Keeper {
+	k := Keeper{
 		cdc:          cdc,
 		storeKey:     storeKey,
 		bankKeeper:   bankKeeper,
 		supplyKeeper: supplyKeeper,
 		ccsKeeper:    ccsKeeper,
+		modulePerms:  types.NewModulePerms(),
 	}
+	for _, requester := range permsRequesters {
+		k.modulePerms.AutoAddRequester(requester)
+	}
+
+	return k
 }
