@@ -36,6 +36,7 @@ import (
 
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/helpers/perms"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/core/msmodule"
@@ -270,6 +271,15 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		keys[ccstorage.StoreKey],
 		app.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
 		app.vmKeeper,
+		currencies.RequestCCStoragePerms(),
+		vmauth.RequestCCStoragePerms(),
+		markets.RequestCCStoragePerms(),
+		func() (moduleName string, modulePerms perms.Permissions) {
+			// fake "app" module is used for app-tests (has all permissions)
+			moduleName = "app"
+			modulePerms = append(modulePerms, ccstorage.AvailablePermissions...)
+			return
+		},
 	)
 
 	// VMAuth keeper wraps AccountKeeper and handles address -> account lookups and keeps VM balances updated.

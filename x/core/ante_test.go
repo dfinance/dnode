@@ -12,7 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	vestTypes"github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
+	vestTypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/mock"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/stretchr/testify/require"
@@ -71,7 +71,13 @@ func setupTestInput() testInput {
 	// create target and dependant keepers
 	input.paramsKeeper = params.NewKeeper(input.cdc, keyParams, tkeyParams)
 	input.vmStorage = vm.NewKeeper(vmKey, input.cdc, nil, nil, nil)
-	input.ccsStorage = ccstorage.NewKeeper(input.cdc, ccsKey, input.paramsKeeper.Subspace(ccstorage.DefaultParamspace), input.vmStorage)
+	input.ccsStorage = ccstorage.NewKeeper(
+		input.cdc,
+		ccsKey,
+		input.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
+		input.vmStorage,
+		vmauth.RequestCCStoragePerms(),
+	)
 	input.accKeeper = vmauth.NewKeeper(input.cdc, accKey, input.paramsKeeper.Subspace(auth.DefaultParamspace), input.ccsStorage, authTypes.ProtoBaseAccount)
 	input.supplyKeeper = mock.NewDummySupplyKeeper(input.accKeeper.AccountKeeper)
 

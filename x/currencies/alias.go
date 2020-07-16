@@ -51,6 +51,8 @@ var (
 	NewMsgIssueCurrency    = types.NewMsgIssueCurrency
 	NewMsgWithdrawCurrency = types.NewMsgWithdrawCurrency
 	NewAddCurrencyProposal = types.NewAddCurrencyProposal
+	// perms requests
+	RequestCCStoragePerms = types.RequestCCStoragePerms
 	// errors
 	ErrInternal            = types.ErrInternal
 	ErrWrongDenom          = types.ErrWrongDenom

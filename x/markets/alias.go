@@ -39,6 +39,8 @@ var (
 	NewMarketExtended   = types.NewMarketExtended
 	NewKeeper           = keeper.NewKeeper
 	NewQuerier          = keeper.NewQuerier
+	// perms requests
+	RequestCCStoragePerms = types.RequestCCStoragePerms
 	// error aliases
 	ErrWrongID         = types.ErrWrongID
 	ErrWrongAssetDenom = types.ErrWrongAssetDenom

@@ -8,6 +8,8 @@ import (
 
 // GetCurrenciesParams returns currencies parameters from the params storage.
 func (k Keeper) GetCurrenciesParams(ctx sdk.Context) types.CurrenciesParams {
+	k.modulePerms.AutoCheck(types.PermCCReader)
+
 	params := types.CurrenciesParams{}
 	if !k.paramStore.Has(ctx, types.ParamStoreKeyCurrencies) {
 		return params

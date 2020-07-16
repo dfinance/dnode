@@ -91,7 +91,13 @@ func NewTestInput(t *testing.T) TestInput {
 	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tKeyParams)
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
-	input.ccsStorage = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccstorage.DefaultParamspace), input.vmStorage)
+	input.ccsStorage = ccstorage.NewKeeper(
+		input.cdc,
+		input.keyCCS,
+		input.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
+		input.vmStorage,
+		types.RequestCCStoragePerms(),
+	)
 	input.keeper = NewKeeper(input.cdc, input.paramsKeeper.Subspace(types.DefaultParamspace), input.ccsStorage)
 
 	// create context
