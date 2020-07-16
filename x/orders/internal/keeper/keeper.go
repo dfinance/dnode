@@ -140,7 +140,7 @@ func NewKeeper(
 		bankKeeper:   bk,
 		supplyKeeper: sk,
 		marketKeeper: mk,
-		modulePerms:   types.NewModulePerms(),
+		modulePerms:  types.NewModulePerms(),
 	}
 	for _, requester := range permsRequesters {
 		k.modulePerms.AutoAddRequester(requester)

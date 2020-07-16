@@ -381,6 +381,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		cdc,
 		keys[poa.StoreKey],
 		app.paramsKeeper.Subspace(poa.DefaultParamspace),
+		multisig.RequestPoaPerms(),
+		appModulePerms(poa.AvailablePermissions),
 	)
 
 	// MultisignatureKeeper handles multisig voting and routes message to multisig module.
@@ -393,6 +395,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
 		app.msRouter,
 		app.poaKeeper,
+		appModulePerms(multisig.AvailablePermissions),
 	)
 
 	// OracleKeeper collects asset pair exchange price from various oracles.
