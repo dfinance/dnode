@@ -425,9 +425,10 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 
 	// OrderBookKeeper matches DEX orders and stores match results.
 	app.orderBookKeeper = orderbook.NewKeeper(
-		keys[orderbook.StoreKey],
 		cdc,
+		keys[orderbook.StoreKey],
 		app.orderKeeper,
+		appModulePerms(orderbook.AvailablePermissions),
 	)
 
 	// CrisisKeeper periodically checks registered module invariants and halt chain on fail.

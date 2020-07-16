@@ -131,7 +131,7 @@ func NewTestInput(t *testing.T) TestInput {
 		input.marketKeeper,
 		types.RequestOrdersPerms(),
 	)
-	input.keeper = NewKeeper(input.keyOB, input.cdc, input.orderKeeper)
+	input.keeper = NewKeeper(input.cdc, input.keyOB, input.orderKeeper)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
