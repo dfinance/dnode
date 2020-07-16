@@ -12,8 +12,8 @@ import (
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
-func Test_Order_StoreIO(t *testing.T) {
-	input := NewTestInput(t)
+func TestOrdersKeeper_StoreIO(t *testing.T) {
+	input := NewTestInput(t, nil)
 
 	// check non-existing
 	{
@@ -46,8 +46,8 @@ func Test_Order_StoreIO(t *testing.T) {
 	}
 }
 
-func Test_Order_List(t *testing.T) {
-	input := NewTestInput(t)
+func TestOrdersKeeper_List(t *testing.T) {
+	input := NewTestInput(t, nil)
 
 	// get empty list
 	{

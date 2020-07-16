@@ -105,7 +105,7 @@ func NewTestInput(t *testing.T) TestInput {
 
 	// init genesis / params
 	input.ccsStorage.InitDefaultGenesis(input.ctx)
-	input.keeper.SetParams(input.ctx, types.DefaultParams())
+	input.keeper.InitDefaultGenesis(input.ctx)
 
 	return input
 }

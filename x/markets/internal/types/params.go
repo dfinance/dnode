@@ -49,11 +49,6 @@ func NewParams(markets []Market) Params {
 	}
 }
 
-// DefaultParams returns default keeper params.
-func DefaultParams() Params {
-	return NewParams(Markets{})
-}
-
 // ParamKeyTable creates keeper params KeyTable.
 func ParamKeyTable() subspace.KeyTable {
 	return subspace.NewKeyTable().RegisterParamSet(&Params{})

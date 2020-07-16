@@ -5,6 +5,21 @@ import (
 	"github.com/dfinance/dnode/x/ccstorage"
 )
 
+const (
+	// Create a new market / modify params
+	PermCreator perms.Permission = ModuleName + "PermCreator"
+	// Read market / markets
+	PermReader perms.Permission = ModuleName + "PermReader"
+)
+
+var (
+	AvailablePermissions = perms.Permissions{PermCreator, PermReader}
+)
+
+func NewModulePerms() perms.ModulePermissions {
+	return perms.NewModulePermissions(ModuleName, AvailablePermissions)
+}
+
 // RequestCCStoragePerms returns module perms used by this module.
 func RequestCCStoragePerms() perms.RequestModulePermissions {
 	return func() (moduleName string, modulePerms perms.Permissions) {

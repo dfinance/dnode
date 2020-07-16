@@ -408,6 +408,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		cdc,
 		app.paramsKeeper.Subspace(markets.DefaultParamspace),
 		app.ccsKeeper,
+		orders.RequestMarketsPerms(),
+		appModulePerms(markets.AvailablePermissions),
 	)
 
 	// OrdersKeeper allows posting/revoking DEX system orders.

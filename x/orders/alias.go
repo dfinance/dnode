@@ -41,6 +41,8 @@ var (
 	RegisterCodec = types.RegisterCodec
 	NewKeeper     = keeper.NewKeeper
 	NewQuerier    = keeper.NewQuerier
+	// perms requests
+	RequestMarketsPerms = types.RequestMarketsPerms
 	// error aliases
 	ErrWrongMarketID  = types.ErrWrongMarketID
 	ErrWrongOwner     = types.ErrWrongOwner

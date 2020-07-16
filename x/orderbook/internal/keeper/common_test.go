@@ -117,7 +117,12 @@ func NewTestInput(t *testing.T) TestInput {
 		input.vmStorage,
 		markets.RequestCCStoragePerms(),
 	)
-	input.marketKeeper = markets.NewKeeper(input.cdc, input.paramsKeeper.Subspace(markets.DefaultParamspace), input.ccsKeeper)
+	input.marketKeeper = markets.NewKeeper(
+		input.cdc,
+		input.paramsKeeper.Subspace(markets.DefaultParamspace),
+		input.ccsKeeper,
+		orders.RequestMarketsPerms(),
+	)
 	input.orderKeeper = orders.NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
 	input.keeper = NewKeeper(input.keyOB, input.cdc, input.orderKeeper)
 
@@ -126,7 +131,7 @@ func NewTestInput(t *testing.T) TestInput {
 
 	// init genesis / params
 	input.ccsKeeper.InitDefaultGenesis(input.ctx)
-	input.marketKeeper.SetParams(input.ctx, markets.DefaultParams())
+	input.marketKeeper.InitDefaultGenesis(input.ctx)
 
 	return input
 }

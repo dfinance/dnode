@@ -23,22 +23,23 @@ const (
 	AttributeMarketId   = types.AttributeMarketId
 	AttributeBaseDenom  = types.AttributeBaseDenom
 	AttributeQuoteDenom = types.AttributeQuoteDenom
+	// Permissions
+	PermCreator = types.PermCreator
+	PermReader  = types.PermReader
 )
 
 var (
 	// variable aliases
-	ModuleCdc = types.ModuleCdc
+	ModuleCdc            = types.ModuleCdc
+	AvailablePermissions = types.AvailablePermissions
 	// function aliases
 	RegisterCodec       = types.RegisterCodec
-	NewGenesisState     = types.NewGenesisState
+	NewKeeper           = keeper.NewKeeper
+	NewQuerier          = keeper.NewQuerier
 	DefaultGenesisState = types.DefaultGenesisState
-	ValidateGenesis     = types.ValidateGenesis
-	DefaultParams       = types.DefaultParams
 	NewMarket           = types.NewMarket
 	NewMarketsFilter    = types.NewMarketsFilter
 	NewMarketExtended   = types.NewMarketExtended
-	NewKeeper           = keeper.NewKeeper
-	NewQuerier          = keeper.NewQuerier
 	// perms requests
 	RequestCCStoragePerms = types.RequestCCStoragePerms
 	// error aliases
