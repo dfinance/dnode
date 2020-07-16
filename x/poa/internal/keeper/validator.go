@@ -72,6 +72,8 @@ func (k Keeper) addValidator(ctx sdk.Context, address sdk.AccAddress, ethAddress
 	k.addValidatorToList(ctx, validator)
 	k.increaseValidatorsAmount(ctx)
 
+	ctx.EventManager().EmitEvent(types.NewValidatorAddedEvent(validator))
+
 	return nil
 }
 
@@ -80,6 +82,8 @@ func (k Keeper) removeValidator(ctx sdk.Context, address sdk.AccAddress, checkLi
 	if !k.HasValidator(ctx, address) {
 		return sdkErrors.Wrap(types.ErrValidatorNotExists, address.String())
 	}
+
+	validator := k.getValidator(ctx, address)
 
 	if checkLimits {
 		minValidators := k.GetMinValidators(ctx)
@@ -94,6 +98,8 @@ func (k Keeper) removeValidator(ctx sdk.Context, address sdk.AccAddress, checkLi
 
 	k.removeValidatorFromList(ctx, address)
 	k.decreaseValidatorsAmount(ctx)
+
+	ctx.EventManager().EmitEvent(types.NewValidatorRemovedEvent(validator))
 
 	return nil
 }

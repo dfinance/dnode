@@ -17,55 +17,110 @@ import (
 	"github.com/dfinance/dnode/x/common_vm"
 )
 
-// Test event happens when VM return status to keep changes.
-func TestNewEventKeep(t *testing.T) {
+// Test event build when VM return status is "keep changes".
+func TestVM_KeepEvent(t *testing.T) {
 	t.Parallel()
 
-	event := NewEventKeep()
-	require.Equal(t, EventTypeContractStatus, event.Type)
-	require.EqualValues(t, AttrKeyStatus, event.Attributes[0].Key)
-	require.EqualValues(t, StatusKeep, event.Attributes[0].Value)
+	// "keep" no error
+	{
+		exec := &vm_grpc.VMExecuteResponse{
+			Status: vm_grpc.ContractStatus_Keep,
+		}
+		events := NewContractEvents(exec)
+
+		require.Len(t, events, 1)
+
+		event0 := events[0]
+		require.Equal(t, EventTypeContractStatus, event0.Type)
+		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
+		require.EqualValues(t, AttributeValueStatusKeep, event0.Attributes[0].Value)
+	}
+
+	// "keep" with error
+	{
+		exec := &vm_grpc.VMExecuteResponse{
+			Status: vm_grpc.ContractStatus_Keep,
+			StatusStruct: &vm_grpc.VMStatus{
+				MajorStatus: 100,
+				SubStatus:   200,
+				Message:     "this is error!!111",
+			},
+		}
+		events := NewContractEvents(exec)
+
+		require.Len(t, events, 2)
+
+		event0 := events[0]
+		require.Equal(t, EventTypeContractStatus, event0.Type)
+		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
+		require.EqualValues(t, AttributeValueStatusKeep, event0.Attributes[0].Value)
+
+		event1 := events[1]
+		require.Equal(t, EventTypeContractStatus, event1.Type)
+		require.EqualValues(t, AttributeStatus, event1.Attributes[0].Key)
+		require.EqualValues(t, AttributeValueStatusError, event1.Attributes[0].Value)
+		require.EqualValues(t, AttributeErrMajorStatus, event1.Attributes[1].Key)
+		require.EqualValues(t, strconv.FormatUint(100, 10), event1.Attributes[1].Value)
+		require.EqualValues(t, AttributeErrSubStatus, event1.Attributes[2].Key)
+		require.EqualValues(t, strconv.FormatUint(200, 10), event1.Attributes[2].Value)
+		require.EqualValues(t, AttributeErrMessage, event1.Attributes[3].Key)
+		require.NotEmpty(t, event1.Attributes[3].Value)
+	}
 }
 
-// Test GetSenderAddress.
+// Test event build when VM return status is "discard changes".
+func TestVM_DiscardEvent(t *testing.T) {
+	t.Parallel()
+
+	// "discard" no error
+	{
+		exec := &vm_grpc.VMExecuteResponse{
+			Status: vm_grpc.ContractStatus_Discard,
+		}
+		events := NewContractEvents(exec)
+
+		require.Len(t, events, 1)
+
+		event0 := events[0]
+		require.Equal(t, EventTypeContractStatus, event0.Type)
+		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
+		require.EqualValues(t, AttributeValueStatusDiscard, event0.Attributes[0].Value)
+	}
+
+	// "discard" with error
+	{
+		exec := &vm_grpc.VMExecuteResponse{
+			Status: vm_grpc.ContractStatus_Discard,
+			StatusStruct: &vm_grpc.VMStatus{
+				MajorStatus: 0,
+				SubStatus:   1,
+				Message:     "this is error!!111",
+			},
+		}
+		events := NewContractEvents(exec)
+
+		require.Len(t, events, 1)
+
+		event0 := events[0]
+		require.Equal(t, EventTypeContractStatus, event0.Type)
+		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
+		require.EqualValues(t, AttributeValueStatusDiscard, event0.Attributes[0].Value)
+		require.EqualValues(t, AttributeErrMajorStatus, event0.Attributes[1].Key)
+		require.EqualValues(t, strconv.FormatUint(0, 10), event0.Attributes[1].Value)
+		require.EqualValues(t, AttributeErrSubStatus, event0.Attributes[2].Key)
+		require.EqualValues(t, strconv.FormatUint(1, 10), event0.Attributes[2].Value)
+		require.EqualValues(t, AttributeErrMessage, event0.Attributes[3].Key)
+		require.NotEmpty(t, event0.Attributes[3].Value)
+	}
+}
+
+// Test StringifySenderAddress.
 func Test_GetSenderAddress(t *testing.T) {
 	t.Parallel()
 
 	address := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
-	require.EqualValues(t, common_vm.StdLibAddressShortStr, GetSenderAddress(common_vm.StdLibAddress))
-	require.EqualValues(t, address.String(), GetSenderAddress(address))
-}
-
-// Test event happens when VM return status discard.
-func TestNewEventDiscard(t *testing.T) {
-	t.Parallel()
-
-	event := NewEventDiscard(nil)
-
-	require.Equal(t, EventTypeContractStatus, event.Type)
-	require.EqualValues(t, AttrKeyStatus, event.Attributes[0].Key)
-	require.EqualValues(t, StatusDiscard, event.Attributes[0].Value)
-
-	errorStatus := vm_grpc.VMStatus{
-		MajorStatus: 0,
-		SubStatus:   0,
-		Message:     "this is error!!111",
-	}
-
-	attrs := make([]sdk.Attribute, 4)
-	attrs[0] = sdk.NewAttribute(AttrKeyStatus, StatusDiscard)
-	attrs[1] = sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10))
-	attrs[2] = sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10))
-	attrs[3] = sdk.NewAttribute(AttrKeyMessage, errorStatus.Message)
-
-	event = NewEventDiscard(&errorStatus)
-	require.Len(t, event.Attributes, len(attrs))
-	require.Equal(t, EventTypeContractStatus, event.Type)
-
-	for i, attr := range attrs {
-		require.EqualValuesf(t, []byte(attr.Key), event.Attributes[i].Key, "incorrect attribute key for event discard at position %d", i)
-		require.EqualValuesf(t, []byte(attr.Value), event.Attributes[i].Value, "incorrect attribute key for event discard at position %d", i)
-	}
+	require.EqualValues(t, common_vm.StdLibAddressShortStr, StringifySenderAddress(common_vm.StdLibAddress))
+	require.EqualValues(t, address.String(), StringifySenderAddress(address))
 }
 
 // Test event convertation from Move type to Cosmos.
@@ -106,105 +161,45 @@ func TestNewEventFromVM(t *testing.T) {
 		EventData: valBytes,
 	}
 
-	sdkModuleEvent := NewEventFromVM(sdk.NewInfiniteGasMeter(), &vmEvent)
+	sdkModuleEvent := NewMoveEvent(sdk.NewInfiniteGasMeter(), &vmEvent)
 	require.Equal(t, EventTypeMoveEvent, sdkModuleEvent.Type)
 	require.Len(t, sdkModuleEvent.Attributes, 4)
 
 	// sender
 	{
 		attrId := 0
-		require.EqualValues(t, AttrKeySenderAddress, sdkModuleEvent.Attributes[attrId].Key)
-		require.EqualValues(t, GetSenderAddress(vmEvent.SenderAddress), sdkModuleEvent.Attributes[attrId].Value)
+		require.EqualValues(t, AttributeVmEventSender, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, StringifySenderAddress(vmEvent.SenderAddress), sdkModuleEvent.Attributes[attrId].Value)
 	}
 	// source
 	{
 		attrId := 1
-		require.EqualValues(t, AttrKeySource, sdkModuleEvent.Attributes[attrId].Key)
-		require.EqualValues(t, GetEventSource(vmEvent.SenderModule), sdkModuleEvent.Attributes[attrId].Value)
+		require.EqualValues(t, AttributeVmEventSource, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, GetEventSourceAttribute(vmEvent.SenderModule), sdkModuleEvent.Attributes[attrId].Value)
 	}
 	// type
 	{
 		attrId := 2
-		require.EqualValues(t, AttrKeyType, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, AttributeVmEventType, sdkModuleEvent.Attributes[attrId].Key)
 		require.EqualValues(t, StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), vmEvent.EventType), sdkModuleEvent.Attributes[attrId].Value)
 	}
 	// data
 	{
 		attrId := 3
-		require.EqualValues(t, AttrKeyData, sdkModuleEvent.Attributes[attrId].Key)
+		require.EqualValues(t, AttributeVmEventData, sdkModuleEvent.Attributes[attrId].Key)
 		require.EqualValues(t, hex.EncodeToString(valBytes), sdkModuleEvent.Attributes[attrId].Value)
 	}
 
 	// Modify vmEvent: from script
 	vmEvent.SenderModule = nil
-	sdkScriptEvent := NewEventFromVM(sdk.NewInfiniteGasMeter(), &vmEvent)
+	sdkScriptEvent := NewMoveEvent(sdk.NewInfiniteGasMeter(), &vmEvent)
 	require.Equal(t, EventTypeMoveEvent, sdkScriptEvent.Type)
 	require.Len(t, sdkScriptEvent.Attributes, 4)
 	// source
 	{
 		attrId := 1
-		require.EqualValues(t, AttrKeySource, sdkScriptEvent.Attributes[attrId].Key)
-		require.EqualValues(t, SourceScript, sdkScriptEvent.Attributes[attrId].Value)
-	}
-}
-
-// Test event happens when VM return status with errors.
-func TestNewEventError(t *testing.T) {
-	t.Parallel()
-
-	errorStatus := vm_grpc.VMStatus{
-		MajorStatus: 0,
-		SubStatus:   0,
-		Message:     "this is error!!111",
-	}
-
-	event := NewEventError(&errorStatus)
-
-	attrs := make([]sdk.Attribute, 4)
-	attrs[0] = sdk.NewAttribute(AttrKeyStatus, StatusError)
-	attrs[1] = sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10))
-	attrs[2] = sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10))
-	attrs[3] = sdk.NewAttribute(AttrKeyMessage, errorStatus.Message)
-
-	require.Len(t, event.Attributes, len(attrs))
-
-	for i, attr := range attrs {
-		require.EqualValuesf(t, []byte(attr.Key), event.Attributes[i].Key, "incorrect attribute key for event discard at position %d", i)
-		require.EqualValuesf(t, []byte(attr.Value), event.Attributes[i].Value, "incorrect attribute key for event discard at position %d", i)
-	}
-
-	require.EqualValues(t, EventTypeContractStatus, event.Type)
-}
-
-// Test creation event with error status.
-func TestNewEventWithError(t *testing.T) {
-	t.Parallel()
-
-	event := newEventStatus(StatusKeep, nil)
-
-	require.Equal(t, EventTypeContractStatus, event.Type)
-	require.EqualValues(t, AttrKeyStatus, event.Attributes[0].Key)
-	require.EqualValues(t, StatusKeep, event.Attributes[0].Value)
-
-	errorStatus := vm_grpc.VMStatus{
-		MajorStatus: 0,
-		SubStatus:   0,
-		Message:     "this is error!!111",
-	}
-
-	event = newEventStatus(StatusDiscard, &errorStatus)
-	require.Equal(t, EventTypeContractStatus, event.Type)
-
-	attrs := make([]sdk.Attribute, 4)
-	attrs[0] = sdk.NewAttribute(AttrKeyStatus, StatusDiscard)
-	attrs[1] = sdk.NewAttribute(AttrKeyMajorStatus, strconv.FormatUint(errorStatus.MajorStatus, 10))
-	attrs[2] = sdk.NewAttribute(AttrKeySubStatus, strconv.FormatUint(errorStatus.SubStatus, 10))
-	attrs[3] = sdk.NewAttribute(AttrKeyMessage, errorStatus.Message)
-	require.Len(t, event.Attributes, len(attrs))
-
-	for i, attr := range attrs {
-		require.EqualValuesf(t, []byte(attr.Key), event.Attributes[i].Key, "incorrect attribute key for event discard at position %d", i)
-		require.EqualValuesf(t, []byte(attr.Value), event.Attributes[i].Value, "incorrect attribute key for event discard at position %d", i)
+		require.EqualValues(t, AttributeVmEventSource, sdkScriptEvent.Attributes[attrId].Key)
+		require.EqualValues(t, AttributeValueSourceScript, sdkScriptEvent.Attributes[attrId].Value)
 	}
 }
 
@@ -237,9 +232,9 @@ func Test_OutOfGasProcessEvent(t *testing.T) {
 					{
 						TypeTag: vm_grpc.LcsType_LcsBool,
 						StructIdent: &vm_grpc.StructIdent{
-							Address:    []byte{2},
-							Module:     "Module_1",
-							Name:       "Struct_2",
+							Address: []byte{2},
+							Module:  "Module_1",
+							Name:    "Struct_2",
 							TypeParams: []*vm_grpc.LcsTag{
 								{
 									TypeTag: vm_grpc.LcsType_LcsU8,
@@ -257,6 +252,6 @@ func Test_OutOfGasProcessEvent(t *testing.T) {
 	}
 
 	require.PanicsWithValue(t, sdk.ErrorOutOfGas{"event type processing"}, func() {
-		NewEventFromVM(sdk.NewGasMeter(1000), &vmEvent)
+		NewMoveEvent(sdk.NewGasMeter(1000), &vmEvent)
 	})
 }

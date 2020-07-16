@@ -36,7 +36,7 @@ func Test_NewVMStatus(t *testing.T) {
 	require.Equal(t, vmStatus.Message, message)
 	require.Equal(t, ERR_GAS_MSG, vmStatus.StrCode)
 
-	vmStatus = NewVMStatus(StatusKeep, "", "", "")
+	vmStatus = NewVMStatus(AttributeValueStatusKeep, "", "", "")
 	require.Empty(t, vmStatus.StrCode)
 	require.Empty(t, vmStatus.Message)
 	require.Empty(t, vmStatus.MajorCode)
@@ -76,24 +76,29 @@ func Test_NewVMStatusFromABCILogs(t *testing.T) {
 	txResp := types.TxResponse{
 		TxHash: hash,
 		Logs: types.ABCIMessageLogs{
-			types.NewABCIMessageLog(0, "", types.Events{
-				NewEventKeep(),
-				NewEventError(&vm_grpc.VMStatus{
-					MajorStatus: codes[0],
-					SubStatus:   0,
-					Message:     msgs[0],
+			types.NewABCIMessageLog(0, "",
+				NewContractEvents(&vm_grpc.VMExecuteResponse{
+					Status: vm_grpc.ContractStatus_Keep,
+					StatusStruct: &vm_grpc.VMStatus{
+						MajorStatus: codes[0],
+						SubStatus:   0,
+						Message:     msgs[0],
+					},
 				}),
-			}),
-			types.NewABCIMessageLog(1, "", types.Events{
-				NewEventDiscard(&vm_grpc.VMStatus{
-					MajorStatus: codes[1],
-					SubStatus:   0,
-					Message:     msgs[1],
+			),
+			types.NewABCIMessageLog(1, "",
+				NewContractEvents(&vm_grpc.VMExecuteResponse{
+					Status: vm_grpc.ContractStatus_Discard,
+					StatusStruct: &vm_grpc.VMStatus{
+						MajorStatus: codes[1],
+						SubStatus:   0,
+						Message:     msgs[1],
+					},
 				}),
-			}),
-			types.NewABCIMessageLog(2, "", types.Events{
-				NewEventKeep(),
-			}),
+			),
+			types.NewABCIMessageLog(2, "",
+				NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Keep}),
+			),
 		},
 	}
 

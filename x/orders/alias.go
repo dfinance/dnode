@@ -22,6 +22,16 @@ const (
 	StoreKey     = types.StoreKey
 	BidDirection = types.Bid
 	AskDirection = types.Ask
+	// Event types, attribute types
+	EventTypeOrderPost            = types.EventTypeOrderPost
+	EventTypeOrderCancel          = types.EventTypeOrderCancel
+	EventTypeFullyFilledOrder     = types.EventTypeFullyFilledOrder
+	EventTypePartiallyFilledOrder = types.EventTypePartiallyFilledOrder
+	//
+	AttributeKeyMarketID = types.AttributeMarketId
+	AttributeKeyOrderID  = types.AttributeOrderId
+	AttributeKeyOwner    = types.AttributeOwner
+	AttributeKeyQuantity = types.AttributeQuantity
 )
 
 var (

@@ -10,8 +10,9 @@ import (
 // RemoveCallFromQueue removes call from the queue.
 func (k Keeper) RemoveCallFromQueue(ctx sdk.Context, id dnTypes.ID, height int64) {
 	store := ctx.KVStore(k.storeKey)
-
 	store.Delete(types.GetQueueKey(id, height))
+
+	ctx.EventManager().EmitEvent(types.NewCallRemovedEvent(id))
 }
 
 // GetQueueIteratorStartEnd returns queue iterator within [start:end] blockHeight range.

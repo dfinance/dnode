@@ -126,12 +126,11 @@ func TestProcessExecution(t *testing.T) {
 
 	input.vk.processExecution(input.ctx, resp)
 
-	events := input.ctx.EventManager().Events()
-	event := types.NewEventDiscard(resp.StatusStruct)
-
-	require.Len(t, events, 1)
-	require.Equal(t, event.Type, events[0].Type)
-	require.Equal(t, event.Attributes, events[0].Attributes)
+	procEvents := input.ctx.EventManager().Events()
+	expectedEvents := types.NewContractEvents(resp)
+	require.Len(t, procEvents, 2)
+	require.Len(t, expectedEvents, 1)
+	require.Equal(t, procEvents[1], expectedEvents[0])
 
 	// discard without status
 	resp = &vm_grpc.VMExecuteResponse{
@@ -141,11 +140,11 @@ func TestProcessExecution(t *testing.T) {
 	ctx := input.ctx.WithEventManager(sdk.NewEventManager())
 	input.vk.processExecution(ctx, resp)
 
-	events = ctx.EventManager().Events()
-	event = types.NewEventDiscard(nil)
-
-	require.Len(t, events, 1)
-	require.Equal(t, event, events[0])
+	procEvents = ctx.EventManager().Events()
+	expectedEvents = types.NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Discard})
+	require.Len(t, procEvents, 2)
+	require.Len(t, expectedEvents, 1)
+	require.Equal(t, procEvents[1], expectedEvents[0])
 
 	// status keep
 	resp = &vm_grpc.VMExecuteResponse{
@@ -155,11 +154,11 @@ func TestProcessExecution(t *testing.T) {
 	ctx = input.ctx.WithEventManager(sdk.NewEventManager())
 	input.vk.processExecution(ctx, resp)
 
-	events = ctx.EventManager().Events()
-	event = types.NewEventKeep()
-
-	require.Len(t, events, 1)
-	require.Equal(t, event, events[0])
+	procEvents = ctx.EventManager().Events()
+	expectedEvents = types.NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Keep})
+	require.Len(t, procEvents, 2)
+	require.Len(t, expectedEvents, 1)
+	require.Equal(t, procEvents[1], expectedEvents[0])
 
 	// write set & events
 	var u64Value uint64 = 100
@@ -186,8 +185,8 @@ func TestProcessExecution(t *testing.T) {
 	}
 
 	dnEvents := make(sdk.Events, 2)
-	dnEvents[0] = types.NewEventFromVM(sdk.NewInfiniteGasMeter(), respEvents[0])
-	dnEvents[1] = types.NewEventFromVM(sdk.NewInfiniteGasMeter(), respEvents[1])
+	dnEvents[0] = types.NewMoveEvent(sdk.NewInfiniteGasMeter(), respEvents[0])
+	dnEvents[1] = types.NewMoveEvent(sdk.NewInfiniteGasMeter(), respEvents[1])
 
 	writeSet := make([]*vm_grpc.VMValue, 2)
 	writeSet[0] = &vm_grpc.VMValue{
@@ -209,7 +208,7 @@ func TestProcessExecution(t *testing.T) {
 
 	ctx = input.ctx.WithEventManager(sdk.NewEventManager())
 	input.vk.processExecution(ctx, resp)
-	events = ctx.EventManager().Events()
+	procEvents = ctx.EventManager().Events()
 
 	// check that everything fine with write set
 	for _, write := range writeSet {
@@ -217,9 +216,9 @@ func TestProcessExecution(t *testing.T) {
 		require.Equal(t, write.Value, input.vk.getValue(input.ctx, write.Path))
 	}
 
-	require.Len(t, events, len(dnEvents)+1)
+	require.Len(t, procEvents, len(dnEvents)+2)
 
-	for i, event := range events[1:] {
+	for i, event := range procEvents[2:] {
 		require.Equal(t, dnEvents[i].Type, event.Type)
 
 		for j, attr := range event.Attributes {
@@ -241,9 +240,9 @@ func TestProcessExecution(t *testing.T) {
 
 	ctx = input.ctx.WithEventManager(sdk.NewEventManager())
 	input.vk.processExecution(ctx, resp)
-	events = ctx.EventManager().Events()
+	procEvents = ctx.EventManager().Events()
 
-	require.Len(t, events, 1)
+	require.Len(t, procEvents, 2)
 
 	require.False(t, input.vk.hasValue(input.ctx, writeSet[1].Path))
 	require.Nil(t, input.vk.getValue(input.ctx, writeSet[1].Path))
@@ -323,13 +322,16 @@ func TestExecStatusKeeperNotAnError(t *testing.T) {
 	input.vk.processExecution(input.ctx, resp)
 	events := input.ctx.EventManager().Events()
 
-	require.EqualValues(t, types.EventTypeContractStatus, events[0].Type)
+	require.EqualValues(t, sdk.EventTypeMessage, events[0].Type)
+	require.EqualValues(t, sdk.AttributeKeyModule, events[0].Attributes[0].Key)
+	require.EqualValues(t, types.ModuleName, events[0].Attributes[0].Value)
 
-	require.EqualValues(t, types.AttrKeyStatus, events[0].Attributes[0].Key)
-	require.EqualValues(t, types.StatusKeep, events[0].Attributes[0].Value)
+	require.EqualValues(t, types.EventTypeContractStatus, events[1].Type)
+	require.EqualValues(t, types.AttributeStatus, events[1].Attributes[0].Key)
+	require.EqualValues(t, types.AttributeValueStatusKeep, events[1].Attributes[0].Value)
 
 	for _, attr := range events[0].Attributes {
-		require.NotEqual(t, []byte(types.StatusError), attr.Key)
+		require.NotEqual(t, []byte(types.AttributeValueStatusError), attr.Key)
 	}
 }
 
@@ -356,21 +358,24 @@ func TestExecKeepAndError(t *testing.T) {
 	input.vk.processExecution(input.ctx, resp)
 	events := input.ctx.EventManager().Events()
 
-	require.EqualValues(t, types.EventTypeContractStatus, events[0].Type)
-	require.EqualValues(t, types.AttrKeyStatus, events[0].Attributes[0].Key)
-	require.EqualValues(t, types.StatusKeep, events[0].Attributes[0].Value)
+	require.EqualValues(t, sdk.EventTypeMessage, events[0].Type)
+	require.EqualValues(t, sdk.AttributeKeyModule, events[0].Attributes[0].Key)
+	require.EqualValues(t, types.ModuleName, events[0].Attributes[0].Value)
 
 	require.EqualValues(t, types.EventTypeContractStatus, events[1].Type)
-	require.EqualValues(t, types.AttrKeyStatus, events[1].Attributes[0].Key)
-	require.EqualValues(t, types.StatusError, events[1].Attributes[0].Value)
+	require.EqualValues(t, types.AttributeStatus, events[1].Attributes[0].Key)
+	require.EqualValues(t, types.AttributeValueStatusKeep, events[1].Attributes[0].Value)
 
-	require.EqualValues(t, types.AttrKeyMajorStatus, events[1].Attributes[1].Key)
-	require.EqualValues(t, types.AttrKeySubStatus, events[1].Attributes[2].Key)
-	require.EqualValues(t, types.AttrKeyMessage, events[1].Attributes[3].Key)
+	require.EqualValues(t, types.EventTypeContractStatus, events[2].Type)
+	require.EqualValues(t, types.AttributeStatus, events[2].Attributes[0].Key)
+	require.EqualValues(t, types.AttributeValueStatusError, events[2].Attributes[0].Value)
+	require.EqualValues(t, types.AttributeErrMajorStatus, events[2].Attributes[1].Key)
+	require.EqualValues(t, types.AttributeErrSubStatus, events[2].Attributes[2].Key)
+	require.EqualValues(t, types.AttributeErrMessage, events[2].Attributes[3].Key)
 
-	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.MajorStatus, 10)), events[1].Attributes[1].Value)
-	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.SubStatus, 10)), events[1].Attributes[2].Value)
-	require.EqualValues(t, []byte(errorStatus.Message), events[1].Attributes[3].Value)
+	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.MajorStatus, 10)), events[2].Attributes[1].Value)
+	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.SubStatus, 10)), events[2].Attributes[2].Value)
+	require.EqualValues(t, []byte(errorStatus.Message), events[2].Attributes[3].Value)
 }
 
 // test access path generation for oracles.

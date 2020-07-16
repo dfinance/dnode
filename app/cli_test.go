@@ -3,7 +3,6 @@
 package app
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -35,6 +34,10 @@ func TestCurrencies_CLI(t *testing.T) {
 
 	ct := cliTester.New(t, false)
 	defer ct.Close()
+
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestCurrencies_CLI", []string{"message.module='currencies'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "currencies", "multisig")
 
 	ccDenom := "btc"
 	ccDecimals := ct.Currencies[ccDenom].Decimals
@@ -520,6 +523,10 @@ func TestPOA_CLI(t *testing.T) {
 	ct := cliTester.New(t, false)
 	defer ct.Close()
 
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestPOA_CLI", []string{"message.module='poa'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "poa")
+
 	curValidators := make([]poa.Validator, 0)
 	addValidator := func(address, ethAddress string) {
 		sdkAddr, err := sdk.AccAddressFromBech32(address)
@@ -760,6 +767,10 @@ func TestMS_CLI(t *testing.T) {
 
 	ct := cliTester.New(t, false)
 	defer ct.Close()
+
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestMS_CLI", []string{"message.module='multisig'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "multisig")
 
 	ccDenom1, ccDenom2 := "btc", "eth"
 	ccCurAmount := sdk.NewInt(1000)
@@ -1101,21 +1112,9 @@ func TestOrders_CLI(t *testing.T) {
 	marketID0, marketID1 := dnTypes.NewIDFromUint64(0), dnTypes.NewIDFromUint64(1)
 	assetCode0, assetCode1 := dnTypes.AssetCode("btc_dfi"), dnTypes.AssetCode("eth_dfi")
 
-	wsPostQuery := fmt.Sprintf("orders.post.owner='%s'", ownerAddr1)
-	wsStop, wsChan := ct.CheckWSSubscribed(false, "Test_OrdersCLI", wsPostQuery, 10)
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestOrders_CLI", []string{"message.module='orders'"}, 10)
 	defer wsStop()
-
-	go func() {
-		for {
-			event, ok := <-wsChan
-			if !ok {
-				return
-			}
-
-			t.Logf("Got event: query: %s", event.Query)
-			t.Logf("Got event: events: %v", event.Events)
-		}
-	}()
+	go cliTester.PrintEvents(t, wsChs, "orders")
 
 	// add market
 	ct.TxMarketsAdd(ownerAddr1, cliTester.DenomBTC, cliTester.DenomDFI).CheckSucceeded()

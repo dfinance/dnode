@@ -26,6 +26,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmOs "github.com/tendermint/tendermint/libs/os"
@@ -66,6 +67,7 @@ var (
 	ModuleBasics = module.NewBasicManager(
 		genaccounts.AppModuleBasic{},
 		genutil.AppModuleBasic{},
+		upgrade.AppModuleBasic{},
 		params.AppModuleBasic{},
 		vm.AppModuleBasic{},
 		ccstorage.AppModuleBasic{},
@@ -111,6 +113,7 @@ type DnServiceApp struct {
 	tkeys map[string]*sdk.TransientStoreKey
 
 	paramsKeeper    params.Keeper
+	upgradeKeeper   upgrade.Keeper
 	vmKeeper        vm.Keeper
 	ccsKeeper       ccstorage.Keeper
 	accountKeeper   vmauth.Keeper
@@ -192,6 +195,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	keys := sdk.NewKVStoreKeys(
 		bam.MainStoreKey,
 		params.StoreKey,
+		upgrade.StoreKey,
 		auth.StoreKey,
 		supply.StoreKey,
 		staking.StoreKey,
@@ -240,6 +244,16 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		keys[params.StoreKey],
 		tkeys[params.TStoreKey],
 	)
+
+	// UpgradeKeeper halts chain on software update proposal in order to restart it with newer version.
+	app.upgradeKeeper = upgrade.NewKeeper(
+		make(map[int64]bool),
+		keys[upgrade.StoreKey],
+		cdc,
+	)
+
+	// Upgrade handler with name matching proposal name should be registered here.
+	//app.upgradeKeeper.SetUpgradeHandler("My_update", func(ctx sdk.Context, plan upgrade.Plan) { })
 
 	// VMKeeper stores VM resources and interacts with DVM.
 	app.vmKeeper = vm.NewKeeper(
@@ -410,6 +424,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.govRouter = gov.NewRouter()
 	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
 	app.govRouter.AddRoute(currencies.GovRouterKey, currencies.NewGovHandler(app.ccKeeper))
+	app.govRouter.AddRoute(upgrade.ModuleName, upgrade.NewSoftwareUpgradeProposalHandler(app.upgradeKeeper))
 
 	app.govKeeper = gov.NewKeeper(
 		cdc,
@@ -424,6 +439,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.mm = msmodule.NewMsManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
+		upgrade.NewAppModule(app.upgradeKeeper),
 		vm.NewAppModule(app.vmKeeper),
 		ccstorage.NewAppModule(app.ccsKeeper),
 		vmauth.NewAppModule(app.accountKeeper),
@@ -446,6 +462,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	)
 
 	app.mm.SetOrderBeginBlockers(
+		upgrade.ModuleName,
 		mint.ModuleName,
 		currencies.ModuleName, // Must go after mint.
 		distribution.ModuleName,
@@ -466,6 +483,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	// NOTE: The genutils moodule must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
+		upgrade.ModuleName,
 		vm.ModuleName,
 		ccstorage.ModuleName,
 		genaccounts.ModuleName,

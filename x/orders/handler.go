@@ -5,6 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 // NewHandler creates order type messages handler.
@@ -33,6 +35,8 @@ func handleMsgPostOrder(ctx sdk.Context, k Keeper, msg MsgPostOrder) (*sdk.Resul
 		return nil, fmt.Errorf("result marshal: %w", err)
 	}
 
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
+
 	return &sdk.Result{
 		Data:   res,
 		Events: ctx.EventManager().Events(),
@@ -58,6 +62,8 @@ func handleMsgCancelOrder(ctx sdk.Context, k Keeper, msg MsgRevokeOrder) (*sdk.R
 	if err != nil {
 		return nil, fmt.Errorf("result marshal: %w", err)
 	}
+
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
 
 	return &sdk.Result{
 		Data:   res,

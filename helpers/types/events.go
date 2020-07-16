@@ -1,6 +1,10 @@
 package types
 
-const (
-	DnEventAttrKey   = "dn_type"
-	DnEventAttrValue = "yes"
-)
+import sdk "github.com/cosmos/cosmos-sdk/types"
+
+func NewModuleNameEvent(name string) sdk.Event {
+	return sdk.NewEvent(
+		sdk.EventTypeMessage,
+		sdk.NewAttribute(sdk.AttributeKeyModule, name),
+	)
+}

@@ -37,10 +37,15 @@ func TestKeeper_DeployContractMock(t *testing.T) {
 
 	events := input.ctx.EventManager().Events()
 
-	require.Len(t, events, 1)
-	require.EqualValues(t, types.EventTypeContractStatus, events[0].Type)
-	require.EqualValues(t, types.AttrKeyStatus, events[0].Attributes[0].Key)
-	require.EqualValues(t, types.StatusKeep, events[0].Attributes[0].Value)
+	require.Len(t, events, 2)
+
+	require.EqualValues(t, sdk.EventTypeMessage, events[0].Type)
+	require.EqualValues(t, sdk.AttributeKeyModule, events[0].Attributes[0].Key)
+	require.EqualValues(t, types.ModuleName, events[0].Attributes[0].Value)
+
+	require.EqualValues(t, types.EventTypeContractStatus, events[1].Type)
+	require.EqualValues(t, types.AttributeStatus, events[1].Attributes[0].Key)
+	require.EqualValues(t, types.AttributeValueStatusKeep, events[1].Attributes[0].Value)
 }
 
 // Deploy script execute with mocked VM.
@@ -66,10 +71,17 @@ func TestKeeper_ExecuteScriptMock(t *testing.T) {
 
 	events := input.ctx.EventManager().Events()
 
-	require.Len(t, events, 2)
-	require.EqualValues(t, types.EventTypeContractStatus, events[0].Type)
-	require.EqualValues(t, types.AttrKeyStatus, events[0].Attributes[0].Key)
-	require.EqualValues(t, types.StatusKeep, events[0].Attributes[0].Value)
+	require.Len(t, events, 3)
+
+	require.EqualValues(t, sdk.EventTypeMessage, events[0].Type)
+	require.EqualValues(t, sdk.AttributeKeyModule, events[0].Attributes[0].Key)
+	require.EqualValues(t, types.ModuleName, events[0].Attributes[0].Value)
+
+	require.EqualValues(t, types.EventTypeContractStatus, events[1].Type)
+	require.EqualValues(t, types.AttributeStatus, events[1].Attributes[0].Key)
+	require.EqualValues(t, types.AttributeValueStatusKeep, events[1].Attributes[0].Value)
+
+	require.EqualValues(t, types.EventTypeMoveEvent, events[2].Type)
 }
 
 // Check genesis Import / Export functionality

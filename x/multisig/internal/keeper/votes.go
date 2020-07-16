@@ -77,7 +77,13 @@ func (k Keeper) GetConfirmationsCount(ctx sdk.Context, id dnTypes.ID) (uint64, e
 }
 
 // storeVote checks that {address} can vote for {call} and adds it to the storage.
-func (k Keeper) storeVote(ctx sdk.Context, call types.Call, address sdk.AccAddress) error {
+func (k Keeper) storeVote(ctx sdk.Context, call types.Call, address sdk.AccAddress) (retErr error) {
+	defer func() {
+		if retErr == nil {
+			ctx.EventManager().EmitEvent(types.NewConfirmVoteEvent(call.ID, address))
+		}
+	}()
+
 	store := ctx.KVStore(k.storeKey)
 
 	if err := call.CanBeVoted(); err != nil {
@@ -111,7 +117,13 @@ func (k Keeper) storeVote(ctx sdk.Context, call types.Call, address sdk.AccAddre
 }
 
 // revokeVote check that {address} can revoke his vote from the call and removes it from the storage.
-func (k Keeper) revokeVote(ctx sdk.Context, call types.Call, address sdk.AccAddress) error {
+func (k Keeper) revokeVote(ctx sdk.Context, call types.Call, address sdk.AccAddress) (retErr error) {
+	defer func() {
+		if retErr == nil {
+			ctx.EventManager().EmitEvent(types.NewRevokeVoteEvent(call.ID, address))
+		}
+	}()
+
 	store := ctx.KVStore(k.storeKey)
 
 	if err := call.CanBeVoted(); err != nil {

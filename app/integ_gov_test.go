@@ -203,6 +203,10 @@ func TestIntegGov_RegisterCurrency(t *testing.T) {
 	)
 	defer ct.Close()
 
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestIntegGov_RegisterCurrency", []string{"message.module='ccstorage'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "ccstorage")
+
 	senderAddr := ct.Accounts["validator1"].Address
 
 	// New currency info

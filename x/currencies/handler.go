@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/currencies/internal/keeper"
 )
 
@@ -25,5 +26,7 @@ func handleMsgWithdraw(ctx sdk.Context, keeper keeper.Keeper, msg MsgWithdrawCur
 		return nil, err
 	}
 
-	return &sdk.Result{}, nil
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
+
+	return &sdk.Result{Events: ctx.EventManager().Events()}, nil
 }

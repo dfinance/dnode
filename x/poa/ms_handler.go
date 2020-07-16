@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/poa/internal/keeper"
 )
@@ -30,6 +31,8 @@ func handleMsMsgAddValidator(ctx sdk.Context, k keeper.Keeper, msg MsgAddValidat
 		return err
 	}
 
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
+
 	return nil
 }
 
@@ -40,6 +43,8 @@ func handleMsMsgRemoveValidator(ctx sdk.Context, k keeper.Keeper, msg MsgRemoveV
 		return err
 	}
 
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
+
 	return nil
 }
 
@@ -48,6 +53,8 @@ func handleMsMsgReplaceValidator(ctx sdk.Context, k keeper.Keeper, msg MsgReplac
 	if err := k.ReplaceValidator(ctx, msg.OldValidator, msg.NewValidator, msg.EthAddress); err != nil {
 		return err
 	}
+
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
 
 	return nil
 }

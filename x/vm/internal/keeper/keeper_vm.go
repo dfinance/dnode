@@ -12,10 +12,11 @@ import (
 	"github.com/tendermint/crypto/sha3"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
 // Set value in storage by access path.
@@ -115,25 +116,25 @@ func (keeper Keeper) delValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 
 // Process result of VM module/script execution.
 func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteResponse) {
-	// consume gas, if execution took too much gas - panic and mark transaction as out of gas.
+	// consume gas, if execution took too much gas - panic and mark transaction as out of gas
 	ctx.GasMeter().ConsumeGas(exec.GasUsed, "vm script/module execution")
 
-	// process status
-	if exec.Status == vm_grpc.ContractStatus_Discard {
-		ctx.EventManager().EmitEvent(types.NewEventDiscard(exec.StatusStruct))
-	} else {
-		ctx.EventManager().EmitEvent(types.NewEventKeep())
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(types.ModuleName))
+	ctx.EventManager().EmitEvents(types.NewContractEvents(exec))
 
+	// process "keep" status
+	if exec.Status == vm_grpc.ContractStatus_Keep {
+		// return on "error" status
 		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
-			ctx.EventManager().EmitEvent(types.NewEventError(exec.StatusStruct))
 			types.PrintVMStackTrace(tmhash.Sum(ctx.TxBytes()), keeper.Logger(ctx), exec)
 			return
 		}
 
 		keeper.processWriteSet(ctx, exec.WriteSet)
 
+		// emit VM events (panic on "out of gas", emitted events stays in the EventManager)
 		for _, vmEvent := range exec.Events {
-			ctx.EventManager().EmitEvent(types.NewEventFromVM(ctx.GasMeter(), vmEvent))
+			ctx.EventManager().EmitEvent(types.NewMoveEvent(ctx.GasMeter(), vmEvent))
 		}
 	}
 }
