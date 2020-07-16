@@ -14,8 +14,9 @@ import (
 
 // Process genesis state and write state.
 func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
-	var state types.GenesisState
+	keeper.modulePerms.AutoCheck(types.PermInit)
 
+	var state types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(data, &state)
 
 	for _, genWriteOp := range state.WriteSet {
@@ -48,6 +49,8 @@ func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 }
 
 func (keeper Keeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
+	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+
 	store := ctx.KVStore(keeper.storeKey)
 	state := types.GenesisState{}
 

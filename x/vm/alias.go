@@ -50,7 +50,8 @@ type (
 
 var (
 	// variable aliases
-	ModuleCdc = types.ModuleCdc
+	ModuleCdc            = types.ModuleCdc
+	AvailablePermissions = types.AvailablePermissions
 	// function aliases
 	RegisterCodec      = types.RegisterCodec
 	NewKeeper          = keeper.NewKeeper

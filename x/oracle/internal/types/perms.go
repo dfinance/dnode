@@ -8,18 +8,14 @@ import (
 const (
 	// Init genesis
 	PermInit perms.Permission = ModuleName + "PermInit"
-	// Create a new currency
-	PermCCCreator perms.Permission = ModuleName + "PermCCCreator"
-	// Update currency supply
-	PermCCUpdater perms.Permission = ModuleName + "PermCCUpdater"
-	// Read currency and resources
-	PermCCReader perms.Permission = ModuleName + "PermCCReader"
-	// Update currency VM resources
-	PermCCResUpdater perms.Permission = ModuleName + "PermCCResUpdater"
+	// Read validators and counters
+	PermReader perms.Permission = ModuleName + "PermReader"
+	// Add/update validators
+	PermWriter perms.Permission = ModuleName + "PermWriter"
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermInit, PermCCCreator, PermCCUpdater, PermCCReader, PermCCResUpdater}
+	AvailablePermissions = perms.Permissions{PermInit, PermReader, PermWriter}
 )
 
 func NewModulePerms() perms.ModulePermissions {

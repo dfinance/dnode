@@ -70,7 +70,14 @@ func setupTestInput() testInput {
 
 	// create target and dependant keepers
 	input.paramsKeeper = params.NewKeeper(input.cdc, keyParams, tkeyParams)
-	input.vmStorage = vm.NewKeeper(vmKey, input.cdc, nil, nil, nil)
+	input.vmStorage = vm.NewKeeper(
+		input.cdc,
+		vmKey,
+		nil,
+		nil,
+		nil,
+		ccstorage.RequestVMStoragePerms(),
+	)
 	input.ccsStorage = ccstorage.NewKeeper(
 		input.cdc,
 		ccsKey,

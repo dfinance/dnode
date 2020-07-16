@@ -266,11 +266,14 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 
 	// VMKeeper stores VM resources and interacts with DVM.
 	app.vmKeeper = vm.NewKeeper(
-		keys[vm.StoreKey],
 		cdc,
+		keys[vm.StoreKey],
 		app.vmConn,
 		app.vmListener,
 		config,
+		ccstorage.RequestVMStoragePerms(),
+		oracle.RequestVMStoragePerms(),
+		appModulePerms(vm.AvailablePermissions),
 	)
 
 	// Currencies storage keeper keeps all currencies infos and VM resources.
@@ -404,6 +407,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		keys[oracle.StoreKey],
 		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
 		app.vmKeeper,
+		appModulePerms(oracle.AvailablePermissions),
 	)
 
 	// MarketKeeper stores asset pair market used by DEX system.

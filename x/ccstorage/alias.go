@@ -21,7 +21,7 @@ const (
 	StoreKey          = types.StoreKey
 	DefaultParamspace = types.DefaultParamspace
 	// Event types, attribute types and values
-	EventTypesCreate  = types.EventTypesCreate
+	EventTypesCreate = types.EventTypesCreate
 	//
 	AttributeDenom    = types.AttributeDenom
 	AttributeDecimals = types.AttributeDecimals
@@ -40,6 +40,8 @@ var (
 	// function aliases
 	NewKeeper           = keeper.NewKeeper
 	DefaultGenesisState = types.DefaultGenesisState
+	// perms requests
+	RequestVMStoragePerms = types.RequestVMStoragePerms
 	// errors
 	ErrInternal    = types.ErrInternal
 	ErrWrongDenom  = types.ErrWrongDenom

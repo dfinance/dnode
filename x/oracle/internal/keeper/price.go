@@ -14,6 +14,8 @@ import (
 
 // GetCurrentPrice fetches the current median price of all oracles for a specific asset.
 func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) types.CurrentPrice {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetCurrentPriceKey(assetCode))
 
@@ -25,6 +27,8 @@ func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) ty
 
 // GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight.
 func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode dnTypes.AssetCode, blockHeight int64) []types.PostedPrice {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
 
@@ -32,30 +36,6 @@ func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode dnTypes.AssetCode, block
 	k.cdc.MustUnmarshalBinaryBare(bz, &prices)
 
 	return prices
-}
-
-// Check PostPrice's ReceivedAt timestamp (algorithm depends on module params)
-func (k Keeper) CheckPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.Time) error {
-	cfg := k.GetPostPriceParams(ctx)
-
-	if cfg.ReceivedAtDiffInS > 0 {
-		thresholdDur := time.Duration(cfg.ReceivedAtDiffInS) * time.Second
-
-		absDuration := func(dur time.Duration) time.Duration {
-			if dur < 0 {
-				return -dur
-			}
-			return dur
-		}
-
-		blockTime := ctx.BlockTime()
-		diffDur := blockTime.Sub(receivedAt)
-		if absDuration(diffDur) > thresholdDur {
-			return sdkErrors.Wrapf(types.ErrInvalidReceivedAt, "timestamp difference %v should be less than %v", diffDur, thresholdDur)
-		}
-	}
-
-	return nil
 }
 
 // SetPrice updates the posted price for a specific oracle.
@@ -66,8 +46,10 @@ func (k Keeper) SetPrice(
 	price sdk.Int,
 	receivedAt time.Time) (types.PostedPrice, error) {
 
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	// validate price receivedAt timestamp comparing to the current blockHeight timestamp
-	if err := k.CheckPriceReceivedAtTimestamp(ctx, receivedAt); err != nil {
+	if err := k.checkPriceReceivedAtTimestamp(ctx, receivedAt); err != nil {
 		return types.PostedPrice{}, err
 	}
 
@@ -103,6 +85,8 @@ func (k Keeper) SetPrice(
 
 // SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs and cleans up previous inputs.
 func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	store := ctx.KVStore(k.storeKey)
 	assets := k.GetAssetParams(ctx)
 
@@ -191,6 +175,30 @@ func (k Keeper) ValidatePostPrice(ctx sdk.Context, msg types.MsgPostPrice) error
 	_, err := k.GetOracle(ctx, msg.AssetCode, msg.From)
 	if err != nil {
 		return sdkErrors.Wrap(types.ErrInvalidOracle, msg.From.String())
+	}
+
+	return nil
+}
+
+// checkPriceReceivedAtTimestamp checks PostPrice's ReceivedAt timestamp (algorithm depends on module params)
+func (k Keeper) checkPriceReceivedAtTimestamp(ctx sdk.Context, receivedAt time.Time) error {
+	cfg := k.GetPostPriceParams(ctx)
+
+	if cfg.ReceivedAtDiffInS > 0 {
+		thresholdDur := time.Duration(cfg.ReceivedAtDiffInS) * time.Second
+
+		absDuration := func(dur time.Duration) time.Duration {
+			if dur < 0 {
+				return -dur
+			}
+			return dur
+		}
+
+		blockTime := ctx.BlockTime()
+		diffDur := blockTime.Sub(receivedAt)
+		if absDuration(diffDur) > thresholdDur {
+			return sdkErrors.Wrapf(types.ErrInvalidReceivedAt, "timestamp difference %v should be less than %v", diffDur, thresholdDur)
+		}
 	}
 
 	return nil

@@ -25,6 +25,8 @@ type RetryExecReq struct {
 
 // Start Data source (DS) server.
 func (keeper *Keeper) StartDSServer(ctx sdk.Context) {
+	keeper.modulePerms.AutoCheck(types.PermDsAdmin)
+
 	// check if genesis initialized
 	// if no - skip, it will be started later.
 	store := ctx.KVStore(keeper.storeKey)
@@ -36,11 +38,15 @@ func (keeper *Keeper) StartDSServer(ctx sdk.Context) {
 
 // Set DS (data-source) server context.
 func (keeper Keeper) SetDSContext(ctx sdk.Context) {
+	keeper.modulePerms.AutoCheck(types.PermDsAdmin)
+
 	keeper.dsServer.SetContext(ctx.WithGasMeter(types.NewDumbGasMeter()))
 }
 
 // Stop DS server and close connection to VM.
 func (keeper Keeper) CloseConnections() {
+	keeper.modulePerms.AutoCheck(types.PermDsAdmin)
+
 	if keeper.rawDSServer != nil {
 		keeper.rawDSServer.Stop()
 	}
@@ -86,7 +92,7 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *v
 			if err != nil {
 				if req.Attempt == 0 {
 					// write to Sentry (if enabled)
-					keeper.Logger(ctx).Error(fmt.Sprintf("Can't get answer from VM in %v, will try to reconnect in %s attempts: %v", req.CurrentTimeout, GetMaxAttemptsStr(req.MaxAttempts), err))
+					keeper.Logger(ctx).Error(fmt.Sprintf("Can't get answer from VM in %v, will try to reconnect in %s attempts: %v", req.CurrentTimeout, getMaxAttemptsStr(req.MaxAttempts), err))
 				}
 				req.Attempt += 1
 
@@ -145,7 +151,7 @@ func (keeper Keeper) sendExecuteReq(ctx sdk.Context, moduleReq *vm_grpc.VMPublis
 }
 
 // Convert max attempts amount to string representation.
-func GetMaxAttemptsStr(maxAttempts int) string {
+func getMaxAttemptsStr(maxAttempts int) string {
 	if maxAttempts == 0 {
 		return "infinity"
 	} else {
