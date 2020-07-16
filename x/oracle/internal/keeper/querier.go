@@ -8,18 +8,15 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
-
-// price Takes an [assetcode] and returns CurrentPrice for that asset
-// oracle Takes an [assetcode] and returns the raw []PostedPrice for that asset
-// assets Returns []Assets in the oracle system
 
 // NewQuerier is the module level router for state queries
 func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err error) {
 		switch path[0] {
-		case types.QueryCurrentPrice:
+		case types.QueryPrice:
 			return queryCurrentPrice(ctx, path[1:], req, keeper)
 		case types.QueryRawPrices:
 			return queryRawPrices(ctx, path[1:], req, keeper)
@@ -31,23 +28,25 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 	}
 }
 
-func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
-	assetCode := path[0]
+// queryCurrentPrice handles currentPrice query. Takes an [assetCode] and returns CurrentPrice for that asset.
+func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
+	assetCode := dnTypes.AssetCode(path[0])
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
 		return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "asset not found")
 	}
 	currentPrice := keeper.GetCurrentPrice(ctx, assetCode)
 
-	bz, err2 := codec.MarshalJSONIndent(keeper.cdc, currentPrice)
-	if err2 != nil {
-		panic("could not marshal result to JSON")
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, currentPrice)
+	if err != nil {
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "currentPrice marshal: %v", err)
 	}
 
 	return bz, nil
 }
 
-func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) (res []byte, err error) {
-	assetCode := path[0]
+// queryRawPrices handles rawPrice query. Takes an [assetCode] and [blockHeight], then returns the raw []PostedPrice for that asset.
+func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
+	assetCode := dnTypes.AssetCode(path[0])
 	if _, found := keeper.GetAsset(ctx, assetCode); !found {
 		return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "asset not found")
 	}
@@ -58,14 +57,15 @@ func queryRawPrices(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	}
 
 	priceList := keeper.GetRawPrices(ctx, assetCode, blockHeight)
-	bz, err2 := codec.MarshalJSONIndent(keeper.cdc, priceList)
-	if err2 != nil {
-		panic("could not marshal result to JSON")
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, priceList)
+	if err != nil {
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "currentPrice marshal: %v", err)
 	}
 
 	return bz, nil
 }
 
+// queryAssets handles assets query, returns []Assets in the oracle system.
 func queryAssets(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	assets := keeper.GetAssetParams(ctx)
 	bz := codec.MustMarshalJSONIndent(keeper.cdc, &assets)

@@ -12,10 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
-
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
 // TODO: change listener logic to don't close it here?
@@ -385,7 +385,7 @@ func Test_KeeperGetOracleAccessPath(t *testing.T) {
 	input := newTestInput(true)
 	defer input.Stop()
 
-	assetCode := "eth_usdt"
+	assetCode := dnTypes.AssetCode("eth_usdt")
 	path := input.vk.GetOracleAccessPath(assetCode)
 	require.Equal(t, common_vm.StdLibAddress, path.Address)
 	require.Equal(t, "ffe300b84cc0315d7a963b504ca77202c8c38cd28bad5bce7bbe0301c806666200", hex.EncodeToString(path.Path))

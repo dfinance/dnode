@@ -4,6 +4,7 @@ package app
 
 import (
 	"fmt"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"testing"
 	"time"
 
@@ -34,12 +35,12 @@ func TestOracle_Queries(t *testing.T) {
 		ap := oracle.Params{
 			Assets: oracle.Assets{
 				oracle.Asset{
-					AssetCode: assetCodePrefix + "0",
+					AssetCode: dnTypes.AssetCode(assetCodePrefix + "a"),
 					Oracles:   oracle.Oracles{{Address: genAddrs[0]}, {Address: genAddrs[1]}, {Address: genAddrs[2]}},
 					Active:    true,
 				},
 				oracle.Asset{
-					AssetCode: assetCodePrefix + "1",
+					AssetCode: dnTypes.AssetCode(assetCodePrefix + "b"),
 					Oracles:   oracle.Oracles{{Address: genAddrs[1]}},
 					Active:    true,
 				},
@@ -58,20 +59,20 @@ func TestOracle_Queries(t *testing.T) {
 		CheckRunQuery(t, app, nil, queryOracleGetAssetsPath, &response)
 		require.Len(t, response, 2)
 
-		require.Equal(t, assetCodePrefix+"0", response[0].AssetCode)
+		require.Equal(t, assetCodePrefix+"a", response[0].AssetCode.String())
 		require.True(t, response[0].Active)
 		require.Len(t, response[0].Oracles, 3)
 		require.Equal(t, response[0].Oracles[0].Address, genAddrs[0])
 		require.Equal(t, response[0].Oracles[1].Address, genAddrs[1])
 		require.Equal(t, response[0].Oracles[2].Address, genAddrs[2])
 
-		require.Equal(t, assetCodePrefix+"1", response[1].AssetCode)
+		require.Equal(t, assetCodePrefix+"b", response[1].AssetCode.String())
 		require.True(t, response[1].Active)
 		require.Len(t, response[1].Oracles, 1)
 		require.Equal(t, response[1].Oracles[0].Address, genAddrs[1])
 	}
 
-	assetCode := assetCodePrefix + "0"
+	assetCode := dnTypes.AssetCode(assetCodePrefix + "a")
 
 	// getCurrentPrice query check (no inputs yet)
 	{
@@ -176,7 +177,7 @@ func TestOracle_AddOracle(t *testing.T) {
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 	CheckSetGenesisMockVM(t, app, genAccs)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn2dn"
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], dnTypes.AssetCode("btc_dfi")
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -206,9 +207,9 @@ func TestOracle_AddOracle(t *testing.T) {
 	// add oracle to the asset (1st)
 	{
 		msg := oracle.MsgAddOracle{
-			Oracle:  newOracleAcc1,
-			Nominee: nomineeAddr,
-			Denom:   assetCode,
+			Oracle:    newOracleAcc1,
+			Nominee:   nomineeAddr,
+			AssetCode: assetCode,
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
@@ -219,9 +220,9 @@ func TestOracle_AddOracle(t *testing.T) {
 	// add oracle to the asset (2nd)
 	{
 		msg := oracle.MsgAddOracle{
-			Oracle:  newOracleAcc2,
-			Nominee: nomineeAddr,
-			Denom:   assetCode,
+			Oracle:    newOracleAcc2,
+			Nominee:   nomineeAddr,
+			AssetCode: assetCode,
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
@@ -260,7 +261,7 @@ func TestOracle_SetOracles(t *testing.T) {
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 	CheckSetGenesisMockVM(t, app, genAccs)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "db2db"
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], dnTypes.AssetCode("btc_dfi")
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -293,9 +294,9 @@ func TestOracle_SetOracles(t *testing.T) {
 	// add oracle to the asset
 	{
 		msg := oracle.MsgAddOracle{
-			Oracle:  newOracleAcc1,
-			Nominee: nomineeAddr,
-			Denom:   assetCode,
+			Oracle:    newOracleAcc1,
+			Nominee:   nomineeAddr,
+			AssetCode: assetCode,
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
@@ -306,9 +307,9 @@ func TestOracle_SetOracles(t *testing.T) {
 	// check setting oracles to the asset (rewrite the one added before)
 	{
 		msg := oracle.MsgSetOracles{
-			Oracles: oracle.Oracles{{Address: setOracleAccs[0]}, {Address: setOracleAccs[1]}},
-			Nominee: nomineeAddr,
-			Denom:   assetCode,
+			Oracles:   oracle.Oracles{{Address: setOracleAccs[0]}, {Address: setOracleAccs[1]}},
+			Nominee:   nomineeAddr,
+			AssetCode: assetCode,
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
@@ -335,7 +336,7 @@ func TestOracle_AddAsset(t *testing.T) {
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 	CheckSetGenesisMockVM(t, app, genAccs)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn_dn"
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], dnTypes.AssetCode("dn_dn")
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -364,11 +365,10 @@ func TestOracle_AddAsset(t *testing.T) {
 	}
 
 	// check adding new asset with existing nominees
-	newAssetCode := "dn_test"
+	newAssetCode := dnTypes.AssetCode("dn_test")
 	{
 		msg := oracle.MsgAddAsset{
 			Nominee: nomineeAddr,
-			Denom:   newAssetCode,
 			Asset:   oracle.NewAsset(newAssetCode, oracle.Oracles{{Address: newOracleAcc1}, {Address: newOracleAcc2}}, true),
 		}
 		senderAcc := GetAccountCheckTx(app, genAccs[0].Address)
@@ -397,9 +397,9 @@ func TestOracle_AddAsset(t *testing.T) {
 	// check adding new asset with non-existing nominees
 	{
 		msg := oracle.MsgAddOracle{
-			Oracle:  newOracleAcc1,
-			Nominee: newOracleAcc2,
-			Denom:   "nonexisting_asset",
+			Oracle:    newOracleAcc1,
+			Nominee:   newOracleAcc2,
+			AssetCode: "nonexisting_asset",
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
@@ -418,7 +418,7 @@ func TestOracle_SetAsset(t *testing.T) {
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 	CheckSetGenesisMockVM(t, app, genAccs)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], "dn_dn"
+	nomineeAddr, nomineePrivKey, assetCode, testAsset := genAddrs[0], genPrivKeys[0], dnTypes.AssetCode("dn_dn"), dnTypes.AssetCode("dn_test")
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -433,12 +433,13 @@ func TestOracle_SetAsset(t *testing.T) {
 		ap := oracle.Params{
 			Assets: oracle.Assets{
 				oracle.Asset{AssetCode: assetCode, Oracles: oracle.Oracles{{Address: newOracleAcc1}}, Active: true},
+				oracle.Asset{AssetCode: testAsset, Oracles: oracle.Oracles{}, Active: true},
 			},
 			Nominees: []string{nomineeAddr.String()},
 		}
 		app.oracleKeeper.SetParams(ctx, ap)
 		assets := app.oracleKeeper.GetAssetParams(ctx)
-		require.Equal(t, len(assets), 1)
+		require.Equal(t, len(assets), 2)
 		require.Equal(t, assets[0].AssetCode, assetCode)
 		require.Len(t, assets[0].Oracles, 1)
 
@@ -458,21 +459,18 @@ func TestOracle_SetAsset(t *testing.T) {
 
 	// check setting asset (updating)
 	{
-		updAssetCode := "dn_test"
-
 		msg := oracle.MsgSetAsset{
 			Nominee: nomineeAddr,
-			Denom:   assetCode,
-			Asset:   oracle.NewAsset(updAssetCode, oracle.Oracles{{Address: newOracleAcc1}, {Address: newOracleAcc2}}, true),
+			Asset:   oracle.NewAsset(testAsset, oracle.Oracles{{Address: newOracleAcc1}, {Address: newOracleAcc2}}, true),
 		}
 		senderAcc := GetAccountCheckTx(app, nomineeAddr)
 
 		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, nomineePrivKey)
 		CheckDeliverTx(t, app, tx)
 
-		asset, found := app.oracleKeeper.GetAsset(GetContext(app, true), updAssetCode)
+		asset, found := app.oracleKeeper.GetAsset(GetContext(app, true), testAsset)
 		require.True(t, found)
-		require.Equal(t, updAssetCode, asset.AssetCode)
+		require.Equal(t, testAsset, asset.AssetCode)
 		require.True(t, asset.Active)
 		require.Len(t, asset.Oracles, 2)
 		require.True(t, asset.Oracles[0].Address.Equals(newOracleAcc1))
@@ -489,7 +487,7 @@ func TestOracle_PostPrices(t *testing.T) {
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 	CheckSetGenesisMockVM(t, app, genAccs)
 
-	assetCode := "dn2dn"
+	assetCode := dnTypes.AssetCode("btc_dfi")
 
 	// set params (add asset with oracle 0 / nominees)
 	{
@@ -550,9 +548,9 @@ func TestOracle_PostPrices(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, genAddrs[0]), genPrivKeys[0]
 
 		msg := oracle.MsgSetOracles{
-			Oracles: oracle.Oracles{{Address: genAddrs[0]}, {Address: genAddrs[1]}, {Address: genAddrs[2]}},
-			Nominee: senderAcc.GetAddress(),
-			Denom:   assetCode,
+			Oracles:   oracle.Oracles{{Address: genAddrs[0]}, {Address: genAddrs[1]}, {Address: genAddrs[2]}},
+			Nominee:   senderAcc.GetAddress(),
+			AssetCode: assetCode,
 		}
 
 		tx := GenTx([]sdk.Msg{msg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)

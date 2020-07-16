@@ -39,19 +39,6 @@ func (ct *CLITester) TxCurrenciesWithdraw(recipientAddr, fromAddr, denom string,
 	return r
 }
 
-func (ct *CLITester) TxOracleAddAsset(nomineeAddress, assetCode string, oracleAddresses ...string) *TxRequest {
-	r := ct.newTxRequest()
-	r.SetCmd(
-		"oracle",
-		"",
-		"add-asset",
-		nomineeAddress,
-		assetCode,
-		strings.Join(oracleAddresses, ","))
-
-	return r
-}
-
 func (ct *CLITester) TxPoaAddValidator(fromAddr, address, ethAddress, issueID string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
@@ -94,53 +81,61 @@ func (ct *CLITester) TxPoaReplaceValidator(fromAddr, targetAddress, address, eth
 	return r
 }
 
-func (ct *CLITester) TxOracleSetAsset(nomineeAddress, assetCode string, oracleAddresses ...string) *TxRequest {
+func (ct *CLITester) TxOracleAddAsset(nomineeAddress string, assetCode dnTypes.AssetCode, oracleAddresses ...string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"oracle",
-		"",
-		"set-asset",
 		nomineeAddress,
-		assetCode,
+		"add-asset",
+		assetCode.String(),
 		strings.Join(oracleAddresses, ","))
 
 	return r
 }
 
-func (ct *CLITester) TxOracleAddOracle(nomineeAddress, assetCode string, oracleAddress string) *TxRequest {
+func (ct *CLITester) TxOracleSetAsset(nomineeAddress string, assetCode dnTypes.AssetCode, oracleAddresses ...string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"oracle",
-		"",
-		"add-oracle",
 		nomineeAddress,
-		assetCode,
+		"set-asset",
+		assetCode.String(),
+		strings.Join(oracleAddresses, ","))
+
+	return r
+}
+
+func (ct *CLITester) TxOracleAddOracle(nomineeAddress string, assetCode dnTypes.AssetCode, oracleAddress string) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"oracle",
+		nomineeAddress,
+		"add-oracle",
+		assetCode.String(),
 		oracleAddress)
 
 	return r
 }
 
-func (ct *CLITester) TxOracleSetOracles(nomineeAddress, assetCode string, oracleAddresses ...string) *TxRequest {
+func (ct *CLITester) TxOracleSetOracles(nomineeAddress string, assetCode dnTypes.AssetCode, oracleAddresses ...string) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"oracle",
-		"",
-		"set-oracles",
 		nomineeAddress,
-		assetCode,
+		"set-oracles",
+		assetCode.String(),
 		strings.Join(oracleAddresses, ","))
 
 	return r
 }
 
-func (ct *CLITester) TxOraclePostPrice(nomineeAddress, assetCode string, price sdk.Int, receivedAt time.Time) *TxRequest {
+func (ct *CLITester) TxOraclePostPrice(nomineeAddress string, assetCode dnTypes.AssetCode, price sdk.Int, receivedAt time.Time) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"oracle",
-		"",
-		"postprice",
 		nomineeAddress,
-		assetCode,
+		"postprice",
+		assetCode.String(),
 		price.String(),
 		strconv.FormatInt(receivedAt.Unix(), 10),
 	)

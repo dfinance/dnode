@@ -2,15 +2,15 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
+
+	"github.com/dfinance/dnode/helpers"
 
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
@@ -19,22 +19,22 @@ const (
 	flagClientHome = "home-client"
 )
 
-// AddOracleNomineesCmd returns add-oracle-nomenees cobra Command.
+// AddOracleNomineesCmd returns add-oracle-nominees command for adding a nominee to genesis.
 func AddOracleNomineesCmd(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-oracle-nominees-gen [address1,address2...]",
+		Use:   "add-oracle-nominees-gen [nomineeAddresses]",
 		Short: "Add oracle nominees to genesis.json",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
+			// setup viper config
 			config := ctx.Config
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
-			addresses := strings.Split(args[0], ",")
-			for i, a := range addresses {
-				if _, err := sdk.AccAddressFromBech32(a); err != nil {
-					return fmt.Errorf("%q address at index %d: %w", a, i, err)
-				}
+			// parse inputs
+			addresses, err := helpers.ParseSdkAddressesParams("nomineeAddresses", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
 			}
 
 			// retrieve the app state
@@ -44,26 +44,26 @@ func AddOracleNomineesCmd(ctx *server.Context, cdc *codec.Codec,
 				return err
 			}
 
-			// add genesis account to the app state
 			var genesisOracle types.GenesisState
-
 			cdc.MustUnmarshalJSON(appState[types.ModuleName], &genesisOracle)
-			var addedNomenees []string
+
+			// add genesis account to the app state
+			var addedNominees []string
 			for _, n := range addresses {
 				var found bool
 				for _, nn := range genesisOracle.Params.Nominees {
-					if n == nn {
-						addedNomenees = append(addedNomenees, nn)
+					if n.String() == nn {
+						addedNominees = append(addedNominees, nn)
 						found = true
 					}
 				}
 				if !found {
-					addedNomenees = append(addedNomenees, n)
+					addedNominees = append(addedNominees, n.String())
 				}
 			}
+			genesisOracle.Params.Nominees = addedNominees
 
-			genesisOracle.Params.Nominees = addedNomenees
-
+			// update and export app state
 			genesisStateBz := cdc.MustMarshalJSON(genesisOracle)
 			appState[types.ModuleName] = genesisStateBz
 
@@ -71,48 +71,46 @@ func AddOracleNomineesCmd(ctx *server.Context, cdc *codec.Codec,
 			if err != nil {
 				return err
 			}
-
-			// export app state
 			genDoc.AppState = appStateJSON
 
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		},
 	}
 
+	helpers.BuildCmdHelp(cmd, []string{
+		"nomineeAddresses comma separated list of nominee addresses",
+	})
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(flagClientHome, defaultClientHome, "client's home directory")
+
 	return cmd
 }
 
-// AddAssetGenCmd returns add-asset cobra Command.
+// AddAssetGenCmd returns add-asset command for adding an asset to genesis.
 func AddAssetGenCmd(ctx *server.Context, cdc *codec.Codec,
 	defaultNodeHome, defaultClientHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-oracle-asset-gen [denom] [oracles]",
+		Use:   "add-oracle-asset-gen [assetCode] [oracleAddresses]",
 		Short: "Add oracle asset to genesis.json",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
-			denom := args[0]
-			if len(denom) == 0 {
-				return fmt.Errorf("%s argument %q: empty", "denom", args[0])
-			}
-
-			oracleArgs := strings.Split(args[1], ",")
-			if len(oracleArgs) == 0 {
-				return fmt.Errorf("%s argument: empty slice", "oracles")
-			}
-
-			oracles := make(types.Oracles, 0, len(oracleArgs))
-			for i, arg := range oracleArgs {
-				addr, err := sdk.AccAddressFromBech32(arg)
-				if err != nil {
-					return fmt.Errorf("%s argument: %q address at index %d: %w", "oracles", arg, i, err)
-				}
-				oracles = append(oracles, types.Oracle{Address: addr})
-			}
-
+			// setup viper config
 			config := ctx.Config
 			config.SetRoot(viper.GetString(cli.HomeFlag))
+
+			// parse inputs
+			assetCode, err := helpers.ParseAssetCodeParam("assetCode", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			oracles, err := parseOraclesArg("oracleAddresses", args[1])
+			if err != nil {
+				return err
+			}
+			if len(oracles) == 0 {
+				return fmt.Errorf("%s argument %q: empty slice", "oracleAddresses", args[1])
+			}
 
 			// retrieve the app state
 			genFile := config.GenesisFile()
@@ -121,25 +119,25 @@ func AddAssetGenCmd(ctx *server.Context, cdc *codec.Codec,
 				return err
 			}
 
-			// retrieve the module genesis state
 			var genesisOracle types.GenesisState
 			cdc.MustUnmarshalJSON(appState[types.ModuleName], &genesisOracle)
 
+			// add asset to the module state
 			foundIdx := -1
 			for i, asset := range genesisOracle.Params.Assets {
-				if asset.AssetCode == denom {
+				if asset.AssetCode == assetCode {
 					foundIdx = i
 					break
 				}
 			}
 
 			if foundIdx == -1 {
-				genesisOracle.Params.Assets = append(genesisOracle.Params.Assets, types.NewAsset(denom, oracles, true))
+				genesisOracle.Params.Assets = append(genesisOracle.Params.Assets, types.NewAsset(assetCode, oracles, true))
 			} else {
 				genesisOracle.Params.Assets[foundIdx].Oracles = oracles
 			}
 
-			// update app state
+			// update and export app state
 			genesisStateBz := cdc.MustMarshalJSON(genesisOracle)
 			appState[types.ModuleName] = genesisStateBz
 
@@ -147,16 +145,33 @@ func AddAssetGenCmd(ctx *server.Context, cdc *codec.Codec,
 			if err != nil {
 				return err
 			}
-
-			// export app state
 			genDoc.AppState = appStateJSON
 
 			return genutil.ExportGenesisFile(genDoc, genFile)
 		},
 	}
 
+	helpers.BuildCmdHelp(cmd, []string{
+		"asset code symbol",
+		"comma separated list of oracle addresses",
+	})
 	cmd.Flags().String(cli.HomeFlag, defaultNodeHome, "node's home directory")
 	cmd.Flags().String(flagClientHome, defaultClientHome, "client's home directory")
 
 	return cmd
+}
+
+// parseOraclesArg parses coma-separated notation oracle addresses and returns Oracles objects.
+func parseOraclesArg(argName, argValue string) (retOracles types.Oracles, retErr error) {
+	addresses, err := helpers.ParseSdkAddressesParams(argName, argValue, helpers.ParamTypeCliArg)
+	if err != nil {
+		retErr = err
+		return
+	}
+
+	for _, address := range addresses {
+		retOracles = append(retOracles, types.NewOracle(address))
+	}
+
+	return
 }

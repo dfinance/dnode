@@ -17,6 +17,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	dnodeConfig "github.com/dfinance/dnode/cmd/config"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/oracle"
 	compilerClient "github.com/dfinance/dnode/x/vm/client"
@@ -399,7 +400,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 
 	input.ak.SetAccount(input.ctx, acc1)
 
-	assetCode := "eth_usdt"
+	assetCode := dnTypes.AssetCode("eth_usdt")
 	okInitParams := oracle.Params{
 		Assets: oracle.Assets{
 			oracle.Asset{
@@ -442,8 +443,8 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	checkNoEventErrors(events, t)
 
 	checkEventsContainsEvery(t, events, newKeepEvents())
-	require.Len(t, events, 3)
-	vmEvent := events[2]
+	require.Len(t, events, 5)
+	vmEvent := events[4]
 	require.Len(t, vmEvent.Attributes, 4)
 	// sender
 	{
@@ -1179,7 +1180,7 @@ func Test_EventTypeSerializationGas(t *testing.T) {
 
 	// Calculate min / max gasConsumed: script has 4 depth level
 	expectedMinChargedGas := uint64(0)
-	for i := 1; i <= 4 - types.EventTypeNoGasLevels; i++ {
+	for i := 1; i <= 4-types.EventTypeNoGasLevels; i++ {
 		expectedMinChargedGas += uint64(i) * types.EventTypeProcessingGas
 	}
 	expectedMaxChargedGas := expectedMinChargedGas + types.EventTypeProcessingGas

@@ -281,7 +281,7 @@ func newTestInput(launchMock bool) testInput {
 	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
 	input.cs = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.pk.Subspace(ccstorage.DefaultParamspace), input.vk)
 	input.ak = vmauth.NewKeeper(input.cdc, input.keyAccount, input.pk.Subspace(auth.DefaultParamspace), input.cs, auth.ProtoBaseAccount)
-	input.ok = oracle.NewKeeper(input.keyOracle, input.cdc, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
+	input.ok = oracle.NewKeeper(input.cdc, input.keyOracle, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
 
 	// init genesis
 	input.cs.InitDefaultGenesis(input.ctx)

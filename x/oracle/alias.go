@@ -9,7 +9,6 @@ type (
 	GenesisState       = types.GenesisState
 	MsgPostPrice       = types.MsgPostPrice
 	Params             = types.Params
-	ParamSubspace      = types.ParamSubspace
 	QueryRawPricesResp = types.QueryRawPricesResp
 	QueryAssetsResp    = types.QueryAssetsResp
 	Asset              = types.Asset
@@ -18,7 +17,6 @@ type (
 	Oracles            = types.Oracles
 	CurrentPrice       = types.CurrentPrice
 	PostedPrice        = types.PostedPrice
-	SortDecs           = types.SortDecs
 	Keeper             = keeper.Keeper
 	MsgAddOracle       = types.MsgAddOracle
 	MsgSetOracles      = types.MsgSetOracles
@@ -30,28 +28,37 @@ type (
 const (
 	ModuleName        = types.ModuleName
 	RouterKey         = types.RouterKey
-	QuerierRoute      = types.QuerierRoute
 	DefaultParamspace = types.DefaultParamspace
 	StoreKey          = types.StoreKey
+	//
+	QueryAssets    = types.QueryAssets
+	QueryRawPrices = types.QueryRawPrices
+	QueryPrice     = types.QueryPrice
+	// Event types, attribute types and values
+	EventTypePrice = types.EventTypePrice
+	//
+	AttributeAssetCode  = types.AttributeAssetCode
+	AttributePrice      = types.AttributePrice
+	AttributeReceivedAt = types.AttributeReceivedAt
 )
 
 var (
-	ModuleCdc     = types.ModuleCdc
-	NewKeeper     = keeper.NewKeeper
-	NewAsset      = types.NewAsset
-	RegisterCodec = types.RegisterCodec
+	ModuleCdc = types.ModuleCdc
 	// functions aliases
-	ErrEmptyInput       = types.ErrEmptyInput
-	ErrExpired          = types.ErrExpired
-	ErrNoValidPrice     = types.ErrNoValidPrice
-	ErrInvalidAsset     = types.ErrInvalidAsset
-	ErrInvalidOracle    = types.ErrInvalidOracle
-	NewGenesisState     = types.NewGenesisState
-	DefaultGenesisState = types.DefaultGenesisState
-	ValidateGenesis     = types.ValidateGenesis
-	NewMsgPostPrice     = types.NewMsgPostPrice
-	ParamKeyTable       = types.ParamKeyTable
-	NewParams           = types.NewParams
-	DefaultParams       = types.DefaultParams
+	RegisterCodec       = types.RegisterCodec
+	NewKeeper           = keeper.NewKeeper
 	NewQuerier          = keeper.NewQuerier
+	DefaultGenesisState = types.DefaultGenesisState
+	DefaultParams       = types.DefaultParams
+	NewParams           = types.NewParams
+	NewAsset            = types.NewAsset
+	NewMsgPostPrice     = types.NewMsgPostPrice
+	// errors
+	ErrInternal      = types.ErrInternal
+	ErrEmptyInput    = types.ErrEmptyInput
+	ErrExpired       = types.ErrExpired
+	ErrNoValidPrice  = types.ErrNoValidPrice
+	ErrExistingAsset = types.ErrExistingAsset
+	ErrInvalidAsset  = types.ErrInvalidAsset
+	ErrInvalidOracle = types.ErrInvalidOracle
 )

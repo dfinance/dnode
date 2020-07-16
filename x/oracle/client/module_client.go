@@ -10,7 +10,7 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
-// Returns get commands for this module.
+// GetQueryCmd returns get commands for the oracle module.
 func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	queryCmd := &cobra.Command{
 		Use:   types.ModuleName,
@@ -27,7 +27,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 	return queryCmd
 }
 
-// GetTxCmd returns the transaction commands for this module.
+// GetTxCmd returns the transaction commands for the oracle module.
 func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 	txCmd := &cobra.Command{
 		Use:                        types.ModuleName,

@@ -4,47 +4,26 @@ import (
 	"fmt"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
-
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 var (
-	// KeyAssets store key for assets
 	KeyAssets    = []byte("oracleassets")
 	KeyNominees  = []byte("oraclenominees")
 	KeyPostPrice = []byte("oraclepostprice")
 )
 
-// ParamKeyTable Key declaration for parameters
-func ParamKeyTable() params.KeyTable {
-	return params.NewKeyTable().RegisterParamSet(&Params{})
-}
-
-// Params params for oracle. Can be altered via governance
+// Params defines keeper params.
 type Params struct {
-	Assets    Assets          `json:"assets" yaml:"assets"` //  Array containing the assets supported by the oracle
-	Nominees  []string        `json:"nominees" yaml:"nominees"`
+	// All assets
+	Assets Assets `json:"assets" yaml:"assets"`
+	// Nominees addresses
+	Nominees []string `json:"nominees" yaml:"nominees"`
+	// PostPrice params
 	PostPrice PostPriceParams `json:"post_price" yaml:"post_price"`
 }
 
-// Posting rawPrices from oracles configuration params
-type PostPriceParams struct {
-	// allowed timestamp difference between current block time and oracle's receivedAt (0 - disabled) [sec]
-	ReceivedAtDiffInS uint32 `json:"received_at_diff_in_s" yaml:"received_at_diff_in_s"`
-}
-
-func (p PostPriceParams) String() string {
-	out := strings.Builder{}
-	out.WriteString("PostPrice:\n")
-	out.WriteString(fmt.Sprintf("\tReceivedAtDiffInS: %d\n", p.ReceivedAtDiffInS))
-
-	return out.String()
-}
-
-// ParamSetPairs implements the ParamSet interface and returns all the key/value pairs
-// pairs of oracle module's parameters.
+// Implements subspace.ParamSet interface.
 func (p Params) ParamSetPairs() params.ParamSetPairs {
 	nilPairValidatorFunc := func(value interface{}) error {
 		return nil
@@ -57,29 +36,26 @@ func (p Params) ParamSetPairs() params.ParamSetPairs {
 	}
 }
 
-// NewParams creates a new AssetParams object
-func NewParams(assets []Asset, nominees []string, postPrice PostPriceParams) Params {
-	return Params{
-		Assets:    assets,
-		Nominees:  nominees,
-		PostPrice: postPrice,
+// Validate ensure that params have valid values.
+func (p Params) Validate() error {
+	for _, asset := range p.Assets {
+		if err := asset.AssetCode.Validate(); err != nil {
+			return fmt.Errorf("invalid asset %q: %w", asset.String(), err)
+		}
 	}
+
+	for i, nominee := range p.Nominees {
+		if nominee == "" {
+			return fmt.Errorf("invalid nominee [%d]: empty", i)
+		}
+	}
+
+	return nil
 }
 
-// DefaultParams default params for oracle
-func DefaultParams() Params {
-	return NewParams(
-		Assets{},
-		[]string{},
-		PostPriceParams{
-			ReceivedAtDiffInS: 60 * 60,
-		},
-	)
-}
-
-// String implements fmt.stringer
 func (p Params) String() string {
 	out := strings.Builder{}
+
 	out.WriteString("Params:\n")
 	for i, a := range p.Assets {
 		out.WriteString(fmt.Sprintf("Asset [%d]: %s\n", i, a.String()))
@@ -92,25 +68,36 @@ func (p Params) String() string {
 	return strings.TrimSpace(out.String())
 }
 
-// ParamSubspace defines the expected Subspace interface for parameters
-type ParamSubspace interface {
-	Get(ctx sdk.Context, key []byte, ptr interface{})
-	Set(ctx sdk.Context, key []byte, param interface{})
+// NewParams creates a new AssetParams object.
+func NewParams(assets []Asset, nominees []string, postPrice PostPriceParams) Params {
+	return Params{
+		Assets:    assets,
+		Nominees:  nominees,
+		PostPrice: postPrice,
+	}
 }
 
-// Validate ensure that params have valid values
-func (p Params) Validate() error {
-	for _, asset := range p.Assets {
-		if err := dnTypes.AssetCodeFilter(asset.AssetCode); err != nil {
-			return fmt.Errorf("invalid asset %q: %w", asset.String(), err)
-		}
-	}
+// DefaultParams default params for oracle.
+func DefaultParams() Params {
+	return NewParams(Assets{}, []string{}, PostPriceParams{
+		ReceivedAtDiffInS: 60 * 60,
+	})
+}
 
-	for i, nominee := range p.Nominees {
-		if nominee == "" {
-			return fmt.Errorf("invalid nominee [%d]: empty", i)
-		}
-	}
+// ParamKeyTable Key declaration for parameters.
+func ParamKeyTable() params.KeyTable {
+	return params.NewKeyTable().RegisterParamSet(&Params{})
+}
 
-	return nil
+// PostPriceParams Posting rawPrices from oracles configuration params.
+type PostPriceParams struct {
+	// Allowed timestamp difference between current block time and oracle's receivedAt (0 - disabled) [sec]
+	ReceivedAtDiffInS uint32 `json:"received_at_diff_in_s" yaml:"received_at_diff_in_s"`
+}
+
+func (p PostPriceParams) String() string {
+	return fmt.Sprintf("PostPrice params:\n"+
+		"  ReceivedAtDiffInS: %d",
+		p.ReceivedAtDiffInS,
+	)
 }

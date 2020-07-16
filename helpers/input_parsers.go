@@ -7,6 +7,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	cliCtx "github.com/cosmos/cosmos-sdk/client/context"
@@ -18,6 +19,7 @@ import (
 	govCli "github.com/cosmos/cosmos-sdk/x/gov/client/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	tmtime "github.com/tendermint/tendermint/types/time"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
@@ -144,17 +146,40 @@ func ParseUint64Param(argName, argValue string, paramType ParamType) (uint64, er
 }
 
 // ParseSdkAddressParam parses sdk.AccAddress param.
-func ParseSdkAddressParam(argName, argValue string, paramType ParamType) (sdk.AccAddress, error) {
+func ParseSdkAddressParam(argName, argValue string, paramType ParamType) (retAddr sdk.AccAddress, retErr error) {
+	defer func() {
+		if retAddr.Empty() {
+			retErr = fmt.Errorf("%s %s %q: parsing Bech32 / HEX account address: failed", argName, paramType, argValue)
+		}
+	}()
+
 	if v, err := sdk.AccAddressFromBech32(argValue); err == nil {
-		return v, nil
+		retAddr = v
+		return
 	}
 
 	argValueNorm := strings.TrimPrefix(argValue, "0x")
 	if v, err := sdk.AccAddressFromHex(argValueNorm); err == nil {
-		return v, nil
+		retAddr = v
+		return
 	}
 
-	return sdk.AccAddress{}, fmt.Errorf("%s %s %q: parsing Bech32 / HEX account address: failed", argName, paramType, argValue)
+	return
+}
+
+// ParseSdkAddressesParams parses sdk.AccAddress comma separated slice.
+func ParseSdkAddressesParams(argName, argValue string, paramType ParamType) (retAddrs []sdk.AccAddress, retErr error) {
+	for i, addressStr := range strings.Split(argValue, ",") {
+		addressStr = strings.TrimSpace(addressStr)
+		addr, err := ParseSdkAddressParam(fmt.Sprintf("address[%d]", i), addressStr, paramType)
+		if err != nil {
+			retErr = fmt.Errorf("%s %s %q: %w", argName, paramType, argValue, err)
+			return
+		}
+		retAddrs = append(retAddrs, addr)
+	}
+
+	return
 }
 
 // ParseEthereumAddressParam parses and validates Ethereum address param.
@@ -227,6 +252,17 @@ func ParseCoinParam(argName, argValue string, paramType ParamType) (retCoin sdk.
 	}
 
 	return coin, nil
+}
+
+// ParseUnixTimestamp parses UNIX timestamp in seconds.
+func ParseUnixTimestamp(argName, argValue string, paramType ParamType) (time.Time, error) {
+	ts, err := ParseSdkIntParam(argName, argValue, paramType)
+	if err != nil {
+		return time.Time{}, err
+	}
+	tsCanonical := tmtime.Canonical(time.Unix(ts.Int64(), 0))
+
+	return tsCanonical, nil
 }
 
 // BuildError builds an error in unified error style.

@@ -162,10 +162,10 @@ func (r *TxRequest) CheckFailedWithSDKError(err error) {
 
 func (r *TxRequest) CheckFailedWithErrorSubstring(subStr string) (output string) {
 	code, stdout, stderr := r.Send()
-	require.NotEqual(r.t, 0, code, "%s: succeeded", r.String())
-
 	stdoutStr, stderrErr := string(stdout), string(stderr)
 	output = fmt.Sprintf("stdout: %s\nstderr: %s", stdoutStr, stderrErr)
+
+	require.NotEqual(r.t, 0, code, "%s: succeeded: %s", r.String(), output)
 
 	if subStr == "" {
 		return

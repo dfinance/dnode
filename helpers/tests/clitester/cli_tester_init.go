@@ -161,7 +161,7 @@ func (ct *CLITester) initChain() {
 
 		cmd := ct.newWbdCmd().
 			AddArg("", "add-oracle-asset-gen").
-			AddArg("", ct.DefAssetCode).
+			AddArg("", ct.DefAssetCode.String()).
 			AddArg("", strings.Join(oracles, ","))
 
 		cmd.CheckSuccessfulExecute(nil)

@@ -3,43 +3,41 @@ package rest
 import (
 	"fmt"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/gorilla/mux"
-	tmtime "github.com/tendermint/tendermint/types/time"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
 const (
-	restName        = "assetCode"
-	blockHeightName = "blockHeight"
+	assetCodeKey   = "assetCode"
+	blockHeightKey = "blockHeight"
 )
 
 type postPriceReq struct {
 	BaseReq    rest.BaseReq `json:"base_req" yaml:"base_req"`
-	AssetCode  string       `json:"asset_code" example:"dfi"`                                            // Denom
+	AssetCode  string       `json:"asset_code" example:"dfi"`                                            // AssetCode
 	Price      string       `json:"price" example:"100"`                                                 // BigInt
 	ReceivedAt string       `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
-// RegisterRoutes - Central function to define routes that get registered by the main application
+// RegisterRoutes Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 	r.HandleFunc(fmt.Sprintf("/%s/rawprices", storeName), postPriceHandler(cliCtx)).Methods("PUT")
-	r.HandleFunc(fmt.Sprintf("/%s/rawprices/{%s}/{%s}", storeName, restName, blockHeightName), getRawPricesHandler(cliCtx, storeName)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/currentprice/{%s}", storeName, restName), getCurrentPriceHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/rawprices/{%s}/{%s}", storeName, assetCodeKey, blockHeightKey), getRawPricesHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/currentprice/{%s}", storeName, assetCodeKey), getCurrentPriceHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/assets", storeName), getAssetsHandler(cliCtx, storeName)).Methods("GET")
 }
 
 // PostPrice godoc
 // @Tags oracle
-// @Summary Post Asset RawPrice
-// @Description Send Asset RawPrice signed Tx
+// @Summary Post asset rawPrice
+// @Description Send asset rawPrice signed Tx
 // @ID oraclePostPrice
 // @Accept  json
 // @Produce json
@@ -49,8 +47,8 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 // @Router /oracle/rawprices [put]
 func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs
 		var req postPriceReq
-
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
@@ -61,27 +59,32 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		addr, err := sdk.AccAddressFromBech32(baseReq.From)
+		addr, err := helpers.ParseSdkAddressParam("from", baseReq.From, helpers.ParamTypeRestRequest)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		price, isOk := sdk.NewIntFromString(req.Price)
-		if !isOk {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("something wrong with price value: %s", req.Price))
+		assetCode, err := helpers.ParseAssetCodeParam("assetCode", req.AssetCode, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		receivedAtInt, ok := sdk.NewIntFromString(req.ReceivedAt)
-		if !ok {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "invalid expiry")
+		price, err := helpers.ParseSdkIntParam("price", req.Price, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		receivedAt := tmtime.Canonical(time.Unix(receivedAtInt.Int64(), 0))
+
+		receivedAt, err := helpers.ParseUnixTimestamp("receivedAt", req.ReceivedAt, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
 
 		// create the message
-		msg := types.NewMsgPostPrice(addr, req.AssetCode, price, receivedAt)
+		msg := types.NewMsgPostPrice(addr, assetCode, price, receivedAt)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -93,8 +96,8 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 // GetRawPrices godoc
 // @Tags oracle
-// @Summary Get RawPrices
-// @Description Get RawPrice objects by assetCode and blockHeight
+// @Summary Get rawPrices
+// @Description Get rawPrice objects by assetCode and blockHeight
 // @ID oracleGetRawPrices
 // @Accept  json
 // @Produce json
@@ -106,11 +109,18 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 // @Router /oracle/rawprices/{assetCode}/{blockHeight} [get]
 func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs and prepare request
 		vars := mux.Vars(r)
-		assetCode := vars[restName]
-		blockHeight, err := strconv.ParseInt(vars[blockHeightName], 10, 64)
+
+		assetCode, err := helpers.ParseAssetCodeParam("assetCode", vars[assetCodeKey], helpers.ParamTypeRestPath)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("invalid blockHeight parameter: %v", err))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		blockHeight, err := helpers.ParseUint64Param(blockHeightKey, vars[blockHeightKey], helpers.ParamTypeRestPath)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -119,7 +129,8 @@ func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.Handl
 			return
 		}
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/rawprices/%s/%d", storeName, assetCode, blockHeight), nil)
+		// send request and process response
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s/%d", storeName, types.QueryRawPrices, assetCode, blockHeight), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
@@ -144,14 +155,22 @@ func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.Handl
 // @Router /oracle/currentprice/{assetCode} [get]
 func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs and prepare request
 		vars := mux.Vars(r)
-		paramType := vars[restName]
+
+		assetCode, err := helpers.ParseAssetCodeParam("assetCode", vars[assetCodeKey], helpers.ParamTypeRestPath)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {
 			return
 		}
 
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/price/%s", storeName, paramType), nil)
+		// parse inputs and prepare request
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s/%s", storeName, types.QueryPrice, assetCode), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
@@ -164,8 +183,8 @@ func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.Ha
 
 // GetAssets godoc
 // @Tags oracle
-// @Summary Get Assets
-// @Description Get Asset objects
+// @Summary Get assets
+// @Description Get asset objects
 // @ID oracleGetAssets
 // @Accept  json
 // @Produce json
@@ -174,11 +193,14 @@ func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.Ha
 // @Router /oracle/assets [get]
 func getAssetsHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs and prepare request
 		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
 		if !ok {
 			return
 		}
-		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/assets/", storeName), nil)
+
+		// parse inputs and prepare request
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", storeName, types.QueryAssets), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
