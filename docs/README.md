@@ -15,3 +15,4 @@ to contribute to current repository.
 * [Logging](/docs/logging.md)
 * [DEX](/docs/dex.md)
 * [Governance](/docs/governance.md)
+* [Events](/docs/events.md)

@@ -30,6 +30,12 @@ const (
 	//
 	DefaultMaxValidators = types.DefaultMaxValidators
 	DefaultMinValidators = types.DefaultMinValidators
+	// Event types, attribute types and values
+	EventTypeAdd    = types.EventTypeAdd
+	EventTypeRemove = types.EventTypeRemove
+	//
+	AttributeSdkAddress = types.AttributeSdkAddress
+	AttributeEthAddress = types.AttributeEthAddress
 )
 
 var (

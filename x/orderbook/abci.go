@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/orders"
 )
 
@@ -22,11 +23,17 @@ func EndBlocker(ctx sdk.Context, k Keeper) []abci.ValidatorUpdate {
 		}
 	}
 
+	resultCnt := 0
 	for _, result := range matcherPool.Process() {
 		k.ProcessOrderFills(ctx, result.OrderFills)
 		k.SetHistoryItem(ctx, NewHistoryItem(ctx, result))
 
-		ctx.EventManager().EmitEvent(NewClearanceEvent(result.MarketID, result.ClearanceState.Price))
+		resultCnt++
+		ctx.EventManager().EmitEvent(NewClearanceEvent(result))
+	}
+
+	if resultCnt > 0 {
+		ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
 	}
 
 	return []abci.ValidatorUpdate{}

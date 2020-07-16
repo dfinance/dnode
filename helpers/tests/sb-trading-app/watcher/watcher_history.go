@@ -14,6 +14,8 @@ import (
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/dfinance/dnode/x/ccstorage"
+	"github.com/dfinance/dnode/x/orderbook"
+	"github.com/dfinance/dnode/x/orders"
 )
 
 type History struct {
@@ -157,7 +159,7 @@ func (h *History) String(stats, balances, blockDurations bool) string {
 }
 
 func (h *History) HandleOrderPostEvent(event tmCoreTypes.ResultEvent) {
-	marketOrders := findEventAttrMarketIDOrders("orders.post.", event)
+	marketOrders := findEventAttrMarketIDOrders(orders.EventTypeOrderPost, event)
 	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
 	h.Lock()
@@ -174,7 +176,7 @@ func (h *History) HandleOrderPostEvent(event tmCoreTypes.ResultEvent) {
 }
 
 func (h *History) HandleOrderCancelEvent(event tmCoreTypes.ResultEvent) {
-	marketOrders := findEventAttrMarketIDOrders("orders.cancel.", event)
+	marketOrders := findEventAttrMarketIDOrders(orders.EventTypeOrderCancel, event)
 	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
 	h.Lock()
@@ -196,7 +198,7 @@ func (h *History) HandleOrderCancelEvent(event tmCoreTypes.ResultEvent) {
 }
 
 func (h *History) HandleOrderFullFillEvent(event tmCoreTypes.ResultEvent) {
-	marketOrders := findEventAttrMarketIDOrders("orders.full_fill.", event)
+	marketOrders := findEventAttrMarketIDOrders(orders.EventTypeFullyFilledOrder, event)
 	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
 	h.Lock()
@@ -218,7 +220,7 @@ func (h *History) HandleOrderFullFillEvent(event tmCoreTypes.ResultEvent) {
 }
 
 func (h *History) HandleOrderPartialFillEvent(event tmCoreTypes.ResultEvent) {
-	marketOrders, ordersQuantity := findEventAttrMarketIDOrdersQuantity("orders.partial_fill.", event)
+	marketOrders, ordersQuantity := findEventAttrMarketIDOrdersQuantity(orders.EventTypePartiallyFilledOrder, event)
 	require.NotZero(h.t, len(marketOrders), "parsing failed: %v", event)
 
 	h.Lock()
@@ -275,8 +277,8 @@ func (h *History) HandleNewBlockEvent(event tmCoreTypes.ResultEvent) {
 func findEventAttrMarketIDOrders(prefix string, event tmCoreTypes.ResultEvent) (marketOrders map[string][]string) {
 	marketOrders = make(map[string][]string)
 
-	eventTypeMarketQuery := prefix + "market_id"
-	eventTypeOrderQuery := prefix + "order_id"
+	eventTypeMarketQuery := prefix + "." + orders.AttributeKeyMarketID
+	eventTypeOrderQuery := prefix + "." + orders.AttributeKeyOrderID
 	marketValues := event.Events[eventTypeMarketQuery]
 	orderValues := event.Events[eventTypeOrderQuery]
 
@@ -300,9 +302,9 @@ func findEventAttrMarketIDOrdersQuantity(prefix string, event tmCoreTypes.Result
 	marketOrders = make(map[string][]string)
 	ordersQuantity = make(map[string]sdk.Uint)
 
-	eventTypeMarketQuery := prefix + "market_id"
-	eventTypeOrderQuery := prefix + "order_id"
-	eventTypeQuantityQuery := prefix + "quantity"
+	eventTypeMarketQuery := prefix + "." + orders.AttributeKeyMarketID
+	eventTypeOrderQuery := prefix + "." + orders.AttributeKeyOrderID
+	eventTypeQuantityQuery := prefix + "." + orders.AttributeKeyQuantity
 	marketValues := event.Events[eventTypeMarketQuery]
 	orderValues := event.Events[eventTypeOrderQuery]
 	quantityValues := event.Events[eventTypeQuantityQuery]
@@ -329,13 +331,15 @@ func findEventAttrMarketIDOrdersQuantity(prefix string, event tmCoreTypes.Result
 func findEventAttrPrices(event tmCoreTypes.ResultEvent) (marketPrices map[string]sdk.Uint, ok bool) {
 	ok = true
 	var marketsStr, pricesStr []string
+	marketIdAttr := orderbook.EventTypeClearance + "." + orderbook.AttributeMarketId
+	priceAttr := orderbook.EventTypeClearance + "." + orderbook.AttributePrice
 
 	for eventType, eventValues := range event.Events {
-		if eventType == "orderbook.clearance.market_id" {
+		if eventType == marketIdAttr {
 			marketsStr = eventValues
 			continue
 		}
-		if eventType == "orderbook.clearance.price" {
+		if eventType == priceAttr {
 			pricesStr = eventValues
 			continue
 		}

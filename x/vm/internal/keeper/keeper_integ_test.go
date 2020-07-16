@@ -140,7 +140,7 @@ func checkEventSubStatus(events sdk.Events, subStatus uint64, t *testing.T) {
 		if event.Type == types.EventTypeContractStatus {
 			// find error
 			for _, attr := range event.Attributes {
-				if string(attr.Key) == types.AttrKeySubStatus {
+				if string(attr.Key) == types.AttributeErrSubStatus {
 					require.EqualValues(t, attr.Value, []byte(strconv.FormatUint(subStatus, 10)), "wrong value for sub status")
 
 					found = true
@@ -157,13 +157,13 @@ func checkNoEventErrors(events sdk.Events, t *testing.T) {
 	for _, event := range events {
 		if event.Type == types.EventTypeContractStatus {
 			for _, attr := range event.Attributes {
-				if string(attr.Key) == types.AttrKeyStatus {
-					if string(attr.Value) == types.StatusDiscard {
+				if string(attr.Key) == types.AttributeStatus {
+					if string(attr.Value) == types.AttributeValueStatusDiscard {
 						printEvent(event, t)
 						t.Fatalf("should not contains error event")
 					}
 
-					if string(attr.Value) == types.StatusError {
+					if string(attr.Value) == types.AttributeValueStatusError {
 						printEvent(event, t)
 						t.Fatalf("should not contains error event")
 					}
@@ -171,6 +171,19 @@ func checkNoEventErrors(events sdk.Events, t *testing.T) {
 			}
 		}
 	}
+}
+
+// check that eventsA contains every event of eventsB
+func checkEventsContainsEvery(t *testing.T, eventsA, eventsB sdk.Events) {
+	require.GreaterOrEqual(t, len(eventsA), len(eventsB), "events length mismatch: %d / %d", len(eventsA), len(eventsB))
+	for i, event := range eventsB {
+		require.Contains(t, eventsA, event, "doesn't contain event[%d]", i)
+	}
+}
+
+// creates "keep" without an error events.
+func newKeepEvents() sdk.Events {
+	return types.NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Keep})
 }
 
 // Test transfer of dfi between two accounts in dfi.
@@ -249,7 +262,7 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	require.NoError(t, err)
 
 	events := input.ctx.EventManager().Events()
-	require.Contains(t, events, types.NewEventKeep())
+	checkEventsContainsEvery(t, events, newKeepEvents())
 
 	checkNoEventErrors(events, t)
 
@@ -337,34 +350,35 @@ func TestKeeper_DeployModule(t *testing.T) {
 	events = ctx.EventManager().Events()
 	checkNoEventErrors(events, t)
 
-	require.Contains(t, events, types.NewEventKeep())
-	require.Equal(t, events[1].Type, types.EventTypeMoveEvent, "script after execution doesn't contain event with amount")
-	require.Len(t, events[1].Attributes, 4)
+	checkEventsContainsEvery(t, events, newKeepEvents())
+	vmEvent := events[2]
+	require.Equal(t, vmEvent.Type, types.EventTypeMoveEvent, "script after execution doesn't contain event with amount")
+	require.Len(t, vmEvent.Attributes, 4)
 	// sender
 	{
 		attrIdx := 0
-		require.EqualValues(t, events[1].Attributes[attrIdx].Key, types.AttrKeySenderAddress)
-		require.EqualValues(t, events[1].Attributes[attrIdx].Value, types.GetSenderAddress(addr1))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSender)
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifySenderAddress(addr1))
 	}
 	// source
 	{
 		attrIdx := 1
-		require.EqualValues(t, events[1].Attributes[attrIdx].Key, types.AttrKeySource)
-		require.EqualValues(t, events[1].Attributes[attrIdx].Value, types.GetEventSource(nil))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSource)
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.GetEventSourceAttribute(nil))
 	}
 	// type
 	{
 		attrIdx := 2
-		require.EqualValues(t, events[1].Attributes[attrIdx].Key, types.AttrKeyType)
-		require.EqualValues(t, events[1].Attributes[attrIdx].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventType)
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
 	}
 	// data
 	{
 		attrIdx := 3
 		uintBz := make([]byte, 8)
 		binary.LittleEndian.PutUint64(uintBz, uint64(110))
-		require.EqualValues(t, events[1].Attributes[attrIdx].Key, types.AttrKeyData)
-		require.EqualValues(t, events[1].Attributes[attrIdx].Value, hex.EncodeToString(uintBz))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventData)
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, hex.EncodeToString(uintBz))
 	}
 }
 
@@ -427,33 +441,35 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	events := input.ctx.EventManager().Events()
 	checkNoEventErrors(events, t)
 
-	require.Contains(t, events, types.NewEventKeep())
-	require.Len(t, events[1].Attributes, 4)
+	checkEventsContainsEvery(t, events, newKeepEvents())
+	require.Len(t, events, 3)
+	vmEvent := events[2]
+	require.Len(t, vmEvent.Attributes, 4)
 	// sender
 	{
 		attrIdx := 0
-		require.EqualValues(t, events[1].Attributes[attrIdx].Key, types.AttrKeySenderAddress)
-		require.EqualValues(t, events[1].Attributes[attrIdx].Value, types.GetSenderAddress(addr1))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSender)
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifySenderAddress(addr1))
 	}
 	// source
 	{
 		attrIdx := 1
-		require.EqualValues(t, events[1].Attributes[attrIdx].Key, types.AttrKeySource)
-		require.EqualValues(t, events[1].Attributes[attrIdx].Value, types.GetEventSource(nil))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSource)
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.GetEventSourceAttribute(nil))
 	}
 	// type
 	{
 		attrIdx := 2
-		require.EqualValues(t, events[1].Attributes[attrIdx].Key, types.AttrKeyType)
-		require.EqualValues(t, events[1].Attributes[attrIdx].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventType)
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
 	}
 	// data
 	{
 		attrIdx := 3
 		uintBz := make([]byte, 8)
 		binary.LittleEndian.PutUint64(uintBz, 100)
-		require.EqualValues(t, events[1].Attributes[attrIdx].Key, types.AttrKeyData)
-		require.EqualValues(t, events[1].Attributes[attrIdx].Value, hex.EncodeToString(uintBz))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventData)
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, hex.EncodeToString(uintBz))
 	}
 }
 
@@ -503,7 +519,7 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	require.NoError(t, err)
 
 	events := input.ctx.EventManager().Events()
-	require.Contains(t, events, types.NewEventKeep())
+	checkEventsContainsEvery(t, events, newKeepEvents())
 	for _, e := range events {
 		printEvent(e, t)
 	}
@@ -514,7 +530,7 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	// then check that no events there only error and keep status
 	getAcc := input.ak.GetAccount(input.ctx, addr1)
 	require.True(t, getAcc.GetCoins().IsEqual(coins))
-	require.Len(t, events, 2)
+	require.Len(t, events, 3)
 }
 
 func TestKeeper_AllArgsTypes(t *testing.T) {
@@ -1054,7 +1070,7 @@ func Test_EventTypeSerialization(t *testing.T) {
 		t.Log(types.VMEventToString(event))
 
 		t.Logf("Cosmos Event #%d", idx)
-		cosmosEvent := types.NewEventFromVM(sdk.NewInfiniteGasMeter(), event)
+		cosmosEvent := types.NewMoveEvent(sdk.NewInfiniteGasMeter(), event)
 		printEvent(cosmosEvent, t)
 	}
 }

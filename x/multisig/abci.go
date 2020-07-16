@@ -13,7 +13,8 @@ import (
 // EndBlocker processes active, rejected calls and their confirmations.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) []abci.ValidatorUpdate {
 	logger := k.GetLogger(ctx)
-	eventManager := sdk.NewEventManager()
+	eventManager := ctx.EventManager()
+	prevEventsCnt := len(eventManager.Events())
 
 	// define iteration start range
 	start := ctx.BlockHeight() - k.GetIntervalToExecute(ctx)
@@ -25,7 +26,6 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) []abci.ValidatorUpdate {
 	activeIterator := k.GetQueueIteratorStartEnd(ctx, start, ctx.BlockHeight())
 	defer activeIterator.Close()
 
-	eventManager.EmitEvent(NewActiveCallsEvent(start))
 	for ; activeIterator.Valid(); activeIterator.Next() {
 		bz := activeIterator.Value()
 
@@ -44,12 +44,12 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) []abci.ValidatorUpdate {
 		// check if call is confirmed enough
 		if uint16(confirmations) >= k.GetPoaMinConfirmationsCount(ctx) {
 			// call confirmed -> execute
-			eventManager.EmitEvent(NewExecuteCallEvent(callID))
 			call, err := k.GetCall(ctx, callID)
 			if err != nil {
 				panic(fmt.Errorf("getting active call %s: %v", call.ID.String(), err))
 			}
 			call.Approved = true
+			eventManager.EmitEvent(NewCallStateChangedEvent(callID, AttributeValueApproved))
 
 			handler := k.GetRouteHandler(call.Msg.Route())
 			if handler == nil {
@@ -62,14 +62,16 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) []abci.ValidatorUpdate {
 				call.Failed = true
 				call.Error = err.Error()
 
-				eventManager.EmitEvent(NewFailedCallEvent(callID))
+				eventManager.EmitEvent(NewCallStateChangedEvent(callID, AttributeValueFailed))
 				logger.Info(fmt.Sprintf("Call %s execution failed, marking as failed: %v", callID.String(), err))
 			} else {
 				// call executed
 				call.Executed = true
+
+				eventManager.EmitEvents(cacheCtx.EventManager().Events())
 				writeCache()
 
-				eventManager.EmitEvent(NewExecutedCallEvent(callID))
+				eventManager.EmitEvent(NewCallStateChangedEvent(callID, AttributeValueExecuted))
 				logger.Info(fmt.Sprintf("Call %s executed, marking as executed", callID.String()))
 			}
 
@@ -81,7 +83,6 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) []abci.ValidatorUpdate {
 
 	// iterate over calls that weren't confirmed after the max interval
 	if start > k.GetIntervalToExecute(ctx) {
-		eventManager.EmitEvent(NewRejectedCallsEvent(start))
 		rejectedIterator := k.GetQueueIteratorTill(ctx, start)
 		defer rejectedIterator.Close()
 		for ; rejectedIterator.Valid(); rejectedIterator.Next() {
@@ -100,9 +101,13 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) []abci.ValidatorUpdate {
 			k.StoreCall(ctx, call)
 			k.RemoveCallFromQueue(ctx, callID, call.Height)
 
-			eventManager.EmitEvent(NewRejectedCallEvent(callID))
+			eventManager.EmitEvent(NewCallStateChangedEvent(callID, AttributeValueRejected))
 			logger.Info(fmt.Sprintf("Call %s was not approved in time, marking as rejected", callID.String()))
 		}
+	}
+
+	if curEventsCnt := len(eventManager.Events()); curEventsCnt != prevEventsCnt {
+		eventManager.EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
 	}
 
 	return []abci.ValidatorUpdate{}

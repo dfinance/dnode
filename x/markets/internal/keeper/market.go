@@ -79,6 +79,8 @@ func (k Keeper) Add(ctx sdk.Context, baseAsset, quoteAsset string) (types.Market
 	params.Markets = append(params.Markets, market)
 	k.SetParams(ctx, params)
 
+	ctx.EventManager().EmitEvent(types.NewMarketCreatedEvent(market))
+
 	return market, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/currencies/internal/keeper"
 )
@@ -22,5 +23,11 @@ func NewMsHandler(keeper keeper.Keeper) msmodule.MsHandler {
 
 // handleMsMsgIssueCurrency hanldes MsgIssueCurrency multisig message.
 func handleMsMsgIssueCurrency(ctx sdk.Context, keeper keeper.Keeper, msg MsgIssueCurrency) error {
-	return keeper.IssueCurrency(ctx, msg.ID, msg.Coin, msg.Payee)
+	if err := keeper.IssueCurrency(ctx, msg.ID, msg.Coin, msg.Payee); err != nil {
+		return err
+	}
+
+	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(ModuleName))
+
+	return nil
 }

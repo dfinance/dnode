@@ -1,74 +1,74 @@
 package types
 
 import (
-	"strconv"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
-// NewActiveCallsEvent returns event on multisig active calls processing start.
-func NewActiveCallsEvent(blockHeight int64) sdk.Event {
+const (
+	EventTypeSubmitCall  = ModuleName + ".submit_call"
+	EventTypeRemoveCall  = ModuleName + ".remove_call"
+	EventTypeUpdateCall  = ModuleName + ".update_call"
+	EventTypeConfirmVote = ModuleName + ".confirm_vote"
+	EventTypeRevokeVote  = ModuleName + ".revoke_vote"
+	//
+	AttributeMsgType   = "msg_type"
+	AttributeMsgRoute  = "msg_route"
+	AttributeCallId    = "call_id"
+	AttributeUniqueId  = "unique_id"
+	AttributeSender    = "sender"
+	AttributeCallState = "call_state"
+	//
+	AttributeValueApproved = "approved"
+	AttributeValueRejected = "rejected"
+	AttributeValueFailed   = "failed"
+	AttributeValueExecuted = "executed"
+)
+
+// NewCallSubmittedEvent creates an Event on call submit (creation).
+func NewCallSubmittedEvent(call Call) sdk.Event {
 	return sdk.NewEvent(
-		"start-active-calls-ex",
-		sdk.Attribute{
-			Key:   "height",
-			Value: strconv.FormatInt(blockHeight, 10),
-		},
+		EventTypeSubmitCall,
+		sdk.Attribute{Key: AttributeMsgType, Value: call.MsgType},
+		sdk.Attribute{Key: AttributeMsgRoute, Value: call.MsgRoute},
+		sdk.Attribute{Key: AttributeCallId, Value: call.ID.String()},
+		sdk.Attribute{Key: AttributeUniqueId, Value: call.UniqueID},
+		sdk.Attribute{Key: AttributeSender, Value: call.Creator.String()},
 	)
 }
 
-// NewExecuteCallEvent returns event on multisig active call processing start.
-func NewExecuteCallEvent(id dnTypes.ID) sdk.Event {
+// NewCallRemovedEvent creates an Event on call removal from the queue (deletion).
+func NewCallRemovedEvent(callID dnTypes.ID) sdk.Event {
 	return sdk.NewEvent(
-		"execute-call",
-		sdk.Attribute{
-			Key:   "callId",
-			Value: id.String(),
-		},
+		EventTypeRemoveCall,
+		sdk.Attribute{Key: AttributeCallId, Value: callID.String()},
 	)
 }
 
-// NewFailedCallEvent returns event on multisig call failed.
-func NewFailedCallEvent(id dnTypes.ID) sdk.Event {
+// NewCallStateChangedEvent creates an Event on call state change (approved, rejected, failed, executed).
+func NewCallStateChangedEvent(callID dnTypes.ID, state string) sdk.Event {
 	return sdk.NewEvent(
-		"failed",
-		sdk.Attribute{
-			Key:   "callId",
-			Value: id.String(),
-		},
+		EventTypeUpdateCall,
+		sdk.Attribute{Key: AttributeCallId, Value: callID.String()},
+		sdk.Attribute{Key: AttributeCallState, Value: state},
 	)
 }
 
-// NewExecutedCallEvent returns event on multisig call executed.
-func NewExecutedCallEvent(id dnTypes.ID) sdk.Event {
+// NewConfirmVoteEvent creates an Event on a new call vote (confirmed by sender).
+func NewConfirmVoteEvent(callID dnTypes.ID, sender sdk.AccAddress) sdk.Event {
 	return sdk.NewEvent(
-		"executed",
-		sdk.Attribute{
-			Key:   "callId",
-			Value: id.String(),
-		},
+		EventTypeConfirmVote,
+		sdk.Attribute{Key: AttributeCallId, Value: callID.String()},
+		sdk.Attribute{Key: AttributeSender, Value: sender.String()},
 	)
 }
 
-// NewRejectedCallsEvent returns event on multisig rejected calls processing start.
-func NewRejectedCallsEvent(blockHeight int64) sdk.Event {
+// NewConfirmVoteEvent creates an Event on a new call vote (revoked by sender).
+func NewRevokeVoteEvent(callID dnTypes.ID, sender sdk.AccAddress) sdk.Event {
 	return sdk.NewEvent(
-		"start-rejected-calls-rem",
-		sdk.Attribute{
-			Key:   "callId",
-			Value: strconv.FormatInt(blockHeight, 10),
-		})
-}
-
-// NewRejectedCallEvent returns event on multisig call rejected.
-func NewRejectedCallEvent(id dnTypes.ID) sdk.Event {
-	return sdk.NewEvent(
-		"reject-call",
-		sdk.Attribute{
-			Key:   "callId",
-			Value: id.String(),
-		},
+		EventTypeRevokeVote,
+		sdk.Attribute{Key: AttributeCallId, Value: callID.String()},
+		sdk.Attribute{Key: AttributeSender, Value: sender.String()},
 	)
 }

@@ -44,6 +44,8 @@ func (k Keeper) WithdrawCurrency(ctx sdk.Context, coin sdk.Coin, spender sdk.Acc
 	curSupply = curSupply.SetTotal(curSupply.GetTotal().Sub(newCoins))
 	k.supplyKeeper.SetSupply(ctx, curSupply)
 
+	ctx.EventManager().EmitEvent(types.NewWithdrawEvent(withdraw.ID, coin, spender))
+
 	return
 }
 
