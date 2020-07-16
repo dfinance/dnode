@@ -414,11 +414,13 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 
 	// OrdersKeeper allows posting/revoking DEX system orders.
 	app.orderKeeper = orders.NewKeeper(
-		keys[orders.StoreKey],
 		cdc,
+		keys[orders.StoreKey],
 		app.bankKeeper,
 		app.supplyKeeper,
 		app.marketKeeper,
+		orderbook.RequestOrdersPerms(),
+		appModulePerms(orders.AvailablePermissions),
 	)
 
 	// OrderBookKeeper matches DEX orders and stores match results.

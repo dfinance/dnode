@@ -127,7 +127,7 @@ func NewTestInput(t *testing.T, customMarketsPerms perms.Permissions) TestInput 
 		input.ccsKeeper,
 		marketsRequester,
 	)
-	input.keeper = NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
+	input.keeper = NewKeeper(input.cdc, input.keyOrders, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())

@@ -12,6 +12,8 @@ import (
 
 // Has checks if order object with ID exists.
 func (k Keeper) Has(ctx sdk.Context, id dnTypes.ID) bool {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return store.Has(types.GetOrderKey(id))
@@ -19,6 +21,8 @@ func (k Keeper) Has(ctx sdk.Context, id dnTypes.ID) bool {
 
 // Get gets order object by ID.
 func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Order, error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetOrderKey(id))
 	if bz == nil {
@@ -33,23 +37,10 @@ func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Order, error) {
 	return order, nil
 }
 
-// Set creates / overwrites order object.
-func (k Keeper) Set(ctx sdk.Context, order types.Order) {
-	store := ctx.KVStore(k.storeKey)
-	key := types.GetOrderKey(order.ID)
-	bz := k.cdc.MustMarshalBinaryLengthPrefixed(order)
-	store.Set(key, bz)
-}
-
-// Del removes order object.
-func (k Keeper) Del(ctx sdk.Context, id dnTypes.ID) {
-	store := ctx.KVStore(k.storeKey)
-	key := types.GetOrderKey(id)
-	store.Delete(key)
-}
-
 // GetList return all active orders.
 func (k Keeper) GetList(ctx sdk.Context) (retOrders types.Orders, retErr error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	iterator := k.GetIterator(ctx)
 	defer iterator.Close()
 
@@ -67,6 +58,8 @@ func (k Keeper) GetList(ctx sdk.Context) (retOrders types.Orders, retErr error) 
 
 // GetListFiltered returns order objects filtered by params.
 func (k Keeper) GetListFiltered(ctx sdk.Context, params types.OrdersReq) (types.Orders, error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	orders, err := k.GetList(ctx)
 	if err != nil {
 		return types.Orders{}, err
@@ -102,6 +95,8 @@ func (k Keeper) GetListFiltered(ctx sdk.Context, params types.OrdersReq) (types.
 
 // GetIterator return order object iterator (direct sort order).
 func (k Keeper) GetIterator(ctx sdk.Context) sdk.Iterator {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return sdk.KVStorePrefixIterator(store, types.OrderKeyPrefix)
@@ -109,7 +104,25 @@ func (k Keeper) GetIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetIterator return order object iterator (reverse sort order).
 func (k Keeper) GetReverseIterator(ctx sdk.Context) sdk.Iterator {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return sdk.KVStoreReversePrefixIterator(store, types.OrderKeyPrefix)
+}
+
+
+// set creates / overwrites order object.
+func (k Keeper) set(ctx sdk.Context, order types.Order) {
+	store := ctx.KVStore(k.storeKey)
+	key := types.GetOrderKey(order.ID)
+	bz := k.cdc.MustMarshalBinaryLengthPrefixed(order)
+	store.Set(key, bz)
+}
+
+// del removes order object.
+func (k Keeper) del(ctx sdk.Context, id dnTypes.ID) {
+	store := ctx.KVStore(k.storeKey)
+	key := types.GetOrderKey(id)
+	store.Delete(key)
 }

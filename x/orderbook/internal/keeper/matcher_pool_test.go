@@ -231,7 +231,7 @@ func (i *MatchingPoolInput) PrintCurves(pool *MatcherPool) {
 	}
 }
 
-func TestOB_Matching_XARExample(t *testing.T) {
+func TestOBKeeper_Matching_XARExample(t *testing.T) {
 	// End-to-end test with XAR example.
 	inputs := MatchingPoolInput{
 		Markets: []MatchingPoolMarketInput{
@@ -261,7 +261,7 @@ func TestOB_Matching_XARExample(t *testing.T) {
 	inputs.PrintCurves(&matcherPool)
 }
 
-func TestOB_Matching_NotionExample(t *testing.T) {
+func TestOBKeeper_Matching_NotionExample(t *testing.T) {
 	// End-to-end test with Dfinance Notion example.
 	inputs := MatchingPoolInput{
 		Markets: []MatchingPoolMarketInput{
@@ -291,7 +291,7 @@ func TestOB_Matching_NotionExample(t *testing.T) {
 	inputs.PrintCurves(&matcherPool)
 }
 
-func TestOB_Matching_ProRata(t *testing.T) {
+func TestOBKeeper_Matching_ProRata(t *testing.T) {
 	// Specific test.
 	// Ask amount is twice larger than Bid amount (ProRata = 2.0): only half of Asks should be filled.
 	inputs := MatchingPoolInput{
@@ -318,7 +318,7 @@ func TestOB_Matching_ProRata(t *testing.T) {
 	inputs.PrintResults(results)
 }
 
-func TestOB_Matching_FillPriority(t *testing.T) {
+func TestOBKeeper_Matching_FillPriority(t *testing.T) {
 	// Specific test.
 	// Result MaxAskVolume is 25 (ProRata = 3.6).
 	// Ask orders would be filled from the lowest (50) and each fill would be weighted with ProRata.
@@ -354,7 +354,7 @@ func TestOB_Matching_FillPriority(t *testing.T) {
 	inputs.PrintCurves(&matcherPool)
 }
 
-func TestOB_Matching_TwoOrders(t *testing.T) {
+func TestOBKeeper_Matching_TwoOrders(t *testing.T) {
 	// Two orders, no crossing check.
 	// Aggregates will "draw" two parallel lines (with the same Quantity) and CP would be found by min diff (left).
 	inputs := MatchingPoolInput{

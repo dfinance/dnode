@@ -10,6 +10,8 @@ import (
 
 // InitGenesis inits module genesis state: creates currencies.
 func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
+	k.modulePerms.AutoCheck(types.PermInit)
+
 	state := types.GenesisState{}
 	k.cdc.MustUnmarshalJSON(data, &state)
 

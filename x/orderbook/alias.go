@@ -30,4 +30,6 @@ var (
 	NewClearanceEvent = types.NewClearanceEvent
 	NewKeeper         = keeper.NewKeeper
 	NewMatcherPool    = keeper.NewMatcherPool
+	// perms requests
+	RequestOrdersPerms = types.RequestOrdersPerms
 )

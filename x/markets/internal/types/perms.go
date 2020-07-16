@@ -6,6 +6,8 @@ import (
 )
 
 const (
+	// Init genesis
+	PermInit perms.Permission = ModuleName + "PermInit"
 	// Create a new market / modify params
 	PermCreator perms.Permission = ModuleName + "PermCreator"
 	// Read market / markets
@@ -13,7 +15,7 @@ const (
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermCreator, PermReader}
+	AvailablePermissions = perms.Permissions{PermInit, PermCreator, PermReader}
 )
 
 func NewModulePerms() perms.ModulePermissions {

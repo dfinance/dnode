@@ -3,6 +3,8 @@ package types
 import "github.com/dfinance/dnode/helpers/perms"
 
 const (
+	// Init genesis
+	PermInit perms.Permission = ModuleName + "PermInit"
 	// Create a new currency
 	PermCCCreator perms.Permission = ModuleName + "PermCCCreator"
 	// Update currency supply
@@ -14,7 +16,7 @@ const (
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermCCCreator, PermCCUpdater, PermCCReader, PermCCResUpdater}
+	AvailablePermissions = perms.Permissions{PermInit, PermCCCreator, PermCCUpdater, PermCCReader, PermCCResUpdater}
 )
 
 func NewModulePerms() perms.ModulePermissions {

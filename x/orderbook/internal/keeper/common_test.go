@@ -123,7 +123,14 @@ func NewTestInput(t *testing.T) TestInput {
 		input.ccsKeeper,
 		orders.RequestMarketsPerms(),
 	)
-	input.orderKeeper = orders.NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
+	input.orderKeeper = orders.NewKeeper(
+		input.cdc,
+		input.keyOrders,
+		input.bankKeeper,
+		input.supplyKeeper,
+		input.marketKeeper,
+		types.RequestOrdersPerms(),
+	)
 	input.keeper = NewKeeper(input.keyOB, input.cdc, input.orderKeeper)
 
 	// create context
