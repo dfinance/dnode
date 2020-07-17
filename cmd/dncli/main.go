@@ -23,7 +23,6 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
-	_ "github.com/dfinance/dnode/cmd/dncli/docs/statik"
 	"github.com/dfinance/dnode/helpers/logger"
 	"github.com/dfinance/dnode/helpers/swagger"
 	vmauthCli "github.com/dfinance/dnode/x/vmauth/client/cli"

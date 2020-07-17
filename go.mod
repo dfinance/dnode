@@ -51,5 +51,6 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	k8s.io/apimachinery v0.18.6 // indirect
 	k8s.io/kubernetes v1.13.0
+	github.com/gorilla/handlers v1.4.2
 	sigs.k8s.io/yaml v1.2.0
 )
