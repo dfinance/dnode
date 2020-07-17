@@ -6,7 +6,6 @@ require (
 	github.com/99designs/keyring v1.1.3
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/OneOfOne/xxhash v1.2.7
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/atlassian/go-sentry-api v0.0.0-20200117001222-a9ccec16c98b
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/containerd/containerd v1.3.3 // indirect
@@ -15,12 +14,12 @@ require (
 	github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3
-	github.com/g3co/go-swagger-merger v0.0.0-20200716141932-bfd3aa6406fc // indirect
 	github.com/getsentry/sentry-go v0.5.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/spec v0.19.8 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/gogo/protobuf v1.3.1
+	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/mailru/easyjson v0.7.1 // indirect
@@ -28,7 +27,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/pelletier/go-toml v1.6.0
 	github.com/pkg/errors v0.9.1
-	github.com/rakyll/statik v0.1.7
+	github.com/rakyll/statik v0.1.7 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v0.0.6
@@ -41,8 +40,6 @@ require (
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.3
 	github.com/tendermint/tm-db v0.5.0
-	github.com/urfave/cli v1.22.4 // indirect
-	github.com/urfave/cli/v2 v2.2.0 // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20200717024301-6ddee64345a6 // indirect
@@ -51,6 +48,4 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	k8s.io/apimachinery v0.18.6 // indirect
 	k8s.io/kubernetes v1.13.0
-	github.com/gorilla/handlers v1.4.2
-	sigs.k8s.io/yaml v1.2.0
 )

@@ -27,7 +27,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 }
 
 // GetCurrency godoc
-// @Tags currencies
+// @Tags Currencies
 // @Summary Get currency
 // @Description Get currency by denom
 // @ID currenciesGetCurrency
@@ -62,7 +62,7 @@ func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetIssue godoc
-// @Tags currencies
+// @Tags Currencies
 // @Summary Get currency issue
 // @Description Get currency issue by issueID
 // @ID currenciesGetIssue
@@ -97,7 +97,7 @@ func getIssue(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetWithdraws godoc
-// @Tags currencies
+// @Tags Currencies
 // @Summary Get currency withdraws
 // @Description Get array of Withdraw objects with pagination
 // @ID currenciesGetWithdraws
@@ -143,7 +143,7 @@ func getWithdraws(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetWithdraw godoc
-// @Tags currencies
+// @Tags Currencies
 // @Summary Get currency withdraw
 // @Description Get currency withdraw by withdrawID
 // @ID currenciesGetWithdraw

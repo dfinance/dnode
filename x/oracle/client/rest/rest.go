@@ -35,7 +35,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 }
 
 // PostPrice godoc
-// @Tags oracle
+// @Tags Oracle
 // @Summary Post asset rawPrice
 // @Description Send asset rawPrice signed Tx
 // @ID oraclePostPrice
@@ -95,7 +95,7 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetRawPrices godoc
-// @Tags oracle
+// @Tags Oracle
 // @Summary Get rawPrices
 // @Description Get rawPrice objects by assetCode and blockHeight
 // @ID oracleGetRawPrices
@@ -142,7 +142,7 @@ func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.Handl
 }
 
 // GetCurPrice godoc
-// @Tags oracle
+// @Tags Oracle
 // @Summary Get current Price
 // @Description Get current Price by assetCode
 // @ID oracleGetRawPrices
@@ -182,7 +182,7 @@ func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.Ha
 }
 
 // GetAssets godoc
-// @Tags oracle
+// @Tags Oracle
 // @Summary Get assets
 // @Description Get asset objects
 // @ID oracleGetAssets

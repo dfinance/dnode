@@ -1211,16 +1211,6 @@ definitions:
     items:
       $ref: '#/definitions/types.VMStatus'
     type: array
-  types.Validator:
-    properties:
-      address:
-        items:
-          type: integer
-        type: array
-      power:
-        description: PubKey pub_key = 2 [(gogoproto.nullable)=false];
-        type: integer
-    type: object
   types.Validators:
     items:
       $ref: '#/definitions/types.Validator'
@@ -1450,7 +1440,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get currency
       tags:
-      - currencies
+      - Currencies
   /currencies/issue/{issueID}:
     get:
       consumes:
@@ -1480,7 +1470,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get currency issue
       tags:
-      - currencies
+      - Currencies
   /currencies/withdraw/{withdrawID}:
     get:
       consumes:
@@ -1510,7 +1500,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get currency withdraw
       tags:
-      - currencies
+      - Currencies
   /currencies/withdraws:
     get:
       consumes:
@@ -1543,7 +1533,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get currency withdraws
       tags:
-      - currencies
+      - Currencies
   /distribution/community_pool:
     get:
       produces:
@@ -2349,7 +2339,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get markets
       tags:
-      - markets
+      - Markets
   /markets/{marketID}:
     get:
       consumes:
@@ -2379,7 +2369,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get market
       tags:
-      - markets
+      - Markets
   /minting/annual-provisions:
     get:
       produces:
@@ -2463,7 +2453,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get call
       tags:
-      - multisig
+      - Multisig
   /multisig/calls:
     get:
       consumes:
@@ -2483,7 +2473,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get active calls
       tags:
-      - multisig
+      - Multisig
   /multisig/unique/{uniqueID}:
     get:
       consumes:
@@ -2513,7 +2503,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get call
       tags:
-      - multisig
+      - Multisig
   /node_info:
     get:
       description: Information about the connected node
@@ -2605,7 +2595,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get assets
       tags:
-      - oracle
+      - Oracle
   /oracle/currentprice/{assetCode}:
     get:
       consumes:
@@ -2635,7 +2625,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get current Price
       tags:
-      - oracle
+      - Oracle
   /oracle/rawprices:
     put:
       consumes:
@@ -2662,7 +2652,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Post asset rawPrice
       tags:
-      - oracle
+      - Oracle
   /oracle/rawprices/{assetCode}/{blockHeight}:
     get:
       consumes:
@@ -2697,7 +2687,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get rawPrices
       tags:
-      - oracle
+      - Oracle
   /orders:
     get:
       consumes:
@@ -2742,7 +2732,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get orders
       tags:
-      - orders
+      - Orders
   /orders/{orderID}:
     get:
       consumes:
@@ -2772,7 +2762,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get order
       tags:
-      - orders
+      - Orders
   /orders/post:
     put:
       consumes:
@@ -2803,7 +2793,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Post new order
       tags:
-      - orders
+      - Orders
   /orders/revoke:
     put:
       consumes:
@@ -2834,7 +2824,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Revoke order
       tags:
-      - orders
+      - Orders
   /poa/validators:
     get:
       consumes:
@@ -2854,7 +2844,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get validators
       tags:
-      - poa
+      - PoA
   /slashing/parameters:
     get:
       produces:
@@ -3718,7 +3708,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get compiled byteCode
       tags:
-      - vm
+      - VM
   /vm/data/{accountAddr}/{vmPath}:
     get:
       consumes:
@@ -3753,7 +3743,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get data from data source
       tags:
-      - vm
+      - VM
   /vm/tx/{txHash}:
     get:
       consumes:
@@ -3783,7 +3773,7 @@ paths:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get tx VM execution status
       tags:
-      - vm
+      - VM
 schemes:
 - https
 securityDefinitions:

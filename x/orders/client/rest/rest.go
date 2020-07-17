@@ -50,7 +50,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 }
 
 // GetOrdersWithParams godoc
-// @Tags orders
+// @Tags Orders
 // @Summary Get orders
 // @Description Get array of Order objects with pagination and filters
 // @ID ordersGetOrdersWithParams
@@ -117,7 +117,7 @@ func getOrdersWithParams(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetOrder godoc
-// @Tags orders
+// @Tags Orders
 // @Summary Get order
 // @Description Get Order object by orderID
 // @ID ordersGetOrder
@@ -161,7 +161,7 @@ func getOrder(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // postOrder godoc
-// @Tags orders
+// @Tags Orders
 // @Summary Post new order
 // @Description Post new order
 // @ID ordersPostOrder
@@ -234,7 +234,7 @@ func postOrder(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // revokeOrder godoc
-// @Tags orders
+// @Tags Orders
 // @Summary Revoke order
 // @Description Revoke order
 // @ID ordersRevokeOrder

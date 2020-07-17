@@ -25,7 +25,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 }
 
 // GetCalls godoc
-// @Tags multisig
+// @Tags Multisig
 // @Summary Get active calls
 // @Description Get active call objects
 // @ID multisigGetCalls
@@ -48,7 +48,7 @@ func getCalls(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetCall godoc
-// @Tags multisig
+// @Tags Multisig
 // @Summary Get call
 // @Description Get call object by it's ID
 // @ID multisigGetCall
@@ -87,7 +87,7 @@ func getCall(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetUniqueCall godoc
-// @Tags multisig
+// @Tags Multisig
 // @Summary Get call
 // @Description Get call object by it's uniqueID
 // @ID multisigGetUniqueCall
