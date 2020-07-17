@@ -61,21 +61,20 @@ swagger-ui-deps:
 	go get -u github.com/swaggo/swag/cmd/swag
 	go get github.com/rakyll/statik
 
-	@echo "-> Modify SDK's swagger-ui"
-	mv $(cosmos_dir)/client/lcd/swagger-ui/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/sdk-swagger.yaml
-	sed -i.bak -e 's/url:.*/urls: [{url: \".\/dn-swagger.yaml\", name: \"Dfinance API\"},{url: \"\.\/sdk-swagger\.yaml\", name: \"Cosmos SDK API\"}],/' $(cosmos_dir)/client/lcd/swagger-ui/index.html
-
 swagger-ui-build:
 	@echo "--> Building Swagger API specificaion, merging it to Cosmos SDK"
 
 	@echo "-> Build swagger.yaml (that takes time)"
-	#swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
-	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go
-	cp $(swagger_dir)/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/dn-swagger.yaml
+	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
+	#swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go
 
-	@echo "-> Build statik FS"
-	rm -rf ./cmd/dncli/docs/statik
-	statik -src=$(cosmos_dir)/client/lcd/swagger-ui -dest=./cmd/dncli/docs
+	@echo "-> Merging swagger files"
+	go-swagger-merger -o ./cmd/dncli/docs/swagger.yaml $(swagger_dir)/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/swagger.yaml
+
+	@echo "-> Building swagger.go file"
+	echo "package docs\n\nconst Swagger = \`" > ./cmd/dncli/docs/swagger.go
+	cat ./cmd/dncli/docs/swagger.yaml | sed "s/\`/'/g" >> ./cmd/dncli/docs/swagger.go
+	echo "\`" >> ./cmd/dncli/docs/swagger.go
 
 ## binaries builds (xgo required: https://github.com/karalabe/xgo)
 binaries: go.sum
