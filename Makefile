@@ -59,7 +59,7 @@ swagger-ui-deps:
 
 	@echo "-> Fetching Golang libraries: swag, statik"
 	go get -u github.com/swaggo/swag/cmd/swag
-	go get github.com/rakyll/statik
+	go get github.com/g3co/go-swagger-merger
 
 swagger-ui-build:
 	@echo "--> Building Swagger API specificaion, merging it to Cosmos SDK"
