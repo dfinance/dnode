@@ -16,17 +16,17 @@ const (
 
 // Client request for call by call ID.
 type CallReq struct {
-	CallID dnTypes.ID `json:"call_id"`
+	CallID dnTypes.ID `json:"call_id" yaml:"call_id"`
 }
 
 // Client request for call by call uniqueID.
 type CallByUniqueIdReq struct {
-	UniqueID string `json:"unique_id"`
+	UniqueID string `json:"unique_id" yaml:"unique_id"`
 }
 
 // Client response for last call ID.
 type LastCallIdResp struct {
-	LastID dnTypes.ID `json:"last_id"`
+	LastID dnTypes.ID `json:"last_id" yaml:"last_id"`
 }
 
 func (r LastCallIdResp) String() string {
@@ -36,9 +36,9 @@ func (r LastCallIdResp) String() string {
 // Client response for call with votes.
 type CallResp struct {
 	// Call info
-	Call Call `json:"call"`
+	Call Call `json:"call" yaml:"call"`
 	// Voted accounts addresses
-	Votes Votes `json:"votes" swaggertype:"array,string"`
+	Votes Votes `json:"votes" yaml:"votes" swaggertype:"array,string"`
 }
 
 func (r CallResp) String() string {

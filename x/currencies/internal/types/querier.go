@@ -15,21 +15,21 @@ const (
 
 // Client request for currency.
 type CurrencyReq struct {
-	Denom string
+	Denom string `json:"denom" yaml:"denom"`
 }
 
 // Client request for issue.
 type IssueReq struct {
-	ID string
+	ID string `json:"id" yaml:"id"`
 }
 
 // Client request for withdraw.
 type WithdrawReq struct {
-	ID dnTypes.ID
+	ID dnTypes.ID `json:"id" yaml:"id"`
 }
 
 // Client request for withdraws.
 type WithdrawsReq struct {
-	Page  sdk.Uint
-	Limit sdk.Uint
+	Page  sdk.Uint `json:"page" yaml:"page"`
+	Limit sdk.Uint `json:"limit" yaml:"limit"`
 }

@@ -15,7 +15,7 @@ import (
 // Object is used to store currency references.
 type Market struct {
 	// Market unique ID
-	ID dnTypes.ID `json:"id" yaml:"id" swaggertype:"string" example:"0"`
+	ID dnTypes.ID `json:"id" yaml:"id" format:"string representation for big.Uint" swaggertype:"string" example:"0"`
 	// Base asset denomination (for ex. btc)
 	BaseAssetDenom string `json:"base_asset_denom" yaml:"base_asset_denom" example:"btc"`
 	// Quote asset denomination (for ex. dfi)

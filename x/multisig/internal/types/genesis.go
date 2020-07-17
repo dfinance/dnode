@@ -2,7 +2,7 @@ package types
 
 // GenesisState is module's genesis (initial state).
 type GenesisState struct {
-	Parameters Params `json:"parameters"`
+	Parameters Params `json:"parameters" yaml:"parameters"`
 }
 
 // Validate checks that genesis state is valid.

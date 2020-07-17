@@ -17,23 +17,23 @@ import (
 // Market order object type.
 type Order struct {
 	// Order unique ID
-	ID dnTypes.ID `json:"id" swaggertype:"string" example:"0"`
+	ID dnTypes.ID `json:"id" yaml:"id" example:"0" format:"string representation for big.Uint" swaggertype:"string"`
 	// Order owner account address
-	Owner sdk.AccAddress `json:"owner" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	Owner sdk.AccAddress `json:"owner" yaml:"owner" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Market order belong to
-	Market markets.MarketExtended `json:"market"`
+	Market markets.MarketExtended `json:"market" yaml:"market"`
 	// Order type (bid/ask)
-	Direction Direction `json:"direction" swaggertype:"string" example:"bid"`
+	Direction Direction `json:"direction" yaml:"direction" swaggertype:"string" example:"bid"`
 	// Order target price (in quote asset denom)
-	Price sdk.Uint `json:"price" swaggertype:"string" example:"100"`
+	Price sdk.Uint `json:"price" yaml:"price" swaggertype:"string" example:"100"`
 	// Order target quantity
-	Quantity sdk.Uint `json:"quantity" swaggertype:"string" example:"50"`
+	Quantity sdk.Uint `json:"quantity" yaml:"quantity" swaggertype:"string" example:"50"`
 	// TimeToLive order auto-cancel period
-	Ttl time.Duration `json:"ttl_dur" swaggertype:"integer" example:"60"`
+	Ttl time.Duration `json:"ttl_dur" yaml:"ttl_dur" swaggertype:"integer" example:"60"`
 	// Created timestamp
-	CreatedAt time.Time `json:"created_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
+	CreatedAt time.Time `json:"created_at" yaml:"created_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 	// Updated timestamp
-	UpdatedAt time.Time `json:"updated_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
+	UpdatedAt time.Time `json:"updated_at" yaml:"updated_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
 
 // ValidatePriceQuantity compares price and quantity to min currency values.

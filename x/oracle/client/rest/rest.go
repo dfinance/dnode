@@ -21,8 +21,8 @@ const (
 
 type postPriceReq struct {
 	BaseReq    rest.BaseReq `json:"base_req" yaml:"base_req"`
-	AssetCode  string       `json:"asset_code" example:"dfi"`                                            // AssetCode
-	Price      string       `json:"price" example:"100"`                                                 // BigInt
+	AssetCode  string       `json:"asset_code" example:"btc_dfi"`                                        // AssetCode
+	Price      string       `json:"price" example:"100"`                                                 // Price in big.Int format
 	ReceivedAt string       `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
 }
 
@@ -145,7 +145,7 @@ func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.Handl
 // @Tags oracle
 // @Summary Get current Price
 // @Description Get current Price by assetCode
-// @ID oracleGetRawPrices
+// @ID oracleGetCurrentPrice
 // @Accept  json
 // @Produce json
 // @Param assetCode path string true "asset code"

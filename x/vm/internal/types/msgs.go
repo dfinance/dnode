@@ -19,8 +19,8 @@ var (
 
 // Message to deploy contract.
 type MsgDeployModule struct {
-	Signer sdk.AccAddress `json:"signer"`
-	Module Contract       `json:"module"`
+	Signer sdk.AccAddress `json:"signer" yaml:"signer"`
+	Module Contract       `json:"module" yaml:"module"`
 }
 
 func NewMsgDeployModule(signer sdk.AccAddress, module Contract) MsgDeployModule {
@@ -65,8 +65,8 @@ func (msg MsgDeployModule) GetSigners() []sdk.AccAddress {
 
 // Arguments to execute script.
 type ScriptArg struct {
-	Type  vm_grpc.VMTypeTag `json:"type"`
-	Value []byte            `json:"value"`
+	Type  vm_grpc.VMTypeTag `json:"type" yaml:"type"`
+	Value []byte            `json:"value" yaml:"value"`
 }
 
 // New ScriptArg from arguments.
@@ -79,9 +79,9 @@ func NewScriptArg(typeTag vm_grpc.VMTypeTag, value []byte) ScriptArg {
 
 // Message for contract script (execution).
 type MsgExecuteScript struct {
-	Signer sdk.AccAddress `json:"signer"`
-	Script Contract       `json:"script"`
-	Args   []ScriptArg    `json:"args"`
+	Signer sdk.AccAddress `json:"signer" yaml:"signer"`
+	Script Contract       `json:"script" yaml:"script"`
+	Args   []ScriptArg    `json:"args" yaml:"args"`
 }
 
 func NewMsgExecuteScript(signer sdk.AccAddress, script Contract, args []ScriptArg) MsgExecuteScript {

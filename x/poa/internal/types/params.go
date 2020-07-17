@@ -21,9 +21,9 @@ var (
 // Params defines genesis params.
 type Params struct {
 	// Maximum number of validators allowed
-	MaxValidators uint16 `json:"max_validators"`
+	MaxValidators uint16 `json:"max_validators" yaml:"max_validators"`
 	// Minimum number of validators allowed
-	MinValidators uint16 `json:"min_validators"`
+	MinValidators uint16 `json:"min_validators" yaml:"min_validators"`
 }
 
 // Implements subspace.ParamSet interface.

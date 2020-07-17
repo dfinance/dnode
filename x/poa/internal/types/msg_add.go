@@ -10,11 +10,11 @@ import (
 // Client multisig message to add a PoA validator.
 type MsgAddValidator struct {
 	// Validator SDK address
-	Address sdk.AccAddress `json:"address"`
+	Address sdk.AccAddress `json:"address" yaml:"address"`
 	// Validator Ethereum address
-	EthAddress string `json:"eth_address"`
+	EthAddress string `json:"eth_address" yaml:"eth_address"`
 	// Message sender
-	Sender sdk.AccAddress `json:"sender"`
+	Sender sdk.AccAddress `json:"sender" yaml:"sender"`
 }
 
 // Implements sdk.Msg interface.

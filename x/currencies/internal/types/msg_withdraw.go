@@ -12,13 +12,13 @@ import (
 // Client message to reduce currency balance.
 type MsgWithdrawCurrency struct {
 	// Target currency withdraw coin
-	Coin sdk.Coin `json:"coin"`
+	Coin sdk.Coin `json:"coin" yaml:"coin"`
 	// Target account
-	Spender sdk.AccAddress `json:"spender"`
+	Spender sdk.AccAddress `json:"spender" yaml:"spender"`
 	// Second blockchain: spender account
-	PegZoneRecipient string `json:"pregzone_spender"`
+	PegZoneRecipient string `json:"pregzone_spender" yaml:"pregzone_spender"`
 	// Second blockchain: ID
-	PegZoneChainID string `json:"pegzone_chainID"`
+	PegZoneChainID string `json:"pegzone_chain_id" yaml:"pegzone_chain_id"`
 }
 
 // Implements sdk.Msg interface.

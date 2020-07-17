@@ -12,9 +12,9 @@ import (
 // Client message to confirm an existing call.
 type MsgConfirmCall struct {
 	// Confirming CallID
-	CallID dnTypes.ID `json:"call_id"`
+	CallID dnTypes.ID `json:"call_id" yaml:"call_id" example:"0" format:"string representation for big.Uint" swaggertype:"string"`
 	// Message sender address
-	Sender sdk.AccAddress `json:"sender"`
+	Sender sdk.AccAddress `json:"sender" yaml:"sender"`
 }
 
 // Implements sdk.Msg interface.
