@@ -128,7 +128,7 @@ jobs:
         username: ${{ secrets.OWN_REGISTRY_USR }}
         password: ${{ secrets.OWN_REGISTRY_PWD }}
         dockerfile: ./.build/Dockerfile
-        build_params: --build-arg CI_PIPELINE_ID=${GITHUB_RUN_ID} --build-arg CI_COMMIT_REF_NAME=${GITHUB_REF} --build-arg CI_COMMIT_SHA=${GITHUB_SHA}
+        build_params: --build-arg CI_PIPELINE_ID=${{ github.run_id }} --build-arg CI_COMMIT_REF_NAME=${{ github.ref }} --build-arg CI_COMMIT_SHA=${{ github.sha }}
         registry: registry.wings.toys
         cache: true
 
@@ -140,5 +140,5 @@ jobs:
         username: ${{ secrets.DH_REGISTRY_USR }}
         password: ${{ secrets.DH_REGISTRY_PWD }}
         dockerfile: ./.build/Dockerfile
-        build_params: --build-arg CI_PIPELINE_ID=${GITHUB_RUN_ID} --build-arg CI_COMMIT_REF_NAME=${GITHUB_REF} --build-arg CI_COMMIT_SHA=${GITHUB_SHA}
+        build_params: --build-arg CI_PIPELINE_ID=${{ github.run_id }} --build-arg CI_COMMIT_REF_NAME=${{ github.ref }} --build-arg CI_COMMIT_SHA=${{ github.sha }}
         cache: true
