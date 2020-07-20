@@ -10,6 +10,11 @@ To configure Swagger web application you should change the following parameters 
 matches the Swagger host, this parameter should be empty `[]`);
 * `swagger-schemes = ["http", "https"]` - available schemes (those would appear on the web interface); 
 
+Also you can configure those parameters via CLI:
+* `dncli config swagger-allowed-urls ["http://127.0.0.1:1317"]`;
+* `dncli config swagger-schemes ["http","https"]` no whitespace between elements;
+* `dncli config swagger-host 127.0.0.1:1317`;
+
 Swagger-UI API specification endpoint is available when REST server is up and running:
 * `http://localhost:1317/swagger-ui/` 
 * `http://localhost:1317/swagger-ui/?urls.primaryName=Cosmos%20SDK%20API` - Cosmos SDK / Tendermint specification 

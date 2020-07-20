@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	toml "github.com/pelletier/go-toml"
@@ -102,7 +103,7 @@ func runConfigCmd(cmd *cobra.Command, args []string) error {
 
 	// set config value for a given key
 	switch key {
-	case "chain-id", "output", "node", "broadcast-mode", "compiler", "keyring-backend":
+	case "chain-id", "output", "node", "broadcast-mode", "compiler", "keyring-backend", "swagger-host":
 		tree.Set(key, value)
 
 	case "trace", "trust-node", "indent":
@@ -112,6 +113,18 @@ func runConfigCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		tree.Set(key, boolVal)
+
+	case "swagger-schemes", "swagger-allowed-urls":
+		if value == "[]" {
+			tree.Set(key, []string{})
+			break
+		}
+
+		value = strings.Replace(value, "[", "", 1)
+		value = strings.Replace(value, "]", "", 1)
+		values := strings.Split(value, ",")
+
+		tree.Set(key, values)
 
 	default:
 		return errUnknownConfigKey(key)
