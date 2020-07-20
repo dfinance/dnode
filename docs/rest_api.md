@@ -4,12 +4,11 @@ Launch REST API:
 
     dncli rest-server --chain-id dn-testnet --trust-node
 
-For configure swagger web application should change parameters in `~/.dncli/config` file. 
-There are parameters related to web application.
-* `swagger-host = "127.0.0.1:1317"` host that handle http requests from the swagger interface.
-* `swagger-allowed-urls = ["http://127.0.0.1:1317"]` The url for swagger web interface. If `swagger-host` doesn't equal 
-with the swagger web interface, this parameter should contain one or more urls. If equal set it to empty `[]`.
-* `swagger-schemes = ["http", "https"]` Available schemes. It will appear on the web interface. 
+To configure Swagger web application you should change the following parameters in the `~/.dncli/config` file:
+* `swagger-host = "127.0.0.1:1317"` - host that handles HTTP requests from the Swagger interface;
+* `swagger-allowed-urls = ["http://127.0.0.1:1317"]` - CORS allowed URLs for Swagger web interface (if `swagger-host`
+matches the Swagger host, this parameter should be empty `[]`);
+* `swagger-schemes = ["http", "https"]` - available schemes (those would appear on the web interface); 
 
 Swagger-UI API specification endpoint is available when REST server is up and running:
 * `http://localhost:1317/swagger-ui/` 
