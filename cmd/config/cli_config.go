@@ -19,12 +19,15 @@ const (
 )
 
 var configDefaults = map[string]string{
-	"chain-id":        "",
-	"keyring-backend": "os",
-	"output":          "text",
-	"node":            "tcp://localhost:26657",
-	"broadcast-mode":  "sync",
-	"compiler":        DefaultCompilerAddr,
+	"chain-id":             "",
+	"keyring-backend":      "os",
+	"output":               "text",
+	"node":                 "tcp://localhost:26657",
+	"broadcast-mode":       "sync",
+	"compiler":             DefaultCompilerAddr,
+	"swagger-host":         "127.0.0.1",
+	"swagger-allowed-urls": "[\"http://127.0.0.1\"]",
+	"swagger-schemes":      "[\"http\", \"https\"]",
 }
 
 // ConfigCmd returns a CLI command to interactively create an application CLI

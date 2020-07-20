@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/ghodss/yaml"
+	"github.com/spf13/viper"
 	"github.com/swaggo/swag"
 
 	"github.com/dfinance/dnode/cmd/dncli/docs"
@@ -33,7 +34,7 @@ func (s *s) ReadDoc() string {
 	return doc
 }
 
-func init() {
+func Init() {
 	defer swag.Register(swag.Name, &s{})
 
 	// unmarshal merged Cosmos SDK and Dnode Swagger files
@@ -45,9 +46,9 @@ func init() {
 	}
 
 	// overwrite fields
-	swagStruct["host"] = SwaggerInfo.Host
+	swagStruct["host"] = viper.GetString("swagger-host")
 	swagStruct["basePath"] = SwaggerInfo.BasePath
-	swagStruct["schemes"] = SwaggerInfo.Schemes
+	swagStruct["schemes"] = viper.GetStringSlice("swagger-schemes")
 	swagStruct["info"].(map[string]interface{})["version"] = SwaggerInfo.Version
 	swagStruct["info"].(map[string]interface{})["title"] = SwaggerInfo.Title
 	swagStruct["info"].(map[string]interface{})["description"] = SwaggerInfo.Description
