@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	toml "github.com/pelletier/go-toml"
@@ -19,12 +20,15 @@ const (
 )
 
 var configDefaults = map[string]string{
-	"chain-id":        "",
-	"keyring-backend": "os",
-	"output":          "text",
-	"node":            "tcp://localhost:26657",
-	"broadcast-mode":  "sync",
-	"compiler":        DefaultCompilerAddr,
+	"chain-id":             "",
+	"keyring-backend":      "os",
+	"output":               "text",
+	"node":                 "tcp://localhost:26657",
+	"broadcast-mode":       "sync",
+	"compiler":             DefaultCompilerAddr,
+	"swagger-host":         "127.0.0.1:1317",
+	"swagger-allowed-urls": "[\"http://127.0.0.1:1317\"]",
+	"swagger-schemes":      "[\"http\", \"https\"]",
 }
 
 // ConfigCmd returns a CLI command to interactively create an application CLI
@@ -99,7 +103,7 @@ func runConfigCmd(cmd *cobra.Command, args []string) error {
 
 	// set config value for a given key
 	switch key {
-	case "chain-id", "output", "node", "broadcast-mode", "compiler", "keyring-backend":
+	case "chain-id", "output", "node", "broadcast-mode", "compiler", "keyring-backend", "swagger-host":
 		tree.Set(key, value)
 
 	case "trace", "trust-node", "indent":
@@ -109,6 +113,18 @@ func runConfigCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		tree.Set(key, boolVal)
+
+	case "swagger-schemes", "swagger-allowed-urls":
+		if value == "[]" {
+			tree.Set(key, []string{})
+			break
+		}
+
+		value = strings.Replace(value, "[", "", 1)
+		value = strings.Replace(value, "]", "", 1)
+		values := strings.Split(value, ",")
+
+		tree.Set(key, values)
 
 	default:
 		return errUnknownConfigKey(key)

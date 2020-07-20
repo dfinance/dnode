@@ -37,7 +37,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", types.ModuleName, txHash), getTxVMStatus(cliCtx)).Methods("GET")
 }
 // Compile godoc
-// @Tags vm
+// @Tags VM
 // @Summary Get compiled byteCode
 // @Description Compile script / module code using VM and return byteCode
 // @ID vmCompile
@@ -76,7 +76,7 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetData godoc
-// @Tags vm
+// @Tags VM
 // @Summary Get data from data source
 // @Description Get data from data source by accountAddr and path
 // @ID vmGetData
@@ -147,7 +147,7 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetTxVMStatus godoc
-// @Tags vm
+// @Tags VM
 // @Summary Get tx VM execution status
 // @Description Get tx VM execution status by tx hash
 // @ID vmTxStatus

@@ -17,7 +17,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 }
 
 // GetValidators godoc
-// @Tags poa
+// @Tags PoA
 // @Summary Get validators
 // @Description Get validator objects and required confirmations count
 // @ID poaValidators

@@ -25,7 +25,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 }
 
 // GetMarketsWithParams godoc
-// @Tags markets
+// @Tags Markets
 // @Summary Get markets
 // @Description Get array of Market objects with pagination and filters
 // @ID marketsGetMarketsWithParams
@@ -79,7 +79,7 @@ func getMarketsWithParams(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 // GetMarket godoc
-// @Tags markets
+// @Tags Markets
 // @Summary Get market
 // @Description Get Market object by marketID
 // @ID marketsGetMarket

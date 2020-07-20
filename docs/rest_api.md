@@ -4,6 +4,17 @@ Launch REST API:
 
     dncli rest-server --chain-id dn-testnet --trust-node
 
+To configure Swagger web application you should change the following parameters in the `~/.dncli/config` file:
+* `swagger-host = "127.0.0.1:1317"` - host that handles HTTP requests from the Swagger interface;
+* `swagger-allowed-urls = ["http://127.0.0.1:1317"]` - CORS allowed URLs for Swagger web interface (if `swagger-host`
+matches the Swagger host, this parameter should be empty `[]`);
+* `swagger-schemes = ["http", "https"]` - available schemes (those would appear on the web interface); 
+
+Also you can configure those parameters via CLI:
+* `dncli config swagger-allowed-urls ["http://127.0.0.1:1317"]`;
+* `dncli config swagger-schemes ["http","https"]` no whitespace between elements;
+* `dncli config swagger-host 127.0.0.1:1317`;
+
 Swagger-UI API specification endpoint is available when REST server is up and running:
 * `http://localhost:1317/swagger-ui/` 
 * `http://localhost:1317/swagger-ui/?urls.primaryName=Cosmos%20SDK%20API` - Cosmos SDK / Tendermint specification 
