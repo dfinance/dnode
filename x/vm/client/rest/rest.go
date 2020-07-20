@@ -7,13 +7,13 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
+	addrHelper "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
@@ -36,6 +36,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/data/{%s}/{%s}", types.ModuleName, accountAddrName, vmPathName), getData(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", types.ModuleName, txHash), getTxVMStatus(cliCtx)).Methods("GET")
 }
+
 // Compile godoc
 // @Tags vm
 // @Summary Get compiled byteCode
@@ -57,9 +58,20 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
+
+		address, err := addrHelper.GetAccAddressFromHexOrBech32(req.Account)
+		if err != nil {
+			rest.WriteErrorResponse(
+				w,
+				http.StatusUnprocessableEntity,
+				fmt.Sprintf("error parsing address: %v", err),
+			)
+			return
+		}
+
 		sourceFile := &vm_grpc.SourceFile{
 			Text:    req.Code,
-			Address: []byte(req.Account),
+			Address: common_vm.Bech32ToLibra(address),
 		}
 
 		byteCode, err := vmClient.Compile(compilerAddr, sourceFile)
@@ -82,7 +94,7 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 // @ID vmGetData
 // @Accept  json
 // @Produce json
-// @Param accountAddr path string true "account address (Libra HEX  Bech32)"
+// @Param accountAddr path string true "account address (Libra HEX / Bech32)"
 // @Param vmPath path string true "VM path (HEX string)"
 // @Success 200 {object} VmData
 // @Failure 422 {object} rest.ErrorResponse "Returned if the request doesn't have valid path params"
@@ -94,18 +106,14 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 		rawAddress := vars[accountAddrName]
 		rawPath := vars[vmPathName]
 
-		var address sdk.AccAddress
-		address, err := hex.DecodeString(rawAddress)
+		address, err := addrHelper.GetAccAddressFromHexOrBech32(rawAddress)
 		if err != nil {
-			address, err = sdk.AccAddressFromBech32(rawAddress)
-			if err != nil {
-				rest.WriteErrorResponse(
-					w,
-					http.StatusUnprocessableEntity,
-					fmt.Sprintf("can't parse address %q (should be libra hex or bech32): %v", rawAddress, err),
-				)
-				return
-			}
+			rest.WriteErrorResponse(
+				w,
+				http.StatusUnprocessableEntity,
+				fmt.Sprintf("address parsing error: %v", err),
+			)
+			return
 		}
 
 		path, err := hex.DecodeString(rawPath)
