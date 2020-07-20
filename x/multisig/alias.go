@@ -49,17 +49,24 @@ const (
 	AttributeValueRejected = types.AttributeValueRejected
 	AttributeValueFailed   = types.AttributeValueFailed
 	AttributeValueExecuted = types.AttributeValueExecuted
+	// Permissions
+	PermPoaReader = types.PermPoaReader
+	PermReader    = types.PermReader
+	PermWriter    = types.PermWriter
 )
 
 var (
 	// variable aliases
-	ModuleCdc = types.ModuleCdc
+	ModuleCdc            = types.ModuleCdc
+	AvailablePermissions = types.AvailablePermissions
 	// function aliases
 	RegisterCodec            = types.RegisterCodec
 	NewKeeper                = keeper.NewKeeper
 	NewQuerier               = keeper.NewQuerier
 	DefaultGenesisState      = types.DefaultGenesisState
 	NewCallStateChangedEvent = types.NewCallStateChangedEvent
+	// perms requests
+	RequestPoaPerms = types.RequestPoaPerms
 	// errors
 	ErrInternal             = types.ErrInternal
 	ErrWrongCallId          = types.ErrWrongCallId

@@ -9,11 +9,11 @@ import (
 // Currency is an info object with currency params.
 type Currency struct {
 	// Currency denom (symbol)
-	Denom string `json:"denom" example:"dfi"`
+	Denom string `json:"denom" yaml:"denom" example:"dfi"`
 	// Number of currency decimals
-	Decimals uint8 `json:"decimals" example:"0"`
+	Decimals uint8 `json:"decimals" yaml:"decimals" example:"0"`
 	// Total amount of currency coins in Bank
-	Supply sdk.Int `json:"supply" swaggertype:"string" example:"100"`
+	Supply sdk.Int `json:"supply" yaml:"supply" swaggertype:"string" example:"100"`
 }
 
 // GetSupplyCoin creates sdk.Coin with supply amount.

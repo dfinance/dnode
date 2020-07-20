@@ -16,11 +16,11 @@ import (
 // Object is used by orders module.
 type MarketExtended struct {
 	// Market unique ID
-	ID dnTypes.ID `json:"id" yaml:"id" swaggertype:"string" example:"0"`
+	ID dnTypes.ID `json:"id" yaml:"id" format:"string representation for big.Uint" swaggertype:"string" example:"0"`
 	// Base asset currency (for ex. btc)
-	BaseCurrency ccstorage.Currency
+	BaseCurrency ccstorage.Currency `json:"base_currency" yaml:"base_currency"`
 	// Quote asset currency (for ex. dfi)
-	QuoteCurrency ccstorage.Currency
+	QuoteCurrency ccstorage.Currency `json:"quote_currency" yaml:"quote_currency"`
 }
 
 // BaseToQuoteQuantity converts base asset price and quantity to quote asset quantity.

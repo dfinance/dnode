@@ -14,15 +14,15 @@ const (
 
 // Client request for validator by address.
 type ValidatorReq struct {
-	Address types.AccAddress
+	Address types.AccAddress `json:"address" yaml:"address"`
 }
 
 // Client response for getValidators.
 type ValidatorsConfirmationsResp struct {
 	// Registered validators list
-	Validators Validators `json:"validators"`
+	Validators Validators `json:"validators" yaml:"validators"`
 	// Minimum number of confirmations needed to approve Call
-	Confirmations uint16 `json:"confirmations" example:"3"`
+	Confirmations uint16 `json:"confirmations" yaml:"confirmations" example:"3"`
 }
 
 func (r ValidatorsConfirmationsResp) String() string {

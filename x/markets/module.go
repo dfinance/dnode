@@ -44,12 +44,10 @@ func (AppModuleBasic) DefaultGenesis() json.RawMessage {
 
 // ValidateGenesis validates module genesis state.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	var data GenesisState
-	if err := ModuleCdc.UnmarshalJSON(bz, &data); err != nil {
-		return err
-	}
+	state := GenesisState{}
+	ModuleCdc.MustUnmarshalJSON(bz, &state)
 
-	return ValidateGenesis(data)
+	return state.Validate()
 }
 
 // RegisterRESTRoutes registers module REST routes.
@@ -82,55 +80,50 @@ func NewAppModule(keeper Keeper) AppModule {
 }
 
 // Name gets module name.
-func (am AppModule) Name() string {
+func (app AppModule) Name() string {
 	return ModuleName
 }
 
 // RegisterInvariants registers module invariants.
-func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // Route returns module messages route.
-func (am AppModule) Route() string {
+func (app AppModule) Route() string {
 	return ModuleName
 }
 
 // NewHandler returns module messages handler.
-func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+func (app AppModule) NewHandler() sdk.Handler {
+	return NewHandler(app.keeper)
 }
 
 // QuerierRoute returns module querier route.
-func (am AppModule) QuerierRoute() string {
+func (app AppModule) QuerierRoute() string {
 	return ModuleName
 }
 
 // NewQuerierHandler creates module querier.
-func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper)
+func (app AppModule) NewQuerierHandler() sdk.Querier {
+	return NewQuerier(app.keeper)
 }
 
 // InitGenesis inits module-genesis state.
-func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	genesis := GenesisState{}
-	ModuleCdc.MustUnmarshalJSON(data, &genesis)
-	am.keeper.SetParams(ctx, genesis.Params)
+func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	app.keeper.InitGenesis(ctx, data)
 
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports module genesis state.
-func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	params := am.keeper.GetParams(ctx)
-	genesis := NewGenesisState(params)
-
-	return ModuleCdc.MustMarshalJSON(genesis)
+func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
+	return app.keeper.ExportGenesis(ctx)
 }
 
 // BeginBlock performs module actions at a block start.
-func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (app AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
 // EndBlock performs module actions at a block end.
 // It returns no validator updates.
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }

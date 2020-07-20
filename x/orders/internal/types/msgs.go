@@ -80,8 +80,8 @@ func NewMsgPost(owner sdk.AccAddress, assetCode dnTypes.AssetCode, direction Dir
 
 // Client message to revoke an order.
 type MsgRevokeOrder struct {
-	Owner   sdk.AccAddress `json:"owner" yaml:"owner"`
-	OrderID dnTypes.ID     `json:"order_id" yaml:"order_id"`
+	Owner   sdk.AccAddress `json:"owner" yaml:"owner" `
+	OrderID dnTypes.ID     `json:"order_id" yaml:"order_id" example:"0" format:"string representation for big.Uint" swaggertype:"string"`
 }
 
 // Implements sdk.Msg interface.

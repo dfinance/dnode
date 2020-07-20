@@ -66,7 +66,6 @@ swagger-ui-build:
 
 	@echo "-> Build swagger.yaml (that takes time)"
 	swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go --parseDependency
-	#swag init --dir . --output $(swagger_dir) --generalInfo ./cmd/dnode/main.go
 
 	@echo "-> Merging swagger files"
 	go-swagger-merger -o ./cmd/dncli/docs/swagger.yaml $(swagger_dir)/swagger.yaml $(cosmos_dir)/client/lcd/swagger-ui/swagger.yaml

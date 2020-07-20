@@ -13,7 +13,7 @@ import (
 	"github.com/dfinance/dnode/x/orders"
 )
 
-func TestOB_Sorter(t *testing.T) {
+func TestOBKeeper_Sorter(t *testing.T) {
 	t.Parallel()
 
 	orders := orders.Orders{

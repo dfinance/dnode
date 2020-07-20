@@ -22,6 +22,7 @@ import (
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm"
+	"github.com/dfinance/dnode/x/vmauth/internal/types"
 )
 
 type TestInput struct {
@@ -91,7 +92,13 @@ func NewTestInput(t *testing.T) TestInput {
 
 	// create target and dependant keepers
 	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
-	input.ccsStorage = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccstorage.DefaultParamspace), input.vmStorage)
+	input.ccsStorage = ccstorage.NewKeeper(
+		input.cdc,
+		input.keyCCS,
+		input.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
+		input.vmStorage,
+		types.RequestCCStoragePerms(),
+	)
 	input.accountKeeper = NewKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), input.ccsStorage, auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), make(map[string]bool))
 

@@ -9,12 +9,20 @@ import (
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/dfinance/dnode/helpers/perms"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
-func Test_Keeper_PostRevokeOrder(t *testing.T) {
-	input := NewTestInput(t)
+func TestOrdersKeeper_PostRevokeOrder(t *testing.T) {
+	input := NewTestInput(
+		t,
+		perms.Permissions{
+			markets.PermCreator,
+			markets.PermReader,
+		},
+	)
 
 	// non-existing market
 	{

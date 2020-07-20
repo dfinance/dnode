@@ -10,13 +10,13 @@ import (
 // Client multisig message to replace an old PoA validator with a new one.
 type MsgReplaceValidator struct {
 	// Validator SDK address to remove
-	OldValidator sdk.AccAddress `json:"old_address"`
+	OldValidator sdk.AccAddress `json:"old_validator" yaml:"old_validator"`
 	// New validator SDK address
-	NewValidator sdk.AccAddress `json:"new_validator"`
+	NewValidator sdk.AccAddress `json:"new_validator" yaml:"new_validator"`
 	// New validator Ethereum address
-	EthAddress string `json:"eth_address"`
+	EthAddress string `json:"eth_address" yaml:"eth_address"`
 	// Message sender
-	Sender sdk.AccAddress `json:"sender"`
+	Sender sdk.AccAddress `json:"sender" yaml:"sender"`
 }
 
 // Implements sdk.Msg interface.

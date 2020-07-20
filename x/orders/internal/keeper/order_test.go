@@ -12,8 +12,8 @@ import (
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
-func Test_Order_StoreIO(t *testing.T) {
-	input := NewTestInput(t)
+func TestOrdersKeeper_StoreIO(t *testing.T) {
+	input := NewTestInput(t, nil)
 
 	// check non-existing
 	{
@@ -27,7 +27,7 @@ func Test_Order_StoreIO(t *testing.T) {
 	// add order
 	inOrder := NewBtcDfiMockOrder(types.Bid)
 	{
-		input.keeper.Set(input.ctx, inOrder)
+		input.keeper.set(input.ctx, inOrder)
 
 		outOrder, err := input.keeper.Get(input.ctx, inOrder.ID)
 		require.NoError(t, err)
@@ -36,18 +36,18 @@ func Test_Order_StoreIO(t *testing.T) {
 
 	// del order
 	{
-		input.keeper.Del(input.ctx, inOrder.ID)
+		input.keeper.del(input.ctx, inOrder.ID)
 		require.False(t, input.keeper.Has(input.ctx, inOrder.ID))
 	}
 
 	// del deleted
 	{
-		input.keeper.Del(input.ctx, inOrder.ID)
+		input.keeper.del(input.ctx, inOrder.ID)
 	}
 }
 
-func Test_Order_List(t *testing.T) {
-	input := NewTestInput(t)
+func TestOrdersKeeper_List(t *testing.T) {
+	input := NewTestInput(t, nil)
 
 	// get empty list
 	{
@@ -60,25 +60,25 @@ func Test_Order_List(t *testing.T) {
 	order1.ID = dnTypes.NewIDFromUint64(0)
 	order1.Price = order1.Price.AddUint64(1000)
 	order1.Quantity = order1.Quantity.AddUint64(1000)
-	input.keeper.Set(input.ctx, order1)
+	input.keeper.set(input.ctx, order1)
 
 	order2 := NewEthDfiMockOrder(types.Bid)
 	order2.ID = dnTypes.NewIDFromUint64(1)
 	order2.Price = order2.Price.AddUint64(1000)
 	order2.Quantity = order2.Quantity.AddUint64(1000)
-	input.keeper.Set(input.ctx, order2)
+	input.keeper.set(input.ctx, order2)
 
 	order3 := NewBtcDfiMockOrder(types.Bid)
 	order3.ID = dnTypes.NewIDFromUint64(2)
 	order3.Price = order3.Price.SubUint64(1000)
 	order3.Quantity = order3.Quantity.SubUint64(1000)
-	input.keeper.Set(input.ctx, order3)
+	input.keeper.set(input.ctx, order3)
 
 	order4 := NewEthDfiMockOrder(types.Ask)
 	order4.ID = dnTypes.NewIDFromUint64(3)
 	order4.Price = order4.Price.SubUint64(1000)
 	order4.Quantity = order4.Quantity.SubUint64(1000)
-	input.keeper.Set(input.ctx, order4)
+	input.keeper.set(input.ctx, order4)
 
 	inOrders := types.Orders{order1, order2, order3, order4}
 

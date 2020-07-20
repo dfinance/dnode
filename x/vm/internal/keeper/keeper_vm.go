@@ -29,16 +29,22 @@ func (keeper Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath,
 
 // Check if VM storage has value by access path.
 func (keeper Keeper) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
+	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+
 	return keeper.hasValue(ctx, accessPath)
 }
 
 // Public get value by path.
 func (keeper Keeper) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
+	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+
 	return keeper.getValue(ctx, accessPath)
 }
 
 // GetValue with middleware context-dependant processing.
 func (keeper Keeper) GetValueWithMiddlewares(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
+	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+
 	for _, f := range keeper.dsServer.dataMiddlewares {
 		data, err := f(ctx, accessPath)
 		if err != nil {
@@ -54,16 +60,22 @@ func (keeper Keeper) GetValueWithMiddlewares(ctx sdk.Context, accessPath *vm_grp
 
 // Public set value.
 func (keeper Keeper) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
+	keeper.modulePerms.AutoCheck(types.PermStorageWriter)
+
 	keeper.setValue(ctx, accessPath, value)
 }
 
 // Delete value.
 func (keeper Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
+	keeper.modulePerms.AutoCheck(types.PermStorageWriter)
+
 	keeper.delValue(ctx, accessPath)
 }
 
 // Public get path for oracle price.
 func (keeper Keeper) GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.VMAccessPath {
+	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+
 	seed := xxhash.NewS64(0)
 	if _, err := seed.WriteString(strings.ToLower(assetCode.String())); err != nil {
 		panic(err)

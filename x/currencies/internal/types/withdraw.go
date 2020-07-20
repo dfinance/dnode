@@ -15,19 +15,19 @@ import (
 // swagger:model
 type Withdraw struct {
 	// Withdraw unique ID
-	ID dnTypes.ID `json:"id" swaggertype:"string" example:"0"`
-	// Target currency Coin
-	Coin sdk.Coin `json:"coin" swaggertype:"string" example:"100dfi"`
+	ID dnTypes.ID `json:"id" yaml:"id" format:"string representation for big.Uint" swaggertype:"string" example:"0"`
+	// Target currency coin
+	Coin sdk.Coin `json:"coin" yaml:"coin" swaggertype:"string" example:"100dfi"`
 	// Target account for reducing coin balance
-	Spender sdk.AccAddress `json:"spender" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	Spender sdk.AccAddress `json:"spender" yaml:"spender" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Second blockchain: spender account
-	PegZoneSpender string `json:"pegzone_spender" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	PegZoneSpender string `json:"pegzone_spender" yaml:"pegzone_spender" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Second blockchain: ID
-	PegZoneChainID string `json:"pegzone_chain_id" example:"testnet"`
+	PegZoneChainID string `json:"pegzone_chain_id" yaml:"pegzone_chain_id" example:"testnet"`
 	// Tx UNIX time [s]
-	Timestamp int64 `json:"timestamp" format:"seconds" example:"1585295757"`
+	Timestamp int64 `json:"timestamp" yaml:"timestamp" format:"seconds" example:"1585295757"`
 	// Tx hash
-	TxHash string `json:"tx_hash" example:"fd82ce32835dfd7042808eaf6ff09cece952b9da20460fa462420a93607fa96f"`
+	TxHash string `json:"tx_hash" yaml:"tx_hash" example:"fd82ce32835dfd7042808eaf6ff09cece952b9da20460fa462420a93607fa96f"`
 }
 
 func (withdraw Withdraw) String() string {

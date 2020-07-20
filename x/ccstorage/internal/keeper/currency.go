@@ -10,6 +10,8 @@ import (
 
 // CreateCurrency creates a new currency object with VM resources.
 func (k Keeper) CreateCurrency(ctx sdk.Context, denom string, params types.CurrencyParams) error {
+	k.modulePerms.AutoCheck(types.PermCCCreator)
+
 	if k.HasCurrency(ctx, denom) {
 		return sdkErrors.Wrapf(types.ErrWrongDenom, "currency %q: exists", denom)
 	}
@@ -37,6 +39,8 @@ func (k Keeper) CreateCurrency(ctx sdk.Context, denom string, params types.Curre
 
 // HasCurrency checks that currency exists.
 func (k Keeper) HasCurrency(ctx sdk.Context, denom string) bool {
+	k.modulePerms.AutoCheck(types.PermCCReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return store.Has(types.GetCurrencyKey(denom))
@@ -44,6 +48,8 @@ func (k Keeper) HasCurrency(ctx sdk.Context, denom string) bool {
 
 // GetCurrency returns currency.
 func (k Keeper) GetCurrency(ctx sdk.Context, denom string) (types.Currency, error) {
+	k.modulePerms.AutoCheck(types.PermCCReader)
+
 	if !k.HasCurrency(ctx, denom) {
 		return types.Currency{}, sdkErrors.Wrapf(types.ErrWrongDenom, "currency with %q denom: not found", denom)
 	}
@@ -53,6 +59,8 @@ func (k Keeper) GetCurrency(ctx sdk.Context, denom string) (types.Currency, erro
 
 // IncreaseCurrencySupply increases currency supply and updates VM resources.
 func (k Keeper) IncreaseCurrencySupply(ctx sdk.Context, coin sdk.Coin) error {
+	k.modulePerms.AutoCheck(types.PermCCUpdater)
+
 	currency, err := k.GetCurrency(ctx, coin.Denom)
 	if err != nil {
 		return err
@@ -67,6 +75,8 @@ func (k Keeper) IncreaseCurrencySupply(ctx sdk.Context, coin sdk.Coin) error {
 
 // DecreaseCurrencySupply reduces currency supply and updates VM resources.
 func (k Keeper) DecreaseCurrencySupply(ctx sdk.Context, coin sdk.Coin) error {
+	k.modulePerms.AutoCheck(types.PermCCUpdater)
+
 	currency, err := k.GetCurrency(ctx, coin.Denom)
 	if err != nil {
 		return err

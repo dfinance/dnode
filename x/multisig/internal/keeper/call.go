@@ -11,6 +11,8 @@ import (
 
 // SubmitCall creates a new call to be executed on validators by confirmation.
 func (k Keeper) SubmitCall(ctx sdk.Context, msg msmodule.MsMsg, uniqueID string, sender sdk.AccAddress) error {
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	// check call exists
 	if k.HasCallByUniqueID(ctx, uniqueID) {
 		return sdkErrors.Wrapf(types.ErrWrongCallUniqueId, "%q exists", uniqueID)
@@ -44,6 +46,8 @@ func (k Keeper) SubmitCall(ctx sdk.Context, msg msmodule.MsMsg, uniqueID string,
 
 // HasCall checks that call exists.
 func (k Keeper) HasCall(ctx sdk.Context, id dnTypes.ID) bool {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return store.Has(types.GetCallKey(id))
@@ -51,6 +55,8 @@ func (k Keeper) HasCall(ctx sdk.Context, id dnTypes.ID) bool {
 
 // HasCallByUniqueID checks that call with uniqueID exists.
 func (k Keeper) HasCallByUniqueID(ctx sdk.Context, uniqueID string) bool {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return store.Has(types.GetUniqueIDKey(uniqueID))
@@ -58,6 +64,8 @@ func (k Keeper) HasCallByUniqueID(ctx sdk.Context, uniqueID string) bool {
 
 // GetCall returns call.
 func (k Keeper) GetCall(ctx sdk.Context, id dnTypes.ID) (types.Call, error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	if !k.HasCall(ctx, id) {
 		return types.Call{}, sdkErrors.Wrapf(types.ErrWrongCallId, "%d not found", id)
 	}
@@ -67,6 +75,8 @@ func (k Keeper) GetCall(ctx sdk.Context, id dnTypes.ID) (types.Call, error) {
 
 // GetCallIDByUnique return callID by its uniqueID.
 func (k Keeper) GetCallIDByUniqueID(ctx sdk.Context, uniqueID string) (dnTypes.ID, error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	if !k.HasCallByUniqueID(ctx, uniqueID) {
@@ -82,6 +92,8 @@ func (k Keeper) GetCallIDByUniqueID(ctx sdk.Context, uniqueID string) (dnTypes.I
 
 // GetLastID returns last created call ID.
 func (k Keeper) GetLastCallID(ctx sdk.Context) dnTypes.ID {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	id := k.nextCallID(ctx)
 	if id.GT(dnTypes.NewIDFromUint64(0)) {
 		return id.Decr()
@@ -92,6 +104,8 @@ func (k Keeper) GetLastCallID(ctx sdk.Context) dnTypes.ID {
 
 // StoreCall sets call object.
 func (k Keeper) StoreCall(ctx sdk.Context, call types.Call) {
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetCallKey(call.ID), k.cdc.MustMarshalBinaryBare(call))
 }

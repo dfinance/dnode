@@ -10,6 +10,8 @@ import (
 
 // InitGenesis inits module genesis state: creates currencies.
 func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
+	k.modulePerms.AutoCheck(types.PermInit)
+
 	state := types.GenesisState{}
 	k.cdc.MustUnmarshalJSON(data, &state)
 	k.SetParams(ctx, state.Params)
@@ -17,6 +19,8 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 
 // ExportGenesis exports module genesis state using current params state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	state := types.GenesisState{
 		Params: k.GetParams(ctx),
 	}

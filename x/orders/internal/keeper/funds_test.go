@@ -3,17 +3,27 @@
 package keeper
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	helperTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/orders/internal/types"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/stretchr/testify/require"
+
+	"github.com/dfinance/dnode/helpers/perms"
+	helperTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dnode/x/markets"
+	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
-func Test_Keeper_OrderFill(t *testing.T) {
-	input := NewTestInput(t)
+func TestOrdersKeeper_OrderFill(t *testing.T) {
+	input := NewTestInput(
+		t,
+		perms.Permissions{
+			markets.PermCreator,
+			markets.PermReader,
+		},
+	)
 
 	// create market
 	market, err := input.marketKeeper.Add(input.ctx, input.baseBtcDenom, input.quoteDenom)

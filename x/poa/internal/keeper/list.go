@@ -8,6 +8,8 @@ import (
 
 // GetValidators returns validators list.
 func (k Keeper) GetValidators(ctx sdk.Context) types.Validators {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	if !store.Has(types.ValidatorsListKey) {

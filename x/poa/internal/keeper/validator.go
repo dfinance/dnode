@@ -9,16 +9,22 @@ import (
 
 // AddValidator add a new PoA validator to the list.
 func (k Keeper) AddValidator(ctx sdk.Context, address sdk.AccAddress, ethAddress string) error {
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	return k.addValidator(ctx, address, ethAddress, true)
 }
 
 // RemoveValidator removes existing PoA validator from the list.
 func (k Keeper) RemoveValidator(ctx sdk.Context, address sdk.AccAddress) error {
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	return k.removeValidator(ctx, address, true)
 }
 
 // ReplaceValidator removes "old" PoA validator and adds "new" validator to the list.
 func (k Keeper) ReplaceValidator(ctx sdk.Context, oldAddress sdk.AccAddress, newAddress sdk.AccAddress, ethAddress string) error {
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	if err := k.removeValidator(ctx, oldAddress, false); err != nil {
 		return sdkErrors.Wrap(err, "removing old validator")
 	}
@@ -32,6 +38,8 @@ func (k Keeper) ReplaceValidator(ctx sdk.Context, oldAddress sdk.AccAddress, new
 
 // HasValidator checks if validator exists.
 func (k Keeper) HasValidator(ctx sdk.Context, address sdk.AccAddress) bool {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return store.Has(address)
@@ -39,6 +47,8 @@ func (k Keeper) HasValidator(ctx sdk.Context, address sdk.AccAddress) bool {
 
 // GetValidator returns validator.
 func (k Keeper) GetValidator(ctx sdk.Context, address sdk.AccAddress) (types.Validator, error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	if !k.HasValidator(ctx, address) {
 		return types.Validator{}, sdkErrors.Wrap(types.ErrValidatorNotExists, address.String())
 	}

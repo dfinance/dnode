@@ -11,7 +11,7 @@ import (
 
 // ResBalance is a DVM resource, containing an account coins balance.
 type ResBalance struct {
-	Value *big.Int
+	Value *big.Int `json:"value" yaml:"balance"`
 }
 
 // Bytes returns balance lcs marshalled.

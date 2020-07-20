@@ -20,7 +20,7 @@ var (
 
 // Params defines genesis params.
 type Params struct {
-	IntervalToExecute int64 `json:"interval_to_execute"`
+	IntervalToExecute int64 `json:"interval_to_execute" yaml:"interval_to_execute"`
 }
 
 // Implements subspace.ParamSet interface.

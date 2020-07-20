@@ -12,6 +12,8 @@ import (
 
 // GetCurrencyBalancePath returns VM balance path for currency.
 func (k Keeper) GetCurrencyBalancePath(ctx sdk.Context, denom string) ([]byte, error) {
+	k.modulePerms.AutoCheck(types.PermCCReader)
+
 	path, ok := k.getPathData(ctx, types.GetCurrencyBalancePathKey(denom))
 	if !ok {
 		return nil, sdkErrors.Wrapf(types.ErrWrongDenom, "balancePath for %q currency: not found", denom)
@@ -22,6 +24,8 @@ func (k Keeper) GetCurrencyBalancePath(ctx sdk.Context, denom string) ([]byte, e
 
 // GetCurrencyInfoPath returns VM info path for currency.
 func (k Keeper) GetCurrencyInfoPath(ctx sdk.Context, denom string) ([]byte, error) {
+	k.modulePerms.AutoCheck(types.PermCCReader)
+
 	path, ok := k.getPathData(ctx, types.GetCurrencyInfoPathKey(denom))
 	if !ok {
 		return nil, sdkErrors.Wrapf(types.ErrWrongDenom, "infoPath for %q currency: not found", denom)

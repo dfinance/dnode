@@ -6,8 +6,8 @@ import (
 
 // GenesisState is module's genesis (initial state).
 type GenesisState struct {
-	Parameters Params     `json:"parameters"`
-	Validators Validators `json:"validators"`
+	Parameters Params     `json:"parameters" yaml:"parameters"`
+	Validators Validators `json:"validators" yaml:"validators"`
 }
 
 // Validate checks that genesis state is valid.

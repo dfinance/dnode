@@ -11,6 +11,8 @@ import (
 
 // GetOracles returns oracles.
 func (k Keeper) GetOracles(ctx sdk.Context, assetCode dnTypes.AssetCode) (types.Oracles, error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	for _, a := range k.GetAssetParams(ctx) {
 		if assetCode == a.AssetCode {
 			return a.Oracles, nil
@@ -22,6 +24,8 @@ func (k Keeper) GetOracles(ctx sdk.Context, assetCode dnTypes.AssetCode) (types.
 
 // GetOracle returns an oracle for specific assetCode.
 func (k Keeper) GetOracle(ctx sdk.Context, assetCode dnTypes.AssetCode, address sdk.AccAddress) (types.Oracle, error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	oracles, err := k.GetOracles(ctx, assetCode)
 	if err != nil {
 		return types.Oracle{}, err
@@ -38,6 +42,8 @@ func (k Keeper) GetOracle(ctx sdk.Context, assetCode dnTypes.AssetCode, address 
 
 // AddOracle adds an oracle to specific assetCode.
 func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, address sdk.AccAddress) error {
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	if err := k.IsNominee(ctx, nominee); err != nil {
 		return err
 	}
@@ -69,6 +75,8 @@ func (k Keeper) AddOracle(ctx sdk.Context, nominee string, assetCode dnTypes.Ass
 
 // SetOracles sets (overwrites) oracles for specific assetCode.
 func (k Keeper) SetOracles(ctx sdk.Context, nominee string, assetCode dnTypes.AssetCode, addresses types.Oracles) error {
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	if err := k.IsNominee(ctx, nominee); err != nil {
 		return err
 	}
