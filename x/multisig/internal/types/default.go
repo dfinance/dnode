@@ -2,6 +2,8 @@ package types
 
 import (
 	"bytes"
+	"encoding/binary"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -17,6 +19,7 @@ const (
 
 var (
 	KeyDelimiter = []byte(":")
+	CallPrefix   = []byte("call")
 	QueuePrefix  = []byte("queue")
 	// Key for storing last call ID
 	LastCallIdKey = []byte("lastCallId")
@@ -26,11 +29,16 @@ var (
 func GetCallKey(callID dnTypes.ID) []byte {
 	return bytes.Join(
 		[][]byte{
-			[]byte("call"),
+			CallPrefix,
 			[]byte(callID.String()),
 		},
 		KeyDelimiter,
 	)
+}
+
+// GetCallKeyPrefix returns key prefix for call objects iteration.
+func GetCallKeyPrefix() []byte {
+	return append(CallPrefix, KeyDelimiter...)
 }
 
 // GetUniqueIDKey returns key for storing callID by call's uniqueID.
@@ -75,4 +83,26 @@ func GetPrefixQueueKey(blockHeight int64) []byte {
 			sdk.Uint64ToBigEndian(uint64(blockHeight)),
 		}, KeyDelimiter,
 	)
+}
+
+// MustParseQueueKey parses queue storage key.
+func MustParseQueueKey(key []byte) (callID dnTypes.ID, blockHeight int64) {
+	values := bytes.Split(key, KeyDelimiter)
+	if len(values) != 3 {
+		panic(fmt.Errorf("key %q: invalid splitted length %d", string(key), len(values)))
+	}
+
+	if !bytes.Equal(values[0], QueuePrefix) {
+		panic(fmt.Errorf("key %q: value[0] %q: wrong prefix", string(key), string(values[0])))
+	}
+
+	blockHeight = int64(binary.BigEndian.Uint64(values[1]))
+
+	id, err := dnTypes.NewIDFromString(string(values[2]))
+	if err != nil {
+		panic(fmt.Errorf("key %q: value[2] %q: %w", string(key), string(values[2]), err))
+	}
+	callID = id
+
+	return
 }

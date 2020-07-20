@@ -94,8 +94,6 @@ func (k Keeper) storeVote(ctx sdk.Context, call types.Call, address sdk.AccAddre
 		}
 	}()
 
-	store := ctx.KVStore(k.storeKey)
-
 	if err := call.CanBeVoted(); err != nil {
 		return err
 	}
@@ -107,21 +105,15 @@ func (k Keeper) storeVote(ctx sdk.Context, call types.Call, address sdk.AccAddre
 	}
 
 	// check if call has no votes yet
-	votesKey := types.GetVotesKey(call.ID)
 	if types.ErrVoteNoVotes.Is(err) {
-		votes := types.Votes{address}
-		store.Set(votesKey, k.cdc.MustMarshalBinaryBare(votes))
-
+		k.setVotes(ctx, call.ID, types.Votes{address})
 		return nil
 	}
 
 	// append vote to existing votes
-	var votes types.Votes
-	bz := store.Get(votesKey)
-	k.cdc.MustUnmarshalBinaryBare(bz, &votes)
-
+	votes, _ := k.GetVotes(ctx, call.ID)
 	votes = append(votes, address)
-	store.Set(votesKey, k.cdc.MustMarshalBinaryBare(votes))
+	k.setVotes(ctx, call.ID, votes)
 
 	return nil
 }
@@ -134,8 +126,6 @@ func (k Keeper) revokeVote(ctx sdk.Context, call types.Call, address sdk.AccAddr
 		}
 	}()
 
-	store := ctx.KVStore(k.storeKey)
-
 	if err := call.CanBeVoted(); err != nil {
 		return err
 	}
@@ -146,14 +136,11 @@ func (k Keeper) revokeVote(ctx sdk.Context, call types.Call, address sdk.AccAddr
 		return sdkErrors.Wrapf(types.ErrVoteNotApproved, "%s by %s", call.ID.String(), address.String())
 	}
 
-	votesKey := types.GetVotesKey(call.ID)
-	var votes types.Votes
-	bz := store.Get(votesKey)
-	k.cdc.MustUnmarshalBinaryBare(bz, &votes)
+	votes, _ := k.GetVotes(ctx, call.ID)
 
 	// remove votes if this is the last vote
 	if len(votes) == 1 {
-		store.Delete(votesKey)
+		k.removeVotes(ctx, call.ID)
 		k.RemoveCallFromQueue(ctx, call.ID, call.Height)
 
 		return nil
@@ -169,7 +156,23 @@ func (k Keeper) revokeVote(ctx sdk.Context, call types.Call, address sdk.AccAddr
 	}
 
 	votes = append(votes[:voteIdx], votes[voteIdx+1:]...)
-	store.Set(votesKey, k.cdc.MustMarshalBinaryBare(votes))
+	k.setVotes(ctx, call.ID, votes)
 
 	return nil
+}
+
+// setVotes sets call vote to the storage.
+func (k Keeper) setVotes(ctx sdk.Context, callID dnTypes.ID, votes types.Votes) {
+	store := ctx.KVStore(k.storeKey)
+
+	votesKey := types.GetVotesKey(callID)
+	store.Set(votesKey, k.cdc.MustMarshalBinaryBare(votes))
+}
+
+// removeVotes removes call votes from the storage.
+func (k Keeper) removeVotes(ctx sdk.Context, callID dnTypes.ID) {
+	store := ctx.KVStore(k.storeKey)
+
+	votesKey := types.GetVotesKey(callID)
+	store.Delete(votesKey)
 }

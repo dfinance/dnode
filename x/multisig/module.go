@@ -49,7 +49,7 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	state := GenesisState{}
 	ModuleCdc.MustUnmarshalJSON(bz, &state)
 
-	return state.Validate()
+	return state.Validate(-1)
 }
 
 // RegisterRESTRoutes registers module REST routes.
