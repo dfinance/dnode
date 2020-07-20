@@ -18,6 +18,7 @@ import (
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	"github.com/dfinance/dnode/cmd/config"
+	addrHelper "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	vmClient "github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
@@ -99,12 +100,9 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			// extract data
 			rawAddress := args[0]
 			var address sdk.AccAddress
-			address, err := hex.DecodeString(rawAddress)
+			address, err := addrHelper.GetAccAddressFromHexOrBech32(rawAddress)
 			if err != nil {
-				address, err = sdk.AccAddressFromBech32(rawAddress)
-				if err != nil {
-					return fmt.Errorf("can't parse address: %s\n, check address format, it could be libra hex or bech32", rawAddress)
-				}
+				return fmt.Errorf("error parsing address: %v", err)
 			}
 
 			path, err := hex.DecodeString(args[1])
