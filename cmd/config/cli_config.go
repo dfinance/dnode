@@ -25,8 +25,8 @@ var configDefaults = map[string]string{
 	"node":                 "tcp://localhost:26657",
 	"broadcast-mode":       "sync",
 	"compiler":             DefaultCompilerAddr,
-	"swagger-host":         "127.0.0.1",
-	"swagger-allowed-urls": "[\"http://127.0.0.1\"]",
+	"swagger-host":         "127.0.0.1:1317",
+	"swagger-allowed-urls": "[\"http://127.0.0.1:1317\"]",
 	"swagger-schemes":      "[\"http\", \"https\"]",
 }
 
