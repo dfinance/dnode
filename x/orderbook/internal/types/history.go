@@ -17,25 +17,25 @@ import (
 // History is preserved per market and if there was a matching.
 type HistoryItem struct {
 	// MarketID
-	MarketID dnTypes.ID
+	MarketID dnTypes.ID `json:"market_id" yaml:"market_id" example:"0" format:"string representation for big.Uint" swaggertype:"string"`
 	// Clearance price
-	ClearancePrice sdk.Uint
+	ClearancePrice sdk.Uint `json:"clearance_price" yaml:"clearance_price" swaggertype:"string" example:"100"`
 	// Total number of active bid orders
-	BidOrdersCount int
+	BidOrdersCount int `json:"bid_orders_count" yaml:"bid_orders_count"`
 	// Total number of active ask orders
-	AskOrdersCount int
+	AskOrdersCount int `json:"ask_orders_count" yaml:"ask_orders_count"`
 	// Clearance bid orders volume
-	BidVolume sdk.Uint
+	BidVolume sdk.Uint `json:"bid_volume" yaml:"bid_volume" swaggertype:"string" example:"100"`
 	// Clearance ask orders volume
-	AskVolume sdk.Uint
+	AskVolume sdk.Uint `json:"ask_volume" yaml:"ask_volume" swaggertype:"string" example:"200"`
 	// Matched bid orders volume
-	MatchedBidVolume sdk.Uint
+	MatchedBidVolume sdk.Uint `json:"matched_bid_volume" yaml:"matched_bid_volume" swaggertype:"string" example:"1000"`
 	// Matched ask orders volume
-	MatchedAskVolume sdk.Uint
+	MatchedAskVolume sdk.Uint `json:"matched_ask_volume" yaml:"matched_ask_volume" swaggertype:"string" example:"2000"`
 	// UNIX timestamp [s]
-	Timestamp int64
+	Timestamp int64 `json:"timestamp" yaml:"timestamp"`
 	// Block number
-	BlockHeight int64
+	BlockHeight int64 `json:"block_height" yaml:"block_height"`
 }
 
 // Strings returns multi-line text object representation.

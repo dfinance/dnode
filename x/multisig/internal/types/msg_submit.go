@@ -12,11 +12,11 @@ import (
 // Client message to submit a new call.
 type MsgSubmitCall struct {
 	// Call multi signature message
-	Msg msmodule.MsMsg `json:"msg"`
+	Msg msmodule.MsMsg `json:"msg" yaml:"msg"`
 	// Call unique ID
-	UniqueID string `json:"unique_id"`
+	UniqueID string `json:"unique_id" yaml:"unique_id"`
 	// Call creator address
-	Creator sdk.AccAddress `json:"creator"`
+	Creator sdk.AccAddress `json:"creator" yaml:"creator"`
 }
 
 // Implements sdk.Msg interface.

@@ -9,6 +9,8 @@ import (
 
 // RemoveCallFromQueue removes call from the queue.
 func (k Keeper) RemoveCallFromQueue(ctx sdk.Context, id dnTypes.ID, height int64) {
+	k.modulePerms.AutoCheck(types.PermWriter)
+
 	store := ctx.KVStore(k.storeKey)
 	store.Delete(types.GetQueueKey(id, height))
 
@@ -17,6 +19,8 @@ func (k Keeper) RemoveCallFromQueue(ctx sdk.Context, id dnTypes.ID, height int64
 
 // GetQueueIteratorStartEnd returns queue iterator within [start:end] blockHeight range.
 func (k Keeper) GetQueueIteratorStartEnd(ctx sdk.Context, startHeight, endHeight int64) sdk.Iterator {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return store.Iterator(types.GetPrefixQueueKey(startHeight), sdk.PrefixEndBytes(types.GetPrefixQueueKey(endHeight)))
@@ -25,6 +29,8 @@ func (k Keeper) GetQueueIteratorStartEnd(ctx sdk.Context, startHeight, endHeight
 // GetQueueIteratorTill returns queue iterator within [:end] blockHeight range.
 // Get queue iterator till.
 func (k Keeper) GetQueueIteratorTill(ctx sdk.Context, endHeight int64) sdk.Iterator {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	return store.Iterator(types.QueuePrefix, sdk.PrefixEndBytes(types.GetPrefixQueueKey(endHeight)))

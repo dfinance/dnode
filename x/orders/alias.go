@@ -32,15 +32,25 @@ const (
 	AttributeKeyOrderID  = types.AttributeOrderId
 	AttributeKeyOwner    = types.AttributeOwner
 	AttributeKeyQuantity = types.AttributeQuantity
+	// Permissions
+	PermOrderPost   = types.PermOrderPost
+	PermOrderRevoke = types.PermOrderRevoke
+	PermReader      = types.PermReader
+	PermOrderLock   = types.PermOrderLock
+	PermOrderUnlock = types.PermOrderUnlock
+	PermExecFills   = types.PermExecFills
 )
 
 var (
 	// variable aliases
-	ModuleCdc = types.ModuleCdc
+	ModuleCdc            = types.ModuleCdc
+	AvailablePermissions = types.AvailablePermissions
 	// function aliases
 	RegisterCodec = types.RegisterCodec
 	NewKeeper     = keeper.NewKeeper
 	NewQuerier    = keeper.NewQuerier
+	// perms requests
+	RequestMarketsPerms = types.RequestMarketsPerms
 	// error aliases
 	ErrWrongMarketID  = types.ErrWrongMarketID
 	ErrWrongOwner     = types.ErrWrongOwner

@@ -4,7 +4,7 @@ import "fmt"
 
 // GenesisState is module's genesis (initial state).
 type GenesisState struct {
-	CurrenciesParams CurrenciesParams `json:"currencies_params"`
+	CurrenciesParams CurrenciesParams `json:"currencies_params" yaml:"currencies_params"`
 }
 
 // Validate checks that genesis state is valid.

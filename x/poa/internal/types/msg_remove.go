@@ -11,9 +11,9 @@ import (
 // Client multisig message to remove a PoA validator.
 type MsgRemoveValidator struct {
 	// Validator SDK address
-	Address sdk.AccAddress `json:"address"`
+	Address sdk.AccAddress `json:"address" yaml:"address"`
 	// Message sender
-	Sender sdk.AccAddress `json:"sender"`
+	Sender sdk.AccAddress `json:"sender" yaml:"sender"`
 }
 
 // Implements sdk.Msg interface.

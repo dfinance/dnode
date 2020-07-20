@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/dfinance/dnode/helpers/perms"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/orders/internal/types"
@@ -24,17 +25,7 @@ type Keeper struct {
 	bankKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
 	marketKeeper markets.Keeper
-}
-
-// NewKeeper creates keeper object.
-func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec, bk bank.Keeper, sk supply.Keeper, mk markets.Keeper) Keeper {
-	return Keeper{
-		cdc:          cdc,
-		storeKey:     storeKey,
-		bankKeeper:   bk,
-		supplyKeeper: sk,
-		marketKeeper: mk,
-	}
+	modulePerms  perms.ModulePermissions
 }
 
 // PostOrder creates a new order object and locks account funds (coins).
@@ -46,6 +37,8 @@ func (k Keeper) PostOrder(
 	price sdk.Uint,
 	quantity sdk.Uint,
 	ttlInSec uint64) (types.Order, error) {
+
+	k.modulePerms.AutoCheck(types.PermOrderPost)
 
 	filter := markets.NewMarketsFilter(1, 1)
 	filter.AssetCode = assetCode.String()
@@ -70,7 +63,7 @@ func (k Keeper) PostOrder(
 	if err := k.LockOrderCoins(ctx, order); err != nil {
 		return types.Order{}, err
 	}
-	k.Set(ctx, order)
+	k.set(ctx, order)
 	k.setID(ctx, id)
 
 	ctx.EventManager().EmitEvent(types.NewOrderPostedEvent(order))
@@ -82,6 +75,8 @@ func (k Keeper) PostOrder(
 
 // RevokeOrder removes an order object and unlocks account funds (coins).
 func (k Keeper) RevokeOrder(ctx sdk.Context, id dnTypes.ID) error {
+	k.modulePerms.AutoCheck(types.PermOrderRevoke)
+
 	order, err := k.Get(ctx, id)
 	if err != nil {
 		return sdkErrors.Wrap(types.ErrWrongOrderID, "not found")
@@ -90,7 +85,7 @@ func (k Keeper) RevokeOrder(ctx sdk.Context, id dnTypes.ID) error {
 	if err := k.UnlockOrderCoins(ctx, order); err != nil {
 		return err
 	}
-	k.Del(ctx, id)
+	k.del(ctx, id)
 
 	ctx.EventManager().EmitEvent(types.NewOrderCanceledEvent(order))
 
@@ -128,4 +123,28 @@ func (k Keeper) setID(ctx sdk.Context, id dnTypes.ID) {
 	}
 
 	store.Set(types.LastOrderIDKey, bz)
+}
+
+// NewKeeper creates keeper object.
+func NewKeeper(
+	cdc *codec.Codec,
+	storeKey sdk.StoreKey,
+	bk bank.Keeper,
+	sk supply.Keeper,
+	mk markets.Keeper,
+	permsRequesters ...perms.RequestModulePermissions,
+) Keeper {
+	k := Keeper{
+		cdc:          cdc,
+		storeKey:     storeKey,
+		bankKeeper:   bk,
+		supplyKeeper: sk,
+		marketKeeper: mk,
+		modulePerms:  types.NewModulePerms(),
+	}
+	for _, requester := range permsRequesters {
+		k.modulePerms.AutoAddRequester(requester)
+	}
+
+	return k
 }

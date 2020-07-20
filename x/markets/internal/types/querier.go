@@ -19,15 +19,15 @@ type MarketReq struct {
 // Client request for markets.
 type MarketsReq struct {
 	// Page number
-	Page sdk.Uint
+	Page sdk.Uint `json:"page" yaml:"page"`
 	// Items per page
-	Limit sdk.Uint
+	Limit sdk.Uint `json:"limit" yaml:"limit"`
 	// BaseAsset denom filter
-	BaseAssetDenom string
+	BaseAssetDenom string `json:"base_asset_denom" yaml:"base_asset_denom"`
 	// QuoteAsset denom filter
-	QuoteAssetDenom string
+	QuoteAssetDenom string `json:"quote_asset_denom" yaml:"quote_asset_denom"`
 	// AssetCode filter
-	AssetCode string
+	AssetCode string `json:"asset_code" yaml:"asset_code"`
 }
 
 // NewMarketsFilter returned MarketsReq object with filled required fields page and limit.

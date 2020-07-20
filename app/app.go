@@ -36,6 +36,7 @@ import (
 
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/helpers/perms"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/core/msmodule"
@@ -238,6 +239,14 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 
 	var err error
 
+	// Fake "app" module is used for app-tests (has all permissions)
+	appModulePerms := func(allPerms perms.Permissions) perms.RequestModulePermissions {
+		return func() (moduleName string, modulePerms perms.Permissions) {
+			moduleName, modulePerms = "app", allPerms
+			return
+		}
+	}
+
 	// ParamsKeeper handles parameter storage for the application.
 	app.paramsKeeper = params.NewKeeper(
 		app.cdc,
@@ -257,11 +266,14 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 
 	// VMKeeper stores VM resources and interacts with DVM.
 	app.vmKeeper = vm.NewKeeper(
-		keys[vm.StoreKey],
 		cdc,
+		keys[vm.StoreKey],
 		app.vmConn,
 		app.vmListener,
 		config,
+		ccstorage.RequestVMStoragePerms(),
+		oracle.RequestVMStoragePerms(),
+		appModulePerms(vm.AvailablePermissions),
 	)
 
 	// Currencies storage keeper keeps all currencies infos and VM resources.
@@ -270,6 +282,10 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		keys[ccstorage.StoreKey],
 		app.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
 		app.vmKeeper,
+		currencies.RequestCCStoragePerms(),
+		vmauth.RequestCCStoragePerms(),
+		markets.RequestCCStoragePerms(),
+		appModulePerms(ccstorage.AvailablePermissions),
 	)
 
 	// VMAuth keeper wraps AccountKeeper and handles address -> account lookups and keeps VM balances updated.
@@ -333,6 +349,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		app.bankKeeper,
 		app.supplyKeeper,
 		app.ccsKeeper,
+		appModulePerms(currencies.AvailablePermissions),
 	)
 
 	// DistributionKeeper distributes rewards between Proof-of-Stake validators and delegators.
@@ -367,6 +384,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		cdc,
 		keys[poa.StoreKey],
 		app.paramsKeeper.Subspace(poa.DefaultParamspace),
+		multisig.RequestPoaPerms(),
+		appModulePerms(poa.AvailablePermissions),
 	)
 
 	// MultisignatureKeeper handles multisig voting and routes message to multisig module.
@@ -379,6 +398,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
 		app.msRouter,
 		app.poaKeeper,
+		appModulePerms(multisig.AvailablePermissions),
 	)
 
 	// OracleKeeper collects asset pair exchange price from various oracles.
@@ -387,6 +407,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		keys[oracle.StoreKey],
 		app.paramsKeeper.Subspace(oracle.DefaultParamspace),
 		app.vmKeeper,
+		appModulePerms(oracle.AvailablePermissions),
 	)
 
 	// MarketKeeper stores asset pair market used by DEX system.
@@ -394,22 +415,27 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		cdc,
 		app.paramsKeeper.Subspace(markets.DefaultParamspace),
 		app.ccsKeeper,
+		orders.RequestMarketsPerms(),
+		appModulePerms(markets.AvailablePermissions),
 	)
 
 	// OrdersKeeper allows posting/revoking DEX system orders.
 	app.orderKeeper = orders.NewKeeper(
-		keys[orders.StoreKey],
 		cdc,
+		keys[orders.StoreKey],
 		app.bankKeeper,
 		app.supplyKeeper,
 		app.marketKeeper,
+		orderbook.RequestOrdersPerms(),
+		appModulePerms(orders.AvailablePermissions),
 	)
 
 	// OrderBookKeeper matches DEX orders and stores match results.
 	app.orderBookKeeper = orderbook.NewKeeper(
-		keys[orderbook.StoreKey],
 		cdc,
+		keys[orderbook.StoreKey],
 		app.orderKeeper,
+		appModulePerms(orderbook.AvailablePermissions),
 	)
 
 	// CrisisKeeper periodically checks registered module invariants and halt chain on fail.

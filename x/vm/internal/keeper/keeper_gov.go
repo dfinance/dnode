@@ -9,6 +9,8 @@ import (
 
 // ScheduleProposal checks if proposal can be added to gov proposal queue and adds it.
 func (keeper Keeper) ScheduleProposal(ctx sdk.Context, pProposal types.PlannedProposal) error {
+	keeper.modulePerms.AutoCheck(types.PermInit)
+
 	if pProposal.GetPlan().Height <= ctx.BlockHeight() {
 		return sdkErrors.Wrapf(
 			sdkErrors.ErrInvalidRequest,
@@ -23,6 +25,8 @@ func (keeper Keeper) ScheduleProposal(ctx sdk.Context, pProposal types.PlannedPr
 
 // RemoveProposalFromQueue removes proposal from the gov proposal queue.
 func (keeper Keeper) RemoveProposalFromQueue(ctx sdk.Context, id uint64) {
+	keeper.modulePerms.AutoCheck(types.PermInit)
+
 	queueKey := types.GetProposalQueueKey(id)
 
 	store := ctx.KVStore(keeper.storeKey)
@@ -31,6 +35,8 @@ func (keeper Keeper) RemoveProposalFromQueue(ctx sdk.Context, id uint64) {
 
 // IterateProposalsQueue iterates over gov proposal queue.
 func (keeper Keeper) IterateProposalsQueue(ctx sdk.Context, handler func(id uint64, pProposal types.PlannedProposal)) {
+	keeper.modulePerms.AutoCheck(types.PermInit)
+
 	iterator := keeper.proposalQueueIterator(ctx)
 	defer iterator.Close()
 

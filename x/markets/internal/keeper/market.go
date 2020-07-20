@@ -13,6 +13,8 @@ import (
 
 // Has check if market object with ID exists.
 func (k Keeper) Has(ctx sdk.Context, id dnTypes.ID) bool {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	_, err := k.Get(ctx, id)
 
 	return err == nil
@@ -20,6 +22,8 @@ func (k Keeper) Has(ctx sdk.Context, id dnTypes.ID) bool {
 
 // Get gets market object by ID.
 func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Market, error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	params := k.GetParams(ctx)
 	nextID := k.nextID(params)
 
@@ -37,6 +41,8 @@ func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Market, error) {
 
 // GetExtended gets currency infos and build a MarketExtended object.
 func (k Keeper) GetExtended(ctx sdk.Context, id dnTypes.ID) (retMarket types.MarketExtended, retErr error) {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	market, err := k.Get(ctx, id)
 	if err != nil {
 		retErr = err
@@ -61,6 +67,8 @@ func (k Keeper) GetExtended(ctx sdk.Context, id dnTypes.ID) (retMarket types.Mar
 // Add creates a new market object.
 // Action is only allowed to nominee accounts.
 func (k Keeper) Add(ctx sdk.Context, baseAsset, quoteAsset string) (types.Market, error) {
+	k.modulePerms.AutoCheck(types.PermCreator)
+
 	params := k.GetParams(ctx)
 	for _, m := range params.Markets {
 		if m.BaseAssetDenom == baseAsset && m.QuoteAssetDenom == quoteAsset {
@@ -86,11 +94,15 @@ func (k Keeper) Add(ctx sdk.Context, baseAsset, quoteAsset string) (types.Market
 
 // GetList returns all market objects.
 func (k Keeper) GetList(ctx sdk.Context) types.Markets {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	return k.GetParams(ctx).Markets
 }
 
 // GetListFiltered returns market objects filtered by params.
 func (k Keeper) GetListFiltered(ctx sdk.Context, params types.MarketsReq) types.Markets {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	markets := k.GetList(ctx)
 	filteredMarkets := make(types.Markets, 0, len(markets))
 

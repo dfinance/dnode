@@ -110,17 +110,35 @@ func NewTestInput(t *testing.T) TestInput {
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
-	input.ccsKeeper = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccstorage.DefaultParamspace), input.vmStorage)
-	input.marketKeeper = markets.NewKeeper(input.cdc, input.paramsKeeper.Subspace(markets.DefaultParamspace), input.ccsKeeper)
-	input.orderKeeper = orders.NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
-	input.keeper = NewKeeper(input.keyOB, input.cdc, input.orderKeeper)
+	input.ccsKeeper = ccstorage.NewKeeper(
+		input.cdc,
+		input.keyCCS,
+		input.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
+		input.vmStorage,
+		markets.RequestCCStoragePerms(),
+	)
+	input.marketKeeper = markets.NewKeeper(
+		input.cdc,
+		input.paramsKeeper.Subspace(markets.DefaultParamspace),
+		input.ccsKeeper,
+		orders.RequestMarketsPerms(),
+	)
+	input.orderKeeper = orders.NewKeeper(
+		input.cdc,
+		input.keyOrders,
+		input.bankKeeper,
+		input.supplyKeeper,
+		input.marketKeeper,
+		types.RequestOrdersPerms(),
+	)
+	input.keeper = NewKeeper(input.cdc, input.keyOB, input.orderKeeper)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
 
 	// init genesis / params
 	input.ccsKeeper.InitDefaultGenesis(input.ctx)
-	input.marketKeeper.SetParams(input.ctx, markets.DefaultParams())
+	input.marketKeeper.InitDefaultGenesis(input.ctx)
 
 	return input
 }

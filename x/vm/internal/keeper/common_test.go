@@ -34,6 +34,7 @@ import (
 
 	vmConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/helpers/perms"
 	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/common_vm"
@@ -278,10 +279,37 @@ func newTestInput(launchMock bool) testInput {
 
 	// create keepers
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
-	input.vk = NewKeeper(input.keyVM, input.cdc, clientConn, listener, config)
-	input.cs = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.pk.Subspace(ccstorage.DefaultParamspace), input.vk)
+	input.vk = NewKeeper(
+		input.cdc,
+		input.keyVM,
+		clientConn,
+		listener,
+		config,
+		ccstorage.RequestVMStoragePerms(),
+		oracle.RequestVMStoragePerms(),
+	)
+	input.cs = ccstorage.NewKeeper(
+		input.cdc,
+		input.keyCCS,
+		input.pk.Subspace(ccstorage.DefaultParamspace),
+		input.vk,
+		vmauth.RequestCCStoragePerms(),
+	)
 	input.ak = vmauth.NewKeeper(input.cdc, input.keyAccount, input.pk.Subspace(auth.DefaultParamspace), input.cs, auth.ProtoBaseAccount)
-	input.ok = oracle.NewKeeper(input.cdc, input.keyOracle, input.pk.Subspace(oracle.DefaultParamspace), input.vk)
+	input.ok = oracle.NewKeeper(
+		input.cdc,
+		input.keyOracle,
+		input.pk.Subspace(oracle.DefaultParamspace),
+		input.vk,
+		func() (moduleName string, modulePerms perms.Permissions) {
+			// custom requester as some test require oracle module setup
+			moduleName = types.ModuleName
+			modulePerms = perms.Permissions{
+				oracle.PermWriter,
+			}
+			return
+		},
+	)
 
 	// init genesis
 	input.cs.InitDefaultGenesis(input.ctx)

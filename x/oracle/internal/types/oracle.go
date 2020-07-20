@@ -10,7 +10,7 @@ import (
 // Oracle struct contains oracle source meta.
 type Oracle struct {
 	// Address
-	Address sdk.AccAddress `json:"address" yaml:"address"`
+	Address sdk.AccAddress `json:"address" yaml:"address" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 }
 
 func (o Oracle) String() string {

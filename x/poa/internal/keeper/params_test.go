@@ -22,7 +22,7 @@ func TestPOAKeeper_Params(t *testing.T) {
 		MinValidators: 5,
 	}
 
-	keeper.SetParams(ctx, inParams)
+	keeper.setParams(ctx, inParams)
 
 	outParams := keeper.GetParams(ctx)
 	require.EqualValues(t, 10, outParams.MaxValidators)

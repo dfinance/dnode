@@ -76,7 +76,7 @@ func TestPOAKeeper_AddValidator(t *testing.T) {
 
 	// fail: max validators reached
 	{
-		keeper.SetParams(ctx, types.Params{
+		keeper.setParams(ctx, types.Params{
 			MaxValidators: 1,
 			MinValidators: 1,
 		})
@@ -95,7 +95,7 @@ func TestPOAKeeper_RemoveValidator(t *testing.T) {
 
 	// set mock params
 	{
-		keeper.SetParams(ctx, types.Params{
+		keeper.setParams(ctx, types.Params{
 			MaxValidators: 3,
 			MinValidators: 1,
 		})
@@ -151,7 +151,7 @@ func TestPOAKeeper_RemoveValidator(t *testing.T) {
 
 	// ok: removing the last one
 	{
-		keeper.SetParams(ctx, types.Params{
+		keeper.setParams(ctx, types.Params{
 			MaxValidators: 3,
 			MinValidators: 0,
 		})

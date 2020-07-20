@@ -25,21 +25,21 @@ func TestOracleKeeper_CheckPriceReceiveTime(t *testing.T) {
 
 	// check equal timestamps
 	{
-		require.Nil(t, keeper.CheckPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time))
+		require.Nil(t, keeper.checkPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time))
 	}
 
 	// check timestamps within +-range
 	{
 		dur := receivedAtDiffDur / 2
-		require.Nil(t, keeper.CheckPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time.Add(dur)))
-		require.Nil(t, keeper.CheckPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time.Add(-dur)))
+		require.Nil(t, keeper.checkPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time.Add(dur)))
+		require.Nil(t, keeper.checkPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time.Add(-dur)))
 	}
 
 	// check timestamps outside of +-range
 	{
 		dur := receivedAtDiffDur + 1*time.Second
-		utils.CheckExpectedErr(t, types.ErrInvalidReceivedAt, keeper.CheckPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time.Add(dur)))
-		utils.CheckExpectedErr(t, types.ErrInvalidReceivedAt, keeper.CheckPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time.Add(-dur)))
+		utils.CheckExpectedErr(t, types.ErrInvalidReceivedAt, keeper.checkPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time.Add(dur)))
+		utils.CheckExpectedErr(t, types.ErrInvalidReceivedAt, keeper.checkPriceReceivedAtTimestamp(ctx, ctx.BlockHeader().Time.Add(-dur)))
 	}
 }
 

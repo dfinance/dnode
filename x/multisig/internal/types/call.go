@@ -13,29 +13,29 @@ import (
 // Call contains multi signature message with some meta.
 type Call struct {
 	// Call ID
-	ID dnTypes.ID `json:"id" example:"0"`
+	ID dnTypes.ID `json:"id" yaml:"id" example:"0" format:"string representation for big.Uint" swaggertype:"string"`
 	// Call unique ID (ID and UniqueID both identifies call)
-	UniqueID string `json:"unique_id" example:"issue1"`
+	UniqueID string `json:"unique_id" yaml:"unique_id" example:"issue1"`
 	// Call creator address
-	Creator sdk.AccAddress `json:"creator" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+	Creator sdk.AccAddress `json:"creator" yaml:"creator" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Call state: approved to execute
-	Approved bool `json:"approved"`
+	Approved bool `json:"approved" yaml:"approved"`
 	// Call state: executed
-	Executed bool `json:"executed"`
+	Executed bool `json:"executed" yaml:"executed"`
 	// Call state: execution failed
-	Failed bool `json:"failed"`
+	Failed bool `json:"failed" yaml:"failed"`
 	// Call state: rejected
-	Rejected bool `json:"rejected"`
+	Rejected bool `json:"rejected" yaml:"rejected"`
 	// Call fail reason
-	Error string `json:"error"`
+	Error string `json:"error" yaml:"error"`
 	// Message: data
-	Msg msmodule.MsMsg `json:"msg_data"`
+	Msg msmodule.MsMsg `json:"msg_data" yaml:"msg_data"`
 	// Message: route
-	MsgRoute string `json:"msg_route" example:"oracle"`
+	MsgRoute string `json:"msg_route" yaml:"msg_route" example:"oracle"`
 	// Message: type
-	MsgType string `json:"msg_type" example:"add_asset"`
+	MsgType string `json:"msg_type" yaml:"msg_type" example:"add_asset"`
 	// BlockHeight when call was submitted
-	Height int64 `json:"height" example:"1"`
+	Height int64 `json:"height" yaml:"height" example:"1"`
 }
 
 // CanBeVoted checks if call accepts votes (vote / revoke confirmation).

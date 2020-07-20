@@ -38,11 +38,17 @@ const (
 	AttributeIssueId    = types.AttributeIssueId
 	AttributeWithdrawId = types.AttributeWithdrawId
 	AttributeSender     = types.AttributeSender
+	// Permissions
+	PermCCCreator  = types.PermCCCreator
+	PermCCIssue    = types.PermCCIssue
+	PermCCWithdraw = types.PermCCWithdraw
+	PermReader     = types.PermReader
 )
 
 var (
 	// variable aliases
-	ModuleCdc = types.ModuleCdc
+	ModuleCdc            = types.ModuleCdc
+	AvailablePermissions = types.AvailablePermissions
 	// function aliases
 	RegisterCodec          = types.RegisterCodec
 	NewKeeper              = keeper.NewKeeper
@@ -51,6 +57,8 @@ var (
 	NewMsgIssueCurrency    = types.NewMsgIssueCurrency
 	NewMsgWithdrawCurrency = types.NewMsgWithdrawCurrency
 	NewAddCurrencyProposal = types.NewAddCurrencyProposal
+	// perms requests
+	RequestCCStoragePerms = types.RequestCCStoragePerms
 	// errors
 	ErrInternal            = types.ErrInternal
 	ErrWrongDenom          = types.ErrWrongDenom

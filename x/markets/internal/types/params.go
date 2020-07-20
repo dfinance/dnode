@@ -13,7 +13,7 @@ var (
 
 // Keeper params type.
 type Params struct {
-	Markets Markets
+	Markets Markets `json:"markets" yaml:"markets"`
 }
 
 // Implements subspace.ParamSet.
@@ -47,11 +47,6 @@ func NewParams(markets []Market) Params {
 	return Params{
 		Markets: markets,
 	}
-}
-
-// DefaultParams returns default keeper params.
-func DefaultParams() Params {
-	return NewParams(Markets{})
 }
 
 // ParamKeyTable creates keeper params KeyTable.

@@ -13,6 +13,8 @@ import (
 // LockOrderCoins locks account funds defined by order on order posting.
 // Coins transfer from Account to Module.
 func (k Keeper) LockOrderCoins(ctx sdk.Context, order types.Order) error {
+	k.modulePerms.AutoCheck(types.PermOrderLock)
+
 	coin, err := order.LockCoin()
 	if err != nil {
 		return sdkErrors.Wrap(err, "creating lock coin")
@@ -28,6 +30,8 @@ func (k Keeper) LockOrderCoins(ctx sdk.Context, order types.Order) error {
 // LockOrderCoins locks account funds defined by order on order canceling.
 // Coins transfer from Module to Account.
 func (k Keeper) UnlockOrderCoins(ctx sdk.Context, order types.Order) error {
+	k.modulePerms.AutoCheck(types.PermOrderUnlock)
+
 	coin, err := order.LockCoin()
 	if err != nil {
 		return sdkErrors.Wrap(err, "creating unlock coin")
@@ -45,6 +49,8 @@ func (k Keeper) UnlockOrderCoins(ctx sdk.Context, order types.Order) error {
 // Order is removed from the store on full order fill.
 // Order stays active on partial order fill (order quantity is reduced).
 func (k Keeper) ExecuteOrderFills(ctx sdk.Context, orderFills types.OrderFills) {
+	k.modulePerms.AutoCheck(types.PermExecFills)
+
 	for _, orderFill := range orderFills {
 		fillCoin, err := orderFill.FillCoin()
 		if err != nil {
@@ -78,13 +84,13 @@ func (k Keeper) ExecuteOrderFills(ctx sdk.Context, orderFills types.OrderFills) 
 		eventManager := ctx.EventManager()
 		if orderFill.QuantityUnfilled.IsZero() {
 			k.GetLogger(ctx).Info(fmt.Sprintf("order completely filled: %s", orderFill.Order.ID))
-			k.Del(ctx, orderFill.Order.ID)
+			k.del(ctx, orderFill.Order.ID)
 			eventManager.EmitEvent(types.NewFullyFilledOrderEvent(orderFill.Order))
 		} else {
 			k.GetLogger(ctx).Info(fmt.Sprintf("order partially filled: %s", orderFill.Order.ID))
 			orderFill.Order.Quantity = orderFill.QuantityUnfilled
 			orderFill.Order.UpdatedAt = ctx.BlockTime()
-			k.Set(ctx, orderFill.Order)
+			k.set(ctx, orderFill.Order)
 			eventManager.EmitEvent(types.NewPartiallyFilledOrderEvent(orderFill.Order))
 		}
 	}

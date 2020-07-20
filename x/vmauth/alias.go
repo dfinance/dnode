@@ -32,4 +32,6 @@ var (
 	GetTxCmd            = authClientCli.GetTxCmd
 	GetQueryCmd         = authClientCli.GetQueryCmd
 	DefaultGenesisState = authTypes.DefaultGenesisState
+	// perms requests
+	RequestCCStoragePerms = types.RequestCCStoragePerms
 )

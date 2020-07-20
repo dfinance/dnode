@@ -8,6 +8,8 @@ import (
 
 // GetValidatorAmount returns current validators amount counter.
 func (k Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	store := ctx.KVStore(k.storeKey)
 
 	if !store.Has(types.ValidatorsCountKey) {
@@ -23,6 +25,8 @@ func (k Keeper) GetValidatorAmount(ctx sdk.Context) uint16 {
 
 // GetEnoughConfirmations returns minimal number of votes (confirmations) to perform a multi signature action.
 func (k Keeper) GetEnoughConfirmations(ctx sdk.Context) uint16 {
+	k.modulePerms.AutoCheck(types.PermReader)
+
 	return k.GetValidatorAmount(ctx)/2 + 1
 }
 

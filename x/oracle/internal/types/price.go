@@ -17,7 +17,7 @@ const (
 // CurrentPrice contains meta of the current price for the particular asset.
 type CurrentPrice struct {
 	// Asset code
-	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"dfi"`
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_dfi"`
 	// Price
 	Price sdk.Int `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
 	// UNIX Timestamp price createdAt [sec]
@@ -36,13 +36,13 @@ func (cp CurrentPrice) String() string {
 // PostedPrice contains price for an asset posted by a specific oracle.
 type PostedPrice struct {
 	// Asset code
-	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"dfi"` // Denom
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_dfi"`
 	// Source oracle address
-	OracleAddress sdk.AccAddress `json:"oracle_address" yaml:"oracle_address" swaggertype:"string" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"` // Price source
+	OracleAddress sdk.AccAddress `json:"oracle_address" yaml:"oracle_address" swaggertype:"string" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Price
 	Price sdk.Int `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
 	// UNIX Timestamp price receivedAt [sec]
-	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
+	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
 
 // String implement fmt.Stringer for the PostedPrice type.

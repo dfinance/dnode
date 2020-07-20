@@ -14,15 +14,15 @@ import (
 // For token currencies, CurrencyInfo is created by VM.
 type ResCurrencyInfo struct {
 	// Currency denom ([]byte is used for VM)
-	Denom []byte `json:"denom" swaggertype:"string" example:"dfi"`
+	Denom []byte `json:"denom" yaml:"denom" swaggertype:"string" example:"dfi"`
 	// Number of currency decimals
-	Decimals uint8 `json:"decimals"`
+	Decimals uint8 `json:"decimals" yaml:"decimals"`
 	// If true, currency is created by DVM using 0x1::Dfinance::tokenize func
-	IsToken bool `json:"isToken"`
+	IsToken bool `json:"isToken" yaml:"isToken"`
 	// Owner is 0x1 for non-token currency and account address for token currencies
-	Owner []byte `json:"owner" lcs:"len=20" swaggertype:"string"`
+	Owner []byte `json:"owner" yaml:"owner" lcs:"len=20" swaggertype:"string"`
 	// Total amount of currency coins in Bank
-	TotalSupply *big.Int `json:"totalSupply"`
+	TotalSupply *big.Int `json:"totalSupply" yaml:"totalSupply"`
 }
 
 func (c ResCurrencyInfo) String() string {

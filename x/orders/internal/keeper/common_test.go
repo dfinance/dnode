@@ -18,6 +18,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/dfinance/dnode/helpers/perms"
 	"github.com/dfinance/dnode/helpers/tests"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/ccstorage"
@@ -58,7 +59,7 @@ type TestInput struct {
 	vmStorage common_vm.VMStorage
 }
 
-func NewTestInput(t *testing.T) TestInput {
+func NewTestInput(t *testing.T, customMarketsPerms perms.Permissions) TestInput {
 	input := TestInput{
 		cdc:        codec.New(),
 		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
@@ -98,22 +99,42 @@ func NewTestInput(t *testing.T) TestInput {
 	mstore.MountStoreWithDB(input.tKeyParams, sdk.StoreTypeTransient, db)
 	require.NoError(t, mstore.LoadLatestVersion(), "in-memory DB init")
 
+	// create custom markets module permission requester as some test do need to create a markets
+	marketsRequester := types.RequestMarketsPerms()
+	if customMarketsPerms != nil {
+		marketsRequester = func() (moduleName string, modulePerms perms.Permissions) {
+			moduleName, modulePerms = types.ModuleName, customMarketsPerms
+			return
+		}
+	}
+
 	// create target and dependant keepers
 	input.vmStorage = tests.NewVMStorage(input.keyVMS)
 	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tKeyParams)
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
-	input.ccsKeeper = ccstorage.NewKeeper(input.cdc, input.keyCCS, input.paramsKeeper.Subspace(ccstorage.DefaultParamspace), input.vmStorage)
-	input.marketKeeper = markets.NewKeeper(input.cdc, input.paramsKeeper.Subspace(markets.DefaultParamspace), input.ccsKeeper)
-	input.keeper = NewKeeper(input.keyOrders, input.cdc, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
+	input.ccsKeeper = ccstorage.NewKeeper(
+		input.cdc,
+		input.keyCCS,
+		input.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
+		input.vmStorage,
+		markets.RequestCCStoragePerms(),
+	)
+	input.marketKeeper = markets.NewKeeper(
+		input.cdc,
+		input.paramsKeeper.Subspace(markets.DefaultParamspace),
+		input.ccsKeeper,
+		marketsRequester,
+	)
+	input.keeper = NewKeeper(input.cdc, input.keyOrders, input.bankKeeper, input.supplyKeeper, input.marketKeeper)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
 
 	// init genesis / params
 	input.ccsKeeper.InitDefaultGenesis(input.ctx)
-	input.marketKeeper.SetParams(input.ctx, markets.DefaultParams())
+	input.marketKeeper.InitDefaultGenesis(input.ctx)
 
 	return input
 }

@@ -12,11 +12,11 @@ import (
 // Client multisig message to issue currency.
 type MsgIssueCurrency struct {
 	// Issue unique ID (could be txHash of transaction in another blockchain)
-	ID string `json:"id"`
+	ID string `json:"id" yaml:"id"`
 	// Target currency issue coin
-	Coin sdk.Coin `json:"coin"`
+	Coin sdk.Coin `json:"coin" yaml:"coin"`
 	// Target account
-	Payee sdk.AccAddress `json:"Payee"`
+	Payee sdk.AccAddress `json:"payee" yaml:"payee"`
 }
 
 // Implements sdk.Msg interface.

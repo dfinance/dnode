@@ -24,7 +24,7 @@ func (aggInput AggInput) Check(t *testing.T, agg OrderAggregates) {
 	}
 }
 
-func TestOB_OrderAggregate_Bid(t *testing.T) {
+func TestOBKeeper_OrderAggregate_Bid(t *testing.T) {
 	t.Parallel()
 
 	// zero input
@@ -70,7 +70,7 @@ func TestOB_OrderAggregate_Bid(t *testing.T) {
 	}
 }
 
-func TestOB_OrderAggregate_Ask(t *testing.T) {
+func TestOBKeeper_OrderAggregate_Ask(t *testing.T) {
 	t.Parallel()
 
 	// zero input

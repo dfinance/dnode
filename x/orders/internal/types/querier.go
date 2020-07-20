@@ -19,15 +19,15 @@ type OrderReq struct {
 // Client request for markets.
 type OrdersReq struct {
 	// Page number
-	Page  sdk.Uint
+	Page  sdk.Uint `json:"page" yaml:"page"`
 	// Items per page
-	Limit sdk.Uint
+	Limit sdk.Uint `json:"limit" yaml:"limit"`
 	// Owner filter
-	Owner sdk.AccAddress
+	Owner sdk.AccAddress `json:"owner" yaml:"owner"`
 	// Direction filter
-	Direction Direction
+	Direction Direction `json:"direction" yaml:"direction"`
 	// MarketID filter
-	MarketID string
+	MarketID string `json:"market_id" yaml:"market_id"`
 }
 
 // OwnerFilter check if Owner filter is enabled.

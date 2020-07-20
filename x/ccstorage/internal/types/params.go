@@ -15,11 +15,11 @@ var (
 // CurrencyParams defines currency genesis params.
 type CurrencyParams struct {
 	// Currency decimals count
-	Decimals uint8 `json:"decimals"`
+	Decimals uint8 `json:"decimals" yaml:"decimals"`
 	// Path used to store account balance for currency denom (0x1::Dfinance::T<Coin>)
-	BalancePathHex string `json:"balance_path_hex"`
+	BalancePathHex string `json:"balance_path_hex" yaml:"balance_path_hex"`
 	// Path used to store CurrencyInfo for currency denom (0x1::Dfinance::Info<Coin>)
-	InfoPathHex string `json:"info_path_hex"`
+	InfoPathHex string `json:"info_path_hex" yaml:"info_path_hex"`
 }
 
 // CurrenciesParams is a map with denom key and CurrencyParams value, used for parameters storage.

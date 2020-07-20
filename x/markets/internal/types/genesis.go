@@ -7,9 +7,9 @@ type GenesisState struct {
 	Params Params `json:"params" yaml:"params"`
 }
 
-// ValidateGenesis validates module genesis state.
-func ValidateGenesis(data GenesisState) error {
-	if err := data.Params.Validate(); err != nil {
+// Validate checks that genesis state is valid.
+func (s GenesisState) Validate() error {
+	if err := s.Params.Validate(); err != nil {
 		return fmt.Errorf("params: %w", err)
 	}
 
@@ -26,6 +26,6 @@ func NewGenesisState(p Params) GenesisState {
 // DefaultGenesisState returns module default genesis state.
 func DefaultGenesisState() GenesisState {
 	return NewGenesisState(
-		DefaultParams(),
+		NewParams(Markets{}),
 	)
 }

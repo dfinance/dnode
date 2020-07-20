@@ -40,10 +40,16 @@ const (
 	AttributeAssetCode  = types.AttributeAssetCode
 	AttributePrice      = types.AttributePrice
 	AttributeReceivedAt = types.AttributeReceivedAt
+	// Permissions
+	PermInit   = types.PermInit
+	PermReader = types.PermReader
+	PermWriter = types.PermWriter
 )
 
 var (
-	ModuleCdc = types.ModuleCdc
+	// variable aliases
+	ModuleCdc            = types.ModuleCdc
+	AvailablePermissions = types.AvailablePermissions
 	// functions aliases
 	RegisterCodec       = types.RegisterCodec
 	NewKeeper           = keeper.NewKeeper
@@ -53,6 +59,8 @@ var (
 	NewParams           = types.NewParams
 	NewAsset            = types.NewAsset
 	NewMsgPostPrice     = types.NewMsgPostPrice
+	// perms requests
+	RequestVMStoragePerms = types.RequestVMStoragePerms
 	// errors
 	ErrInternal      = types.ErrInternal
 	ErrEmptyInput    = types.ErrEmptyInput
