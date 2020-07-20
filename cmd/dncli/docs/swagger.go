@@ -628,10 +628,10 @@ definitions:
       code:
         type: string
     type: object
-  crypto.PubKey:
-    type: object
   markets.MarketExtended:
     $ref: '#/definitions/types.MarketExtended'
+  msmodule.MsMsg:
+    type: object
   rest.BaseReq:
     properties:
       account_number:
@@ -906,13 +906,13 @@ definitions:
     properties:
       asset_code:
         description: AssetCode
-        example: dfi
+        example: btc_dfi
         type: string
       base_req:
         $ref: '#/definitions/rest.BaseReq'
         type: object
       price:
-        description: BigInt
+        description: Price in big.Int format
         example: "100"
         type: string
       received_at:
@@ -925,8 +925,6 @@ definitions:
     items:
       type: integer
     type: array
-  types.Address:
-    type: object
   types.Asset:
     properties:
       active:
@@ -945,6 +943,66 @@ definitions:
     items:
       $ref: '#/definitions/types.Asset'
     type: array
+  types.Call:
+    properties:
+      approved:
+        description: 'Call state: approved to execute'
+        type: boolean
+      creator:
+        description: Call creator address
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      error:
+        description: Call fail reason
+        type: string
+      executed:
+        description: 'Call state: executed'
+        type: boolean
+      failed:
+        description: 'Call state: execution failed'
+        type: boolean
+      height:
+        description: BlockHeight when call was submitted
+        example: 1
+        type: integer
+      id:
+        description: Call ID
+        example: "0"
+        format: string representation for big.Uint
+        type: string
+      msg_data:
+        $ref: '#/definitions/msmodule.MsMsg'
+        description: 'Message: data'
+        type: object
+      msg_route:
+        description: 'Message: route'
+        example: oracle
+        type: string
+      msg_type:
+        description: 'Message: type'
+        example: add_asset
+        type: string
+      rejected:
+        description: 'Call state: rejected'
+        type: boolean
+      unique_id:
+        description: Call unique ID (ID and UniqueID both identifies call)
+        example: issue1
+        type: string
+    type: object
+  types.CallResp:
+    properties:
+      call:
+        $ref: '#/definitions/types.Call'
+        description: Call info
+        type: object
+      votes:
+        description: Voted accounts addresses
+        items:
+          type: string
+        type: array
+    type: object
   types.CallsResp:
     items:
       $ref: '#/definitions/types.CallResp'
@@ -984,7 +1042,7 @@ definitions:
     properties:
       asset_code:
         description: Asset code
-        example: dfi
+        example: btc_dfi
         type: string
       price:
         description: Price
@@ -1035,6 +1093,7 @@ definitions:
       id:
         description: Market unique ID
         example: "0"
+        format: string representation for big.Uint
         type: string
       quote_asset_denom:
         description: Quote asset denomination (for ex. dfi)
@@ -1043,15 +1102,16 @@ definitions:
     type: object
   types.MarketExtended:
     properties:
-      baseCurrency:
+      base_currency:
         $ref: '#/definitions/ccstorage.Currency'
         description: Base asset currency (for ex. btc)
         type: object
       id:
         description: Market unique ID
         example: "0"
+        format: string representation for big.Uint
         type: string
-      quoteCurrency:
+      quote_currency:
         $ref: '#/definitions/ccstorage.Currency'
         description: Quote asset currency (for ex. dfi)
         type: object
@@ -1081,8 +1141,9 @@ definitions:
   types.MsgRevokeOrder:
     properties:
       order_id:
-        $ref: '#/definitions/types.ID'
-        type: object
+        example: "0"
+        format: string representation for big.Uint
+        type: string
       owner:
         $ref: '#/definitions/types.AccAddress'
         type: object
@@ -1090,9 +1151,10 @@ definitions:
   types.Oracle:
     properties:
       address:
-        $ref: '#/definitions/types.AccAddress'
         description: Address
-        type: object
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
     type: object
   types.Oracles:
     items:
@@ -1112,6 +1174,7 @@ definitions:
       id:
         description: Order unique ID
         example: "0"
+        format: string representation for big.Uint
         type: string
       market:
         $ref: '#/definitions/markets.MarketExtended'
@@ -1148,7 +1211,7 @@ definitions:
     properties:
       asset_code:
         description: Asset code
-        example: dfi
+        example: btc_dfi
         type: string
       oracle_address:
         description: Source oracle address
@@ -1217,19 +1280,6 @@ definitions:
     items:
       $ref: '#/definitions/types.VMStatus'
     type: array
-  types.Validator:
-    properties:
-      address:
-        $ref: '#/definitions/types.Address'
-        type: object
-      proposer_priority:
-        type: integer
-      pub_key:
-        $ref: '#/definitions/crypto.PubKey'
-        type: object
-      voting_power:
-        type: integer
-    type: object
   types.Validators:
     items:
       $ref: '#/definitions/types.Validator'
@@ -1248,12 +1298,13 @@ definitions:
   types.Withdraw:
     properties:
       coin:
-        description: Target currency Coin
+        description: Target currency coin
         example: 100dfi
         type: string
       id:
         description: Withdraw unique ID
         example: "0"
+        format: string representation for big.Uint
         type: string
       pegzone_chain_id:
         description: 'Second blockchain: ID'
@@ -2450,7 +2501,7 @@ paths:
       description: Get call object by it's ID
       operationId: multisigGetCall
       parameters:
-      - description: call ID
+      - description: callID
         in: path
         name: callID
         required: true
@@ -2620,7 +2671,7 @@ paths:
       consumes:
       - application/json
       description: Get current Price by assetCode
-      operationId: oracleGetRawPrices
+      operationId: oracleGetCurrentPrice
       parameters:
       - description: asset code
         in: path

@@ -75,6 +75,7 @@ swagger-ui-build:
 	echo "package docs\n\nconst Swagger = \`" >> ./cmd/dncli/docs/swagger.go
 	cat ./cmd/dncli/docs/swagger.yaml | sed "s/\`/'/g" >> ./cmd/dncli/docs/swagger.go
 	echo "\`" >> ./cmd/dncli/docs/swagger.go
+	rm ./cmd/dncli/docs/swagger.yaml
 
 ## binaries builds (xgo required: https://github.com/karalabe/xgo)
 binaries: go.sum
