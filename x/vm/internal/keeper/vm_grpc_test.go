@@ -14,7 +14,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/vm/client"
+	"github.com/dfinance/dnode/x/vm/client/vm_client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -24,38 +24,38 @@ func newArgInputs() []types.ScriptArg {
 
 	// Bool: true
 	{
-		tag, _ := client.NewBoolScriptArg("true")
+		tag, _ := vm_client.NewBoolScriptArg("true")
 		args = append(args, tag)
 	}
 	// Bool: false
 	{
-		tag, _ := client.NewBoolScriptArg("false")
+		tag, _ := vm_client.NewBoolScriptArg("false")
 		args = append(args, tag)
 	}
 	// Vector
 	{
-		tag, _ := client.NewVectorScriptArg("0x010203040506070809AABBCCDDEEFF")
+		tag, _ := vm_client.NewVectorScriptArg("0x010203040506070809AABBCCDDEEFF")
 		args = append(args, tag)
 	}
 	// Address
 	{
 		addr := sdk.AccAddress(randomValue(common_vm.VMAddressLength))
-		tag, _ := client.NewAddressScriptArg(addr.String())
+		tag, _ := vm_client.NewAddressScriptArg(addr.String())
 		args = append(args, tag)
 	}
 	// U8
 	{
-		tag, _ := client.NewU8ScriptArg("128")
+		tag, _ := vm_client.NewU8ScriptArg("128")
 		args = append(args, tag)
 	}
 	// U64
 	{
-		tag, _ := client.NewU64ScriptArg("1000000")
+		tag, _ := vm_client.NewU64ScriptArg("1000000")
 		args = append(args, tag)
 	}
 	// U128
 	{
-		tag, _ := client.NewU128ScriptArg("100000000000000000000000000000")
+		tag, _ := vm_client.NewU128ScriptArg("100000000000000000000000000000")
 		args = append(args, tag)
 	}
 

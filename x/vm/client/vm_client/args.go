@@ -1,4 +1,4 @@
-package client
+package vm_client
 
 import (
 	"encoding/binary"

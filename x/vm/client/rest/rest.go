@@ -7,15 +7,15 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/common_vm"
-	vmClient "github.com/dfinance/dnode/x/vm/client"
+	"github.com/dfinance/dnode/x/vm/client/vm_client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -25,9 +25,11 @@ const (
 	txHash          = "txHash"
 )
 
-type compileReq struct {
-	Code    string `json:"code"`                                                            // Script code
-	Account string `json:"address" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"` // Code address
+type CompileReq struct {
+	// Script source code
+	Code string `json:"code"`
+	// Account address
+	Account string `json:"address" format:"bech32/hex" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 }
 
 // Registering routes for REST API.
@@ -36,6 +38,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/data/{%s}/{%s}", types.ModuleName, accountAddrName, vmPathName), getData(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", types.ModuleName, txHash), getTxVMStatus(cliCtx)).Methods("GET")
 }
+
 // Compile godoc
 // @Tags VM
 // @Summary Get compiled byteCode
@@ -43,42 +46,52 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // @ID vmCompile
 // @Accept  json
 // @Produce json
-// @Param getRequest body compileReq true "Code with metadata"
+// @Param getRequest body CompileReq true "Code with metadata"
 // @Success 200 {object} VmRespCompile
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /vm/compile [get]
 func compile(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := compileReq{}
+		compilerAddr := viper.GetString(vm_client.FlagCompilerAddr)
+
+		// parse inputs and prepare request
+		req := CompileReq{}
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
 
-		compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
-		sourceFile := &vm_grpc.SourceFile{
-			Text:    req.Code,
-			Address: []byte(req.Account),
+		address, err := helpers.ParseSdkAddressParam("address", req.Account, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
 		}
 
-		byteCode, err := vmClient.Compile(compilerAddr, sourceFile)
+		sourceFile := &vm_grpc.SourceFile{
+			Text:    req.Code,
+			Address: common_vm.Bech32ToLibra(address),
+		}
+
+		// compile and process response
+		byteCode, err := vm_client.Compile(compilerAddr, sourceFile)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		resp := vmClient.MoveFile{
+		resp := vm_client.MoveFile{
 			Code: hex.EncodeToString(byteCode),
 		}
+
 		rest.PostProcessResponse(w, cliCtx, resp)
 	}
 }
 
 // GetData godoc
 // @Tags VM
-// @Summary Get data from data source
-// @Description Get data from data source by accountAddr and path
+// @Summary Get writeSet data from VM
+// @Description Get writeSet data from VM by accountAddr and path
 // @ID vmGetData
 // @Accept  json
 // @Produce json
@@ -90,57 +103,37 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 // @Router /vm/data/{accountAddr}/{vmPath} [get]
 func getData(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs and prepare request
 		vars := mux.Vars(r)
-		rawAddress := vars[accountAddrName]
-		rawPath := vars[vmPathName]
 
-		var address sdk.AccAddress
-		address, err := hex.DecodeString(rawAddress)
+		address, err := helpers.ParseSdkAddressParam(accountAddrName, vars[accountAddrName], helpers.ParamTypeRestPath)
 		if err != nil {
-			address, err = sdk.AccAddressFromBech32(rawAddress)
-			if err != nil {
-				rest.WriteErrorResponse(
-					w,
-					http.StatusUnprocessableEntity,
-					fmt.Sprintf("can't parse address %q (should be libra hex or bech32): %v", rawAddress, err),
-				)
-				return
-			}
-		}
-
-		path, err := hex.DecodeString(rawPath)
-		if err != nil {
-			rest.WriteErrorResponse(
-				w,
-				http.StatusUnprocessableEntity,
-				fmt.Sprintf("can't parse path %q: %v", rawPath, err),
-			)
+			rest.WriteErrorResponse(w, http.StatusUnprocessableEntity, "failed to parse request")
 			return
 		}
 
-		bz, err := cliCtx.Codec.MarshalJSON(types.QueryAccessPath{
+		_, path, err := helpers.ParseHexStringParam(vmPathName, vars[vmPathName], helpers.ParamTypeRestPath)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusUnprocessableEntity, "failed to parse request")
+			return
+		}
+
+		bz, err := cliCtx.Codec.MarshalJSON(types.ValueReq{
 			Address: common_vm.Bech32ToLibra(address),
 			Path:    path,
 		})
 		if err != nil {
-			rest.WriteErrorResponse(
-				w,
-				http.StatusInternalServerError,
-				fmt.Sprintf("can't marshal query: %v", err),
-			)
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/value", types.ModuleName), bz)
+		// send request and process response
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryValue), bz)
 		if err != nil {
-			rest.WriteErrorResponse(
-				w,
-				http.StatusInternalServerError,
-				fmt.Sprintf("processing query: %v", err),
-			)
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		resp := types.QueryValueResp{Value: hex.EncodeToString(res)}
+		resp := types.ValueResp{Value: hex.EncodeToString(res)}
 
 		rest.PostProcessResponse(w, cliCtx, resp)
 	}
@@ -148,8 +141,8 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 
 // GetTxVMStatus godoc
 // @Tags VM
-// @Summary Get tx VM execution status
-// @Description Get tx VM execution status by tx hash
+// @Summary Get TX VM execution status
+// @Description Get TX VM execution status by hash
 // @ID vmTxStatus
 // @Accept  json
 // @Produce json
@@ -160,6 +153,7 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 // @Router /vm/tx/{txHash} [get]
 func getTxVMStatus(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs and prepare request
 		vars := mux.Vars(r)
 		txHash := vars[txHash]
 
@@ -179,7 +173,7 @@ func getTxVMStatus(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		if output.Empty() {
-			rest.WriteErrorResponse(w, http.StatusNotFound, fmt.Sprintf("no transaction found with hash %s", txHash))
+			rest.WriteErrorResponse(w, http.StatusNotFound, fmt.Sprintf("transaction with %q hash: not found", txHash))
 			return
 		}
 

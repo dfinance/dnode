@@ -37,8 +37,8 @@ type (
 	ScriptArg        = types.ScriptArg
 
 	GenesisState    = types.GenesisState
-	QueryAccessPath = types.QueryAccessPath
-	QueryValueResp  = types.QueryValueResp
+	QueryAccessPath = types.ValueReq
+	QueryValueResp  = types.ValueResp
 
 	CurrentTimestamp = middlewares.CurrentTimestamp
 	BlockHeader      = middlewares.BlockHeader

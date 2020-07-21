@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -145,6 +147,16 @@ func ParseUint64Param(argName, argValue string, paramType ParamType) (uint64, er
 	return v, nil
 }
 
+// ParseInt64Param parses int64 param.
+func ParseInt64Param(argName, argValue string, paramType ParamType) (int64, error) {
+	v, err := strconv.ParseInt(argValue, 10, 64)
+	if err != nil {
+		return int64(0), fmt.Errorf("%s %s %q: int64 parsing: %w", argName, paramType, argValue, err)
+	}
+
+	return v, nil
+}
+
 // ParseSdkAddressParam parses sdk.AccAddress param.
 func ParseSdkAddressParam(argName, argValue string, paramType ParamType) (retAddr sdk.AccAddress, retErr error) {
 	defer func() {
@@ -211,13 +223,14 @@ func ValidateDenomParam(argName, argValue string, paramType ParamType) error {
 }
 
 // ParseHexStringParam parses HEX string param.
-func ParseHexStringParam(argName, argValue string, paramType ParamType) (string, error) {
+func ParseHexStringParam(argName, argValue string, paramType ParamType) (string, []byte, error) {
 	argValueNorm := strings.TrimPrefix(argValue, "0x")
-	if _, err := hex.DecodeString(argValueNorm); err != nil {
-		return "", fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+	argValueBytes, err := hex.DecodeString(argValueNorm)
+	if err != nil {
+		return "", nil,  fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
 	}
 
-	return argValueNorm, nil
+	return argValueNorm, argValueBytes, nil
 }
 
 // ParseAssetCodeParam parses assetCode and validates it.
@@ -263,6 +276,21 @@ func ParseUnixTimestamp(argName, argValue string, paramType ParamType) (time.Tim
 	tsCanonical := tmtime.Canonical(time.Unix(ts.Int64(), 0))
 
 	return tsCanonical, nil
+}
+
+// ParseFilePath opens file.
+func ParseFilePath(argName, argValue string, paramType ParamType) ([]byte, error) {
+	file, err := os.Open(argValue)
+	if err != nil {
+		return nil, fmt.Errorf("%s %s %q: file open: %w", argName, paramType, argValue, err)
+	}
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("%s %s %q: file read: %w", argName, paramType, argValue, err)
+	}
+
+	return content, nil
 }
 
 // BuildError builds an error in unified error style.

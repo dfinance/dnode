@@ -16,8 +16,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/vm/client/cli"
+	"github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/client/rest"
+	"github.com/dfinance/dnode/x/vm/internal/keeper"
 )
 
 var (
@@ -77,12 +78,12 @@ func (module AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.R
 
 // Get transaction commands for CLI.
 func (module AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+	return client.GetTxCmd(cdc)
 }
 
 // Get query commands for CLI.
 func (module AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(cdc)
+	return client.GetQueryCmd(cdc)
 }
 
 // VM module.
@@ -121,7 +122,7 @@ func (app AppModule) QuerierRoute() string { return RouterKey }
 
 // Get new querier for VM module.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(app.vmKeeper)
+	return keeper.NewQuerier(app.vmKeeper)
 }
 
 // Process begin block (abci).

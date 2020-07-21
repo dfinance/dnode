@@ -20,7 +20,7 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/oracle"
-	compilerClient "github.com/dfinance/dnode/x/vm/client"
+	"github.com/dfinance/dnode/x/vm/client/vm_client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -238,7 +238,7 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	t.Logf("Compile send script")
-	bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    sendScript,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -247,12 +247,12 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 	// execute contract.
 	var args []types.ScriptArg
 	{
-		arg, err := compilerClient.NewAddressScriptArg(addr2.String())
+		arg, err := vm_client.NewAddressScriptArg(addr2.String())
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
 	for _, d := range denoms {
-		arg, err := compilerClient.NewU128ScriptArg(toSend[d].String())
+		arg, err := vm_client.NewU128ScriptArg(toSend[d].String())
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
@@ -306,7 +306,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	bytecodeModule, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	bytecodeModule, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    mathModule,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -325,7 +325,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 
 	writeCtx()
 
-	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	bytecodeScript, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    strings.Replace(mathScript, "{{sender}}", addr1.String(), 1),
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -333,12 +333,12 @@ func TestKeeper_DeployModule(t *testing.T) {
 
 	var args []types.ScriptArg
 	{
-		arg, err := compilerClient.NewU64ScriptArg("10")
+		arg, err := vm_client.NewU64ScriptArg("10")
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
 	{
-		arg, err := compilerClient.NewU64ScriptArg("100")
+		arg, err := vm_client.NewU64ScriptArg("100")
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
@@ -429,7 +429,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	bytecodeScript, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    oraclePriceScript,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -502,7 +502,7 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	bytecodeScript, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	bytecodeScript, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    errorScript,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -510,7 +510,7 @@ func TestKeeper_ErrorScript(t *testing.T) {
 
 	var args []types.ScriptArg
 	{
-		arg, err := compilerClient.NewU64ScriptArg(strconv.FormatUint(10, 10))
+		arg, err := vm_client.NewU64ScriptArg(strconv.FormatUint(10, 10))
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
@@ -559,7 +559,7 @@ func TestKeeper_AllArgsTypes(t *testing.T) {
 	defer stopContainer()
 
 	// Compile script
-	bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    argsScript,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -568,37 +568,37 @@ func TestKeeper_AllArgsTypes(t *testing.T) {
 	// Add all args and execute
 	var args []types.ScriptArg
 	{
-		arg, err := compilerClient.NewU8ScriptArg("128")
+		arg, err := vm_client.NewU8ScriptArg("128")
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
 	{
-		arg, err := compilerClient.NewU64ScriptArg("1000000")
+		arg, err := vm_client.NewU64ScriptArg("1000000")
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
 	{
-		arg, err := compilerClient.NewU128ScriptArg("100000000000000000000000000000")
+		arg, err := vm_client.NewU128ScriptArg("100000000000000000000000000000")
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
 	{
-		arg, err := compilerClient.NewAddressScriptArg(addr1.String())
+		arg, err := vm_client.NewAddressScriptArg(addr1.String())
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
 	{
-		arg, err := compilerClient.NewBoolScriptArg("true")
+		arg, err := vm_client.NewBoolScriptArg("true")
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
 	{
-		arg, err := compilerClient.NewBoolScriptArg("false")
+		arg, err := vm_client.NewBoolScriptArg("false")
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
 	{
-		arg, err := compilerClient.NewVectorScriptArg("0x0001")
+		arg, err := vm_client.NewVectorScriptArg("0x0001")
 		require.NoError(t, err)
 		args = append(args, arg)
 	}
@@ -655,7 +655,7 @@ func TestKeeper_Path(t *testing.T) {
     			}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -682,7 +682,7 @@ func TestKeeper_Path(t *testing.T) {
     			}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -710,7 +710,7 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -738,7 +738,7 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -766,7 +766,7 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -794,7 +794,7 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -822,7 +822,7 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -850,7 +850,7 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -878,7 +878,7 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -906,7 +906,7 @@ func TestKeeper_Path(t *testing.T) {
 				}
 			}
 		`
-		bytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		bytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -931,7 +931,7 @@ func TestKeeper_Path(t *testing.T) {
 			    }
 			}
 		`
-		moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		moduleBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    moduleSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -958,7 +958,7 @@ func TestKeeper_Path(t *testing.T) {
 			}
 		`
 		scriptSrc := fmt.Sprintf(scriptSrcFmt, addr1)
-		scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+		scriptBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 			Text:    scriptSrc,
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
@@ -1036,7 +1036,7 @@ func Test_EventTypeSerialization(t *testing.T) {
 	defer stopContainer()
 
 	// Compile, publish module
-	moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	moduleBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    moduleSrc,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -1053,7 +1053,7 @@ func Test_EventTypeSerialization(t *testing.T) {
 
 	// Compile, execute script
 	scriptSrc := fmt.Sprintf(scriptSrcFmt, addr1)
-	scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	scriptBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    scriptSrc,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -1150,7 +1150,7 @@ func Test_EventTypeSerializationGas(t *testing.T) {
 	defer stopContainer()
 
 	// Compile, publish module
-	moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	moduleBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    moduleSrc,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -1167,7 +1167,7 @@ func Test_EventTypeSerializationGas(t *testing.T) {
 
 	// Compile, execute script
 	scriptSrc := fmt.Sprintf(scriptSrcFmt, addr1)
-	scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	scriptBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    scriptSrc,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -1281,7 +1281,7 @@ func Test_EventTypeSerializationOutOfGas(t *testing.T) {
 	defer stopContainer()
 
 	// Compile, publish module
-	moduleBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	moduleBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    moduleSrc,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
@@ -1298,7 +1298,7 @@ func Test_EventTypeSerializationOutOfGas(t *testing.T) {
 
 	// Compile, execute script
 	scriptSrc := fmt.Sprintf(scriptSrcFmt, addr1)
-	scriptBytecode, err := compilerClient.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	scriptBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
 		Text:    scriptSrc,
 		Address: common_vm.Bech32ToLibra(addr1),
 	})

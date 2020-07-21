@@ -1,20 +1,20 @@
 package rest
 
 import (
-	vmClient "github.com/dfinance/dnode/x/vm/client"
+	"github.com/dfinance/dnode/x/vm/client/vm_client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 //nolint:deadcode,unused
 type (
 	VmRespCompile struct {
-		Height int64             `json:"height"`
-		Result vmClient.MoveFile `json:"result"`
+		Height int64              `json:"height"`
+		Result vm_client.MoveFile `json:"result"`
 	}
 
 	VmData struct {
-		Height int64                `json:"height"`
-		Result types.QueryValueResp `json:"result" format:"HEX string"`
+		Height int64           `json:"height"`
+		Result types.ValueResp `json:"result" format:"HEX string"`
 	}
 
 	VmTxStatus struct {

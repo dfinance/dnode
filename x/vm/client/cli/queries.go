@@ -4,115 +4,43 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
-	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tendermint/go-amino"
 
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
-
-	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/common_vm"
-	vmClient "github.com/dfinance/dnode/x/vm/client"
+	"github.com/dfinance/dnode/x/vm/client/vm_client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// Returns get commands for this module.
-func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
-	queryCmd := &cobra.Command{
-		Use:   types.ModuleName,
-		Short: "VM query commands, includes compiler",
-	}
-
-	compileCommands := sdkClient.GetCommands(
-		Compile(cdc),
-	)
-	for _, cmd := range compileCommands {
-		cmd.Flags().String(vmClient.FlagCompilerAddr, config.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
-		cmd.Flags().String(vmClient.FlagOutput, "", "--to-file ./compiled.mv")
-	}
-
-	commands := sdkClient.GetCommands(
-		GetData(types.ModuleName, cdc),
-		GetTxVMStatus(cdc),
-	)
-	commands = append(commands, compileCommands...)
-
-	queryCmd.AddCommand(commands...)
-
-	return queryCmd
-}
-
-// Read move file by file path.
-func readMoveFile(filePath string) ([]byte, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	return ioutil.ReadAll(file)
-}
-
-// Save output to stdout or file after compilation.
-func saveOutput(bytecode []byte, cdc *codec.Codec) error {
-	code := hex.EncodeToString(bytecode)
-	output := viper.GetString(vmClient.FlagOutput)
-
-	mvFile := vmClient.MoveFile{Code: code}
-	mvBytes, err := cdc.MarshalJSONIndent(mvFile, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	if output == "" || output == "stdout" {
-		fmt.Println("Compiled code: ")
-		fmt.Println(string(mvBytes))
-	} else {
-		// write to file output
-		if err := ioutil.WriteFile(output, mvBytes, 0644); err != nil {
-			return err
-		}
-
-		fmt.Printf("Result saved to file %s\n", output)
-	}
-
-	return nil
-}
-
-// Get data from data source by access path.
+// GetData returns query command that returns writeSet for VM accessPath.
 func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "get-data [address] [path]",
-		Short:   "get-data from data source storage by address and path, address could be bech32 or hex",
+		Short:   "Get write set data from the storage by address and path",
 		Example: "get-data wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 0019b01c2cf3c2160a43e4dcad70e3e5d18151cc38de7a1d1067c6031bfa0ae4d9",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			// extract data
-			rawAddress := args[0]
-			var address sdk.AccAddress
-			address, err := hex.DecodeString(rawAddress)
-			if err != nil {
-				address, err = sdk.AccAddressFromBech32(rawAddress)
-				if err != nil {
-					return fmt.Errorf("can't parse address: %s\n, check address format, it could be libra hex or bech32", rawAddress)
-				}
-			}
-
-			path, err := hex.DecodeString(args[1])
+			// parse inputs
+			address, err := helpers.ParseSdkAddressParam("address", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
-			bz, err := cdc.MarshalJSON(types.QueryAccessPath{
+			_, path, err := helpers.ParseHexStringParam("path", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			// prepare request
+			bz, err := cdc.MarshalJSON(types.ValueReq{
 				Address: common_vm.Bech32ToLibra(address),
 				Path:    path,
 			})
@@ -120,70 +48,79 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			res, _, err := cliCtx.QueryWithData(
-				fmt.Sprintf("custom/%s/value", queryRoute),
-				bz)
-
+			// query and parse the result
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryValue), bz)
 			if err != nil {
 				return err
 			}
 
-			out := types.QueryValueResp{Value: hex.EncodeToString(res)}
+			out := types.ValueResp{Value: hex.EncodeToString(res)}
 
 			return cliCtx.PrintOutput(out)
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"VM address (Bech32 / HEX string)",
+		"VM path (HEX string)",
+	})
+
+	return cmd
 }
 
-// Compile Move script / module.
+// Compile returns query command that compiles Move script / module.
 func Compile(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "compile [moveFile] [account]",
-		Short:   "compile script / module using source code from Move file",
+		Short:   "Compile script / module using source code from Move file",
 		Example: "compile script.move wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file script.move.json",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
+			compilerAddr := viper.GetString(vm_client.FlagCompilerAddr)
 
-			// read provided file
-			moveContent, err := readMoveFile(args[0])
+			// parse inputs
+			moveContent, err := helpers.ParseFilePath("moveFile", args[0], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("error during reading Move file %q: %v", args[0], err)
+				return err
 			}
 
-			addr, err := sdk.AccAddressFromBech32(args[1])
+			address, err := helpers.ParseSdkAddressParam("account", args[1], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("error during parsing address %s: %v", args[1], err)
+				return err
 			}
 
-			// Move file
+			// prepare request
 			sourceFile := &vm_grpc.SourceFile{
 				Text:    string(moveContent),
-				Address: common_vm.Bech32ToLibra(addr),
+				Address: common_vm.Bech32ToLibra(address),
 			}
 
 			// compile Move file
-			bytecode, err := vmClient.Compile(compilerAddr, sourceFile)
+			bytecode, err := vm_client.Compile(compilerAddr, sourceFile)
 			if err != nil {
 				return err
 			}
 
 			if err := saveOutput(bytecode, cdc); err != nil {
-				return fmt.Errorf("error during compiled bytes output: %v", err)
+				return fmt.Errorf("error during compiled bytes print: %v", err)
 			}
-
-			fmt.Println("Compilation successful done.")
+			fmt.Println("Compilation successfully done")
 
 			return nil
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"path to .move file",
+		"account address (Bech32 / HEX string)",
+	})
+
+	return cmd
 }
 
-// Get transaction VM errors if contains it.
+// GetTxVMStatus returns query command that returns transaction VM status.
 func GetTxVMStatus(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "tx [hash]",
-		Short:   "query tx vm status by hash",
+		Short:   "Get TX VM status by hash",
 		Example: "query tx 6D5A4D889BCDB4C71C6AE5836CD8BC1FD8E0703F1580B9812990431D1796CE34",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -203,4 +140,35 @@ func GetTxVMStatus(cdc *codec.Codec) *cobra.Command {
 			return cliCtx.PrintOutput(status)
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"transaction hash code",
+	})
+
+	return cmd
+}
+
+// saveOutput prints compilation output to stdout or file.
+func saveOutput(bytecode []byte, cdc *codec.Codec) error {
+	code := hex.EncodeToString(bytecode)
+	output := viper.GetString(vm_client.FlagOutput)
+
+	mvFile := vm_client.MoveFile{Code: code}
+	mvBytes, err := cdc.MarshalJSONIndent(mvFile, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	if output == "" || output == "stdout" {
+		fmt.Println("Compiled code: ")
+		fmt.Println(string(mvBytes))
+	} else {
+		// write to file output
+		if err := ioutil.WriteFile(output, mvBytes, 0644); err != nil {
+			return err
+		}
+
+		fmt.Printf("Result saved to file %s\n", output)
+	}
+
+	return nil
 }
