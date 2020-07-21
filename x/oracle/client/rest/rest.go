@@ -43,6 +43,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 // @Produce json
 // @Param postRequest body postPriceReq true "PostPrice request with signed transaction"
 // @Success 200 {object} OracleRespGetAssets
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /oracle/rawprices [put]
 func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -105,6 +106,7 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 // @Param blockHeight path int true "block height rawPrices relates to"
 // @Success 200 {object} OracleRespGetRawPrices
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 404 {object} rest.ErrorResponse "Returned if requested data wasn't found"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /oracle/rawprices/{assetCode}/{blockHeight} [get]
 func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
@@ -151,6 +153,7 @@ func getRawPricesHandler(cliCtx context.CLIContext, storeName string) http.Handl
 // @Param assetCode path string true "asset code"
 // @Success 200 {object} OracleRespGetPrice
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 404 {object} rest.ErrorResponse "Returned if requested data wasn't found"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /oracle/currentprice/{assetCode} [get]
 func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
@@ -189,6 +192,8 @@ func getCurrentPriceHandler(cliCtx context.CLIContext, storeName string) http.Ha
 // @Accept  json
 // @Produce json
 // @Success 200 {object} OracleRespGetAssets
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 404 {object} rest.ErrorResponse "Returned if requested data wasn't found"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /oracle/assets [get]
 func getAssetsHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {

@@ -36,7 +36,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // @Produce json
 // @Param denom path string true "currency denomination symbol"
 // @Success 200 {object} CCRespGetCurrency
-// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /currencies/currency/{denom} [get]
 func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
@@ -69,7 +68,6 @@ func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
 // @Accept  json
 // @Produce json
 // @Success 200 {object} CCRespGetCurrencies
-// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /currencies [get]
 func getCurrencies(cliCtx context.CLIContext) http.HandlerFunc {
@@ -94,7 +92,6 @@ func getCurrencies(cliCtx context.CLIContext) http.HandlerFunc {
 // @Produce json
 // @Param issueID path string true "issueID"
 // @Success 200 {object} CCRespGetIssue
-// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /currencies/issue/{issueID} [get]
 func getIssue(cliCtx context.CLIContext) http.HandlerFunc {
@@ -140,7 +137,7 @@ func getWithdraws(cliCtx context.CLIContext) http.HandlerFunc {
 		limitStr := r.URL.Query().Get("limit")
 		page, limit, err := helpers.ParsePaginationParams(pageStr, limitStr, helpers.ParamTypeRestQuery)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -184,7 +181,7 @@ func getWithdraw(cliCtx context.CLIContext) http.HandlerFunc {
 		vars := mux.Vars(r)
 		id, err := helpers.ParseDnIDParam(WithdrawID, vars[WithdrawID], helpers.ParamTypeRestQuery)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
