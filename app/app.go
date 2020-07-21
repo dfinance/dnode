@@ -280,7 +280,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.ccsKeeper = ccstorage.NewKeeper(
 		cdc,
 		keys[ccstorage.StoreKey],
-		app.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
 		app.vmKeeper,
 		currencies.RequestCCStoragePerms(),
 		vmauth.RequestCCStoragePerms(),

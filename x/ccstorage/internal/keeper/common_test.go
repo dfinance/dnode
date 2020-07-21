@@ -24,12 +24,10 @@ type TestInput struct {
 	ctx sdk.Context
 	//
 	keyCCStorage *sdk.KVStoreKey
-	keyParams    *sdk.KVStoreKey
 	tkeyParams   *sdk.TransientStoreKey
 	keyVMS       *sdk.KVStoreKey
 	//
-	paramsKeeper params.Keeper
-	keeper       Keeper
+	keeper Keeper
 	//
 	vmStorage common_vm.VMStorage
 }
@@ -37,7 +35,6 @@ type TestInput struct {
 func NewTestInput(t *testing.T) TestInput {
 	input := TestInput{
 		cdc:          codec.New(),
-		keyParams:    sdk.NewKVStoreKey(params.StoreKey),
 		keyCCStorage: sdk.NewKVStoreKey(types.StoreKey),
 		keyVMS:       sdk.NewKVStoreKey(vm.StoreKey),
 		tkeyParams:   sdk.NewTransientStoreKey(params.TStoreKey),
@@ -50,7 +47,6 @@ func NewTestInput(t *testing.T) TestInput {
 	// init in-memory DB
 	db := dbm.NewMemDB()
 	mstore := store.NewCommitMultiStore(db)
-	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyCCStorage, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyVMS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
@@ -63,8 +59,7 @@ func NewTestInput(t *testing.T) TestInput {
 	input.vmStorage = tests.NewVMStorage(input.keyVMS)
 
 	// create target and dependant keepers
-	input.paramsKeeper = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
-	input.keeper = NewKeeper(input.cdc, input.keyCCStorage, input.paramsKeeper.Subspace(types.DefaultParamspace), input.vmStorage)
+	input.keeper = NewKeeper(input.cdc, input.keyCCStorage, input.vmStorage)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())

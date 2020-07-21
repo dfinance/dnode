@@ -51,6 +51,31 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
+// GetCurrencies returns query command that returns all registered currencies.
+func GetCurrencies(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "currencies",
+		Short:   "Get all registered currencies",
+		Example: "currencies",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			// query and parse the result
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryCurrencies), nil)
+			if err != nil {
+				return err
+			}
+
+			var out ccstorage.Currencies
+			cdc.MustUnmarshalJSON(res, &out)
+
+			return cliCtx.PrintOutput(out)
+		},
+	}
+
+	return cmd
+}
+
 // GetIssue returns query command that returns issue by id.
 func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{

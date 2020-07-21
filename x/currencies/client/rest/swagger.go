@@ -26,4 +26,9 @@ type (
 		Height int64              `json:"height"`
 		Result ccstorage.Currency `json:"result"`
 	}
+
+	CCRespGetCurrencies struct {
+		Height int64                `json:"height"`
+		Result ccstorage.Currencies `json:"result"`
+	}
 )

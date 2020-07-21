@@ -5,9 +5,8 @@ import (
 )
 
 const (
-	ModuleName        = "ccstorage"
-	StoreKey          = ModuleName
-	DefaultParamspace = ModuleName
+	ModuleName = "ccstorage"
+	StoreKey   = ModuleName
 )
 
 var (
@@ -24,6 +23,11 @@ func GetCurrencyKey(denom string) []byte {
 		},
 		KeyDelimiter,
 	)
+}
+
+// GetCurrencyKeyPrefix return currency storage key prefix (used for iteration).
+func GetCurrencyKeyPrefix() []byte {
+	return append(KeyCurrencyPrefix, KeyDelimiter...)
 }
 
 // GetCurrencyBalancePathKey returns storage key for currencyBalance VM path.

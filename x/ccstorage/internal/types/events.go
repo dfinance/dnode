@@ -15,11 +15,11 @@ const (
 )
 
 // NewCCCreatedEvent creates an Event on currency creation.
-func NewCCCreatedEvent(currency Currency, params CurrencyParams) sdk.Event {
+func NewCCCreatedEvent(currency Currency) sdk.Event {
 	return sdk.NewEvent(
 		EventTypesCreate,
 		sdk.NewAttribute(AttributeDenom, currency.Denom),
 		sdk.NewAttribute(AttributeDecimals, strconv.FormatUint(uint64(currency.Decimals), 10)),
-		sdk.NewAttribute(AttributeInfoPath, params.InfoPathHex),
+		sdk.NewAttribute(AttributeInfoPath, currency.InfoPathHex),
 	)
 }

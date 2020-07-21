@@ -15,8 +15,8 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	state := types.GenesisState{}
 	k.cdc.MustUnmarshalJSON(data, &state)
 
-	for denom, params := range state.CurrenciesParams {
-		if err := k.CreateCurrency(ctx, denom, params); err != nil {
+	for _, params := range state.CurrenciesParams {
+		if err := k.CreateCurrency(ctx, params); err != nil {
 			panic(err)
 		}
 	}
@@ -26,30 +26,17 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	k.modulePerms.AutoCheck(types.PermCCReader)
 
-	store := ctx.KVStore(k.storeKey)
 	state := types.GenesisState{
-		CurrenciesParams: make(types.CurrenciesParams),
+		CurrenciesParams: types.CurrenciesParams{},
 	}
 
-	keyPrefix := types.KeyCurrencyPrefix
-	keyPrefix = append(keyPrefix, types.KeyDelimiter...)
-	iterator := sdk.KVStorePrefixIterator(store, keyPrefix)
-	for ; iterator.Valid(); iterator.Next() {
-		currency := types.Currency{}
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &currency)
-
-		balancePath, err := k.GetCurrencyBalancePath(ctx, currency.Denom)
-		if err != nil {
-			panic(err)
-		}
-
-		infoPath, err := k.GetCurrencyInfoPath(ctx, currency.Denom)
-		if err != nil {
-			panic(err)
-		}
-
-		params := types.NewCurrencyParams(currency.Decimals, balancePath, infoPath)
-		state.CurrenciesParams[currency.Denom] = params
+	for _, currency := range k.GetCurrencies(ctx) {
+		state.CurrenciesParams = append(state.CurrenciesParams, types.CurrencyParams{
+			Denom:          currency.Denom,
+			Decimals:       currency.Decimals,
+			BalancePathHex: currency.BalancePathHex,
+			InfoPathHex:    currency.InfoPathHex,
+		})
 	}
 
 	return k.cdc.MustMarshalJSON(state)

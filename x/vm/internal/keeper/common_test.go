@@ -291,7 +291,6 @@ func newTestInput(launchMock bool) testInput {
 	input.cs = ccstorage.NewKeeper(
 		input.cdc,
 		input.keyCCS,
-		input.pk.Subspace(ccstorage.DefaultParamspace),
 		input.vk,
 		vmauth.RequestCCStoragePerms(),
 	)

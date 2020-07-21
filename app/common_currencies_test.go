@@ -210,11 +210,8 @@ func GetAllSupplies(t *testing.T, app *DnServiceApp, ctx sdk.Context) AllSupplie
 
 	getCCSupplies := func() ModuleSupplies {
 		supplies := make(ModuleSupplies)
-		for denom := range app.ccsKeeper.GetCurrenciesParams(ctx) {
-			currency, err := app.ccsKeeper.GetCurrency(ctx, denom)
-			require.NoError(t, err, "requesting ccStorage for %q currency", denom)
-
-			supplies[denom] = currency.Supply
+		for _, currency := range app.ccsKeeper.GetCurrencies(ctx) {
+			supplies[currency.Denom] = currency.Supply
 		}
 		return supplies
 	}
@@ -232,13 +229,14 @@ func CreateCurrency(t *testing.T, app *DnServiceApp, ccDenom string, ccDecimals 
 	_, infoPathHex := GenerateRandomBytes(10)
 
 	params := ccstorage.CurrencyParams{
+		Denom:          ccDenom,
 		Decimals:       ccDecimals,
 		BalancePathHex: balancePathHex,
 		InfoPathHex:    infoPathHex,
 	}
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})
-	err := app.ccKeeper.CreateCurrency(GetContext(app, false), ccDenom, params)
+	err := app.ccKeeper.CreateCurrency(GetContext(app, false), params)
 	require.NoError(t, err, "creating %q currency", ccDenom)
 	app.EndBlock(abci.RequestEndBlock{})
 	app.Commit()

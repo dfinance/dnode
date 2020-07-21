@@ -1,6 +1,7 @@
 package clitester
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -83,14 +84,16 @@ func NewCurrencyMap(cdc *codec.Codec, state GenesisState) map[string]CurrencyInf
 	var ccsGenesis ccstorage.GenesisState
 	cdc.MustUnmarshalJSON(state[ccstorage.ModuleName], &ccsGenesis)
 
-	for denom, params := range ccsGenesis.CurrenciesParams {
-		currencies[denom] = CurrencyInfo{
+	for _, params := range ccsGenesis.CurrenciesParams {
+		info := CurrencyInfo{
 			Decimals:       params.Decimals,
 			BalancePathHex: params.BalancePathHex,
-			BalancePath:    params.BalancePath(),
 			InfoPathHex:    params.InfoPathHex,
-			InfoPath:       params.InfoPath(),
 		}
+		info.BalancePath, _ = hex.DecodeString(params.BalancePathHex)
+		info.InfoPath, _ = hex.DecodeString(params.InfoPathHex)
+
+		currencies[params.Denom] = info
 	}
 
 	return currencies

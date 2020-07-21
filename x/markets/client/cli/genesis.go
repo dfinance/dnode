@@ -53,7 +53,8 @@ func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome stri
 
 			// check if base/quote denom do exist in currencies genesis
 			baseFound, quoteFound := false, false
-			for denom := range genesisCCS.CurrenciesParams {
+			for _, params := range genesisCCS.CurrenciesParams {
+				denom := params.Denom
 				if denom == baseDenom {
 					baseFound = true
 					continue
