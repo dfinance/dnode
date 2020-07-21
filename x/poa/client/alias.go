@@ -1,9 +1,9 @@
-package export
+package client
 
 import "github.com/dfinance/dnode/x/poa/internal/types"
 
 const (
 	// Permissions
-	PermReader = types.PermReader
-	PermWriter = types.PermWriter
+	PermRead  = types.PermRead
+	PermWrite = types.PermWrite
 )

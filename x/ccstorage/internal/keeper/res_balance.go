@@ -13,7 +13,7 @@ import (
 
 // SetAccountBalanceResources updates account Balance resources.
 func (k Keeper) SetAccountBalanceResources(ctx sdk.Context, acc exported.Account) error {
-	k.modulePerms.AutoCheck(types.PermCCResUpdater)
+	k.modulePerms.AutoCheck(types.PermResUpdate)
 
 	filledBalances, emptyBalances, err := k.newBalances(ctx, acc.GetAddress(), acc.GetCoins())
 	if err != nil {
@@ -45,7 +45,7 @@ func (k Keeper) SetAccountBalanceResources(ctx sdk.Context, acc exported.Account
 
 // GetAccountBalanceResources returns account Balance resources.
 func (k Keeper) GetAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddress) (types.Balances, error) {
-	k.modulePerms.AutoCheck(types.PermCCReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	addrLibra := common_vm.Bech32ToLibra(addr)
 	balances := make(types.Balances, 0)
@@ -69,7 +69,7 @@ func (k Keeper) GetAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddress)
 
 // RemoveAccountBalanceResources removes all account balance resource.
 func (k Keeper) RemoveAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddress) {
-	k.modulePerms.AutoCheck(types.PermCCResUpdater)
+	k.modulePerms.AutoCheck(types.PermResUpdate)
 
 	addrLibra := common_vm.Bech32ToLibra(addr)
 

@@ -10,13 +10,13 @@ const (
 	// DS start/stop/setContext
 	PermDsAdmin perms.Permission = ModuleName + "PermDsAdmin"
 	// Read from VM storage
-	PermStorageReader perms.Permission = ModuleName + "PermStorageReader"
+	PermStorageRead perms.Permission = ModuleName + "PermStorageRead"
 	// Write to VM storage
-	PermStorageWriter perms.Permission = ModuleName + "PermStorageWriter"
+	PermStorageWrite perms.Permission = ModuleName + "PermStorageWrite"
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermInit, PermVmExec, PermDsAdmin, PermStorageReader, PermStorageWriter}
+	AvailablePermissions = perms.Permissions{PermInit, PermVmExec, PermDsAdmin, PermStorageRead, PermStorageWrite}
 )
 
 func NewModulePerms() perms.ModulePermissions {

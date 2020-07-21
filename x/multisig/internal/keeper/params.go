@@ -8,7 +8,7 @@ import (
 
 // GetIntervalToExecute returns intervalToExecute param.
 func (k Keeper) GetIntervalToExecute(ctx sdk.Context) (res int64) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	k.paramStore.Get(ctx, types.ParamStoreKeyIntervalToExecute, &res)
 
@@ -17,7 +17,7 @@ func (k Keeper) GetIntervalToExecute(ctx sdk.Context) (res int64) {
 
 // SetIntervalToExecute updates intervalToExecute param.
 func (k Keeper) SetIntervalToExecute(ctx sdk.Context, value int64) {
-	k.modulePerms.AutoCheck(types.PermWriter)
+	k.modulePerms.AutoCheck(types.PermWrite)
 
 	k.paramStore.Set(ctx, types.ParamStoreKeyIntervalToExecute, value)
 }

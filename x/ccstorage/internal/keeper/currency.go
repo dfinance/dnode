@@ -10,7 +10,7 @@ import (
 
 // CreateCurrency creates a new currency object with VM resources.
 func (k Keeper) CreateCurrency(ctx sdk.Context, params types.CurrencyParams) error {
-	k.modulePerms.AutoCheck(types.PermCCCreator)
+	k.modulePerms.AutoCheck(types.PermCreate)
 
 	denom := params.Denom
 	if k.HasCurrency(ctx, denom) {
@@ -39,7 +39,7 @@ func (k Keeper) CreateCurrency(ctx sdk.Context, params types.CurrencyParams) err
 
 // HasCurrency checks that currency exists.
 func (k Keeper) HasCurrency(ctx sdk.Context, denom string) bool {
-	k.modulePerms.AutoCheck(types.PermCCReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 
@@ -48,7 +48,7 @@ func (k Keeper) HasCurrency(ctx sdk.Context, denom string) bool {
 
 // GetCurrencies returns all registered currencies.
 func (k Keeper) GetCurrencies(ctx sdk.Context) types.Currencies {
-	k.modulePerms.AutoCheck(types.PermCCReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	currencies := types.Currencies{}
 	store := ctx.KVStore(k.storeKey)
@@ -67,7 +67,7 @@ func (k Keeper) GetCurrencies(ctx sdk.Context) types.Currencies {
 
 // GetCurrency returns currency.
 func (k Keeper) GetCurrency(ctx sdk.Context, denom string) (types.Currency, error) {
-	k.modulePerms.AutoCheck(types.PermCCReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	if !k.HasCurrency(ctx, denom) {
 		return types.Currency{}, sdkErrors.Wrapf(types.ErrWrongDenom, "currency with %q denom: not found", denom)
@@ -78,7 +78,7 @@ func (k Keeper) GetCurrency(ctx sdk.Context, denom string) (types.Currency, erro
 
 // IncreaseCurrencySupply increases currency supply and updates VM resources.
 func (k Keeper) IncreaseCurrencySupply(ctx sdk.Context, coin sdk.Coin) error {
-	k.modulePerms.AutoCheck(types.PermCCUpdater)
+	k.modulePerms.AutoCheck(types.PermUpdate)
 
 	currency, err := k.GetCurrency(ctx, coin.Denom)
 	if err != nil {
@@ -94,7 +94,7 @@ func (k Keeper) IncreaseCurrencySupply(ctx sdk.Context, coin sdk.Coin) error {
 
 // DecreaseCurrencySupply reduces currency supply and updates VM resources.
 func (k Keeper) DecreaseCurrencySupply(ctx sdk.Context, coin sdk.Coin) error {
-	k.modulePerms.AutoCheck(types.PermCCUpdater)
+	k.modulePerms.AutoCheck(types.PermUpdate)
 
 	currency, err := k.GetCurrency(ctx, coin.Denom)
 	if err != nil {

@@ -24,7 +24,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 
 // ExportGenesis exports module genesis state using current params state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	k.modulePerms.AutoCheck(types.PermCCReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	state := types.GenesisState{
 		CurrenciesParams: types.CurrenciesParams{},

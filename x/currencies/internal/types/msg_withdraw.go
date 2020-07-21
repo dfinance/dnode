@@ -1,8 +1,6 @@
 package types
 
 import (
-	"encoding/json"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -16,7 +14,7 @@ type MsgWithdrawCurrency struct {
 	// Target account
 	Spender sdk.AccAddress `json:"spender" yaml:"spender"`
 	// Second blockchain: spender account
-	PegZoneRecipient string `json:"pregzone_spender" yaml:"pregzone_spender"`
+	PegZoneRecipient string `json:"pegzone_spender" yaml:"pegzone_spender"`
 	// Second blockchain: ID
 	PegZoneChainID string `json:"pegzone_chain_id" yaml:"pegzone_chain_id"`
 }
@@ -54,12 +52,7 @@ func (msg MsgWithdrawCurrency) ValidateBasic() error {
 
 // Implements sdk.Msg interface.
 func (msg MsgWithdrawCurrency) GetSignBytes() []byte {
-	b, err := json.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-
-	return sdk.MustSortJSON(b)
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // Implements sdk.Msg interface.

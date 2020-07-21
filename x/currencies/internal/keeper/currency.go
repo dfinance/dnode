@@ -9,7 +9,7 @@ import (
 
 // CreateCurrency redirects CreateCurrency request to the currencies storage.
 func (k Keeper) CreateCurrency(ctx sdk.Context, params ccstorage.CurrencyParams) error {
-	k.modulePerms.AutoCheck(types.PermCCCreator)
+	k.modulePerms.AutoCheck(types.PermCreate)
 
 	return k.ccsKeeper.CreateCurrency(ctx, params)
 }

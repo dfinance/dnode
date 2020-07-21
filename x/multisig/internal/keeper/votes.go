@@ -10,7 +10,7 @@ import (
 
 // ConfirmCall confirms (adds vote) call by {address}.
 func (k Keeper) ConfirmCall(ctx sdk.Context, id dnTypes.ID, address sdk.AccAddress) error {
-	k.modulePerms.AutoCheck(types.PermWriter)
+	k.modulePerms.AutoCheck(types.PermWrite)
 
 	call, err := k.GetCall(ctx, id)
 	if err != nil {
@@ -22,7 +22,7 @@ func (k Keeper) ConfirmCall(ctx sdk.Context, id dnTypes.ID, address sdk.AccAddre
 
 // RevokeConfirmation revokes {address} confirmation (removes vote) for the call.
 func (k Keeper) RevokeConfirmation(ctx sdk.Context, id dnTypes.ID, address sdk.AccAddress) error {
-	k.modulePerms.AutoCheck(types.PermWriter)
+	k.modulePerms.AutoCheck(types.PermWrite)
 
 	call, err := k.GetCall(ctx, id)
 	if err != nil {
@@ -34,7 +34,7 @@ func (k Keeper) RevokeConfirmation(ctx sdk.Context, id dnTypes.ID, address sdk.A
 
 // HasVote checks that call is confirmed by {address}.
 func (k Keeper) HasVote(ctx sdk.Context, callID dnTypes.ID, address sdk.AccAddress) (bool, error) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 
@@ -57,7 +57,7 @@ func (k Keeper) HasVote(ctx sdk.Context, callID dnTypes.ID, address sdk.AccAddre
 
 // GetVotes returns vote for specific call.
 func (k Keeper) GetVotes(ctx sdk.Context, id dnTypes.ID) (types.Votes, error) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 
@@ -79,7 +79,7 @@ func (k Keeper) GetVotes(ctx sdk.Context, id dnTypes.ID) (types.Votes, error) {
 
 // GetConfirmationsCount returns number of confirmations for specific call.
 func (k Keeper) GetConfirmationsCount(ctx sdk.Context, id dnTypes.ID) (uint64, error) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	votes, err := k.GetVotes(ctx, id)
 

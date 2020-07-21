@@ -6,14 +6,13 @@ import (
 )
 
 type (
-	Keeper            = keeper.Keeper
-	GenesisState      = types.GenesisState
-	Params            = types.Params
-	Call              = types.Call
-	Votes             = types.Votes
-	MsgSubmitCall     = types.MsgSubmitCall
-	MsgConfirmCall    = types.MsgConfirmCall
-	MsgRevokeConfirm  = types.MsgRevokeConfirm
+	Keeper       = keeper.Keeper
+	GenesisState = types.GenesisState
+	Params       = types.Params
+	//
+	Call  = types.Call
+	Votes = types.Votes
+	//
 	CallReq           = types.CallReq
 	CallByUniqueIdReq = types.CallByUniqueIdReq
 	CallsResp         = types.CallsResp
@@ -49,10 +48,6 @@ const (
 	AttributeValueRejected = types.AttributeValueRejected
 	AttributeValueFailed   = types.AttributeValueFailed
 	AttributeValueExecuted = types.AttributeValueExecuted
-	// Permissions
-	PermPoaReader = types.PermPoaReader
-	PermReader    = types.PermReader
-	PermWriter    = types.PermWriter
 )
 
 var (
@@ -60,13 +55,16 @@ var (
 	ModuleCdc            = types.ModuleCdc
 	AvailablePermissions = types.AvailablePermissions
 	// function aliases
-	RegisterCodec            = types.RegisterCodec
-	NewKeeper                = keeper.NewKeeper
-	NewQuerier               = keeper.NewQuerier
-	DefaultGenesisState      = types.DefaultGenesisState
+	RegisterCodec       = types.RegisterCodec
+	NewKeeper           = keeper.NewKeeper
+	NewQuerier          = keeper.NewQuerier
+	DefaultGenesisState = types.DefaultGenesisState
+	//
+	NewMsgSubmitCall    = types.NewMsgSubmitCall
+	NewMsgConfirmCall   = types.NewMsgConfirmCall
+	NewMsgRevokeConfirm = types.NewMsgRevokeConfirm
+	//
 	NewCallStateChangedEvent = types.NewCallStateChangedEvent
-	// perms requests
-	RequestPoaPerms = types.RequestPoaPerms
 	// errors
 	ErrInternal             = types.ErrInternal
 	ErrWrongCallId          = types.ErrWrongCallId

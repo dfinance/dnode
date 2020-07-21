@@ -45,6 +45,7 @@ func TestMSMsg_SubmitCall_ValidateBasic(t *testing.T) {
 // Test MsgSubmitCall implements sdk.Msg interface.
 func TestMSMsg_SubmitCall_MsgInterface(t *testing.T) {
 	t.Parallel()
+	RegisterMultiSigTypeCodec(MockMsMsg{}, "MockMsMsg")
 
 	addr := sdk.AccAddress("addr1")
 	target := NewMsgSubmitCall(NewOkMockMsMsg(), "unique", addr)

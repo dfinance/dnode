@@ -26,11 +26,6 @@ const (
 	AttributeDenom    = types.AttributeDenom
 	AttributeDecimals = types.AttributeDecimals
 	AttributeInfoPath = types.AttributeInfoPath
-	// Permissions
-	PermCCCreator    = types.PermCCCreator
-	PermCCUpdater    = types.PermCCUpdater
-	PermCCReader     = types.PermCCReader
-	PermCCResUpdater = types.PermCCResUpdater
 )
 
 var (

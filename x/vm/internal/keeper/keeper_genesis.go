@@ -49,7 +49,7 @@ func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 }
 
 func (keeper Keeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
-	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+	keeper.modulePerms.AutoCheck(types.PermStorageRead)
 
 	store := ctx.KVStore(keeper.storeKey)
 	state := types.GenesisState{}

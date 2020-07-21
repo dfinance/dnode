@@ -396,7 +396,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		keys[multisig.StoreKey],
 		app.paramsKeeper.Subspace(multisig.DefaultParamspace),
 		app.msRouter,
-		app.poaKeeper,
 		appModulePerms(multisig.AvailablePermissions),
 	)
 
@@ -477,7 +476,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		currencies.NewAppMsModule(app.ccKeeper, app.ccsKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
-		multisig.NewAppModule(app.msKeeper),
+		multisig.NewAppModule(app.msKeeper, app.poaKeeper),
 		oracle.NewAppModule(app.oracleKeeper),
 		markets.NewAppModule(app.marketKeeper),
 		orders.NewAppModule(app.orderKeeper),
