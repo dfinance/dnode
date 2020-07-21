@@ -6,11 +6,31 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
+type (
+	Keeper       = keeper.Keeper
+	GenesisState = types.GenesisState
+	//
+	ScriptArg        = types.ScriptArg
+	MsgDeployModule  = types.MsgDeployModule
+	MsgExecuteScript = types.MsgExecuteScript
+	//
+	QueryAccessPath = types.ValueReq
+	QueryValueResp  = types.ValueResp
+	//
+	CurrentTimestamp = middlewares.CurrentTimestamp
+	BlockHeader      = middlewares.BlockHeader
+	//
+	PlannedProposal      = types.PlannedProposal
+	TestProposal         = types.TestProposal
+	StdlibUpdateProposal = types.StdlibUpdateProposal
+)
+
 const (
 	ModuleName   = types.ModuleName
 	StoreKey     = types.StoreKey
 	RouterKey    = types.RouterKey
 	GovRouterKey = types.GovRouterKey
+	//
 	// Event types, attribute types and values
 	EventTypeContractStatus = types.EventTypeContractStatus
 	EventTypeMoveEvent      = types.EventTypeMoveEvent
@@ -30,32 +50,16 @@ const (
 	AttributeValueSourceScript  = types.AttributeValueSourceScript
 )
 
-type (
-	Keeper           = keeper.Keeper
-	MsgDeployModule  = types.MsgDeployModule
-	MsgExecuteScript = types.MsgExecuteScript
-	ScriptArg        = types.ScriptArg
-
-	GenesisState    = types.GenesisState
-	QueryAccessPath = types.ValueReq
-	QueryValueResp  = types.ValueResp
-
-	CurrentTimestamp = middlewares.CurrentTimestamp
-	BlockHeader      = middlewares.BlockHeader
-
-	PlannedProposal      = types.PlannedProposal
-	TestProposal         = types.TestProposal
-	StdlibUpdateProposal = types.StdlibUpdateProposal
-)
-
 var (
 	// variable aliases
 	ModuleCdc            = types.ModuleCdc
 	AvailablePermissions = types.AvailablePermissions
 	// function aliases
-	RegisterCodec      = types.RegisterCodec
-	NewKeeper          = keeper.NewKeeper
-	NewMsgDeployModule = types.NewMsgDeployModule
+	RegisterCodec       = types.RegisterCodec
+	NewKeeper           = keeper.NewKeeper
+	NewQuerier          = keeper.NewQuerier
+	DefaultGenesisState = types.DefaultGenesisState
+	NewMsgDeployModule  = types.NewMsgDeployModule
 	// error aliases
 	ErrInternal           = types.ErrInternal
 	ErrVMCrashed          = types.ErrVMCrashed

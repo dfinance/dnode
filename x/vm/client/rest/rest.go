@@ -98,7 +98,7 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 // @Param accountAddr path string true "account address (Libra HEX  Bech32)"
 // @Param vmPath path string true "VM path (HEX string)"
 // @Success 200 {object} VmData
-// @Failure 422 {object} rest.ErrorResponse "Returned if the request doesn't have valid path params"
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /vm/data/{accountAddr}/{vmPath} [get]
 func getData(cliCtx context.CLIContext) http.HandlerFunc {
@@ -108,13 +108,13 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 
 		address, err := helpers.ParseSdkAddressParam(accountAddrName, vars[accountAddrName], helpers.ParamTypeRestPath)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusUnprocessableEntity, "failed to parse request")
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
 
 		_, path, err := helpers.ParseHexStringParam(vmPathName, vars[vmPathName], helpers.ParamTypeRestPath)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusUnprocessableEntity, "failed to parse request")
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
 
@@ -148,7 +148,8 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 // @Produce json
 // @Param txHash path string true "transaction hash"
 // @Success 200 {object} VmTxStatus
-// @Failure 422 {object} rest.ErrorResponse "Returned if the request doesn't have valid path params"
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 404 {object} rest.ErrorResponse "Returned if the requested data wasn't found"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /vm/tx/{txHash} [get]
 func getTxVMStatus(cliCtx context.CLIContext) http.HandlerFunc {

@@ -66,9 +66,7 @@ func main() {
 			genaccounts.AppModuleBasic{}, app.DefaultNodeHome, app.DefaultCLIHome,
 		),
 		genutilCli.ValidateGenesisCmd(ctx, cdc, app.ModuleBasics),
-		// AddGenesisAccountCmd allows users to add accounts to the genesis file
 		genaccsCli.AddGenesisAccountCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
-		// Allows user to poa genesis validator
 		ccsCli.AddGenesisCurrencyInfo(ctx, cdc, app.DefaultNodeHome),
 		poaCli.AddGenesisPoAValidatorCmd(ctx, cdc, app.DefaultNodeHome),
 		vmCli.AddGenesisWSFromFileCmd(ctx, cdc),
