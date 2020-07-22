@@ -43,7 +43,10 @@ func (AppModuleBasic) DefaultGenesis() json.RawMessage {
 
 // ValidateGenesis validates module genesis state.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	return nil
+	state := GenesisState{}
+	ModuleCdc.MustUnmarshalJSON(bz, &state)
+
+	return state.Validate()
 }
 
 // RegisterRESTRoutes registers module REST routes.
@@ -105,12 +108,14 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 // InitGenesis inits module-genesis state.
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	am.keeper.InitGenesis(ctx, data)
+
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports module genesis state.
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return nil
+	return am.keeper.ExportGenesis(ctx)
 }
 
 // BeginBlock performs module actions at a block start.

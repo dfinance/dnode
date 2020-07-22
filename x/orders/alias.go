@@ -6,6 +6,7 @@ import (
 )
 
 type (
+	GenesisState   = types.GenesisState
 	Keeper         = keeper.Keeper
 	Order          = types.Order
 	Orders         = types.Orders

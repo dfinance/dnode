@@ -36,6 +36,30 @@ type Order struct {
 	UpdatedAt time.Time `json:"updated_at" yaml:"updated_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
 
+// Valid checks that Order is valid (used for genesis ops)
+func (o Order) Valid() error {
+	if err := o.ID.Valid(); err != nil {
+		return fmt.Errorf("id: %w", err)
+	}
+	if o.Owner.Empty() {
+		return fmt.Errorf("owner: empty")
+	}
+	if !o.Direction.IsValid() {
+		return fmt.Errorf("direction: invalid")
+	}
+	if o.Price.IsZero() {
+		return fmt.Errorf("price: is zero")
+	}
+	if o.Quantity.IsZero() {
+		return fmt.Errorf("quantity: is zero")
+	}
+	if o.CreatedAt.After(o.UpdatedAt) {
+		return fmt.Errorf("wrong create and update dates: create date later than update date")
+	}
+
+	return nil
+}
+
 // ValidatePriceQuantity compares price and quantity to min currency values.
 func (o Order) ValidatePriceQuantity() error {
 	minQuotePrice := o.Market.QuoteCurrency.MinDecimal()
