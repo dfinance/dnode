@@ -15,7 +15,7 @@ type proposalInput struct {
 	proposal types.TestProposal
 }
 
-func Test_GovProposalQueue(t *testing.T) {
+func TestVMKeeper_GovProposalQueue(t *testing.T) {
 	input := newTestInput(true)
 	defer input.Stop()
 

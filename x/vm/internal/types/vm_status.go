@@ -3,12 +3,13 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
-	// Error codes in json.
+	// Error codes in JSON format
 	jsonErrorCodes = `{
 		"3001": "MALFORMED",
 		"2007": "LOCAL_REFERENCE_ERROR",
@@ -185,25 +186,16 @@ const (
 		"1062": "MOVEFROM_TYPE_MISMATCH_ERROR"
 	}`
 
-	// VM error is unknown.
+	// VM error is unknown
 	VMErrUnknown = "unknown"
 )
 
 var (
-	// VM errors list.
+	// VM execution status majorCode to string error matching.
 	errorCodes map[string]string
 )
 
-// Load VM errors.
-func init() {
-	// File with errors.
-	errorCodes = make(map[string]string)
-	if err := json.Unmarshal([]byte(jsonErrorCodes), &errorCodes); err != nil {
-		panic(err)
-	}
-}
-
-// Get major code in string representation.
+// GetStrCode returns majorCode string representation.
 func GetStrCode(majorCode string) string {
 	if v, ok := errorCodes[majorCode]; ok {
 		return v
@@ -212,16 +204,27 @@ func GetStrCode(majorCode string) string {
 	return VMErrUnknown
 }
 
-// VM error response.
+// VMStatus is a VM error response.
 type VMStatus struct {
-	Status    string `json:"status"`               // Status of error: error/discard.
-	MajorCode string `json:"major_code,omitempty"` // Major code.
-	SubCode   string `json:"sub_code,omitempty"`   // Sub code.
-	StrCode   string `json:"str_code,omitempty"`   // Detailed exaplantion of code.
-	Message   string `json:"message,omitempty"`    // Message.
+	Status    string `json:"status"`               // Status of error: error/discard
+	MajorCode string `json:"major_code,omitempty"` // Major code
+	SubCode   string `json:"sub_code,omitempty"`   // Sub code
+	StrCode   string `json:"str_code,omitempty"`   // Detailed explanation of code
+	Message   string `json:"message,omitempty"`    // Message
 }
 
-// Create new vm error.
+func (status VMStatus) String() string {
+	return fmt.Sprintf("VM status:\n"+
+		"  Status: %s\n"+
+		"  Major code: %s\n"+
+		"  String code: %s\n"+
+		"  Sub code: %s\n"+
+		"  Message:  %s",
+		status.Status, status.MajorCode, status.StrCode, status.SubCode, status.Message,
+	)
+}
+
+// NewVMStatus creates a new VMStatus error.
 func NewVMStatus(status, majorCode, subCode, message string) VMStatus {
 	strCode := ""
 
@@ -238,40 +241,37 @@ func NewVMStatus(status, majorCode, subCode, message string) VMStatus {
 	}
 }
 
-// VM error as string.
-func (status VMStatus) String() string {
-	return fmt.Sprintf("VM status:"+
-		"\tStatus: %s\n"+
-		"\tMajor code: %s\n"+
-		"\tString code: %s\n"+
-		"\tSub code: %s\n"+
-		"\tMessage:  %s\n",
-		status.Status, status.MajorCode, status.StrCode,
-		status.SubCode, status.Message,
-	)
-}
-
-// VM error responses.
+// Slice of VMStatus objects (VM error responses).
 type VMStatuses []VMStatus
 
-// VM error responses to string.
-func (statuses VMStatuses) String() string {
-	s := ""
-
-	for _, status := range statuses {
-		s += status.String()
+func (list VMStatuses) String() string {
+	strBuilder := strings.Builder{}
+	strBuilder.WriteString("VMStatuses:\n")
+	for i, status := range list {
+		strBuilder.WriteString(status.String())
+		if i < len(list)-1 {
+			strBuilder.WriteString("\n")
+		}
 	}
 
-	return s
+	return strBuilder.String()
 }
 
-// Response contains tx hash with vm errors.
+// TxVMStatus is a response containing TX hash with VM errors.
 type TxVMStatus struct {
 	Hash       string     `json:"hash"`
 	VMStatuses VMStatuses `json:"vm_status"`
 }
 
-// New Tx VM response.
+func (tx TxVMStatus) String() string {
+	return fmt.Sprintf("Tx:\n"+
+		"  Hash: %s\n"+
+		"  Statuses: %s",
+		tx.Hash, tx.VMStatuses.String(),
+	)
+}
+
+// NewTxVMStatus creates a new TxVMStatus object.
 func NewTxVMStatus(hash string, statuses VMStatuses) TxVMStatus {
 	return TxVMStatus{
 		Hash:       hash,
@@ -279,15 +279,7 @@ func NewTxVMStatus(hash string, statuses VMStatuses) TxVMStatus {
 	}
 }
 
-// TxVMResponse to string.
-func (tx TxVMStatus) String() string {
-	return fmt.Sprintf("Tx:"+
-		"\tHash: %s\n"+
-		"\tStatuses: %s\n",
-		tx.Hash, tx.VMStatuses.String())
-}
-
-// New VM error from events.
+// NewVMStatusFromABCILogs converts SDK TxResponse log events to TxVMStatus.
 func NewVMStatusFromABCILogs(tx types.TxResponse) TxVMStatus {
 	statuses := make(VMStatuses, 0)
 
@@ -335,4 +327,11 @@ func NewVMStatusFromABCILogs(tx types.TxResponse) TxVMStatus {
 	}
 
 	return NewTxVMStatus(tx.TxHash, statuses)
+}
+
+func init() {
+	errorCodes = make(map[string]string)
+	if err := json.Unmarshal([]byte(jsonErrorCodes), &errorCodes); err != nil {
+		panic(err)
+	}
 }

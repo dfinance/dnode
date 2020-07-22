@@ -1,4 +1,4 @@
-// Implementation of Data Source (DS) server.
+// DataSource server implementation.
 package keeper
 
 import (
@@ -21,53 +21,38 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// Check type.
+// Check DSServer implements gRPC service.
 var _ ds_grpc.DSServiceServer = &DSServer{}
 
-// Server to catch VM data client requests.
+// DSServer is a DataSource server that catches VM client data requests.
 type DSServer struct {
 	ds_grpc.UnimplementedDSServiceServer
 	sync.Mutex
-
-	isStarted bool // check if server already listen
-
+	//
+	isStarted bool // check if server already listens
+	//
 	keeper *Keeper
-	ctx    sdk.Context // should be careful with it, but for now we store default context
-
-	dataMiddlewares []common_vm.DSDataMiddleware
+	ctx    sdk.Context // current storage context
+	//
+	dataMiddlewares []common_vm.DSDataMiddleware // data middleware handlers
 }
 
-// Error when no data found.
-func ErrNoData(path *ds_grpc.DSAccessPath) *ds_grpc.DSRawResponse {
-	return &ds_grpc.DSRawResponse{
-		ErrorCode:    ds_grpc.DSRawResponse_NO_DATA,
-		ErrorMessage: fmt.Sprintf("data not found for access path: %s", path.String()),
-	}
-}
-
-// Server logger.
-func (server *DSServer) Logger() log.Logger {
+// GetLogger gets logger with DS server context.
+func (server *DSServer) GetLogger() log.Logger {
 	return server.ctx.Logger().With("module", fmt.Sprintf("x/%s/dsserver", types.ModuleName))
 }
 
-// Register new data middleware.
+// IsStarted checks if server is already in the listen mode.
+func (server *DSServer) IsStarted() bool {
+	return server.isStarted
+}
+
+// RegisterDataMiddleware registers new data middleware.
 func (server *DSServer) RegisterDataMiddleware(md common_vm.DSDataMiddleware) {
 	server.dataMiddlewares = append(server.dataMiddlewares, md)
 }
 
-// Process middlewares.
-func (server *DSServer) processMiddlewares(path *vm_grpc.VMAccessPath) (data []byte, err error) {
-	for _, f := range server.dataMiddlewares {
-		data, err = f(server.ctx, path)
-		if err != nil || data != nil {
-			return
-		}
-	}
-
-	return
-}
-
-// Set server context.
+// SetContext updates server storage context.
 func (server *DSServer) SetContext(ctx sdk.Context) {
 	server.Lock()
 	defer server.Unlock()
@@ -75,24 +60,19 @@ func (server *DSServer) SetContext(ctx sdk.Context) {
 	server.ctx = ctx
 }
 
-// Check if server is already in listen mode.
-func (server *DSServer) IsStarted() bool {
-	return server.isStarted
-}
-
-// Data source processing request to return value from storage.
+// GetRaw implements gRPC service handler: returns value from the storage.
 func (server *DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*ds_grpc.DSRawResponse, error) {
 	path := &vm_grpc.VMAccessPath{
 		Address: req.Address,
 		Path:    req.Path,
 	}
 
-	server.Logger().Info(fmt.Sprintf("Get path: %s", types.VMPathToHex(path)))
+	server.GetLogger().Info(fmt.Sprintf("Get path: %s", types.StringifyVMPath(path)))
 
 	// here go with middlewares
 	blob, err := server.processMiddlewares(path)
 	if err != nil {
-		server.Logger().Error(fmt.Sprintf("Error processing middlewares for path %s: %v", types.VMPathToHex(path), err))
+		server.GetLogger().Error(fmt.Sprintf("Error processing middlewares for path %s: %v", types.StringifyVMPath(path), err))
 		return ErrNoData(req), nil
 	}
 
@@ -102,18 +82,18 @@ func (server *DSServer) GetRaw(_ context.Context, req *ds_grpc.DSAccessPath) (*d
 
 	// we can move it to middleware later.
 	if !server.keeper.hasValue(server.ctx, path) {
-		server.Logger().Debug(fmt.Sprintf("Can't find path: %s", types.VMPathToHex(path)))
+		server.GetLogger().Debug(fmt.Sprintf("Can't find path: %s", types.StringifyVMPath(path)))
 		return ErrNoData(req), nil
 	}
 
-	server.Logger().Debug(fmt.Sprintf("Get path: %s", types.VMPathToHex(path)))
+	server.GetLogger().Debug(fmt.Sprintf("Get path: %s", types.StringifyVMPath(path)))
 	blob = server.keeper.getValue(server.ctx, path)
-	server.Logger().Debug(fmt.Sprintf("Return values: %s\n", hex.EncodeToString(blob)))
+	server.GetLogger().Debug(fmt.Sprintf("Return values: %s\n", hex.EncodeToString(blob)))
 
 	return &ds_grpc.DSRawResponse{Blob: blob}, nil
 }
 
-// Data source processing request to return multiplay values form storage.
+// MultiGetRaw implements gRPC service handler: returns multiple values from the storage.
 func (server *DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPaths) (*ds_grpc.DSRawResponses, error) {
 	/*resps := &ds_grpc.DSRawResponses{
 		Blobs: make([][]byte, 0),
@@ -137,14 +117,27 @@ func (server *DSServer) MultiGetRaw(_ context.Context, req *ds_grpc.DSAccessPath
 	return nil, status.Errorf(codes.Unimplemented, "MultiGetRaw unimplemented")
 }
 
-// Creating new DS server.
+// processMiddlewares checks that accessPath can be processed by any registered middleware.
+// Contract: if {data} != nil, middleware was found.
+func (server *DSServer) processMiddlewares(path *vm_grpc.VMAccessPath) (data []byte, err error) {
+	for _, f := range server.dataMiddlewares {
+		data, err = f(server.ctx, path)
+		if err != nil || data != nil {
+			return
+		}
+	}
+
+	return
+}
+
+// NewDSServer creates a new DS server.
 func NewDSServer(keeper *Keeper) *DSServer {
 	return &DSServer{
 		keeper: keeper,
 	}
 }
 
-// Start DS server in go routine.
+// StartServer starts DS server in the go routine.
 func StartServer(listener net.Listener, dsServer *DSServer) *grpc.Server {
 	server := grpc.NewServer()
 	ds_grpc.RegisterDSServiceServer(server, dsServer)
@@ -157,4 +150,12 @@ func StartServer(listener net.Listener, dsServer *DSServer) *grpc.Server {
 	}()
 
 	return server
+}
+
+// ErrNoData builds gRPC error response when data wasn't found.
+func ErrNoData(path *ds_grpc.DSAccessPath) *ds_grpc.DSRawResponse {
+	return &ds_grpc.DSRawResponse{
+		ErrorCode:    ds_grpc.DSRawResponse_NO_DATA,
+		ErrorMessage: fmt.Sprintf("data not found for access path: %s", path.String()),
+	}
 }

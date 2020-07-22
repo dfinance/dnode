@@ -625,11 +625,6 @@ definitions:
     $ref: '#/definitions/types.Currencies'
   ccstorage.Currency:
     $ref: '#/definitions/types.Currency'
-  client.MoveFile:
-    properties:
-      code:
-        type: string
-    type: object
   crypto.PubKey:
     type: object
   markets.MarketExtended:
@@ -700,6 +695,17 @@ definitions:
       result:
         $ref: '#/definitions/types.Withdraws'
         type: object
+    type: object
+  rest.CompileReq:
+    properties:
+      address:
+        description: Account address
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32/hex
+        type: string
+      code:
+        description: Script source code
+        type: string
     type: object
   rest.ErrorResponse:
     properties:
@@ -885,7 +891,7 @@ definitions:
       height:
         type: integer
       result:
-        $ref: '#/definitions/types.QueryValueResp'
+        $ref: '#/definitions/types.ValueResp'
         type: object
     type: object
   rest.VmRespCompile:
@@ -893,7 +899,7 @@ definitions:
       height:
         type: integer
       result:
-        $ref: '#/definitions/client.MoveFile'
+        $ref: '#/definitions/vm_client.MoveFile'
         type: object
     type: object
   rest.VmTxStatus:
@@ -903,16 +909,6 @@ definitions:
       result:
         $ref: '#/definitions/types.TxVMStatus'
         type: object
-    type: object
-  rest.compileReq:
-    properties:
-      address:
-        description: Code address
-        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
-        type: string
-      code:
-        description: Script code
-        type: string
     type: object
   rest.postPriceReq:
     properties:
@@ -1285,12 +1281,6 @@ definitions:
         format: RFC 3339
         type: string
     type: object
-  types.QueryValueResp:
-    properties:
-      value:
-        format: HEX string
-        type: string
-    type: object
   types.StdFee:
     properties:
       amount:
@@ -1319,19 +1309,19 @@ definitions:
   types.VMStatus:
     properties:
       major_code:
-        description: Major code.
+        description: Major code
         type: string
       message:
-        description: Message.
+        description: Message
         type: string
       status:
-        description: 'Status of error: error/discard.'
+        description: 'Status of error: error/discard'
         type: string
       str_code:
-        description: Detailed exaplantion of code.
+        description: Detailed explanation of code
         type: string
       sub_code:
-        description: Sub code.
+        description: Sub code
         type: string
     type: object
   types.VMStatuses:
@@ -1400,6 +1390,12 @@ definitions:
         description: Registered validators list
         type: object
     type: object
+  types.ValueResp:
+    properties:
+      value:
+        format: HEX string
+        type: string
+    type: object
   types.Withdraw:
     properties:
       coin:
@@ -1439,6 +1435,11 @@ definitions:
     items:
       $ref: '#/definitions/types.Withdraw'
     type: array
+  vm_client.MoveFile:
+    properties:
+      code:
+        type: string
+    type: object
 host: stargate.cosmos.network
 info:
   contact: {}
@@ -1598,10 +1599,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.CCRespGetCurrencies'
-        "400":
-          description: Returned if the request doesn't have valid query params
-          schema:
-            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -1628,10 +1625,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.CCRespGetCurrency'
-        "400":
-          description: Returned if the request doesn't have valid query params
-          schema:
-            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -1658,10 +1651,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.CCRespGetIssue'
-        "400":
-          description: Returned if the request doesn't have valid query params
-          schema:
-            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2691,10 +2680,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.MSRespGetCall'
-        "400":
-          description: Returned if the request doesn't have valid query params
-          schema:
-            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2787,6 +2772,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.OracleRespGetAssets'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Returned if requested data wasn't found
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2817,6 +2810,10 @@ paths:
           description: Returned if the request doesn't have valid query params
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Returned if requested data wasn't found
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2844,6 +2841,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.OracleRespGetAssets'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2877,6 +2878,10 @@ paths:
             $ref: '#/definitions/rest.OracleRespGetRawPrices'
         "400":
           description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Returned if requested data wasn't found
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
         "500":
@@ -3888,7 +3893,7 @@ paths:
         name: getRequest
         required: true
         schema:
-          $ref: '#/definitions/rest.compileReq'
+          $ref: '#/definitions/rest.CompileReq'
       produces:
       - application/json
       responses:
@@ -3911,7 +3916,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get data from data source by accountAddr and path
+      description: Get writeSet data from VM by accountAddr and path
       operationId: vmGetData
       parameters:
       - description: account address (Libra HEX  Bech32)
@@ -3931,22 +3936,22 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.VmData'
-        "422":
-          description: Returned if the request doesn't have valid path params
+        "400":
+          description: Returned if the request doesn't have valid query params
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
-      summary: Get data from data source
+      summary: Get writeSet data from VM
       tags:
       - VM
   /vm/tx/{txHash}:
     get:
       consumes:
       - application/json
-      description: Get tx VM execution status by tx hash
+      description: Get TX VM execution status by hash
       operationId: vmTxStatus
       parameters:
       - description: transaction hash
@@ -3961,15 +3966,19 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.VmTxStatus'
-        "422":
-          description: Returned if the request doesn't have valid path params
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Returned if the requested data wasn't found
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
-      summary: Get tx VM execution status
+      summary: Get TX VM execution status
       tags:
       - VM
 schemes:

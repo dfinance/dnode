@@ -5,7 +5,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 )
 
-// Register concrete types on codec codec
+var ModuleCdc *codec.Codec
+
+// RegisterCodec registers module specific messages.
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgDeployModule{}, ModuleName+"/MsgDeployModule", nil)
 	cdc.RegisterConcrete(MsgExecuteScript{}, ModuleName+"/MsgExecuteScript", nil)
@@ -14,9 +16,6 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(TestProposal{}, ModuleName+"/TestProposal", nil)
 	cdc.RegisterConcrete(StdlibUpdateProposal{}, ModuleName+"/StdlibUpdateProposal", nil)
 }
-
-// module codec
-var ModuleCdc *codec.Codec
 
 func init() {
 	ModuleCdc = codec.New()

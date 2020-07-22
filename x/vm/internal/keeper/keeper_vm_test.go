@@ -21,7 +21,7 @@ import (
 // TODO: change listener logic to don't close it here?
 
 // Check storage set value functional.
-func TestSetValue(t *testing.T) {
+func TestVMKeeper_SetValue(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -42,7 +42,7 @@ func TestSetValue(t *testing.T) {
 }
 
 // Check get value from storage functional.
-func TestGetValue(t *testing.T) {
+func TestVMKeeper_GetValue(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -62,7 +62,7 @@ func TestGetValue(t *testing.T) {
 }
 
 // Check has value functional.
-func TestHasValue(t *testing.T) {
+func TestVMKeeper_HasValue(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -81,7 +81,7 @@ func TestHasValue(t *testing.T) {
 }
 
 // Check deletion of key in storage.
-func TestDelValue(t *testing.T) {
+func TestVMKeeper_DelValue(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -108,7 +108,7 @@ func TestDelValue(t *testing.T) {
 }
 
 // Check process execution (response from VM) functional.
-func TestProcessExecution(t *testing.T) {
+func TestVMKeeper_ProcessExecution(t *testing.T) {
 	t.Parallel()
 
 	// ignoring gas for now.
@@ -249,7 +249,7 @@ func TestProcessExecution(t *testing.T) {
 }
 
 // Check returned write set procession.
-func TestProcessWriteSet(t *testing.T) {
+func TestVMKeeper_ProcessWriteSet(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -300,7 +300,7 @@ func TestProcessWriteSet(t *testing.T) {
 }
 
 // Status keep (4001) still doesn't contains error.
-func TestExecStatusKeeperNotAnError(t *testing.T) {
+func TestVMKeeper_ExecStatusKeeperNotAnError(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -336,7 +336,7 @@ func TestExecStatusKeeperNotAnError(t *testing.T) {
 }
 
 // When status still keep but returns error (and it could exists).
-func TestExecKeepAndError(t *testing.T) {
+func TestVMKeeper_ExecKeepAndError(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -379,7 +379,7 @@ func TestExecKeepAndError(t *testing.T) {
 }
 
 // test access path generation for oracles.
-func Test_KeeperGetOracleAccessPath(t *testing.T) {
+func TestVMKeeper_GetOracleAccessPath(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)

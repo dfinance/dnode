@@ -36,12 +36,12 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 				return err
 			}
 
-			balancePath, err := helpers.ParseHexStringParam("vmBalancePath", args[2], helpers.ParamTypeCliArg)
+			balancePath, _, err := helpers.ParseHexStringParam("vmBalancePath", args[2], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
-			infoPath, err := helpers.ParseHexStringParam("vmInfoPath", args[3], helpers.ParamTypeCliArg)
+			infoPath, _, err := helpers.ParseHexStringParam("vmInfoPath", args[3], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}

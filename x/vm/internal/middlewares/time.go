@@ -19,6 +19,7 @@ type CurrentTimestamp struct {
 	Seconds uint64
 }
 
+// NewTimeMiddleware creates DS server middleware which return current block timestamp.
 func NewTimeMiddleware() common_vm.DSDataMiddleware {
 	bzPath, err := hex.DecodeString(hexTimePath)
 	if err != nil {

@@ -141,7 +141,7 @@ func TestIntegGov_StdlibUpdate(t *testing.T) {
 		// invalid file path
 		{
 			tx := ct.TxVmStdlibUpdateProposal(senderAddr, "invalid_path", "http://ya.ru", "Desc", 50, config.GovMinDeposit)
-			tx.CheckFailedWithErrorSubstring("mvFile")
+			tx.CheckFailedWithErrorSubstring("moveFile")
 		}
 
 		// invalid blockHeight

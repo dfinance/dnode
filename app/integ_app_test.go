@@ -15,7 +15,7 @@ import (
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm"
-	compilerClient "github.com/dfinance/dnode/x/vm/client"
+	"github.com/dfinance/dnode/x/vm/client/vm_client"
 )
 
 const swapModuleSrc = `
@@ -155,7 +155,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 	// compile and deploy module
 	{
 		// compile
-		byteCode, compileErr := compilerClient.Compile(dvmAddr, &vm_grpc.SourceFile{
+		byteCode, compileErr := vm_client.Compile(dvmAddr, &vm_grpc.SourceFile{
 			Text:    swapModuleSrc,
 			Address: client1LibraAddr,
 		})
@@ -199,16 +199,16 @@ func TestIntegApp_Crisis(t *testing.T) {
 
 		// compile
 		createSwapScriptSrc := strings.ReplaceAll(createSwapScriptSrcFmt, "{{sender}}", client1Addr.String())
-		byteCode, compileErr := compilerClient.Compile(dvmAddr, &vm_grpc.SourceFile{
+		byteCode, compileErr := vm_client.Compile(dvmAddr, &vm_grpc.SourceFile{
 			Text:    createSwapScriptSrc,
 			Address: client1LibraAddr,
 		})
 		require.NoError(t, compileErr)
 
 		// prepare execute Tx
-		swapAmountArg, amountArgErr := compilerClient.NewU128ScriptArg(offerAmount.String())
+		swapAmountArg, amountArgErr := vm_client.NewU128ScriptArg(offerAmount.String())
 		require.NoError(t, amountArgErr)
-		swapPriceArg, priceArgErr := compilerClient.NewU128ScriptArg(priceAmount.String())
+		swapPriceArg, priceArgErr := vm_client.NewU128ScriptArg(priceAmount.String())
 		require.NoError(t, priceArgErr)
 
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client1Addr), client1PrivKey
@@ -258,15 +258,15 @@ func TestIntegApp_Crisis(t *testing.T) {
 		suppliesBefore := GetAllSupplies(t, app, GetContext(app, true))
 
 		createSwapScriptSrc := strings.ReplaceAll(swapSwapScriptSrcFmt, "{{sender}}", client1Addr.String())
-		byteCode, compileErr := compilerClient.Compile(dvmAddr, &vm_grpc.SourceFile{
+		byteCode, compileErr := vm_client.Compile(dvmAddr, &vm_grpc.SourceFile{
 			Text:    createSwapScriptSrc,
 			Address: client1LibraAddr,
 		})
 		require.NoError(t, compileErr)
 
-		sellerAddrArg, sellerArgErr := compilerClient.NewAddressScriptArg(client1Addr.String())
+		sellerAddrArg, sellerArgErr := vm_client.NewAddressScriptArg(client1Addr.String())
 		require.NoError(t, sellerArgErr)
-		swapPriceArg, priceArgErr := compilerClient.NewU128ScriptArg(priceAmount.String())
+		swapPriceArg, priceArgErr := vm_client.NewU128ScriptArg(priceAmount.String())
 		require.NoError(t, priceArgErr)
 
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client2Addr), client2PrivKey

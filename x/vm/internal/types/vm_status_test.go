@@ -25,7 +25,7 @@ const (
 )
 
 // Test NewVMStatus.
-func Test_NewVMStatus(t *testing.T) {
+func TestVM_NewVMStatus(t *testing.T) {
 	status := "error"
 	message := "out of gas"
 
@@ -44,7 +44,7 @@ func Test_NewVMStatus(t *testing.T) {
 }
 
 // Test NewTxVMResponse.
-func Test_NewTxVMStatus(t *testing.T) {
+func TestVM_NewTxVMStatus(t *testing.T) {
 	statuses := make(VMStatuses, 3)
 
 	statuses[0] = NewVMStatus("error", ERR_GAS, "0", "")
@@ -59,7 +59,7 @@ func Test_NewTxVMStatus(t *testing.T) {
 }
 
 // New NewVMStatusFromABCILogs.
-func Test_NewVMStatusFromABCILogs(t *testing.T) {
+func TestVM_NewVMStatusFromABCILogs(t *testing.T) {
 	msgs := make([]string, 2)
 	msgs[0] = "out of gas"
 	msgs[1] = "bad u32"

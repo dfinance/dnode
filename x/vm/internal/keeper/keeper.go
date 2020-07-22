@@ -1,4 +1,6 @@
-// VM keeper processing messages from handler.
+// VM module keeper wraps DVM gRPC DataServer service and gRPC VM service client.
+// Keeper provides VM storage functionality used by other modules.
+// DataSource server provides async data (writeSets) requests from DVM to VM during VM script/module execution.
 package keeper
 
 import (
@@ -20,61 +22,61 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// VM keeper.
-type Keeper struct {
-	cdc      *amino.Codec // Amino codec.
-	storeKey sdk.StoreKey // Store key.
-
-	client    VMClient         // VM service client.
-	listener  net.Listener     // VM data server listener.
-	rawClient *grpc.ClientConn // GRPC connection to VM.
-
-	config *config.VMConfig // VM config.
-
-	dsServer    *DSServer    // Data-source server.
-	rawDSServer *grpc.Server // GRPC raw server.
-
-	modulePerms perms.ModulePermissions
-}
-
 // Check that VMStorage is compatible with keeper (later we can do it by events probably).
 var _ common_vm.VMStorage = Keeper{}
 
-// VM keeper logger.
-func (Keeper) Logger(ctx sdk.Context) log.Logger {
+// Module keeper object.
+type Keeper struct {
+	cdc      *amino.Codec
+	storeKey sdk.StoreKey
+	//
+	config *config.VMConfig
+	// VM connection
+	client    VMClient         // aggregated gRPC services client
+	rawClient *grpc.ClientConn // gRPC connection
+	// DataSource server
+	listener    net.Listener
+	dsServer    *DSServer
+	rawDSServer *grpc.Server
+	//
+	modulePerms perms.ModulePermissions
+}
+
+// GetLogger gets logger with keeper context.
+func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// Execute script.
-func (keeper Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) error {
-	keeper.modulePerms.AutoCheck(types.PermVmExec)
+// ExecuteScript executes Move script and processes execution results (events, writeSets).
+func (k Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) error {
+	k.modulePerms.AutoCheck(types.PermVmExec)
 
 	req, sdkErr := NewExecuteRequest(ctx, msg)
 	if sdkErr != nil {
 		return sdkErr
 	}
 
-	exec, err := keeper.sendExecuteReq(ctx, nil, req)
+	exec, err := k.sendExecuteReq(ctx, nil, req)
 	if err != nil {
-		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
+		k.GetLogger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(sdkErrors.Wrap(types.ErrVMCrashed, err.Error()))
 	}
 
-	keeper.processExecution(ctx, exec)
+	k.processExecution(ctx, exec)
 
 	return nil
 }
 
-// Execute script without response processing (used for debug).
-func (keeper Keeper) ExecuteScriptNoProcessing(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteResponse, error) {
-	keeper.modulePerms.AutoCheck(types.PermVmExec)
+// ExecuteScriptNoProcessing is executes Move script without execution processing (used for debug).
+func (k Keeper) ExecuteScriptNoProcessing(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteResponse, error) {
+	k.modulePerms.AutoCheck(types.PermVmExec)
 
 	req, sdkErr := NewExecuteRequest(ctx, msg)
 	if sdkErr != nil {
 		return nil, sdkErr
 	}
 
-	exec, err := keeper.sendExecuteReq(ctx, nil, req)
+	exec, err := k.sendExecuteReq(ctx, nil, req)
 	if err != nil {
 		return nil, err
 	}
@@ -82,43 +84,43 @@ func (keeper Keeper) ExecuteScriptNoProcessing(ctx sdk.Context, msg types.MsgExe
 	return exec, nil
 }
 
-// Deploy module.
-func (keeper Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) error {
-	keeper.modulePerms.AutoCheck(types.PermVmExec)
+// DeployContract deploys Move module (contract) and processes execution results (events, writeSets).
+func (k Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) error {
+	k.modulePerms.AutoCheck(types.PermVmExec)
 
 	req, sdkErr := NewDeployRequest(ctx, msg)
 	if sdkErr != nil {
 		return sdkErr
 	}
 
-	exec, err := keeper.sendExecuteReq(ctx, req, nil)
+	exec, err := k.sendExecuteReq(ctx, req, nil)
 	if err != nil {
-		keeper.Logger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
+		k.GetLogger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
 		panic(sdkErrors.Wrap(types.ErrVMCrashed, err.Error()))
 	}
 
-	keeper.processExecution(ctx, exec)
+	k.processExecution(ctx, exec)
 
 	return nil
 }
 
 // DeployContractDryRun checks that contract can be deployed (returned writeSets are not persisted to store).
-func (keeper Keeper) DeployContractDryRun(ctx sdk.Context, msg types.MsgDeployModule) error {
-	keeper.modulePerms.AutoCheck(types.PermVmExec)
+func (k Keeper) DeployContractDryRun(ctx sdk.Context, msg types.MsgDeployModule) error {
+	k.modulePerms.AutoCheck(types.PermVmExec)
 
 	req, sdkErr := NewDeployRequest(ctx, msg)
 	if sdkErr != nil {
 		return sdkErr
 	}
 
-	exec, dvmErr := keeper.sendExecuteReq(ctx, req, nil)
+	exec, dvmErr := k.sendExecuteReq(ctx, req, nil)
 	if dvmErr != nil {
 		return sdkErrors.Wrap(types.ErrVMCrashed, dvmErr.Error())
 	}
 
 	if exec.Status != vm_grpc.ContractStatus_Discard {
 		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
-			statusMsg := types.VMExecStatusToString(exec.Status, exec.StatusStruct)
+			statusMsg := types.StringifyVMExecStatus(exec.Status, exec.StatusStruct)
 			return sdkErrors.Wrap(types.ErrWrongExecutionResponse, statusMsg)
 		}
 	}
@@ -126,7 +128,7 @@ func (keeper Keeper) DeployContractDryRun(ctx sdk.Context, msg types.MsgDeployMo
 	return nil
 }
 
-// Initialize VM keeper (include grpc client to VM and grpc server for data store).
+// Create new currency keeper.
 func NewKeeper(
 	cdc *amino.Codec,
 	storeKey sdk.StoreKey,
