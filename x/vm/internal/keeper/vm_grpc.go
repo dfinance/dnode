@@ -1,4 +1,4 @@
-// VM GRPC related functional.
+// VM gRPC client implementation.
 package keeper
 
 import (
@@ -11,7 +11,7 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// VMClient is an aggregated gRPC services client.
+// VMClient is an aggregated gRPC VM services client.
 type VMClient struct {
 	vm_grpc.VMCompilerClient
 	vm_grpc.VMModulePublisherClient
@@ -27,12 +27,12 @@ func NewVMClient(connection *grpc.ClientConn) VMClient {
 	}
 }
 
-// Get free gas from execution context.
+// GetFreeGas returns free gas from execution context.
 func GetFreeGas(ctx sdk.Context) sdk.Gas {
 	return ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumed()
 }
 
-// NewDeployContract creates object used for publish module request.
+// NewDeployContract creates an object used for publish module requests.
 func NewDeployContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte) *vm_grpc.VMPublishModule {
 	return &vm_grpc.VMPublishModule{
 		Address:      common_vm.Bech32ToLibra(address),
@@ -42,7 +42,7 @@ func NewDeployContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte) *vm_
 	}
 }
 
-// NewExecuteContract creates object used for script execute request.
+// NewExecuteContract creates an object used for script execute requests.
 func NewExecuteContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, args []types.ScriptArg) (*vm_grpc.VMExecuteScript, error) {
 	vmArgs := make([]*vm_grpc.VMArgs, len(args))
 	for argIdx, arg := range args {
@@ -62,12 +62,12 @@ func NewExecuteContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, arg
 	}, nil
 }
 
-// Create deploy request for VM gRPC server.
+// NewDeployRequest is a NewDeployContract wrapper: create deploy request.
 func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMPublishModule, error) {
 	return NewDeployContract(msg.Signer, GetFreeGas(ctx), msg.Module), nil
 }
 
-// Create execute script request for VM gRPC server.
+// NewExecuteRequest is a NewExecuteContract wrapper: create execute request.
 func NewExecuteRequest(ctx sdk.Context, msg types.MsgExecuteScript) (*vm_grpc.VMExecuteScript, error) {
 	contract, err := NewExecuteContract(msg.Signer, GetFreeGas(ctx), msg.Script, msg.Args)
 	if err != nil {

@@ -1,4 +1,3 @@
-// Genesis state for VM block.
 package types
 
 import (
@@ -8,16 +7,16 @@ import (
 	"github.com/dfinance/dnode/x/common_vm"
 )
 
-// Genesis write operations.
+// GenesisState is module's genesis (initial state).
+type GenesisState struct {
+	WriteSet []GenesisWriteOp `json:"write_set" yaml:"write_set"`
+}
+
+// Genesis writeSet operation.
 type GenesisWriteOp struct {
 	Address string `json:"address" yaml:"address"`
 	Path    string `json:"path" yaml:"path"`
 	Value   string `json:"value" yaml:"value"`
-}
-
-// Genesis state contains write operations.
-type GenesisState struct {
-	WriteSet []GenesisWriteOp `json:"write_set" yaml:"write_set"`
 }
 
 // Validate checks that genesis state is valid.

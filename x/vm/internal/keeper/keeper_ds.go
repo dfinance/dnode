@@ -1,4 +1,3 @@
-// Keeper methods related to data source.
 package keeper
 
 import (
@@ -13,8 +12,7 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// Retry "execution" request.
-// Contains information about request to VM and retry settings.
+// RetryExecReq contains VM "execution" request meta (request details and retry settings).
 type RetryExecReq struct {
 	RawModule      *vm_grpc.VMPublishModule // Request to retry (module publish).
 	RawScript      *vm_grpc.VMExecuteScript // Request to retry (script execution)
@@ -23,42 +21,42 @@ type RetryExecReq struct {
 	MaxAttempts    int                      // Max attempts.
 }
 
-// Start Data source (DS) server.
-func (keeper *Keeper) StartDSServer(ctx sdk.Context) {
-	keeper.modulePerms.AutoCheck(types.PermDsAdmin)
+// StartDSServer starts DataSource server.
+func (k *Keeper) StartDSServer(ctx sdk.Context) {
+	k.modulePerms.AutoCheck(types.PermDsAdmin)
 
 	// check if genesis initialized
 	// if no - skip, it will be started later.
-	store := ctx.KVStore(keeper.storeKey)
-	if store.Has(types.KeyGenesis) && !keeper.dsServer.IsStarted() {
+	store := ctx.KVStore(k.storeKey)
+	if store.Has(types.KeyGenesis) && !k.dsServer.IsStarted() {
 		// launch server.
-		keeper.rawDSServer = StartServer(keeper.listener, keeper.dsServer)
+		k.rawDSServer = StartServer(k.listener, k.dsServer)
 	}
 }
 
-// Set DS (data-source) server context.
-func (keeper Keeper) SetDSContext(ctx sdk.Context) {
-	keeper.modulePerms.AutoCheck(types.PermDsAdmin)
+// SetDSContext sets DataSource server context (storage context should be updated periodically to provide actual data).
+func (k Keeper) SetDSContext(ctx sdk.Context) {
+	k.modulePerms.AutoCheck(types.PermDsAdmin)
 
-	keeper.dsServer.SetContext(ctx.WithGasMeter(types.NewDumbGasMeter()))
+	k.dsServer.SetContext(ctx.WithGasMeter(types.NewDumbGasMeter()))
 }
 
-// Stop DS server and close connection to VM.
-func (keeper Keeper) CloseConnections() {
-	keeper.modulePerms.AutoCheck(types.PermDsAdmin)
+// CloseConnections stops DataSource server and close connection to VM.
+func (k Keeper) CloseConnections() {
+	k.modulePerms.AutoCheck(types.PermDsAdmin)
 
-	if keeper.rawDSServer != nil {
-		keeper.rawDSServer.Stop()
+	if k.rawDSServer != nil {
+		k.rawDSServer.Stop()
 	}
 
-	if keeper.rawClient != nil {
-		keeper.rawClient.Close()
+	if k.rawClient != nil {
+		k.rawClient.Close()
 	}
 }
 
-// Send request with retry mechanism and wait for connection and execution or return error.
+// retryExecReq sends request with retry mechanism and waits for connection and execution.
 // Contract: either RawModule or RawScript must be specified for RetryExecReq.
-func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grpc.VMExecuteResponse, retErr error) {
+func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grpc.VMExecuteResponse, retErr error) {
 	doneCh := make(chan bool)
 	go func() {
 		var cancelCtx func()
@@ -83,23 +81,23 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *v
 			var resp *vm_grpc.VMExecuteResponse
 			var err error
 			if req.RawModule != nil {
-				resp, err = keeper.client.PublishModule(connCtx, req.RawModule)
+				resp, err = k.client.PublishModule(connCtx, req.RawModule)
 			} else if req.RawScript != nil {
-				resp, err = keeper.client.ExecuteScript(connCtx, req.RawScript)
+				resp, err = k.client.ExecuteScript(connCtx, req.RawScript)
 			}
 
 			connDuration := time.Since(connStartedAt)
 			if err != nil {
 				if req.Attempt == 0 {
 					// write to Sentry (if enabled)
-					keeper.Logger(ctx).Error(fmt.Sprintf("Can't get answer from VM in %v, will try to reconnect in %s attempts: %v", req.CurrentTimeout, getMaxAttemptsStr(req.MaxAttempts), err))
+					k.GetLogger(ctx).Error(fmt.Sprintf("Can't get answer from VM in %v, will try to reconnect in %s attempts: %v", req.CurrentTimeout, getMaxAttemptsStr(req.MaxAttempts), err))
 				}
 				req.Attempt += 1
 
 				if req.MaxAttempts != 0 && req.Attempt == req.MaxAttempts {
 					// return error because of max attempts.
 					logErr := fmt.Errorf("max %d attemps reached, can't get answer from VM: %v", req.Attempt, err)
-					keeper.Logger(ctx).Error(logErr.Error())
+					k.GetLogger(ctx).Error(logErr.Error())
 					retErr = logErr
 					return
 				}
@@ -108,14 +106,14 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *v
 					time.Sleep(curTimeout - connDuration)
 				}
 
-				req.CurrentTimeout += int(math.Round(float64(req.CurrentTimeout) * keeper.config.BackoffMultiplier))
-				if req.CurrentTimeout > keeper.config.MaxBackoff {
-					req.CurrentTimeout = keeper.config.MaxBackoff
+				req.CurrentTimeout += int(math.Round(float64(req.CurrentTimeout) * k.config.BackoffMultiplier))
+				if req.CurrentTimeout > k.config.MaxBackoff {
+					req.CurrentTimeout = k.config.MaxBackoff
 				}
 
 				continue
 			}
-			keeper.Logger(ctx).Info(fmt.Sprintf("Successfully connected to VM with %v timeout in %d attempts", req.CurrentTimeout, req.Attempt))
+			k.GetLogger(ctx).Info(fmt.Sprintf("Successfully connected to VM with %v timeout in %d attempts", req.CurrentTimeout, req.Attempt))
 			retResp = resp
 
 			return
@@ -126,8 +124,8 @@ func (keeper Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *v
 	return
 }
 
-// Send request with retry mechanism.
-func (keeper Keeper) sendExecuteReq(ctx sdk.Context, moduleReq *vm_grpc.VMPublishModule, scriptReq *vm_grpc.VMExecuteScript) (*vm_grpc.VMExecuteResponse, error) {
+// sendExecuteReq sends request with retry mechanism.
+func (k Keeper) sendExecuteReq(ctx sdk.Context, moduleReq *vm_grpc.VMPublishModule, scriptReq *vm_grpc.VMExecuteScript) (*vm_grpc.VMExecuteResponse, error) {
 	if moduleReq == nil && scriptReq == nil {
 		return nil, fmt.Errorf("request (module / script) not specified")
 	}
@@ -138,19 +136,19 @@ func (keeper Keeper) sendExecuteReq(ctx sdk.Context, moduleReq *vm_grpc.VMPublis
 	retryReq := RetryExecReq{
 		RawModule:      moduleReq,
 		RawScript:      scriptReq,
-		CurrentTimeout: keeper.config.InitialBackoff,
-		MaxAttempts:    keeper.config.MaxAttempts,
+		CurrentTimeout: k.config.InitialBackoff,
+		MaxAttempts:    k.config.MaxAttempts,
 	}
 
-	if keeper.config.MaxAttempts < 0 {
+	if k.config.MaxAttempts < 0 {
 		// just send, in case of error - return error and panic.
 		retryReq.MaxAttempts = 1
 	}
 
-	return keeper.retryExecReq(ctx, retryReq)
+	return k.retryExecReq(ctx, retryReq)
 }
 
-// Convert max attempts amount to string representation.
+// getMaxAttemptsStr converts max attempts amount to string representation.
 func getMaxAttemptsStr(maxAttempts int) string {
 	if maxAttempts == 0 {
 		return "infinity"

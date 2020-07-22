@@ -1,16 +1,11 @@
-// DumbGasMeter - gas meter that doesn't count amount of gas during usage.
 package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type DumbGasMeter struct {
-}
-
-func NewDumbGasMeter() sdk.GasMeter {
-	return &DumbGasMeter{}
-}
+// DumbGasMeter is a gas meter that doesn't count amount of gas during usage.
+type DumbGasMeter struct{}
 
 func (g DumbGasMeter) GasConsumed() sdk.Gas {
 	return 0
@@ -33,4 +28,8 @@ func (g DumbGasMeter) IsPastLimit() bool {
 
 func (g DumbGasMeter) IsOutOfGas() bool {
 	return false
+}
+
+func NewDumbGasMeter() sdk.GasMeter {
+	return &DumbGasMeter{}
 }

@@ -1068,7 +1068,7 @@ func Test_EventTypeSerialization(t *testing.T) {
 
 	for idx, event := range resp.Events {
 		t.Logf("VM Event #%d", idx)
-		t.Log(types.VMEventToString(event))
+		t.Log(types.StringifyVMEvent(event))
 
 		t.Logf("Cosmos Event #%d", idx)
 		cosmosEvent := types.NewMoveEvent(sdk.NewInfiniteGasMeter(), event)

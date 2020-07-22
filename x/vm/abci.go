@@ -8,12 +8,14 @@ import (
 )
 
 // BeginBlocker handles gov proposal scheduler: iterating over plannedProposals and checking if it is time to execute.
-func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
-	logger := keeper.Logger(ctx)
+func BeginBlocker(ctx sdk.Context, k Keeper, _ abci.RequestBeginBlock) {
+	logger := k.GetLogger(ctx)
 
-	keeper.SetDSContext(ctx)
+	// setup current (actual) DS context
+	k.SetDSContext(ctx)
 
-	keeper.IterateProposalsQueue(ctx, func(id uint64, pProposal PlannedProposal) {
+	// proposals processing
+	k.IterateProposalsQueue(ctx, func(id uint64, pProposal PlannedProposal) {
 		if !pProposal.GetPlan().ShouldExecute(ctx) {
 			return
 		}
@@ -22,7 +24,7 @@ func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
 
 		switch proposal := pProposal.(type) {
 		case StdlibUpdateProposal:
-			err = handleStdlibUpdateProposalExecution(ctx, keeper, proposal)
+			err = handleStdlibUpdateProposalExecution(ctx, k, proposal)
 		default:
 			panic(fmt.Errorf("unsupported type: %T", pProposal))
 		}
@@ -30,18 +32,18 @@ func BeginBlocker(ctx sdk.Context, keeper Keeper, _ abci.RequestBeginBlock) {
 		if err != nil {
 			logger.Error(fmt.Sprintf("%s\nexecution status: failed: %v", pProposal.String(), err))
 		} else {
-			keeper.SetDSContext(ctx)
+			k.SetDSContext(ctx)
 			logger.Info(fmt.Sprintf("%s\nexecution status: done", pProposal.String()))
 		}
 
-		keeper.RemoveProposalFromQueue(ctx, id)
+		k.RemoveProposalFromQueue(ctx, id)
 	})
 }
 
 // handleStdlibUpdateProposalExecution requests DVM to update stdlib.
-func handleStdlibUpdateProposalExecution(ctx sdk.Context, keeper Keeper, proposal StdlibUpdateProposal) error {
+func handleStdlibUpdateProposalExecution(ctx sdk.Context, k Keeper, proposal StdlibUpdateProposal) error {
 	msg, _ := getStdlibUpdateMsg(proposal)
-	if err := keeper.DeployContract(ctx, msg); err != nil {
+	if err := k.DeployContract(ctx, msg); err != nil {
 		return err
 	}
 
