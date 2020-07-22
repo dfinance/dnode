@@ -25,7 +25,7 @@ func getClient(t *testing.T, listener *bufconn.Listener) ds_grpc.DSServiceClient
 }
 
 // Test set context for server.
-func TestDSServer_SetContext(t *testing.T) {
+func TestVM_DSServer_SetContext(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -36,7 +36,7 @@ func TestDSServer_SetContext(t *testing.T) {
 }
 
 // Test get raw data from server.
-func TestDSServer_GetRaw(t *testing.T) {
+func TestVM_DSServer_GetRaw(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -68,7 +68,7 @@ func TestDSServer_GetRaw(t *testing.T) {
 }
 
 // Test get multiraw data from server.
-func TestDSServer_MultiGetRaw(t *testing.T) {
+func TestVM_DSServer_MultiGetRaw(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)

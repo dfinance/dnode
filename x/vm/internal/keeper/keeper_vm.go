@@ -20,21 +20,21 @@ import (
 
 // HasValue checks if VM storage has writeSet data by accessPath.
 func (k Keeper) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
-	k.modulePerms.AutoCheck(types.PermStorageReader)
+	k.modulePerms.AutoCheck(types.PermStorageRead)
 
 	return k.hasValue(ctx, accessPath)
 }
 
 // GetValue returns VM storage writeSet data by accessPath.
 func (k Keeper) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
-	k.modulePerms.AutoCheck(types.PermStorageReader)
+	k.modulePerms.AutoCheck(types.PermStorageRead)
 
 	return k.getValue(ctx, accessPath)
 }
 
 // GetValueWithMiddlewares extends GetValue with middleware context-dependant processing.
 func (k Keeper) GetValueWithMiddlewares(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
-	k.modulePerms.AutoCheck(types.PermStorageReader)
+	k.modulePerms.AutoCheck(types.PermStorageRead)
 
 	for _, f := range k.dsServer.dataMiddlewares {
 		data, err := f(ctx, accessPath)
@@ -51,7 +51,7 @@ func (k Keeper) GetValueWithMiddlewares(ctx sdk.Context, accessPath *vm_grpc.VMA
 
 // GetOracleAccessPath returns accessPath for oracle price.
 func (k Keeper) GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.VMAccessPath {
-	k.modulePerms.AutoCheck(types.PermStorageReader)
+	k.modulePerms.AutoCheck(types.PermStorageRead)
 
 	seed := xxhash.NewS64(0)
 	if _, err := seed.WriteString(strings.ToLower(assetCode.String())); err != nil {
@@ -81,14 +81,14 @@ func (k Keeper) GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.VMAcce
 
 // SetValue sets VM storage writeSet data by accessPath.
 func (k Keeper) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
-	k.modulePerms.AutoCheck(types.PermStorageWriter)
+	k.modulePerms.AutoCheck(types.PermStorageWrite)
 
 	k.setValue(ctx, accessPath, value)
 }
 
 // DelValue removes VM storage writeSet data by accessPath.
 func (k Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
-	k.modulePerms.AutoCheck(types.PermStorageWriter)
+	k.modulePerms.AutoCheck(types.PermStorageWrite)
 
 	k.delValue(ctx, accessPath)
 }

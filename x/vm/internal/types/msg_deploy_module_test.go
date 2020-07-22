@@ -17,7 +17,7 @@ func getMsgSignBytes(t *testing.T, msg sdk.Msg) []byte {
 }
 
 // Test MsgDeployModule.
-func TestMsgDeployModule(t *testing.T) {
+func TestVM_MsgDeployModule(t *testing.T) {
 	t.Parallel()
 
 	acc := sdk.AccAddress([]byte("addr1"))

@@ -6,6 +6,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -187,8 +189,24 @@ func newKeepEvents() sdk.Events {
 	return types.NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Keep})
 }
 
+func getGenesis(t *testing.T) []byte {
+	fileName := "./genesis_ws.json"
+
+	handle, err := os.Open(fileName)
+	if err != nil {
+		t.Fatalf("can't read write set: %v", err)
+	}
+	defer handle.Close()
+	bz, err := ioutil.ReadAll(handle)
+	if err != nil {
+		t.Fatalf("can't read json content of genesis state: %v", err)
+	}
+
+	return bz
+}
+
 // Test transfer of dfi between two accounts in dfi.
-func TestKeeper_DeployContractTransfer(t *testing.T) {
+func TestVMKeeper_DeployContractTransfer(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
@@ -284,7 +302,7 @@ func TestKeeper_DeployContractTransfer(t *testing.T) {
 }
 
 // Test deploy module and use it.
-func TestKeeper_DeployModule(t *testing.T) {
+func TestVMKeeper_DeployModule(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
@@ -384,7 +402,7 @@ func TestKeeper_DeployModule(t *testing.T) {
 }
 
 // Test oracle price return.
-func TestKeeper_ScriptOracle(t *testing.T) {
+func TestVMKeeper_ScriptOracle(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
@@ -475,7 +493,7 @@ func TestKeeper_ScriptOracle(t *testing.T) {
 }
 
 // Test oracle price return.
-func TestKeeper_ErrorScript(t *testing.T) {
+func TestVMKeeper_ErrorScript(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
@@ -534,7 +552,7 @@ func TestKeeper_ErrorScript(t *testing.T) {
 	require.Len(t, events, 3)
 }
 
-func TestKeeper_AllArgsTypes(t *testing.T) {
+func TestVMKeeper_AllArgsTypes(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
@@ -611,7 +629,7 @@ func TestKeeper_AllArgsTypes(t *testing.T) {
 
 // Test that all hardcoded VM Path are correct.
 // If something goes wrong, check the DataSource logs for requested Path and fix.
-func TestKeeper_Path(t *testing.T) {
+func TestVMKeeper_Path(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
 
@@ -974,7 +992,7 @@ func TestKeeper_Path(t *testing.T) {
 }
 
 // VM Event.EventType string serialization test.
-func Test_EventTypeSerialization(t *testing.T) {
+func TestVMKeeper_EventTypeSerialization(t *testing.T) {
 	const moduleSrc = `
 		module Foo {
 		    struct FooEvent<T, VT> {
@@ -1077,7 +1095,7 @@ func Test_EventTypeSerialization(t *testing.T) {
 }
 
 // VM Event.EventType string serialization test with gas charged check.
-func Test_EventTypeSerializationGas(t *testing.T) {
+func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 	const moduleSrc = `
 		module GasEvent {
 			struct A {
@@ -1192,7 +1210,7 @@ func Test_EventTypeSerializationGas(t *testing.T) {
 }
 
 // VM Event.EventType string serialization test with out of gas.
-func Test_EventTypeSerializationOutOfGas(t *testing.T) {
+func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 	const moduleSrc = `
 		module OutOfGasEvent {
 			struct A {

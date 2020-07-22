@@ -459,13 +459,13 @@ func TestVM_REST(t *testing.T) {
 			// invalid accAddress
 			{
 				req, _ := ct.RestQueryVMGetData("non-valid-addr", writeSet.Path)
-				req.CheckFailed(http.StatusUnprocessableEntity, nil)
+				req.CheckFailed(http.StatusBadRequest, nil)
 			}
 
 			// invalid path
 			{
 				req, _ := ct.RestQueryVMGetData(writeSet.Address, "non-valid-path")
-				req.CheckFailed(http.StatusUnprocessableEntity, nil)
+				req.CheckFailed(http.StatusBadRequest, nil)
 			}
 		}
 	}

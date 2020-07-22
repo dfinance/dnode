@@ -16,7 +16,7 @@ import (
 )
 
 // Test MsgExecuteScript.
-func TestMsgExecuteScript(t *testing.T) {
+func TestVM_MsgExecuteScript(t *testing.T) {
 	t.Parallel()
 
 	acc := sdk.AccAddress([]byte("addr1"))
@@ -55,7 +55,7 @@ func TestMsgExecuteScript(t *testing.T) {
 }
 
 // Test new argument
-func TestNewScriptArg(t *testing.T) {
+func TestVM_NewScriptArg(t *testing.T) {
 	t.Parallel()
 
 	value := []byte{0, 1}

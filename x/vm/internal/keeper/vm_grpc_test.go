@@ -63,7 +63,7 @@ func newArgInputs() []types.ScriptArg {
 }
 
 // Get free gas calculations.
-func TestGetFreeGas(t *testing.T) {
+func TestVMKeeper_GetFreeGas(t *testing.T) {
 	t.Parallel()
 
 	var gasLimit uint64 = 1000
@@ -96,7 +96,7 @@ func TestGetFreeGas(t *testing.T) {
 }
 
 // Check creation of new contract instance.
-func TestNewContract(t *testing.T) {
+func TestVMKeeper_NewContract(t *testing.T) {
 	t.Parallel()
 
 	addr := sdk.AccAddress(randomValue(common_vm.VMAddressLength))
@@ -124,7 +124,7 @@ func TestNewContract(t *testing.T) {
 }
 
 // Create new deploy request.
-func TestNewDeployRequest(t *testing.T) {
+func TestVMKeeper_NewDeployRequest(t *testing.T) {
 	t.Parallel()
 
 	addr := secp256k1.GenPrivKey().PubKey().Address().Bytes()
