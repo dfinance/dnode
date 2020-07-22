@@ -40,10 +40,6 @@ const (
 	AttributeAssetCode  = types.AttributeAssetCode
 	AttributePrice      = types.AttributePrice
 	AttributeReceivedAt = types.AttributeReceivedAt
-	// Permissions
-	PermInit   = types.PermInit
-	PermReader = types.PermReader
-	PermWriter = types.PermWriter
 )
 
 var (

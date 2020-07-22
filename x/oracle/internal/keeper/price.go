@@ -14,7 +14,7 @@ import (
 
 // GetCurrentPrice fetches the current median price of all oracles for a specific asset.
 func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) types.CurrentPrice {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetCurrentPriceKey(assetCode))
@@ -27,7 +27,7 @@ func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) ty
 
 // GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight.
 func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode dnTypes.AssetCode, blockHeight int64) []types.PostedPrice {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
@@ -46,7 +46,7 @@ func (k Keeper) SetPrice(
 	price sdk.Int,
 	receivedAt time.Time) (types.PostedPrice, error) {
 
-	k.modulePerms.AutoCheck(types.PermWriter)
+	k.modulePerms.AutoCheck(types.PermWrite)
 
 	// validate price receivedAt timestamp comparing to the current blockHeight timestamp
 	if err := k.checkPriceReceivedAtTimestamp(ctx, receivedAt); err != nil {
@@ -85,7 +85,7 @@ func (k Keeper) SetPrice(
 
 // SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs and cleans up previous inputs.
 func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
-	k.modulePerms.AutoCheck(types.PermWriter)
+	k.modulePerms.AutoCheck(types.PermWrite)
 
 	store := ctx.KVStore(k.storeKey)
 	assets := k.GetAssetParams(ctx)

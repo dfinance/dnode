@@ -8,7 +8,7 @@ import (
 
 // GetMaxValidators returns maxValidators param.
 func (k Keeper) GetMaxValidators(ctx sdk.Context) (res uint16) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	k.paramStore.Get(ctx, types.ParamStoreKeyMaxValidators, &res)
 	return
@@ -16,7 +16,7 @@ func (k Keeper) GetMaxValidators(ctx sdk.Context) (res uint16) {
 
 // Get minimum validators amount.
 func (k Keeper) GetMinValidators(ctx sdk.Context) (res uint16) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	k.paramStore.Get(ctx, types.ParamStoreKeyMinValidators, &res)
 	return
@@ -24,7 +24,7 @@ func (k Keeper) GetMinValidators(ctx sdk.Context) (res uint16) {
 
 // GetParams returns keeper params.
 func (k Keeper) GetParams(ctx sdk.Context) types.Params {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	min := k.GetMinValidators(ctx)
 	max := k.GetMaxValidators(ctx)

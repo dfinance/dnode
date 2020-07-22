@@ -49,7 +49,7 @@ func (k Keeper) UnlockOrderCoins(ctx sdk.Context, order types.Order) error {
 // Order is removed from the store on full order fill.
 // Order stays active on partial order fill (order quantity is reduced).
 func (k Keeper) ExecuteOrderFills(ctx sdk.Context, orderFills types.OrderFills) {
-	k.modulePerms.AutoCheck(types.PermExecFills)
+	k.modulePerms.AutoCheck(types.PermExecFill)
 
 	for _, orderFill := range orderFills {
 		fillCoin, err := orderFill.FillCoin()

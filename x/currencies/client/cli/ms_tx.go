@@ -10,7 +10,7 @@ import (
 
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
-	msExport "github.com/dfinance/dnode/x/multisig/export"
+	msClient "github.com/dfinance/dnode/x/multisig/client"
 )
 
 // PostMsIssueCurrency returns tx command which post a new multisig issue request.
@@ -45,7 +45,7 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			callMsg := msExport.NewMsgSubmitCall(msg, args[0], fromAddr)
+			callMsg := msClient.NewMsgSubmitCall(msg, args[0], fromAddr)
 			if err := callMsg.ValidateBasic(); err != nil {
 				return err
 			}

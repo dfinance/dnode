@@ -1,8 +1,6 @@
 package types
 
 import (
-	"encoding/json"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -51,12 +49,7 @@ func (msg MsgDeployModule) ValidateBasic() error {
 }
 
 func (msg MsgDeployModule) GetSignBytes() []byte {
-	bc, err := json.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-
-	return sdk.MustSortJSON(bc)
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 func (msg MsgDeployModule) GetSigners() []sdk.AccAddress {
@@ -122,12 +115,7 @@ func (msg MsgExecuteScript) ValidateBasic() error {
 }
 
 func (msg MsgExecuteScript) GetSignBytes() []byte {
-	bc, err := json.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-
-	return sdk.MustSortJSON(bc)
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 func (msg MsgExecuteScript) GetSigners() []sdk.AccAddress {

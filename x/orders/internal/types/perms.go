@@ -2,7 +2,7 @@ package types
 
 import (
 	"github.com/dfinance/dnode/helpers/perms"
-	"github.com/dfinance/dnode/x/markets"
+	marketsClient "github.com/dfinance/dnode/x/markets/client"
 )
 
 const (
@@ -11,17 +11,17 @@ const (
 	// Revoke order
 	PermOrderRevoke perms.Permission = ModuleName + "PermOrderRevoke"
 	// Read order / orders
-	PermReader perms.Permission = ModuleName + "PermReader"
+	PermRead perms.Permission = ModuleName + "PermRead"
 	// Lock order coins
 	PermOrderLock perms.Permission = ModuleName + "PermOrderLock"
 	// Unlock order coins
 	PermOrderUnlock perms.Permission = ModuleName + "PermOrderUnlock"
 	// Execute order fills
-	PermExecFills perms.Permission = ModuleName + "PermExecFills"
+	PermExecFill perms.Permission = ModuleName + "PermExecFill"
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermOrderPost, PermOrderRevoke, PermReader, PermOrderLock, PermOrderUnlock, PermExecFills}
+	AvailablePermissions = perms.Permissions{PermOrderPost, PermOrderRevoke, PermRead, PermOrderLock, PermOrderUnlock, PermExecFill}
 )
 
 func NewModulePerms() perms.ModulePermissions {
@@ -33,7 +33,7 @@ func RequestMarketsPerms() perms.RequestModulePermissions {
 	return func() (moduleName string, modulePerms perms.Permissions) {
 		moduleName = ModuleName
 		modulePerms = perms.Permissions{
-			markets.PermReader,
+			marketsClient.PermRead,
 		}
 		return
 	}

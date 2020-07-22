@@ -3,7 +3,6 @@
 package types
 
 import (
-	"encoding/json"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,12 +16,7 @@ import (
 )
 
 func getMsgSignBytes(t *testing.T, msg sdk.Msg) []byte {
-	bc, err := json.Marshal(msg)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return sdk.MustSortJSON(bc)
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // Test MsgDeployModule.

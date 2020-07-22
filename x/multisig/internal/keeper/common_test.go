@@ -20,7 +20,6 @@ import (
 	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/multisig/internal/types"
-	"github.com/dfinance/dnode/x/poa"
 )
 
 const (
@@ -36,7 +35,6 @@ type TestInput struct {
 	keyParams  *sdk.KVStoreKey
 	keyAccount *sdk.KVStoreKey
 	keySupply  *sdk.KVStoreKey
-	keyPOA     *sdk.KVStoreKey
 	keyMS      *sdk.KVStoreKey
 	tkeyParams *sdk.TransientStoreKey
 	//
@@ -46,7 +44,6 @@ type TestInput struct {
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
 	paramsKeeper  params.Keeper
-	poaKeeper     poa.Keeper
 	target        Keeper
 }
 
@@ -56,7 +53,6 @@ func NewTestInput(t *testing.T) TestInput {
 		keyParams:  sdk.NewKVStoreKey(params.StoreKey),
 		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
 		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
-		keyPOA:     sdk.NewKVStoreKey(poa.StoreKey),
 		keyMS:      sdk.NewKVStoreKey(types.StoreKey),
 		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 	}
@@ -71,7 +67,6 @@ func NewTestInput(t *testing.T) TestInput {
 	mstore := store.NewCommitMultiStore(db)
 	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
-	mstore.MountStoreWithDB(input.keyPOA, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyParams, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
 	mstore.MountStoreWithDB(input.keyMS, sdk.StoreTypeIAVL, db)
@@ -84,7 +79,6 @@ func NewTestInput(t *testing.T) TestInput {
 	input.accountKeeper = auth.NewAccountKeeper(input.cdc, input.keyAccount, input.paramsKeeper.Subspace(auth.DefaultParamspace), auth.ProtoBaseAccount)
 	input.bankKeeper = bank.NewBaseKeeper(input.accountKeeper, input.paramsKeeper.Subspace(bank.DefaultParamspace), tests.ModuleAccountAddrs())
 	input.supplyKeeper = supply.NewKeeper(input.cdc, input.keySupply, input.accountKeeper, input.bankKeeper, tests.MAccPerms)
-	input.poaKeeper = poa.NewKeeper(input.cdc, input.keyPOA, input.paramsKeeper.Subspace(poa.DefaultParamspace))
 
 	// init multisig router
 	input.msRouter = msmodule.NewMsRouter()
@@ -95,7 +89,7 @@ func NewTestInput(t *testing.T) TestInput {
 	input.cdc.RegisterConcrete(MockMsMsg{}, "multisig/mock-msg", nil)
 
 	// create target keeper
-	input.target = NewKeeper(input.cdc, input.keyMS, input.paramsKeeper.Subspace(types.DefaultParamspace), input.msRouter, input.poaKeeper)
+	input.target = NewKeeper(input.cdc, input.keyMS, input.paramsKeeper.Subspace(types.DefaultParamspace), input.msRouter)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())

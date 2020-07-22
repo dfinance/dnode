@@ -81,7 +81,6 @@ func setupTestInput() testInput {
 	input.ccsStorage = ccstorage.NewKeeper(
 		input.cdc,
 		ccsKey,
-		input.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
 		input.vmStorage,
 		vmauth.RequestCCStoragePerms(),
 	)

@@ -35,14 +35,14 @@ type (
 	MsgDeployModule  = types.MsgDeployModule
 	MsgExecuteScript = types.MsgExecuteScript
 	ScriptArg        = types.ScriptArg
-
+	//
 	GenesisState    = types.GenesisState
 	QueryAccessPath = types.QueryAccessPath
 	QueryValueResp  = types.QueryValueResp
-
+	//
 	CurrentTimestamp = middlewares.CurrentTimestamp
 	BlockHeader      = middlewares.BlockHeader
-
+	//
 	PlannedProposal      = types.PlannedProposal
 	TestProposal         = types.TestProposal
 	StdlibUpdateProposal = types.StdlibUpdateProposal

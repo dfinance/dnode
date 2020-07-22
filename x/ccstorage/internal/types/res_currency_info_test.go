@@ -15,7 +15,15 @@ import (
 func TestCCS_NewCurrencyInfo(t *testing.T) {
 	t.Parallel()
 
-	currency := NewCurrency("test", sdk.NewIntFromUint64(100), 8)
+	currency := NewCurrency(
+		CurrencyParams{
+			Denom:          "test",
+			Decimals:       4,
+			BalancePathHex: "",
+			InfoPathHex:    "",
+		},
+		sdk.NewIntFromUint64(100),
+	)
 
 	// ok: stdlib
 	{

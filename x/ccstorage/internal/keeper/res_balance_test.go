@@ -106,12 +106,14 @@ func (l balanceInputs) CheckResources(t *testing.T, ctx sdk.Context, storage com
 
 func newBalanceInputs(t *testing.T, addr sdk.AccAddress) balanceInputs {
 	inputs := balanceInputs{}
-	for denom, params := range types.DefaultGenesisState().CurrenciesParams {
+	for _, params := range types.DefaultGenesisState().CurrenciesParams {
+		currency := types.NewCurrency(params, sdk.ZeroInt())
+
 		inputs = append(inputs, balanceInput{
-			Denom: denom,
+			Denom: params.Denom,
 			AccessPath: &vm_grpc.VMAccessPath{
 				Address: common_vm.Bech32ToLibra(addr),
-				Path:    params.BalancePath(),
+				Path:    currency.BalancePath(),
 			},
 			Amount: sdk.ZeroInt(),
 		})
@@ -132,8 +134,8 @@ func TestCCSKeeper_newBalance(t *testing.T) {
 	coin := sdk.Coin{Amount: sdk.NewIntFromUint64(100)}
 
 	// pick an existing currency
-	for d, _ := range types.DefaultGenesisState().CurrenciesParams {
-		coin.Denom = d
+	for _, params := range types.DefaultGenesisState().CurrenciesParams {
+		coin.Denom = params.Denom
 		break
 	}
 

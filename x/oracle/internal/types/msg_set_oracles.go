@@ -41,8 +41,7 @@ func (msg MsgSetOracles) ValidateBasic() error {
 
 // Implements sdk.Msg interface.
 func (msg MsgSetOracles) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // Implements sdk.Msg interface.
