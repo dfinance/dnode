@@ -58,7 +58,7 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	helpers.BuildCmdHelp(cmd, []string{
 		"unique multi signature call ID",
 		"currency denomination symbol and amount in Coin format (1.0 btc with 8 decimals -> 100000000btc)",
-		"payee address",
+		"payee address (whose balance is increased)",
 	})
 
 	return cmd

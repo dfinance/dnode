@@ -13,7 +13,7 @@ type MsgIssueCurrency struct {
 	ID string `json:"id" yaml:"id"`
 	// Target currency issue coin
 	Coin sdk.Coin `json:"coin" yaml:"coin"`
-	// Target account
+	// Payee account (whose balance is increased)
 	Payee sdk.AccAddress `json:"payee" yaml:"payee"`
 }
 

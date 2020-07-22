@@ -11,10 +11,10 @@ import (
 type MsgWithdrawCurrency struct {
 	// Target currency withdraw coin
 	Coin sdk.Coin `json:"coin" yaml:"coin"`
-	// Target account
-	Spender sdk.AccAddress `json:"spender" yaml:"spender"`
-	// Second blockchain: spender account
-	PegZoneRecipient string `json:"pegzone_spender" yaml:"pegzone_spender"`
+	// Payer account (whose balance is decreased)
+	Payer sdk.AccAddress `json:"payer" yaml:"payer"`
+	// Second blockchain: payee account (whose balance is increased)
+	PegZonePayee string `json:"pegzone_payee" yaml:"pegzone_payee"`
 	// Second blockchain: ID
 	PegZoneChainID string `json:"pegzone_chain_id" yaml:"pegzone_chain_id"`
 }
@@ -39,12 +39,12 @@ func (msg MsgWithdrawCurrency) ValidateBasic() error {
 		return sdkErrors.Wrap(ErrWrongAmount, "LTE to zero")
 	}
 
-	if msg.Spender.Empty() {
-		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "spender: empty")
+	if msg.Payer.Empty() {
+		return sdkErrors.Wrap(sdkErrors.ErrInvalidAddress, "payer: empty")
 	}
 
-	if len(msg.PegZoneRecipient) == 0 {
-		return sdkErrors.Wrap(ErrWrongPegZoneSpender, "empty")
+	if msg.PegZonePayee == "" {
+		return sdkErrors.Wrap(ErrWrongPegZonePayee, "empty")
 	}
 
 	return nil
@@ -57,15 +57,15 @@ func (msg MsgWithdrawCurrency) GetSignBytes() []byte {
 
 // Implements sdk.Msg interface.
 func (msg MsgWithdrawCurrency) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Spender}
+	return []sdk.AccAddress{msg.Payer}
 }
 
 // NewMsgWithdrawCurrency creates a new MsgWithdrawCurrency message.
-func NewMsgWithdrawCurrency(coin sdk.Coin, spender sdk.AccAddress, pzSpender, pzChainID string) MsgWithdrawCurrency {
+func NewMsgWithdrawCurrency(coin sdk.Coin, payer sdk.AccAddress, pzPayee, pzChainID string) MsgWithdrawCurrency {
 	return MsgWithdrawCurrency{
-		Coin:             coin,
-		Spender:          spender,
-		PegZoneRecipient: pzSpender,
-		PegZoneChainID:   pzChainID,
+		Coin:           coin,
+		Payer:          payer,
+		PegZonePayee:   pzPayee,
+		PegZoneChainID: pzChainID,
 	}
 }

@@ -34,7 +34,7 @@ func (withdraw Withdraw) String() string {
 	return fmt.Sprintf("Withdraw:\n"+
 		"  ID:             %s\n"+
 		"  Coin:           %s\n"+
-		"  Spender:        %s\n"+
+		"  Payer:        %s\n"+
 		"  PegZoneSpender: %s\n"+
 		"  PegZoneChainID: %s\n"+
 		"  Timestamp:      %d\n"+

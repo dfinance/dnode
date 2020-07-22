@@ -60,7 +60,7 @@ var (
 	ErrWrongAmount         = types.ErrWrongAmount
 	ErrWrongIssueID        = types.ErrWrongIssueID
 	ErrWrongWithdrawID     = types.ErrWrongWithdrawID
-	ErrWrongPegZoneSpender = types.ErrWrongPegZoneSpender
+	ErrWrongPegZoneSpender = types.ErrWrongPegZonePayee
 	ErrGovInvalidProposal  = types.ErrGovInvalidProposal
 
 	// Mint denom and event type when mint happen.

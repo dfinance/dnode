@@ -11,7 +11,7 @@ import (
 type MsgConfirmCall struct {
 	// Confirming CallID
 	CallID dnTypes.ID `json:"call_id" yaml:"call_id" example:"0" format:"string representation for big.Uint" swaggertype:"string"`
-	// Message sender address
+	// PoA validator address
 	Sender sdk.AccAddress `json:"sender" yaml:"sender"`
 }
 

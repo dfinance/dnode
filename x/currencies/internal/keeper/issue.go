@@ -15,7 +15,7 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id string, coin sdk.Coin, payee s
 	// bankKeeper might panic
 	defer func() {
 		if r := recover(); r != nil {
-			retErr = sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q panic: %v", payee, r)
+			retErr = sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q panic: %v", payee.String(), r)
 		}
 	}()
 
@@ -34,7 +34,7 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id string, coin sdk.Coin, payee s
 
 	// update account balance
 	if _, err := k.bankKeeper.AddCoins(ctx, payee, sdk.Coins{coin}); err != nil {
-		return sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q: %v", payee, err)
+		return sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q: %v", payee.String(), err)
 	}
 
 	// increase supply

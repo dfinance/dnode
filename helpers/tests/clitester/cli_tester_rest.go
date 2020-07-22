@@ -7,6 +7,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	restTypes "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/stretchr/testify/require"
@@ -16,14 +17,34 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/currencies"
+	ccRest "github.com/dfinance/dnode/x/currencies/client/rest"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
+	msRest "github.com/dfinance/dnode/x/multisig/client/rest"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
 	ordersRest "github.com/dfinance/dnode/x/orders/client/rest"
 	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
+
+// buildBaseReq returns BaseReq used to prepare REST Tx send.
+func (ct *CLITester) buildBaseReq(accName, memo string) restTypes.BaseReq {
+	feeAmount, ok := sdk.NewIntFromString(dnConfig.DefaultFeeAmount)
+	require.True(ct.t, ok, "fee coin amount parsing")
+	feeCoin := sdk.NewCoin(dnConfig.MainDenom, feeAmount)
+
+	accInfo, ok := ct.Accounts[accName]
+	require.True(ct.t, ok, "account %q: not found", accName)
+
+	return restTypes.BaseReq{
+		ChainID: ct.IDs.ChainID,
+		From:    accInfo.Address,
+		Fees:    sdk.Coins{feeCoin},
+		Gas:     strconv.Itoa(DefaultGas),
+		Memo:    memo,
+	}
+}
 
 func (ct *CLITester) newRestTxRequest(accName string, acc *auth.BaseAccount, msg sdk.Msg, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
 	return ct.newRestTxRequestRaw(accName, acc.GetAccountNumber(), acc.GetSequence(), msg, isSync)
@@ -57,6 +78,38 @@ func (ct *CLITester) newRestTxRequestRaw(accName string, accNumber, accSequence 
 	}
 
 	// build REST request
+	txResp = &sdk.TxResponse{}
+	r = ct.newRestRequest()
+	r.SetQuery("POST", "txs", nil, txBroadcastReq, txResp)
+
+	return
+}
+
+// NewRestStdTxRequest signs {stdTx} by {accName} and prepares a REST request to send the Tx.
+func (ct *CLITester) NewRestStdTxRequest(accName string, stdTx auth.StdTx, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
+	// get current account info
+	accInfo, ok := ct.Accounts[accName]
+	require.True(ct.t, ok, "account %q: not found", accName)
+	q, acc := ct.QueryAccount(accInfo.Address)
+	q.CheckSucceeded()
+
+	// get signature
+	signBytes := auth.StdSignBytes(ct.IDs.ChainID, acc.AccountNumber, acc.Sequence, stdTx.Fee, stdTx.Msgs, stdTx.Memo)
+	signature, pubKey, err := ct.keyBase.Sign(accName, ct.AccountPassphrase, signBytes)
+	require.NoError(ct.t, err, "signing signBytes")
+	stdTx.Signatures = []auth.StdSignature{
+		{
+			PubKey:    pubKey,
+			Signature: signature,
+		},
+	}
+
+	// prepare request
+	txBroadcastReq := sdkAuthRest.BroadcastReq{Tx: stdTx, Mode: "block"}
+	if isSync {
+		txBroadcastReq.Mode = "sync"
+	}
+
 	txResp = &sdk.TxResponse{}
 	r = ct.newRestRequest()
 	r.SetQuery("POST", "txs", nil, txBroadcastReq, txResp)
@@ -266,6 +319,61 @@ func (ct *CLITester) RestQueryOrderPost(rq ordersRest.PostOrderReq) (*RestReques
 
 func (ct *CLITester) RestQueryOrderRevoke(rq ordersRest.RevokeOrderReq) (*RestRequest, *auth.StdTx) {
 	reqSubPath := fmt.Sprintf("%s/%s", orders.ModuleName, "revoke")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryCurrenciesIssueStdTx(creatorAccName, payeeAccName, issueID string, coin sdk.Coin, memo string) (*RestRequest, *auth.StdTx) {
+	payeeAccInfo, ok := ct.Accounts[payeeAccName]
+	require.True(ct.t, ok, "payee account %q: not found", payeeAccName)
+
+	rq := ccRest.SubmitIssueReq{
+		BaseReq: ct.buildBaseReq(creatorAccName, memo),
+		ID:      issueID,
+		Coin:    coin,
+		Payee:   payeeAccInfo.Address,
+	}
+
+	reqSubPath := fmt.Sprintf("%s/%s", currencies.ModuleName, "issue")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryCurrenciesWithdrawStdTx(payerAccName, pegZonePayeeAddress, pegZoneChainID string, coin sdk.Coin, memo string) (*RestRequest, *auth.StdTx) {
+	rq := ccRest.WithdrawReq{
+		BaseReq:        ct.buildBaseReq(payerAccName, memo),
+		Coin:           coin,
+		PegZonePayee:   pegZonePayeeAddress,
+		PegZoneChainID: pegZoneChainID,
+	}
+
+	reqSubPath := fmt.Sprintf("%s/%s", currencies.ModuleName, "withdraw")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryMultisigConfirmStdTx(validatorAccName string, callID dnTypes.ID, memo string) (*RestRequest, *auth.StdTx) {
+	rq := msRest.ConfirmReq{
+		BaseReq: ct.buildBaseReq(validatorAccName, memo),
+		CallID:  callID.String(),
+	}
+
+	reqSubPath := fmt.Sprintf("%s/%s", multisig.ModuleName, "confirm")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryMultisigRevokeStdTx(validatorAccName string, callID dnTypes.ID, memo string) (*RestRequest, *auth.StdTx) {
+	rq := msRest.RevokeReq{
+		BaseReq: ct.buildBaseReq(validatorAccName, memo),
+		CallID:  callID.String(),
+	}
+
+	reqSubPath := fmt.Sprintf("%s/%s", multisig.ModuleName, "revoke")
 	respMsg := &auth.StdTx{}
 	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
 	return r, respMsg
