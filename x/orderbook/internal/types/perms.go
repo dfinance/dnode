@@ -2,22 +2,22 @@ package types
 
 import (
 	"github.com/dfinance/dnode/helpers/perms"
-	"github.com/dfinance/dnode/x/orders"
+	ordersClient "github.com/dfinance/dnode/x/orders/client"
 )
 
 const (
 	// Read history item / items
-	PermHistoryReader perms.Permission = ModuleName + "PermHistoryReader"
+	PermHistoryRead perms.Permission = ModuleName + "PermHistoryRead"
 	// Write history item
-	PermHistoryWriter perms.Permission = ModuleName + "PermHistoryWriter"
+	PermHistoryWrite perms.Permission = ModuleName + "PermHistoryWrite"
 	// Read orders
 	PermOrdersRead perms.Permission = ModuleName + "PermOrdersRead"
 	// Execute order fills
-	PermExecFills perms.Permission = ModuleName + "PermExecFills"
+	PermExecFill perms.Permission = ModuleName + "PermExecFill"
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermHistoryReader, PermHistoryWriter, PermOrdersRead, PermExecFills}
+	AvailablePermissions = perms.Permissions{PermHistoryRead, PermHistoryWrite, PermOrdersRead, PermExecFill}
 )
 
 func NewModulePerms() perms.ModulePermissions {
@@ -29,8 +29,8 @@ func RequestOrdersPerms() perms.RequestModulePermissions {
 	return func() (moduleName string, modulePerms perms.Permissions) {
 		moduleName = ModuleName
 		modulePerms = perms.Permissions{
-			orders.PermReader,
-			orders.PermExecFills,
+			ordersClient.PermRead,
+			ordersClient.PermExecFill,
 		}
 		return
 	}

@@ -19,16 +19,17 @@ func TestCCSKeeper_CreateCurrency(t *testing.T) {
 	input := NewTestInput(t)
 	ctx, keeper := input.ctx, input.keeper
 
-	denom := "test"
 	params := types.CurrencyParams{
+		Denom:          "test",
 		Decimals:       8,
 		BalancePathHex: "010203",
 		InfoPathHex:    "AABBCC",
 	}
+	denom := params.Denom
 
 	// ok
 	{
-		err := keeper.CreateCurrency(ctx, denom, params)
+		err := keeper.CreateCurrency(ctx, params)
 		require.NoError(t, err)
 
 		// check currency
@@ -37,6 +38,8 @@ func TestCCSKeeper_CreateCurrency(t *testing.T) {
 		require.Equal(t, denom, currency.Denom)
 		require.EqualValues(t, params.Decimals, currency.Decimals)
 		require.True(t, currency.Supply.IsZero())
+		require.Equal(t, params.BalancePathHex, currency.BalancePathHex)
+		require.Equal(t, params.InfoPathHex, currency.InfoPathHex)
 		require.True(t, keeper.HasCurrency(ctx, denom))
 
 		// check currencyInfo
@@ -54,13 +57,13 @@ func TestCCSKeeper_CreateCurrency(t *testing.T) {
 		curInfoPath, err := keeper.GetCurrencyInfoPath(ctx, denom)
 		require.NoError(t, err)
 
-		require.EqualValues(t, params.BalancePath(), curBalancePath)
-		require.EqualValues(t, params.InfoPath(), curInfoPath)
+		require.EqualValues(t, currency.BalancePath(), curBalancePath)
+		require.EqualValues(t, currency.InfoPath(), curInfoPath)
 	}
 
 	// fail: existing
 	{
-		err := keeper.CreateCurrency(ctx, denom, params)
+		err := keeper.CreateCurrency(ctx, params)
 		require.Error(t, err)
 	}
 }
@@ -73,13 +76,15 @@ func TestCCSKeeper_GetCurrency(t *testing.T) {
 	ctx, keeper := input.ctx, input.keeper
 
 	// create currency
-	denom, decimals := "test", uint8(8)
 	params := types.CurrencyParams{
-		Decimals:       decimals,
+		Denom:          "test",
+		Decimals:       uint8(8),
 		BalancePathHex: "010203",
 		InfoPathHex:    "AABBCC",
 	}
-	err := keeper.CreateCurrency(ctx, denom, params)
+	denom := params.Denom
+
+	err := keeper.CreateCurrency(ctx, params)
 	require.NoError(t, err)
 
 	// ok
@@ -88,7 +93,7 @@ func TestCCSKeeper_GetCurrency(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, denom, currency.Denom)
-		require.EqualValues(t, decimals, currency.Decimals)
+		require.EqualValues(t, params.Decimals, currency.Decimals)
 		require.True(t, currency.Supply.IsZero())
 		require.True(t, keeper.HasCurrency(ctx, denom))
 	}
@@ -102,6 +107,7 @@ func TestCCSKeeper_GetCurrency(t *testing.T) {
 	}
 }
 
+// Test keeper IncreaseCurrencySupply / DecreaseCurrencySupply methods.
 func TestCCSKeeper_Supply(t *testing.T) {
 	t.Parallel()
 
@@ -109,13 +115,16 @@ func TestCCSKeeper_Supply(t *testing.T) {
 	ctx, keeper := input.ctx, input.keeper
 
 	// create currency
-	denom, decimals, curAmount := "test", uint8(8), sdk.ZeroInt()
+	curAmount := sdk.ZeroInt()
 	params := types.CurrencyParams{
-		Decimals:       decimals,
+		Denom:          "test",
+		Decimals:       uint8(8),
 		BalancePathHex: "010203",
 		InfoPathHex:    "AABBCC",
 	}
-	err := keeper.CreateCurrency(ctx, denom, params)
+	denom := params.Denom
+
+	err := keeper.CreateCurrency(ctx, params)
 	require.NoError(t, err)
 
 	// ok: increase
@@ -161,4 +170,16 @@ func TestCCSKeeper_Supply(t *testing.T) {
 		require.Error(t, keeper.IncreaseCurrencySupply(ctx, coin))
 		require.Error(t, keeper.DecreaseCurrencySupply(ctx, coin))
 	}
+}
+
+func TestCCSKeeper_GetCurrencies(t *testing.T) {
+	t.Parallel()
+
+	input := NewTestInput(t)
+	ctx, keeper := input.ctx, input.keeper
+
+	defGenesis := types.DefaultGenesisState()
+
+	currencies := keeper.GetCurrencies(ctx)
+	require.Len(t, currencies, len(defGenesis.CurrenciesParams))
 }

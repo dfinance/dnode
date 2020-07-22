@@ -32,7 +32,7 @@ func NewGovHandler(k Keeper) gov.Handler {
 func handleAddCurrencyProposal(ctx sdk.Context, k Keeper, p AddCurrencyProposal) error {
 	logger := k.GetLogger(ctx)
 
-	err := k.CreateCurrency(ctx, p.Denom, p.GetCurrencyParams())
+	err := k.CreateCurrency(ctx, p.GetCurrencyParams())
 	if err != nil {
 		return sdkErrors.Wrapf(ErrGovInvalidProposal, "creating currency: %v", err)
 	}

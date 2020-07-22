@@ -11,7 +11,7 @@ import (
 
 	"github.com/dfinance/dnode/helpers/perms"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
-	"github.com/dfinance/dnode/x/markets"
+	marketsClient "github.com/dfinance/dnode/x/markets/client"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
@@ -19,8 +19,8 @@ func TestOrdersKeeper_PostRevokeOrder(t *testing.T) {
 	input := NewTestInput(
 		t,
 		perms.Permissions{
-			markets.PermCreator,
-			markets.PermReader,
+			marketsClient.PermCreate,
+			marketsClient.PermRead,
 		},
 	)
 

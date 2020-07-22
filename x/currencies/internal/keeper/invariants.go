@@ -23,12 +23,7 @@ func TotalSupply(k Keeper) sdk.Invariant {
 		supplyCoins.Sort()
 
 		currenciesCoins := sdk.NewCoins()
-		for denom := range k.ccsKeeper.GetCurrenciesParams(ctx) {
-			currency, err := k.ccsKeeper.GetCurrency(ctx, denom)
-			if err != nil {
-				panic(fmt.Errorf("currency %q read failed", denom))
-			}
-
+		for _, currency := range k.ccsKeeper.GetCurrencies(ctx) {
 			currenciesCoins = currenciesCoins.Add(currency.GetSupplyCoin())
 		}
 		currenciesCoins.Sort()

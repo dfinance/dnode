@@ -48,9 +48,7 @@ func (msg MsgPostPrice) ValidateBasic() error {
 
 // Implements sdk.Msg interface.
 func (msg MsgPostPrice) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-
-	return sdk.MustSortJSON(bz)
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // Implements sdk.Msg interface.

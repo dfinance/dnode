@@ -11,7 +11,7 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/multisig"
-	msExport "github.com/dfinance/dnode/x/multisig/export"
+	msClient "github.com/dfinance/dnode/x/multisig/client"
 )
 
 // MSMsgSubmitAndVote submits multi signature message call and confirms it.
@@ -28,7 +28,7 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 	{
 		// submit message
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, accs[submitAccIdx].Address), privKeys[submitAccIdx]
-		submitMsg := msExport.NewMsgSubmitCall(msMsg, msMsgID, senderAcc.GetAddress())
+		submitMsg := msClient.NewMsgSubmitCall(msMsg, msMsgID, senderAcc.GetAddress())
 		tx := GenTx([]sdk.Msg{submitMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		if doChecks {
 			CheckDeliverTx(t, app, tx)
@@ -53,7 +53,7 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 	for idx := 0; idx < confirmCnt-2; idx++ {
 		// confirm message
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, accsFixed[idx].Address), privKeysFixed[idx]
-		confirmMsg := msExport.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
+		confirmMsg := msClient.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
 		tx := GenTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		if doChecks {
 			CheckDeliverTx(t, app, tx)
@@ -72,7 +72,7 @@ func MSMsgSubmitAndVote(t *testing.T, app *DnServiceApp, msMsgID string, msMsg m
 		// confirm message
 		idx := len(accsFixed) - 1
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, accsFixed[idx].Address), privKeysFixed[idx]
-		confirmMsg := msExport.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
+		confirmMsg := msClient.NewMsgConfirmCall(callMsgID, senderAcc.GetAddress())
 		tx := GenTx([]sdk.Msg{confirmMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		if doChecks {
 			CheckDeliverTx(t, app, tx)

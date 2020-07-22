@@ -21,6 +21,8 @@ func NewQuerier(k Keeper) sdk.Querier {
 			return queryGetIssue(k, ctx, req)
 		case types.QueryCurrency:
 			return queryGetCurrency(k, ctx, req)
+		case types.QueryCurrencies:
+			return queryGetCurrencies(k, ctx)
 		default:
 			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unsupported query endpoint %q for module %q", path[0], types.ModuleName)
 		}
@@ -88,7 +90,6 @@ func queryGetIssue(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, er
 }
 
 // queryGetCurrency handles getCurrency query which return currency by denom.
-// Query handler to get currency by symbol.
 func queryGetCurrency(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte, error) {
 	params := types.CurrencyReq{}
 	if err := types.ModuleCdc.UnmarshalJSON(req.Data, &params); err != nil {
@@ -103,6 +104,18 @@ func queryGetCurrency(k Keeper, ctx sdk.Context, req abci.RequestQuery) ([]byte,
 	bz, err := codec.MarshalJSONIndent(k.cdc, currency)
 	if err != nil {
 		return nil, sdkErrors.Wrapf(types.ErrInternal, "currency marshal: %v", err)
+	}
+
+	return bz, nil
+}
+
+// queryGetCurrencies handles getCurrencies query which return all registered currencies.
+func queryGetCurrencies(k Keeper, ctx sdk.Context) ([]byte, error) {
+	currencies := k.ccsKeeper.GetCurrencies(ctx)
+
+	bz, err := codec.MarshalJSONIndent(k.cdc, currencies)
+	if err != nil {
+		return nil, sdkErrors.Wrapf(types.ErrInternal, "currencies marshal: %v", err)
 	}
 
 	return bz, nil

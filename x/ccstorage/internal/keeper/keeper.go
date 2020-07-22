@@ -4,7 +4,6 @@ package keeper
 import (
 	cdcCodec "github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/dfinance/dnode/helpers/perms"
@@ -16,7 +15,6 @@ import (
 type Keeper struct {
 	cdc         *cdcCodec.Codec
 	storeKey    sdk.StoreKey
-	paramStore  params.Subspace
 	vmKeeper    common_vm.VMStorage
 	modulePerms perms.ModulePermissions
 }
@@ -30,15 +28,13 @@ func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
 func NewKeeper(
 	cdc *cdcCodec.Codec,
 	storeKey sdk.StoreKey,
-	paramSubspace params.Subspace,
 	vmKeeper common_vm.VMStorage,
 	permsRequesters ...perms.RequestModulePermissions,
 ) Keeper {
 	k := Keeper{
-		cdc:        cdc,
-		storeKey:   storeKey,
-		paramStore: paramSubspace.WithKeyTable(types.ParamKeyTable()),
-		vmKeeper:   vmKeeper,
+		cdc:         cdc,
+		storeKey:    storeKey,
+		vmKeeper:    vmKeeper,
 		modulePerms: types.NewModulePerms(),
 	}
 	for _, requester := range permsRequesters {

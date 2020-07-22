@@ -18,18 +18,24 @@ func TestCCSKeeper_InitGenesis(t *testing.T) {
 	ctx, keeper := input.ctx, input.keeper
 
 	defGenesis := types.DefaultGenesisState()
-	params := keeper.GetCurrenciesParams(ctx)
-	require.Equal(t, len(defGenesis.CurrenciesParams), len(params))
 
-	for denom, genParams := range defGenesis.CurrenciesParams {
-		require.True(t, keeper.HasCurrency(ctx, denom))
+	currencies := keeper.GetCurrencies(ctx)
+	require.Equal(t, len(defGenesis.CurrenciesParams), len(currencies))
 
-		paramParam, ok := params[denom]
-		require.True(t, ok)
+	for _, genParams := range defGenesis.CurrenciesParams {
+		require.True(t, keeper.HasCurrency(ctx, genParams.Denom))
 
-		require.Equal(t, genParams.Decimals, paramParam.Decimals)
-		require.Equal(t, genParams.BalancePathHex, paramParam.BalancePathHex)
-		require.Equal(t, genParams.InfoPathHex, paramParam.InfoPathHex)
+		foundCnt := 0
+		for _, curParams := range currencies.ToParams() {
+			if curParams.Denom == genParams.Denom {
+				require.Equal(t, genParams.Decimals, curParams.Decimals)
+				require.Equal(t, genParams.BalancePathHex, curParams.BalancePathHex)
+				require.Equal(t, genParams.InfoPathHex, curParams.InfoPathHex)
+
+				foundCnt++
+			}
+		}
+		require.Equal(t, 1, foundCnt)
 	}
 }
 
@@ -38,24 +44,26 @@ func TestCCSKeeper_ExportGenesis(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)
-	defaultGenesis := types.DefaultGenesisState()
 	ctx, keeper := input.ctx, input.keeper
 
 	state := types.GenesisState{}
 	bz := keeper.ExportGenesis(ctx)
 	input.cdc.MustUnmarshalJSON(bz, &state)
 
-	for defDenom, defParams := range defaultGenesis.CurrenciesParams {
-		for rtDenom, rtParams := range state.CurrenciesParams {
-			if defDenom == rtDenom {
-				require.Equal(t, defParams.Decimals, rtParams.Decimals)
-				require.Equal(t, defParams.BalancePathHex, rtParams.BalancePathHex)
-				require.Equal(t, defParams.InfoPathHex, rtParams.InfoPathHex)
+	for _, curParams := range keeper.GetCurrencies(ctx).ToParams() {
+		foundCnt, foundIdx := 0, 0
+		for i, expParams := range state.CurrenciesParams {
+			if curParams.Denom == expParams.Denom {
+				require.Equal(t, expParams.Decimals, curParams.Decimals)
+				require.Equal(t, expParams.BalancePathHex, curParams.BalancePathHex)
+				require.Equal(t, expParams.InfoPathHex, curParams.InfoPathHex)
 
-				delete(state.CurrenciesParams, rtDenom)
-				break
+				foundCnt++
+				foundIdx = i
 			}
 		}
+		require.Equal(t, 1, foundCnt)
+		state.CurrenciesParams = append(state.CurrenciesParams[:foundIdx], state.CurrenciesParams[foundIdx+1:]...)
 	}
 	require.Empty(t, state.CurrenciesParams)
 }

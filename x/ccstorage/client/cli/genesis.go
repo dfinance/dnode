@@ -58,6 +58,7 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 
 			// update the state
 			params := types.CurrencyParams{
+				Denom:          denom,
 				Decimals:       decimals,
 				BalancePathHex: balancePath,
 				InfoPathHex:    infoPath,
@@ -65,7 +66,19 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 			if err := params.Validate(); err != nil {
 				return fmt.Errorf("invalid params: %w", err)
 			}
-			genesisState.CurrenciesParams[denom] = params
+
+			foundIdx := -1
+			for idx, params := range genesisState.CurrenciesParams {
+				if params.Denom == denom {
+					foundIdx = idx
+					break
+				}
+			}
+			if foundIdx == -1 {
+				genesisState.CurrenciesParams = append(genesisState.CurrenciesParams, params)
+			} else {
+				genesisState.CurrenciesParams[foundIdx] = params
+			}
 
 			// update and export app state
 			genesisStateBz := cdc.MustMarshalJSON(genesisState)

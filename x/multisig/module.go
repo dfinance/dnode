@@ -19,6 +19,7 @@ import (
 	"github.com/dfinance/dnode/x/multisig/client"
 	"github.com/dfinance/dnode/x/multisig/client/rest"
 	"github.com/dfinance/dnode/x/multisig/internal/keeper"
+	"github.com/dfinance/dnode/x/poa"
 )
 
 var (
@@ -70,14 +71,16 @@ func (AppModuleBasic) GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 // AppModule is a app module type.
 type AppModule struct {
 	AppModuleBasic
-	keeper keeper.Keeper
+	msKeeper  keeper.Keeper
+	poaKeeper poa.Keeper
 }
 
 // NewAppModule creates new AppModule object.
-func NewAppModule(keeper keeper.Keeper) AppModule {
+func NewAppModule(msKeeper keeper.Keeper, poaKeeper poa.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		keeper:         keeper,
+		msKeeper:       msKeeper,
+		poaKeeper:      poaKeeper,
 	}
 }
 
@@ -96,7 +99,7 @@ func (app AppModule) Route() string {
 
 // NewHandler returns module messages handler.
 func (app AppModule) NewHandler() sdk.Handler {
-	return NewHandler(app.keeper)
+	return NewHandler(app.msKeeper, app.poaKeeper)
 }
 
 // QuerierRoute returns module querier route.
@@ -106,19 +109,19 @@ func (app AppModule) QuerierRoute() string {
 
 // NewQuerierHandler creates module querier.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return keeper.NewQuerier(app.keeper)
+	return keeper.NewQuerier(app.msKeeper)
 }
 
 // InitGenesis inits module-genesis state.
 func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	app.keeper.InitGenesis(ctx, data)
+	app.msKeeper.InitGenesis(ctx, data)
 
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports module genesis state.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return app.keeper.ExportGenesis(ctx)
+	return app.msKeeper.ExportGenesis(ctx)
 }
 
 // BeginBlock performs module actions at a block start.
@@ -126,5 +129,5 @@ func (app AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 
 // EndBlock performs module actions at a block end.
 func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return EndBlocker(ctx, app.keeper)
+	return EndBlocker(ctx, app.msKeeper, app.poaKeeper)
 }

@@ -7,10 +7,11 @@ import (
 )
 
 const (
-	QueryCurrency  = "currency"
-	QueryIssue     = "issue"
-	QueryWithdraws = "withdraws"
-	QueryWithdraw  = "withdraw"
+	QueryCurrency   = "currency"
+	QueryCurrencies = "currencies"
+	QueryIssue      = "issue"
+	QueryWithdraws  = "withdraws"
+	QueryWithdraw   = "withdraw"
 )
 
 // Client request for currency.

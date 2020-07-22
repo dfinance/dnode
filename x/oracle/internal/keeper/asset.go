@@ -11,7 +11,7 @@ import (
 
 // GetAsset returns an asset if exists.
 func (k Keeper) GetAsset(ctx sdk.Context, assetCode dnTypes.AssetCode) (types.Asset, bool) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	assets := k.GetAssetParams(ctx)
 	for i := range assets {
@@ -26,7 +26,7 @@ func (k Keeper) GetAsset(ctx sdk.Context, assetCode dnTypes.AssetCode) (types.As
 
 // SetAsset overwrites existing asset for specific assetCode.
 func (k Keeper) SetAsset(ctx sdk.Context, nominee string, asset types.Asset) error {
-	k.modulePerms.AutoCheck(types.PermWriter)
+	k.modulePerms.AutoCheck(types.PermWrite)
 
 	if err := k.IsNominee(ctx, nominee); err != nil {
 		return err
@@ -54,7 +54,7 @@ func (k Keeper) SetAsset(ctx sdk.Context, nominee string, asset types.Asset) err
 
 // AddAsset adds non-existing asset.
 func (k Keeper) AddAsset(ctx sdk.Context, nominee string, asset types.Asset) error {
-	k.modulePerms.AutoCheck(types.PermWriter)
+	k.modulePerms.AutoCheck(types.PermWrite)
 
 	if err := k.IsNominee(ctx, nominee); err != nil {
 		return err

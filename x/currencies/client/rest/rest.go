@@ -20,8 +20,9 @@ const (
 
 // RegisterRoutes adds endpoint to REST router.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
-	r.HandleFunc(fmt.Sprintf("/%s/issue/{%s}", types.ModuleName, IssueID), getIssue(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/currency/{%s}", types.ModuleName, Denom), getCurrency(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s", types.ModuleName), getCurrencies(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/issue/{%s}", types.ModuleName, IssueID), getIssue(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/withdraw/{%s}", types.ModuleName, WithdrawID), getWithdraw(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/withdraws", types.ModuleName), getWithdraws(cliCtx)).Methods("GET")
 }
@@ -35,7 +36,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // @Produce json
 // @Param denom path string true "currency denomination symbol"
 // @Success 200 {object} CCRespGetCurrency
-// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /currencies/currency/{denom} [get]
 func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
@@ -61,6 +61,28 @@ func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
+// GetCurrencies godoc
+// @Tags Currencies
+// @Summary Get all registered currencies
+// @ID currenciesGetCurrencies
+// @Accept  json
+// @Produce json
+// @Success 200 {object} CCRespGetCurrencies
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /currencies [get]
+func getCurrencies(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// send request and process response
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryCurrencies), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
 // GetIssue godoc
 // @Tags Currencies
 // @Summary Get currency issue
@@ -70,7 +92,6 @@ func getCurrency(cliCtx context.CLIContext) http.HandlerFunc {
 // @Produce json
 // @Param issueID path string true "issueID"
 // @Success 200 {object} CCRespGetIssue
-// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /currencies/issue/{issueID} [get]
 func getIssue(cliCtx context.CLIContext) http.HandlerFunc {
@@ -116,7 +137,7 @@ func getWithdraws(cliCtx context.CLIContext) http.HandlerFunc {
 		limitStr := r.URL.Query().Get("limit")
 		page, limit, err := helpers.ParsePaginationParams(pageStr, limitStr, helpers.ParamTypeRestQuery)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -160,7 +181,7 @@ func getWithdraw(cliCtx context.CLIContext) http.HandlerFunc {
 		vars := mux.Vars(r)
 		id, err := helpers.ParseDnIDParam(WithdrawID, vars[WithdrawID], helpers.ParamTypeRestQuery)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 

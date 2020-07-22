@@ -32,13 +32,6 @@ const (
 	AttributeKeyOrderID  = types.AttributeOrderId
 	AttributeKeyOwner    = types.AttributeOwner
 	AttributeKeyQuantity = types.AttributeQuantity
-	// Permissions
-	PermOrderPost   = types.PermOrderPost
-	PermOrderRevoke = types.PermOrderRevoke
-	PermReader      = types.PermReader
-	PermOrderLock   = types.PermOrderLock
-	PermOrderUnlock = types.PermOrderUnlock
-	PermExecFills   = types.PermExecFills
 )
 
 var (

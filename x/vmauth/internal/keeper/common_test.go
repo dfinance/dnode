@@ -95,7 +95,6 @@ func NewTestInput(t *testing.T) TestInput {
 	input.ccsStorage = ccstorage.NewKeeper(
 		input.cdc,
 		input.keyCCS,
-		input.paramsKeeper.Subspace(ccstorage.DefaultParamspace),
 		input.vmStorage,
 		types.RequestCCStoragePerms(),
 	)

@@ -38,11 +38,6 @@ const (
 	AttributeIssueId    = types.AttributeIssueId
 	AttributeWithdrawId = types.AttributeWithdrawId
 	AttributeSender     = types.AttributeSender
-	// Permissions
-	PermCCCreator  = types.PermCCCreator
-	PermCCIssue    = types.PermCCIssue
-	PermCCWithdraw = types.PermCCWithdraw
-	PermReader     = types.PermReader
 )
 
 var (

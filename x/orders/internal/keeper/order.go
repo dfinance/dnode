@@ -12,7 +12,7 @@ import (
 
 // Has checks if order object with ID exists.
 func (k Keeper) Has(ctx sdk.Context, id dnTypes.ID) bool {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 
@@ -21,7 +21,7 @@ func (k Keeper) Has(ctx sdk.Context, id dnTypes.ID) bool {
 
 // Get gets order object by ID.
 func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Order, error) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetOrderKey(id))
@@ -39,7 +39,7 @@ func (k Keeper) Get(ctx sdk.Context, id dnTypes.ID) (types.Order, error) {
 
 // GetList return all active orders.
 func (k Keeper) GetList(ctx sdk.Context) (retOrders types.Orders, retErr error) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	iterator := k.GetIterator(ctx)
 	defer iterator.Close()
@@ -58,7 +58,7 @@ func (k Keeper) GetList(ctx sdk.Context) (retOrders types.Orders, retErr error) 
 
 // GetListFiltered returns order objects filtered by params.
 func (k Keeper) GetListFiltered(ctx sdk.Context, params types.OrdersReq) (types.Orders, error) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	orders, err := k.GetList(ctx)
 	if err != nil {
@@ -95,7 +95,7 @@ func (k Keeper) GetListFiltered(ctx sdk.Context, params types.OrdersReq) (types.
 
 // GetIterator return order object iterator (direct sort order).
 func (k Keeper) GetIterator(ctx sdk.Context) sdk.Iterator {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 
@@ -104,7 +104,7 @@ func (k Keeper) GetIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetIterator return order object iterator (reverse sort order).
 func (k Keeper) GetReverseIterator(ctx sdk.Context) sdk.Iterator {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 
