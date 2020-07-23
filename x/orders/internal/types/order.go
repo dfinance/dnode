@@ -44,6 +44,15 @@ func (o Order) Valid() error {
 	if o.Owner.Empty() {
 		return fmt.Errorf("owner: empty")
 	}
+	if err := o.Market.ID.Valid(); err != nil {
+		return fmt.Errorf("market id: %w", err)
+	}
+	if o.Market.BaseCurrency.Denom == "" {
+		return fmt.Errorf("market base currency denom is empty")
+	}
+	if o.Market.QuoteCurrency.Denom == "" {
+		return fmt.Errorf("market quote currency denom is empty")
+	}
 	if !o.Direction.IsValid() {
 		return fmt.Errorf("direction: invalid")
 	}

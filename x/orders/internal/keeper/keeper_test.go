@@ -26,7 +26,7 @@ func TestOrdersKeeper_PostRevokeOrder(t *testing.T) {
 
 	// non-existing market
 	{
-		owner := sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07z`")
+		owner := sdk.AccAddress("wallet13jyjuz3kkdvqx`")
 		_, err := input.keeper.PostOrder(input.ctx, owner, dnTypes.AssetCode("dfi_usd"), types.Bid, sdk.OneUint(), sdk.OneUint(), 60)
 		require.Error(t, err)
 	}

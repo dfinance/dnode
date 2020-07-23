@@ -3,11 +3,14 @@ package types
 import (
 	"bytes"
 	"fmt"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
-// GenesisState oracle state that must be provided at genesis.
+// GenesisState orders state that must be provided at genesis.
 type GenesisState struct {
-	Orders Orders `json:"orders" yaml:"orders"`
+	Orders      Orders     `json:"orders" yaml:"orders"`
+	LastOrderId dnTypes.ID `json:"last_order_id" yaml:"last_order_id"`
 }
 
 // Validate checks that genesis state is valid.
