@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dfinance/dnode/helpers"
-	msExport "github.com/dfinance/dnode/x/multisig/export"
+	msClient "github.com/dfinance/dnode/x/multisig/client"
 	"github.com/dfinance/dnode/x/poa/internal/types"
 )
 
@@ -41,7 +41,7 @@ func PostMsAddValidator(cdc *codec.Codec) *cobra.Command {
 
 			// prepare and send multisig message
 			msg := types.NewMsgAddValidator(sdkAddr, ethAddr, fromAddr)
-			callMsg := msExport.NewMsgSubmitCall(msg, args[0], fromAddr)
+			callMsg := msClient.NewMsgSubmitCall(msg, args[0], fromAddr)
 			if err := callMsg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -83,7 +83,7 @@ func PostMsRemoveValidator(cdc *codec.Codec) *cobra.Command {
 
 			// prepare and send multisig message
 			msg := types.NewMsgRemoveValidator(sdkAddr, fromAddr)
-			msMsg := msExport.NewMsgSubmitCall(msg, args[0], fromAddr)
+			msMsg := msClient.NewMsgSubmitCall(msg, args[0], fromAddr)
 			if err := msMsg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -133,7 +133,7 @@ func PostMsReplaceValidator(cdc *codec.Codec) *cobra.Command {
 
 			// prepare and send multisig message
 			msg := types.NewMsgReplaceValidator(sdkAddrOld, sdkAddrNew, ethAddr, fromAddr)
-			msMsg := msExport.NewMsgSubmitCall(msg, args[0], fromAddr)
+			msMsg := msClient.NewMsgSubmitCall(msg, args[0], fromAddr)
 			if err := msMsg.ValidateBasic(); err != nil {
 				return err
 			}

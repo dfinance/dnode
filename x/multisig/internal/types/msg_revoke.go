@@ -1,8 +1,6 @@
 package types
 
 import (
-	"encoding/json"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -42,12 +40,7 @@ func (msg MsgRevokeConfirm) ValidateBasic() error {
 
 // Implements sdk.Msg interface.
 func (msg MsgRevokeConfirm) GetSignBytes() []byte {
-	bc, err := json.Marshal(msg)
-	if err != nil {
-		panic(err)
-	}
-
-	return sdk.MustSortJSON(bc)
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // Implements sdk.Msg interface.

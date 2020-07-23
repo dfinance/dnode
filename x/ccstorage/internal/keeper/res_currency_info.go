@@ -14,7 +14,7 @@ import (
 
 // GetResStdCurrencyInfo returns VM currencyInfo for stdlib currencies (non-token).
 func (k Keeper) GetResStdCurrencyInfo(ctx sdk.Context, denom string) (types.ResCurrencyInfo, error) {
-	k.modulePerms.AutoCheck(types.PermCCReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	path, err := k.GetCurrencyInfoPath(ctx, denom)
 	if err != nil {

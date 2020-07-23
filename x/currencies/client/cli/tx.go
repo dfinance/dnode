@@ -86,12 +86,12 @@ func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			balancePath, err := helpers.ParseHexStringParam("vmBalancePathHex", args[2], helpers.ParamTypeCliArg)
+			balancePath, _, err := helpers.ParseHexStringParam("vmBalancePathHex", args[2], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
-			infoPath, err := helpers.ParseHexStringParam("vmInfoPathHex", args[3], helpers.ParamTypeCliArg)
+			infoPath, _, err := helpers.ParseHexStringParam("vmInfoPathHex", args[3], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}

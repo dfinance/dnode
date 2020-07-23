@@ -7,18 +7,19 @@ import (
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/multisig/internal/keeper"
 	"github.com/dfinance/dnode/x/multisig/internal/types"
+	"github.com/dfinance/dnode/x/poa"
 )
 
 // NewHandler creates sdk.Msg type messages handler.
-func NewHandler(k keeper.Keeper) sdk.Handler {
+func NewHandler(msKeeper keeper.Keeper, poaKeeper poa.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
 		case types.MsgSubmitCall:
-			return handleMsgSubmitCall(ctx, k, msg)
+			return handleMsgSubmitCall(ctx, msKeeper, poaKeeper, msg)
 		case types.MsgConfirmCall:
-			return handleMsgConfirmCall(ctx, k, msg)
+			return handleMsgConfirmCall(ctx, msKeeper, poaKeeper, msg)
 		case types.MsgRevokeConfirm:
-			return handleMsgRevokeConfirm(ctx, k, msg)
+			return handleMsgRevokeConfirm(ctx, msKeeper, poaKeeper, msg)
 		default:
 			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized currencies msg type: %v", msg.Type())
 		}
@@ -26,12 +27,12 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 }
 
 // handleMsgSubmitCall handles MsgSubmitCall message.
-func handleMsgSubmitCall(ctx sdk.Context, k keeper.Keeper, msg types.MsgSubmitCall) (*sdk.Result, error) {
-	if err := k.CheckAddressIsPoaValidator(ctx, msg.Creator); err != nil {
-		return nil, err
+func handleMsgSubmitCall(ctx sdk.Context, msKeeper keeper.Keeper, poaKeeper poa.Keeper, msg types.MsgSubmitCall) (*sdk.Result, error) {
+	if !poaKeeper.HasValidator(ctx, msg.Creator) {
+		return nil, sdkErrors.Wrap(types.ErrPoaNotValidator, msg.Creator.String())
 	}
 
-	if err := k.SubmitCall(ctx, msg.Msg, msg.UniqueID, msg.Creator); err != nil {
+	if err := msKeeper.SubmitCall(ctx, msg.Msg, msg.UniqueID, msg.Creator); err != nil {
 		return nil, err
 	}
 
@@ -41,12 +42,12 @@ func handleMsgSubmitCall(ctx sdk.Context, k keeper.Keeper, msg types.MsgSubmitCa
 }
 
 // handleMsgConfirmCall handles MsgConfirmCall message.
-func handleMsgConfirmCall(ctx sdk.Context, k keeper.Keeper, msg types.MsgConfirmCall) (*sdk.Result, error) {
-	if err := k.CheckAddressIsPoaValidator(ctx, msg.Sender); err != nil {
-		return nil, err
+func handleMsgConfirmCall(ctx sdk.Context, msKeeper keeper.Keeper, poaKeeper poa.Keeper, msg types.MsgConfirmCall) (*sdk.Result, error) {
+	if !poaKeeper.HasValidator(ctx, msg.Sender) {
+		return nil, sdkErrors.Wrap(types.ErrPoaNotValidator, msg.Sender.String())
 	}
 
-	if err := k.ConfirmCall(ctx, msg.CallID, msg.Sender); err != nil {
+	if err := msKeeper.ConfirmCall(ctx, msg.CallID, msg.Sender); err != nil {
 		return nil, err
 	}
 
@@ -56,8 +57,8 @@ func handleMsgConfirmCall(ctx sdk.Context, k keeper.Keeper, msg types.MsgConfirm
 }
 
 // handleMsgRevokeConfirm handles MsgRevokeConfirm message.
-func handleMsgRevokeConfirm(ctx sdk.Context, k keeper.Keeper, msg types.MsgRevokeConfirm) (*sdk.Result, error) {
-	if err := k.RevokeConfirmation(ctx, msg.CallID, msg.Sender); err != nil {
+func handleMsgRevokeConfirm(ctx sdk.Context, msKeeper keeper.Keeper, poaKeeper poa.Keeper, msg types.MsgRevokeConfirm) (*sdk.Result, error) {
+	if err := msKeeper.RevokeConfirmation(ctx, msg.CallID, msg.Sender); err != nil {
 		return nil, err
 	}
 

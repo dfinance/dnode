@@ -21,23 +21,26 @@ func TestCCSKeeper_GetStandardCurrencyInfo(t *testing.T) {
 
 	// ok
 	{
-		for denom, params := range defaultGenesis.CurrenciesParams {
-			curInfo, err := keeper.GetResStdCurrencyInfo(ctx, denom)
+		for _, params := range defaultGenesis.CurrenciesParams {
+			curInfo, err := keeper.GetResStdCurrencyInfo(ctx, params.Denom)
 			require.NoError(t, err)
 
-			require.EqualValues(t, denom, curInfo.Denom)
+			require.EqualValues(t, params.Denom, curInfo.Denom)
 			require.EqualValues(t, params.Decimals, curInfo.Decimals)
 			require.EqualValues(t, common_vm.StdLibAddress, curInfo.Owner)
 			require.EqualValues(t, 0, curInfo.TotalSupply.Uint64())
 			require.False(t, curInfo.IsToken)
 
-			curBalancePath, err := keeper.GetCurrencyBalancePath(ctx, denom)
+			curBalancePath, err := keeper.GetCurrencyBalancePath(ctx, params.Denom)
 			require.NoError(t, err)
-			curInfoPath, err := keeper.GetCurrencyInfoPath(ctx, denom)
+			curInfoPath, err := keeper.GetCurrencyInfoPath(ctx, params.Denom)
 			require.NoError(t, err)
 
-			require.EqualValues(t, params.BalancePath(), curBalancePath)
-			require.EqualValues(t, params.InfoPath(), curInfoPath)
+			currency, err := keeper.GetCurrency(ctx, params.Denom)
+			require.NoError(t, err)
+
+			require.EqualValues(t, currency.BalancePath(), curBalancePath)
+			require.EqualValues(t, currency.InfoPath(), curInfoPath)
 		}
 	}
 

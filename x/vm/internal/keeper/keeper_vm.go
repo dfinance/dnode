@@ -1,4 +1,3 @@
-// VM and storage related things.
 package keeper
 
 import (
@@ -19,33 +18,25 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// Set value in storage by access path.
-func (keeper Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
-	store := ctx.KVStore(keeper.storeKey)
-	key := common_vm.MakePathKey(accessPath)
+// HasValue checks if VM storage has writeSet data by accessPath.
+func (k Keeper) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
+	k.modulePerms.AutoCheck(types.PermStorageRead)
 
-	store.Set(key, value)
+	return k.hasValue(ctx, accessPath)
 }
 
-// Check if VM storage has value by access path.
-func (keeper Keeper) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
-	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+// GetValue returns VM storage writeSet data by accessPath.
+func (k Keeper) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
+	k.modulePerms.AutoCheck(types.PermStorageRead)
 
-	return keeper.hasValue(ctx, accessPath)
+	return k.getValue(ctx, accessPath)
 }
 
-// Public get value by path.
-func (keeper Keeper) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
-	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+// GetValueWithMiddlewares extends GetValue with middleware context-dependant processing.
+func (k Keeper) GetValueWithMiddlewares(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
+	k.modulePerms.AutoCheck(types.PermStorageRead)
 
-	return keeper.getValue(ctx, accessPath)
-}
-
-// GetValue with middleware context-dependant processing.
-func (keeper Keeper) GetValueWithMiddlewares(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
-	keeper.modulePerms.AutoCheck(types.PermStorageReader)
-
-	for _, f := range keeper.dsServer.dataMiddlewares {
+	for _, f := range k.dsServer.dataMiddlewares {
 		data, err := f(ctx, accessPath)
 		if err != nil {
 			return nil
@@ -55,26 +46,12 @@ func (keeper Keeper) GetValueWithMiddlewares(ctx sdk.Context, accessPath *vm_grp
 		}
 	}
 
-	return keeper.GetValue(ctx, accessPath)
+	return k.GetValue(ctx, accessPath)
 }
 
-// Public set value.
-func (keeper Keeper) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
-	keeper.modulePerms.AutoCheck(types.PermStorageWriter)
-
-	keeper.setValue(ctx, accessPath, value)
-}
-
-// Delete value.
-func (keeper Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
-	keeper.modulePerms.AutoCheck(types.PermStorageWriter)
-
-	keeper.delValue(ctx, accessPath)
-}
-
-// Public get path for oracle price.
-func (keeper Keeper) GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.VMAccessPath {
-	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+// GetOracleAccessPath returns accessPath for oracle price.
+func (k Keeper) GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.VMAccessPath {
+	k.modulePerms.AutoCheck(types.PermStorageRead)
 
 	seed := xxhash.NewS64(0)
 	if _, err := seed.WriteString(strings.ToLower(assetCode.String())); err != nil {
@@ -102,32 +79,54 @@ func (keeper Keeper) GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.V
 	}
 }
 
-// Check if vm storage contains key.
-func (keeper Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
-	store := ctx.KVStore(keeper.storeKey)
+// SetValue sets VM storage writeSet data by accessPath.
+func (k Keeper) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
+	k.modulePerms.AutoCheck(types.PermStorageWrite)
+
+	k.setValue(ctx, accessPath, value)
+}
+
+// DelValue removes VM storage writeSet data by accessPath.
+func (k Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
+	k.modulePerms.AutoCheck(types.PermStorageWrite)
+
+	k.delValue(ctx, accessPath)
+}
+
+// hasValue checks that VM storage contains key.
+func (k Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
+	store := ctx.KVStore(k.storeKey)
 	key := common_vm.MakePathKey(accessPath)
 
 	return store.Has(key)
 }
 
-// Get value from storage by access path.
-func (keeper Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
-	store := ctx.KVStore(keeper.storeKey)
+// getValue returns value from VM storage by key.
+func (k Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
+	store := ctx.KVStore(k.storeKey)
 	key := common_vm.MakePathKey(accessPath)
 
 	return store.Get(key)
 }
 
-// Delete key in storage by access path.
-func (keeper Keeper) delValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
-	store := ctx.KVStore(keeper.storeKey)
+// setValue sets value to VM storage by key.
+func (k Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
+	store := ctx.KVStore(k.storeKey)
+	key := common_vm.MakePathKey(accessPath)
+
+	store.Set(key, value)
+}
+
+// delValue removes value from VM storage by key.
+func (k Keeper) delValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
+	store := ctx.KVStore(k.storeKey)
 	key := common_vm.MakePathKey(accessPath)
 
 	store.Delete(key)
 }
 
-// Process result of VM module/script execution.
-func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteResponse) {
+// processExecution processes VM execution result (emit events, convert VM events, update writeSets).
+func (k Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteResponse) {
 	// consume gas, if execution took too much gas - panic and mark transaction as out of gas
 	ctx.GasMeter().ConsumeGas(exec.GasUsed, "vm script/module execution")
 
@@ -138,11 +137,11 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 	if exec.Status == vm_grpc.ContractStatus_Keep {
 		// return on "error" status
 		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
-			types.PrintVMStackTrace(tmhash.Sum(ctx.TxBytes()), keeper.Logger(ctx), exec)
+			types.PrintVMStackTrace(tmhash.Sum(ctx.TxBytes()), k.GetLogger(ctx), exec)
 			return
 		}
 
-		keeper.processWriteSet(ctx, exec.WriteSet)
+		k.processWriteSet(ctx, exec.WriteSet)
 
 		// emit VM events (panic on "out of gas", emitted events stays in the EventManager)
 		for _, vmEvent := range exec.Events {
@@ -151,16 +150,16 @@ func (keeper Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRe
 	}
 }
 
-// Process write set of module/script execution.
-func (keeper Keeper) processWriteSet(ctx sdk.Context, writeSet []*vm_grpc.VMValue) {
+// processWriteSet processes VM execution writeSets (set/delete).
+func (k Keeper) processWriteSet(ctx sdk.Context, writeSet []*vm_grpc.VMValue) {
 	for _, value := range writeSet {
 		// check type and solve what to do.
 		if value.Type == vm_grpc.VmWriteOp_Deletion {
 			// deleting key.
-			keeper.delValue(ctx, value.Path)
+			k.delValue(ctx, value.Path)
 		} else if value.Type == vm_grpc.VmWriteOp_Value {
 			// write to storage.
-			keeper.setValue(ctx, value.Path, value.Value)
+			k.setValue(ctx, value.Path, value.Value)
 		} else {
 			// must not happens at all
 			panic(fmt.Errorf("unknown write op, couldn't happen: %d", value.Type))

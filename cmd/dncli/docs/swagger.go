@@ -621,12 +621,11 @@ definitions:
       voter:
         type: string
     type: object
+  ccstorage.Currencies:
+    $ref: '#/definitions/types.Currencies'
   ccstorage.Currency:
     $ref: '#/definitions/types.Currency'
-  client.MoveFile:
-    properties:
-      code:
-        type: string
+  crypto.PubKey:
     type: object
   markets.MarketExtended:
     $ref: '#/definitions/types.MarketExtended'
@@ -656,6 +655,14 @@ definitions:
         type: integer
       simulate:
         type: boolean
+    type: object
+  rest.CCRespGetCurrencies:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/ccstorage.Currencies'
+        type: object
     type: object
   rest.CCRespGetCurrency:
     properties:
@@ -688,6 +695,17 @@ definitions:
       result:
         $ref: '#/definitions/types.Withdraws'
         type: object
+    type: object
+  rest.CompileReq:
+    properties:
+      address:
+        description: Account address
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32/hex
+        type: string
+      code:
+        description: Script source code
+        type: string
     type: object
   rest.ErrorResponse:
     properties:
@@ -873,7 +891,7 @@ definitions:
       height:
         type: integer
       result:
-        $ref: '#/definitions/types.QueryValueResp'
+        $ref: '#/definitions/types.ValueResp'
         type: object
     type: object
   rest.VmRespCompile:
@@ -881,7 +899,7 @@ definitions:
       height:
         type: integer
       result:
-        $ref: '#/definitions/client.MoveFile'
+        $ref: '#/definitions/vm_client.MoveFile'
         type: object
     type: object
   rest.VmTxStatus:
@@ -891,16 +909,6 @@ definitions:
       result:
         $ref: '#/definitions/types.TxVMStatus'
         type: object
-    type: object
-  rest.compileReq:
-    properties:
-      address:
-        description: Code address
-        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
-        type: string
-      code:
-        description: Script code
-        type: string
     type: object
   rest.postPriceReq:
     properties:
@@ -1023,8 +1031,33 @@ definitions:
     items:
       $ref: '#/definitions/types.Coin'
     type: array
+  types.Commission:
+    properties:
+      max_change_rate:
+        $ref: '#/definitions/types.Dec'
+        description: maximum daily increase of the validator commission, as a fraction
+        type: object
+      max_rate:
+        $ref: '#/definitions/types.Dec'
+        description: maximum commission rate which validator can ever charge, as a fraction
+        type: object
+      rate:
+        $ref: '#/definitions/types.Dec'
+        description: the commission rate charged to delegators, as a fraction
+        type: object
+      update_time:
+        description: the last time the commission rate was changed
+        type: string
+    type: object
+  types.Currencies:
+    items:
+      $ref: '#/definitions/types.Currency'
+    type: array
   types.Currency:
     properties:
+      balance_path_hex:
+        description: Path used to store account balance for currency denom (0x1::Dfinance::T<Coin>)
+        type: string
       decimals:
         description: Number of currency decimals
         example: 0
@@ -1032,6 +1065,9 @@ definitions:
       denom:
         description: Currency denom (symbol)
         example: dfi
+        type: string
+      info_path_hex:
+        description: Path used to store CurrencyInfo for currency denom (0x1::Dfinance::Info<Coin>)
         type: string
       supply:
         description: Total amount of currency coins in Bank
@@ -1068,6 +1104,24 @@ definitions:
     items:
       $ref: '#/definitions/types.DecCoin'
     type: array
+  types.Description:
+    properties:
+      details:
+        description: optional details
+        type: string
+      identity:
+        description: optional identity signature (ex. UPort or Keybase)
+        type: string
+      moniker:
+        description: name
+        type: string
+      security_contact:
+        description: optional security contact info
+        type: string
+      website:
+        description: optional website link
+        type: string
+    type: object
   types.ID:
     $ref: '#/definitions/sdk.Uint'
   types.Int:
@@ -1227,12 +1281,6 @@ definitions:
         format: RFC 3339
         type: string
     type: object
-  types.QueryValueResp:
-    properties:
-      value:
-        format: HEX string
-        type: string
-    type: object
   types.StdFee:
     properties:
       amount:
@@ -1261,25 +1309,72 @@ definitions:
   types.VMStatus:
     properties:
       major_code:
-        description: Major code.
+        description: Major code
         type: string
       message:
-        description: Message.
+        description: Message
         type: string
       status:
-        description: 'Status of error: error/discard.'
+        description: 'Status of error: error/discard'
         type: string
       str_code:
-        description: Detailed exaplantion of code.
+        description: Detailed explanation of code
         type: string
       sub_code:
-        description: Sub code.
+        description: Sub code
         type: string
     type: object
   types.VMStatuses:
     items:
       $ref: '#/definitions/types.VMStatus'
     type: array
+  types.ValAddress:
+    items:
+      type: integer
+    type: array
+  types.Validator:
+    properties:
+      commission:
+        $ref: '#/definitions/types.Commission'
+        description: commission parameters
+        type: object
+      consensus_pubkey:
+        $ref: '#/definitions/crypto.PubKey'
+        description: the consensus public key of the validator; bech encoded in JSON
+        type: object
+      delegator_shares:
+        $ref: '#/definitions/types.Dec'
+        description: total shares issued to a validator's delegators
+        type: object
+      description:
+        $ref: '#/definitions/types.Description'
+        description: description terms for the validator
+        type: object
+      jailed:
+        description: has the validator been jailed from bonded status?
+        type: boolean
+      min_self_delegation:
+        $ref: '#/definitions/types.Int'
+        description: validator's self declared minimum self delegation
+        type: object
+      operator_address:
+        $ref: '#/definitions/types.ValAddress'
+        description: address of the validator's operator; bech encoded in JSON
+        type: object
+      status:
+        description: validator status (bonded/unbonding/unbonded)
+        type: string
+      tokens:
+        $ref: '#/definitions/types.Int'
+        description: delegated tokens (incl. self-delegation)
+        type: object
+      unbonding_height:
+        description: if unbonding, height at which this validator has begun unbonding
+        type: integer
+      unbonding_time:
+        description: if unbonding, min time for the validator to complete unbonding
+        type: string
+    type: object
   types.Validators:
     items:
       $ref: '#/definitions/types.Validator'
@@ -1294,6 +1389,12 @@ definitions:
         $ref: '#/definitions/types.Validators'
         description: Registered validators list
         type: object
+    type: object
+  types.ValueResp:
+    properties:
+      value:
+        format: HEX string
+        type: string
     type: object
   types.Withdraw:
     properties:
@@ -1334,6 +1435,11 @@ definitions:
     items:
       $ref: '#/definitions/types.Withdraw'
     type: array
+  vm_client.MoveFile:
+    properties:
+      code:
+        type: string
+    type: object
 host: stargate.cosmos.network
 info:
   contact: {}
@@ -1481,6 +1587,25 @@ paths:
       summary: Get the latest block
       tags:
       - Tendermint RPC
+  /currencies:
+    get:
+      consumes:
+      - application/json
+      operationId: currenciesGetCurrencies
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespGetCurrencies'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get all registered currencies
+      tags:
+      - Currencies
   /currencies/currency/{denom}:
     get:
       consumes:
@@ -1500,10 +1625,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.CCRespGetCurrency'
-        "400":
-          description: Returned if the request doesn't have valid query params
-          schema:
-            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -1530,10 +1651,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.CCRespGetIssue'
-        "400":
-          description: Returned if the request doesn't have valid query params
-          schema:
-            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2563,10 +2680,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.MSRespGetCall'
-        "400":
-          description: Returned if the request doesn't have valid query params
-          schema:
-            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2659,6 +2772,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.OracleRespGetAssets'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Returned if requested data wasn't found
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2689,6 +2810,10 @@ paths:
           description: Returned if the request doesn't have valid query params
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Returned if requested data wasn't found
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2716,6 +2841,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.OracleRespGetAssets'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
@@ -2749,6 +2878,10 @@ paths:
             $ref: '#/definitions/rest.OracleRespGetRawPrices'
         "400":
           description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Returned if requested data wasn't found
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
         "500":
@@ -3760,7 +3893,7 @@ paths:
         name: getRequest
         required: true
         schema:
-          $ref: '#/definitions/rest.compileReq'
+          $ref: '#/definitions/rest.CompileReq'
       produces:
       - application/json
       responses:
@@ -3783,7 +3916,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get data from data source by accountAddr and path
+      description: Get writeSet data from VM by accountAddr and path
       operationId: vmGetData
       parameters:
       - description: account address (Libra HEX  Bech32)
@@ -3803,22 +3936,22 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.VmData'
-        "422":
-          description: Returned if the request doesn't have valid path params
+        "400":
+          description: Returned if the request doesn't have valid query params
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
-      summary: Get data from data source
+      summary: Get writeSet data from VM
       tags:
       - VM
   /vm/tx/{txHash}:
     get:
       consumes:
       - application/json
-      description: Get tx VM execution status by tx hash
+      description: Get TX VM execution status by hash
       operationId: vmTxStatus
       parameters:
       - description: transaction hash
@@ -3833,15 +3966,19 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/rest.VmTxStatus'
-        "422":
-          description: Returned if the request doesn't have valid path params
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "404":
+          description: Returned if the requested data wasn't found
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
         "500":
           description: Returned on server error
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
-      summary: Get tx VM execution status
+      summary: Get TX VM execution status
       tags:
       - VM
 schemes:

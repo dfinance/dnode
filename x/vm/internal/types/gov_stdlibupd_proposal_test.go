@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_StdlibUpdateProposal(t *testing.T) {
+func TestVM_StdlibUpdateProposal(t *testing.T) {
 	// ok
 	require.NoError(t, NewStdlibUpdateProposal(NewPlan(1), "http://github.com/repo", "tst", []byte{1}).ValidateBasic())
 

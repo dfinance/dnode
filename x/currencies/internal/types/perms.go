@@ -2,22 +2,22 @@ package types
 
 import (
 	"github.com/dfinance/dnode/helpers/perms"
-	"github.com/dfinance/dnode/x/ccstorage"
+	ccsClient "github.com/dfinance/dnode/x/ccstorage/client"
 )
 
 const (
 	// Create a new currency
-	PermCCCreator perms.Permission = ModuleName + "PermCCCreator"
+	PermCreate perms.Permission = ModuleName + "PermCreate"
 	// Issue currency amount
-	PermCCIssue perms.Permission = ModuleName + "PermCCIssue"
+	PermIssue perms.Permission = ModuleName + "PermIssue"
 	// Withdraw currency amount
-	PermCCWithdraw perms.Permission = ModuleName + "PermCCWithdraw"
+	PermWithdraw perms.Permission = ModuleName + "PermWithdraw"
 	// Read Issue / Withdraw
-	PermReader perms.Permission = ModuleName + "PermReader"
+	PermRead perms.Permission = ModuleName + "PermRead"
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermCCCreator, PermCCIssue, PermCCWithdraw, PermReader}
+	AvailablePermissions = perms.Permissions{PermCreate, PermIssue, PermWithdraw, PermRead}
 )
 
 func NewModulePerms() perms.ModulePermissions {
@@ -29,9 +29,9 @@ func RequestCCStoragePerms() perms.RequestModulePermissions {
 	return func() (moduleName string, modulePerms perms.Permissions) {
 		moduleName = ModuleName
 		modulePerms = perms.Permissions{
-			ccstorage.PermCCCreator,
-			ccstorage.PermCCUpdater,
-			ccstorage.PermCCReader,
+			ccsClient.PermCreate,
+			ccsClient.PermUpdate,
+			ccsClient.PermRead,
 		}
 		return
 	}

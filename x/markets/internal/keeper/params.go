@@ -8,7 +8,7 @@ import (
 
 // GetParams gets keeper params.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	k.paramSubspace.GetParamSet(ctx, &params)
 
@@ -17,7 +17,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 
 // SetParams sets keeper params.
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
-	k.modulePerms.AutoCheck(types.PermCreator)
+	k.modulePerms.AutoCheck(types.PermCreate)
 
 	k.paramSubspace.SetParamSet(ctx, &params)
 }

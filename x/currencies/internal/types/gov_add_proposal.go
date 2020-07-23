@@ -44,6 +44,7 @@ func (p AddCurrencyProposal) ValidateBasic() error {
 
 func (p AddCurrencyProposal) GetCurrencyParams() ccstorage.CurrencyParams {
 	return ccstorage.CurrencyParams{
+		Denom:          p.Denom,
 		Decimals:       p.Decimals,
 		BalancePathHex: p.VmBalancePathHex,
 		InfoPathHex:    p.VmInfoPathHex,

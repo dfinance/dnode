@@ -115,7 +115,7 @@ func TestVM_DiscardEvent(t *testing.T) {
 }
 
 // Test StringifySenderAddress.
-func Test_GetSenderAddress(t *testing.T) {
+func TestVM_StringifySenderAddress(t *testing.T) {
 	t.Parallel()
 
 	address := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
@@ -124,7 +124,7 @@ func Test_GetSenderAddress(t *testing.T) {
 }
 
 // Test event convertation from Move type to Cosmos.
-func TestNewEventFromVM(t *testing.T) {
+func TestVM_NewEventFromVM(t *testing.T) {
 	t.Parallel()
 
 	moduleAddr := make([]byte, common_vm.VMAddressLength)
@@ -204,7 +204,7 @@ func TestNewEventFromVM(t *testing.T) {
 }
 
 // Processing event with out of gas.
-func Test_OutOfGasProcessEvent(t *testing.T) {
+func TestVM_OutOfGasProcessEvent(t *testing.T) {
 	t.Parallel()
 
 	moduleAddr := make([]byte, common_vm.VMAddressLength)

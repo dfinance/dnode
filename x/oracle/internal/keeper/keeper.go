@@ -24,7 +24,7 @@ type Keeper struct {
 
 // IsNominee checks is nominee exist in the keeper params.
 func (k Keeper) IsNominee(ctx sdk.Context, address string) error {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	p := k.GetParams(ctx)
 	for _, v := range p.Nominees {

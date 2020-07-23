@@ -9,6 +9,7 @@ type (
 	Keeper          = keeper.Keeper
 	GenesisState    = types.GenesisState
 	Currency        = types.Currency
+	Currencies      = types.Currencies
 	CurrencyParams  = types.CurrencyParams
 	ResCurrencyInfo = types.ResCurrencyInfo
 	ResBalance      = types.ResBalance
@@ -17,20 +18,14 @@ type (
 )
 
 const (
-	ModuleName        = types.ModuleName
-	StoreKey          = types.StoreKey
-	DefaultParamspace = types.DefaultParamspace
+	ModuleName = types.ModuleName
+	StoreKey   = types.StoreKey
 	// Event types, attribute types and values
 	EventTypesCreate = types.EventTypesCreate
 	//
 	AttributeDenom    = types.AttributeDenom
 	AttributeDecimals = types.AttributeDecimals
 	AttributeInfoPath = types.AttributeInfoPath
-	// Permissions
-	PermCCCreator    = types.PermCCCreator
-	PermCCUpdater    = types.PermCCUpdater
-	PermCCReader     = types.PermCCReader
-	PermCCResUpdater = types.PermCCResUpdater
 )
 
 var (

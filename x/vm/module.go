@@ -1,10 +1,11 @@
-// VM module.
+// Module provides DVM integration with Move script/module execution/deployment.
+// VM storage is used for writeSets (VM execution results) operations and used by other modules to preserve module dependant resources.
+// DataSource server is a gRPC server for dnode-dvm async communication (DS context is updated during the BeginBlock).
+// Module support DVM stdlib update proposal updates corresponding writeSets.
 package vm
 
 import (
-	"encoding/hex"
 	"encoding/json"
-	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -15,8 +16,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/vm/client/cli"
+	"github.com/dfinance/dnode/x/vm/client"
 	"github.com/dfinance/dnode/x/vm/client/rest"
 )
 
@@ -25,123 +25,114 @@ var (
 	_ module.AppModuleBasic = AppModuleBasic{}
 )
 
+// AppModuleBasic app module basics object.
 type AppModuleBasic struct{}
 
-// Module name.
-func (module AppModuleBasic) Name() string {
+// Name gets module name.
+func (AppModuleBasic) Name() string {
 	return ModuleName
 }
 
-// Registering codecs.
-func (module AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
+// RegisterCodec registers module codec.
+func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 	RegisterCodec(cdc)
 }
 
-// Validate exists genesis.
-func (module AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
+// DefaultGenesis gets default module genesis state.
+func (AppModuleBasic) DefaultGenesis() json.RawMessage {
+	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
+}
+
+// ValidateGenesis validates module genesis state.
+func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 	var state GenesisState
 	ModuleCdc.MustUnmarshalJSON(data, &state)
 
-	for _, genWriteOp := range state.WriteSet {
-		bzAddr, err := hex.DecodeString(genWriteOp.Address)
-		if err != nil {
-			return err
-		}
-
-		// address length
-		if len(bzAddr) != common_vm.VMAddressLength {
-			return fmt.Errorf("incorrect address %q length, should be %d bytes length", genWriteOp.Address, common_vm.VMAddressLength)
-		}
-
-		if _, err := hex.DecodeString(genWriteOp.Path); err != nil {
-			return err
-		}
-
-		if _, err := hex.DecodeString(genWriteOp.Value); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return state.Validate()
 }
 
-// Generate default genesis.
-func (module AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return ModuleCdc.MustMarshalJSON(&GenesisState{})
-}
-
-// Register REST routes.
-func (module AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
+// RegisterRESTRoutes registers module REST routes.
+func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, r *mux.Router) {
 	rest.RegisterRoutes(ctx, r)
 }
 
-// Get transaction commands for CLI.
-func (module AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetTxCmd(cdc)
+// GetTxCmd returns module root tx command.
+func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
+	return client.GetTxCmd(cdc)
 }
 
-// Get query commands for CLI.
-func (module AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	return cli.GetQueryCmd(cdc)
+// GetQueryCmd returns module root query command.
+func (AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
+	return client.GetQueryCmd(cdc)
 }
 
-// VM module.
+// AppModule is a app module type.
 type AppModule struct {
 	AppModuleBasic
-	vmKeeper Keeper
+	keeper Keeper
 }
 
-// Create new VM module.
-func NewAppModule(vmKeeper Keeper) AppModule {
+// NewAppModule creates new AppModule object.
+func NewAppModule(keeper Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
-		vmKeeper:       vmKeeper,
+		keeper:         keeper,
 	}
 }
 
-// Get name of module.
+// Name gets module name.
 func (app AppModule) Name() string {
 	return ModuleName
 }
 
-// Register module invariants.
+// RegisterInvariants registers module invariants.
 func (app AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Base route of module (for handler).
-func (app AppModule) Route() string { return RouterKey }
+// Route returns module messages route.
+func (app AppModule) Route() string {
+	return RouterKey
+}
 
-// Create new handler.
-func (app AppModule) NewHandler() sdk.Handler { return NewHandler(app.vmKeeper) }
+// NewHandler returns module messages handler.
+func (app AppModule) NewHandler() sdk.Handler {
+	return NewHandler(app.keeper)
+}
 
-// Create governance handler.
-func (app AppModule) NewGovHandler() gov.Handler { return NewGovHandler(app.vmKeeper) }
+// NewGovHandler retruns governance module proposals handler.
+func (app AppModule) NewGovHandler() gov.Handler {
+	return NewGovHandler(app.keeper)
+}
 
-// Get route for querier.
-func (app AppModule) QuerierRoute() string { return RouterKey }
+// QuerierRoute returns module querier route.
+func (app AppModule) QuerierRoute() string {
+	return RouterKey
+}
 
-// Get new querier for VM module.
+// NewQuerierHandler creates module querier.
 func (app AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(app.vmKeeper)
+	return NewQuerier(app.keeper)
 }
 
-// Process begin block (abci).
+// InitGenesis inits module-genesis state.
+func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	app.keeper.InitGenesis(ctx, data)
+
+	return []abci.ValidatorUpdate{}
+}
+
+// ExportGenesis exports module genesis state.
+func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
+	genesisState := app.keeper.ExportGenesis(ctx)
+
+	return ModuleCdc.MustMarshalJSON(genesisState)
+}
+
+// BeginBlock performs module actions at a block start.
 func (app AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, app.vmKeeper, req)
+	BeginBlocker(ctx, app.keeper, req)
 }
 
-// Process end block (abci).
+// EndBlock performs module actions at a block end.
 func (app AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
-}
-
-// Initialize genesis.
-func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
-	app.vmKeeper.InitGenesis(ctx, data)
-	return []abci.ValidatorUpdate{}
-}
-
-// Export genesis.
-func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	genesisState := app.vmKeeper.ExportGenesis(ctx)
-	return ModuleCdc.MustMarshalJSON(genesisState)
 }

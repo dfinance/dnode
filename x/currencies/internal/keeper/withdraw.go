@@ -10,7 +10,7 @@ import (
 
 // WithdrawCurrency lowers payee coin balance.
 func (k Keeper) WithdrawCurrency(ctx sdk.Context, coin sdk.Coin, spender sdk.AccAddress, recipient, chainID string) (retErr error) {
-	k.modulePerms.AutoCheck(types.PermCCWithdraw)
+	k.modulePerms.AutoCheck(types.PermWithdraw)
 
 	// bankKeeper might panic
 	defer func() {
@@ -53,7 +53,7 @@ func (k Keeper) WithdrawCurrency(ctx sdk.Context, coin sdk.Coin, spender sdk.Acc
 
 // HasWithdraw checks that withdraw exists.
 func (k Keeper) HasWithdraw(ctx sdk.Context, id dnTypes.ID) bool {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
 
@@ -62,7 +62,7 @@ func (k Keeper) HasWithdraw(ctx sdk.Context, id dnTypes.ID) bool {
 
 // GetWithdraw returns withdraw.
 func (k Keeper) GetWithdraw(ctx sdk.Context, id dnTypes.ID) (types.Withdraw, error) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	if !k.HasWithdraw(ctx, id) {
 		return types.Withdraw{}, sdkErrors.Wrapf(types.ErrWrongWithdrawID, "withdrawID %q: not found", id.String())
@@ -73,7 +73,7 @@ func (k Keeper) GetWithdraw(ctx sdk.Context, id dnTypes.ID) (types.Withdraw, err
 
 // GetWithdrawsFiltered returns withdraw objects list with pagination params.
 func (k Keeper) GetWithdrawsFiltered(ctx sdk.Context, params types.WithdrawsReq) (types.Withdraws, error) {
-	k.modulePerms.AutoCheck(types.PermReader)
+	k.modulePerms.AutoCheck(types.PermRead)
 
 	if params.Page.GT(sdk.ZeroUint()) {
 		params.Page = params.Page.SubUint64(1)

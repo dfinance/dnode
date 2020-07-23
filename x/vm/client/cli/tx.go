@@ -1,118 +1,53 @@
 package cli
 
 import (
-	"bufio"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"strconv"
 
-	cliBldrCtx "github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	sdkClient "github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	txBldrCtx "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govCli "github.com/cosmos/cosmos-sdk/x/gov/client/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	codec "github.com/tendermint/go-amino"
 
-	"github.com/dfinance/dnode/cmd/config"
-	vmClient "github.com/dfinance/dnode/x/vm/client"
+	"github.com/dfinance/dnode/helpers"
+	"github.com/dfinance/dnode/x/vm/client/vm_client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// GetTxCmd returns the transaction commands for this module.
-func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	txCmd := &cobra.Command{
-		Use:   types.ModuleName,
-		Short: "VM transactions commands",
-	}
-
-	compileCommands := sdkClient.PostCommands(
-		ExecuteScript(cdc),
-	)
-	for _, cmd := range compileCommands {
-		cmd.Flags().String(vmClient.FlagCompilerAddr, config.DefaultCompilerAddr, vmClient.FlagCompilerUsage)
-		txCmd.AddCommand(cmd)
-	}
-
-	commands := sdkClient.PostCommands(
-		DeployContract(cdc),
-		flags.LineBreak,
-		UpdateStdlibProposal(cdc),
-	)
-	commands = append(commands, compileCommands...)
-
-	txCmd.AddCommand(commands...)
-
-	return txCmd
-}
-
-// Read Move file contains code in hex.
-func GetMVFromFile(filePath string) (vmClient.MoveFile, error) {
-	var move vmClient.MoveFile
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return move, err
-	}
-	defer file.Close()
-
-	jsonContent, err := ioutil.ReadAll(file)
-	if err != nil {
-		return move, err
-	}
-
-	if err := json.Unmarshal(jsonContent, &move); err != nil {
-		return move, err
-	}
-
-	return move, nil
-}
-
-// Execute script contract.
+// ExecuteScript returns tx command which executed VM script.
 func ExecuteScript(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:     "execute [compiledMoveFile] [arg1,arg2,arg3,...] --from [account] --fees [dfiFee] --gas [gas]",
-		Short:   "execute Move script",
-		Example: "execute ./script.move.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\" --from my_account --fees 1dfi --gas 500000",
+	cmd := &cobra.Command{
+		Use:     "execute [moveFile] [arg1,arg2,arg3,..]",
+		Short:   "Execute Move script",
+		Example: "execute ./script.move.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\" --from my_account --fees 10000dfi --gas 500000",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			compilerAddr := viper.GetString(vmClient.FlagCompilerAddr)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
+			compilerAddr := viper.GetString(vm_client.FlagCompilerAddr)
 
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
-
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("provide correct parameter for --from flag: %v", err)
-			}
-
-			mvFile, err := GetMVFromFile(args[0])
-			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "mvFile", args[0], err)
-			}
-
-			code, err := hex.DecodeString(mvFile.Code)
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
 			if err != nil {
 				return err
 			}
 
-			// parsing arguments
+			code, err := getMoveCodeFromFileArg(args[0])
+			if err != nil {
+				return err
+			}
+
 			strArgs := args[1:]
-			typedArgs, err := vmClient.ExtractArguments(compilerAddr, code)
+			typedArgs, err := vm_client.ExtractArguments(compilerAddr, code)
 			if err != nil {
 				return err
 			}
 
-			scriptArgs, err := vmClient.ConvertStringScriptArguments(strArgs, typedArgs)
+			scriptArgs, err := vm_client.ConvertStringScriptArguments(strArgs, typedArgs)
 			if err != nil {
 				return err
 			}
@@ -120,99 +55,93 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 				scriptArgs = nil
 			}
 
-			msg := types.NewMsgExecuteScript(cliCtx.GetFromAddress(), code, scriptArgs)
+			// prepare and send message
+			msg := types.NewMsgExecuteScript(fromAddr, code, scriptArgs)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"path to compiled Mode file containing bytecode",
+		"space separated VM script arguments (optional)",
+	})
+
+	return cmd
 }
 
-// Deploy contract cli TX command.
+// DeployContract returns tx command which deploys VM module (contract).
 func DeployContract(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:     "publish [compiledMoveFile] --from [account] --fees [dfiFee] --gas [gas]",
-		Short:   "publish Move module",
-		Example: "publish ./my_module.move.json --from my_account --fees 1dfi --gas 500000",
+	cmd := &cobra.Command{
+		Use:     "publish [moveFile]",
+		Short:   "Publish Move module",
+		Example: "publish ./my_module.move.json --from my_account --fees 10000dfi --gas 500000",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := txBldrCtx.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
-			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
-			if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-				return fmt.Errorf("provide correct parameter for --from flag: %v", err)
-			}
-
-			mvFile, err := GetMVFromFile(args[0])
-			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "mvFile", args[0], err)
-			}
-
-			code, err := hex.DecodeString(mvFile.Code)
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgDeployModule(cliCtx.GetFromAddress(), code)
+			code, err := getMoveCodeFromFileArg(args[0])
+			if err != nil {
+				return err
+			}
+
+			// prepare and send message
+			msg := types.NewMsgDeployModule(fromAddr, code)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
 			cliCtx.WithOutput(os.Stdout)
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msg})
 		},
 	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"path to compiled Mode file containing bytecode",
+	})
+
+	return cmd
 }
 
-// Send governance update stdlib VM module proposal.
+// UpdateStdlibProposal returns tx command which sends governance update stdlib VM module proposal.
 func UpdateStdlibProposal(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "update-stdlib-proposal [mvFile] [plannedBlockHeight] [sourceUrl] [updateDescription] [flags]",
-		Args:    cobra.ExactArgs(4),
+		Use:     "update-stdlib-proposal [moveFile] [plannedBlockHeight] [sourceUrl] [updateDescription]",
 		Short:   "Submit a DVM stdlib update proposal",
-		Example: "update-stdlib-proposal ./update.move.json 1000 http://github.com/repo 'fix for Foo module' --deposit 100dfi --from my_account --fees 1dfi",
+		Example: "update-stdlib-proposal ./update.move.json 1000 http://github.com/repo 'fix for Foo module' --deposit 10000dfi --from my_account --fees 10000dfi",
+		Args:    cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			inBuf := bufio.NewReader(cmd.InOrStdin())
-			txBldr := auth.NewTxBuilderFromCLI(inBuf).WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := cliBldrCtx.NewCLIContextWithInput(inBuf).WithCodec(cdc)
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
 			// parse inputs
-			accGetter := txBldrCtx.NewAccountRetriever(cliCtx)
-			fromAddress := cliCtx.FromAddress
-			if err := accGetter.EnsureExists(fromAddress); err != nil {
-				return fmt.Errorf("%s flag: %v", flags.FlagFrom, err)
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
+			if err != nil {
+				return err
 			}
 
-			depositStr, err := cmd.Flags().GetString(govCli.FlagDeposit)
+			deposit, err := helpers.ParseDepositFlag(cmd.Flags())
 			if err != nil {
-				return fmt.Errorf("%s flag: %w", govCli.FlagDeposit, err)
-			}
-			deposit, err := sdk.ParseCoins(depositStr)
-			if err != nil {
-				return fmt.Errorf("%s flag %q: parsing: %w", govCli.FlagDeposit, depositStr, err)
+				return err
 			}
 
-			mvFilePath := args[0]
-			mvFile, err := GetMVFromFile(mvFilePath)
+			code, err := getMoveCodeFromFileArg(args[0])
 			if err != nil {
-				return fmt.Errorf("%s argument %q: %w", "mvFile", mvFilePath, err)
-			}
-			code, err := hex.DecodeString(mvFile.Code)
-			if err != nil {
-				return fmt.Errorf("%s argument %q: decoding: %w", "mvFile", mvFilePath, err)
+				return err
 			}
 
-			plannedBlockHeightStr := args[1]
-			plannedBlockHeight, err := strconv.ParseInt(plannedBlockHeightStr, 10, 64)
+			plannedBlockHeight, err := helpers.ParseInt64Param("plannedBlockHeight", args[1], helpers.ParamTypeCliArg)
 			if err != nil {
-				return fmt.Errorf("%s argument %q: decoding: %w", "plannedBlockHeight", plannedBlockHeightStr, err)
+				return err
 			}
 
 			sourceUrl, updateDesc := args[2], args[3]
@@ -223,16 +152,57 @@ func UpdateStdlibProposal(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := gov.NewMsgSubmitProposal(content, deposit, fromAddress)
+			msg := gov.NewMsgSubmitProposal(content, deposit, fromAddr)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{msg})
 		},
 	}
-
+	helpers.BuildCmdHelp(cmd, []string{
+		"path to compiled Mode file containing bytecode",
+		"blockHeight at which update should occur [int]",
+		"URL containing proposal source code",
+		"proposal description (version, short changelist)",
+	})
 	cmd.Flags().String(govCli.FlagDeposit, "", "deposit of proposal")
 
 	return cmd
+}
+
+// getMoveCodeFromFileArg reads .move file and converts its code field.
+func getMoveCodeFromFileArg(argValue string) (moveCode []byte, retErr error) {
+	const argName = "moveFile"
+
+	jsonContent, err := helpers.ParseFilePath(argName, argValue, helpers.ParamTypeCliArg)
+	if err != nil {
+		retErr = err
+		return
+	}
+
+	var moveFile vm_client.MoveFile
+	if err := json.Unmarshal(jsonContent, &moveFile); err != nil {
+		retErr = helpers.BuildError(
+			argName,
+			argValue,
+			helpers.ParamTypeCliArg,
+			fmt.Sprintf("Move file JSON unmarshal: %v", err),
+		)
+		return
+	}
+
+	code, err := hex.DecodeString(moveFile.Code)
+	if err != nil {
+		retErr = helpers.BuildError(
+			argName,
+			argValue,
+			helpers.ParamTypeCliArg,
+			fmt.Sprintf("Move file code HEX decode: %v", err),
+		)
+		return
+	}
+	moveCode = code
+
+	return
 }

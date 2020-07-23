@@ -33,8 +33,7 @@ func (msg MsgAddAsset) ValidateBasic() error {
 
 // Implements sdk.Msg interface.
 func (msg MsgAddAsset) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // Implements sdk.Msg interface.

@@ -2,20 +2,20 @@ package types
 
 import (
 	"github.com/dfinance/dnode/helpers/perms"
-	vmExport "github.com/dfinance/dnode/x/vm/export"
+	vmClient "github.com/dfinance/dnode/x/vm/client"
 )
 
 const (
 	// Init genesis
 	PermInit perms.Permission = ModuleName + "PermInit"
 	// Read validators and counters
-	PermReader perms.Permission = ModuleName + "PermReader"
+	PermRead perms.Permission = ModuleName + "PermRead"
 	// Add/update validators
-	PermWriter perms.Permission = ModuleName + "PermWriter"
+	PermWrite perms.Permission = ModuleName + "PermWrite"
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermInit, PermReader, PermWriter}
+	AvailablePermissions = perms.Permissions{PermInit, PermRead, PermWrite}
 )
 
 func NewModulePerms() perms.ModulePermissions {
@@ -27,8 +27,8 @@ func RequestVMStoragePerms() perms.RequestModulePermissions {
 	return func() (moduleName string, modulePerms perms.Permissions) {
 		moduleName = ModuleName
 		modulePerms = perms.Permissions{
-			vmExport.PermStorageReader,
-			vmExport.PermStorageWriter,
+			vmClient.PermStorageRead,
+			vmClient.PermStorageWrite,
 		}
 		return
 	}

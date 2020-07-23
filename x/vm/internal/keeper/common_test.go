@@ -39,6 +39,7 @@ import (
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/oracle"
+	oracleClient "github.com/dfinance/dnode/x/oracle/client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 	"github.com/dfinance/dnode/x/vmauth"
 )
@@ -291,7 +292,6 @@ func newTestInput(launchMock bool) testInput {
 	input.cs = ccstorage.NewKeeper(
 		input.cdc,
 		input.keyCCS,
-		input.pk.Subspace(ccstorage.DefaultParamspace),
 		input.vk,
 		vmauth.RequestCCStoragePerms(),
 	)
@@ -305,7 +305,7 @@ func newTestInput(launchMock bool) testInput {
 			// custom requester as some test require oracle module setup
 			moduleName = types.ModuleName
 			modulePerms = perms.Permissions{
-				oracle.PermWriter,
+				oracleClient.PermWrite,
 			}
 			return
 		},

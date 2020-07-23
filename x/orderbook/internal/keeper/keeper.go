@@ -33,7 +33,7 @@ func (k Keeper) GetOrderIterator(ctx sdk.Context) sdk.Iterator {
 
 // ProcessOrderFills passes order fills to the orders module.
 func (k Keeper) ProcessOrderFills(ctx sdk.Context, orderFills orders.OrderFills) {
-	k.modulePerms.AutoCheck(types.PermExecFills)
+	k.modulePerms.AutoCheck(types.PermExecFill)
 
 	k.orderKeeper.ExecuteOrderFills(ctx, orderFills)
 }

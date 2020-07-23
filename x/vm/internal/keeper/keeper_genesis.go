@@ -1,4 +1,3 @@
-// Work with genesis data.
 package keeper
 
 import (
@@ -12,9 +11,9 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
-// Process genesis state and write state.
-func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
-	keeper.modulePerms.AutoCheck(types.PermInit)
+// InitGenesis inits module genesis state: creates currencies.
+func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
+	k.modulePerms.AutoCheck(types.PermInit)
 
 	var state types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(data, &state)
@@ -40,18 +39,19 @@ func (keeper Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 			Path:    bzPath,
 		}
 
-		keeper.setValue(ctx, accessPath, bzValue)
+		k.setValue(ctx, accessPath, bzValue)
 	}
 
 	// "data" variable can't be used directly as it might contain extra JSON fields
-	store := ctx.KVStore(keeper.storeKey)
+	store := ctx.KVStore(k.storeKey)
 	store.Set(types.KeyGenesis, types.ModuleCdc.MustMarshalJSON(state))
 }
 
-func (keeper Keeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
-	keeper.modulePerms.AutoCheck(types.PermStorageReader)
+// ExportGenesis exports module genesis state using current params state.
+func (k Keeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
+	k.modulePerms.AutoCheck(types.PermStorageRead)
 
-	store := ctx.KVStore(keeper.storeKey)
+	store := ctx.KVStore(k.storeKey)
 	state := types.GenesisState{}
 
 	if store.Has(types.KeyGenesis) {

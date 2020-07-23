@@ -1,5 +1,4 @@
-// Export is used to prevent cycle dependency using /x/multisig/alias.go (by all multisig modules).
-package export
+package client
 
 import "github.com/dfinance/dnode/x/multisig/internal/types"
 
@@ -9,7 +8,15 @@ type (
 	MsgRevokeConfirm = types.MsgRevokeConfirm
 )
 
+const (
+	// Permissions
+	PermRead  = types.PermRead
+	PermWrite = types.PermWrite
+)
+
 var (
+	RegisterMultiSigTypeCodec = types.RegisterMultiSigTypeCodec
+	//
 	NewMsgSubmitCall    = types.NewMsgSubmitCall
 	NewMsgConfirmCall   = types.NewMsgConfirmCall
 	NewMsgRevokeConfirm = types.NewMsgRevokeConfirm

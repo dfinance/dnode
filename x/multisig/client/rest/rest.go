@@ -65,7 +65,7 @@ func getCall(cliCtx context.CLIContext) http.HandlerFunc {
 		vars := mux.Vars(r)
 		id, err := helpers.ParseDnIDParam(CallID, vars[CallID], helpers.ParamTypeRestPath)
 		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		}
 
 		req := types.CallReq{CallID: id}
@@ -95,7 +95,6 @@ func getCall(cliCtx context.CLIContext) http.HandlerFunc {
 // @Produce json
 // @Param uniqueID path string true "call uniqueID"
 // @Success 200 {object} MSRespGetCall
-// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
 // @Router /multisig/unique/{uniqueID} [get]
 func getCallByUnique(cliCtx context.CLIContext) http.HandlerFunc {

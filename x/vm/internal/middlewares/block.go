@@ -19,6 +19,7 @@ type BlockHeader struct {
 	Height uint64
 }
 
+// NewBlockMiddleware creates DS server middleware which return current blockHeight.
 func NewBlockMiddleware() common_vm.DSDataMiddleware {
 	bzPath, err := hex.DecodeString(hexBlockHeaderPath)
 	if err != nil {

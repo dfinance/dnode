@@ -112,7 +112,7 @@ func TestCurrency_REST(t *testing.T) {
 			{
 				req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(0))
 				req.ModifySubPath("0", "abc")
-				req.CheckFailed(http.StatusInternalServerError, nil)
+				req.CheckFailed(http.StatusBadRequest, nil)
 			}
 
 			// non-existing withdrawID
@@ -152,7 +152,7 @@ func TestCurrency_REST(t *testing.T) {
 			{
 				req, _ := ct.RestQueryCurrenciesWithdraws(&page, nil)
 				req.ModifyUrlValues("page", "abc")
-				req.CheckFailed(http.StatusInternalServerError, nil)
+				req.CheckFailed(http.StatusBadRequest, nil)
 			}
 
 			// invalid "limit" value
@@ -160,7 +160,7 @@ func TestCurrency_REST(t *testing.T) {
 				limit := 1
 				req, _ := ct.RestQueryCurrenciesWithdraws(&page, &limit)
 				req.ModifyUrlValues("limit", "-1")
-				req.CheckFailed(http.StatusInternalServerError, nil)
+				req.CheckFailed(http.StatusBadRequest, nil)
 			}
 		}
 	}
@@ -226,7 +226,7 @@ func TestMS_REST(t *testing.T) {
 			{
 				req, _ := ct.RestQueryMultiSigCall(dnTypes.NewIDFromUint64(0))
 				req.ModifySubPath("0", "-1")
-				req.CheckFailed(http.StatusInternalServerError, nil)
+				req.CheckFailed(http.StatusBadRequest, nil)
 			}
 
 			// non-existing "id"
@@ -459,13 +459,13 @@ func TestVM_REST(t *testing.T) {
 			// invalid accAddress
 			{
 				req, _ := ct.RestQueryVMGetData("non-valid-addr", writeSet.Path)
-				req.CheckFailed(http.StatusUnprocessableEntity, nil)
+				req.CheckFailed(http.StatusBadRequest, nil)
 			}
 
 			// invalid path
 			{
 				req, _ := ct.RestQueryVMGetData(writeSet.Address, "non-valid-path")
-				req.CheckFailed(http.StatusUnprocessableEntity, nil)
+				req.CheckFailed(http.StatusBadRequest, nil)
 			}
 		}
 	}

@@ -8,8 +8,8 @@ import (
 )
 
 // CreateCurrency redirects CreateCurrency request to the currencies storage.
-func (k Keeper) CreateCurrency(ctx sdk.Context, denom string, params ccstorage.CurrencyParams) error {
-	k.modulePerms.AutoCheck(types.PermCCCreator)
+func (k Keeper) CreateCurrency(ctx sdk.Context, params ccstorage.CurrencyParams) error {
+	k.modulePerms.AutoCheck(types.PermCreate)
 
-	return k.ccsKeeper.CreateCurrency(ctx, denom, params)
+	return k.ccsKeeper.CreateCurrency(ctx, params)
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/dfinance/dnode/x/core/msmodule"
 )
 
-var ModuleCdc *codec.Codec
+var ModuleCdc = codec.New()
 
 // RegisterCodec registers module specific messages.
 func RegisterCodec(cdc *codec.Codec) {
@@ -17,9 +17,12 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterInterface((*msmodule.MsMsg)(nil), nil)
 }
 
+// RegisterMultiSigTypeCodec registers an external multisig message defined in another module for the internal ModuleCdc.
+func RegisterMultiSigTypeCodec(o interface{}, name string) {
+	ModuleCdc.RegisterConcrete(o, name, nil)
+}
+
 func init() {
-	cdc := codec.New()
-	RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-	ModuleCdc = cdc.Seal()
+	RegisterCodec(ModuleCdc)
+	codec.RegisterCrypto(ModuleCdc)
 }

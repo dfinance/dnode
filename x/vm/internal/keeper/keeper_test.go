@@ -15,7 +15,7 @@ import (
 )
 
 // Deploy script with mocked VM.
-func TestKeeper_DeployContractMock(t *testing.T) {
+func TestVMKeeper_DeployContractMock(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -49,7 +49,7 @@ func TestKeeper_DeployContractMock(t *testing.T) {
 }
 
 // Deploy script execute with mocked VM.
-func TestKeeper_ExecuteScriptMock(t *testing.T) {
+func TestVMKeeper_ExecuteScriptMock(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)
@@ -85,7 +85,7 @@ func TestKeeper_ExecuteScriptMock(t *testing.T) {
 }
 
 // Check genesis Import / Export functionality
-func TestKeeper_ExportGenesis(t *testing.T) {
+func TestVMKeeper_ExportGenesis(t *testing.T) {
 	t.Parallel()
 
 	input := newTestInput(true)

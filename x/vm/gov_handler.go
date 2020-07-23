@@ -11,7 +11,7 @@ import (
 )
 
 // NewGovHandler creates proposal type handler for Gov module.
-func NewGovHandler(keeper Keeper) gov.Handler {
+func NewGovHandler(k Keeper) gov.Handler {
 	return func(ctx sdk.Context, c govTypes.Content) error {
 		if c.ProposalRoute() != GovRouterKey {
 			return fmt.Errorf("invalid proposal route %q for module %q", c.ProposalRoute(), ModuleName)
@@ -19,7 +19,7 @@ func NewGovHandler(keeper Keeper) gov.Handler {
 
 		switch p := c.(type) {
 		case StdlibUpdateProposal:
-			return handleUpdateStdlibProposalDryRun(ctx, keeper, p)
+			return handleUpdateStdlibProposalDryRun(ctx, k, p)
 		default:
 			return fmt.Errorf("unsupported proposal content type %q for module %q", c.ProposalType(), ModuleName)
 		}
@@ -27,20 +27,20 @@ func NewGovHandler(keeper Keeper) gov.Handler {
 }
 
 // handleUpdateStdlibProposalDryRun handles DVM stdlib update proposal: DVM validation and scheduling.
-func handleUpdateStdlibProposalDryRun(ctx sdk.Context, keeper Keeper, proposal StdlibUpdateProposal) error {
-	logger := keeper.Logger(ctx)
+func handleUpdateStdlibProposalDryRun(ctx sdk.Context, k Keeper, proposal StdlibUpdateProposal) error {
+	logger := k.GetLogger(ctx)
 
 	// DVM check (dry-run deploy)
 	msg, err := getStdlibUpdateMsg(proposal)
 	if err != nil {
 		return err
 	}
-	if err := keeper.DeployContractDryRun(ctx, msg); err != nil {
+	if err := k.DeployContractDryRun(ctx, msg); err != nil {
 		return fmt.Errorf("contract dry run deploy failed: %w", err)
 	}
 
 	// add proposal to queue
-	if err := keeper.ScheduleProposal(ctx, proposal); err != nil {
+	if err := k.ScheduleProposal(ctx, proposal); err != nil {
 		return err
 	}
 

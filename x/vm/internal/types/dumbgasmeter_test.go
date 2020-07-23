@@ -9,7 +9,7 @@ import (
 )
 
 // Tests for dumb gas meter.
-func TestNewDumbGasMeter(t *testing.T) {
+func TestVM_NewDumbGasMeter(t *testing.T) {
 	t.Parallel()
 
 	gasMeter := NewDumbGasMeter()

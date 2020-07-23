@@ -1,4 +1,3 @@
-// Initialize commands for cli (add genesis validator).
 package cli
 
 import (

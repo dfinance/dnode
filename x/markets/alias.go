@@ -23,9 +23,6 @@ const (
 	AttributeMarketId   = types.AttributeMarketId
 	AttributeBaseDenom  = types.AttributeBaseDenom
 	AttributeQuoteDenom = types.AttributeQuoteDenom
-	// Permissions
-	PermCreator = types.PermCreator
-	PermReader  = types.PermReader
 )
 
 var (
