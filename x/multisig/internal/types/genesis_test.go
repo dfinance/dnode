@@ -151,6 +151,17 @@ func TestMS_Genesis_Validate(t *testing.T) {
 		}
 		require.Error(t, state.Validate(-1))
 	}
+	// fail: invalid lastCallID: not nil without existing calls
+	{
+		lastID := dnTypes.NewZeroID()
+		state := GenesisState{
+			Parameters: Params{
+				IntervalToExecute: MinIntervalToExecute,
+			},
+			LastCallID: &lastID,
+		}
+		require.Error(t, state.Validate(-1))
+	}
 	// fail: invalid lastCallID: mismatch
 	{
 		lastID := dnTypes.NewZeroID()

@@ -70,6 +70,9 @@ func (s GenesisState) Validate(curBlockHeight int64) error {
 	if s.LastCallID == nil && len(s.CallItems) != 0 {
 		return fmt.Errorf("last_call_id: nil with existing calls")
 	}
+	if s.LastCallID != nil && len(s.CallItems) == 0 {
+		return fmt.Errorf("last_call_id: not nil without existing calls")
+	}
 	if s.LastCallID != nil {
 		if err := s.LastCallID.Valid(); err != nil {
 			return fmt.Errorf("last_call_id: %w", err)
