@@ -1223,7 +1223,7 @@ func TestOrders_CLI(t *testing.T) {
 	// check orders added
 	{
 		for i, input := range inputOrders {
-			orderID := dnTypes.NewIDFromUint64(uint64(i))
+			orderID := dnTypes.NewIDFromUint64(uint64(i + 1))
 			q, order := ct.QueryOrdersOrder(orderID)
 			q.CheckSucceeded()
 
@@ -1360,21 +1360,21 @@ func TestOrders_CLI(t *testing.T) {
 
 	// revoke order
 	{
-		orderIdx := len(inputOrders) - 1
+		orderIdx := len(inputOrders)
 		orderID := dnTypes.NewIDFromUint64(uint64(orderIdx))
-		inputOrder := inputOrders[orderIdx]
+		inputOrder := inputOrders[orderIdx-1]
 		ct.TxOrdersRevoke(inputOrder.OwnerAddress, orderID).CheckSucceeded()
 
 		q, _ := ct.QueryOrdersOrder(orderID)
 		q.CheckFailedWithSDKError(orders.ErrWrongOrderID)
-		inputOrders = inputOrders[:len(inputOrders)-2]
+		inputOrders = inputOrders[:len(inputOrders)-1]
 	}
 
 	// check RevokeOrder Tx
 	{
 		// invalid from address
 		{
-			tx := ct.TxOrdersRevoke("invalid_address", dnTypes.NewIDFromUint64(0))
+			tx := ct.TxOrdersRevoke("invalid_address", dnTypes.NewIDFromUint64(1))
 			tx.CheckFailedWithErrorSubstring("keyring")
 		}
 
@@ -1386,7 +1386,7 @@ func TestOrders_CLI(t *testing.T) {
 
 		// wrong owner (not an order owner)
 		{
-			tx := ct.TxOrdersRevoke(ct.Accounts["validator1"].Address, dnTypes.NewIDFromUint64(0))
+			tx := ct.TxOrdersRevoke(ct.Accounts["validator1"].Address, dnTypes.NewIDFromUint64(1))
 			tx.CheckFailedWithSDKError(orders.ErrWrongOwner)
 		}
 	}
