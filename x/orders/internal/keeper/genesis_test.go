@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/dfinance/dnode/helpers/perms"
-	"github.com/dfinance/dnode/x/markets"
+	marketsClient "github.com/dfinance/dnode/x/markets/client"
 	"github.com/dfinance/dnode/x/orders/internal/types"
 )
 
@@ -16,8 +16,8 @@ func TestOrdersKeeper_Genesis_Init(t *testing.T) {
 	input := NewTestInput(
 		t,
 		perms.Permissions{
-			markets.PermCreator,
-			markets.PermReader,
+			marketsClient.PermCreate,
+			marketsClient.PermRead,
 		},
 	)
 
