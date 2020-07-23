@@ -6,6 +6,8 @@ import (
 )
 
 const (
+	// Init genesis
+	PermInit perms.Permission = ModuleName + "PermInit"
 	// Create a new currency
 	PermCreate perms.Permission = ModuleName + "PermCreate"
 	// Issue currency amount
@@ -17,7 +19,7 @@ const (
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermCreate, PermIssue, PermWithdraw, PermRead}
+	AvailablePermissions = perms.Permissions{PermInit, PermCreate, PermIssue, PermWithdraw, PermRead}
 )
 
 func NewModulePerms() perms.ModulePermissions {
