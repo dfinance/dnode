@@ -721,7 +721,7 @@ func TestOrders_REST(t *testing.T) {
 	// check orders added
 	{
 		for i, input := range inputOrders {
-			orderID := dnTypes.NewIDFromUint64(uint64(i))
+			orderID := dnTypes.NewIDFromUint64(uint64(i + 1))
 			q, order := ct.RestQueryOrder(orderID)
 			q.CheckSucceeded()
 
@@ -858,15 +858,15 @@ func TestOrders_REST(t *testing.T) {
 
 	// revoke order
 	{
-		orderIdx := len(inputOrders) - 1
+		orderIdx := len(inputOrders)
 		orderID := dnTypes.NewIDFromUint64(uint64(orderIdx))
-		inputOrder := inputOrders[orderIdx]
+		inputOrder := inputOrders[orderIdx-1]
 		r, _ := ct.RestTxOrdersRevokeOrder(inputOrder.OwnerName, orderID)
 		r.CheckSucceeded()
 
 		q, _ := ct.RestQueryOrder(orderID)
 		q.CheckFailed(http.StatusInternalServerError, orders.ErrWrongOrderID)
-		inputOrders = inputOrders[:len(inputOrders)-2]
+		inputOrders = inputOrders[:len(inputOrders)-1]
 	}
 
 	// check RevokeOrder Tx
@@ -879,7 +879,7 @@ func TestOrders_REST(t *testing.T) {
 
 		// wrong owner (not an order owner)
 		{
-			r, _ := ct.RestTxOrdersRevokeOrder("validator1", dnTypes.NewIDFromUint64(0))
+			r, _ := ct.RestTxOrdersRevokeOrder("validator1", dnTypes.NewIDFromUint64(1))
 			r.CheckFailed(http.StatusOK, orders.ErrWrongOwner)
 		}
 	}
@@ -920,7 +920,7 @@ func TestOrders_REST(t *testing.T) {
 	// check revoke order
 	{
 		{
-			orderIdx := len(inputOrders) - 1
+			orderIdx := len(inputOrders)
 			orderID := dnTypes.NewIDFromUint64(uint64(orderIdx))
 
 			rq := rest.RevokeOrderReq{
