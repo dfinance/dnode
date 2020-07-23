@@ -19,7 +19,7 @@ func NewMockOrder() Order {
 
 	return Order{
 		ID:    dnTypes.NewIDFromUint64(0),
-		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"),
+		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw"),
 		Market: markets.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(0),
 			BaseCurrency: ccstorage.Currency{

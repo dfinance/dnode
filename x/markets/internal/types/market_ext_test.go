@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/ccstorage"
 )
 
@@ -35,6 +36,97 @@ func checkBaseToQuoteQuantityInputs(t *testing.T, inputs []BaseToQuoteQuantityIn
 			require.NoError(t, err, "[%d]: error is not expected", i)
 			require.True(t, input.OutQuoteQ.Equal(quoteQ), "[%d]: got / expected: %s / %s", i, input.OutQuoteQ, quoteQ)
 		}
+	}
+}
+
+func TestMarkets_Valid(t *testing.T) {
+	t.Parallel()
+
+	currency := ccstorage.Currency{
+		Decimals: 2,
+		Denom:    "btc",
+		Supply:   sdk.NewInt(100),
+	}
+
+	wrongDenomCurrency := ccstorage.Currency{
+		Decimals: 2,
+		Denom:    "wrong_denom",
+		Supply:   sdk.NewInt(100),
+	}
+
+	id := dnTypes.NewIDFromUint64(1)
+
+	// OK
+	{
+		err := MarketExtended{
+			ID:            id,
+			BaseCurrency:  currency,
+			QuoteCurrency: currency,
+		}.Valid()
+
+		require.Nil(t, err)
+	}
+
+	// Wrong id
+	{
+		err := MarketExtended{
+			BaseCurrency:  currency,
+			QuoteCurrency: currency,
+		}.Valid()
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "id")
+		require.Contains(t, err.Error(), "invalid")
+	}
+
+	// Wrong BaseCurrency
+	{
+		err := MarketExtended{
+			ID:            id,
+			BaseCurrency:  wrongDenomCurrency,
+			QuoteCurrency: currency,
+		}.Valid()
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "baseCurrency")
+		require.Contains(t, err.Error(), "denom is invalid")
+	}
+
+	// Empty BaseCurrency
+	{
+		err := MarketExtended{
+			ID:            id,
+			QuoteCurrency: currency,
+		}.Valid()
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "baseCurrency")
+		require.Contains(t, err.Error(), "empty")
+	}
+
+	// Wrong QuoteCurrency
+	{
+		err := MarketExtended{
+			ID:            id,
+			BaseCurrency:  currency,
+			QuoteCurrency: wrongDenomCurrency,
+		}.Valid()
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "quoteCurrency")
+		require.Contains(t, err.Error(), "denom is invalid")
+	}
+
+	// Empty QuoteCurrency
+	{
+		err := MarketExtended{
+			ID:           id,
+			BaseCurrency: currency,
+		}.Valid()
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "quoteCurrency")
+		require.Contains(t, err.Error(), "empty")
 	}
 }
 

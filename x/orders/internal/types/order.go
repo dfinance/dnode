@@ -36,7 +36,7 @@ type Order struct {
 	UpdatedAt time.Time `json:"updated_at" yaml:"updated_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
 
-// Valid checks that Order is valid (used for genesis ops)
+// Valid checks that Order is valid (used for genesis ops).
 func (o Order) Valid() error {
 	if err := o.ID.Valid(); err != nil {
 		return fmt.Errorf("id: %w", err)
@@ -44,14 +44,11 @@ func (o Order) Valid() error {
 	if o.Owner.Empty() {
 		return fmt.Errorf("owner: empty")
 	}
-	if err := o.Market.ID.Valid(); err != nil {
-		return fmt.Errorf("market id: %w", err)
+	if err := sdk.VerifyAddressFormat(o.Owner); err != nil {
+		return fmt.Errorf("owner address format is wrong: %w", err)
 	}
-	if o.Market.BaseCurrency.Denom == "" {
-		return fmt.Errorf("market base currency denom is empty")
-	}
-	if o.Market.QuoteCurrency.Denom == "" {
-		return fmt.Errorf("market quote currency denom is empty")
+	if err := o.Market.Valid(); err != nil {
+		return fmt.Errorf("market: %w", err)
 	}
 	if !o.Direction.IsValid() {
 		return fmt.Errorf("direction: invalid")
@@ -65,7 +62,18 @@ func (o Order) Valid() error {
 	if o.CreatedAt.After(o.UpdatedAt) {
 		return fmt.Errorf("wrong create and update dates: create date later than update date")
 	}
-
+	if o.CreatedAt.IsZero() {
+		return fmt.Errorf("CreatedAt: is zero")
+	}
+	if o.CreatedAt.After(time.Now()) {
+		return fmt.Errorf("CreatedAt: is future date")
+	}
+	if o.UpdatedAt.IsZero() {
+		return fmt.Errorf("UpdatedAt: is zero")
+	}
+	if o.UpdatedAt.After(time.Now()) {
+		return fmt.Errorf("UpdatedAt: is future date")
+	}
 	return nil
 }
 

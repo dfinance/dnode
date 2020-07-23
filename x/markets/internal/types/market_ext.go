@@ -23,6 +23,21 @@ type MarketExtended struct {
 	QuoteCurrency ccstorage.Currency `json:"quote_currency" yaml:"quote_currency"`
 }
 
+// Valid checks that MarketExtended is valid.
+func (m MarketExtended) Valid() error {
+	if err := m.BaseCurrency.Valid(); err != nil {
+		return fmt.Errorf("baseCurrency is invalid: %v", err)
+	}
+	if err := m.QuoteCurrency.Valid(); err != nil {
+		return fmt.Errorf("quoteCurrency is invalid: %v", err)
+	}
+	if err := m.ID.Valid(); err != nil {
+		return fmt.Errorf("id is invalid: %v", err)
+	}
+
+	return nil
+}
+
 // BaseToQuoteQuantity converts base asset price and quantity to quote asset quantity.
 // Function normalizes quantity to be used later by OrderBook module, that way quantity for bid and ask
 // order are casted to the same base (base quantity).

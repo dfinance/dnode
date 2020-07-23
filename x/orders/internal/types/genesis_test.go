@@ -3,6 +3,7 @@
 package types
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -53,10 +54,11 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 	// wrong owner
 	{
 		order := NewMockOrder()
-		order.Owner = sdk.AccAddress{}
+		order.Owner = sdk.AccAddress(strings.Repeat("0", 50))
 		err := GenesisState{Orders: Orders{order}}.Validate().Error()
 		require.Contains(t, err, "owner")
-		require.Contains(t, err, "empty")
+		require.Contains(t, err, "format")
+		require.Contains(t, err, "wrong")
 	}
 
 	// wrong direction
@@ -95,6 +97,41 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 		require.Contains(t, err, "wrong create and update dates")
 	}
 
+	// future dates
+	{
+		// CreatedAt
+		{
+			order := NewMockOrder()
+			order.CreatedAt = time.Now().Add(time.Hour * 10)
+			order.UpdatedAt = time.Now().Add(time.Hour * 11)
+			err := GenesisState{Orders: Orders{order}}.Validate().Error()
+			require.Contains(t, err, "CreatedAt")
+			require.Contains(t, err, "future date")
+		}
+
+		// UpdatedAt
+		{
+			order := NewMockOrder()
+			order.CreatedAt = time.Now().Truncate(time.Hour)
+			order.UpdatedAt = time.Now().Add(time.Hour * 1)
+			err := GenesisState{Orders: Orders{order}}.Validate().Error()
+			require.Contains(t, err, "UpdatedAt")
+			require.Contains(t, err, "future date")
+		}
+	}
+
+	// zero dates
+	{
+		// CreatedAt
+		{
+			order := NewMockOrder()
+			order.CreatedAt = time.Time{}
+			err := GenesisState{Orders: Orders{order}}.Validate().Error()
+			require.Contains(t, err, "CreatedAt")
+			require.Contains(t, err, "zero")
+		}
+	}
+
 	// wrong market id
 	{
 		order := NewMockOrder()
@@ -105,7 +142,7 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 		require.Contains(t, err, "nil")
 	}
 
-	// wrong market BaseCurrency Denom
+	// empty market BaseCurrency Denom
 	{
 		order := NewMockOrder()
 		order.Market.BaseCurrency.Denom = ""
@@ -116,7 +153,18 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 		require.Contains(t, err, "empty")
 	}
 
-	// wrong market QuoteCurrency Denom
+	// wrong market BaseCurrency Denom
+	{
+		order := NewMockOrder()
+		order.Market.BaseCurrency.Denom = "wrong_denom"
+		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		require.Contains(t, err, "market")
+		require.Contains(t, err, "denom")
+		require.Contains(t, err, "baseCurrency")
+		require.Contains(t, err, "invalid")
+	}
+
+	// empty market QuoteCurrency Denom
 	{
 		order := NewMockOrder()
 		order.Market.QuoteCurrency.Denom = ""
@@ -125,5 +173,16 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 		require.Contains(t, err, "denom")
 		require.Contains(t, err, "quote")
 		require.Contains(t, err, "empty")
+	}
+
+	// wrong market QuoteCurrency Denom
+	{
+		order := NewMockOrder()
+		order.Market.QuoteCurrency.Denom = "wrong_denom"
+		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		require.Contains(t, err, "market")
+		require.Contains(t, err, "denom")
+		require.Contains(t, err, "quoteCurrency")
+		require.Contains(t, err, "invalid")
 	}
 }

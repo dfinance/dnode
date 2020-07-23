@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -14,6 +15,15 @@ type Currency struct {
 	Decimals uint8 `json:"decimals" yaml:"decimals" example:"0"`
 	// Total amount of currency coins in Bank
 	Supply sdk.Int `json:"supply" yaml:"supply" swaggertype:"string" example:"100"`
+}
+
+// Valid checks that Currency is valid.
+func (c Currency) Valid() error {
+	if err := dnTypes.DenomFilter(c.Denom); err != nil {
+		return fmt.Errorf("denom is invalid: %v", err)
+	}
+
+	return nil
 }
 
 // GetSupplyCoin creates sdk.Coin with supply amount.
