@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/json"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -26,12 +27,20 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	}
 
 	// issues
-	for _, issue := range state.Issues {
+	for i, issue := range state.Issues {
+		if !k.ccsKeeper.HasCurrency(ctx, issue.Coin.Denom) {
+			panic(fmt.Errorf("issue[%d] denom %q: currency not found", i, issue.Coin.Denom))
+		}
+
 		k.storeIssue(ctx, issue.ID, issue.Issue)
 	}
 
 	// withdraws
-	for _, withdraw := range state.Withdraws {
+	for i, withdraw := range state.Withdraws {
+		if !k.ccsKeeper.HasCurrency(ctx, withdraw.Coin.Denom) {
+			panic(fmt.Errorf("withdraw[%d] denom %q: currency not found", i, withdraw.Coin.Denom))
+		}
+
 		k.storeWithdraw(ctx, withdraw)
 	}
 }
