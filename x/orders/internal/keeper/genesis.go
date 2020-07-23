@@ -19,7 +19,9 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 		k.set(ctx, order)
 	}
 
-	k.setID(ctx, state.LastOrderId)
+	if len(state.Orders) != 0 {
+		k.setID(ctx, state.LastOrderId)
+	}
 }
 
 // ExportGenesis exports module genesis state using current params state.
@@ -40,7 +42,9 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 		state.Orders = append(state.Orders, order)
 	}
 
-	state.LastOrderId, _ = k.getLastID(ctx)
+	if lastOrderId, isFirst := k.getLastID(ctx); !isFirst {
+		state.LastOrderId = lastOrderId
+	}
 
 	return k.cdc.MustMarshalJSON(state)
 }
