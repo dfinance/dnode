@@ -52,14 +52,10 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	}
 
 	// issues
-	for _, issue := range k.getGenesisIssues(ctx) {
-		state.Issues = append(state.Issues, issue)
-	}
+	state.Issues = append(state.Issues, k.getGenesisIssues(ctx)...)
 
 	// withdraws
-	for _, withdraw := range k.getWithdraws(ctx) {
-		state.Withdraws = append(state.Withdraws, withdraw)
-	}
+	state.Withdraws = append(state.Withdraws, k.getWithdraws(ctx)...)
 
 	return k.cdc.MustMarshalJSON(state)
 }
