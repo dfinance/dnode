@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/json"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -29,7 +30,11 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	}
 
 	// calls, uniqueID-callID matches and votes per call
-	for _, callItem := range state.CallItems {
+	for i, callItem := range state.CallItems {
+		if !k.router.HasRoute(callItem.Call.Msg.Route()) {
+			panic(fmt.Errorf("call[%d]: route %q not registered in keepers router", i, callItem.Call.Msg.Route()))
+		}
+
 		k.setCallUniqueIDMatch(ctx, callItem.Call.UniqueID, callItem.Call.ID)
 		k.StoreCall(ctx, callItem.Call)
 		if len(callItem.Votes) > 0 {
