@@ -238,6 +238,69 @@ func TestCurrencyMultisig_REST(t *testing.T) {
 	}
 }
 
+// Trying to recreate bug from Damir: validator reads submitted call by uniqueID, but the following confirm return "not found".
+func TestMS_Damir(t *testing.T) {
+	t.Parallel()
+
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	issuePayeeName := "validator1"
+	issueConfirmerName := "validator2"
+	issueID := "issue1"
+	issueCoin := sdk.NewCoin("eth", sdk.NewInt(100))
+
+	// submit call
+	{
+		q, stdTx := ct.RestQueryCurrenciesIssueStdTx(issuePayeeName, issuePayeeName, issueID, issueCoin, "")
+		q.CheckSucceeded()
+
+		r, _ := ct.NewRestStdTxRequest(issuePayeeName, *stdTx, true)
+		r.CheckSucceeded()
+	}
+	t.Logf("issue submitted")
+
+	// wait for call to appear (poll by uniqueID)
+	var callID dnTypes.ID
+	for i := 0; i < 100; i++ {
+		time.Sleep(5 * time.Millisecond)
+
+		// call by uniqueID
+		req, callByUnique := ct.RestQueryMultiSigUnique(issueID)
+		if err := req.Execute(); err != nil {
+			t.Logf("call receive skipped")
+			continue
+		}
+		callID = callByUnique.Call.ID
+		t.Logf("call received by uniqueID")
+
+		// confirm
+		{
+			q, stdTx := ct.RestQueryMultisigConfirmStdTx(issueConfirmerName, callID, "")
+			q.CheckSucceeded()
+
+			r, _ := ct.NewRestStdTxRequest(issueConfirmerName, *stdTx, true)
+			r.CheckSucceeded()
+
+			t.Logf("call confirmed")
+		}
+
+		// call by ID
+		{
+			req, callByID := ct.RestQueryMultiSigCall(callID)
+			req.CheckSucceeded()
+			t.Logf("call received by callID")
+
+			require.Equal(t, callByUnique.Call.ID.String(), callByID.Call.ID.String())
+			require.Equal(t, callByUnique.Call.UniqueID, callByID.Call.UniqueID)
+		}
+
+		break
+	}
+	require.NoError(t, callID.Valid(), "callID is invalid")
+}
+
 func TestCurrency_REST(t *testing.T) {
 	t.Parallel()
 
