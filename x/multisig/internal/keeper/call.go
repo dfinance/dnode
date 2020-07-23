@@ -94,10 +94,15 @@ func (k Keeper) GetCallIDByUniqueID(ctx sdk.Context, uniqueID string) (dnTypes.I
 func (k Keeper) GetLastCallID(ctx sdk.Context) dnTypes.ID {
 	k.modulePerms.AutoCheck(types.PermRead)
 
-	id := k.nextCallID(ctx)
-	if id.GT(dnTypes.NewIDFromUint64(0)) {
-		return id.Decr()
+	store := ctx.KVStore(k.storeKey)
+
+	if !store.Has(types.LastCallIdKey) {
+		return dnTypes.NewIDFromUint64(0)
 	}
+
+	var id dnTypes.ID
+	bz := store.Get(types.LastCallIdKey)
+	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &id)
 
 	return id
 }
@@ -108,18 +113,6 @@ func (k Keeper) StoreCall(ctx sdk.Context, call types.Call) {
 
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetCallKey(call.ID), k.cdc.MustMarshalBinaryBare(call))
-}
-
-// createCall updates lastCallId, sets uniqueID-callID match, stores a new call and adds call to the queue.
-func (k Keeper) createCall(ctx sdk.Context, call types.Call) {
-	store := ctx.KVStore(k.storeKey)
-
-	store.Set(types.LastCallIdKey, k.cdc.MustMarshalBinaryLengthPrefixed(call.ID))
-	store.Set(types.GetUniqueIDKey(call.UniqueID), k.cdc.MustMarshalBinaryLengthPrefixed(call.ID))
-	k.StoreCall(ctx, call)
-	k.addCallToQueue(ctx, call.ID, call.Height)
-
-	ctx.EventManager().EmitEvent(types.NewCallSubmittedEvent(call))
 }
 
 // getCall returns call from the storage.
@@ -133,17 +126,68 @@ func (k Keeper) getCall(ctx sdk.Context, id dnTypes.ID) types.Call {
 	return call
 }
 
-// nextCallId return next unique call object ID.
+// getCalls returns all registered call objects.
+func (k Keeper) getCalls(ctx sdk.Context) []types.Call {
+	calls := make([]types.Call, 0)
+
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, types.GetCallKeyPrefix())
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var call types.Call
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &call)
+		calls = append(calls, call)
+	}
+
+	return calls
+}
+
+// createCall updates lastCallId, sets uniqueID-callID match, stores a new call and adds call to the queue.
+func (k Keeper) createCall(ctx sdk.Context, call types.Call) {
+	k.setLastCallID(ctx, call.ID)
+	k.setCallUniqueIDMatch(ctx, call.UniqueID, call.ID)
+	k.StoreCall(ctx, call)
+	k.addCallToQueue(ctx, call.ID, call.Height)
+
+	ctx.EventManager().EmitEvent(types.NewCallSubmittedEvent(call))
+}
+
+// setCallUniqueIDMatch
+func (k Keeper) setCallUniqueIDMatch(ctx sdk.Context, uniqueID string, callID dnTypes.ID) {
+	store := ctx.KVStore(k.storeKey)
+
+	store.Set(types.GetUniqueIDKey(uniqueID), k.cdc.MustMarshalBinaryLengthPrefixed(callID))
+}
+
+// nextCallId return next unique call object ID (first is 0).
 func (k Keeper) nextCallID(ctx sdk.Context) dnTypes.ID {
+	id := k.getLastCallID(ctx)
+	if id == nil {
+		return dnTypes.NewZeroID()
+	}
+
+	return id.Incr()
+}
+
+// getLastCallID returns lastCallID from the storage if exists.
+func (k Keeper) getLastCallID(ctx sdk.Context) *dnTypes.ID {
 	store := ctx.KVStore(k.storeKey)
 
 	if !store.Has(types.LastCallIdKey) {
-		return dnTypes.NewIDFromUint64(0)
+		return nil
 	}
 
 	var id dnTypes.ID
 	bz := store.Get(types.LastCallIdKey)
 	k.cdc.MustUnmarshalBinaryLengthPrefixed(bz, &id)
 
-	return id.Incr()
+	return &id
+}
+
+// setLastCallID sets lastCallID to the storage.
+func (k Keeper) setLastCallID(ctx sdk.Context, id dnTypes.ID) {
+	store := ctx.KVStore(k.storeKey)
+
+	store.Set(types.LastCallIdKey, k.cdc.MustMarshalBinaryLengthPrefixed(id))
 }

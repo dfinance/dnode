@@ -37,7 +37,7 @@ func (p *Params) Equal(p2 Params) bool {
 	return p.IntervalToExecute == p2.IntervalToExecute
 }
 
-// Validate validates params.
+// Valid validates params.
 func (p Params) Validate() error {
 	if p.IntervalToExecute < MinIntervalToExecute {
 		return fmt.Errorf("interval to execute calls should be GTE than %d", MinIntervalToExecute)
