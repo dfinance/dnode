@@ -211,6 +211,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		multisig.StoreKey,
 		vm.StoreKey,
 		oracle.StoreKey,
+		markets.StoreKey,
 		orders.StoreKey,
 		orderbook.StoreKey,
 	)
@@ -411,7 +412,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	// MarketKeeper stores asset pair market used by DEX system.
 	app.marketKeeper = markets.NewKeeper(
 		cdc,
-		app.paramsKeeper.Subspace(markets.DefaultParamspace),
+		keys[markets.StoreKey],
 		app.ccsKeeper,
 		orders.RequestMarketsPerms(),
 		appModulePerms(markets.AvailablePermissions),

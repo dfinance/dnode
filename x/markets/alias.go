@@ -15,8 +15,8 @@ type (
 )
 
 const (
-	ModuleName        = types.ModuleName
-	DefaultParamspace = types.DefaultParamspace
+	ModuleName = types.ModuleName
+	StoreKey   = types.StoreKey
 	// Event types, attribute types and values
 	EventTypeCreate = types.EventTypeCreate
 	//
