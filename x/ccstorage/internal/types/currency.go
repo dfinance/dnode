@@ -2,9 +2,10 @@ package types
 
 import (
 	"fmt"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 // Currency is an info object with currency params.
