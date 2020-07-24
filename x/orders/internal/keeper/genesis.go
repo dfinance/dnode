@@ -2,6 +2,8 @@ package keeper
 
 import (
 	"encoding/json"
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/dfinance/dnode/x/orders/internal/types"
@@ -13,12 +15,17 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 
 	state := types.GenesisState{}
 	k.cdc.MustUnmarshalJSON(data, &state)
-	for _, order := range state.Orders {
-		k.set(ctx, order)
-	}
 
 	if err := state.Validate(ctx.BlockTime()); err != nil {
 		panic(err)
+	}
+
+	for _, order := range state.Orders {
+		if _, err := k.marketKeeper.Get(ctx, order.Market.ID); err != nil {
+			panic(fmt.Errorf("market id: %d not found: %v", order.Market.ID.UInt64(), err))
+		}
+
+		k.set(ctx, order)
 	}
 
 	if state.LastOrderId != nil {
