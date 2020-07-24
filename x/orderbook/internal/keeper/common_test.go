@@ -37,6 +37,7 @@ type TestInput struct {
 	keyAccount *sdk.KVStoreKey
 	keySupply  *sdk.KVStoreKey
 	keyCCS     *sdk.KVStoreKey
+	keyMarkets *sdk.KVStoreKey
 	keyOrders  *sdk.KVStoreKey
 	keyOB      *sdk.KVStoreKey
 	keyVMS     *sdk.KVStoreKey
@@ -68,6 +69,7 @@ func NewTestInput(t *testing.T) TestInput {
 		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
 		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
 		keyCCS:     sdk.NewKVStoreKey(ccstorage.StoreKey),
+		keyMarkets: sdk.NewKVStoreKey(markets.StoreKey),
 		keyOrders:  sdk.NewKVStoreKey(orders.StoreKey),
 		keyOB:      sdk.NewKVStoreKey(types.StoreKey),
 		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
@@ -99,6 +101,7 @@ func NewTestInput(t *testing.T) TestInput {
 	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyCCS, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyMarkets, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyOrders, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyOB, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tKeyParams, sdk.StoreTypeTransient, db)
@@ -118,7 +121,7 @@ func NewTestInput(t *testing.T) TestInput {
 	)
 	input.marketKeeper = markets.NewKeeper(
 		input.cdc,
-		input.paramsKeeper.Subspace(markets.DefaultParamspace),
+		input.keyMarkets,
 		input.ccsKeeper,
 		orders.RequestMarketsPerms(),
 	)

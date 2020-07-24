@@ -1,6 +1,6 @@
 package types
 
 const (
-	ModuleName        = "markets"
-	DefaultParamspace = ModuleName
+	ModuleName = "markets"
+	StoreKey   = ModuleName
 )
