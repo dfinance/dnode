@@ -5,11 +5,14 @@ import (
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/gorilla/mux"
 
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
+	msClient "github.com/dfinance/dnode/x/multisig/client"
 )
 
 const (
@@ -18,6 +21,26 @@ const (
 	WithdrawID = "withdrawID"
 )
 
+type SubmitIssueReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	// Issue unique ID (could be txHash of transaction in another blockchain)
+	ID string `json:"id" yaml:"id"`
+	// Target currency issue coin
+	Coin sdk.Coin `json:"coin" yaml:"coin"`
+	// Payee account (whose balance is increased)
+	Payee string `json:"payee" yaml:"payee" format:"bech32/hex" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+}
+
+type WithdrawReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	// Target currency withdraw coin
+	Coin sdk.Coin `json:"coin" yaml:"coin"`
+	// Second blockchain: payee account (whose balance is increased)
+	PegZonePayee string `json:"pegzone_payee" yaml:"pegzone_payee"`
+	// Second blockchain: ID
+	PegZoneChainID string `json:"pegzone_chain_id" yaml:"pegzone_chain_id"`
+}
+
 // RegisterRoutes adds endpoint to REST router.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/currency/{%s}", types.ModuleName, Denom), getCurrency(cliCtx)).Methods("GET")
@@ -25,6 +48,8 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/issue/{%s}", types.ModuleName, IssueID), getIssue(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/withdraw/{%s}", types.ModuleName, WithdrawID), getWithdraw(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/withdraws", types.ModuleName), getWithdraws(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/issue", types.ModuleName), submitIssue(cliCtx)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("/%s/withdraw", types.ModuleName), withdraw(cliCtx)).Methods("PUT")
 }
 
 // GetCurrency godoc
@@ -203,5 +228,119 @@ func getWithdraw(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+// SubmitIssue godoc
+// @Tags Currencies
+// @Summary Submit issue
+// @Description Get submit new issue multi signature message stdTx object
+// @ID currenciesSubmitIssue
+// @Accept  json
+// @Produce json
+// @Param request body SubmitIssueReq true "Submit issue request"
+// @Success 200 {object} CCRespStdTx
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /currencies/issue [put]
+func submitIssue(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs
+		var req SubmitIssueReq
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, err := helpers.ParseSdkAddressParam("from", baseReq.From, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		coin, err := helpers.ParseCoinParam("coin", req.Coin.String(), helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		payeeAddr, err := helpers.ParseSdkAddressParam("payee", req.Payee, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		issueID := req.ID
+
+		// create the message
+		msg := types.NewMsgIssueCurrency(issueID, coin, payeeAddr)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		callMsg := msClient.NewMsgSubmitCall(msg, issueID, fromAddr)
+		if err := callMsg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{callMsg})
+	}
+}
+
+// Withdraw godoc
+// @Tags Currencies
+// @Summary Withdraw currency
+// @Description Get withdraw currency coins from account balance stdTx object
+// @ID currenciesWithdraw
+// @Accept  json
+// @Produce json
+// @Param request body WithdrawReq true "Withdraw request"
+// @Success 200 {object} CCRespStdTx
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /currencies/withdraw [put]
+func withdraw(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs
+		var req WithdrawReq
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, err := helpers.ParseSdkAddressParam("from", baseReq.From, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		coin, err := helpers.ParseCoinParam("coin", req.Coin.String(), helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		pzPayee := req.PegZonePayee
+		pzChainID := req.PegZoneChainID
+
+		// create the message
+		msg := types.NewMsgWithdrawCurrency(coin, fromAddr, pzPayee, pzChainID)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
 	}
 }

@@ -13,6 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	restTypes "github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
@@ -20,11 +21,285 @@ import (
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
+	msClient "github.com/dfinance/dnode/x/multisig/client"
 	"github.com/dfinance/dnode/x/oracle"
 	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/orders/client/rest"
 	"github.com/dfinance/dnode/x/vm"
 )
+
+func TestCurrencyMultisig_REST(t *testing.T) {
+	t.Parallel()
+
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	validatorAccNames := make([]string, 0)
+	for name, accInfo := range ct.Accounts {
+		if accInfo.IsPOAValidator {
+			validatorAccNames = append(validatorAccNames, name)
+		}
+	}
+
+	checkConfirmStdTx := func(stdTx auth.StdTx, validatorName string, callID dnTypes.ID) {
+		validatorAddr := ct.Accounts[validatorName].Address
+
+		// verify stdTx
+		require.Len(t, stdTx.Msgs, 1)
+		require.IsType(t, msClient.MsgConfirmCall{}, stdTx.Msgs[0])
+		confirmMsg := stdTx.Msgs[0].(msClient.MsgConfirmCall)
+		require.Equal(t, validatorAddr, confirmMsg.Sender.String())
+		require.Equal(t, callID.String(), confirmMsg.CallID.String())
+
+		// do request
+		r, _ := ct.NewRestStdTxRequest(validatorName, stdTx, false)
+		r.CheckSucceeded()
+
+		// check vote added
+		q, call := ct.RestQueryMultiSigCall(callID)
+		q.CheckSucceeded()
+
+		voteFound := false
+		for _, voteAddr := range call.Votes {
+			if voteAddr.String() == validatorAddr {
+				voteFound = true
+				break
+			}
+		}
+		require.True(t, voteFound)
+	}
+
+	checkRevokeStdTx := func(stdTx auth.StdTx, validatorName string, callID dnTypes.ID) {
+		validatorAddr := ct.Accounts[validatorName].Address
+
+		// verify stdTx
+		require.Len(t, stdTx.Msgs, 1)
+		require.IsType(t, msClient.MsgRevokeConfirm{}, stdTx.Msgs[0])
+		confirmMsg := stdTx.Msgs[0].(msClient.MsgRevokeConfirm)
+		require.Equal(t, validatorAddr, confirmMsg.Sender.String())
+		require.Equal(t, callID.String(), confirmMsg.CallID.String())
+
+		// do request
+		r, _ := ct.NewRestStdTxRequest(validatorName, stdTx, false)
+		r.CheckSucceeded()
+
+		// check vote removed
+		q, call := ct.RestQueryMultiSigCall(callID)
+		q.CheckSucceeded()
+
+		voteFound := false
+		for _, voteAddr := range call.Votes {
+			if voteAddr.String() == validatorAddr {
+				voteFound = true
+				break
+			}
+		}
+		require.False(t, voteFound)
+	}
+
+	issueCreatorName := "validator1"
+	issuePayeeName := "validator2"
+	issueCoin := sdk.NewCoin("eth", sdk.NewInt(100))
+
+	for issueIdx := 0; issueIdx < 5; issueIdx++ {
+		curIssueID := fmt.Sprintf("issue_%d", issueIdx)
+		var curCallID dnTypes.ID
+
+		// check currencies submit issue currency endpoint
+		{
+			t.Logf("issue %q: check issueCurrency StdTx", curIssueID)
+
+			// get stdTx from PUT endpoint
+			q, stdTx := ct.RestQueryCurrenciesIssueStdTx(issueCreatorName, issuePayeeName, curIssueID, issueCoin, "")
+			q.CheckSucceeded()
+
+			// verify stdTx
+			{
+				require.Len(t, stdTx.Msgs, 1)
+				require.IsType(t, msClient.MsgSubmitCall{}, stdTx.Msgs[0])
+				submitMsg := stdTx.Msgs[0].(msClient.MsgSubmitCall)
+				require.IsType(t, currencies.MsgIssueCurrency{}, submitMsg.Msg)
+				issueMsg := submitMsg.Msg.(currencies.MsgIssueCurrency)
+				require.Equal(t, curIssueID, issueMsg.ID)
+				require.True(t, issueCoin.IsEqual(issueMsg.Coin))
+				require.Equal(t, ct.Accounts[issuePayeeName].Address, issueMsg.Payee.String())
+			}
+
+			t.Logf("issue %q: check issueCurrency Tx request", curIssueID)
+
+			r, _ := ct.NewRestStdTxRequest(issueCreatorName, *stdTx, false)
+			r.CheckSucceeded()
+
+			// verify call submitted
+			{
+				q, call := ct.QueryMultiSigUnique(curIssueID)
+				q.CheckSucceeded()
+
+				require.Equal(t, ct.Accounts[issueCreatorName].Address, call.Call.Creator.String())
+				require.Len(t, call.Votes, 1)
+				require.Equal(t, ct.Accounts[issueCreatorName].Address, call.Votes[0].String())
+
+				curCallID = call.Call.ID
+			}
+		}
+
+		// confirm and revoke call (checking multisig confirm/revoke endpoints)
+		{
+			confirmerName := "validator2"
+
+			// confirm
+			{
+				t.Logf("issue %q [%s]: check revokeCall: confirm", curIssueID, curCallID.String())
+
+				q, stdTx := ct.RestQueryMultisigConfirmStdTx(confirmerName, curCallID, "")
+				q.CheckSucceeded()
+
+				checkConfirmStdTx(*stdTx, confirmerName, curCallID)
+			}
+
+			// revoke
+			{
+				t.Logf("issue %q [%s]: check revokeCall: revoke", curIssueID, curCallID.String())
+
+				q, stdTx := ct.RestQueryMultisigRevokeStdTx(confirmerName, curCallID, "")
+				q.CheckSucceeded()
+
+				checkRevokeStdTx(*stdTx, confirmerName, curCallID)
+			}
+		}
+
+		// approve call by PoA voting
+		{
+			requiredVotes := len(validatorAccNames)/2 + 1
+
+			q, call := ct.QueryMultiSigCall(curCallID)
+			q.CheckSucceeded()
+			require.Len(t, call.Votes, 1)
+			t.Logf("issue %q [%s]: current votes: %d / %d", curIssueID, curCallID.String(), len(call.Votes), requiredVotes)
+
+			curVotes := 1
+			for _, validatorAccName := range validatorAccNames {
+				if validatorAccName == issueCreatorName {
+					continue
+				}
+
+				t.Logf("issue %q [%s]: check voting: confirm by %s", curIssueID, curCallID.String(), validatorAccName)
+
+				q, stdTx := ct.RestQueryMultisigConfirmStdTx(validatorAccName, curCallID, "")
+				q.CheckSucceeded()
+
+				checkConfirmStdTx(*stdTx, validatorAccName, curCallID)
+
+				curVotes++
+				if curVotes == requiredVotes {
+					break
+				}
+			}
+		}
+
+		// check call approved
+		{
+			t.Logf("issue %q [%s]: check call approved", curIssueID, curCallID.String())
+
+			q, call := ct.QueryMultiSigCall(curCallID)
+			q.CheckSucceeded()
+
+			require.True(t, call.Call.Approved)
+		}
+	}
+
+	// check currencies withdraw currency endpoint
+	{
+		t.Logf("withdraw 0: check withdrawCurrency stdTx")
+
+		withdrawCoin := sdk.NewCoin("eth", sdk.NewInt(50))
+		pzAddress, pzChainID := "pz_addr", "pz_chainID"
+
+		// get stdTx from PUT endpoint
+		q, stdTx := ct.RestQueryCurrenciesWithdrawStdTx(issuePayeeName, pzAddress, pzChainID, withdrawCoin, "")
+		q.CheckSucceeded()
+
+		// verify stdTx
+		{
+			require.Len(t, stdTx.Msgs, 1)
+			require.IsType(t, currencies.MsgWithdrawCurrency{}, stdTx.Msgs[0])
+			withdrawMsg := stdTx.Msgs[0].(currencies.MsgWithdrawCurrency)
+			require.True(t, withdrawCoin.IsEqual(withdrawMsg.Coin))
+			require.Equal(t, ct.Accounts[issuePayeeName].Address, withdrawMsg.Payer.String())
+			require.Equal(t, pzAddress, withdrawMsg.PegZonePayee)
+			require.Equal(t, pzChainID, withdrawMsg.PegZoneChainID)
+		}
+
+		t.Logf("withdraw 0: check withdrawCurrency request")
+
+		r, _ := ct.NewRestStdTxRequest(issuePayeeName, *stdTx, false)
+		r.CheckSucceeded()
+	}
+}
+
+// Trying to recreate bug from Damir: validator reads submitted call by uniqueID, but the following confirm return "not found".
+func TestMS_Damir(t *testing.T) {
+	t.Parallel()
+
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	issuePayeeName := "validator1"
+	issueConfirmerName := "validator2"
+	issueID := "issue1"
+	issueCoin := sdk.NewCoin("eth", sdk.NewInt(100))
+
+	// submit call
+	{
+		q, stdTx := ct.RestQueryCurrenciesIssueStdTx(issuePayeeName, issuePayeeName, issueID, issueCoin, "")
+		q.CheckSucceeded()
+
+		r, _ := ct.NewRestStdTxRequest(issuePayeeName, *stdTx, true)
+		r.CheckSucceeded()
+	}
+	t.Logf("issue submitted")
+
+	// wait for call to appear (poll by uniqueID)
+	var callID dnTypes.ID
+	for i := 0; i < 100; i++ {
+		time.Sleep(5 * time.Millisecond)
+
+		// call by uniqueID
+		req, callByUnique := ct.RestQueryMultiSigUnique(issueID)
+		if err := req.Execute(); err != nil {
+			t.Logf("call receive skipped")
+			continue
+		}
+		callID = callByUnique.Call.ID
+		t.Logf("call received by uniqueID")
+
+		// confirm
+		{
+			q, stdTx := ct.RestQueryMultisigConfirmStdTx(issueConfirmerName, callID, "")
+			q.CheckSucceeded()
+
+			r, _ := ct.NewRestStdTxRequest(issueConfirmerName, *stdTx, true)
+			r.CheckSucceeded()
+
+			t.Logf("call confirmed")
+		}
+
+		// call by ID
+		{
+			req, callByID := ct.RestQueryMultiSigCall(callID)
+			req.CheckSucceeded()
+			t.Logf("call received by callID")
+
+			require.Equal(t, callByUnique.Call.ID.String(), callByID.Call.ID.String())
+			require.Equal(t, callByUnique.Call.UniqueID, callByID.Call.UniqueID)
+		}
+
+		break
+	}
+	require.NoError(t, callID.Valid(), "callID is invalid")
+}
 
 func TestCurrency_REST(t *testing.T) {
 	t.Parallel()

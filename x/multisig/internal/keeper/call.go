@@ -67,7 +67,7 @@ func (k Keeper) GetCall(ctx sdk.Context, id dnTypes.ID) (types.Call, error) {
 	k.modulePerms.AutoCheck(types.PermRead)
 
 	if !k.HasCall(ctx, id) {
-		return types.Call{}, sdkErrors.Wrapf(types.ErrWrongCallId, "%d not found", id)
+		return types.Call{}, sdkErrors.Wrapf(types.ErrWrongCallId, "%s not found", id.String())
 	}
 
 	return k.getCall(ctx, id), nil

@@ -19,11 +19,14 @@ const (
 	blockHeightKey = "blockHeight"
 )
 
-type postPriceReq struct {
-	BaseReq    rest.BaseReq `json:"base_req" yaml:"base_req"`
-	AssetCode  string       `json:"asset_code" example:"btc_dfi"`                                        // AssetCode
-	Price      string       `json:"price" example:"100"`                                                 // Price in big.Int format
-	ReceivedAt string       `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"` // Timestamp Price createdAt
+type PostPriceReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	// AssetCode
+	AssetCode string `json:"asset_code" example:"btc_dfi"`
+	// Price in big.Int format
+	Price string `json:"price" example:"100"`
+	// Timestamp price createdAt
+	ReceivedAt string `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
 
 // RegisterRoutes Central function to define routes that get registered by the main application
@@ -41,7 +44,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 // @ID oraclePostPrice
 // @Accept  json
 // @Produce json
-// @Param postRequest body postPriceReq true "PostPrice request with signed transaction"
+// @Param postRequest body PostPriceReq true "PostPrice request with signed transaction"
 // @Success 200 {object} OracleRespGetAssets
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
@@ -49,7 +52,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs
-		var req postPriceReq
+		var req PostPriceReq
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return

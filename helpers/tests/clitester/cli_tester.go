@@ -2,7 +2,6 @@ package clitester
 
 import (
 	"fmt"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 
 	"github.com/99designs/keyring"
 	"github.com/cosmos/cosmos-sdk/codec"
