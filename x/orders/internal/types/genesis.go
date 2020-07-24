@@ -24,11 +24,11 @@ func (gs GenesisState) Validate(blockTime time.Time) error {
 			return fmt.Errorf("order[%d]: %w", i, err)
 		}
 
-		if order.CreatedAt.After(blockTime) {
+		if !blockTime.IsZero() && order.CreatedAt.After(blockTime) {
 			return fmt.Errorf("order[%d]: create_at after block time", i)
 		}
 
-		if order.UpdatedAt.After(blockTime) {
+		if !blockTime.IsZero() && order.UpdatedAt.After(blockTime) {
 			return fmt.Errorf("order[%d]: updated_at after block time", i)
 		}
 
