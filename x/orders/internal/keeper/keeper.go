@@ -99,40 +99,36 @@ func (k Keeper) GetLogger(ctx sdk.Context) log.Logger {
 
 // nextID return next unique order object ID.
 func (k Keeper) nextID(ctx sdk.Context) dnTypes.ID {
-	id, isFirst := k.getLastID(ctx)
-	if isFirst {
-		return id
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has(types.LastOrderIDKey) {
+		return dnTypes.NewIDFromUint64(0)
 	}
 
-	return id.Incr()
+	lastID := k.getLastOrderID(ctx)
+
+	return lastID.Incr()
+}
+
+// getLastOrderID gets lastOrderID from the storage.
+func (k Keeper) getLastOrderID(ctx sdk.Context) dnTypes.ID {
+	store := ctx.KVStore(k.storeKey)
+	id := dnTypes.ID{}
+	k.cdc.MustUnmarshalBinaryBare(store.Get(types.LastOrderIDKey), &id)
+
+	return id
+}
+
+// hasLastOrderID checks that LastOrderID exists in the storage.
+func (k Keeper) hasLastOrderID(ctx sdk.Context) bool {
+	store := ctx.KVStore(k.storeKey)
+
+	return store.Has(types.LastOrderIDKey)
 }
 
 // setID sets last unique order object ID.
 func (k Keeper) setID(ctx sdk.Context, id dnTypes.ID) {
 	store := ctx.KVStore(k.storeKey)
-
-	bz, err := k.cdc.MarshalBinaryLengthPrefixed(id)
-	if err != nil {
-		panic(fmt.Errorf("lastOrderID marshal: %w", err))
-	}
-
-	store.Set(types.LastOrderIDKey, bz)
-}
-
-// getLastID returns last unique order object ID.
-func (k Keeper) getLastID(ctx sdk.Context) (id dnTypes.ID, isFirst bool) {
-	store := ctx.KVStore(k.storeKey)
-	if !store.Has(types.LastOrderIDKey) {
-		return dnTypes.NewIDFromUint64(0), true
-	}
-
-	bz := store.Get(types.LastOrderIDKey)
-	id = dnTypes.ID{}
-	if err := k.cdc.UnmarshalBinaryLengthPrefixed(bz, &id); err != nil {
-		panic(fmt.Errorf("lastOrderID unmarshal: %w", err))
-	}
-
-	return id, false
+	store.Set(types.LastOrderIDKey, k.cdc.MustMarshalBinaryBare(id))
 }
 
 // NewKeeper creates keeper object.

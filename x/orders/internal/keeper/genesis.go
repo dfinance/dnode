@@ -19,8 +19,12 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 		k.set(ctx, order)
 	}
 
-	if len(state.Orders) != 0 {
-		k.setID(ctx, state.LastOrderId)
+	if err := state.Validate(); err != nil {
+		panic(err)
+	}
+
+	if state.LastOrderId != nil {
+		k.setID(ctx, *state.LastOrderId)
 	}
 }
 
@@ -42,8 +46,9 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 		state.Orders = append(state.Orders, order)
 	}
 
-	if lastOrderId, isFirst := k.getLastID(ctx); !isFirst {
-		state.LastOrderId = lastOrderId
+	if ok := k.hasLastOrderID(ctx); ok {
+		lastID := k.getLastOrderID(ctx)
+		state.LastOrderId = &lastID
 	}
 
 	return k.cdc.MustMarshalJSON(state)
