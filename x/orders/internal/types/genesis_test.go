@@ -13,6 +13,14 @@ import (
 	"github.com/dfinance/dnode/helpers/types"
 )
 
+func getTestGenesisState() GenesisState {
+	order := NewMockOrder()
+	return GenesisState{
+		Orders:      Orders{order},
+		LastOrderId: &order.ID,
+	}
+}
+
 func TestOrders_Genesis_Valid(t *testing.T) {
 	//validateGenesis ok
 	{
@@ -31,7 +39,7 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 			Orders:      Orders{order, order2, order3},
 			LastOrderId: &order3.ID,
 		}
-		require.NoError(t, state.Validate())
+		require.NoError(t, state.Validate(time.Now()))
 		require.False(t, state.IsEmpty())
 
 		require.False(t, GenesisState{Orders: Orders{order2}}.Equal(GenesisState{Orders: Orders{order3}}))
@@ -40,27 +48,27 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 
 	// wrong id
 	{
-		order := NewMockOrder()
-		order.ID, _ = types.NewIDFromString("")
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].ID, _ = types.NewIDFromString("")
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "id")
 		require.Contains(t, err, "nil")
 	}
 
 	//validateGenesis wrong owner
 	{
-		order := NewMockOrder()
-		order.Owner = sdk.AccAddress{}
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Owner = sdk.AccAddress{}
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "owner")
 		require.Contains(t, err, "empty")
 	}
 
 	// wrong owner
 	{
-		order := NewMockOrder()
-		order.Owner = sdk.AccAddress(strings.Repeat("0", 50))
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Owner = sdk.AccAddress(strings.Repeat("0", 50))
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "owner")
 		require.Contains(t, err, "format")
 		require.Contains(t, err, "wrong")
@@ -68,37 +76,37 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 
 	// wrong direction
 	{
-		order := NewMockOrder()
-		order.Direction = "wrong"
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Direction = "wrong"
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "direction")
 		require.Contains(t, err, "invalid")
 	}
 
 	// wrong price
 	{
-		order := NewMockOrder()
-		order.Price = sdk.NewUint(0)
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Price = sdk.NewUint(0)
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "price")
 		require.Contains(t, err, "zero")
 	}
 
 	// wrong quantity
 	{
-		order := NewMockOrder()
-		order.Quantity = sdk.NewUint(0)
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Quantity = sdk.NewUint(0)
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "quantity")
 		require.Contains(t, err, "zero")
 	}
 
 	// wrong dates
 	{
-		order := NewMockOrder()
-		order.CreatedAt = time.Unix(2, 0)
-		order.UpdatedAt = time.Unix(1, 0)
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].CreatedAt = time.Unix(2, 0)
+		state.Orders[0].UpdatedAt = time.Unix(1, 0)
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "wrong create and update dates")
 	}
 
@@ -106,20 +114,20 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 	{
 		// CreatedAt
 		{
-			order := NewMockOrder()
-			order.CreatedAt = time.Now().Add(time.Hour * 10)
-			order.UpdatedAt = time.Now().Add(time.Hour * 11)
-			err := GenesisState{Orders: Orders{order}}.Validate().Error()
+			state := getTestGenesisState()
+			state.Orders[0].CreatedAt = time.Now().Add(time.Hour * 10)
+			state.Orders[0].UpdatedAt = time.Now().Add(time.Hour * 11)
+			err := state.Validate(time.Now()).Error()
 			require.Contains(t, err, "created_at")
 			require.Contains(t, err, "future date")
 		}
 
 		// UpdatedAt
 		{
-			order := NewMockOrder()
-			order.CreatedAt = time.Now().Truncate(time.Hour)
-			order.UpdatedAt = time.Now().Add(time.Hour * 1)
-			err := GenesisState{Orders: Orders{order}}.Validate().Error()
+			state := getTestGenesisState()
+			state.Orders[0].CreatedAt = time.Now().Truncate(time.Hour)
+			state.Orders[0].UpdatedAt = time.Now().Add(time.Hour * 1)
+			err := state.Validate(time.Now()).Error()
 			require.Contains(t, err, "updated_at")
 			require.Contains(t, err, "future date")
 		}
@@ -129,9 +137,9 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 	{
 		// CreatedAt
 		{
-			order := NewMockOrder()
-			order.CreatedAt = time.Time{}
-			err := GenesisState{Orders: Orders{order}}.Validate().Error()
+			state := getTestGenesisState()
+			state.Orders[0].CreatedAt = time.Time{}
+			err := state.Validate(time.Now()).Error()
 			require.Contains(t, err, "created_at")
 			require.Contains(t, err, "zero")
 		}
@@ -139,9 +147,9 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 
 	// wrong market id
 	{
-		order := NewMockOrder()
-		order.Market.ID, _ = types.NewIDFromString("")
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Market.ID, _ = types.NewIDFromString("")
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "market")
 		require.Contains(t, err, "id")
 		require.Contains(t, err, "nil")
@@ -149,9 +157,9 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 
 	// empty market BaseCurrency Denom
 	{
-		order := NewMockOrder()
-		order.Market.BaseCurrency.Denom = ""
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Market.BaseCurrency.Denom = ""
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "market")
 		require.Contains(t, err, "denom")
 		require.Contains(t, err, "base")
@@ -160,9 +168,9 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 
 	// wrong market BaseCurrency Denom
 	{
-		order := NewMockOrder()
-		order.Market.BaseCurrency.Denom = "wrong_denom"
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Market.BaseCurrency.Denom = "wrong_denom"
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "market")
 		require.Contains(t, err, "denom")
 		require.Contains(t, err, "base_currency")
@@ -171,9 +179,9 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 
 	// empty market QuoteCurrency Denom
 	{
-		order := NewMockOrder()
-		order.Market.QuoteCurrency.Denom = ""
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Market.QuoteCurrency.Denom = ""
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "market")
 		require.Contains(t, err, "denom")
 		require.Contains(t, err, "quote")
@@ -182,9 +190,9 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 
 	// wrong market QuoteCurrency Denom
 	{
-		order := NewMockOrder()
-		order.Market.QuoteCurrency.Denom = "wrong_denom"
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		state := getTestGenesisState()
+		state.Orders[0].Market.QuoteCurrency.Denom = "wrong_denom"
+		err := state.Validate(time.Now()).Error()
 		require.Contains(t, err, "market")
 		require.Contains(t, err, "denom")
 		require.Contains(t, err, "quote_currency")
@@ -194,7 +202,7 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 	// empty orders, existiong lastId
 	{
 		id := types.NewIDFromUint64(1)
-		err := GenesisState{LastOrderId: &id}.Validate().Error()
+		err := GenesisState{LastOrderId: &id}.Validate(time.Now()).Error()
 		require.Contains(t, err, "last_order_id")
 		require.Contains(t, err, "not nil")
 		require.Contains(t, err, "without")
@@ -204,7 +212,7 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 	// empty orders, without lastId
 	{
 		order := NewMockOrder()
-		err := GenesisState{Orders: Orders{order}}.Validate().Error()
+		err := GenesisState{Orders: Orders{order}}.Validate(time.Now()).Error()
 		require.Contains(t, err, "last_order_id")
 		require.Contains(t, err, "nil")
 		require.Contains(t, err, "existing")
@@ -223,9 +231,30 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 		err := GenesisState{
 			Orders:      Orders{order, order2},
 			LastOrderId: &id,
-		}.Validate().Error()
+		}.Validate(time.Now()).Error()
 
 		require.Contains(t, err, "last_order_id")
 		require.Contains(t, err, "not equal to max order ID")
+	}
+
+	// updatedAt later than block time
+	{
+		state := getTestGenesisState()
+		state.Orders[0].UpdatedAt = time.Now().Add(time.Hour)
+		err := state.Validate(time.Now()).Error()
+
+		require.Contains(t, err, "updated_at")
+		require.Contains(t, err, "future date")
+	}
+
+	// createdAt later than block time
+	{
+		state := getTestGenesisState()
+		state.Orders[0].CreatedAt = time.Now().Add(time.Hour)
+		state.Orders[0].UpdatedAt = time.Now().Add(time.Hour * 2)
+		err := state.Validate(time.Now()).Error()
+
+		require.Contains(t, err, "created_at")
+		require.Contains(t, err, "future date")
 	}
 }

@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
@@ -14,13 +15,21 @@ type GenesisState struct {
 }
 
 // Validate checks that genesis state is valid.
-func (gs GenesisState) Validate() error {
+func (gs GenesisState) Validate(blockTime time.Time) error {
 	maxOrderID := dnTypes.NewZeroID()
 	ordersIdsSet := make(map[string]bool, len(gs.Orders))
 
 	for i, order := range gs.Orders {
 		if err := order.Valid(); err != nil {
 			return fmt.Errorf("order[%d]: %w", i, err)
+		}
+
+		if order.CreatedAt.After(blockTime) {
+			return fmt.Errorf("order[%d]: create_at after block time", i)
+		}
+
+		if order.UpdatedAt.After(blockTime) {
+			return fmt.Errorf("order[%d]: updated_at after block time", i)
 		}
 
 		if ordersIdsSet[order.ID.String()] {

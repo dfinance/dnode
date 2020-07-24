@@ -2,8 +2,6 @@ package keeper
 
 import (
 	"encoding/json"
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/dfinance/dnode/x/orders/internal/types"
@@ -19,7 +17,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 		k.set(ctx, order)
 	}
 
-	if err := state.Validate(); err != nil {
+	if err := state.Validate(ctx.BlockTime()); err != nil {
 		panic(err)
 	}
 
@@ -34,17 +32,12 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 
 	state := types.GenesisState{}
 
-	iterator := k.GetIterator(ctx)
-	defer iterator.Close()
-
-	for ; iterator.Valid(); iterator.Next() {
-		order := types.Order{}
-		if err := k.cdc.UnmarshalBinaryLengthPrefixed(iterator.Value(), &order); err != nil {
-			panic(fmt.Sprintf("order unmarshal: %v", err))
-		}
-
-		state.Orders = append(state.Orders, order)
+	orders, err := k.GetList(ctx)
+	if err != nil {
+		panic(err)
 	}
+
+	state.Orders = append(state.Orders, orders...)
 
 	if ok := k.hasLastOrderID(ctx); ok {
 		lastID := k.getLastOrderID(ctx)

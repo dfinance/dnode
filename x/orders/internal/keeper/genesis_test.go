@@ -4,6 +4,7 @@ package keeper
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -23,6 +24,7 @@ func TestOrdersKeeper_Genesis_Init(t *testing.T) {
 
 	keeper := input.keeper
 	ctx := input.ctx
+	ctx = ctx.WithBlockTime(time.Now().Add(time.Hour))
 	cdc := input.cdc
 
 	// default genesis

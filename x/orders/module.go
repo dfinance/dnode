@@ -3,6 +3,7 @@ package orders
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -46,7 +47,7 @@ func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	state := GenesisState{}
 	ModuleCdc.MustUnmarshalJSON(bz, &state)
 
-	return state.Validate()
+	return state.Validate(time.Unix(0, 0))
 }
 
 // RegisterRESTRoutes registers module REST routes.
