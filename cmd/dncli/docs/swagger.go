@@ -621,12 +621,12 @@ definitions:
       voter:
         type: string
     type: object
+  auth.StdTx:
+    $ref: '#/definitions/types.StdTx'
   ccstorage.Currencies:
     $ref: '#/definitions/types.Currencies'
   ccstorage.Currency:
     $ref: '#/definitions/types.Currency'
-  crypto.PubKey:
-    type: object
   markets.MarketExtended:
     $ref: '#/definitions/types.MarketExtended'
   msmodule.MsMsg:
@@ -696,6 +696,14 @@ definitions:
         $ref: '#/definitions/types.Withdraws'
         type: object
     type: object
+  rest.CCRespStdTx:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/auth.StdTx'
+        type: object
+    type: object
   rest.CompileReq:
     properties:
       address:
@@ -705,6 +713,17 @@ definitions:
         type: string
       code:
         description: Script source code
+        type: string
+    type: object
+  rest.ConfirmReq:
+    properties:
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      call_id:
+        description: Confirming CallID
+        example: "0"
+        format: string representation for big.Uint
         type: string
     type: object
   rest.ErrorResponse:
@@ -869,6 +888,25 @@ definitions:
         example: "3"
         type: string
     type: object
+  rest.PostPriceReq:
+    properties:
+      asset_code:
+        description: AssetCode
+        example: btc_dfi
+        type: string
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      price:
+        description: Price in big.Int format
+        example: "100"
+        type: string
+      received_at:
+        description: Timestamp price createdAt
+        example: "2020-03-27T13:45:15.293426Z"
+        format: RFC 3339
+        type: string
+    type: object
   rest.RevokeOrderMsg:
     properties:
       type:
@@ -884,6 +922,35 @@ definitions:
         type: object
       order_id:
         example: "100"
+        type: string
+    type: object
+  rest.RevokeReq:
+    properties:
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      call_id:
+        description: Confirming CallID
+        example: "0"
+        format: string representation for big.Uint
+        type: string
+    type: object
+  rest.SubmitIssueReq:
+    properties:
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      coin:
+        $ref: '#/definitions/types.Coin'
+        description: Target currency issue coin
+        type: object
+      id:
+        description: Issue unique ID (could be txHash of transaction in another blockchain)
+        type: string
+      payee:
+        description: Payee account (whose balance is increased)
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32/hex
         type: string
     type: object
   rest.VmData:
@@ -910,23 +977,20 @@ definitions:
         $ref: '#/definitions/types.TxVMStatus'
         type: object
     type: object
-  rest.postPriceReq:
+  rest.WithdrawReq:
     properties:
-      asset_code:
-        description: AssetCode
-        example: btc_dfi
-        type: string
       base_req:
         $ref: '#/definitions/rest.BaseReq'
         type: object
-      price:
-        description: Price in big.Int format
-        example: "100"
+      coin:
+        $ref: '#/definitions/types.Coin'
+        description: Target currency withdraw coin
+        type: object
+      pegzone_chain_id:
+        description: 'Second blockchain: ID'
         type: string
-      received_at:
-        description: Timestamp Price createdAt
-        example: "2020-03-27T13:45:15.293426Z"
-        format: RFC 3339
+      pegzone_payee:
+        description: 'Second blockchain: payee account (whose balance is increased)'
         type: string
     type: object
   types.AccAddress:
@@ -1031,24 +1095,6 @@ definitions:
     items:
       $ref: '#/definitions/types.Coin'
     type: array
-  types.Commission:
-    properties:
-      max_change_rate:
-        $ref: '#/definitions/types.Dec'
-        description: maximum daily increase of the validator commission, as a fraction
-        type: object
-      max_rate:
-        $ref: '#/definitions/types.Dec'
-        description: maximum commission rate which validator can ever charge, as a fraction
-        type: object
-      rate:
-        $ref: '#/definitions/types.Dec'
-        description: the commission rate charged to delegators, as a fraction
-        type: object
-      update_time:
-        description: the last time the commission rate was changed
-        type: string
-    type: object
   types.Currencies:
     items:
       $ref: '#/definitions/types.Currency'
@@ -1104,24 +1150,6 @@ definitions:
     items:
       $ref: '#/definitions/types.DecCoin'
     type: array
-  types.Description:
-    properties:
-      details:
-        description: optional details
-        type: string
-      identity:
-        description: optional identity signature (ex. UPort or Keybase)
-        type: string
-      moniker:
-        description: name
-        type: string
-      security_contact:
-        description: optional security contact info
-        type: string
-      website:
-        description: optional website link
-        type: string
-    type: object
   types.ID:
     $ref: '#/definitions/sdk.Uint'
   types.Int:
@@ -1174,6 +1202,8 @@ definitions:
     items:
       $ref: '#/definitions/types.Market'
     type: array
+  types.Msg:
+    type: object
   types.MsgPostOrder:
     properties:
       asset_code:
@@ -1296,6 +1326,22 @@ definitions:
           type: integer
         type: array
     type: object
+  types.StdTx:
+    properties:
+      fee:
+        $ref: '#/definitions/types.StdFee'
+        type: object
+      memo:
+        type: string
+      msg:
+        items:
+          $ref: '#/definitions/types.Msg'
+        type: array
+      signatures:
+        items:
+          $ref: '#/definitions/types.StdSignature'
+        type: array
+    type: object
   types.TxVMStatus:
     properties:
       hash:
@@ -1328,52 +1374,15 @@ definitions:
     items:
       $ref: '#/definitions/types.VMStatus'
     type: array
-  types.ValAddress:
-    items:
-      type: integer
-    type: array
   types.Validator:
     properties:
-      commission:
-        $ref: '#/definitions/types.Commission'
-        description: commission parameters
-        type: object
-      consensus_pubkey:
-        $ref: '#/definitions/crypto.PubKey'
-        description: the consensus public key of the validator; bech encoded in JSON
-        type: object
-      delegator_shares:
-        $ref: '#/definitions/types.Dec'
-        description: total shares issued to a validator's delegators
-        type: object
-      description:
-        $ref: '#/definitions/types.Description'
-        description: description terms for the validator
-        type: object
-      jailed:
-        description: has the validator been jailed from bonded status?
-        type: boolean
-      min_self_delegation:
-        $ref: '#/definitions/types.Int'
-        description: validator's self declared minimum self delegation
-        type: object
-      operator_address:
-        $ref: '#/definitions/types.ValAddress'
-        description: address of the validator's operator; bech encoded in JSON
-        type: object
-      status:
-        description: validator status (bonded/unbonding/unbonded)
-        type: string
-      tokens:
-        $ref: '#/definitions/types.Int'
-        description: delegated tokens (incl. self-delegation)
-        type: object
-      unbonding_height:
-        description: if unbonding, height at which this validator has begun unbonding
+      address:
+        items:
+          type: integer
+        type: array
+      power:
+        description: PubKey pub_key = 2 [(gogoproto.nullable)=false];
         type: integer
-      unbonding_time:
-        description: if unbonding, min time for the validator to complete unbonding
-        type: string
     type: object
   types.Validators:
     items:
@@ -1632,6 +1641,37 @@ paths:
       summary: Get currency
       tags:
       - Currencies
+  /currencies/issue:
+    put:
+      consumes:
+      - application/json
+      description: Get submit new issue multi signature message stdTx object
+      operationId: currenciesSubmitIssue
+      parameters:
+      - description: Submit issue request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.SubmitIssueReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespStdTx'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Submit issue
+      tags:
+      - Currencies
   /currencies/issue/{issueID}:
     get:
       consumes:
@@ -1656,6 +1696,37 @@ paths:
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get currency issue
+      tags:
+      - Currencies
+  /currencies/withdraw:
+    put:
+      consumes:
+      - application/json
+      description: Get withdraw currency coins from account balance stdTx object
+      operationId: currenciesWithdraw
+      parameters:
+      - description: Withdraw request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.WithdrawReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespStdTx'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Withdraw currency
       tags:
       - Currencies
   /currencies/withdraw/{withdrawID}:
@@ -2661,6 +2732,68 @@ paths:
       summary: Get active calls
       tags:
       - Multisig
+  /multisig/confirm:
+    put:
+      consumes:
+      - application/json
+      description: Get confirm multi signature call by PoA validator stdTx object
+      operationId: multisigConfirm
+      parameters:
+      - description: Confirm request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.ConfirmReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespStdTx'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Confirm call
+      tags:
+      - Multisig
+  /multisig/revoke:
+    put:
+      consumes:
+      - application/json
+      description: Get revoke multi signature call vote by PoA validator stdTx object
+      operationId: multisigRevoke
+      parameters:
+      - description: Revoke request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.RevokeReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespStdTx'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Revoke call
+      tags:
+      - Multisig
   /multisig/unique/{uniqueID}:
     get:
       consumes:
@@ -2833,7 +2966,7 @@ paths:
         name: postRequest
         required: true
         schema:
-          $ref: '#/definitions/rest.postPriceReq'
+          $ref: '#/definitions/rest.PostPriceReq'
       produces:
       - application/json
       responses:

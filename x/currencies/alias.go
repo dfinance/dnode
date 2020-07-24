@@ -7,6 +7,7 @@ import (
 
 type (
 	Keeper              = keeper.Keeper
+	GenesisState        = types.GenesisState
 	Issue               = types.Issue
 	Withdraw            = types.Withdraw
 	Withdraws           = types.Withdraws
@@ -48,6 +49,7 @@ var (
 	RegisterCodec          = types.RegisterCodec
 	NewKeeper              = keeper.NewKeeper
 	NewQuerier             = keeper.NewQuerier
+	DefaultGenesisState    = types.DefaultGenesisState
 	RegisterInvariants     = keeper.RegisterInvariants
 	NewMsgIssueCurrency    = types.NewMsgIssueCurrency
 	NewMsgWithdrawCurrency = types.NewMsgWithdrawCurrency
@@ -60,7 +62,7 @@ var (
 	ErrWrongAmount         = types.ErrWrongAmount
 	ErrWrongIssueID        = types.ErrWrongIssueID
 	ErrWrongWithdrawID     = types.ErrWrongWithdrawID
-	ErrWrongPegZoneSpender = types.ErrWrongPegZoneSpender
+	ErrWrongPegZoneSpender = types.ErrWrongPegZonePayee
 	ErrGovInvalidProposal  = types.ErrGovInvalidProposal
 
 	// Mint denom and event type when mint happen.

@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/auth"
+
 	"github.com/dfinance/dnode/x/multisig/internal/types"
 )
 
@@ -14,5 +16,10 @@ type (
 	MSRespGetCalls struct {
 		Height int64           `json:"height"`
 		Result types.CallsResp `json:"result"`
+	}
+
+	CCRespStdTx struct {
+		Height int64      `json:"height"`
+		Result auth.StdTx `json:"result"`
 	}
 )

@@ -107,6 +107,24 @@ func (k Keeper) getWithdraw(ctx sdk.Context, id dnTypes.ID) types.Withdraw {
 	return withdraw
 }
 
+// getWithdraws returns all registered withdraws from the storage.
+func (k Keeper) getWithdraws(ctx sdk.Context) types.Withdraws {
+	withdraws := types.Withdraws{}
+
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, types.GetWithdrawsPrefix())
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var withdraw types.Withdraw
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &withdraw)
+
+		withdraws = append(withdraws, withdraw)
+	}
+
+	return withdraws
+}
+
 // storeWithdraw sets withdraw to the storage.
 func (k Keeper) storeWithdraw(ctx sdk.Context, withdraw types.Withdraw) {
 	store := ctx.KVStore(k.storeKey)
@@ -117,6 +135,13 @@ func (k Keeper) storeWithdraw(ctx sdk.Context, withdraw types.Withdraw) {
 func (k Keeper) setLastWithdrawID(ctx sdk.Context, id dnTypes.ID) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.GetLastWithdrawIDKey(), k.cdc.MustMarshalBinaryBare(id))
+}
+
+// hasLastWithdrawID checks that lastWithdrawID exists in the storage.
+func (k Keeper) hasLastWithdrawID(ctx sdk.Context) bool {
+	store := ctx.KVStore(k.storeKey)
+
+	return store.Has(types.GetLastWithdrawIDKey())
 }
 
 // getLastWithdrawID gets lastWithdrawID from the storage.

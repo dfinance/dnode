@@ -139,7 +139,7 @@ func TestInteg_ConsensusFailure(t *testing.T) {
 	{
 		ct.RestartDaemon(false, false)
 
-		retCode, daemonLogs := ct.CheckDaemonStopped(2 * time.Second)
+		retCode, daemonLogs := ct.CheckDaemonStopped(5 * time.Second)
 
 		require.NotZero(t, retCode, "daemon exitCode")
 		require.Contains(t, strings.Join(daemonLogs, ","), "panic", "daemon didn't panic")

@@ -14,6 +14,6 @@ const (
 )
 
 var (
-	KeyDelimiter = []byte(":")
-	KeyGenesis   = []byte("gen")
+	KeyDelimiter   = []byte(":")
+	KeyGenesisInit = []byte("gen") // is storage has that key, InitGenesis was done
 )

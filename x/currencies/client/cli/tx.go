@@ -17,7 +17,7 @@ import (
 // PostWithdrawCurrency returns tx command which post a new withdraw request.
 func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "withdraw [coin] [pegZoneSpender] [pegZoneChainID]",
+		Use:     "withdraw [coin] [pegZonePayee] [pegZoneChainID]",
 		Short:   "Withdraw issued currency from dfinance chain to pegZone chain, reducing spender balance",
 		Example: "withdraw 100dfi {account} testnet --from {account}",
 		Args:    cobra.ExactArgs(3),
@@ -48,7 +48,7 @@ func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 	}
 	helpers.BuildCmdHelp(cmd, []string{
 		"currency denomination symbol and amount in Coin format (1.0 btc with 8 decimals -> 100000000btc)",
-		"spender address for PegZone",
+		"payee address for PegZone (whose balance is increased)",
 		"chainID for PegZone blockchain",
 	})
 

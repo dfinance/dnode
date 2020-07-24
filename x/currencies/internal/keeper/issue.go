@@ -15,7 +15,7 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id string, coin sdk.Coin, payee s
 	// bankKeeper might panic
 	defer func() {
 		if r := recover(); r != nil {
-			retErr = sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q panic: %v", payee, r)
+			retErr = sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q panic: %v", payee.String(), r)
 		}
 	}()
 
@@ -34,7 +34,7 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id string, coin sdk.Coin, payee s
 
 	// update account balance
 	if _, err := k.bankKeeper.AddCoins(ctx, payee, sdk.Coins{coin}); err != nil {
-		return sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q: %v", payee, err)
+		return sdkErrors.Wrapf(types.ErrInternal, "bankKeeper.AddCoins for address %q: %v", payee.String(), err)
 	}
 
 	// increase supply
@@ -80,6 +80,28 @@ func (k Keeper) getIssue(ctx sdk.Context, id string) types.Issue {
 	k.cdc.MustUnmarshalBinaryBare(bz, &issue)
 
 	return issue
+}
+
+// getGenesisIssues returns all registered issues with meta (GenesisIssue) from the storage.
+func (k Keeper) getGenesisIssues(ctx sdk.Context) []types.GenesisIssue {
+	issues := make([]types.GenesisIssue, 0)
+
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, types.GetIssuesPrefix())
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var issue types.Issue
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &issue)
+
+		issueID := types.MustParseIssueKey(iterator.Key())
+		issues = append(issues, types.GenesisIssue{
+			Issue: issue,
+			ID:    issueID,
+		})
+	}
+
+	return issues
 }
 
 // storeIssue sets issue to the storage.

@@ -34,6 +34,7 @@ type TestInput struct {
 	keySupply  *sdk.KVStoreKey
 	keyCCS     *sdk.KVStoreKey
 	keyVMS     *sdk.KVStoreKey
+	keyMarkets *sdk.KVStoreKey
 	tKeyParams *sdk.TransientStoreKey
 	//
 	baseBtcDenom    string
@@ -61,6 +62,7 @@ func NewTestInput(t *testing.T) TestInput {
 		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
 		keyCCS:     sdk.NewKVStoreKey(ccstorage.StoreKey),
 		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
+		keyMarkets: sdk.NewKVStoreKey(types.StoreKey),
 		tKeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 		//
 		baseBtcDenom:    "btc",
@@ -83,6 +85,7 @@ func NewTestInput(t *testing.T) TestInput {
 	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyCCS, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyMarkets, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tKeyParams, sdk.StoreTypeTransient, db)
 	require.NoError(t, mstore.LoadLatestVersion(), "in-memory DB init")
 
@@ -97,7 +100,7 @@ func NewTestInput(t *testing.T) TestInput {
 		input.vmStorage,
 		types.RequestCCStoragePerms(),
 	)
-	input.keeper = NewKeeper(input.cdc, input.paramsKeeper.Subspace(types.DefaultParamspace), input.ccsStorage)
+	input.keeper = NewKeeper(input.cdc, input.keyMarkets, input.ccsStorage)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())

@@ -35,7 +35,7 @@ func StringifyVMPath(path *vm_grpc.VMAccessPath) string {
 		"  Key:     %s",
 		hex.EncodeToString(path.Address),
 		hex.EncodeToString(path.Path),
-		hex.EncodeToString(common_vm.MakePathKey(path)),
+		hex.EncodeToString(common_vm.GetPathKey(path)),
 	)
 }
 

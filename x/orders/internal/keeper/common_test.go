@@ -37,6 +37,7 @@ type TestInput struct {
 	keyAccount *sdk.KVStoreKey
 	keySupply  *sdk.KVStoreKey
 	keyCCS     *sdk.KVStoreKey
+	keyMarkets *sdk.KVStoreKey
 	keyOrders  *sdk.KVStoreKey
 	keyVMS     *sdk.KVStoreKey
 	tKeyParams *sdk.TransientStoreKey
@@ -66,6 +67,7 @@ func NewTestInput(t *testing.T, customMarketsPerms perms.Permissions) TestInput 
 		keyAccount: sdk.NewKVStoreKey(auth.StoreKey),
 		keySupply:  sdk.NewKVStoreKey(supply.StoreKey),
 		keyCCS:     sdk.NewKVStoreKey(ccstorage.StoreKey),
+		keyMarkets: sdk.NewKVStoreKey(markets.StoreKey),
 		keyOrders:  sdk.NewKVStoreKey(types.StoreKey),
 		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
 		tKeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
@@ -95,6 +97,7 @@ func NewTestInput(t *testing.T, customMarketsPerms perms.Permissions) TestInput 
 	mstore.MountStoreWithDB(input.keyAccount, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keySupply, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyCCS, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyMarkets, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyOrders, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tKeyParams, sdk.StoreTypeTransient, db)
 	require.NoError(t, mstore.LoadLatestVersion(), "in-memory DB init")
@@ -122,7 +125,7 @@ func NewTestInput(t *testing.T, customMarketsPerms perms.Permissions) TestInput 
 	)
 	input.marketKeeper = markets.NewKeeper(
 		input.cdc,
-		input.paramsKeeper.Subspace(markets.DefaultParamspace),
+		input.keyMarkets,
 		input.ccsKeeper,
 		marketsRequester,
 	)

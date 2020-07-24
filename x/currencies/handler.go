@@ -22,7 +22,7 @@ func NewHandler(keeper keeper.Keeper) sdk.Handler {
 
 // handleMsgWithdraw handles MsgWithdrawCurrency message.
 func handleMsgWithdraw(ctx sdk.Context, keeper keeper.Keeper, msg MsgWithdrawCurrency) (*sdk.Result, error) {
-	if err := keeper.WithdrawCurrency(ctx, msg.Coin, msg.Spender, msg.PegZoneRecipient, msg.PegZoneChainID); err != nil {
+	if err := keeper.WithdrawCurrency(ctx, msg.Coin, msg.Payer, msg.PegZonePayee, msg.PegZoneChainID); err != nil {
 		return nil, err
 	}
 

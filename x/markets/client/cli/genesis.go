@@ -72,10 +72,18 @@ func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome stri
 			}
 
 			// add market to the genesis
-			marketID := len(genesisMarket.Params.Markets)
+			var id dnTypes.ID
+			marketID := genesisMarket.LastMarketID
+			if marketID == nil {
+				id = dnTypes.NewZeroID()
+			} else {
+				id = marketID.Incr()
+			}
+			marketID = &id
 
-			genesisMarket.Params.Markets = append(genesisMarket.Params.Markets, types.Market{
-				ID:              dnTypes.NewIDFromUint64(uint64(marketID)),
+			genesisMarket.LastMarketID = marketID
+			genesisMarket.Markets = append(genesisMarket.Markets, types.Market{
+				ID:              *marketID,
 				BaseAssetDenom:  baseDenom,
 				QuoteAssetDenom: quoteDenom,
 			})

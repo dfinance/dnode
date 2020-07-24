@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/auth"
+
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
@@ -30,5 +32,10 @@ type (
 	CCRespGetCurrencies struct {
 		Height int64                `json:"height"`
 		Result ccstorage.Currencies `json:"result"`
+	}
+
+	CCRespStdTx struct {
+		Height int64      `json:"height"`
+		Result auth.StdTx `json:"result"`
 	}
 )

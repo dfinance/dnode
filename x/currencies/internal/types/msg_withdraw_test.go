@@ -34,17 +34,17 @@ func TestCurrenciesMsg_WithdrawCurrency_ValidateBasic(t *testing.T) {
 		require.Error(t, invalidTarget.ValidateBasic())
 	}
 
-	// invalid: spender
+	// invalid: payer
 	{
 		invalidTarget := target
-		invalidTarget.Spender = sdk.AccAddress([]byte{})
+		invalidTarget.Payer = sdk.AccAddress([]byte{})
 		require.Error(t, invalidTarget.ValidateBasic())
 	}
 
-	// invalid: pegZoneSpender
+	// invalid: pegZonePayee
 	{
 		invalidTarget := target
-		invalidTarget.PegZoneRecipient = ""
+		invalidTarget.PegZonePayee = ""
 		require.Error(t, invalidTarget.ValidateBasic())
 	}
 }
@@ -58,5 +58,5 @@ func TestCurrenciesMsg_WithdrawCurrency_MsgInterface(t *testing.T) {
 	require.Equal(t, "withdraw_currency", target.Type())
 	require.Equal(t, RouterKey, target.Route())
 	require.True(t, len(target.GetSignBytes()) > 0)
-	require.Equal(t, []sdk.AccAddress{target.Spender}, target.GetSigners())
+	require.Equal(t, []sdk.AccAddress{target.Payer}, target.GetSigners())
 }
