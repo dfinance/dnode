@@ -81,7 +81,7 @@ swagger-ui-build:
 binaries: go.sum
 	mkdir -p ./builds
 	GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-darwin-amd64 ${dncli}
-	GOOS=linux GOARCH=386 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-linux-386 ${dncli}
+	#GOOS=linux GOARCH=386 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-linux-386 ${dncli}
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-linux-amd64 ${dncli}
 	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-windows-amd64.exe ${dncli}
-	GOOS=windows GOARCH=386 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-windows-386.exe ${dncli}
+	#GOOS=windows GOARCH=386 CGO_ENABLED=0 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-windows-386.exe ${dncli}
