@@ -61,8 +61,10 @@ type CLITester struct {
 }
 
 func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITester {
+	cfgMtx.Lock()
 	sdkConfig := sdk.GetConfig()
 	dnConfig.InitBechPrefixes(sdkConfig)
+	cfgMtx.Unlock()
 
 	ct := CLITester{
 		IDs:               NewTestNodeIdConfig(),

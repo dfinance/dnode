@@ -2,6 +2,8 @@ package common_vm
 
 import (
 	"bytes"
+	"fmt"
+
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -9,38 +11,49 @@ import (
 )
 
 const (
-	// Default address length.
+	// Default address length (Move address length)
 	VMAddressLength = 20
 )
 
 var (
-	KeyDelimiter          = []byte(":")
-	VMKey                 = []byte("vm")
+	// Storage keys
+	KeyDelimiter = []byte("@:@") // complex delimiter used, as VM accessPath.Path might include symbols like: [':', '@',..]
+	VMKey        = []byte("vm")
+	// Move stdlib addresses
 	StdLibAddress         = make([]byte, VMAddressLength)
 	StdLibAddressShortStr = "0x1"
 )
 
-// Data server middleware type.
+// DSDataMiddleware defines prototype for DataSource server middleware.
 type DSDataMiddleware func(ctx sdk.Context, path *vm_grpc.VMAccessPath) ([]byte, error)
 
-// Interface for other keepers to get/set data.
+// VMStorage interface used by other keepers to get/set VM data.
 type VMStorage interface {
-	// Access path for oracle.
+	// VM accessPath for an oracle asset price resource
 	GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.VMAccessPath
 
-	// Setters/getters.
+	// Setters / getters for a VM storage values
 	SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte)
 	GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte
 
-	// Delete value in VM storage.
+	// Delete VM value from a VM storage
 	DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath)
 
-	// Has value in VM storage.
+	// Check value in a VM storage exists
 	HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool
 }
 
-// Make path for storage from VMAccessPath.
-func MakePathKey(path *vm_grpc.VMAccessPath) []byte {
+// GetPathKey returns storage key for VM values from VM AccessPath.
+func GetPathKey(path *vm_grpc.VMAccessPath) []byte {
+	// as we can't influence to path.Address/path.Path format
+	// we should check if that storage key is parsable later (vm.GenesisExport)
+	if bytes.Contains(path.Address, KeyDelimiter) {
+		panic(fmt.Errorf("VMAccessPath.Address contains delimiter symbols"))
+	}
+	if bytes.Contains(path.Path, KeyDelimiter) {
+		panic(fmt.Errorf("VMAccessPath.Path contains delimiter symbols"))
+	}
+
 	return bytes.Join(
 		[][]byte{
 			VMKey,
@@ -51,7 +64,31 @@ func MakePathKey(path *vm_grpc.VMAccessPath) []byte {
 	)
 }
 
-// Convert bech32 to libra hex.
+// GetPathPrefixKey returns strage key prefix for VM values (used for iteration).
+func GetPathPrefixKey() []byte {
+	return append(VMKey, KeyDelimiter...)
+}
+
+// MustParsePathKey parses VM storage key and panics on failure.
+func MustParsePathKey(key []byte) *vm_grpc.VMAccessPath {
+	accessPath := vm_grpc.VMAccessPath{}
+
+	values := bytes.Split(key, KeyDelimiter)
+	if len(values) != 3 {
+		panic(fmt.Errorf("key %q: invalid splitted length %d", string(key), len(values)))
+	}
+
+	if !bytes.Equal(values[0], VMKey) {
+		panic(fmt.Errorf("key %q: value[0] %q: wrong prefix", string(key), string(values[0])))
+	}
+
+	accessPath.Address = values[1]
+	accessPath.Path = values[2]
+
+	return &accessPath
+}
+
+// Bech32ToLibra converts Bech32 to Libra hex.
 func Bech32ToLibra(addr sdk.AccAddress) []byte {
 	return addr.Bytes()
 }

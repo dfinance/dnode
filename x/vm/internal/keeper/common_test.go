@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/hex"
 	"flag"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/url"
@@ -408,6 +409,23 @@ func startDVMContainer(t *testing.T, dsPort int) (stopFunc func()) {
 	*vmCompiler = "127.0.0.1:" + vmUrl.Port()
 
 	return containerStop
+}
+
+func getGenesis(t *testing.T) []byte {
+	fileName := "./genesis_ws.json"
+
+	f, err := os.Open(fileName)
+	if err != nil {
+		t.Fatalf("can't read write set: %v", err)
+	}
+	defer f.Close()
+
+	bz, err := ioutil.ReadAll(f)
+	if err != nil {
+		t.Fatalf("can't read json content of genesis state: %v", err)
+	}
+
+	return bz
 }
 
 func init() {

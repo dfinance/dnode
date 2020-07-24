@@ -6,8 +6,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -187,22 +185,6 @@ func checkEventsContainsEvery(t *testing.T, eventsA, eventsB sdk.Events) {
 // creates "keep" without an error events.
 func newKeepEvents() sdk.Events {
 	return types.NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Keep})
-}
-
-func getGenesis(t *testing.T) []byte {
-	fileName := "./genesis_ws.json"
-
-	handle, err := os.Open(fileName)
-	if err != nil {
-		t.Fatalf("can't read write set: %v", err)
-	}
-	defer handle.Close()
-	bz, err := ioutil.ReadAll(handle)
-	if err != nil {
-		t.Fatalf("can't read json content of genesis state: %v", err)
-	}
-
-	return bz
 }
 
 // Test transfer of dfi between two accounts in dfi.

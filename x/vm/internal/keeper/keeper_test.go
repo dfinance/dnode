@@ -9,8 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
-
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
@@ -82,47 +80,4 @@ func TestVMKeeper_ExecuteScriptMock(t *testing.T) {
 	require.EqualValues(t, types.AttributeValueStatusKeep, events[1].Attributes[0].Value)
 
 	require.EqualValues(t, types.EventTypeMoveEvent, events[2].Type)
-}
-
-// Check genesis Import / Export functionality
-func TestVMKeeper_ExportGenesis(t *testing.T) {
-	t.Parallel()
-
-	input := newTestInput(true)
-	defer input.Stop()
-
-	// check export with no initial genesis
-	{
-		outputState := input.vk.ExportGenesis(input.ctx)
-		require.Empty(t, outputState.WriteSet)
-	}
-
-	// initial state
-	inputState := types.GenesisState{
-		WriteSet: []types.GenesisWriteOp{
-			{
-				Address: "616464726573735f31", // address_1
-				Path:    "706174685f31",       // path_1
-				Value:   "76616c75655f31",     // value_1
-			},
-			{
-				Address: "616464726573735f32", // address_2
-				Path:    "706174685f32",       // path_2
-				Value:   "76616c75655f32",     // value_2
-			},
-		},
-	}
-
-	// add non-init WriteSets
-	input.vk.SetValue(input.ctx, &vm_grpc.VMAccessPath{
-		Address: []byte("616464726573735f33"), // address_3
-		Path:    []byte("706174685f33"),       // path_3
-	}, []byte("76616c75655f33")) // value_3
-
-	// check export with initial genesis
-	{
-		input.vk.InitGenesis(input.ctx, input.cdc.MustMarshalJSON(inputState))
-		outputState := input.vk.ExportGenesis(input.ctx)
-		require.Equal(t, inputState, outputState)
-	}
 }
