@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -28,6 +29,47 @@ type Withdraw struct {
 	Timestamp int64 `json:"timestamp" yaml:"timestamp" format:"seconds" example:"1585295757"`
 	// Tx hash
 	TxHash string `json:"tx_hash" yaml:"tx_hash" example:"fd82ce32835dfd7042808eaf6ff09cece952b9da20460fa462420a93607fa96f"`
+}
+
+// Valid checks that withdraw is valid (used for genesis ops).
+// Contract: timestamp check is performed if {curBlockTime} is not empty.
+func (withdraw Withdraw) Valid(curBlockTime time.Time) error {
+	if err := withdraw.ID.Valid(); err != nil {
+		return fmt.Errorf("id: %w", err)
+	}
+
+	if err := dnTypes.DenomFilter(withdraw.Coin.Denom); err != nil {
+		return fmt.Errorf("coin: denom: %w", err)
+	}
+
+	if withdraw.Coin.Amount.LTE(sdk.ZeroInt()) {
+		return fmt.Errorf("coin: amount: LTE to zero")
+	}
+
+	if withdraw.Spender.Empty() {
+		return fmt.Errorf("spender: empty")
+	}
+
+	if withdraw.PegZoneSpender == "" {
+		return fmt.Errorf("pegzone_spender: empty")
+	}
+
+	if withdraw.Timestamp <= 0 {
+		return fmt.Errorf("timestamp: invalid")
+	}
+
+	if withdraw.TxHash == "" {
+		return fmt.Errorf("tx_hash: empty")
+	}
+
+	if !curBlockTime.IsZero() {
+		timestamp := time.Unix(withdraw.Timestamp, 0)
+		if timestamp.After(curBlockTime) {
+			return fmt.Errorf("timestamp: is after current blockTime %s", curBlockTime.String())
+		}
+	}
+
+	return nil
 }
 
 func (withdraw Withdraw) String() string {
