@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
 
 // Currency is an info object with currency params.
@@ -19,6 +21,15 @@ type Currency struct {
 	InfoPathHex string `json:"info_path_hex" yaml:"info_path_hex"`
 	// Total amount of currency coins in Bank
 	Supply sdk.Int `json:"supply" yaml:"supply" swaggertype:"string" example:"100"`
+}
+
+// Valid checks that Currency is valid.
+func (c Currency) Valid() error {
+	if err := dnTypes.DenomFilter(c.Denom); err != nil {
+		return fmt.Errorf("denom is invalid: %v", err)
+	}
+
+	return nil
 }
 
 // GetSupplyCoin creates sdk.Coin with supply amount.

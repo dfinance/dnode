@@ -160,7 +160,7 @@ func NewBtcDfiMockOrder(direction types.Direction) types.Order {
 
 	return types.Order{
 		ID:    dnTypes.NewIDFromUint64(0),
-		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"),
+		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw"),
 		Market: markets.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(0),
 			BaseCurrency: ccstorage.Currency{
@@ -186,7 +186,7 @@ func NewEthDfiMockOrder(direction types.Direction) types.Order {
 
 	return types.Order{
 		ID:    dnTypes.NewIDFromUint64(1),
-		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07i"),
+		Owner: sdk.AccAddress("wallet13jyjuz3kkdvqx"),
 		Market: markets.MarketExtended{
 			ID: dnTypes.NewIDFromUint64(1),
 			BaseCurrency: ccstorage.Currency{

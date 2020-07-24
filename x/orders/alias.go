@@ -6,6 +6,7 @@ import (
 )
 
 type (
+	GenesisState   = types.GenesisState
 	Keeper         = keeper.Keeper
 	Order          = types.Order
 	Orders         = types.Orders
@@ -39,9 +40,10 @@ var (
 	ModuleCdc            = types.ModuleCdc
 	AvailablePermissions = types.AvailablePermissions
 	// function aliases
-	RegisterCodec = types.RegisterCodec
-	NewKeeper     = keeper.NewKeeper
-	NewQuerier    = keeper.NewQuerier
+	RegisterCodec       = types.RegisterCodec
+	DefaultGenesisState = types.DefaultGenesisState
+	NewKeeper           = keeper.NewKeeper
+	NewQuerier          = keeper.NewQuerier
 	// perms requests
 	RequestMarketsPerms = types.RequestMarketsPerms
 	// error aliases
