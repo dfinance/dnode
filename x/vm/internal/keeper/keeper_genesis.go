@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -18,45 +19,35 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	var state types.GenesisState
 	types.ModuleCdc.MustUnmarshalJSON(data, &state)
 
-	for _, genWriteOp := range state.WriteSet {
-		bzAddr, err := hex.DecodeString(genWriteOp.Address)
+	for genWOIdx, genWriteOp := range state.WriteSet {
+		accessPath, value, err := genWriteOp.ToBytes()
 		if err != nil {
-			panic(err)
+			panic(fmt.Errorf("writeSetOp[%d]: %w", genWOIdx, err))
 		}
 
-		bzPath, err := hex.DecodeString(genWriteOp.Path)
-		if err != nil {
-			panic(err)
-		}
-
-		bzValue, err := hex.DecodeString(genWriteOp.Value)
-		if err != nil {
-			panic(err)
-		}
-
-		accessPath := &vm_grpc.VMAccessPath{
-			Address: bzAddr,
-			Path:    bzPath,
-		}
-
-		k.setValue(ctx, accessPath, bzValue)
+		k.setValue(ctx, accessPath, value)
 	}
 
-	// "data" variable can't be used directly as it might contain extra JSON fields
+	// raise flag for DS server that genesis was inited
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.KeyGenesis, types.ModuleCdc.MustMarshalJSON(state))
+	store.Set(types.KeyGenesisInit, []byte{0x1})
 }
 
 // ExportGenesis exports module genesis state using current params state.
-func (k Keeper) ExportGenesis(ctx sdk.Context) types.GenesisState {
+func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	k.modulePerms.AutoCheck(types.PermStorageRead)
 
-	store := ctx.KVStore(k.storeKey)
 	state := types.GenesisState{}
+	k.iterateOverValues(ctx, func(accessPath *vm_grpc.VMAccessPath, value []byte) bool {
+		writeSetOp := types.GenesisWriteOp{
+			Address: hex.EncodeToString(accessPath.Address),
+			Path:    hex.EncodeToString(accessPath.Path),
+			Value:   hex.EncodeToString(value),
+		}
+		state.WriteSet = append(state.WriteSet, writeSetOp)
 
-	if store.Has(types.KeyGenesis) {
-		types.ModuleCdc.MustUnmarshalJSON(store.Get(types.KeyGenesis), &state)
-	}
+		return true
+	})
 
-	return state
+	return k.cdc.MustMarshalJSON(state)
 }

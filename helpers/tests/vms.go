@@ -26,20 +26,20 @@ func (storage VMStorageImpl) GetOracleAccessPath(_ dnTypes.AssetCode) *vm_grpc.V
 
 func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 	store := ctx.KVStore(storage.storeKey)
-	store.Set(common_vm.MakePathKey(accessPath), value)
+	store.Set(common_vm.GetPathKey(accessPath), value)
 }
 
 func (storage VMStorageImpl) GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	store := ctx.KVStore(storage.storeKey)
-	return store.Get(common_vm.MakePathKey(accessPath))
+	return store.Get(common_vm.GetPathKey(accessPath))
 }
 
 func (storage VMStorageImpl) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 	store := ctx.KVStore(storage.storeKey)
-	store.Delete(common_vm.MakePathKey(accessPath))
+	store.Delete(common_vm.GetPathKey(accessPath))
 }
 
 func (storage VMStorageImpl) HasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
 	store := ctx.KVStore(storage.storeKey)
-	return store.Has(common_vm.MakePathKey(accessPath))
+	return store.Has(common_vm.GetPathKey(accessPath))
 }

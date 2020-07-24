@@ -122,9 +122,7 @@ func (app AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.V
 
 // ExportGenesis exports module genesis state.
 func (app AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	genesisState := app.keeper.ExportGenesis(ctx)
-
-	return ModuleCdc.MustMarshalJSON(genesisState)
+	return app.keeper.ExportGenesis(ctx)
 }
 
 // BeginBlock performs module actions at a block start.

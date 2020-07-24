@@ -28,7 +28,7 @@ func (k *Keeper) StartDSServer(ctx sdk.Context) {
 	// check if genesis initialized
 	// if no - skip, it will be started later.
 	store := ctx.KVStore(k.storeKey)
-	if store.Has(types.KeyGenesis) && !k.dsServer.IsStarted() {
+	if store.Has(types.KeyGenesisInit) && !k.dsServer.IsStarted() {
 		// launch server.
 		k.rawDSServer = StartServer(k.listener, k.dsServer)
 	}

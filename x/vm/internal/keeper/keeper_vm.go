@@ -96,7 +96,7 @@ func (k Keeper) DelValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 // hasValue checks that VM storage contains key.
 func (k Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := common_vm.MakePathKey(accessPath)
+	key := common_vm.GetPathKey(accessPath)
 
 	return store.Has(key)
 }
@@ -104,7 +104,7 @@ func (k Keeper) hasValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) bool
 // getValue returns value from VM storage by key.
 func (k Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte {
 	store := ctx.KVStore(k.storeKey)
-	key := common_vm.MakePathKey(accessPath)
+	key := common_vm.GetPathKey(accessPath)
 
 	return store.Get(key)
 }
@@ -112,7 +112,7 @@ func (k Keeper) getValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []by
 // setValue sets value to VM storage by key.
 func (k Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {
 	store := ctx.KVStore(k.storeKey)
-	key := common_vm.MakePathKey(accessPath)
+	key := common_vm.GetPathKey(accessPath)
 
 	store.Set(key, value)
 }
@@ -120,7 +120,7 @@ func (k Keeper) setValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, valu
 // delValue removes value from VM storage by key.
 func (k Keeper) delValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) {
 	store := ctx.KVStore(k.storeKey)
-	key := common_vm.MakePathKey(accessPath)
+	key := common_vm.GetPathKey(accessPath)
 
 	store.Delete(key)
 }
@@ -163,6 +163,22 @@ func (k Keeper) processWriteSet(ctx sdk.Context, writeSet []*vm_grpc.VMValue) {
 		} else {
 			// must not happens at all
 			panic(fmt.Errorf("unknown write op, couldn't happen: %d", value.Type))
+		}
+	}
+}
+
+// iterateOverValues iterates over all VM values and processes them with handler (stop when handler returns false).
+func (k Keeper) iterateOverValues(ctx sdk.Context, handler func(accessPath *vm_grpc.VMAccessPath, value []byte) bool) {
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, common_vm.GetPathPrefixKey())
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		accessPath := common_vm.MustParsePathKey(iterator.Key())
+		value := iterator.Value()
+
+		if !handler(accessPath, value) {
+			break
 		}
 	}
 }
