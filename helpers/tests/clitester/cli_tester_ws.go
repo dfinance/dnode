@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
-	tmClient "github.com/tendermint/tendermint/rpc/client"
+	tmClient "github.com/tendermint/tendermint/rpc/client/http"
 	coreTypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -46,7 +46,7 @@ func (ct *CLITester) CreateWSConnection(printLogs bool, subscriber, query string
 		logger = log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	}
 
-	client, err := tmClient.NewHTTP(ct.NodePorts.RPCAddress, "/websocket")
+	client, err := tmClient.New(ct.NodePorts.RPCAddress, "/websocket")
 	if err != nil {
 		retErr = fmt.Errorf("creating WebSocket client: %w", err)
 		return

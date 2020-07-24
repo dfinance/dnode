@@ -627,6 +627,15 @@ definitions:
     $ref: '#/definitions/types.Currencies'
   ccstorage.Currency:
     $ref: '#/definitions/types.Currency'
+  keys.PublicKey:
+    properties:
+      sum:
+        $ref: '#/definitions/keys.isPublicKey_Sum'
+        description: "Types that are valid to be assigned to Sum:\n\t*PublicKey_Ed25519"
+        type: object
+    type: object
+  keys.isPublicKey_Sum:
+    type: object
   markets.MarketExtended:
     $ref: '#/definitions/types.MarketExtended'
   msmodule.MsMsg:
@@ -1380,8 +1389,12 @@ definitions:
         items:
           type: integer
         type: array
-      power:
-        description: PubKey pub_key = 2 [(gogoproto.nullable)=false];
+      proposer_priority:
+        type: integer
+      pub_key:
+        $ref: '#/definitions/keys.PublicKey'
+        type: object
+      voting_power:
         type: integer
     type: object
   types.Validators:

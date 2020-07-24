@@ -23,7 +23,7 @@ import (
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmRPCTypes "github.com/tendermint/tendermint/rpc/lib/types"
+	tmRPCTypes "github.com/tendermint/tendermint/rpc/jsonrpc/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
