@@ -17,7 +17,7 @@ const (
 
 var (
 	// Storage keys
-	KeyDelimiter = []byte("@:@") // complex delimiter used, as VM accessPath.Path might include symbols like: [':', '@',..]
+	KeyDelimiter = []byte(":") // we should rely on this delimiter (for bytes.Split for example) as VM accessPath.Path might include symbols like: [':', '@',..]
 	VMKey        = []byte("vm")
 	// Move stdlib addresses
 	StdLibAddress         = make([]byte, VMAddressLength)
@@ -45,15 +45,6 @@ type VMStorage interface {
 
 // GetPathKey returns storage key for VM values from VM AccessPath.
 func GetPathKey(path *vm_grpc.VMAccessPath) []byte {
-	// as we can't influence to path.Address/path.Path format
-	// we should check if that storage key is parsable later (vm.GenesisExport)
-	if bytes.Contains(path.Address, KeyDelimiter) {
-		panic(fmt.Errorf("VMAccessPath.Address contains delimiter symbols"))
-	}
-	if bytes.Contains(path.Path, KeyDelimiter) {
-		panic(fmt.Errorf("VMAccessPath.Path contains delimiter symbols"))
-	}
-
 	return bytes.Join(
 		[][]byte{
 			VMKey,
@@ -73,17 +64,43 @@ func GetPathPrefixKey() []byte {
 func MustParsePathKey(key []byte) *vm_grpc.VMAccessPath {
 	accessPath := vm_grpc.VMAccessPath{}
 
-	values := bytes.Split(key, KeyDelimiter)
-	if len(values) != 3 {
-		panic(fmt.Errorf("key %q: invalid splitted length %d", string(key), len(values)))
+	// we expect key to be correct: vm:{address_20bytes}:{path_at_least_1byte}
+	expectedMinLen := len(VMKey) + len(KeyDelimiter) + VMAddressLength + len(KeyDelimiter) + 1
+	if len(key) < expectedMinLen {
+		panic(fmt.Errorf("key %q: invalid length: min expected: %d", string(key), expectedMinLen))
 	}
 
-	if !bytes.Equal(values[0], VMKey) {
-		panic(fmt.Errorf("key %q: value[0] %q: wrong prefix", string(key), string(values[0])))
+	// calc indices (end index is the next one of the real end idx)
+	prefixStartIdx := 0
+	prefixEndIdx := prefixStartIdx + len(VMKey)
+	delimiterFirstStartIdx := prefixEndIdx
+	delimiterFirstEndIdx := delimiterFirstStartIdx + len(KeyDelimiter)
+	addressStartIdx := delimiterFirstEndIdx
+	addressEndIdx := addressStartIdx + VMAddressLength
+	delimiterSecondStartIdx := addressEndIdx
+	delimiterSecondEndIdx := delimiterSecondStartIdx + len(KeyDelimiter)
+	pathStartIdx := delimiterSecondEndIdx
+
+	// split key
+	prefixValue := key[prefixStartIdx:prefixEndIdx]
+	delimiterFirstValue := key[delimiterFirstStartIdx:delimiterFirstEndIdx]
+	addressValue := key[addressStartIdx:addressEndIdx]
+	delimiterSecondValue := key[delimiterSecondStartIdx:delimiterSecondEndIdx]
+	pathValue := key[pathStartIdx:]
+
+	// validate
+	if !bytes.Equal(prefixValue, VMKey) {
+		panic(fmt.Errorf("key %q: prefix: invalid", string(key)))
+	}
+	if !bytes.Equal(delimiterFirstValue, KeyDelimiter) {
+		panic(fmt.Errorf("key %q: 1st delimiter: invalid", string(key)))
+	}
+	if !bytes.Equal(delimiterSecondValue, KeyDelimiter) {
+		panic(fmt.Errorf("key %q: 2nd delimiter: invalid", string(key)))
 	}
 
-	accessPath.Address = values[1]
-	accessPath.Path = values[2]
+	accessPath.Address = addressValue
+	accessPath.Path = pathValue
 
 	return &accessPath
 }
