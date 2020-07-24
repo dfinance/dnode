@@ -38,6 +38,42 @@ type Call struct {
 	Height int64 `json:"height" yaml:"height" example:"1"`
 }
 
+// Valid checks that Call is valid (used for genesis ops)
+func (c Call) Valid(curBlockHeight int64) error {
+	if err := c.ID.Valid(); err != nil {
+		return fmt.Errorf("id: %w", err)
+	}
+	if c.UniqueID == "" {
+		return fmt.Errorf("unique_id: empty")
+	}
+	if c.Creator.Empty() {
+		return fmt.Errorf("creator: empty")
+	}
+	if c.Approved && !(c.Executed || c.Failed) {
+		return fmt.Errorf("approved, but not executed/failed")
+	}
+	if c.Rejected && (c.Approved || c.Executed || c.Failed) {
+		return fmt.Errorf("rejected, but also approved/executed/failed")
+	}
+	if c.Msg == nil {
+		return fmt.Errorf("msg: nil")
+	}
+	if c.MsgRoute == "" {
+		return fmt.Errorf("msg_route: empty")
+	}
+	if c.MsgType == "" {
+		return fmt.Errorf("msg_type: empty")
+	}
+	if c.Height < 0 {
+		return fmt.Errorf("height: LT 0")
+	}
+	if curBlockHeight != -1 && c.Height > curBlockHeight {
+		return fmt.Errorf("height: GT current blockHeight")
+	}
+
+	return nil
+}
+
 // CanBeVoted checks if call accepts votes (vote / revoke confirmation).
 func (c Call) CanBeVoted() error {
 	if c.Approved {

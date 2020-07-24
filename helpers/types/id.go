@@ -81,6 +81,10 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 	return (*sdk.Uint)(id).UnmarshalJSON(data)
 }
 
+func NewZeroID() ID {
+	return ID(sdk.ZeroUint())
+}
+
 func NewIDFromUint64(id uint64) ID {
 	return ID(sdk.NewUint(id))
 }
