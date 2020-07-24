@@ -411,8 +411,12 @@ func startDVMContainer(t *testing.T, dsPort int) (stopFunc func()) {
 	return containerStop
 }
 
+// getGenesis reads VM genesis from file (default path can be overridden using "VMWSPATH" env).
 func getGenesis(t *testing.T) []byte {
 	fileName := "./genesis_ws.json"
+	if evnPath, ok := os.LookupEnv("VMWSPATH"); ok {
+		fileName = evnPath
+	}
 
 	f, err := os.Open(fileName)
 	if err != nil {
