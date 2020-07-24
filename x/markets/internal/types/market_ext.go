@@ -26,10 +26,10 @@ type MarketExtended struct {
 // Valid checks that MarketExtended is valid.
 func (m MarketExtended) Valid() error {
 	if err := m.BaseCurrency.Valid(); err != nil {
-		return fmt.Errorf("baseCurrency is invalid: %v", err)
+		return fmt.Errorf("base_currency is invalid: %v", err)
 	}
 	if err := m.QuoteCurrency.Valid(); err != nil {
-		return fmt.Errorf("quoteCurrency is invalid: %v", err)
+		return fmt.Errorf("quote_currency is invalid: %v", err)
 	}
 	if err := m.ID.Valid(); err != nil {
 		return fmt.Errorf("id is invalid: %v", err)

@@ -63,16 +63,16 @@ func (o Order) Valid() error {
 		return fmt.Errorf("wrong create and update dates: create date later than update date")
 	}
 	if o.CreatedAt.IsZero() {
-		return fmt.Errorf("CreatedAt: is zero")
+		return fmt.Errorf("created_at: is zero")
 	}
 	if o.CreatedAt.After(time.Now()) {
-		return fmt.Errorf("CreatedAt: is future date")
+		return fmt.Errorf("created_at: is future date")
 	}
 	if o.UpdatedAt.IsZero() {
-		return fmt.Errorf("UpdatedAt: is zero")
+		return fmt.Errorf("updated_at: is zero")
 	}
 	if o.UpdatedAt.After(time.Now()) {
-		return fmt.Errorf("UpdatedAt: is future date")
+		return fmt.Errorf("updated_at: is future date")
 	}
 	return nil
 }

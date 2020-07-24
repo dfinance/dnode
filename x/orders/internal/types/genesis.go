@@ -15,9 +15,38 @@ type GenesisState struct {
 
 // Validate checks that genesis state is valid.
 func (gs GenesisState) Validate() error {
-	for i, item := range gs.Orders {
-		if err := item.Valid(); err != nil {
+	maxOrderID := dnTypes.NewZeroID()
+	ordersIdsSet := make(map[string]bool, len(gs.Orders))
+
+	for i, order := range gs.Orders {
+		if err := order.Valid(); err != nil {
 			return fmt.Errorf("order[%d]: %w", i, err)
+		}
+
+		if ordersIdsSet[order.ID.String()] {
+			return fmt.Errorf("order[%d]: duplicated ID %q", i, order.ID.String())
+		}
+
+		ordersIdsSet[order.ID.String()] = true
+
+		if order.ID.GT(maxOrderID) {
+			maxOrderID = order.ID
+		}
+	}
+
+	if gs.LastOrderId == nil && len(gs.Orders) != 0 {
+		return fmt.Errorf("last_order_id: nil with existing orders")
+	}
+	if gs.LastOrderId != nil && len(gs.Orders) == 0 {
+		return fmt.Errorf("last_order_id: not nil without existing orders")
+	}
+	if gs.LastOrderId != nil {
+		if err := gs.LastOrderId.Valid(); err != nil {
+			return fmt.Errorf("last_order_id: %w", err)
+		}
+
+		if !gs.LastOrderId.Equal(maxOrderID) {
+			return fmt.Errorf("last_order_id: not equal to max order ID")
 		}
 	}
 

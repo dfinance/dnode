@@ -88,7 +88,7 @@ func TestMarkets_Valid(t *testing.T) {
 		}.Valid()
 
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "baseCurrency")
+		require.Contains(t, err.Error(), "base_currency")
 		require.Contains(t, err.Error(), "denom is invalid")
 	}
 
@@ -100,7 +100,7 @@ func TestMarkets_Valid(t *testing.T) {
 		}.Valid()
 
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "baseCurrency")
+		require.Contains(t, err.Error(), "base_currency")
 		require.Contains(t, err.Error(), "empty")
 	}
 
@@ -113,7 +113,7 @@ func TestMarkets_Valid(t *testing.T) {
 		}.Valid()
 
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "quoteCurrency")
+		require.Contains(t, err.Error(), "quote_currency")
 		require.Contains(t, err.Error(), "denom is invalid")
 	}
 
@@ -125,7 +125,7 @@ func TestMarkets_Valid(t *testing.T) {
 		}.Valid()
 
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "quoteCurrency")
+		require.Contains(t, err.Error(), "quote_currency")
 		require.Contains(t, err.Error(), "empty")
 	}
 }

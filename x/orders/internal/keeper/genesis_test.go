@@ -43,11 +43,11 @@ func TestOrdersKeeper_Genesis_Init(t *testing.T) {
 		order2.ID = keeper.nextID(ctx)
 		keeper.setID(ctx, order2.ID)
 
-		lastId, _ := keeper.getLastID(ctx)
+		lastId := keeper.getLastOrderID(ctx)
 
 		state := types.GenesisState{
 			Orders:      types.Orders{order, order2},
-			LastOrderId: lastId,
+			LastOrderId: &lastId,
 		}
 
 		keeper.InitGenesis(ctx, cdc.MustMarshalJSON(state))
