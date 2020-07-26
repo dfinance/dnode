@@ -48,6 +48,7 @@ type CLITester struct {
 	VMCommunication   VMCommunicationConfig
 	ConsensusTimings  ConsensusTimingConfig
 	GovernanceConfig  GovernanceConfig
+	MempoolConfig     MempoolConfig
 	//
 	t *testing.T
 	//
@@ -73,6 +74,7 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 		VMCommunication:   NewTestVMCommunicationConfig(),
 		ConsensusTimings:  NewTestConsensusTimingConfig(),
 		GovernanceConfig:  NewGovernanceConfig(),
+		MempoolConfig:     NewMempoolConfig(),
 		AccountPassphrase: "passphrase",
 		DefAssetCode:      "tst_tst",
 		//

@@ -32,7 +32,6 @@ func (ct *CLITester) initChain() {
 	{
 		if !ct.ConsensusTimings.UseDefaults {
 			cfgMtx.Lock()
-			defer cfgMtx.Unlock()
 
 			cfgFile := path.Join(ct.Dirs.RootDir, "config", "config.toml")
 			_, err := os.Stat(cfgFile)
@@ -49,6 +48,28 @@ func (ct *CLITester) initChain() {
 			viper.Set("consensus.timeout_commit", ct.ConsensusTimings.TimeoutCommit)
 
 			require.NoError(ct.t, viper.WriteConfig(), "saving config.toml file")
+
+			cfgMtx.Unlock()
+		}
+	}
+
+	// adjust mempool config
+	{
+		if !ct.MempoolConfig.UseDefault {
+			cfgMtx.Lock()
+
+			cfgFile := path.Join(ct.Dirs.RootDir, "config", "config.toml")
+			_, err := os.Stat(cfgFile)
+			require.NoError(ct.t, err, "reading config.toml file")
+			viper.SetConfigFile(cfgFile)
+			require.NoError(ct.t, viper.ReadInConfig())
+
+			viper.Set("mempool.size", ct.MempoolConfig.Size)
+			viper.Set("mempool.cache_size", ct.MempoolConfig.CacheSize)
+			viper.Set("mempool.max_tx_bytes", ct.MempoolConfig.MaxTxBytes)
+			viper.Set("mempool.max_txs_bytes", ct.MempoolConfig.MaxTxsBytes)
+
+			cfgMtx.Unlock()
 		}
 	}
 

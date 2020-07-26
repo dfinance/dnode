@@ -29,7 +29,7 @@ func (s ClearanceState) String() string {
 	b.WriteString(fmt.Sprintf("  ProRata:       %s\n", s.ProRata.String()))
 	b.WriteString(fmt.Sprintf("  ProRataInvert: %s\n", s.ProRataInvert.String()))
 	b.WriteString(fmt.Sprintf("  MaxBidVolume:  %s\n", s.MaxBidVolume.String()))
-	b.WriteString(fmt.Sprintf("  MaxAskVolume:  %s\n", s.MaxAskVolume.String()))
+	b.WriteString(fmt.Sprintf("  MaxAskVolume:  %s", s.MaxAskVolume.String()))
 
 	return b.String()
 }

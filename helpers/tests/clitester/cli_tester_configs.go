@@ -319,3 +319,21 @@ func NewGovernanceConfig() GovernanceConfig {
 		MinVotingDur: 10 * time.Second,
 	}
 }
+
+type MempoolConfig struct {
+	UseDefault  bool
+	Size        int64
+	CacheSize   int64
+	MaxTxBytes  int64
+	MaxTxsBytes int64
+}
+
+func NewMempoolConfig() MempoolConfig {
+	return MempoolConfig{
+		UseDefault:  true,
+		Size:        5000,
+		CacheSize:   10000,
+		MaxTxBytes:  1048576,
+		MaxTxsBytes: 1073741824,
+	}
+}

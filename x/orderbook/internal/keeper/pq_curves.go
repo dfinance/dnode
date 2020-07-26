@@ -61,7 +61,7 @@ func (c *SDCurves) String() string {
 func NewSDCurves(askAggs, bidAggs OrderAggregates) (SDCurves, error) {
 	// check if curves can be obtained
 	if len(askAggs) == 0 || len(bidAggs) == 0 {
-		return SDCurves{}, fmt.Errorf("ask / bid orders are empty")
+		return SDCurves{}, fmt.Errorf("ask / bid orders are empty: %d / %d", len(askAggs), len(bidAggs))
 	}
 
 	// check inputs (aggregates must be properly sorted)
