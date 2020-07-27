@@ -28,14 +28,24 @@ type MatcherResult struct {
 	OrderFills orders.OrderFills
 }
 
+func (r MatcherResult) ShortString() string {
+	b := strings.Builder{}
+	b.WriteString(fmt.Sprintf("MatcherResult for marketID %q:\n", r.MarketID.String()))
+	b.WriteString(fmt.Sprintf("  Bid/Ask orders count:   %d/%d\n", r.BidOrdersCount, r.AskOrdersCount))
+	b.WriteString(fmt.Sprintf("  ClearanceState.Price:   %s\n", r.ClearanceState.Price.String()))
+	b.WriteString(fmt.Sprintf("  ClearanceState.ProRata: %s\n", r.ClearanceState.ProRata.String()))
+	b.WriteString(fmt.Sprintf("  OrderFillsCount:        %d", len(r.OrderFills)))
+
+	return b.String()
+}
+
 // Strings returns multi-line text object representation.
 func (r MatcherResult) String() string {
 	b := strings.Builder{}
 	b.WriteString("MatcherResult:\n")
-
 	b.WriteString(fmt.Sprintf("  MarketID:         %s\n", r.MarketID.String()))
-	b.WriteString(fmt.Sprintf("  BidOrdersCount    %d\n", r.BidOrdersCount))
-	b.WriteString(fmt.Sprintf("  AskOrdersCount    %d\n", r.AskOrdersCount))
+	b.WriteString(fmt.Sprintf("  BidOrdersCount:   %d\n", r.BidOrdersCount))
+	b.WriteString(fmt.Sprintf("  AskOrdersCount:   %d\n", r.AskOrdersCount))
 	b.WriteString(fmt.Sprintf("  MatchedBidVolume: %s\n", r.MatchedBidVolume.String()))
 	b.WriteString(fmt.Sprintf("  MatchedAskVolume: %s\n", r.MatchedAskVolume.String()))
 	b.WriteString(r.ClearanceState.String())

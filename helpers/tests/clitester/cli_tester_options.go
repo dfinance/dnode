@@ -106,6 +106,18 @@ func ConsensusTimingsOption(propose, proposeDelta, preVote, preVoteDelta, preCom
 	}
 }
 
+func MempoolOption(size, cacheSize, maxTxBytes, maxTxsBytes int64) CLITesterOption {
+	return func(ct *CLITester) error {
+		ct.MempoolConfig.UseDefault = false
+		ct.MempoolConfig.Size = size
+		ct.MempoolConfig.CacheSize = cacheSize
+		ct.MempoolConfig.MaxTxBytes = maxTxBytes
+		ct.MempoolConfig.MaxTxsBytes = maxTxsBytes
+
+		return nil
+	}
+}
+
 func DaemonLogLevelOption(logLevel string) CLITesterOption {
 	return func(ct *CLITester) error {
 		ct.daemonLogLvl = logLevel
