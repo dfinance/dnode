@@ -41,6 +41,7 @@ import (
 	"github.com/dfinance/dnode/x/core"
 	"github.com/dfinance/dnode/x/core/msmodule"
 	"github.com/dfinance/dnode/x/currencies"
+	"github.com/dfinance/dnode/x/fake"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/markets"
 	"github.com/dfinance/dnode/x/multisig"
@@ -89,6 +90,7 @@ var (
 		orderbook.AppModuleBasic{},
 		crisis.AppModuleBasic{},
 		gov.AppModuleBasic{},
+		fake.AppModuleBasic{},
 	)
 
 	maccPerms = map[string][]string{
@@ -482,6 +484,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		markets.NewAppModule(app.marketKeeper),
 		orders.NewAppModule(app.orderKeeper),
 		orderbook.NewAppModule(app.orderBookKeeper),
+		fake.NewAppModule(),
 		crisis.NewAppModule(&app.crisisKeeper),
 		gov.NewAppModule(app.govKeeper, app.accountKeeper, app.supplyKeeper),
 	)
@@ -528,6 +531,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		markets.ModuleName,
 		orders.ModuleName,
 		orderbook.ModuleName,
+		fake.ModuleName,
 		crisis.ModuleName,
 		genutil.ModuleName,
 	)

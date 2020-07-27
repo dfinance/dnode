@@ -60,8 +60,7 @@ func EndBlocker(ctx sdk.Context, msKeeper keeper.Keeper, poaKeeper poa.Keeper) [
 			cacheCtx, writeCache := ctx.CacheContext()
 			if err := handler(cacheCtx, call.Msg); err != nil {
 				// call execution failed, update call status
-				call.Failed = true
-				call.Error = err.Error()
+				call.Error = fmt.Sprintf("failed: %v", err.Error())
 
 				eventManager.EmitEvent(NewCallStateChangedEvent(callID, AttributeValueFailed))
 				logger.Info(fmt.Sprintf("Call %s execution failed, marking as failed: %v", callID.String(), err))

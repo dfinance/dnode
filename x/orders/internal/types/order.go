@@ -30,6 +30,8 @@ type Order struct {
 	Quantity sdk.Uint `json:"quantity" yaml:"quantity" swaggertype:"string" example:"50"`
 	// TimeToLive order auto-cancel period
 	Ttl time.Duration `json:"ttl_dur" yaml:"ttl_dur" swaggertype:"integer" example:"60"`
+	// ATM: auto-generated field
+	Memo string `json:"memo" yaml:"memo"`
 	// Created timestamp
 	CreatedAt time.Time `json:"created_at" yaml:"created_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 	// Updated timestamp
@@ -135,6 +137,7 @@ func (o Order) String() string {
 		b.WriteString(fmt.Sprintf("  BQuantity: %s\n", o.Market.BaseCurrency.UintToDec(o.Quantity).String()))
 	}
 	b.WriteString(fmt.Sprintf("  Ttl:       %s\n", o.Ttl.String()))
+	b.WriteString(fmt.Sprintf("  Memo: %s\n", o.Memo))
 	b.WriteString(fmt.Sprintf("  CreatedAt: %s\n", o.CreatedAt.String()))
 	b.WriteString(fmt.Sprintf("  UpdatedAt: %s\n", o.UpdatedAt.String()))
 	b.WriteString(o.Market.String())
@@ -151,6 +154,7 @@ func (o Order) TableHeaders() []string {
 		"O.Price",
 		"O.QBQuantity",
 		"O.TTL",
+		"O.Memo",
 		"O.CreatedAt",
 		"O.UpdatedAt",
 	}
@@ -172,6 +176,7 @@ func (o Order) TableValues() []string {
 		v = append(v, o.Market.BaseCurrency.UintToDec(o.Quantity).String())
 	}
 	v = append(v, o.Ttl.String())
+	v = append(v, o.Memo)
 	v = append(v, o.CreatedAt.String())
 	v = append(v, o.UpdatedAt.String())
 
@@ -197,6 +202,7 @@ func NewOrder(
 		Price:     price,
 		Quantity:  quantity,
 		Ttl:       time.Duration(ttlInSec) * time.Second,
+		Memo:      fmt.Sprintf("%s by %s", direction.String(), owner.String()),
 		CreatedAt: ctx.BlockTime(),
 		UpdatedAt: ctx.BlockTime(),
 	}

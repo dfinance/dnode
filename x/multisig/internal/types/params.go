@@ -9,7 +9,7 @@ import (
 // Default parameters values.
 const (
 	// interval in blocks to execute call
-	DefIntervalToExecute = 86400
+	DefIntervalToExecute = 80000
 	MinIntervalToExecute = 10
 )
 

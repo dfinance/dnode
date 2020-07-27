@@ -22,8 +22,6 @@ type Call struct {
 	Approved bool `json:"approved" yaml:"approved"`
 	// Call state: executed
 	Executed bool `json:"executed" yaml:"executed"`
-	// Call state: execution failed
-	Failed bool `json:"failed" yaml:"failed"`
 	// Call state: rejected
 	Rejected bool `json:"rejected" yaml:"rejected"`
 	// Call fail reason
@@ -49,10 +47,10 @@ func (c Call) Valid(curBlockHeight int64) error {
 	if c.Creator.Empty() {
 		return fmt.Errorf("creator: empty")
 	}
-	if c.Approved && !(c.Executed || c.Failed) {
+	if c.Approved && !(c.Executed || c.Error != "") {
 		return fmt.Errorf("approved, but not executed/failed")
 	}
-	if c.Rejected && (c.Approved || c.Executed || c.Failed) {
+	if c.Rejected && (c.Approved || c.Executed || c.Error != "") {
 		return fmt.Errorf("rejected, but also approved/executed/failed")
 	}
 	if c.Msg == nil {
@@ -93,7 +91,6 @@ func (c Call) String() string {
 		"  Creator:  %s\n"+
 		"  Approved: %v\n"+
 		"  Executed: %v\n"+
-		"  Failed:   %v\n"+
 		"  Rejected: %v\n"+
 		"  Error:    %s\n"+
 		"  MsgRoute: %s\n"+
@@ -104,7 +101,6 @@ func (c Call) String() string {
 		c.Creator.String(),
 		c.Approved,
 		c.Executed,
-		c.Failed,
 		c.Rejected,
 		c.Error,
 		c.MsgRoute,
@@ -150,7 +146,6 @@ func NewCall(id dnTypes.ID, uniqueID string, msg msmodule.MsMsg, blockHeight int
 		Approved: false,
 		Executed: false,
 		Rejected: false,
-		Failed:   false,
 		Msg:      msg,
 		Error:    "",
 		Height:   blockHeight,
