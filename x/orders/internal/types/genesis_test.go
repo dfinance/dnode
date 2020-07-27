@@ -285,7 +285,7 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 		require.Contains(t, err.Error(), "after block time")
 	}
 
-	// updatedAt later than block time
+	// Block time is nil, no validation
 	{
 		state := getTestGenesisState()
 		tmpT := time.Now().Truncate(time.Hour)

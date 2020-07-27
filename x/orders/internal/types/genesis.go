@@ -74,7 +74,7 @@ func (gs GenesisState) IsEmpty() bool {
 	return gs.Equal(GenesisState{})
 }
 
-// DefaultGenesisState defines default GenesisState for oracle.
+// DefaultGenesisState defines default GenesisState for orders.
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		Orders: Orders{},

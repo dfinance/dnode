@@ -10,6 +10,8 @@ const (
 	PermOrderPost perms.Permission = ModuleName + "PermOrderPost"
 	// Revoke order
 	PermOrderRevoke perms.Permission = ModuleName + "PermOrderRevoke"
+	// Init genesis
+	PermInit perms.Permission = ModuleName + "PermInit"
 	// Read order / orders
 	PermRead perms.Permission = ModuleName + "PermRead"
 	// Lock order coins
@@ -21,7 +23,7 @@ const (
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermOrderPost, PermOrderRevoke, PermRead, PermOrderLock, PermOrderUnlock, PermExecFill}
+	AvailablePermissions = perms.Permissions{PermOrderPost, PermOrderRevoke, PermInit, PermRead, PermOrderLock, PermOrderUnlock, PermExecFill}
 )
 
 func NewModulePerms() perms.ModulePermissions {
