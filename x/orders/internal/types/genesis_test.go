@@ -141,7 +141,7 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 		// UpdatedAt
 		{
 			state := getTestGenesisState()
-			state.Orders[0].CreatedAt = time.Now().Truncate(time.Hour)
+			state.Orders[0].CreatedAt = time.Now().Add(-1 * time.Hour)
 			state.Orders[0].UpdatedAt = time.Now().Add(time.Hour * 1)
 			err := state.Validate(time.Now())
 
@@ -288,7 +288,7 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 	// Block time is nil, no validation
 	{
 		state := getTestGenesisState()
-		tmpT := time.Now().Truncate(time.Hour)
+		tmpT := time.Now().Add(-1 * time.Hour)
 		state.Orders[0].UpdatedAt = tmpT
 		state.Orders[0].CreatedAt = tmpT
 		err := state.Validate(time.Time{})
