@@ -65,7 +65,7 @@ func (withdraw Withdraw) Valid(curBlockTime time.Time) error {
 	if !curBlockTime.IsZero() {
 		timestamp := time.Unix(withdraw.Timestamp, 0)
 		if timestamp.After(curBlockTime) {
-			return fmt.Errorf("timestamp: is after current blockTime %s", curBlockTime.String())
+			return fmt.Errorf("timestamp: is after current blockTime: %s / %s", timestamp.String(), curBlockTime.String())
 		}
 	}
 

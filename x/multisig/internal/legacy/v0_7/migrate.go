@@ -42,7 +42,7 @@ func Migrate(oldState v06.GenesisState) (GenesisState, error) {
 				Msg:      oldCallItem.Call.Msg,
 				MsgRoute: oldCallItem.Call.MsgRoute,
 				MsgType:  oldCallItem.Call.MsgType,
-				Height:   oldCallItem.Call.Height,
+				Height:   0,
 			},
 			Votes: oldCallItem.Votes,
 		}
