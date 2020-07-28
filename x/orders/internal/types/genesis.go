@@ -62,7 +62,7 @@ func (gs GenesisState) Validate(blockTime time.Time) error {
 	return nil
 }
 
-// Equal checks whether two gov GenesisState structs are equivalent.
+// Equal checks whether two GenesisState structs are equivalent.
 func (gs GenesisState) Equal(data2 GenesisState) bool {
 	b1 := ModuleCdc.MustMarshalBinaryBare(gs)
 	b2 := ModuleCdc.MustMarshalBinaryBare(data2)

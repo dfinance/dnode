@@ -2,12 +2,13 @@ package keeper
 
 import (
 	"encoding/json"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/dfinance/dnode/x/orderbook/internal/types"
 )
 
-// InitGenesis inits module genesis state: creates currencies.
+// InitGenesis inits module genesis state: creates history items.
 func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	k.modulePerms.AutoCheck(types.PermInit)
 
