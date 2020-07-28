@@ -19,11 +19,6 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	}
 
 	for _, item := range state.HistoryItems {
-
-		//if _, err := k.orderKeeper.Get(ctx, item.MarketID); err != nil {
-		//	panic(fmt.Errorf("market id: %d not found: %v", order.Market.ID.UInt64(), err))
-		//}
-
 		k.SetHistoryItem(ctx, item)
 	}
 

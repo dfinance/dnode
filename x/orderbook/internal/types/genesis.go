@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -53,6 +54,10 @@ func (gs GenesisState) Validate(currentBlockTime time.Time, currentBlockHeight i
 func (gs GenesisState) Equal(data2 GenesisState) bool {
 	b1 := ModuleCdc.MustMarshalBinaryBare(gs)
 	b2 := ModuleCdc.MustMarshalBinaryBare(data2)
+	s1, _ := json.Marshal(gs)
+	s2, _ := json.Marshal(data2)
+	fmt.Println(string(s1))
+	fmt.Println(string(s2))
 	return bytes.Equal(b1, b2)
 }
 
