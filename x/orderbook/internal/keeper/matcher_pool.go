@@ -36,7 +36,7 @@ func (mp *MatcherPool) Process() types.MatcherResults {
 	for marketID, matcher := range mp.pool {
 		result, err := matcher.Match()
 		if err != nil {
-			errMsg := fmt.Sprintf("matcher for marketID %s: %v", marketID, err)
+			errMsg := fmt.Sprintf("Matcher for marketID %q: %v", marketID, err)
 			if types.ErrInternal.Is(err) {
 				panic(errMsg)
 			} else {
@@ -45,6 +45,7 @@ func (mp *MatcherPool) Process() types.MatcherResults {
 
 			continue
 		}
+		mp.logger.Info(result.ShortString())
 
 		results = append(results, result)
 	}

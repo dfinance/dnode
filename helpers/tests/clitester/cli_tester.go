@@ -23,7 +23,7 @@ import (
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmRPCTypes "github.com/tendermint/tendermint/rpc/lib/types"
+	tmRPCTypes "github.com/tendermint/tendermint/rpc/jsonrpc/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
@@ -48,6 +48,7 @@ type CLITester struct {
 	VMCommunication   VMCommunicationConfig
 	ConsensusTimings  ConsensusTimingConfig
 	GovernanceConfig  GovernanceConfig
+	MempoolConfig     MempoolConfig
 	//
 	t *testing.T
 	//
@@ -73,6 +74,7 @@ func New(t *testing.T, printDaemonLogs bool, options ...CLITesterOption) *CLITes
 		VMCommunication:   NewTestVMCommunicationConfig(),
 		ConsensusTimings:  NewTestConsensusTimingConfig(),
 		GovernanceConfig:  NewGovernanceConfig(),
+		MempoolConfig:     NewMempoolConfig(),
 		AccountPassphrase: "passphrase",
 		DefAssetCode:      "tst_tst",
 		//

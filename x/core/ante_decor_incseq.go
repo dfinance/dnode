@@ -10,13 +10,13 @@ import (
 
 // IncrementSequenceDecorator handles incrementing sequences of all signers.
 // Use the IncrementSequenceDecorator decorator to prevent replay attacks. Note,
-// there is no need to execute IncrementSequenceDecorator on CheckTx or RecheckTX
-// since it is merely updating the nonce. As a result, this has the side effect
-// that subsequent and sequential txs orginating from the same account cannot be
-// handled correctly in a reliable way. To send sequential txs orginating from the
-// same account, it is recommended to instead use multiple messages in a tx.
+// there is no need to execute IncrementSequenceDecorator on RecheckTX since
+// CheckTx would already bump the sequence number.
 //
-// CONTRACT: The tx must implement the SigVerifiableTx interface.
+// NOTE: Since CheckTx and DeliverTx state are managed separately, subsequent and
+// sequential txs orginating from the same account cannot be handled correctly in
+// a reliable way unless sequence numbers are managed and tracked manually by a
+// client. It is recommended to instead use multiple messages in a tx.
 type IncrementSequenceDecorator struct {
 	ak vmauth.Keeper
 }
@@ -28,11 +28,6 @@ func NewIncrementSequenceDecorator(ak vmauth.Keeper) IncrementSequenceDecorator 
 }
 
 func (isd IncrementSequenceDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	// no need to increment sequence on RecheckTx
-	if ctx.IsReCheckTx() && !simulate {
-		return next(ctx, tx, simulate)
-	}
-
 	sigTx, ok := tx.(ante.SigVerifiableTx)
 	if !ok {
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "invalid transaction type")

@@ -275,10 +275,10 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 	// updatedAt later than block time
 	{
 		state := getTestGenesisState()
-		tmpT := time.Now().Truncate(time.Hour)
+		tmpT := time.Now()
 		state.Orders[0].UpdatedAt = tmpT
 		state.Orders[0].CreatedAt = tmpT
-		err := state.Validate(time.Now().Truncate(time.Hour * 2))
+		err := state.Validate(tmpT.Add(-1 * time.Hour))
 
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "create_at")

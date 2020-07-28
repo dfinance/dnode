@@ -284,6 +284,7 @@ func ParseFilePath(argName, argValue string, paramType ParamType) ([]byte, error
 	if err != nil {
 		return nil, fmt.Errorf("%s %s %q: file open: %w", argName, paramType, argValue, err)
 	}
+	defer file.Close()
 
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -291,6 +292,23 @@ func ParseFilePath(argName, argValue string, paramType ParamType) ([]byte, error
 	}
 
 	return content, nil
+}
+
+// CheckFileExists checks that file exists and it is not a directory.
+func CheckFileExists(argName, argValue string, paramType ParamType) error {
+	info, err := os.Stat(argValue)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("%s %s %q: file not found", argName, paramType, argValue)
+		}
+		return fmt.Errorf("%s %s %q: reading file stats: %w", argName, paramType, argValue, err)
+	}
+
+	if info.IsDir() {
+		return fmt.Errorf("%s %s %q: file is a directory", argName, paramType, argValue)
+	}
+
+	return nil
 }
 
 // BuildError builds an error in unified error style.

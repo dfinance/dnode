@@ -22,10 +22,10 @@ const (
 
 func Test_SB_Trading(t *testing.T) {
 	const (
-		minClientsPerMarket = 8
-		maxClientsPerMarket = 12
+		minClientsPerMarket = 1
+		maxClientsPerMarket = 4
 		workDurInSec        = 300
-		initOrders          = 500
+		initOrders          = 50
 	)
 
 	oneDfi := sdk.NewUintFromString(DecimalsDFI)
@@ -68,7 +68,7 @@ func Test_SB_Trading(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		true,
-		cliTester.DaemonLogLevelOption("main:error,state:error,x/orders:error,x/orderbook:error"),
+		cliTester.DaemonLogLevelOption("main:error,state:info,x/orders:error,x/orderbook:info"),
 		cliTester.AccountsOption(accountOpts...),
 		//cliTester.DefaultConsensusTimingsOption(),
 		cliTester.ConsensusTimingsOption(
@@ -80,6 +80,7 @@ func Test_SB_Trading(t *testing.T) {
 			"500ms",
 			"10s",
 		),
+		//cliTester.MempoolOption(500000, 1000000, 104857600, 107374182400),
 	)
 	ct.StartRestServer(false)
 	defer ct.Close()

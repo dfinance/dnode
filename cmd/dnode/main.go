@@ -27,6 +27,7 @@ import (
 	"github.com/dfinance/dnode/x/genaccounts"
 	genaccsCli "github.com/dfinance/dnode/x/genaccounts/client/cli"
 	marketsCli "github.com/dfinance/dnode/x/markets/client/cli"
+	migrationCli "github.com/dfinance/dnode/x/migration/client"
 	oracleCli "github.com/dfinance/dnode/x/oracle/client/cli"
 	poaCli "github.com/dfinance/dnode/x/poa/client/cli"
 	vmCli "github.com/dfinance/dnode/x/vm/client/cli"
@@ -73,6 +74,7 @@ func main() {
 		oracleCli.AddOracleNomineesCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		marketsCli.AddMarketGenCmd(ctx, cdc, app.DefaultNodeHome),
+		migrationCli.MigrateGenesisCmd(ctx, cdc),
 		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 
