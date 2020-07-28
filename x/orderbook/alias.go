@@ -7,6 +7,7 @@ import (
 
 type (
 	Keeper       = keeper.Keeper
+	GenesisState = types.GenesisState
 	HistoryItem  = types.HistoryItem
 	HistoryItems = types.HistoryItems
 )
@@ -25,6 +26,7 @@ var (
 	// variable aliases
 	ModuleCdc            = types.ModuleCdc
 	AvailablePermissions = types.AvailablePermissions
+	DefaultGenesisState  = types.DefaultGenesisState
 	// function aliases
 	RegisterCodec     = types.RegisterCodec
 	NewHistoryItem    = types.NewHistoryItem

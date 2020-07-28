@@ -5,6 +5,7 @@ package orderbook
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -37,12 +38,15 @@ func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
 
 // DefaultGenesis gets default module genesis state.
 func (AppModuleBasic) DefaultGenesis() json.RawMessage {
-	return nil
+	return ModuleCdc.MustMarshalJSON(DefaultGenesisState())
 }
 
 // ValidateGenesis validates module genesis state.
 func (AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
-	return nil
+	state := GenesisState{}
+	ModuleCdc.MustUnmarshalJSON(bz, &state)
+
+	return state.Validate(time.Time{}, -1)
 }
 
 // RegisterRESTRoutes registers module REST routes.
@@ -94,12 +98,13 @@ func (am AppModule) NewQuerierHandler() sdk.Querier { return nil }
 
 // InitGenesis inits module-genesis state.
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
+	am.keeper.InitGenesis(ctx, data)
 	return []abci.ValidatorUpdate{}
 }
 
 // ExportGenesis exports module genesis state.
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	return nil
+	return am.keeper.ExportGenesis(ctx)
 }
 
 // BeginBlock performs module actions at a block start.

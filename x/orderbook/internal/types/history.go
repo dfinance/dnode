@@ -38,6 +38,29 @@ type HistoryItem struct {
 	BlockHeight int64 `json:"block_height" yaml:"block_height"`
 }
 
+// Valid checks that HistoryItem is valid (used for genesis ops).
+func (h HistoryItem) Valid() error {
+	if err := h.MarketID.Valid(); err != nil {
+		return fmt.Errorf("market_id: %w", err)
+	}
+	if h.ClearancePrice.IsZero() {
+		return fmt.Errorf("clearance_price is zero")
+	}
+	if h.BidOrdersCount < 0 {
+		return fmt.Errorf("bid_orders_count has negative value")
+	}
+	if h.AskOrdersCount < 0 {
+		return fmt.Errorf("ask_orders_count has negative value")
+	}
+	if h.Timestamp < 0 {
+		return fmt.Errorf("timestamp is negative")
+	}
+	if h.BlockHeight < 0 {
+		return fmt.Errorf("block_height is negative")
+	}
+	return nil
+}
+
 // Strings returns multi-line text object representation.
 func (h HistoryItem) String() string {
 	b := strings.Builder{}

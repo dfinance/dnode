@@ -9,18 +9,40 @@ import (
 
 // InitGenesis inits module genesis state: creates currencies.
 func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
-	k.modulePerms.AutoCheck(types.PermHistoryRead)
+	k.modulePerms.AutoCheck(types.PermInit)
 
 	state := types.GenesisState{}
+	k.cdc.MustUnmarshalJSON(data, &state)
+
+	if err := state.Validate(ctx.BlockTime(), ctx.BlockHeight()); err != nil {
+		panic(err)
+	}
+
+	for _, item := range state.HistoryItems {
+
+		//if _, err := k.orderKeeper.Get(ctx, item.MarketID); err != nil {
+		//	panic(fmt.Errorf("market id: %d not found: %v", order.Market.ID.UInt64(), err))
+		//}
+
+		k.SetHistoryItem(ctx, item)
+	}
+
 	k.cdc.MustUnmarshalJSON(data, &state)
 
 }
 
 // ExportGenesis exports module genesis state using current params state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	k.modulePerms.AutoCheck(types.PermHistoryRead)
+	k.modulePerms.AutoCheck(types.PermExport)
 
 	state := types.GenesisState{}
+
+	historyItems, err := k.GetHistoryItemsList(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	state.HistoryItems = append(state.HistoryItems, historyItems...)
 
 	return k.cdc.MustMarshalJSON(state)
 }
