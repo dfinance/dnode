@@ -22,9 +22,9 @@ swagger-ui: swagger-ui-deps swagger-ui-build
 tests: | test-unit test-cli test-rest test-integ
 
 install-dnode:
-	GO111MODULE=on go install -ldflags "$(tags)"  -tags "$(build_tags)" $(dnode)
+	GO111MODULE=on go build -ldflags "$(tags)" -tags "$(build_tags)" -o ${GOPATH}/bin/dnode_v07 $(dnode)
 install-dncli:
-	GO111MODULE=on go install -ldflags "$(tags)"  -tags "$(build_tags)" $(dncli)
+	GO111MODULE=on go build -ldflags "$(tags)" -tags "$(build_tags)" -o ${GOPATH}/bin/dncli_v07 $(dncli)
 
 lint:
 	@echo "--> Running Golang linter (unused variable / function warning are skipped)"

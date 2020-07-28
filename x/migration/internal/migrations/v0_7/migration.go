@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 
+	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/fake"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/orders"
@@ -15,9 +16,13 @@ import (
 func Migrate(appState genutil.AppMap) (genutil.AppMap, error) {
 	cdcOld := codec.New()
 	codec.RegisterCrypto(cdcOld)
+	multisig.RegisterCodec(cdcOld)
+	currencies.RegisterCodec(cdcOld)
 
 	cdcNew := codec.New()
 	codec.RegisterCrypto(cdcNew)
+	multisig.RegisterCodec(cdcNew)
+	currencies.RegisterCodec(cdcNew)
 
 	// migrate multisig module
 	moduleName := multisig.ModuleName
