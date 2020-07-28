@@ -2,54 +2,43 @@ package keeper
 
 import (
 	"encoding/json"
-	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/dfinance/dnode/x/orders/internal/types"
+	"github.com/dfinance/dnode/x/orderbook/internal/types"
 )
 
-// InitGenesis inits module genesis state: creates currencies.
+// InitGenesis inits module genesis state: creates history items.
 func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	k.modulePerms.AutoCheck(types.PermInit)
 
 	state := types.GenesisState{}
 	k.cdc.MustUnmarshalJSON(data, &state)
 
-	if err := state.Validate(ctx.BlockTime()); err != nil {
+	if err := state.Validate(ctx.BlockTime(), ctx.BlockHeight()); err != nil {
 		panic(err)
 	}
 
-	for _, order := range state.Orders {
-		if _, err := k.marketKeeper.Get(ctx, order.Market.ID); err != nil {
-			panic(fmt.Errorf("market id: %d not found: %v", order.Market.ID.UInt64(), err))
-		}
-
-		k.set(ctx, order)
+	for _, item := range state.HistoryItems {
+		k.SetHistoryItem(ctx, item)
 	}
 
-	if state.LastOrderId != nil {
-		k.setID(ctx, *state.LastOrderId)
-	}
+	k.cdc.MustUnmarshalJSON(data, &state)
+
 }
 
 // ExportGenesis exports module genesis state using current params state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	k.modulePerms.AutoCheck(types.PermRead)
+	k.modulePerms.AutoCheck(types.PermExport)
 
 	state := types.GenesisState{}
 
-	orders, err := k.GetList(ctx)
+	historyItems, err := k.GetHistoryItemsList(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	state.Orders = append(state.Orders, orders...)
-
-	if ok := k.hasLastOrderID(ctx); ok {
-		lastID := k.getLastOrderID(ctx)
-		state.LastOrderId = &lastID
-	}
+	state.HistoryItems = append(state.HistoryItems, historyItems...)
 
 	return k.cdc.MustMarshalJSON(state)
 }

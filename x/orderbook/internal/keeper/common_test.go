@@ -5,6 +5,7 @@ package keeper
 import (
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -155,7 +156,7 @@ func NewMockHistoryItem(marketID dnTypes.ID, blockHeight int64) types.HistoryIte
 		AskVolume:        sdk.NewUint(rand.Uint64()),
 		MatchedBidVolume: sdk.NewUint(rand.Uint64()),
 		MatchedAskVolume: sdk.NewUint(rand.Uint64()),
-		Timestamp:        rand.Int63(),
+		Timestamp:        time.Now().Unix(),
 		BlockHeight:      blockHeight,
 	}
 }

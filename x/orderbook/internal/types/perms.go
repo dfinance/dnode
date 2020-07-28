@@ -6,6 +6,10 @@ import (
 )
 
 const (
+	// Init genesis
+	PermInit perms.Permission = ModuleName + "PermInit"
+	// Export genesis
+	PermExport perms.Permission = ModuleName + "PermExport"
 	// Read history item / items
 	PermHistoryRead perms.Permission = ModuleName + "PermHistoryRead"
 	// Write history item
@@ -17,7 +21,14 @@ const (
 )
 
 var (
-	AvailablePermissions = perms.Permissions{PermHistoryRead, PermHistoryWrite, PermOrdersRead, PermExecFill}
+	AvailablePermissions = perms.Permissions{
+		PermExport,
+		PermInit,
+		PermHistoryRead,
+		PermHistoryWrite,
+		PermOrdersRead,
+		PermExecFill,
+	}
 )
 
 func NewModulePerms() perms.ModulePermissions {

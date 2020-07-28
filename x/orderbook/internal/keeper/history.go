@@ -37,6 +37,28 @@ func (k Keeper) GetHistoryItem(ctx sdk.Context, marketID dnTypes.ID, blockHeight
 	return item, nil
 }
 
+// GetHistoryItemsList return all history items.
+func (k Keeper) GetHistoryItemsList(ctx sdk.Context) (types.HistoryItems, error) {
+	k.modulePerms.AutoCheck(types.PermHistoryRead)
+
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, types.HistoryItemKeyPrefix)
+	defer iterator.Close()
+
+	historyItems := types.HistoryItems{}
+
+	for ; iterator.Valid(); iterator.Next() {
+		item := types.HistoryItem{}
+		if err := k.cdc.UnmarshalBinaryLengthPrefixed(iterator.Value(), &item); err != nil {
+			err = fmt.Errorf("order unmarshal: %w", err)
+			return nil, err
+		}
+		historyItems = append(historyItems, item)
+	}
+
+	return historyItems, nil
+}
+
 // GetHistoryItemsInBlockHeightRange return historyItems per marketID in blockHeight range.
 func (k Keeper) GetHistoryItemsInBlockHeightRange(ctx sdk.Context, marketID dnTypes.ID, startHeight, endHeight int64) (types.HistoryItems, error) {
 	k.modulePerms.AutoCheck(types.PermHistoryRead)
