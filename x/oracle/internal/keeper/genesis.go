@@ -15,7 +15,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	state := types.GenesisState{}
 	k.cdc.MustUnmarshalJSON(data, &state)
 
-	if err := state.Validate(); err != nil {
+	if err := state.Validate(ctx.BlockTime()); err != nil {
 		panic(err)
 	}
 
