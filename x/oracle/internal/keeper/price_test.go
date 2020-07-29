@@ -14,6 +14,14 @@ import (
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
+func NewMockCurrentPrice(assetCode string, price uint64) types.CurrentPrice {
+	return types.CurrentPrice{
+		AssetCode:  dnTypes.AssetCode(assetCode),
+		Price:      sdk.NewIntFromUint64(price),
+		ReceivedAt: time.Now(),
+	}
+}
+
 // Check CheckPriceReceiveTime method with different timestamp sets.
 func TestOracleKeeper_CheckPriceReceiveTime(t *testing.T) {
 	t.Parallel()
