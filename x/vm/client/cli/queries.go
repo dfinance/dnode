@@ -72,7 +72,7 @@ func Compile(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "compile [moveFile] [account]",
 		Short:   "Compile script / module using source code from Move file",
-		Example: "compile script.move wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file script.move.json",
+		Example: "compile script.move wallet196udj7s83uaw2u4safcrvgyqc0sc3flxuherp6 --to-file script.json",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compilerAddr := viper.GetString(vm_client.FlagCompilerAddr)

@@ -26,6 +26,8 @@ import (
 	ordersRest "github.com/dfinance/dnode/x/orders/client/rest"
 	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
+	vmRest "github.com/dfinance/dnode/x/vm/client/rest"
+	"github.com/dfinance/dnode/x/vm/client/vm_client"
 )
 
 // buildBaseReq returns BaseReq used to prepare REST Tx send.
@@ -374,6 +376,45 @@ func (ct *CLITester) RestQueryMultisigRevokeStdTx(validatorAccName string, callI
 	}
 
 	reqSubPath := fmt.Sprintf("%s/%s", multisig.ModuleName, "revoke")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryVMCompile(address, code string) (*RestRequest, *vm_client.MoveFile) {
+	req := vmRest.CompileReq{
+		Code:    code,
+		Account: address,
+	}
+
+	reqSubPath := fmt.Sprintf("%s/%s", vm.ModuleName, "compile")
+	respMsg := &vm_client.MoveFile{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, req, respMsg)
+
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryVMExecuteScriptStdTx(senderAccName string, byteCode, memo string, args ...string) (*RestRequest, *auth.StdTx) {
+	rq := vmRest.ExecuteScriptReq{
+		BaseReq:  ct.buildBaseReq(senderAccName, memo),
+		MoveCode: byteCode,
+		MoveArgs: args,
+	}
+
+	reqSubPath := fmt.Sprintf("%s/%s", vm.ModuleName, "execute")
+	respMsg := &auth.StdTx{}
+	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
+	return r, respMsg
+}
+
+func (ct *CLITester) RestQueryVMPublishModuleStdTx(senderAccName string, byteCode, memo string) (*RestRequest, *auth.StdTx) {
+	rq := vmRest.PublishModuleReq{
+		BaseReq:  ct.buildBaseReq(senderAccName, memo),
+		MoveCode: byteCode,
+	}
+
+	reqSubPath := fmt.Sprintf("%s/%s", vm.ModuleName, "publish")
 	respMsg := &auth.StdTx{}
 	r := ct.newRestRequest().SetQuery("PUT", reqSubPath, nil, rq, respMsg)
 	return r, respMsg

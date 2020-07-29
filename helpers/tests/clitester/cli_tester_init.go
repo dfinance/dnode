@@ -21,11 +21,22 @@ func (ct *CLITester) initChain() {
 
 	// configure dncli
 	{
-		cmd := ct.newWbcliCmd().
-			AddArg("", "config").
-			AddArg("", "keyring-backend").
-			AddArg("", string(ct.keyringBackend))
-		cmd.CheckSuccessfulExecute(nil)
+		// keyring backend
+		{
+			cmd := ct.newWbcliCmd().
+				AddArg("", "config").
+				AddArg("", "keyring-backend").
+				AddArg("", string(ct.keyringBackend))
+			cmd.CheckSuccessfulExecute(nil)
+		}
+		// compiler address
+		{
+			cmd := ct.newWbcliCmd().
+				AddArg("", "config").
+				AddArg("", "compiler").
+				AddArg("", ct.VMConnection.CompilerAddress)
+			cmd.CheckSuccessfulExecute(nil)
+		}
 	}
 
 	// adjust Tendermint config (make blocks generation faster)
