@@ -10,6 +10,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dnode/helpers/tests/utils"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 
@@ -161,8 +162,28 @@ func TestOracleKeeper_CurrentPrice(t *testing.T) {
 		ctx, input.addresses[3], input.stdAssetCode,
 		sdk.NewInt(36000000),
 		header.Time)
+
+	// Checking SetCurrentPrices method
 	err = keeper.SetCurrentPrices(ctx)
 	require.NoError(t, err)
+
+	// Checking GetCurrentPrice method
 	price = keeper.GetCurrentPrice(ctx, input.stdAssetCode)
 	require.Equal(t, price.Price.Equal(sdk.NewInt(34500000)), true)
+
+	price2 := types.CurrentPrice{
+		AssetCode:  dnTypes.AssetCode("usdt_dfi"),
+		Price:      sdk.NewIntFromUint64(1000000),
+		ReceivedAt: time.Now().Add(-1 * time.Hour),
+	}
+
+	// Checking AddCurrentPrice method
+	keeper.AddCurrentPrice(ctx, price2)
+
+	// Checking GetCurrentPricesList method
+	cpList, err := keeper.GetCurrentPricesList(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(cpList))
+	require.Equal(t, cpList[0].AssetCode, price.AssetCode)
+	require.Equal(t, cpList[0].Price.Add(cpList[1].Price), price.Price.Add(price2.Price))
 }

@@ -33,6 +33,8 @@ func (cp CurrentPrice) String() string {
 	)
 }
 
+type CurrentPrices []CurrentPrice
+
 // PostedPrice contains price for an asset posted by a specific oracle.
 type PostedPrice struct {
 	// Asset code

@@ -14,15 +14,30 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 
 	state := types.GenesisState{}
 	k.cdc.MustUnmarshalJSON(data, &state)
+
+	if err := state.Validate(); err != nil {
+		panic(err)
+	}
+
 	k.SetParams(ctx, state.Params)
+
+	for _, cPrice := range state.CurrentPrices {
+		k.AddCurrentPrice(ctx, cPrice)
+	}
 }
 
 // ExportGenesis exports module genesis state using current params state.
 func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	k.modulePerms.AutoCheck(types.PermRead)
 
+	currentPrices, err := k.GetCurrentPricesList(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	state := types.GenesisState{
-		Params: k.GetParams(ctx),
+		Params:        k.GetParams(ctx),
+		CurrentPrices: currentPrices,
 	}
 
 	return k.cdc.MustMarshalJSON(state)

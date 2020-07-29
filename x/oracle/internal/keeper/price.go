@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -25,62 +26,36 @@ func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) ty
 	return price
 }
 
-// GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight.
-func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode dnTypes.AssetCode, blockHeight int64) []types.PostedPrice {
+// GetCurrentPricesList returns all current prices.
+func (k Keeper) GetCurrentPricesList(ctx sdk.Context) (types.CurrentPrices, error) {
 	k.modulePerms.AutoCheck(types.PermRead)
 
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
+	iterator := sdk.KVStorePrefixIterator(store, types.GetCurrentPricePrefix())
+	defer iterator.Close()
 
-	var prices []types.PostedPrice
-	k.cdc.MustUnmarshalBinaryBare(bz, &prices)
+	currentPrices := types.CurrentPrices{}
 
-	return prices
+	for ; iterator.Valid(); iterator.Next() {
+		cPrice := types.CurrentPrice{}
+		if err := k.cdc.UnmarshalBinaryBare(iterator.Value(), &cPrice); err != nil {
+			err = fmt.Errorf("order unmarshal: %w", err)
+			return nil, err
+		}
+		currentPrices = append(currentPrices, cPrice)
+	}
+
+	return currentPrices, nil
 }
 
-// SetPrice updates the posted price for a specific oracle.
-func (k Keeper) SetPrice(
-	ctx sdk.Context,
-	oracle sdk.AccAddress,
-	assetCode dnTypes.AssetCode,
-	price sdk.Int,
-	receivedAt time.Time) (types.PostedPrice, error) {
-
+// AddCurrentPrice adds currentPrice item to the storage.
+func (k Keeper) AddCurrentPrice(ctx sdk.Context, currentPrice types.CurrentPrice) {
 	k.modulePerms.AutoCheck(types.PermWrite)
 
-	// validate price receivedAt timestamp comparing to the current blockHeight timestamp
-	if err := k.checkPriceReceivedAtTimestamp(ctx, receivedAt); err != nil {
-		return types.PostedPrice{}, err
-	}
-
-	// find raw price for specified oracle
 	store := ctx.KVStore(k.storeKey)
-	prices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
-	var index int
-	found := false
-	for i := range prices {
-		if prices[i].OracleAddress.Equals(oracle) {
-			index = i
-			found = true
-			break
-		}
-	}
 
-	// set the rawPrice for that particular oracle
-	if found {
-		prices[index] = types.PostedPrice{
-			AssetCode: assetCode, OracleAddress: oracle,
-			Price: price, ReceivedAt: receivedAt}
-	} else {
-		prices = append(prices, types.PostedPrice{
-			AssetCode: assetCode, OracleAddress: oracle,
-			Price: price, ReceivedAt: receivedAt})
-		index = len(prices) - 1
-	}
-
-	store.Set(types.GetRawPricesKey(assetCode, ctx.BlockHeight()), k.cdc.MustMarshalBinaryBare(prices))
-
-	return prices[index], nil
+	bz := k.cdc.MustMarshalBinaryBare(currentPrice)
+	store.Set(types.GetCurrentPriceKey(currentPrice.AssetCode), bz)
 }
 
 // SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs and cleans up previous inputs.
@@ -161,6 +136,64 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 	}
 
 	return nil
+}
+
+// GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight.
+func (k Keeper) GetRawPrices(ctx sdk.Context, assetCode dnTypes.AssetCode, blockHeight int64) []types.PostedPrice {
+	k.modulePerms.AutoCheck(types.PermRead)
+
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.GetRawPricesKey(assetCode, blockHeight))
+
+	var prices []types.PostedPrice
+	k.cdc.MustUnmarshalBinaryBare(bz, &prices)
+
+	return prices
+}
+
+// SetPrice updates the posted price for a specific oracle.
+func (k Keeper) SetPrice(
+	ctx sdk.Context,
+	oracle sdk.AccAddress,
+	assetCode dnTypes.AssetCode,
+	price sdk.Int,
+	receivedAt time.Time) (types.PostedPrice, error) {
+
+	k.modulePerms.AutoCheck(types.PermWrite)
+
+	// validate price receivedAt timestamp comparing to the current blockHeight timestamp
+	if err := k.checkPriceReceivedAtTimestamp(ctx, receivedAt); err != nil {
+		return types.PostedPrice{}, err
+	}
+
+	// find raw price for specified oracle
+	store := ctx.KVStore(k.storeKey)
+	prices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
+	var index int
+	found := false
+	for i := range prices {
+		if prices[i].OracleAddress.Equals(oracle) {
+			index = i
+			found = true
+			break
+		}
+	}
+
+	// set the rawPrice for that particular oracle
+	if found {
+		prices[index] = types.PostedPrice{
+			AssetCode: assetCode, OracleAddress: oracle,
+			Price: price, ReceivedAt: receivedAt}
+	} else {
+		prices = append(prices, types.PostedPrice{
+			AssetCode: assetCode, OracleAddress: oracle,
+			Price: price, ReceivedAt: receivedAt})
+		index = len(prices) - 1
+	}
+
+	store.Set(types.GetRawPricesKey(assetCode, ctx.BlockHeight()), k.cdc.MustMarshalBinaryBare(prices))
+
+	return prices[index], nil
 }
 
 // nolint:errcheck
