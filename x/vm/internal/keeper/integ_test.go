@@ -17,6 +17,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	dnodeConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/helpers"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/oracle"
@@ -74,12 +75,11 @@ script {
 const oraclePriceScript = `
 script {
 	use 0x1::Event;
-	use 0x1::Oracle;
 	use 0x1::Coins;
 
 	fun main(_account: &signer) {
-		let price = Oracle::get_price<Coins::ETH, Coins::USDT>();
-		Event::emit<u64>(price);
+		let price = Coins::get_price<Coins::ETH, Coins::USDT>();
+		Event::emit<u128>(price);
 	}
 }
 `
@@ -462,15 +462,14 @@ func TestVMKeeper_ScriptOracle(t *testing.T) {
 	{
 		attrIdx := 2
 		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventType)
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU64}))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU128}))
 	}
 	// data
 	{
 		attrIdx := 3
-		uintBz := make([]byte, 8)
-		binary.LittleEndian.PutUint64(uintBz, 100)
+		priceBz := helpers.BigToBytes(sdk.NewInt(100), 16) // u128
 		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventData)
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, hex.EncodeToString(uintBz))
+		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, hex.EncodeToString(priceBz))
 	}
 }
 
