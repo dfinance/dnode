@@ -3,13 +3,13 @@
 package keeper
 
 import (
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"testing"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
 

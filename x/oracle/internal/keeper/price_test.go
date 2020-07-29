@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dnode/helpers/tests/utils"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
@@ -134,15 +134,15 @@ func TestOracleKeeper_CurrentPrice(t *testing.T) {
 	ctx := input.ctx
 	header := ctx.BlockHeader()
 
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[0], input.stdAssetCode,
 		sdk.NewInt(33000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[1], input.stdAssetCode,
 		sdk.NewInt(35000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[2], input.stdAssetCode,
 		sdk.NewInt(34000000),
 		header.Time)
@@ -154,19 +154,19 @@ func TestOracleKeeper_CurrentPrice(t *testing.T) {
 	require.Equal(t, price.Price.Equal(sdk.NewInt(34000000)), true)
 
 	// Even number of oracles
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[0], input.stdAssetCode,
 		sdk.NewInt(33000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[1], input.stdAssetCode,
 		sdk.NewInt(35000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[2], input.stdAssetCode,
 		sdk.NewInt(34000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[3], input.stdAssetCode,
 		sdk.NewInt(36000000),
 		header.Time)
