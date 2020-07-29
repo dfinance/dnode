@@ -3,6 +3,7 @@
 package keeper
 
 import (
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"testing"
 	"time"
 
@@ -32,9 +33,48 @@ func TestOracleKeeper_Genesis_Init(t *testing.T) {
 		require.Equal(t, len(params.Assets), len(defaultParams.Assets))
 	}
 
+	// prices asset code doesnt exist in assets
+	{
+		params := input.keeper.GetParams(ctx)
+		params.Assets = types.Assets{
+			types.NewAsset(dnTypes.AssetCode("eth_dfi"), types.Oracles{}, true),
+		}
+
+		cpList := types.CurrentPrices{
+			NewMockCurrentPrice("btc_dfi", 100),
+		}
+
+		state := types.GenesisState{
+			Params:        params,
+			CurrentPrices: cpList,
+		}
+
+		defer func() {
+			r := recover()
+			require.NotNil(t, r)
+			require.Contains(t, r.(error).Error(), "asset_code")
+			require.Contains(t, r.(error).Error(), "does not exist")
+		}()
+
+		keeper.InitGenesis(ctx, cdc.MustMarshalJSON(state))
+	}
+
 	//import and export
 	{
 		params := input.keeper.GetParams(ctx)
+
+		oracles := types.Oracles{
+			types.Oracle{
+				Address: sdk.AccAddress{},
+			},
+		}
+
+		params.Assets = types.Assets{
+			types.NewAsset(dnTypes.AssetCode("btc_dfi"), oracles, true),
+			types.NewAsset(dnTypes.AssetCode("eth_dfi"), oracles, true),
+			types.NewAsset(dnTypes.AssetCode("dfi_btc"), oracles, true),
+			types.NewAsset(dnTypes.AssetCode("usdt_dfi"), oracles, true),
+		}
 
 		cpList := types.CurrentPrices{
 			NewMockCurrentPrice("btc_dfi", 100),

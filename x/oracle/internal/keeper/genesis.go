@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 
@@ -22,6 +23,9 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	k.SetParams(ctx, state.Params)
 
 	for _, cPrice := range state.CurrentPrices {
+		if _, ok := k.GetAsset(ctx, cPrice.AssetCode); !ok {
+			panic(fmt.Errorf("asset_code %s does not exist", cPrice.AssetCode))
+		}
 		k.AddCurrentPrice(ctx, cPrice)
 	}
 }
