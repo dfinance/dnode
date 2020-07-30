@@ -16,7 +16,7 @@ func getTestGenesisState() GenesisState {
 	}
 }
 
-func TestOrders_Genesis_Valid(t *testing.T) {
+func TestOracles_Genesis_Valid(t *testing.T) {
 	//validateGenesis ok
 	{
 		order1 := NewMockCurrentPrice("btc_dfi", 10000)
@@ -53,7 +53,7 @@ func TestOrders_Genesis_Valid(t *testing.T) {
 
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "received_at")
-		require.Contains(t, err.Error(), "future date")
+		require.Contains(t, err.Error(), "after block time")
 	}
 
 	// wrong received_at, no validate

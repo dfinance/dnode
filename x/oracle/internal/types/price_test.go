@@ -52,16 +52,6 @@ func TestOracle_Price_Valid(t *testing.T) {
 		require.Contains(t, err.Error(), "negative")
 	}
 
-	// wrong ReceivedAt: future
-	{
-		price := NewMockCurrentPrice("btc_dfi", 100)
-		price.ReceivedAt = time.Now().Add(time.Minute)
-		err := price.Valid()
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "received_at")
-		require.Contains(t, err.Error(), "future")
-	}
-
 	// wrong ReceivedAt: zero
 	{
 		price := NewMockCurrentPrice("btc_dfi", 100)

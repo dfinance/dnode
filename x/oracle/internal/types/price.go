@@ -38,9 +38,6 @@ func (cp CurrentPrice) Valid() error {
 	if cp.ReceivedAt.IsZero() {
 		return fmt.Errorf("received_at: is zero")
 	}
-	if cp.ReceivedAt.After(time.Now()) {
-		return fmt.Errorf("received_at: is future date")
-	}
 	return nil
 }
 
