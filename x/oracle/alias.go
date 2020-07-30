@@ -55,6 +55,7 @@ var (
 	NewParams           = types.NewParams
 	NewAsset            = types.NewAsset
 	NewMsgPostPrice     = types.NewMsgPostPrice
+	GetAssetCodePath    = types.GetAssetCodePath
 	// perms requests
 	RequestVMStoragePerms = types.RequestVMStoragePerms
 	// errors

@@ -5,17 +5,16 @@ package keeper
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
+	"github.com/dfinance/dvm-proto/go/vm_grpc"
+
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
 
 // TODO: change listener logic to don't close it here?
@@ -376,17 +375,4 @@ func TestVMKeeper_ExecKeepAndError(t *testing.T) {
 	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.MajorStatus, 10)), events[2].Attributes[1].Value)
 	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.SubStatus, 10)), events[2].Attributes[2].Value)
 	require.EqualValues(t, []byte(errorStatus.Message), events[2].Attributes[3].Value)
-}
-
-// test access path generation for oracles.
-func TestVMKeeper_GetOracleAccessPath(t *testing.T) {
-	t.Parallel()
-
-	input := newTestInput(true)
-	defer input.Stop()
-
-	assetCode := dnTypes.AssetCode("eth_usdt")
-	path := input.vk.GetOracleAccessPath(assetCode)
-	require.Equal(t, common_vm.StdLibAddress, path.Address)
-	require.Equal(t, "ffe300b84cc0315d7a963b504ca77202c8c38cd28bad5bce7bbe0301c806666200", hex.EncodeToString(path.Path))
 }

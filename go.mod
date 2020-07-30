@@ -11,6 +11,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
 	github.com/cosmos/cosmos-sdk v0.39.0
 	github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26
+	github.com/dfinance/glav v0.0.0-20200729153512-98d5f8ab9cb5
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3
 	github.com/getsentry/sentry-go v0.5.1

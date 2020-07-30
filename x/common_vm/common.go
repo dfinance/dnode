@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	dnTypes "github.com/dfinance/dnode/helpers/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 )
@@ -29,9 +27,6 @@ type DSDataMiddleware func(ctx sdk.Context, path *vm_grpc.VMAccessPath) ([]byte,
 
 // VMStorage interface used by other keepers to get/set VM data.
 type VMStorage interface {
-	// VM accessPath for an oracle asset price resource
-	GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.VMAccessPath
-
 	// Setters / getters for a VM storage values
 	SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte)
 	GetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath) []byte

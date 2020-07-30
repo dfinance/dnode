@@ -8,6 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+const (
+	AssetCodeDelimiter = '_'
+)
+
 func DenomFilter(denom string) error {
 	return stringFilter(
 		denom,
@@ -19,8 +23,8 @@ func DenomFilter(denom string) error {
 func AssetCodeFilter(code string) error {
 	return stringFilter(
 		code,
-		[]strFilterOpt{stringNotEmpty, newDelimiterStrFilterOpt("_")},
-		[]runeFilterOpt{runeIsASCII, newIsLowerCasedLetterOrDelimiter('_')},
+		[]strFilterOpt{stringNotEmpty, newDelimiterStrFilterOpt(string(AssetCodeDelimiter))},
+		[]runeFilterOpt{runeIsASCII, newIsLowerCasedLetterOrDelimiter(AssetCodeDelimiter)},
 	)
 }
 

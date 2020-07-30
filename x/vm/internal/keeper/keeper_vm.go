@@ -1,14 +1,9 @@
 package keeper
 
 import (
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
-	"strings"
 
-	"github.com/OneOfOne/xxhash"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/crypto/sha3"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
@@ -47,36 +42,6 @@ func (k Keeper) GetValueWithMiddlewares(ctx sdk.Context, accessPath *vm_grpc.VMA
 	}
 
 	return k.GetValue(ctx, accessPath)
-}
-
-// GetOracleAccessPath returns accessPath for oracle price.
-func (k Keeper) GetOracleAccessPath(assetCode dnTypes.AssetCode) *vm_grpc.VMAccessPath {
-	k.modulePerms.AutoCheck(types.PermStorageRead)
-
-	seed := xxhash.NewS64(0)
-	if _, err := seed.WriteString(strings.ToLower(assetCode.String())); err != nil {
-		panic(err)
-	}
-
-	ticketPair := seed.Sum64()
-
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, ticketPair)
-	tag, err := hex.DecodeString("ff")
-	if err != nil {
-		panic(err)
-	}
-
-	hash := sha3.New256()
-	if _, err := hash.Write(bz); err != nil {
-		panic(err)
-	}
-	path := hash.Sum(tag)
-
-	return &vm_grpc.VMAccessPath{
-		Address: common_vm.StdLibAddress,
-		Path:    path,
-	}
 }
 
 // SetValue sets VM storage writeSet data by accessPath.

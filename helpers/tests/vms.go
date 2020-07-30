@@ -2,7 +2,6 @@ package tests
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	"github.com/dfinance/dnode/x/common_vm"
@@ -18,10 +17,6 @@ func NewVMStorage(storeKey sdk.StoreKey) VMStorageImpl {
 	return VMStorageImpl{
 		storeKey: storeKey,
 	}
-}
-
-func (storage VMStorageImpl) GetOracleAccessPath(_ dnTypes.AssetCode) *vm_grpc.VMAccessPath {
-	return &vm_grpc.VMAccessPath{}
 }
 
 func (storage VMStorageImpl) SetValue(ctx sdk.Context, accessPath *vm_grpc.VMAccessPath, value []byte) {

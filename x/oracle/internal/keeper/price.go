@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	"github.com/dfinance/dnode/helpers"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
@@ -147,9 +146,9 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 
 		store.Set(types.GetCurrentPriceKey(assetCode), k.cdc.MustMarshalBinaryBare(newPrice))
 
-		// save price to vm storage
-		accessPath := k.vmKeeper.GetOracleAccessPath(newPrice.AssetCode)
-		k.vmKeeper.SetValue(ctx, accessPath, helpers.BigToBytes(newPrice.Price, types.PriceBytesLimit))
+		// save price to VM storage
+		priceVmAccessPath, priceVmValue := types.NewResPriceStorageValuesPanic(newPrice.AssetCode, newPrice.Price)
+		k.vmKeeper.SetValue(ctx, priceVmAccessPath, priceVmValue)
 
 		// emit event
 		updatesCnt++
