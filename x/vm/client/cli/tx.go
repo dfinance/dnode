@@ -44,12 +44,12 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			strArgs := args[1:]
 			typedArgs, err := vm_client.ExtractArguments(compilerAddr, code)
 			if err != nil {
-				return err
+				return fmt.Errorf("extracting typed args from the code: %w", err)
 			}
 
 			scriptArgs, err := vm_client.ConvertStringScriptArguments(strArgs, typedArgs)
 			if err != nil {
-				return err
+				return fmt.Errorf("converting input args to typed args: %w", err)
 			}
 			if len(scriptArgs) == 0 {
 				scriptArgs = nil

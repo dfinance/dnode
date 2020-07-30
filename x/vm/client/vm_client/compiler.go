@@ -51,7 +51,7 @@ func ExtractArguments(addr string, bytecode []byte) ([]vm_grpc.VMTypeTag, error)
 func Compile(addr string, sourceFile *vm_grpc.SourceFile) ([]byte, error) {
 	conn, err := CreateConnection(addr)
 	if err != nil {
-		return nil, fmt.Errorf("compilation failed because of error during connection to VM: %w", err)
+		return nil, fmt.Errorf("compilation failed because of error during connection to VM (%s): %w", addr, err)
 	}
 	defer conn.Close()
 
@@ -60,7 +60,7 @@ func Compile(addr string, sourceFile *vm_grpc.SourceFile) ([]byte, error) {
 
 	resp, err := client.Compile(connCtx, sourceFile)
 	if err != nil {
-		return nil, fmt.Errorf("compilation failed because of error during compilation and connection to VM: %w", err)
+		return nil, fmt.Errorf("compilation failed because of error during compilation and connection to VM (%s): %w", addr, err)
 	}
 
 	// if contains errors

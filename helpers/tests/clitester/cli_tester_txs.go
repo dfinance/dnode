@@ -235,7 +235,7 @@ func (ct *CLITester) TxMarketsAdd(fromAddress string, baseDenom, quoteDenom stri
 
 func (ct *CLITester) TxVmDeployModule(fromAddress, filePath string) *TxRequest {
 	cmdArgs := []string{
-		"deploy",
+		"publish",
 		filePath,
 	}
 

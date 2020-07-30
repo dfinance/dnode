@@ -11,6 +11,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
 	github.com/cosmos/cosmos-sdk v0.39.0
 	github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26
+	github.com/dfinance/glav v0.0.0-20200729153512-98d5f8ab9cb5
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3
 	github.com/getsentry/sentry-go v0.5.1
@@ -21,7 +22,7 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/mailru/easyjson v0.7.1 // indirect
+	github.com/mailru/easyjson v0.7.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/pelletier/go-toml v1.6.0
@@ -39,7 +40,7 @@ require (
 	github.com/tendermint/tendermint v0.33.6
 	github.com/tendermint/tm-db v0.5.1
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
-	golang.org/x/tools v0.0.0-20200724172932-b5fc9d354d99 // indirect
+	golang.org/x/tools v0.0.0-20200729041821-df70183b1872 // indirect
 	google.golang.org/grpc v1.30.0
 	google.golang.org/protobuf v1.24.0 // indirect
 	k8s.io/apimachinery v0.18.6 // indirect
