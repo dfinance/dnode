@@ -47,8 +47,8 @@ func (k Keeper) GetCurrentPricesList(ctx sdk.Context) (types.CurrentPrices, erro
 	return currentPrices, nil
 }
 
-// AddCurrentPrice adds currentPrice item to the storage.
-func (k Keeper) AddCurrentPrice(ctx sdk.Context, currentPrice types.CurrentPrice) {
+// addCurrentPrice adds currentPrice item to the storage.
+func (k Keeper) addCurrentPrice(ctx sdk.Context, currentPrice types.CurrentPrice) {
 	k.modulePerms.AutoCheck(types.PermWrite)
 
 	store := ctx.KVStore(k.storeKey)
@@ -61,7 +61,6 @@ func (k Keeper) AddCurrentPrice(ctx sdk.Context, currentPrice types.CurrentPrice
 func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 	k.modulePerms.AutoCheck(types.PermWrite)
 
-	store := ctx.KVStore(k.storeKey)
 	assets := k.GetAssetParams(ctx)
 
 	updatesCnt := 0
@@ -119,7 +118,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 			ReceivedAt: medianReceivedAt,
 		}
 
-		store.Set(types.GetCurrentPriceKey(assetCode), k.cdc.MustMarshalBinaryBare(newPrice))
+		k.addCurrentPrice(ctx, newPrice)
 
 		// save price to VM storage
 		priceVmAccessPath, priceVmValue := types.NewResPriceStorageValuesPanic(newPrice.AssetCode, newPrice.Price)

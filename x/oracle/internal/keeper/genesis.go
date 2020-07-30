@@ -26,7 +26,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 		if _, ok := k.GetAsset(ctx, cPrice.AssetCode); !ok {
 			panic(fmt.Errorf("asset_code %s does not exist", cPrice.AssetCode))
 		}
-		k.AddCurrentPrice(ctx, cPrice)
+		k.addCurrentPrice(ctx, cPrice)
 	}
 }
 

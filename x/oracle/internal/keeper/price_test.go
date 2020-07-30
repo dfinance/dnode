@@ -185,8 +185,8 @@ func TestOracleKeeper_CurrentPrice(t *testing.T) {
 		ReceivedAt: time.Now().Add(-1 * time.Hour),
 	}
 
-	// Checking AddCurrentPrice method
-	keeper.AddCurrentPrice(ctx, price2)
+	// Checking addCurrentPrice method
+	keeper.addCurrentPrice(ctx, price2)
 
 	// Checking GetCurrentPricesList method
 	cpList, err := keeper.GetCurrentPricesList(ctx)
