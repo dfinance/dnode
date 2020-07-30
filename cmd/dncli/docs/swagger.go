@@ -627,14 +627,7 @@ definitions:
     $ref: '#/definitions/types.Currencies'
   ccstorage.Currency:
     $ref: '#/definitions/types.Currency'
-  keys.PublicKey:
-    properties:
-      sum:
-        $ref: '#/definitions/keys.isPublicKey_Sum'
-        description: "Types that are valid to be assigned to Sum:\n\t*PublicKey_Ed25519"
-        type: object
-    type: object
-  keys.isPublicKey_Sum:
+  crypto.PubKey:
     type: object
   markets.MarketExtended:
     $ref: '#/definitions/types.MarketExtended'
@@ -740,6 +733,23 @@ definitions:
       code:
         type: integer
       error:
+        type: string
+    type: object
+  rest.ExecuteScriptReq:
+    properties:
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      move_args:
+        description: Script arguments
+        example:
+        - "true"
+        items:
+          type: string
+        type: array
+      move_code:
+        description: Compiled Move code
+        format: HEX encoded byte code
         type: string
     type: object
   rest.MSRespGetCall:
@@ -916,6 +926,16 @@ definitions:
         format: RFC 3339
         type: string
     type: object
+  rest.PublishModuleReq:
+    properties:
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      move_code:
+        description: Compiled Move code
+        format: HEX encoded byte code
+        type: string
+    type: object
   rest.RevokeOrderMsg:
     properties:
       type:
@@ -978,6 +998,14 @@ definitions:
         $ref: '#/definitions/vm_client.MoveFile'
         type: object
     type: object
+  rest.VmRespStdTx:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/auth.StdTx'
+        type: object
+    type: object
   rest.VmTxStatus:
     properties:
       height:
@@ -1006,6 +1034,8 @@ definitions:
     items:
       type: integer
     type: array
+  types.Address:
+    type: object
   types.Asset:
     properties:
       active:
@@ -1386,13 +1416,12 @@ definitions:
   types.Validator:
     properties:
       address:
-        items:
-          type: integer
-        type: array
+        $ref: '#/definitions/types.Address'
+        type: object
       proposer_priority:
         type: integer
       pub_key:
-        $ref: '#/definitions/keys.PublicKey'
+        $ref: '#/definitions/crypto.PubKey'
         type: object
       voting_power:
         type: integer
@@ -4091,6 +4120,68 @@ paths:
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get writeSet data from VM
+      tags:
+      - VM
+  /vm/execute:
+    put:
+      consumes:
+      - application/json
+      description: Get execute Move script stdTx object
+      operationId: vmExecuteScript
+      parameters:
+      - description: Execute request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.ExecuteScriptReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.VmRespStdTx'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Execute Move script
+      tags:
+      - VM
+  /vm/publish:
+    put:
+      consumes:
+      - application/json
+      description: Get publish Move module stdTx object
+      operationId: vmDeployModule
+      parameters:
+      - description: Publish request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.PublishModuleReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.VmRespStdTx'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Publish Move module
       tags:
       - VM
   /vm/tx/{txHash}:

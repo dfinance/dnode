@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/auth"
+
 	"github.com/dfinance/dnode/x/vm/client/vm_client"
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
@@ -20,5 +22,10 @@ type (
 	VmTxStatus struct {
 		Height int64            `json:"height"`
 		Result types.TxVMStatus `json:"result"`
+	}
+
+	VmRespStdTx struct {
+		Height int64      `json:"height"`
+		Result auth.StdTx `json:"result"`
 	}
 )

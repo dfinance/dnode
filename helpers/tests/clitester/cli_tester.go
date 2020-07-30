@@ -276,6 +276,7 @@ func (ct *CLITester) StartRestServer(printLogs bool) (restUrl string) {
 	//cmd := ct.newWbcliCmd().
 	cmd := &CLICmd{t: ct.t, base: ct.BinaryPath.wbcli}
 	cmd.AddArg("", "rest-server")
+	cmd.AddArg("home", ct.Dirs.DncliDir)
 	cmd.AddArg("laddr", "tcp://"+restAddress)
 	cmd.AddArg("node", ct.NodePorts.RPCAddress)
 	cmd.AddArg("trust-node", "true")

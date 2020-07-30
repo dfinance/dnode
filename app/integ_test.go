@@ -4,6 +4,7 @@ package app
 
 import (
 	"context"
+	"encoding/hex"
 	"io/ioutil"
 	"net"
 	"os"
@@ -24,6 +25,8 @@ import (
 	"github.com/dfinance/dnode/helpers/tests"
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	testUtils "github.com/dfinance/dnode/helpers/tests/utils"
+	"github.com/dfinance/dnode/x/vm"
+	"github.com/dfinance/dnode/x/vm/client/vm_client"
 )
 
 type MockDVM struct {
@@ -81,6 +84,7 @@ func StartMockDVMService(listener net.Listener) *MockDVM {
 	return s
 }
 
+// Test dnode crash on VM Tx failure
 func TestInteg_ConsensusFailure(t *testing.T) {
 	const script = `
 		script {
@@ -146,14 +150,15 @@ func TestInteg_ConsensusFailure(t *testing.T) {
 	}
 }
 
-func TestIntegVM_ExecuteScript(t *testing.T) {
+// Test Move compile and execute Move script with arg via CLI interface.
+func TestIntegVM_ExecuteScriptViaCLI(t *testing.T) {
 	const script = `
 		script {
 			use 0x1::Account;
 			use 0x1::DFI;
 
-			fun main(account: &signer) {
-				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
+			fun main(account: &signer, amount: u128) {
+				let dfi = Account::withdraw_from_sender<DFI::T>(account, amount);
 				Account::deposit_to_sender<DFI::T>(account, dfi);
 			}
 		}
@@ -161,7 +166,7 @@ func TestIntegVM_ExecuteScript(t *testing.T) {
 
 	ct := cliTester.New(
 		t,
-		true,
+		false,
 		cliTester.VMCommunicationOption(50, 1000, 100),
 		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
 	)
@@ -175,7 +180,7 @@ func TestIntegVM_ExecuteScript(t *testing.T) {
 	movePath := path.Join(ct.Dirs.RootDir, "script.move")
 	compiledPath := path.Join(ct.Dirs.RootDir, "script.json")
 
-	// Create .moe script file
+	// Create .move script file
 	moveFile, err := os.Create(movePath)
 	require.NoError(t, err, "creating script file")
 	_, err = moveFile.WriteString(script)
@@ -185,10 +190,290 @@ func TestIntegVM_ExecuteScript(t *testing.T) {
 	// Compile .move script file
 	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
 
+	// Check compile query cmd with invalid inputs
+	{
+		// invalid source path
+		{
+			r := ct.QueryVmCompile("./invalid.json", compiledPath, senderAddr)
+			r.CheckFailedWithErrorSubstring("moveFile")
+		}
+		// invalid account
+		{
+			r := ct.QueryVmCompile(movePath, compiledPath, "invalid")
+			r.CheckFailedWithErrorSubstring("account")
+		}
+	}
+
 	// Execute .json script file
-	ct.TxVmExecuteScript(senderAddr, compiledPath).CheckSucceeded()
+	ct.TxVmExecuteScript(senderAddr, compiledPath, "100").CheckSucceeded()
+
+	// Check execute Tx cmd with invalid inputs
+	{
+		// invalid from flag
+		{
+			r := ct.TxVmExecuteScript("invalid", compiledPath, "100")
+			r.CheckFailedWithErrorSubstring("from")
+		}
+		// invalid source path
+		{
+			r := ct.TxVmExecuteScript(senderAddr, "./invalid.json", "100")
+			r.CheckFailedWithErrorSubstring("moveFile")
+		}
+		// invalid args len (no args)
+		{
+			r := ct.TxVmExecuteScript(senderAddr, compiledPath)
+			r.CheckFailedWithErrorSubstring("length mismatch")
+		}
+		// invalid args len (more than needed)
+		{
+			r := ct.TxVmExecuteScript(senderAddr, compiledPath, "100", "200")
+			r.CheckFailedWithErrorSubstring("length mismatch")
+		}
+		// invalid args (wrong type)
+		{
+			r := ct.TxVmExecuteScript(senderAddr, compiledPath, "true")
+			r.CheckFailedWithErrorSubstring("true")
+		}
+	}
 }
 
+// Test Move compile and execute Move script with arg via REST interface.
+func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
+	const script = `
+		script {
+			use 0x1::Account;
+			use 0x1::DFI;
+
+			fun main(account: &signer, amount: u128) {
+				let dfi = Account::withdraw_from_sender<DFI::T>(account, amount);
+				Account::deposit_to_sender<DFI::T>(account, dfi);
+			}
+		}
+	`
+
+	ct := cliTester.New(
+		t,
+		false,
+		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
+	)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	// Start DVM container
+	dvmStop := tests.LaunchDVMWithNetTransport(t, ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort, false)
+	defer dvmStop()
+
+	senderName := "validator1"
+	senderAddress := ct.Accounts[senderName].Address
+
+	// Compile script
+	byteCode := ""
+	{
+		r, resp := ct.RestQueryVMCompile(senderAddress, script)
+		r.CheckSucceeded()
+
+		require.NotEmpty(t, resp.Code)
+
+		byteCode = resp.Code
+	}
+
+	// Check compile endpoint with invalid inputs
+	{
+		// invalid account
+		{
+			r, _ := ct.RestQueryVMCompile("invalid", script)
+			r.CheckFailed(400, nil)
+		}
+	}
+
+	// Execute script
+	{
+		arg := "100"
+		q, stdTx := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "", arg)
+		q.CheckSucceeded()
+
+		// verify stdTx
+		{
+			scriptArg, err := vm_client.NewU128ScriptArg(arg)
+			require.NoError(t, err)
+
+			code, err := hex.DecodeString(byteCode)
+			require.NoError(t, err)
+
+			require.Len(t, stdTx.Msgs, 1)
+			require.IsType(t, vm.MsgExecuteScript{}, stdTx.Msgs[0])
+			executeMsg := stdTx.Msgs[0].(vm.MsgExecuteScript)
+			require.EqualValues(t, code, executeMsg.Script)
+			require.Len(t, executeMsg.Args, 1)
+			require.EqualValues(t, scriptArg, executeMsg.Args[0])
+			require.Equal(t, ct.Accounts[senderName].Address, executeMsg.Signer.String())
+		}
+
+		// run Tx
+		r, _ := ct.NewRestStdTxRequest(senderName, *stdTx, false)
+		r.CheckSucceeded()
+	}
+
+	// Check execute script endpoint with invalid inputs
+	{
+		// invalid code (non-hex string)
+		{
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, "zxy", "", "100")
+			q.CheckFailed(400, nil)
+		}
+		// invalid args len (no args)
+		{
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "")
+			q.CheckFailed(400, nil)
+		}
+		// invalid args len (more than needed)
+		{
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "", "100", "200")
+			q.CheckFailed(400, nil)
+		}
+		// invalid args (wrong type)
+		{
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "", "true")
+			q.CheckFailed(400, nil)
+		}
+	}
+}
+
+// Deploy Move module via CLI interface.
+func TestIntegVM_DeployModuleViaCLI(t *testing.T) {
+	const module = `
+		address 0x1 {
+		module Foo {
+		    resource struct U64 {val: u64}
+			
+		    public fun store_u64(sender: &signer) {
+				let value = U64 {val: 1};
+		        move_to<U64>(sender, value);
+		    }
+		}
+		}
+	`
+
+	ct := cliTester.New(
+		t,
+		false,
+		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
+	)
+	defer ct.Close()
+
+	// Start DVM container
+	dvmStop := tests.LaunchDVMWithNetTransport(t, ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort, false)
+	defer dvmStop()
+
+	senderAddr := ct.Accounts["validator1"].Address
+	movePath := path.Join(ct.Dirs.RootDir, "module.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "module.json")
+
+	// Create .move module file
+	moveFile, err := os.Create(movePath)
+	require.NoError(t, err, "creating module file")
+	_, err = moveFile.WriteString(module)
+	require.NoError(t, err, "write module file")
+	require.NoError(t, moveFile.Close(), "close module file")
+
+	// Compile .move module file
+	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
+
+	// Execute .json script file
+	ct.TxVmDeployModule(senderAddr, compiledPath).CheckSucceeded()
+
+	// Check deploy contract Tx cmd with invalid inputs
+	{
+		// invalid from flag
+		{
+			r := ct.TxVmDeployModule("invalid", compiledPath)
+			r.CheckFailedWithErrorSubstring("from")
+		}
+		// invalid source path
+		{
+			r := ct.TxVmDeployModule(senderAddr, "./invalid.json")
+			r.CheckFailedWithErrorSubstring("moveFile")
+		}
+	}
+}
+
+// Deploy Move module via REST interface.
+func TestIntegVM_DeployModuleViaREST(t *testing.T) {
+	const module = `
+		address 0x1 {
+		module Foo {
+		    resource struct U64 {val: u64}
+			
+		    public fun store_u64(sender: &signer) {
+				let value = U64 {val: 1};
+		        move_to<U64>(sender, value);
+		    }
+		}
+		}
+	`
+
+	ct := cliTester.New(
+		t,
+		false,
+		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
+	)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	// Start DVM container
+	dvmStop := tests.LaunchDVMWithNetTransport(t, ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort, false)
+	defer dvmStop()
+
+	senderName := "validator1"
+	senderAddress := ct.Accounts[senderName].Address
+
+	// Compile module
+	byteCode := ""
+	{
+		r, resp := ct.RestQueryVMCompile(senderAddress, module)
+		r.CheckSucceeded()
+
+		require.NotEmpty(t, resp.Code)
+
+		byteCode = resp.Code
+	}
+
+	// Deploy script
+	{
+		q, stdTx := ct.RestQueryVMPublishModuleStdTx(senderName, byteCode, "")
+		q.CheckSucceeded()
+
+		// verify stdTx
+		{
+			code, err := hex.DecodeString(byteCode)
+			require.NoError(t, err)
+
+			require.Len(t, stdTx.Msgs, 1)
+			require.IsType(t, vm.MsgDeployModule{}, stdTx.Msgs[0])
+			deployMsg := stdTx.Msgs[0].(vm.MsgDeployModule)
+			require.EqualValues(t, code, deployMsg.Module)
+			require.Equal(t, ct.Accounts[senderName].Address, deployMsg.Signer.String())
+		}
+
+		// run Tx
+		r, _ := ct.NewRestStdTxRequest(senderName, *stdTx, false)
+		r.CheckSucceeded()
+	}
+
+	// Check deploy module endpoint with invalid inputs
+	{
+		// invalid code (non-hex string)
+		{
+			q, _ := ct.RestQueryVMPublishModuleStdTx(senderName, "zxy", "")
+			q.CheckFailed(400, nil)
+		}
+	}
+}
+
+// Test dnode <-> dvm request-retry mechanism.
 func TestIntegVM_RequestRetry(t *testing.T) {
 	// TODO: Test should be rewritten as its success / failure is Moon phase dependant (not repeatable)
 	t.Skip()

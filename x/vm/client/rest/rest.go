@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
@@ -32,11 +33,27 @@ type CompileReq struct {
 	Account string `json:"address" format:"bech32/hex" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 }
 
+type ExecuteScriptReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	// Compiled Move code
+	MoveCode string `json:"move_code" yaml:"move_code" format:"HEX encoded byte code"`
+	// Script arguments
+	MoveArgs []string `json:"move_args" yaml:"move_args" example:"true"`
+}
+
+type PublishModuleReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	// Compiled Move code
+	MoveCode string `json:"move_code" yaml:"move_code" format:"HEX encoded byte code"`
+}
+
 // Registering routes for REST API.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/compile", types.ModuleName), compile(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/data/{%s}/{%s}", types.ModuleName, accountAddrName, vmPathName), getData(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", types.ModuleName, txHash), getTxVMStatus(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/execute", types.ModuleName), executeScript(cliCtx)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("/%s/publish", types.ModuleName), deployModule(cliCtx)).Methods("PUT")
 }
 
 // Compile godoc
@@ -180,5 +197,132 @@ func getTxVMStatus(cliCtx context.CLIContext) http.HandlerFunc {
 
 		resp := types.NewVMStatusFromABCILogs(output)
 		rest.PostProcessResponse(w, cliCtx, resp)
+	}
+}
+
+// GetIssue godoc
+// @Tags VM
+// @Summary Execute Move script
+// @Description Get execute Move script stdTx object
+// @ID vmExecuteScript
+// @Accept  json
+// @Produce json
+// @Param request body ExecuteScriptReq true "Execute request"
+// @Success 200 {object} VmRespStdTx
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /vm/execute [put]
+func executeScript(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		compilerAddr := viper.GetString(vm_client.FlagCompilerAddr)
+
+		// parse inputs
+		var req ExecuteScriptReq
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, err := helpers.ParseSdkAddressParam("from", baseReq.From, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		_, code, err := helpers.ParseHexStringParam("move_code", req.MoveCode, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		typedArgs, err := vm_client.ExtractArguments(compilerAddr, code)
+		if err != nil {
+			retErr := helpers.BuildError(
+				"move_args",
+				strings.Join(req.MoveArgs, ", "),
+				helpers.ParamTypeRestRequest,
+				fmt.Sprintf("extracting typed args from the code: %v", err),
+			)
+			rest.WriteErrorResponse(w, http.StatusBadRequest, retErr.Error())
+			return
+		}
+
+		scriptArgs, err := vm_client.ConvertStringScriptArguments(req.MoveArgs, typedArgs)
+		if err != nil {
+			retErr := helpers.BuildError(
+				"move_args",
+				strings.Join(req.MoveArgs, ", "),
+				helpers.ParamTypeRestRequest,
+				fmt.Sprintf("converting input args to typed args: %v", err),
+			)
+			rest.WriteErrorResponse(w, http.StatusBadRequest, retErr.Error())
+			return
+		}
+		if len(scriptArgs) == 0 {
+			scriptArgs = nil
+		}
+
+		// create the message
+		msg := types.NewMsgExecuteScript(fromAddr, code, scriptArgs)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
+// GetIssue godoc
+// @Tags VM
+// @Summary Publish Move module
+// @Description Get publish Move module stdTx object
+// @ID vmDeployModule
+// @Accept  json
+// @Produce json
+// @Param request body PublishModuleReq true "Publish request"
+// @Success 200 {object} VmRespStdTx
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /vm/publish [put]
+func deployModule(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs
+		var req PublishModuleReq
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, err := helpers.ParseSdkAddressParam("from", baseReq.From, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		_, code, err := helpers.ParseHexStringParam("move_code", req.MoveCode, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		// create the message
+		msg := types.NewMsgDeployModule(fromAddr, code)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
 	}
 }
