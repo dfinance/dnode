@@ -72,9 +72,10 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetLcsView returns query command that returns LCS view for VM writeSet based on request struct meta.
 func GetLcsView(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "get-lcs-view [address] [moduleStructMovePath] [viewRequestPath]",
-		Short: "Get write set data LCS string view for {address}::{moduleName}::{structName} Move path",
-		Args:  cobra.ExactArgs(3),
+		Use:     "get-lcs-view [address] [moduleStructMovePath] [viewRequestPath]",
+		Short:   "Get write set data LCS string view for {address}::{moduleName}::{structName} Move path",
+		Example: "get-lcs-view 0x0000000000000000000000000000000000000001 Block::BlockMetadata ./block.json",
+		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
