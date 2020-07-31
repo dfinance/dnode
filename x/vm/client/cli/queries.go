@@ -120,8 +120,9 @@ func GetLcsView(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			fmt.Println(string(res))
 
-			return cliCtx.PrintOutput(res)
+			return nil
 		},
 	}
 	helpers.BuildCmdHelp(cmd, []string{
