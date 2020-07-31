@@ -432,6 +432,18 @@ func getGenesis(t *testing.T) []byte {
 	return bz
 }
 
+// readFile reads file content.
+func readFile(t *testing.T, fileName string) string {
+	f, err := os.Open(fileName)
+	require.NoError(t, err, "opening file %q", fileName)
+	defer f.Close()
+
+	bz, err := ioutil.ReadAll(f)
+	require.NoError(t, err, "reading file %q", fileName)
+
+	return string(bz)
+}
+
 func init() {
 	if flag.Lookup(FlagCompiler) == nil {
 		vmCompiler = flag.String(FlagCompiler, "127.0.0.1:50053", "compiler address")
