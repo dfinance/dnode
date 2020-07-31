@@ -22,9 +22,6 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data json.RawMessage) {
 	for _, item := range state.HistoryItems {
 		k.SetHistoryItem(ctx, item)
 	}
-
-	k.cdc.MustUnmarshalJSON(data, &state)
-
 }
 
 // ExportGenesis exports module genesis state using current params state.

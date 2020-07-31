@@ -34,12 +34,22 @@ func GetRawPricesKey(assetCode types.AssetCode, blockHeight int64) []byte {
 	)
 }
 
-// GetCurrentPriceKey Get a key to store CurrentPrice for specific assetCode.
-func GetCurrentPriceKey(assetCode types.AssetCode) []byte {
+// GetCurrentPricePrefix Get a prefix for store CurrentPrice.
+func GetCurrentPricePrefix() []byte {
 	return bytes.Join(
 		[][]byte{
 			ModuleKey,
 			CurrentPriceKey,
+		},
+		KeyDelimiter,
+	)
+}
+
+// GetCurrentPriceKey Get a key to store CurrentPrice for specific assetCode.
+func GetCurrentPriceKey(assetCode types.AssetCode) []byte {
+	return bytes.Join(
+		[][]byte{
+			GetCurrentPricePrefix(),
 			[]byte(assetCode),
 		},
 		KeyDelimiter,

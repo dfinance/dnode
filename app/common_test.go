@@ -477,8 +477,14 @@ func CheckSetGenesisDVM(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccoun
 
 	// read VM genesis from file and add to genesisState
 	{
-		vmGenesisPath := os.ExpandEnv("${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json")
-		stateBytes, err := ioutil.ReadFile(vmGenesisPath)
+		vmGenesisPath := "${GOPATH}/src/github.com/dfinance/dnode/x/vm/internal/keeper/genesis_ws.json"
+
+		vmGenesisPathEnv := os.Getenv("VMWSPATH")
+		if vmGenesisPathEnv != "" {
+			vmGenesisPath = vmGenesisPathEnv
+		}
+
+		stateBytes, err := ioutil.ReadFile(os.ExpandEnv(vmGenesisPath))
 		require.NoError(t, err, "reading VM genesis file")
 
 		genesisState[vm.ModuleName] = stateBytes

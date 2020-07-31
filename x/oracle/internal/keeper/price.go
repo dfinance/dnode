@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -22,6 +23,117 @@ func (k Keeper) GetCurrentPrice(ctx sdk.Context, assetCode dnTypes.AssetCode) ty
 	k.cdc.MustUnmarshalBinaryBare(bz, &price)
 
 	return price
+}
+
+// GetCurrentPricesList returns all current prices.
+func (k Keeper) GetCurrentPricesList(ctx sdk.Context) (types.CurrentPrices, error) {
+	k.modulePerms.AutoCheck(types.PermRead)
+
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, types.GetCurrentPricePrefix())
+	defer iterator.Close()
+
+	currentPrices := types.CurrentPrices{}
+
+	for ; iterator.Valid(); iterator.Next() {
+		cPrice := types.CurrentPrice{}
+		if err := k.cdc.UnmarshalBinaryBare(iterator.Value(), &cPrice); err != nil {
+			err = fmt.Errorf("order unmarshal: %w", err)
+			return nil, err
+		}
+		currentPrices = append(currentPrices, cPrice)
+	}
+
+	return currentPrices, nil
+}
+
+// addCurrentPrice adds currentPrice item to the storage.
+func (k Keeper) addCurrentPrice(ctx sdk.Context, currentPrice types.CurrentPrice) {
+	k.modulePerms.AutoCheck(types.PermWrite)
+
+	store := ctx.KVStore(k.storeKey)
+
+	bz := k.cdc.MustMarshalBinaryBare(currentPrice)
+	store.Set(types.GetCurrentPriceKey(currentPrice.AssetCode), bz)
+}
+
+// SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs and cleans up previous inputs.
+func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
+	k.modulePerms.AutoCheck(types.PermWrite)
+
+	assets := k.GetAssetParams(ctx)
+
+	updatesCnt := 0
+	for _, v := range assets {
+		assetCode := v.AssetCode
+		rawPrices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
+
+		l := len(rawPrices)
+		var medianPrice sdk.Int
+		var medianReceivedAt time.Time
+		// TODO make threshold for acceptance (ie. require 51% of oracles to have posted valid prices
+		if l == 0 {
+			// Error if there are no valid prices in the raw oracle
+			//return types.ErrNoValidPrice(k.codespace)
+			medianPrice = sdk.ZeroInt()
+		} else if l == 1 {
+			// Return immediately if there's only one price
+			medianPrice, medianReceivedAt = rawPrices[0].Price, rawPrices[0].ReceivedAt
+		} else {
+			// sort the prices
+			sort.Slice(rawPrices, func(i, j int) bool {
+				return rawPrices[i].Price.LT(rawPrices[j].Price)
+			})
+			// If there's an even number of prices
+			if l%2 == 0 {
+				// TODO make sure this is safe.
+				// Since it's a price and not a balance, division with precision loss is OK.
+				price1 := rawPrices[l/2-1].Price
+				price2 := rawPrices[l/2].Price
+				sum := price1.Add(price2)
+				divsor := sdk.NewInt(2)
+				medianPrice = sum.Quo(divsor)
+				medianReceivedAt = ctx.BlockTime().UTC()
+			} else {
+				// integer division, so we'll get an integer back, rounded down
+				medianPrice, medianReceivedAt = rawPrices[l/2].Price, rawPrices[l/2].ReceivedAt
+			}
+		}
+
+		// check if there is no rawPrices or medianPrice is invalid
+		if medianPrice.IsZero() {
+			continue
+		}
+
+		// check new price for the asset appeared, no need to update after every block
+		oldPrice := k.GetCurrentPrice(ctx, assetCode)
+		if oldPrice.AssetCode != "" && oldPrice.Price.Equal(medianPrice) {
+			continue
+		}
+
+		// set the new price for the asset
+		newPrice := types.CurrentPrice{
+			AssetCode:  assetCode,
+			Price:      medianPrice,
+			ReceivedAt: medianReceivedAt,
+		}
+
+		k.addCurrentPrice(ctx, newPrice)
+
+		// save price to VM storage
+		priceVmAccessPath, priceVmValue := types.NewResPriceStorageValuesPanic(newPrice.AssetCode, newPrice.Price)
+		k.vmKeeper.SetValue(ctx, priceVmAccessPath, priceVmValue)
+
+		// emit event
+		updatesCnt++
+		ctx.EventManager().EmitEvent(types.NewPriceEvent(newPrice))
+	}
+
+	if updatesCnt > 0 {
+		ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(types.ModuleName))
+	}
+
+	return nil
 }
 
 // GetRawPrices fetches the set of all prices posted by oracles for an asset and specific blockHeight.
@@ -80,86 +192,6 @@ func (k Keeper) SetPrice(
 	store.Set(types.GetRawPricesKey(assetCode, ctx.BlockHeight()), k.cdc.MustMarshalBinaryBare(prices))
 
 	return prices[index], nil
-}
-
-// SetCurrentPrices updates the price of an asset to the median of all valid oracle inputs and cleans up previous inputs.
-func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
-	k.modulePerms.AutoCheck(types.PermWrite)
-
-	store := ctx.KVStore(k.storeKey)
-	assets := k.GetAssetParams(ctx)
-
-	updatesCnt := 0
-	for _, v := range assets {
-		assetCode := v.AssetCode
-		rawPrices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
-
-		l := len(rawPrices)
-		var medianPrice sdk.Int
-		var medianReceivedAt time.Time
-		// TODO make threshold for acceptance (ie. require 51% of oracles to have posted valid prices
-		if l == 0 {
-			// Error if there are no valid prices in the raw oracle
-			//return types.ErrNoValidPrice(k.codespace)
-			medianPrice = sdk.ZeroInt()
-		} else if l == 1 {
-			// Return immediately if there's only one price
-			medianPrice, medianReceivedAt = rawPrices[0].Price, rawPrices[0].ReceivedAt
-		} else {
-			// sort the prices
-			sort.Slice(rawPrices, func(i, j int) bool {
-				return rawPrices[i].Price.LT(rawPrices[j].Price)
-			})
-			// If there's an even number of prices
-			if l%2 == 0 {
-				// TODO make sure this is safe.
-				// Since it's a price and not a balance, division with precision loss is OK.
-				price1 := rawPrices[l/2-1].Price
-				price2 := rawPrices[l/2].Price
-				sum := price1.Add(price2)
-				divsor := sdk.NewInt(2)
-				medianPrice = sum.Quo(divsor)
-				medianReceivedAt = ctx.BlockTime().UTC()
-			} else {
-				// integer division, so we'll get an integer back, rounded down
-				medianPrice, medianReceivedAt = rawPrices[l/2].Price, rawPrices[l/2].ReceivedAt
-			}
-		}
-
-		// check if there is no rawPrices or medianPrice is invalid
-		if medianPrice.IsZero() {
-			continue
-		}
-
-		// check new price for the asset appeared, no need to update after every block
-		oldPrice := k.GetCurrentPrice(ctx, assetCode)
-		if oldPrice.AssetCode != "" && oldPrice.Price.Equal(medianPrice) {
-			continue
-		}
-
-		// set the new price for the asset
-		newPrice := types.CurrentPrice{
-			AssetCode:  assetCode,
-			Price:      medianPrice,
-			ReceivedAt: medianReceivedAt,
-		}
-
-		store.Set(types.GetCurrentPriceKey(assetCode), k.cdc.MustMarshalBinaryBare(newPrice))
-
-		// save price to VM storage
-		priceVmAccessPath, priceVmValue := types.NewResPriceStorageValuesPanic(newPrice.AssetCode, newPrice.Price)
-		k.vmKeeper.SetValue(ctx, priceVmAccessPath, priceVmValue)
-
-		// emit event
-		updatesCnt++
-		ctx.EventManager().EmitEvent(types.NewPriceEvent(newPrice))
-	}
-
-	if updatesCnt > 0 {
-		ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(types.ModuleName))
-	}
-
-	return nil
 }
 
 // nolint:errcheck

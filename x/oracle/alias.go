@@ -16,6 +16,7 @@ type (
 	Oracle             = types.Oracle
 	Oracles            = types.Oracles
 	CurrentPrice       = types.CurrentPrice
+	CurrentPrices      = types.CurrentPrices
 	PostedPrice        = types.PostedPrice
 	Keeper             = keeper.Keeper
 	MsgAddOracle       = types.MsgAddOracle

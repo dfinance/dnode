@@ -6,12 +6,21 @@ import (
 	"testing"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dnode/helpers/tests/utils"
+	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/oracle/internal/types"
 )
+
+func NewMockCurrentPrice(assetCode string, price uint64) types.CurrentPrice {
+	return types.CurrentPrice{
+		AssetCode:  dnTypes.AssetCode(assetCode),
+		Price:      sdk.NewIntFromUint64(price),
+		ReceivedAt: time.Now(),
+	}
+}
 
 // Check CheckPriceReceiveTime method with different timestamp sets.
 func TestOracleKeeper_CheckPriceReceiveTime(t *testing.T) {
@@ -125,15 +134,15 @@ func TestOracleKeeper_CurrentPrice(t *testing.T) {
 	ctx := input.ctx
 	header := ctx.BlockHeader()
 
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[0], input.stdAssetCode,
 		sdk.NewInt(33000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[1], input.stdAssetCode,
 		sdk.NewInt(35000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[2], input.stdAssetCode,
 		sdk.NewInt(34000000),
 		header.Time)
@@ -145,24 +154,44 @@ func TestOracleKeeper_CurrentPrice(t *testing.T) {
 	require.Equal(t, price.Price.Equal(sdk.NewInt(34000000)), true)
 
 	// Even number of oracles
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[0], input.stdAssetCode,
 		sdk.NewInt(33000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[1], input.stdAssetCode,
 		sdk.NewInt(35000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[2], input.stdAssetCode,
 		sdk.NewInt(34000000),
 		header.Time)
-	keeper.SetPrice(
+	_, _ = keeper.SetPrice(
 		ctx, input.addresses[3], input.stdAssetCode,
 		sdk.NewInt(36000000),
 		header.Time)
+
+	// Checking SetCurrentPrices method
 	err = keeper.SetCurrentPrices(ctx)
 	require.NoError(t, err)
+
+	// Checking GetCurrentPrice method
 	price = keeper.GetCurrentPrice(ctx, input.stdAssetCode)
 	require.Equal(t, price.Price.Equal(sdk.NewInt(34500000)), true)
+
+	price2 := types.CurrentPrice{
+		AssetCode:  dnTypes.AssetCode("usdt_dfi"),
+		Price:      sdk.NewIntFromUint64(1000000),
+		ReceivedAt: time.Now().Add(-1 * time.Hour),
+	}
+
+	// Checking addCurrentPrice method
+	keeper.addCurrentPrice(ctx, price2)
+
+	// Checking GetCurrentPricesList method
+	cpList, err := keeper.GetCurrentPricesList(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(cpList))
+	require.Equal(t, cpList[0].AssetCode, price.AssetCode)
+	require.Equal(t, cpList[0].Price.Add(cpList[1].Price), price.Price.Add(price2.Price))
 }

@@ -24,6 +24,23 @@ type CurrentPrice struct {
 	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
 
+// Valid checks that CurrentPrice is valid (used for genesis ops).
+func (cp CurrentPrice) Valid() error {
+	if err := cp.AssetCode.Validate(); err != nil {
+		return fmt.Errorf("asset_code: %w", err)
+	}
+	if cp.Price.IsZero() {
+		return fmt.Errorf("price: is zero")
+	}
+	if cp.Price.IsNegative() {
+		return fmt.Errorf("price: is negative")
+	}
+	if cp.ReceivedAt.IsZero() {
+		return fmt.Errorf("received_at: is zero")
+	}
+	return nil
+}
+
 func (cp CurrentPrice) String() string {
 	return fmt.Sprintf("CurrentPrice:\n"+
 		"AssetCode: %s\n"+
@@ -32,6 +49,8 @@ func (cp CurrentPrice) String() string {
 		cp.AssetCode, cp.Price, cp.ReceivedAt,
 	)
 }
+
+type CurrentPrices []CurrentPrice
 
 // PostedPrice contains price for an asset posted by a specific oracle.
 type PostedPrice struct {
