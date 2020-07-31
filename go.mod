@@ -11,7 +11,7 @@ require (
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
 	github.com/cosmos/cosmos-sdk v0.39.0
 	github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26
-	github.com/dfinance/glav v0.0.0-20200729153512-98d5f8ab9cb5
+	github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3
 	github.com/getsentry/sentry-go v0.5.1
@@ -35,7 +35,6 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/swaggo/http-swagger v0.0.0-20200308142732-58ac5e232fba
 	github.com/swaggo/swag v1.6.7
-	github.com/tendermint/crypto v0.0.0-20191022145703-50d29ede1e15
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.6
 	github.com/tendermint/tm-db v0.5.1

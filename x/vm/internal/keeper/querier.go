@@ -50,7 +50,13 @@ func queryLcsView(ctx sdk.Context, k Keeper, req abci.RequestQuery) ([]byte, err
 	// Build VM path using GLAV
 	var addrLibra [20]byte
 	copy(addrLibra[:], common_vm.Bech32ToLibra(request.Address)[:20])
-	resPath := glav.NewStructTag(addrLibra, request.ModuleName, request.StructName, nil).AccessVector()
+
+	var resPath []byte
+	if request.StructName != "" {
+		resPath = glav.NewStructTag(addrLibra, request.ModuleName, request.StructName, nil).AccessVector()
+	} else {
+		resPath = glav.ModuleAccessVector(addrLibra, request.ModuleName)
+	}
 
 	// Get raw writeSet data
 	resData := k.GetValueWithMiddlewares(ctx, &vm_grpc.VMAccessPath{Address: request.Address, Path: resPath})

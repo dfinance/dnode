@@ -150,8 +150,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26 h1:HjCcumhDVs5KmXxy7AAzcRzHVaHF3msBoWCpSewdFAc=
 github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
-github.com/dfinance/glav v0.0.0-20200729153512-98d5f8ab9cb5 h1:UYWSJLklh3ie5OQrwppAVHKQeScMmVi8Bh3x16mR3vA=
-github.com/dfinance/glav v0.0.0-20200729153512-98d5f8ab9cb5/go.mod h1:/0gr38+QzVxCNSNKc/WjGKtdTfV8NtMagCNO0/VjOQU=
+github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8 h1:SpACwa85hu9vFveIBPE4Xe28KiSrwxU8Lge3Pcdtr8s=
+github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8/go.mod h1:/0gr38+QzVxCNSNKc/WjGKtdTfV8NtMagCNO0/VjOQU=
 github.com/dfinance/lcs v0.1.7-big h1:z+Pvxcxvr6lKSy1vjYJtM5MnCTQ7DBjPitTywoWO9X0=
 github.com/dfinance/lcs v0.1.7-big/go.mod h1:0Ir8JvbtxibZYvgTrRbbjNjk2EImCEXOJc3WHuUaSzI=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
