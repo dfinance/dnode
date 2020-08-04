@@ -28,4 +28,9 @@ type (
 		Height int64      `json:"height"`
 		Result auth.StdTx `json:"result"`
 	}
+
+	VmRespLcsView struct {
+		Height int64       `json:"height"`
+		Result LcsViewResp `json:"result"`
+	}
 )

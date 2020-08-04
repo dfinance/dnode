@@ -14,6 +14,7 @@ require (
 	github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3
+	github.com/g3co/go-swagger-merger v0.0.0-20200729134821-4edc8debe55f // indirect
 	github.com/getsentry/sentry-go v0.5.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/spec v0.19.9 // indirect
@@ -38,8 +39,9 @@ require (
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.6
 	github.com/tendermint/tm-db v0.5.1
+	github.com/urfave/cli/v2 v2.2.0 // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
-	golang.org/x/tools v0.0.0-20200729041821-df70183b1872 // indirect
+	golang.org/x/tools v0.0.0-20200804011535-6c149bb5ef0d // indirect
 	google.golang.org/grpc v1.30.0
 	google.golang.org/protobuf v1.24.0 // indirect
 	k8s.io/apimachinery v0.18.6 // indirect
