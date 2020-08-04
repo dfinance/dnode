@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -47,10 +48,24 @@ type PublishModuleReq struct {
 	MoveCode string `json:"move_code" yaml:"move_code" format:"HEX encoded byte code"`
 }
 
+type LcsViewReq struct {
+	// Resource address
+	Account  string `json:"address" format:"bech32/hex" example:"0x0000000000000000000000000000000000000001"`
+	// Move formatted path (ModuleName::StructName, where ::StructName is optional)
+	MovePath string `json:"move_path" example:"Block::BlockMetadata"`
+	// LCS view JSON formatted request (refer to docs for specs)
+	ViewRequest string `json:"view_request" example:"[ { \"name\": \"height\", \"type\": \"U64\" } ]"`
+}
+
+type LcsViewResp struct {
+	Value string `json:"value" format:"JSON"`
+}
+
 // Registering routes for REST API.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/compile", types.ModuleName), compile(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/data/{%s}/{%s}", types.ModuleName, accountAddrName, vmPathName), getData(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/view", types.ModuleName), lcsView(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", types.ModuleName, txHash), getTxVMStatus(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/execute", types.ModuleName), executeScript(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/publish", types.ModuleName), deployModule(cliCtx)).Methods("PUT")
@@ -151,6 +166,75 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 		resp := types.ValueResp{Value: hex.EncodeToString(res)}
+
+		rest.PostProcessResponse(w, cliCtx, resp)
+	}
+}
+
+// LCSView godoc
+// @Tags VM
+// @Summary Get writeSet data from VM LCS string view
+// @Description Get writeSet data LCS string view for {address}::{moduleName}::{structName} Move path"
+// @ID vmGetData
+// @Accept  json
+// @Produce json
+// @Param request body LcsViewReq true "View request"
+// @Success 200 {object} VmRespLcsView
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /vm/view [get]
+func lcsView(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs and prepare request
+		req := LcsViewReq{}
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		address, err := helpers.ParseSdkAddressParam("address", req.Account, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		moduleName, structName := req.MovePath, ""
+		moveSepCnt := strings.Count(moduleName, "::")
+		if moveSepCnt > 1 {
+			err := helpers.BuildError("move_path", moduleName, helpers.ParamTypeRestRequest, "none/one :: separator is supported")
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if moveSepCnt == 1 {
+			values := strings.Split(moduleName, "::")
+			moduleName, structName = values[0], values[1]
+		}
+
+		var viewRequest types.ViewerRequest
+		if err := json.Unmarshal([]byte(req.ViewRequest), &viewRequest); err != nil {
+			err := helpers.BuildError("view_request", "", helpers.ParamTypeRestRequest, fmt.Sprintf("JSON unmarshal: %v", err))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		bz, err := cliCtx.Codec.MarshalJSON(types.LcsViewReq{
+			Address:     address,
+			ModuleName:  moduleName,
+			StructName:  structName,
+			ViewRequest: viewRequest,
+		})
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		// send request and process response
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryLcsView), bz)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		resp := LcsViewResp{Value: string(res)}
 
 		rest.PostProcessResponse(w, cliCtx, resp)
 	}

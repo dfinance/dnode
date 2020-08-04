@@ -14,7 +14,7 @@ cosmos_dir=$(swagger_dir)/cosmos-sdk
 dnode = ./cmd/dnode
 dncli =./cmd/dncli
 
-cosmos_version = backport/v0.39.1
+cosmos_version = backport/v0.39.x
 
 all: install
 install: go.sum install-dnode install-dncli

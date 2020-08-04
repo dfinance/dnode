@@ -28,6 +28,7 @@ func GetQueryCmd(cdc *amino.Codec) *cobra.Command {
 
 	commands := sdkClient.GetCommands(
 		cli.GetData(types.ModuleName, cdc),
+		cli.GetLcsView(types.ModuleName, cdc),
 		cli.GetTxVMStatus(cdc),
 	)
 	commands = append(commands, compileCommands...)

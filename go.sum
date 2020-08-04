@@ -150,8 +150,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26 h1:HjCcumhDVs5KmXxy7AAzcRzHVaHF3msBoWCpSewdFAc=
 github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
-github.com/dfinance/glav v0.0.0-20200729153512-98d5f8ab9cb5 h1:UYWSJLklh3ie5OQrwppAVHKQeScMmVi8Bh3x16mR3vA=
-github.com/dfinance/glav v0.0.0-20200729153512-98d5f8ab9cb5/go.mod h1:/0gr38+QzVxCNSNKc/WjGKtdTfV8NtMagCNO0/VjOQU=
+github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8 h1:SpACwa85hu9vFveIBPE4Xe28KiSrwxU8Lge3Pcdtr8s=
+github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8/go.mod h1:/0gr38+QzVxCNSNKc/WjGKtdTfV8NtMagCNO0/VjOQU=
 github.com/dfinance/lcs v0.1.7-big h1:z+Pvxcxvr6lKSy1vjYJtM5MnCTQ7DBjPitTywoWO9X0=
 github.com/dfinance/lcs v0.1.7-big/go.mod h1:0Ir8JvbtxibZYvgTrRbbjNjk2EImCEXOJc3WHuUaSzI=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
@@ -204,6 +204,8 @@ github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsouza/go-dockerclient v1.6.3 h1:VS/I3mxieZVIeaWXd57JKvSjheELafUJYtblGg75RIQ=
 github.com/fsouza/go-dockerclient v1.6.3/go.mod h1:OiSy/IhZIF+zheikZkXK7LVpGzxWchJPJKGWhBqOK4M=
+github.com/g3co/go-swagger-merger v0.0.0-20200729134821-4edc8debe55f h1:k5O6l2MEnI8MBFwK5SBGyC9OGVlPCbEf+HJwOHxGhQE=
+github.com/g3co/go-swagger-merger v0.0.0-20200729134821-4edc8debe55f/go.mod h1:jvC3b+YoOx9/SJYqqo1pN1vJ31StlOCugGCyO3EW9XA=
 github.com/gavv/httpexpect v2.0.0+incompatible/go.mod h1:x+9tiU1YnrOvnB725RkpoLv1M62hOWzwo5OXotisrKc=
 github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49PX4NzFV5kcQ=
 github.com/getsentry/sentry-go v0.4.0/go.mod h1:xkGcb82SipKQloDNa5b7hTV4VdEyc2bhwd1/UczP52k=
@@ -749,6 +751,8 @@ github.com/urfave/cli v1.22.1 h1:+mkCCcOFKPnCmVYVcURKps1Xe+3zP90gSYGNfRkjoIY=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/urfave/cli/v2 v2.1.1 h1:Qt8FeAtxE/vfdrLmR3rxR6JRE0RoVmbXu8+6kZtYU4k=
 github.com/urfave/cli/v2 v2.1.1/go.mod h1:SE9GqnLQmjVa0iPEY0f1w3ygNIYcIJ0OKPMoW2caLfQ=
+github.com/urfave/cli/v2 v2.2.0 h1:JTTnM6wKzdA0Jqodd966MVj4vWbbquZykeX1sKbe2C4=
+github.com/urfave/cli/v2 v2.2.0/go.mod h1:SE9GqnLQmjVa0iPEY0f1w3ygNIYcIJ0OKPMoW2caLfQ=
 github.com/urfave/negroni v1.0.0/go.mod h1:Meg73S6kFm/4PpbYdq35yYWoCZ9mS/YSx+lKnmiohz4=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
@@ -927,6 +931,8 @@ golang.org/x/tools v0.0.0-20200103221440-774c71fcf114 h1:DnSr2mCsxyCE6ZgIkmcWUQY
 golang.org/x/tools v0.0.0-20200103221440-774c71fcf114/go.mod h1:TB2adYChydJhpapKDTa4BR/hXlZSLoq2Wpct/0txZ28=
 golang.org/x/tools v0.0.0-20200729041821-df70183b1872 h1:/U95VAvB4ZsR91rpZX2MwiKpejhWr+UxJ+N2VlJuESk=
 golang.org/x/tools v0.0.0-20200729041821-df70183b1872/go.mod h1:njjCfa9FT2d7l9Bc6FUM5FLjQPp3cFF28FI3qnDFljA=
+golang.org/x/tools v0.0.0-20200804011535-6c149bb5ef0d h1:szSOL78iTCl0LF1AMjhSWJj8tIM0KixlUUnBtYXsmd8=
+golang.org/x/tools v0.0.0-20200804011535-6c149bb5ef0d/go.mod h1:njjCfa9FT2d7l9Bc6FUM5FLjQPp3cFF28FI3qnDFljA=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 h1:E7g+9GITq07hpfrRu66IVDexMakfv52eLZ2CXBWiKr4=

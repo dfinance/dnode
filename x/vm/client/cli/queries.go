@@ -2,8 +2,10 @@ package cli
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -62,6 +64,72 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	helpers.BuildCmdHelp(cmd, []string{
 		"VM address (Bech32 / HEX string)",
 		"VM path (HEX string)",
+	})
+
+	return cmd
+}
+
+// GetLcsView returns query command that returns LCS view for VM writeSet based on request struct meta.
+func GetLcsView(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "get-lcs-view [address] [moduleStructMovePath] [viewRequestPath]",
+		Short:   "Get write set data LCS string view for {address}::{moduleName}::{structName} Move path",
+		Example: "get-lcs-view 0x0000000000000000000000000000000000000001 Block::BlockMetadata ./block.json",
+		Args:    cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			// parse inputs
+			address, err := helpers.ParseSdkAddressParam("address", args[0], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			moduleName, structName := args[1], ""
+			moveSepCnt := strings.Count(moduleName, "::")
+			if moveSepCnt > 1 {
+				return helpers.BuildError("moduleStructMovePath", moduleName, helpers.ParamTypeCliArg, "none/one :: separator is supported")
+			}
+			if moveSepCnt == 1 {
+				values := strings.Split(moduleName, "::")
+				moduleName, structName = values[0], values[1]
+			}
+
+			viewRequestBz, err := helpers.ParseFilePath("viewRequestPath", args[2], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			var viewRequest types.ViewerRequest
+			if err := json.Unmarshal(viewRequestBz, &viewRequest); err != nil {
+				return fmt.Errorf("viewRequest JSON unmarshal: %v", err)
+			}
+
+			// prepare request
+			bz, err := cdc.MarshalJSON(types.LcsViewReq{
+				Address:     address,
+				ModuleName:  moduleName,
+				StructName:  structName,
+				ViewRequest: viewRequest,
+			})
+			if err != nil {
+				return err
+			}
+
+			// query and parse the result
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", queryRoute, types.QueryLcsView), bz)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(res))
+
+			return nil
+		},
+	}
+	helpers.BuildCmdHelp(cmd, []string{
+		"VM address (Bech32 / HEX string)",
+		"Move formatted path (ModuleName::StructName, where ::StructName is optional)",
+		"LCS view JSON formatted request filePath (refer to docs for specs)",
 	})
 
 	return cmd

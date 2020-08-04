@@ -13,6 +13,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/glav"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
@@ -1308,4 +1309,142 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 	require.PanicsWithValue(t, sdk.ErrorOutOfGas{"event type processing"}, func() {
 		input.vk.ExecuteScript(input.ctx.WithGasMeter(sdk.NewGasMeter(100000)), scriptMsg)
 	})
+}
+
+func TestResearch_LCS(t *testing.T) {
+	config := sdk.GetConfig()
+	dnodeConfig.InitBechPrefixes(config)
+
+	input := newTestInput(false)
+
+	// Create account
+	var addr1 sdk.AccAddress
+	var addr1Libra [20]byte
+	{
+		baseAmount := sdk.NewInt(1000)
+		accCoins := sdk.NewCoins(
+			sdk.NewCoin("dfi", baseAmount),
+			sdk.NewCoin("eth", baseAmount),
+			sdk.NewCoin("btc", baseAmount),
+			sdk.NewCoin("usdt", baseAmount),
+		)
+
+		addr1 = sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+		acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
+		acc1.SetCoins(accCoins)
+		input.ak.SetAccount(input.ctx, acc1)
+
+		copy(addr1Libra[:], common_vm.Bech32ToLibra(addr1)[:20])
+		t.Logf("Address: 0x%s", hex.EncodeToString(addr1Libra[:]))
+	}
+
+	// Init genesis and start DS
+	{
+		gs := getGenesis(t)
+		input.vk.InitGenesis(input.ctx, gs)
+		input.vk.SetDSContext(input.ctx)
+		input.vk.StartDSServer(input.ctx)
+		time.Sleep(2 * time.Second)
+	}
+
+	// Launch DVM container
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
+
+	// Read and compile sources, deploy byteCodes
+	{
+		moduleSrc := readFile(t, "./move/lcs_module.move")
+		moduleSrc = strings.ReplaceAll(moduleSrc, "0x123", addr1.String())
+		moduleBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
+			Text:    moduleSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+		})
+		require.NoErrorf(t, err, "module compile error")
+
+		// publish
+		{
+			moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+			require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
+
+			cacheCtx, writeCtx := input.ctx.CacheContext()
+			require.NoErrorf(t, input.vk.DeployContract(cacheCtx, moduleMsg), "module deploy error")
+
+			checkNoEventErrors(cacheCtx.EventManager().Events(), t)
+			writeCtx()
+		}
+
+		scriptSrc := readFile(t, "./move/lcs_script.move")
+		scriptSrc = strings.ReplaceAll(scriptSrc, "0x123", addr1.String())
+		scriptBytecode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
+			Text:    scriptSrc,
+			Address: common_vm.Bech32ToLibra(addr1),
+		})
+		require.NoErrorf(t, err, "script compile error")
+
+		// execute
+		{
+			scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+			require.NoErrorf(t, scriptMsg.ValidateBasic(), "script execute message validation failed")
+
+			cacheCtx, writeCtx := input.ctx.CacheContext()
+			require.NoErrorf(t, input.vk.ExecuteScript(cacheCtx, scriptMsg), "script execute error")
+
+			checkNoEventErrors(cacheCtx.EventManager().Events(), t)
+			writeCtx()
+		}
+	}
+
+	// Build VM resource path
+	resPath := glav.NewStructTag(addr1Libra, "Foo", "Bar", nil).AccessVector()
+	t.Logf("Resource path: 0x%s", hex.EncodeToString(resPath))
+
+	// Get resource raw data
+	resAccessPath := &vm_grpc.VMAccessPath{Address: addr1, Path: resPath}
+	resRawData := input.vk.GetValue(input.ctx, resAccessPath)
+	require.NotNil(t, resRawData, "resource raw data not found")
+	t.Logf("Raw resource data: %s", hex.EncodeToString(resRawData))
+
+	// Viewer parsing
+	viewerRequest := types.ViewerRequest{
+		types.ViewerItem{Name: "u8Val", Type: "U8"},
+		types.ViewerItem{Name: "u64Val", Type: "U64"},
+		types.ViewerItem{Name: "u128Val", Type: "U128"},
+		types.ViewerItem{Name: "boolVal", Type: "bool"},
+		types.ViewerItem{Name: "addrVal", Type: "address"},
+		types.ViewerItem{
+			Name:      "vectU8Val",
+			Type:      "vector",
+			InnerItem: &types.ViewerRequest{types.ViewerItem{Type: "U8"}},
+		},
+		types.ViewerItem{
+			Name:      "vectU64Val",
+			Type:      "vector",
+			InnerItem: &types.ViewerRequest{types.ViewerItem{Type: "U64"}},
+		},
+		types.ViewerItem{
+			Name: "innerStruct",
+			Type: "struct",
+			InnerItem: &types.ViewerRequest{
+				types.ViewerItem{Name: "a", Type: "U8"},
+				types.ViewerItem{Name: "b", Type: "bool"},
+			},
+		},
+		types.ViewerItem{
+			Name: "vectComplex",
+			Type: "vector",
+			InnerItem: &types.ViewerRequest{
+				types.ViewerItem{
+					Type: "struct",
+					InnerItem: &types.ViewerRequest{
+						types.ViewerItem{Name: "a", Type: "U8"},
+						types.ViewerItem{Name: "b", Type: "bool"},
+					},
+				},
+			},
+		},
+	}
+	resString, err := StringifyLCSData(viewerRequest, resRawData)
+	require.NoError(t, err, "viewer parsing")
+	require.NotEmpty(t, resString)
+	t.Logf("Viewer result:\n%s", resString)
 }
