@@ -35,7 +35,7 @@ func TestIntegVM_CommunicationUDSOverDocker(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationOption(5, 1000),
 		cliTester.VMCommunicationBaseAddressUDSOption(dsSocket, dvmSocket),
 	)
 	defer ct.Close()

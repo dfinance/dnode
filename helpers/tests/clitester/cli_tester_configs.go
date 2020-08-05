@@ -273,16 +273,14 @@ func NewTestVMConnectionConfigTCP() (c VMConnectionConfig, retErr error) {
 }
 
 type VMCommunicationConfig struct {
-	MinBackoffMs int
-	MaxBackoffMs int
-	MaxAttempts  int
+	MaxAttempts    uint
+	ReqTimeoutInMs uint
 }
 
 func NewTestVMCommunicationConfig() VMCommunicationConfig {
 	return VMCommunicationConfig{
-		MinBackoffMs: 100,
-		MaxBackoffMs: 150,
-		MaxAttempts:  1,
+		MaxAttempts:    1,
+		ReqTimeoutInMs: 5000,
 	}
 }
 

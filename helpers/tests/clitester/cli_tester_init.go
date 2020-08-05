@@ -230,9 +230,8 @@ func (ct *CLITester) initChain() {
 	{
 		vmConfig := dnConfig.DefaultVMConfig()
 		vmConfig.Address, vmConfig.DataListen = ct.VMConnection.ConnectAddress, ct.VMConnection.ListenAddress
-		vmConfig.InitialBackoff = ct.VMCommunication.MinBackoffMs
-		vmConfig.MaxBackoff = ct.VMCommunication.MaxBackoffMs
 		vmConfig.MaxAttempts = ct.VMCommunication.MaxAttempts
+		vmConfig.ReqTimeoutInMs = ct.VMCommunication.ReqTimeoutInMs
 		dnConfig.WriteVMConfig(ct.Dirs.RootDir, vmConfig)
 	}
 }

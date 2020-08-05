@@ -752,6 +752,28 @@ definitions:
         format: HEX encoded byte code
         type: string
     type: object
+  rest.LcsViewReq:
+    properties:
+      address:
+        description: Resource address
+        example: "0x0000000000000000000000000000000000000001"
+        format: bech32/hex
+        type: string
+      move_path:
+        description: Move formatted path (ModuleName::StructName, where ::StructName is optional)
+        example: Block::BlockMetadata
+        type: string
+      view_request:
+        description: LCS view JSON formatted request (refer to docs for specs)
+        example: '[ { "name": "height", "type": "U64" } ]'
+        type: string
+    type: object
+  rest.LcsViewResp:
+    properties:
+      value:
+        format: JSON
+        type: string
+    type: object
   rest.MSRespGetCall:
     properties:
       height:
@@ -998,6 +1020,14 @@ definitions:
         $ref: '#/definitions/vm_client.MoveFile'
         type: object
     type: object
+  rest.VmRespLcsView:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/rest.LcsViewResp'
+        type: object
+    type: object
   rest.VmRespStdTx:
     properties:
       height:
@@ -1034,8 +1064,6 @@ definitions:
     items:
       type: integer
     type: array
-  types.Address:
-    type: object
   types.Asset:
     properties:
       active:
@@ -1134,6 +1162,24 @@ definitions:
     items:
       $ref: '#/definitions/types.Coin'
     type: array
+  types.Commission:
+    properties:
+      max_change_rate:
+        $ref: '#/definitions/types.Dec'
+        description: maximum daily increase of the validator commission, as a fraction
+        type: object
+      max_rate:
+        $ref: '#/definitions/types.Dec'
+        description: maximum commission rate which validator can ever charge, as a fraction
+        type: object
+      rate:
+        $ref: '#/definitions/types.Dec'
+        description: the commission rate charged to delegators, as a fraction
+        type: object
+      update_time:
+        description: the last time the commission rate was changed
+        type: string
+    type: object
   types.Currencies:
     items:
       $ref: '#/definitions/types.Currency'
@@ -1189,6 +1235,24 @@ definitions:
     items:
       $ref: '#/definitions/types.DecCoin'
     type: array
+  types.Description:
+    properties:
+      details:
+        description: optional details
+        type: string
+      identity:
+        description: optional identity signature (ex. UPort or Keybase)
+        type: string
+      moniker:
+        description: name
+        type: string
+      security_contact:
+        description: optional security contact info
+        type: string
+      website:
+        description: optional website link
+        type: string
+    type: object
   types.ID:
     $ref: '#/definitions/sdk.Uint'
   types.Int:
@@ -1413,18 +1477,52 @@ definitions:
     items:
       $ref: '#/definitions/types.VMStatus'
     type: array
+  types.ValAddress:
+    items:
+      type: integer
+    type: array
   types.Validator:
     properties:
-      address:
-        $ref: '#/definitions/types.Address'
+      commission:
+        $ref: '#/definitions/types.Commission'
+        description: commission parameters
         type: object
-      proposer_priority:
-        type: integer
-      pub_key:
+      consensus_pubkey:
         $ref: '#/definitions/crypto.PubKey'
+        description: the consensus public key of the validator; bech encoded in JSON
         type: object
-      voting_power:
+      delegator_shares:
+        $ref: '#/definitions/types.Dec'
+        description: total shares issued to a validator's delegators
+        type: object
+      description:
+        $ref: '#/definitions/types.Description'
+        description: description terms for the validator
+        type: object
+      jailed:
+        description: has the validator been jailed from bonded status?
+        type: boolean
+      min_self_delegation:
+        $ref: '#/definitions/types.Int'
+        description: validator's self declared minimum self delegation
+        type: object
+      operator_address:
+        $ref: '#/definitions/types.ValAddress'
+        description: address of the validator's operator; bech encoded in JSON
+        type: object
+      status:
+        description: validator status (bonded/unbonding/unbonded)
+        type: string
+      tokens:
+        $ref: '#/definitions/types.Int'
+        description: delegated tokens (incl. self-delegation)
+        type: object
+      unbonding_height:
+        description: if unbonding, height at which this validator has begun unbonding
         type: integer
+      unbonding_time:
+        description: if unbonding, min time for the validator to complete unbonding
+        type: string
     type: object
   types.Validators:
     items:
@@ -4216,6 +4314,37 @@ paths:
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get TX VM execution status
+      tags:
+      - VM
+  /vm/view:
+    get:
+      consumes:
+      - application/json
+      description: Get writeSet data LCS string view for {address}::{moduleName}::{structName} Move path"
+      operationId: vmGetData
+      parameters:
+      - description: View request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.LcsViewReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.VmRespLcsView'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get writeSet data from VM LCS string view
       tags:
       - VM
 schemes:
