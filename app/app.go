@@ -122,9 +122,9 @@ type DnServiceApp struct {
 	supplyKeeper    supply.Keeper
 	stakingKeeper   staking.Keeper
 	mintKeeper      mint.Keeper
-	evidenceKeeper  evidence.Keeper
 	distrKeeper     distribution.Keeper
 	slashingKeeper  slashing.Keeper
+	evidenceKeeper  evidence.Keeper
 	ccKeeper        currencies.Keeper
 	poaKeeper       poa.Keeper
 	msKeeper        multisig.Keeper
@@ -325,31 +325,9 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.mintKeeper = mint.NewKeeper(
 		cdc, keys[mint.StoreKey],
 		app.paramsKeeper.Subspace(mint.DefaultParamspace),
-		stakingKeeper,
+		&stakingKeeper,
 		app.supplyKeeper,
 		auth.FeeCollectorName,
-	)
-
-	// EvidenceKeeper catchs double sign and provide evidence to confirm Byzantine validators.
-	evidenceKeeper := evidence.NewKeeper(
-		cdc,
-		keys[evidence.StoreKey],
-		app.paramsKeeper.Subspace(evidence.DefaultParamspace),
-		stakingKeeper,
-		app.slashingKeeper,
-	)
-	evidenceRouter := evidence.NewRouter()
-	evidenceKeeper.SetRouter(evidenceRouter)
-	app.evidenceKeeper = *evidenceKeeper
-
-	// Initialize currency keeper.
-	app.ccKeeper = currencies.NewKeeper(
-		cdc,
-		keys[currencies.StoreKey],
-		app.bankKeeper,
-		app.supplyKeeper,
-		app.ccsKeeper,
-		appModulePerms(currencies.AvailablePermissions),
 	)
 
 	// DistributionKeeper distributes rewards between Proof-of-Stake validators and delegators.
@@ -357,7 +335,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		cdc,
 		keys[distribution.StoreKey],
 		app.paramsKeeper.Subspace(distribution.DefaultParamspace),
-		stakingKeeper,
+		&stakingKeeper,
 		app.supplyKeeper,
 		auth.FeeCollectorName,
 		app.ModuleAccountAddrs(),
@@ -367,9 +345,21 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.slashingKeeper = slashing.NewKeeper(
 		cdc,
 		keys[slashing.StoreKey],
-		stakingKeeper,
+		&stakingKeeper,
 		app.paramsKeeper.Subspace(slashing.DefaultParamspace),
 	)
+
+	// EvidenceKeeper catchs double sign and provide evidence to confirm Byzantine validators.
+	evidenceKeeper := evidence.NewKeeper(
+		cdc,
+		keys[evidence.StoreKey],
+		app.paramsKeeper.Subspace(evidence.DefaultParamspace),
+		&stakingKeeper,
+		app.slashingKeeper,
+	)
+	evidenceRouter := evidence.NewRouter()
+	evidenceKeeper.SetRouter(evidenceRouter)
+	app.evidenceKeeper = *evidenceKeeper
 
 	// Initialize StakingKeeper.
 	app.stakingKeeper = *stakingKeeper.SetHooks(
@@ -377,6 +367,16 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 			app.distrKeeper.Hooks(),
 			app.slashingKeeper.Hooks(),
 		),
+	)
+
+	// Initialize currency keeper.
+	app.ccKeeper = currencies.NewKeeper(
+		cdc,
+		keys[currencies.StoreKey],
+		app.bankKeeper,
+		app.supplyKeeper,
+		app.ccsKeeper,
+		appModulePerms(currencies.AvailablePermissions),
 	)
 
 	// PoaKeeper stores list of Proof-of-Authority validators used by multisig system.
@@ -521,6 +521,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		mint.ModuleName,
 		evidence.ModuleName,
 		supply.ModuleName,
+		crisis.ModuleName,
 		poa.ModuleName,
 		multisig.ModuleName,
 		currencies.ModuleName,
@@ -528,7 +529,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		markets.ModuleName,
 		orders.ModuleName,
 		orderbook.ModuleName,
-		crisis.ModuleName,
 		genutil.ModuleName,
 	)
 
