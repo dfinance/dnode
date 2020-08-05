@@ -236,12 +236,10 @@ func NewTestDnAppDVM(t *testing.T, logOpts ...log.Option) (*DnServiceApp, string
 
 	// create VM config
 	config := &vmConfig.VMConfig{
-		Address:           dvmAddr,
-		DataListen:        dsAddr,
-		MaxAttempts:       10,
-		InitialBackoff:    500,
-		MaxBackoff:        1500,
-		BackoffMultiplier: 0.1,
+		Address:        dvmAddr,
+		DataListen:     dsAddr,
+		MaxAttempts:    10,
+		ReqTimeoutInMs: 1000,
 	}
 
 	// create app

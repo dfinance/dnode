@@ -51,11 +51,10 @@ func BinaryPathsOptions(dnodePath, dncliPath string) CLITesterOption {
 	}
 }
 
-func VMCommunicationOption(minBackoffMs, maxBackoffMs, maxAttempts int) CLITesterOption {
+func VMCommunicationOption(maxAttempts, reqTimeoutInMs uint) CLITesterOption {
 	return func(ct *CLITester) error {
-		ct.VMCommunication.MinBackoffMs = minBackoffMs
-		ct.VMCommunication.MaxBackoffMs = maxBackoffMs
 		ct.VMCommunication.MaxAttempts = maxAttempts
+		ct.VMCommunication.ReqTimeoutInMs = reqTimeoutInMs
 
 		return nil
 	}

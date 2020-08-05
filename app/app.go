@@ -263,7 +263,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	)
 
 	// Upgrade handler with name matching proposal name should be registered here.
-	//app.upgradeKeeper.SetUpgradeHandler("My_update", func(ctx sdk.Context, plan upgrade.Plan) { })
+	app.upgradeKeeper.SetUpgradeHandler("v0.6.1", func(ctx sdk.Context, plan upgrade.Plan) {})
 
 	// VMKeeper stores VM resources and interacts with DVM.
 	app.vmKeeper = vm.NewKeeper(

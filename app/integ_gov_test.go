@@ -63,7 +63,7 @@ func TestIntegGov_StdlibUpdate(t *testing.T) {
 		t,
 		true,
 		cliTester.DaemonLogLevelOption("x/vm/dsserver:info,x/vm:info,x/gov:info,main:info,state:info,*:error"),
-		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationOption(5, 1000),
 		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
 	)
 	defer ct.Close()

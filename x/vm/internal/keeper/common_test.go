@@ -343,12 +343,10 @@ func newTestInput(launchMock bool) testInput {
 
 func newMockVMConfig() *vmConfig.VMConfig {
 	return &vmConfig.VMConfig{
-		Address:           *vmMockAddress,
-		DataListen:        *dataListenMock,
-		MaxAttempts:       vmConfig.DefaultMaxAttempts,
-		InitialBackoff:    vmConfig.DefaultInitialBackoff,
-		MaxBackoff:        vmConfig.DefaultMaxBackoff,
-		BackoffMultiplier: vmConfig.DefaultBackoffMultiplier,
+		Address:        *vmMockAddress,
+		DataListen:     *dataListenMock,
+		MaxAttempts:    vmConfig.DefaultMaxAttempts,
+		ReqTimeoutInMs: vmConfig.DefaultReqTimeout,
 	}
 }
 

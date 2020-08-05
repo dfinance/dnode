@@ -31,10 +31,8 @@ const (
 	DefaultDataListen = "tcp://127.0.0.1:50052" // Default data server address to listen for connections from VM.
 
 	// Default retry configs.
-	DefaultMaxAttempts       = 0    // Default VM retry attempts.
-	DefaultInitialBackoff    = 1000 // Default VM 100 milliseconds for retry attempts.
-	DefaultMaxBackoff        = 2000 // Default VM max backoff.
-	DefaultBackoffMultiplier = 0.1  // Default backoff multiplayer (10)
+	DefaultMaxAttempts = 0 // Default maximum attempts for retry.
+	DefaultReqTimeout  = 0 // Default request timeout per attempt [ms].
 
 	// Default governance params.
 	DefaultGovMinDepositAmount = "100000000000000000000" // 100 dfi
@@ -52,23 +50,18 @@ type VMConfig struct {
 	Address    string `mapstructure:"vm_address"`     // address of virtual machine.
 	DataListen string `mapstructure:"vm_data_listen"` // data listen.
 
-	// Retry policy.
-	// Example how backoff works - https://stackoverflow.com/questions/43224683/what-does-backoffmultiplier-mean-in-defaultretrypolicy.
-	MaxAttempts       int     `mapstructure:"vm_retry_max_attempts"`       // maximum attempts for retry, for infinity retry - use 0.
-	InitialBackoff    int     `mapstructure:"vm_retry_initial_backoff"`    // initial back off in ms.
-	MaxBackoff        int     `mapstructure:"vm_retry_max_backoff"`        // max backoff in ms.
-	BackoffMultiplier float64 `mapstructure:"vm_retry_backoff_multiplier"` // backoff multiplier.
+	// Retry policy
+	MaxAttempts    uint `mapstructure:"vm_retry_max_attempts"`   // maximum attempts for retry (0 - infinity)
+	ReqTimeoutInMs uint `mapstructure:"vm_retry_req_timeout_ms"` // request timeout per attempt (0 - infinity) [ms]
 }
 
 // Default VM configuration.
 func DefaultVMConfig() *VMConfig {
 	return &VMConfig{
-		Address:           DefaultVMAddress,
-		DataListen:        DefaultDataListen,
-		MaxAttempts:       DefaultMaxAttempts,
-		InitialBackoff:    DefaultInitialBackoff,
-		MaxBackoff:        DefaultMaxBackoff,
-		BackoffMultiplier: DefaultBackoffMultiplier,
+		Address:        DefaultVMAddress,
+		DataListen:     DefaultDataListen,
+		MaxAttempts:    DefaultMaxAttempts,
+		ReqTimeoutInMs: DefaultReqTimeout,
 	}
 }
 

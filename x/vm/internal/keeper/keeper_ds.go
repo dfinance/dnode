@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"math"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,11 +13,14 @@ import (
 
 // RetryExecReq contains VM "execution" request meta (request details and retry settings).
 type RetryExecReq struct {
-	RawModule      *vm_grpc.VMPublishModule // Request to retry (module publish).
-	RawScript      *vm_grpc.VMExecuteScript // Request to retry (script execution)
-	Attempt        int                      // Current attempt.
-	CurrentTimeout int                      // Current timeout.
-	MaxAttempts    int                      // Max attempts.
+	// Request to retry (module publish).
+	RawModule *vm_grpc.VMPublishModule
+	// Request to retry (script execution)
+	RawScript *vm_grpc.VMExecuteScript
+	// Max number of request attempts (0 - infinite)
+	MaxAttempts uint
+	// Request timeout per attempt (0 - infinite) [ms]
+	ReqTimeoutInMs uint
 }
 
 // StartDSServer starts DataSource server.
@@ -58,68 +60,64 @@ func (k Keeper) CloseConnections() {
 // Contract: either RawModule or RawScript must be specified for RetryExecReq.
 func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grpc.VMExecuteResponse, retErr error) {
 	doneCh := make(chan bool)
-	go func() {
-		var cancelCtx func()
-		stopPrevCtx := func() {
-			if cancelCtx != nil {
-				cancelCtx()
-			}
-		}
+	curAttempt := uint(0)
+	reqTimeout := time.Duration(req.ReqTimeoutInMs) * time.Millisecond
+	reqStartedAt := time.Now()
 
+	go func() {
 		defer func() {
 			close(doneCh)
-			stopPrevCtx()
 		}()
 
 		for {
-			stopPrevCtx()
-			curTimeout := time.Duration(req.CurrentTimeout) * time.Millisecond
-			connCtx, cancelFunc := context.WithTimeout(context.Background(), curTimeout)
-			cancelCtx = cancelFunc
-
-			connStartedAt := time.Now()
+			var connCtx context.Context
+			var connCancel context.CancelFunc
 			var resp *vm_grpc.VMExecuteResponse
 			var err error
+
+			curAttempt++
+
+			connCtx = context.Background()
+			if reqTimeout > 0 {
+				connCtx, connCancel = context.WithTimeout(context.Background(), reqTimeout)
+			}
+
+			curReqStartedAt := time.Now()
 			if req.RawModule != nil {
 				resp, err = k.client.PublishModule(connCtx, req.RawModule)
 			} else if req.RawScript != nil {
 				resp, err = k.client.ExecuteScript(connCtx, req.RawScript)
 			}
-
-			connDuration := time.Since(connStartedAt)
-			if err != nil {
-				if req.Attempt == 0 {
-					// write to Sentry (if enabled)
-					k.GetLogger(ctx).Error(fmt.Sprintf("Can't get answer from VM in %v, will try to reconnect in %s attempts: %v", req.CurrentTimeout, getMaxAttemptsStr(req.MaxAttempts), err))
-				}
-				req.Attempt += 1
-
-				if req.MaxAttempts != 0 && req.Attempt == req.MaxAttempts {
-					// return error because of max attempts.
-					logErr := fmt.Errorf("max %d attemps reached, can't get answer from VM: %v", req.Attempt, err)
-					k.GetLogger(ctx).Error(logErr.Error())
-					retErr = logErr
-					return
-				}
-
-				if curTimeout > connDuration {
-					time.Sleep(curTimeout - connDuration)
-				}
-
-				req.CurrentTimeout += int(math.Round(float64(req.CurrentTimeout) * k.config.BackoffMultiplier))
-				if req.CurrentTimeout > k.config.MaxBackoff {
-					req.CurrentTimeout = k.config.MaxBackoff
-				}
-
-				continue
+			if connCancel != nil {
+				connCancel()
 			}
-			k.GetLogger(ctx).Info(fmt.Sprintf("Successfully connected to VM with %v timeout in %d attempts", req.CurrentTimeout, req.Attempt))
-			retResp = resp
+			curReqDur := time.Since(curReqStartedAt)
 
-			return
+			if err == nil {
+				retResp, retErr = resp, nil
+				return
+			}
+
+			if curAttempt == req.MaxAttempts {
+				retResp, retErr = nil, err
+				return
+			}
+
+			if curReqDur < reqTimeout {
+				time.Sleep(reqTimeout - curReqDur)
+			}
 		}
 	}()
 	<-doneCh
+
+	reqDur := time.Since(reqStartedAt)
+	msg := fmt.Sprintf("in %d attempt(s) with %v timeout (%v)", curAttempt, reqTimeout, reqDur)
+	if retErr == nil {
+		k.GetLogger(ctx).Info(fmt.Sprintf("Successfull VM request (%s)", msg))
+	} else {
+		k.GetLogger(ctx).Error(fmt.Sprintf("Failed VM request (%s): %v", msg, retErr))
+		retErr = fmt.Errorf("%s: %w", msg, retErr)
+	}
 
 	return
 }
@@ -136,13 +134,8 @@ func (k Keeper) sendExecuteReq(ctx sdk.Context, moduleReq *vm_grpc.VMPublishModu
 	retryReq := RetryExecReq{
 		RawModule:      moduleReq,
 		RawScript:      scriptReq,
-		CurrentTimeout: k.config.InitialBackoff,
 		MaxAttempts:    k.config.MaxAttempts,
-	}
-
-	if k.config.MaxAttempts < 0 {
-		// just send, in case of error - return error and panic.
-		retryReq.MaxAttempts = 1
+		ReqTimeoutInMs: k.config.ReqTimeoutInMs,
 	}
 
 	return k.retryExecReq(ctx, retryReq)
