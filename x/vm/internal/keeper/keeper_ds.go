@@ -65,28 +65,19 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 	reqStartedAt := time.Now()
 
 	go func() {
-		var connCancel context.CancelFunc
-
-		cancelPrevConn := func() {
-			if connCancel != nil {
-				connCancel()
-				connCancel = nil
-			}
-		}
-
 		defer func() {
-			cancelPrevConn()
 			close(doneCh)
 		}()
 
 		for {
+			var connCtx context.Context
+			var connCancel context.CancelFunc
 			var resp *vm_grpc.VMExecuteResponse
 			var err error
 
 			curAttempt++
-			cancelPrevConn()
 
-			connCtx := context.Background()
+			connCtx = context.Background()
 			if reqTimeout > 0 {
 				connCtx, connCancel = context.WithTimeout(context.Background(), reqTimeout)
 			}
@@ -95,6 +86,9 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 				resp, err = k.client.PublishModule(connCtx, req.RawModule)
 			} else if req.RawScript != nil {
 				resp, err = k.client.ExecuteScript(connCtx, req.RawScript)
+			}
+			if connCancel != nil {
+				connCancel()
 			}
 
 			if err == nil {
@@ -110,7 +104,7 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 	}()
 	<-doneCh
 
-	reqDur := time.Now().Sub(reqStartedAt)
+	reqDur := time.Since(reqStartedAt)
 	msg := fmt.Sprintf("in %d attempt(s) with %v timeout (%v)", curAttempt, reqTimeout, reqDur)
 	if retErr == nil {
 		k.GetLogger(ctx).Info(fmt.Sprintf("Successfull VM request (%s)", msg))

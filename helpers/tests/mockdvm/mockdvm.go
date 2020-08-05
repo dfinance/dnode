@@ -2,6 +2,7 @@ package mockdvm
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -74,7 +75,9 @@ func StartMockDVMService(listener net.Listener) *MockDVM {
 	vm_grpc.RegisterVMModulePublisherServer(server, s)
 
 	go func() {
-		server.Serve(listener)
+		if err := server.Serve(listener); err != nil {
+			fmt.Printf("MockDVM serve: %v\n", err)
+		}
 	}()
 	s.server = server
 
