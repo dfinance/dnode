@@ -420,6 +420,21 @@ func (ct *CLITester) RestQueryVMPublishModuleStdTx(senderAccName string, byteCod
 	return r, respMsg
 }
 
+func (ct *CLITester) RestQueryVMLcsView(address, movePath, viewRequest string) (*RestRequest, *vmRest.LcsViewResp) {
+	req := vmRest.LcsViewReq{
+		Account:     address,
+		MovePath:    movePath,
+		ViewRequest: viewRequest,
+	}
+
+	reqSubPath := fmt.Sprintf("%s/%s", vm.ModuleName, "view")
+	respMsg := &vmRest.LcsViewResp{}
+
+	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, req, respMsg)
+
+	return r, respMsg
+}
+
 func (ct *CLITester) RestTxOraclePostPrice(accName string, assetCode dnTypes.AssetCode, price sdk.Int, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
 	accInfo := ct.Accounts[accName]
 	require.NotNil(ct.t, accInfo, "account %s: not found", accName)

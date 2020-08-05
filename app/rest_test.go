@@ -3,6 +3,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -740,6 +741,42 @@ func TestVM_REST(t *testing.T) {
 			// invalid path
 			{
 				req, _ := ct.RestQueryVMGetData(writeSet.Address, "non-valid-path")
+				req.CheckFailed(http.StatusBadRequest, nil)
+			}
+		}
+	}
+
+	// check lcsView endpoint
+	{
+		moveAddress := "0000000000000000000000000000000000000001"
+		movePath := "Block::BlockMetadata"
+		viewRequest := `[ { "name": "height", "type": "U64" } ]`
+		req, respMsg := ct.RestQueryVMLcsView(moveAddress, movePath, viewRequest)
+		req.CheckSucceeded()
+
+		respStruct := struct {
+			Height int64
+		}{}
+		require.NoError(t, json.Unmarshal([]byte(respMsg.Value), &respStruct))
+		require.Greater(t, respStruct.Height, int64(0))
+		t.Logf("LCS view:\n%s", respMsg.Value)
+
+		// check invalid inputs
+		{
+			// invalid address
+			{
+				req, _ := ct.RestQueryVMLcsView("invalid", movePath, viewRequest)
+				req.CheckFailed(http.StatusBadRequest, nil)
+			}
+
+			// invalid movePath: multiple "::"
+			{
+				req, _ := ct.RestQueryVMLcsView(moveAddress, "A::B::C", viewRequest)
+				req.CheckFailed(http.StatusBadRequest, nil)
+			}
+			// invalid viewRequest: unparsable JSON
+			{
+				req, _ := ct.RestQueryVMLcsView(moveAddress, movePath, `[ { "A": 1 }`)
 				req.CheckFailed(http.StatusBadRequest, nil)
 			}
 		}

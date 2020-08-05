@@ -153,5 +153,230 @@ It possible to read storage data by path, e.g.:
     dncli query vm get-data [address] [path]
 
 Where:
- * `address` - address of account containing data, could be bech32 or hex string (libra);
+ * `address` - address of account containing data, could be bech32 or hex string (Libra);
  * `path` - resource path, hex string;
+
+## Get storage data LCS (Libra Canonical Serialization) view
+
+If is possible to get VM resource string representation (LCS view) using Move path.
+This is similar to using `dncli query vm get-data` command, but VM path is build automatically:
+
+    dncli query vm get-lcs-view [address] [moduleStructMovePath] [viewRequestPath]
+
+Where:
+* `address` - address of account containing data (or stdlib address), could be bech32 or hex string (Libra);
+* `moduleStructMovePath` - Move resource path;
+* `viewRequestPath` - path to file containing LCS view request in JSON format;
+
+Here is an example reading stdlib `Block` resource data:
+
+    dncli query vm get-lcs-view 0x0000000000000000000000000000000000000001 Block::BlockMetadata ./block.json
+
+`block.json` file contains the following request:
+```JSON
+[
+  {
+    "name": "height",
+    "type": "U64"
+  }
+]
+```
+
+The output in the example above would look like:
+```JSON
+{
+  "Height": 1894
+}
+```
+
+### LCS view request format
+
+LCS representation doesn't include any additional fields meta data (like JSON/gRPC for instance).
+LCS request is a struct schema description used to deserialize the resource data.
+
+Request is the JSON array containing resource fields descriptions:
+```JSON
+[
+  {                             // first resource field description
+    "name": "my_vector_field",  // field name (any name)
+    "type": "vector",           // field type (supported types)
+    "inner_item": [             // nested struct schema used for "vector" and "struct" types (null for others)
+      {                         // for "vector" type only one "inner_item" should exist (more for "struct" type)
+        "name": "",             // not used for "vector" types, but must be non-empty for "struct" type
+        "type": "U64"           // 0x1::Vector<u64>
+      }
+    ]
+  }
+]
+```
+
+Notes:
+* fields order must match resource fields order;
+* request must include all resource fields;
+
+#### Supported types
+
+* `U8` - unsigned int with 8 bits;
+* `U64` - unsigned int with 64 bits;
+* `U128` - unsigned int with 128 bits;
+* `bool` - boolean;
+* `address` - Libra address;
+* `struct` - nested struct (`inner_item` must include nested struct fields schema);
+* `vector` - `0x1::Vector` type (`inner_item` must include exactly one field schema);
+
+#### Example
+
+Let's assume we have `Foo` Move module with `Bar` resource :
+
+```Move
+address {module_address} {
+	module Foo {
+        use 0x1::Vector;
+
+        struct Inner {
+            a: u8,
+            b: bool
+        }
+
+	    resource struct Bar {
+	        u8Val:    u8,
+            u64Val:   u64,
+            u128Val:  u128,
+            boolVal:  bool,
+            addrVal:  address,
+            vU8Val:   vector<u8>,
+            vU64Val:  vector<u64>,
+            inStruct: Inner,
+            vComplex: vector<Inner>
+        }
+	}
+}
+```
+
+The LCS viewer request containing resource schema would look like:
+```JSON
+[
+    {
+        "name": "u8Val",
+        "type": "U8",
+    },
+    {
+        "name": "u64Val",
+        "type": "U64",
+    },
+    {
+        "name": "u128Val",
+        "type": "U128",
+    },
+    {
+        "name": "boolVal",
+        "type": "bool",
+    },
+    {
+        "name": "addrVal",
+        "type": "address",
+    },
+    {
+        "name": "vectU8Val",
+        "type": "vector",
+        "inner_item": [
+            {
+                "type": "U8",
+            }
+        ]
+    },
+    {
+        "name": "vectU64Val",
+        "type": "vector",
+        "inner_item": [
+            {
+                "type": "U64",
+            }
+        ]
+    },
+    {
+        "name": "innerStruct",
+        "type": "struct",
+        "inner_item": [
+            {
+                "name": "a",
+                "type": "U8",
+            },
+            {
+                "name": "b",
+                "type": "bool",
+            }
+        ]
+    },
+    {
+        "name": "vectComplex",
+        "type": "vector",
+        "inner_item": [
+            {
+                "type": "struct",
+                "inner_item": [
+                    {
+                        "name": "a",
+                        "type": "U8",
+                    },
+                    {
+                        "name": "b",
+                        "type": "bool",
+                    }
+                ]
+            }
+        ]
+    }
+]
+```
+
+The output example:
+```JSON
+{
+    "U8val": 100,
+    "U64val": 10000,
+    "U128val": 12345678910111213141516171819,
+    "Boolval": true,
+    "Addrval": [
+        220,
+        91,
+        202,
+        217,
+        255,
+        54,
+        112,
+        0,
+        44,
+        56,
+        17,
+        55,
+        236,
+        82,
+        187,
+        52,
+        88,
+        155,
+        113,
+        196
+    ],
+    "Vectu8val": "ZMg=",
+    "Vectu64val": [
+        1,
+        2
+    ],
+    "Innerstruct": {
+        "A": 128,
+        "B": false
+    },
+    "Vectcomplex": [
+        {
+            "A": 1,
+            "B": false
+        },
+        {
+            "A": 2,
+            "B": true
+        }
+    ]
+}
+```
