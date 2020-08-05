@@ -82,6 +82,7 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 				connCtx, connCancel = context.WithTimeout(context.Background(), reqTimeout)
 			}
 
+			curReqStartedAt := time.Now()
 			if req.RawModule != nil {
 				resp, err = k.client.PublishModule(connCtx, req.RawModule)
 			} else if req.RawScript != nil {
@@ -90,6 +91,7 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 			if connCancel != nil {
 				connCancel()
 			}
+			curReqDur := time.Since(curReqStartedAt)
 
 			if err == nil {
 				retResp, retErr = resp, nil
@@ -99,6 +101,10 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 			if curAttempt == req.MaxAttempts {
 				retResp, retErr = nil, err
 				return
+			}
+
+			if curReqDur < reqTimeout {
+				time.Sleep(reqTimeout - curReqDur)
 			}
 		}
 	}()
