@@ -3,10 +3,8 @@
 package app
 
 import (
-	"context"
 	"encoding/hex"
 	"io/ioutil"
-	"net"
 	"os"
 	"path"
 	"strings"
@@ -15,74 +13,16 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/server"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	grpcStatus "google.golang.org/grpc/status"
 
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/tests"
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
+	"github.com/dfinance/dnode/helpers/tests/mockdvm"
 	testUtils "github.com/dfinance/dnode/helpers/tests/utils"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vm/client/vm_client"
 )
-
-type MockDVM struct {
-	server        *grpc.Server
-	failExecution bool
-	failResponse  bool
-	execDelay     time.Duration
-}
-
-func (s *MockDVM) SetExecutionFail() { s.failExecution = true }
-func (s *MockDVM) SetExecutionOK()   { s.failExecution = false }
-func (s *MockDVM) SetResponseFail()  { s.failResponse = true }
-func (s *MockDVM) SetResponseOK()    { s.failResponse = false }
-func (s *MockDVM) SetExecutionDelay(dur time.Duration) {
-	s.execDelay = dur
-}
-func (s *MockDVM) Stop() {
-	if s.server != nil {
-		s.server.Stop()
-	}
-}
-
-func (s *MockDVM) PublishModule(ctx context.Context, in *vm_grpc.VMPublishModule) (*vm_grpc.VMExecuteResponse, error) {
-	if s.failExecution {
-		return nil, grpcStatus.Errorf(codes.Internal, "failing gRPC execution")
-	}
-
-	resp := &vm_grpc.VMExecuteResponse{}
-	if !s.failResponse {
-		resp = &vm_grpc.VMExecuteResponse{
-			WriteSet:     nil,
-			Events:       nil,
-			GasUsed:      1,
-			Status:       vm_grpc.ContractStatus_Discard,
-			StatusStruct: nil,
-		}
-	}
-
-	return resp, nil
-}
-
-func StartMockDVMService(listener net.Listener) *MockDVM {
-	s := &MockDVM{
-		execDelay: 100 * time.Millisecond,
-	}
-
-	server := grpc.NewServer()
-	vm_grpc.RegisterVMModulePublisherServer(server, s)
-
-	go func() {
-		server.Serve(listener)
-	}()
-	s.server = server
-
-	return s
-}
 
 // Test dnode crash on VM Tx failure
 func TestInteg_ConsensusFailure(t *testing.T) {
@@ -167,7 +107,7 @@ func TestIntegVM_ExecuteScriptViaCLI(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationOption(5, 1000),
 		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
 	)
 	defer ct.Close()
@@ -254,7 +194,7 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationOption(5, 1000),
 		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
 	)
 	defer ct.Close()
@@ -358,7 +298,7 @@ func TestIntegVM_DeployModuleViaCLI(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationOption(5, 1000),
 		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
 	)
 	defer ct.Close()
@@ -417,7 +357,7 @@ func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationOption(5, 1000),
 		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
 	)
 	defer ct.Close()
@@ -486,7 +426,7 @@ func TestIntegVM_RequestRetry(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		true,
-		cliTester.VMCommunicationOption(100, 500, 10),
+		cliTester.VMCommunicationOption(5, 100),
 		cliTester.VMCommunicationBaseAddressUDSOption(dsSocket, mockDVMSocket),
 	)
 	defer ct.Close()
@@ -496,7 +436,7 @@ func TestIntegVM_RequestRetry(t *testing.T) {
 	mockDVMListener, err := helpers.GetGRpcNetListener("unix://" + mockDVMSocketPath)
 	require.NoError(t, err, "creating MockDVM listener")
 
-	mockDvm := StartMockDVMService(mockDVMListener)
+	mockDvm := mockdvm.StartMockDVMService(mockDVMListener)
 	defer mockDvm.Stop()
 	require.NoError(t, testUtils.WaitForFileExists(mockDVMSocketPath, 1*time.Second), "MockDVM start failed")
 
@@ -580,7 +520,7 @@ func TestIntegVM_CommunicationUDS(t *testing.T) {
 	ct := cliTester.New(
 		t,
 		false,
-		cliTester.VMCommunicationOption(50, 1000, 100),
+		cliTester.VMCommunicationOption(5, 1000),
 		cliTester.VMCommunicationBaseAddressUDSOption(dsSocket, dvmSocket),
 	)
 	defer ct.Close()
