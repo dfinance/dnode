@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/glav"
 	"github.com/dfinance/lcs"
 
 	"github.com/dfinance/dnode/x/ccstorage/internal/types"
@@ -16,14 +17,9 @@ import (
 func (k Keeper) GetResStdCurrencyInfo(ctx sdk.Context, denom string) (types.ResCurrencyInfo, error) {
 	k.modulePerms.AutoCheck(types.PermRead)
 
-	path, err := k.GetCurrencyInfoPath(ctx, denom)
-	if err != nil {
-		return types.ResCurrencyInfo{}, sdkErrors.Wrapf(types.ErrWrongDenom, err.Error())
-	}
-
 	accessPath := &vm_grpc.VMAccessPath{
 		Address: common_vm.StdLibAddress,
-		Path:    path,
+		Path:    glav.CurrencyInfoVector(denom),
 	}
 
 	if !k.vmKeeper.HasValue(ctx, accessPath) {
@@ -46,11 +42,6 @@ func (k Keeper) storeResStdCurrencyInfo(ctx sdk.Context, currency types.Currency
 		panic(fmt.Errorf("currency %q: %v", currency.Denom, err))
 	}
 
-	path, err := k.GetCurrencyInfoPath(ctx, currency.Denom)
-	if err != nil {
-		panic(fmt.Errorf("currency %q: %v", currency.Denom, err))
-	}
-
 	bz, err := lcs.Marshal(currencyInfo)
 	if err != nil {
 		panic(fmt.Errorf("currency %q: lcs marshal: %v", currency.Denom, err))
@@ -58,7 +49,7 @@ func (k Keeper) storeResStdCurrencyInfo(ctx sdk.Context, currency types.Currency
 
 	accessPath := &vm_grpc.VMAccessPath{
 		Address: common_vm.StdLibAddress,
-		Path:    path,
+		Path:    glav.CurrencyInfoVector(currency.Denom),
 	}
 
 	k.vmKeeper.SetValue(ctx, accessPath, bz)

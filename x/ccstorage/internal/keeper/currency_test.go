@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/dfinance/glav"
 	"github.com/stretchr/testify/require"
 
 	"github.com/dfinance/dnode/x/ccstorage/internal/types"
@@ -52,10 +53,8 @@ func TestCCSKeeper_CreateCurrency(t *testing.T) {
 		require.False(t, curInfo.IsToken)
 
 		// check VM paths
-		curBalancePath, err := keeper.GetCurrencyBalancePath(ctx, denom)
-		require.NoError(t, err)
-		curInfoPath, err := keeper.GetCurrencyInfoPath(ctx, denom)
-		require.NoError(t, err)
+		curBalancePath := glav.BalanceVector(denom)
+		curInfoPath := glav.CurrencyInfoVector(denom)
 
 		require.EqualValues(t, currency.BalancePath(), curBalancePath)
 		require.EqualValues(t, currency.InfoPath(), curInfoPath)

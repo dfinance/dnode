@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/glav"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
@@ -144,8 +145,7 @@ func TestCCSKeeper_newBalance(t *testing.T) {
 		balance, err := keeper.newBalance(ctx, addr, coin)
 		require.NoError(t, err)
 
-		path, err := keeper.GetCurrencyBalancePath(ctx, coin.Denom)
-		require.NoError(t, err)
+		path := glav.CurrencyInfoVector(coin.Denom)
 
 		require.Equal(t, coin.Denom, balance.Denom)
 		require.Equal(t, coin.Amount.String(), balance.Resource.Value.String())

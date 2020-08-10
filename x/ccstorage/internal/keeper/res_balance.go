@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/glav"
 
 	"github.com/dfinance/dnode/x/ccstorage/internal/types"
 	"github.com/dfinance/dnode/x/common_vm"
@@ -84,17 +85,11 @@ func (k Keeper) RemoveAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddre
 
 // newBalance converts sdk.Coin for sdk.AccAddress to Balance.
 func (k Keeper) newBalance(ctx sdk.Context, addr sdk.AccAddress, coin sdk.Coin) (types.Balance, error) {
-	denom := coin.Denom
-	path, err := k.GetCurrencyBalancePath(ctx, denom)
-	if err != nil {
-		return types.Balance{}, fmt.Errorf("balance for %q denom: %w", denom, err)
-	}
-
 	return types.Balance{
 		Denom: coin.Denom,
 		AccessPath: &vm_grpc.VMAccessPath{
 			Address: common_vm.Bech32ToLibra(addr),
-			Path:    path,
+			Path:    glav.BalanceVector(coin.Denom),
 		},
 		Resource: types.ResBalance{
 			Value: coin.Amount.BigInt(),

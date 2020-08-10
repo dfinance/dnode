@@ -24,10 +24,6 @@ func (k Keeper) CreateCurrency(ctx sdk.Context, params types.CurrencyParams) err
 		return sdkErrors.Wrapf(types.ErrWrongParams, "currency %q: %v", denom, err)
 	}
 
-	// store VM path objects
-	k.storeCurrencyBalancePath(ctx, denom, currency.BalancePath())
-	k.storeCurrencyInfoPath(ctx, denom, currency.InfoPath())
-
 	// store currency objects
 	k.storeCurrency(ctx, currency)
 	k.storeResStdCurrencyInfo(ctx, currency)

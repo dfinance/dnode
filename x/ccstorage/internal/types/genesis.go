@@ -36,7 +36,7 @@ type CurrencyParams struct {
 	Denom string `json:"denom" yaml:"denom"`
 	// Currency decimals count
 	Decimals uint8 `json:"decimals" yaml:"decimals"`
-	// Path used to store account balance for currency denom (0x1::Dfinance::T<Coin>)
+	// Path used to store account balance for currency denom (0x1::Account::Balance<Coin>)
 	BalancePathHex string `json:"balance_path_hex" yaml:"balance_path_hex"`
 	// Path used to store CurrencyInfo for currency denom (0x1::Dfinance::Info<Coin>)
 	InfoPathHex string `json:"info_path_hex" yaml:"info_path_hex"`
