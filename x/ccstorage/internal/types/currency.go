@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/dfinance/glav"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
@@ -15,10 +16,6 @@ type Currency struct {
 	Denom string `json:"denom" yaml:"denom" example:"dfi"`
 	// Number of currency decimals
 	Decimals uint8 `json:"decimals" yaml:"decimals" example:"0"`
-	// Path used to store account balance for currency denom (0x1::Account::Balance<Coin>)
-	BalancePathHex string `json:"balance_path_hex" yaml:"balance_path_hex"`
-	// Path used to store CurrencyInfo for currency denom (0x1::Dfinance::Info<Coin>)
-	InfoPathHex string `json:"info_path_hex" yaml:"info_path_hex"`
 	// Total amount of currency coins in Bank
 	Supply sdk.Int `json:"supply" yaml:"supply" swaggertype:"string" example:"100"`
 }
@@ -37,16 +34,24 @@ func (c Currency) GetSupplyCoin() sdk.Coin {
 	return sdk.NewCoin(c.Denom, c.Supply)
 }
 
-// BalancePath return []byte representation for BalancePathHex.
+// BalancePath return []byte representation for BalancePath.
 func (c Currency) BalancePath() []byte {
-	bytes, _ := hex.DecodeString(c.BalancePathHex)
-	return bytes
+	return glav.BalanceVector(c.Denom)
 }
 
-// BalancePath return []byte representation for InfoPathHex.
+// BalancePathHex return string representation for InfoPath.
+func (c Currency) BalancePathHex() string {
+	return hex.EncodeToString(c.BalancePath())
+}
+
+// InfoPath return []byte representation for InfoPath.
 func (c Currency) InfoPath() []byte {
-	bytes, _ := hex.DecodeString(c.InfoPathHex)
-	return bytes
+	return glav.CurrencyInfoVector(c.Denom)
+}
+
+// InfoPathHex return string representation for InfoPath.
+func (c Currency) InfoPathHex() string {
+	return hex.EncodeToString(c.BalancePath())
 }
 
 // UintToDec converts sdk.Uint to sdk.Dec using currency decimals.
@@ -85,10 +90,8 @@ func (list Currencies) ToParams() CurrenciesParams {
 	var params CurrenciesParams
 	for _, currency := range list {
 		params = append(params, CurrencyParams{
-			Denom:          currency.Denom,
-			Decimals:       currency.Decimals,
-			BalancePathHex: currency.BalancePathHex,
-			InfoPathHex:    currency.InfoPathHex,
+			Denom:    currency.Denom,
+			Decimals: currency.Decimals,
 		})
 	}
 
@@ -98,10 +101,8 @@ func (list Currencies) ToParams() CurrenciesParams {
 // NewCurrency creates a new Currency object.
 func NewCurrency(params CurrencyParams, supply sdk.Int) Currency {
 	return Currency{
-		Denom:          params.Denom,
-		Decimals:       params.Decimals,
-		BalancePathHex: params.BalancePathHex,
-		InfoPathHex:    params.InfoPathHex,
-		Supply:         supply,
+		Denom:    params.Denom,
+		Decimals: params.Decimals,
+		Supply:   supply,
 	}
 }

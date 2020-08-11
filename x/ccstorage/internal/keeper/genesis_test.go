@@ -29,8 +29,6 @@ func TestCCSKeeper_InitGenesis(t *testing.T) {
 		for _, curParams := range currencies.ToParams() {
 			if curParams.Denom == genParams.Denom {
 				require.Equal(t, genParams.Decimals, curParams.Decimals)
-				require.Equal(t, genParams.BalancePathHex, curParams.BalancePathHex)
-				require.Equal(t, genParams.InfoPathHex, curParams.InfoPathHex)
 
 				foundCnt++
 			}
@@ -55,8 +53,6 @@ func TestCCSKeeper_ExportGenesis(t *testing.T) {
 		for i, expParams := range state.CurrenciesParams {
 			if curParams.Denom == expParams.Denom {
 				require.Equal(t, expParams.Decimals, curParams.Decimals)
-				require.Equal(t, expParams.BalancePathHex, curParams.BalancePathHex)
-				require.Equal(t, expParams.InfoPathHex, curParams.InfoPathHex)
 
 				foundCnt++
 				foundIdx = i

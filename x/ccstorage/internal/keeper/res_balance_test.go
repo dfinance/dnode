@@ -145,7 +145,7 @@ func TestCCSKeeper_newBalance(t *testing.T) {
 		balance, err := keeper.newBalance(ctx, addr, coin)
 		require.NoError(t, err)
 
-		path := glav.CurrencyInfoVector(coin.Denom)
+		path := glav.BalanceVector(coin.Denom)
 
 		require.Equal(t, coin.Denom, balance.Denom)
 		require.Equal(t, coin.Amount.String(), balance.Resource.Value.String())

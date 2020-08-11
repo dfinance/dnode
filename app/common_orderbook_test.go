@@ -114,14 +114,9 @@ func (tester *OrderBookTester) RegisterMarket(ownerAddr sdk.AccAddress, baseDeno
 	ctx := GetContext(tester.app, false)
 
 	registerCurrency := func(denom string, decimals uint8) {
-		_, balancePathHex := GenerateRandomBytes(10)
-		_, infoPathHex := GenerateRandomBytes(10)
-
 		ccParams := ccstorage.CurrencyParams{
-			Denom:          denom,
-			Decimals:       decimals,
-			BalancePathHex: balancePathHex,
-			InfoPathHex:    infoPathHex,
+			Denom:    denom,
+			Decimals: decimals,
 		}
 		err := tester.app.ccKeeper.CreateCurrency(ctx, ccParams)
 		require.NoError(tester.t, err, "adding currency for denom: %s", denom)

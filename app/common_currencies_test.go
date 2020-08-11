@@ -225,14 +225,9 @@ func GetAllSupplies(t *testing.T, app *DnServiceApp, ctx sdk.Context) AllSupplie
 
 // CreateCurrency creates currency with random VM paths.
 func CreateCurrency(t *testing.T, app *DnServiceApp, ccDenom string, ccDecimals uint8) {
-	_, balancePathHex := GenerateRandomBytes(10)
-	_, infoPathHex := GenerateRandomBytes(10)
-
 	params := ccstorage.CurrencyParams{
-		Denom:          ccDenom,
-		Decimals:       ccDecimals,
-		BalancePathHex: balancePathHex,
-		InfoPathHex:    infoPathHex,
+		Denom:    ccDenom,
+		Decimals: ccDecimals,
 	}
 
 	app.BeginBlock(abci.RequestBeginBlock{Header: abci.Header{ChainID: chainID, Height: app.LastBlockHeight() + 1}})

@@ -14,32 +14,14 @@ func TestCCS_GenesisParams_Validate(t *testing.T) {
 
 	// ok
 	{
-		param := CurrencyParams{"dfi",0, "0102", "AABB"}
+		param := CurrencyParams{"dfi", 0}
 		require.NoError(t, param.Validate())
 	}
 
 	// fail: invalid denom
 	{
-		param1 := CurrencyParams{"dfi1",0, "0102", "AABB"}
+		param1 := CurrencyParams{"dfi1", 0}
 		require.Error(t, param1.Validate())
-	}
-
-	// fail: empty path
-	{
-		param1 := CurrencyParams{"dfi",0, "", "AABB"}
-		require.Error(t, param1.Validate())
-
-		param2 := CurrencyParams{"dfi",0, "0102", ""}
-		require.Error(t, param2.Validate())
-	}
-
-	// fail: invalid hex path
-	{
-		param1 := CurrencyParams{"dfi",0, "z", "AABB"}
-		require.Error(t, param1.Validate())
-
-		param2 := CurrencyParams{"dfi",0, "0102", "z"}
-		require.Error(t, param2.Validate())
 	}
 }
 
@@ -57,10 +39,8 @@ func TestCCS_Genesis_Validate(t *testing.T) {
 	// ok: new 1
 	{
 		state.CurrenciesParams = append(state.CurrenciesParams, CurrencyParams{
-			Denom:          "dfi",
-			Decimals:       0,
-			BalancePathHex: "0102",
-			InfoPathHex:    "0A0B",
+			Denom:    "dfi",
+			Decimals: 0,
 		})
 		require.NoError(t, state.Validate())
 	}
@@ -68,10 +48,8 @@ func TestCCS_Genesis_Validate(t *testing.T) {
 	// ok: new 2
 	{
 		state.CurrenciesParams = append(state.CurrenciesParams, CurrencyParams{
-			Denom:          "btc",
-			Decimals:       8,
-			BalancePathHex: "1112",
-			InfoPathHex:    "1A1B",
+			Denom:    "btc",
+			Decimals: 8,
 		})
 		require.NoError(t, state.Validate())
 	}
@@ -79,10 +57,8 @@ func TestCCS_Genesis_Validate(t *testing.T) {
 	// fail: duplicate
 	{
 		state.CurrenciesParams = append(state.CurrenciesParams, CurrencyParams{
-			Denom:          "btc",
-			Decimals:       4,
-			BalancePathHex: "3132",
-			InfoPathHex:    "3A3B",
+			Denom:    "btc",
+			Decimals: 4,
 		})
 		require.Error(t, state.Validate())
 	}

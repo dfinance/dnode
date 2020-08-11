@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/dfinance/glav"
 
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/ccstorage"
@@ -87,11 +88,11 @@ func NewCurrencyMap(cdc *codec.Codec, state GenesisState) map[string]CurrencyInf
 	for _, params := range ccsGenesis.CurrenciesParams {
 		info := CurrencyInfo{
 			Decimals:       params.Decimals,
-			BalancePathHex: params.BalancePathHex,
-			InfoPathHex:    params.InfoPathHex,
+			BalancePath:    glav.BalanceVector(params.Denom),
+			InfoPath:       glav.CurrencyInfoVector(params.Denom),
+			BalancePathHex: hex.EncodeToString(glav.BalanceVector(params.Denom)),
+			InfoPathHex:    hex.EncodeToString(glav.CurrencyInfoVector(params.Denom)),
 		}
-		info.BalancePath, _ = hex.DecodeString(params.BalancePathHex)
-		info.InfoPath, _ = hex.DecodeString(params.InfoPathHex)
 
 		currencies[params.Denom] = info
 	}

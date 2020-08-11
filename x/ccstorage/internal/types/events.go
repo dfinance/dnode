@@ -20,6 +20,6 @@ func NewCCCreatedEvent(currency Currency) sdk.Event {
 		EventTypesCreate,
 		sdk.NewAttribute(AttributeDenom, currency.Denom),
 		sdk.NewAttribute(AttributeDecimals, strconv.FormatUint(uint64(currency.Decimals), 10)),
-		sdk.NewAttribute(AttributeInfoPath, currency.InfoPathHex),
+		sdk.NewAttribute(AttributeInfoPath, currency.InfoPathHex()),
 	)
 }
