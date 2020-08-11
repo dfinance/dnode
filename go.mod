@@ -47,5 +47,3 @@ require (
 	k8s.io/apimachinery v0.18.6 // indirect
 	k8s.io/kubernetes v1.13.0
 )
-
-replace "github.com/dfinance/glav" v0.0.0-20200731202515-8e21f58877c8 => "/home/valera/work/dfinance/glav"
