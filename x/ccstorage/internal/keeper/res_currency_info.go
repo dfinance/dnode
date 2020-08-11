@@ -49,7 +49,7 @@ func (k Keeper) storeResStdCurrencyInfo(ctx sdk.Context, currency types.Currency
 
 	accessPath := &vm_grpc.VMAccessPath{
 		Address: common_vm.StdLibAddress,
-		Path:    glav.CurrencyInfoVector(currency.Denom),
+		Path:    currency.InfoPath(),
 	}
 
 	k.vmKeeper.SetValue(ctx, accessPath, bz)

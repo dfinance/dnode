@@ -129,7 +129,7 @@ func TestCCSKeeper_newBalance(t *testing.T) {
 	t.Parallel()
 
 	input := NewTestInput(t)
-	ctx, keeper := input.ctx, input.keeper
+	keeper := input.keeper
 
 	addr := sdk.AccAddress("addr1")
 	coin := sdk.Coin{Amount: sdk.NewIntFromUint64(100)}
@@ -142,21 +142,13 @@ func TestCCSKeeper_newBalance(t *testing.T) {
 
 	// ok
 	{
-		balance, err := keeper.newBalance(ctx, addr, coin)
-		require.NoError(t, err)
-
+		balance := keeper.newBalance(addr, coin)
 		path := glav.BalanceVector(coin.Denom)
 
 		require.Equal(t, coin.Denom, balance.Denom)
 		require.Equal(t, coin.Amount.String(), balance.Resource.Value.String())
 		require.EqualValues(t, common_vm.Bech32ToLibra(addr), balance.AccessPath.Address)
 		require.EqualValues(t, path, balance.AccessPath.Path)
-	}
-
-	// fail: non-existing currency
-	{
-		_, err := keeper.newBalance(ctx, addr, sdk.Coin{Denom: "testa", Amount: sdk.ZeroInt()})
-		require.Error(t, err)
 	}
 }
 
