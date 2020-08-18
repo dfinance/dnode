@@ -5,7 +5,6 @@ package types
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,7 +23,7 @@ func TestVM_KeepEvent(t *testing.T) {
 	// "keep" no error
 	{
 		exec := &vm_grpc.VMExecuteResponse{
-			Status: vm_grpc.ContractStatus_Keep,
+			Status: &vm_grpc.VMStatus{},
 		}
 		events := NewContractEvents(exec)
 
@@ -38,33 +37,23 @@ func TestVM_KeepEvent(t *testing.T) {
 
 	// "keep" with error
 	{
+		errMessage := "this is error!!111"
 		exec := &vm_grpc.VMExecuteResponse{
-			Status: vm_grpc.ContractStatus_Keep,
-			StatusStruct: &vm_grpc.VMStatus{
-				MajorStatus: 100,
-				SubStatus:   200,
-				Message:     "this is error!!111",
+			Status: &vm_grpc.VMStatus{
+				Error:   &vm_grpc.VMStatus_ExecutionFailure{},
+				Message: &vm_grpc.Message{Text: errMessage},
 			},
 		}
 		events := NewContractEvents(exec)
 
-		require.Len(t, events, 2)
+		require.Len(t, events, 1)
 
 		event0 := events[0]
 		require.Equal(t, EventTypeContractStatus, event0.Type)
 		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
-		require.EqualValues(t, AttributeValueStatusKeep, event0.Attributes[0].Value)
-
-		event1 := events[1]
-		require.Equal(t, EventTypeContractStatus, event1.Type)
-		require.EqualValues(t, AttributeStatus, event1.Attributes[0].Key)
-		require.EqualValues(t, AttributeValueStatusError, event1.Attributes[0].Value)
-		require.EqualValues(t, AttributeErrMajorStatus, event1.Attributes[1].Key)
-		require.EqualValues(t, strconv.FormatUint(100, 10), event1.Attributes[1].Value)
-		require.EqualValues(t, AttributeErrSubStatus, event1.Attributes[2].Key)
-		require.EqualValues(t, strconv.FormatUint(200, 10), event1.Attributes[2].Value)
-		require.EqualValues(t, AttributeErrMessage, event1.Attributes[3].Key)
-		require.NotEmpty(t, event1.Attributes[3].Value)
+		require.EqualValues(t, AttributeValueStatusDiscard, event0.Attributes[0].Value)
+		require.EqualValues(t, AttributeErrMessage, event0.Attributes[1].Key)
+		require.EqualValues(t, errMessage, event0.Attributes[1].Value)
 	}
 }
 
@@ -75,7 +64,9 @@ func TestVM_DiscardEvent(t *testing.T) {
 	// "discard" no error
 	{
 		exec := &vm_grpc.VMExecuteResponse{
-			Status: vm_grpc.ContractStatus_Discard,
+			Status: &vm_grpc.VMStatus{
+				Error: &vm_grpc.VMStatus_Abort{},
+			},
 		}
 		events := NewContractEvents(exec)
 
@@ -89,12 +80,11 @@ func TestVM_DiscardEvent(t *testing.T) {
 
 	// "discard" with error
 	{
+		errMessage := "this is error!!111"
 		exec := &vm_grpc.VMExecuteResponse{
-			Status: vm_grpc.ContractStatus_Discard,
-			StatusStruct: &vm_grpc.VMStatus{
-				MajorStatus: 0,
-				SubStatus:   1,
-				Message:     "this is error!!111",
+			Status: &vm_grpc.VMStatus{
+				Error:   &vm_grpc.VMStatus_ExecutionFailure{},
+				Message: &vm_grpc.Message{Text: errMessage},
 			},
 		}
 		events := NewContractEvents(exec)
@@ -105,12 +95,8 @@ func TestVM_DiscardEvent(t *testing.T) {
 		require.Equal(t, EventTypeContractStatus, event0.Type)
 		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
 		require.EqualValues(t, AttributeValueStatusDiscard, event0.Attributes[0].Value)
-		require.EqualValues(t, AttributeErrMajorStatus, event0.Attributes[1].Key)
-		require.EqualValues(t, strconv.FormatUint(0, 10), event0.Attributes[1].Value)
-		require.EqualValues(t, AttributeErrSubStatus, event0.Attributes[2].Key)
-		require.EqualValues(t, strconv.FormatUint(1, 10), event0.Attributes[2].Value)
-		require.EqualValues(t, AttributeErrMessage, event0.Attributes[3].Key)
-		require.NotEmpty(t, event0.Attributes[3].Value)
+		require.EqualValues(t, AttributeErrMessage, event0.Attributes[1].Key)
+		require.EqualValues(t, errMessage, event0.Attributes[1].Value)
 	}
 }
 

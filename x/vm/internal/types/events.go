@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
-	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
@@ -36,47 +35,36 @@ func NewContractEvents(exec *vm_grpc.VMExecuteResponse) sdk.Events {
 		panic(fmt.Errorf("building contract sdk.Events: exec is nil"))
 	}
 
-	statusStructAttributes := func() []sdk.Attribute {
-		if exec.StatusStruct == nil {
-			return nil
-		}
-
-		return []sdk.Attribute{
-			sdk.NewAttribute(AttributeErrMajorStatus, strconv.FormatUint(exec.StatusStruct.MajorStatus, 10)),
-			sdk.NewAttribute(AttributeErrSubStatus, strconv.FormatUint(exec.StatusStruct.SubStatus, 10)),
-			sdk.NewAttribute(AttributeErrMessage, exec.StatusStruct.Message),
-		}
+	status := exec.GetStatus()
+	if status == nil {
+		panic(fmt.Errorf("building contract sdk.Events: exec.Status is nil"))
 	}
 
 	var events sdk.Events
-	switch exec.Status {
-	case vm_grpc.ContractStatus_Keep:
-		// "keep" event
+
+	if status.GetError() == nil {
 		events = append(events, sdk.NewEvent(
 			EventTypeContractStatus,
 			sdk.NewAttribute(AttributeStatus, AttributeValueStatusKeep),
 		))
 
-		// "error" event
-		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != VMCodeExecuted {
-			event := sdk.NewEvent(
-				EventTypeContractStatus,
-				sdk.NewAttribute(AttributeStatus, AttributeValueStatusError),
-			)
-			event = event.AppendAttributes(statusStructAttributes()...)
-
-			events = append(events, event)
-		}
-	case vm_grpc.ContractStatus_Discard:
-		// "discard" event
-		event := sdk.NewEvent(
-			EventTypeContractStatus,
-			sdk.NewAttribute(AttributeStatus, AttributeValueStatusDiscard),
-		)
-		event = event.AppendAttributes(statusStructAttributes()...)
-
-		events = append(events, event)
+		return events
 	}
+
+	event := sdk.NewEvent(
+		EventTypeContractStatus,
+		sdk.NewAttribute(AttributeStatus, AttributeValueStatusDiscard),
+	)
+
+	if status.GetMessage() != nil {
+		attributes := []sdk.Attribute{
+			sdk.NewAttribute(AttributeErrMessage, status.GetMessage().GetText()),
+		}
+
+		event = event.AppendAttributes(attributes...)
+	}
+
+	events = append(events, event)
 
 	return events
 }

@@ -5,7 +5,6 @@ package keeper
 import (
 	"bytes"
 	"encoding/binary"
-	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -115,11 +114,11 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 	defer input.Stop()
 
 	resp := &vm_grpc.VMExecuteResponse{
-		Status: vm_grpc.ContractStatus_Discard,
-		StatusStruct: &vm_grpc.VMStatus{
-			MajorStatus: 1,
-			SubStatus:   250,
-			Message:     "this is another errorr!!!1111",
+		Status: &vm_grpc.VMStatus{
+			Error: &vm_grpc.VMStatus_ExecutionFailure{},
+			Message: &vm_grpc.Message{
+				Text: "this is another errorr!!!1111",
+			},
 		},
 	}
 
@@ -133,28 +132,36 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 
 	// discard without status
 	resp = &vm_grpc.VMExecuteResponse{
-		Status: vm_grpc.ContractStatus_Discard,
+		Status: &vm_grpc.VMStatus{
+			Error: &vm_grpc.VMStatus_ExecutionFailure{},
+		},
 	}
 
 	ctx := input.ctx.WithEventManager(sdk.NewEventManager())
 	input.vk.processExecution(ctx, resp)
 
 	procEvents = ctx.EventManager().Events()
-	expectedEvents = types.NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Discard})
+	expectedEvents = types.NewContractEvents(&vm_grpc.VMExecuteResponse{
+		Status: &vm_grpc.VMStatus{
+			Error: &vm_grpc.VMStatus_ExecutionFailure{},
+		},
+	})
 	require.Len(t, procEvents, 2)
 	require.Len(t, expectedEvents, 1)
 	require.Equal(t, procEvents[1], expectedEvents[0])
 
 	// status keep
 	resp = &vm_grpc.VMExecuteResponse{
-		Status: vm_grpc.ContractStatus_Keep,
+		Status: &vm_grpc.VMStatus{},
 	}
 
 	ctx = input.ctx.WithEventManager(sdk.NewEventManager())
 	input.vk.processExecution(ctx, resp)
 
 	procEvents = ctx.EventManager().Events()
-	expectedEvents = types.NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Keep})
+	expectedEvents = types.NewContractEvents(&vm_grpc.VMExecuteResponse{
+		Status: &vm_grpc.VMStatus{},
+	})
 	require.Len(t, procEvents, 2)
 	require.Len(t, expectedEvents, 1)
 	require.Equal(t, procEvents[1], expectedEvents[0])
@@ -202,7 +209,7 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 	resp = &vm_grpc.VMExecuteResponse{
 		WriteSet: writeSet,
 		Events:   respEvents,
-		Status:   vm_grpc.ContractStatus_Keep,
+		Status:   &vm_grpc.VMStatus{},
 	}
 
 	ctx = input.ctx.WithEventManager(sdk.NewEventManager())
@@ -234,7 +241,7 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 
 	resp = &vm_grpc.VMExecuteResponse{
 		WriteSet: writeSet,
-		Status:   vm_grpc.ContractStatus_Keep,
+		Status:   &vm_grpc.VMStatus{},
 	}
 
 	ctx = input.ctx.WithEventManager(sdk.NewEventManager())
@@ -305,17 +312,10 @@ func TestVMKeeper_ExecStatusKeeperNotAnError(t *testing.T) {
 	input := newTestInput(true)
 	defer input.Stop()
 
-	errorStatus := vm_grpc.VMStatus{
-		MajorStatus: types.VMCodeExecuted,
-		SubStatus:   0,
-		Message:     "",
-	}
-
 	resp := &vm_grpc.VMExecuteResponse{
-		WriteSet:     nil,
-		Events:       nil,
-		Status:       vm_grpc.ContractStatus_Keep,
-		StatusStruct: &errorStatus,
+		WriteSet: nil,
+		Events:   nil,
+		Status:   &vm_grpc.VMStatus{},
 	}
 
 	input.vk.processExecution(input.ctx, resp)
@@ -341,17 +341,17 @@ func TestVMKeeper_ExecKeepAndError(t *testing.T) {
 	input := newTestInput(true)
 	defer input.Stop()
 
-	errorStatus := vm_grpc.VMStatus{
-		MajorStatus: 16,
-		SubStatus:   0,
-		Message:     "aborted error!11111!1!!!",
-	}
+	errMessage := "aborted error!11111!1!!!"
 
 	resp := &vm_grpc.VMExecuteResponse{
-		WriteSet:     nil,
-		Events:       nil,
-		Status:       vm_grpc.ContractStatus_Keep,
-		StatusStruct: &errorStatus,
+		WriteSet: nil,
+		Events:   nil,
+		Status: &vm_grpc.VMStatus{
+			Error: &vm_grpc.VMStatus_MoveError{},
+			Message: &vm_grpc.Message{
+				Text: errMessage,
+			},
+		},
 	}
 
 	input.vk.processExecution(input.ctx, resp)
@@ -363,16 +363,7 @@ func TestVMKeeper_ExecKeepAndError(t *testing.T) {
 
 	require.EqualValues(t, types.EventTypeContractStatus, events[1].Type)
 	require.EqualValues(t, types.AttributeStatus, events[1].Attributes[0].Key)
-	require.EqualValues(t, types.AttributeValueStatusKeep, events[1].Attributes[0].Value)
-
-	require.EqualValues(t, types.EventTypeContractStatus, events[2].Type)
-	require.EqualValues(t, types.AttributeStatus, events[2].Attributes[0].Key)
-	require.EqualValues(t, types.AttributeValueStatusError, events[2].Attributes[0].Value)
-	require.EqualValues(t, types.AttributeErrMajorStatus, events[2].Attributes[1].Key)
-	require.EqualValues(t, types.AttributeErrSubStatus, events[2].Attributes[2].Key)
-	require.EqualValues(t, types.AttributeErrMessage, events[2].Attributes[3].Key)
-
-	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.MajorStatus, 10)), events[2].Attributes[1].Value)
-	require.EqualValues(t, []byte(strconv.FormatUint(errorStatus.SubStatus, 10)), events[2].Attributes[2].Value)
-	require.EqualValues(t, []byte(errorStatus.Message), events[2].Attributes[3].Value)
+	require.EqualValues(t, types.AttributeValueStatusDiscard, events[1].Attributes[0].Value)
+	require.EqualValues(t, types.AttributeErrMessage, events[1].Attributes[1].Key)
+	require.EqualValues(t, errMessage, events[1].Attributes[1].Value)
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -186,15 +185,16 @@ func StringifyVMWriteSet(value *vm_grpc.VMValue) string {
 }
 
 // StringifyVMExecStatus converts vm_grpc.ContractStatus to string representation.
-func StringifyVMExecStatus(status vm_grpc.ContractStatus, sstruct *vm_grpc.VMStatus) string {
+func StringifyVMExecStatus(status *vm_grpc.VMStatus) string {
+	if status == nil {
+		return ""
+	}
+
 	strBuilder := strings.Builder{}
 
 	strBuilder.WriteString(fmt.Sprintf("Exec %q status:\n", status.String()))
-	if sstruct != nil {
-		strBuilder.WriteString(fmt.Sprintf("  Major code: %d\n", sstruct.MajorStatus))
-		strBuilder.WriteString(fmt.Sprintf("  Major status: %s\n", GetStrCode(strconv.FormatUint(sstruct.MajorStatus, 10))))
-		strBuilder.WriteString(fmt.Sprintf("  Sub code: %d\n", sstruct.SubStatus))
-		strBuilder.WriteString(fmt.Sprintf("  Message: %s", sstruct.Message))
+	if status.GetError() != nil {
+		strBuilder.WriteString(fmt.Sprintf("  Message: %s", status.GetMessage().GetText()))
 	} else {
 		strBuilder.WriteString("  VMStatus: nil")
 	}

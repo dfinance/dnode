@@ -134,26 +134,6 @@ func printEvent(event sdk.Event, t *testing.T) {
 	}
 }
 
-// check that sub status exists.
-func checkEventSubStatus(events sdk.Events, subStatus uint64, t *testing.T) {
-	found := false
-
-	for _, event := range events {
-		if event.Type == types.EventTypeContractStatus {
-			// find error
-			for _, attr := range event.Attributes {
-				if string(attr.Key) == types.AttributeErrSubStatus {
-					require.EqualValues(t, attr.Value, []byte(strconv.FormatUint(subStatus, 10)), "wrong value for sub status")
-
-					found = true
-				}
-			}
-		}
-	}
-
-	require.True(t, found, "sub status not found")
-}
-
 // check script doesn't contains errors.
 func checkNoEventErrors(events sdk.Events, t *testing.T) {
 	for _, event := range events {
@@ -164,15 +144,27 @@ func checkNoEventErrors(events sdk.Events, t *testing.T) {
 						printEvent(event, t)
 						t.Fatalf("should not contains error event")
 					}
+				}
+			}
+		}
+	}
+}
 
-					if string(attr.Value) == types.AttributeValueStatusError {
-						printEvent(event, t)
-						t.Fatalf("should not contains error event")
+// check events contains errors.
+func checkEventErrors(events sdk.Events) bool {
+	for _, event := range events {
+		if event.Type == types.EventTypeContractStatus {
+			for _, attr := range event.Attributes {
+				if string(attr.Key) == types.AttributeStatus {
+					if string(attr.Value) == types.AttributeValueStatusDiscard {
+						return true
 					}
 				}
 			}
 		}
 	}
+
+	return false
 }
 
 // check that eventsA contains every event of eventsB
@@ -185,7 +177,9 @@ func checkEventsContainsEvery(t *testing.T, eventsA, eventsB sdk.Events) {
 
 // creates "keep" without an error events.
 func newKeepEvents() sdk.Events {
-	return types.NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Keep})
+	return types.NewContractEvents(&vm_grpc.VMExecuteResponse{
+		Status: &vm_grpc.VMStatus{},
+	})
 }
 
 // Test transfer of dfi between two accounts in dfi.
@@ -520,18 +514,14 @@ func TestVMKeeper_ErrorScript(t *testing.T) {
 	require.NoError(t, err)
 
 	events := input.ctx.EventManager().Events()
-	checkEventsContainsEvery(t, events, newKeepEvents())
-	for _, e := range events {
-		printEvent(e, t)
-	}
-	checkEventSubStatus(events, 122, t)
+	require.True(t, checkEventErrors(events))
 
 	// first of all - check balance
 	// then check that error still there
 	// then check that no events there only error and keep status
 	getAcc := input.ak.GetAccount(input.ctx, addr1)
 	require.True(t, getAcc.GetCoins().IsEqual(coins))
-	require.Len(t, events, 3)
+	require.Len(t, events, 2)
 }
 
 func TestVMKeeper_AllArgsTypes(t *testing.T) {

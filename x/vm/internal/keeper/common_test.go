@@ -115,7 +115,7 @@ func (server vmServer) PublishModule(context.Context, *vm_grpc.VMPublishModule) 
 		WriteSet: values,
 		Events:   nil,
 		GasUsed:  10000,
-		Status:   vm_grpc.ContractStatus_Keep,
+		Status:   &vm_grpc.VMStatus{},
 	}, nil
 }
 
@@ -148,7 +148,7 @@ func (server vmServer) ExecuteScript(context.Context, *vm_grpc.VMExecuteScript) 
 		WriteSet: values,
 		Events:   events,
 		GasUsed:  10000,
-		Status:   vm_grpc.ContractStatus_Keep,
+		Status:   &vm_grpc.VMStatus{},
 	}, nil
 }
 
