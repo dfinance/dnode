@@ -278,6 +278,7 @@ func newTestInput(launchMock bool) testInput {
 		panic(err)
 	}
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, logger)
+	input.ctx = input.ctx.WithGasMeter(sdk.NewGasMeter(10000000))
 
 	// create keepers
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
