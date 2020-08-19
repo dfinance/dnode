@@ -269,13 +269,11 @@ func NewTestDnAppDVM(t *testing.T, logOpts ...log.Option) (*DnServiceApp, string
 }
 
 // GetGenesis builds genesis state for dnode app.
-func GetGenesis(app *DnServiceApp, chainID, monikerID string, accs []*auth.BaseAccount) ([]byte, error) {
+func GetGenesis(app *DnServiceApp, chainID, monikerID string, nodeAccPrivKey secp256k1.PrivKeySecp256k1, accs []*auth.BaseAccount) ([]byte, error) {
 	// generate node validator account
 	var nodeAcc *auth.BaseAccount
 	var nodeAccPubKey crypto.PubKey
-	var nodeAccPrivKey secp256k1.PrivKeySecp256k1
 	{
-		nodeAccPrivKey = secp256k1.GenPrivKey()
 		nodeAccPubKey = nodeAccPrivKey.PubKey()
 
 		accAddr := sdk.AccAddress(nodeAccPubKey.Address())
@@ -454,12 +452,15 @@ func SetGenesis(app *DnServiceApp, genesisStateBz []byte) {
 	app.Commit()
 }
 
-// Sets genesis to DnServiceApp with default test genesis.
-func CheckSetGenesisMockVM(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) {
-	genesisStateBz, err := GetGenesis(app, chainID, "test-moniker", accs)
+// Sets genesis to DnServiceApp with default test genesis, returns validator node private key.
+func CheckSetGenesisMockVM(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccount) secp256k1.PrivKeySecp256k1 {
+	nodeAccPrivKey := secp256k1.GenPrivKey()
+	genesisStateBz, err := GetGenesis(app, chainID, "test-moniker", nodeAccPrivKey, accs)
 	require.NoError(t, err, "GetGenesis")
 
 	SetGenesis(app, genesisStateBz)
+
+	return nodeAccPrivKey
 }
 
 // Sets genesis to DnServiceApp with default test genesis and VM genesis writeSets.
@@ -467,7 +468,7 @@ func CheckSetGenesisDVM(t *testing.T, app *DnServiceApp, accs []*auth.BaseAccoun
 	// get genesis bytes
 	var genesisState GenesisState
 	{
-		stateBytes, err := GetGenesis(app, "", "testMoniker", accs)
+		stateBytes, err := GetGenesis(app, "", "testMoniker", secp256k1.GenPrivKey(), accs)
 		require.NoError(t, err, "GetGenesis")
 
 		app.cdc.MustUnmarshalJSON(stateBytes, &genesisState)

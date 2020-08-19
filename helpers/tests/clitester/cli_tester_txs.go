@@ -317,3 +317,11 @@ func (ct *CLITester) TxGovVote(fromAddress string, id uint64, option gov.VoteOpt
 
 	return r
 }
+
+func (ct *CLITester) TxDistributionWithoutParams() *TxRequest {
+	r := ct.newTxRequest()
+	r.cmd.AddArg("", "tx")
+	r.cmd.AddArg("", "distribution")
+
+	return r
+}
