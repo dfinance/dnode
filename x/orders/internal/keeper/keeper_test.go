@@ -27,7 +27,7 @@ func TestOrdersKeeper_PostRevokeOrder(t *testing.T) {
 	// non-existing market
 	{
 		owner := sdk.AccAddress("wallet13jyjuz3kkdvqx`")
-		_, err := input.keeper.PostOrder(input.ctx, owner, dnTypes.AssetCode("dfi_usd"), types.Bid, sdk.OneUint(), sdk.OneUint(), 60)
+		_, err := input.keeper.PostOrder(input.ctx, owner, dnTypes.AssetCode("xfi_usd"), types.Bid, sdk.OneUint(), sdk.OneUint(), 60)
 		require.Error(t, err)
 	}
 
@@ -39,7 +39,7 @@ func TestOrdersKeeper_PostRevokeOrder(t *testing.T) {
 	_, _, addr := authTypes.KeyTestPubAddr()
 	curBaseBalance, ok := sdk.NewIntFromString("100000000000") // 1000 btc
 	require.True(t, ok)
-	curQuoteBalance, ok := sdk.NewIntFromString("1000000000000000000000") // 1000 dfi
+	curQuoteBalance, ok := sdk.NewIntFromString("1000000000000000000000") // 1000 xfi
 	require.True(t, ok)
 
 	acc := input.accountKeeper.NewAccountWithAddress(input.ctx, addr)
@@ -95,7 +95,7 @@ func TestOrdersKeeper_PostRevokeOrder(t *testing.T) {
 
 		// bid order
 		{
-			price := sdk.NewUintFromString("10000000000000000000") // 10 dfi
+			price := sdk.NewUintFromString("10000000000000000000") // 10 xfi
 			quantity := sdk.NewUintFromString("1000000000")        // 10 btc
 
 			// post and check returned order

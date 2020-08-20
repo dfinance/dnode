@@ -794,9 +794,9 @@ func TestMarkets_REST(t *testing.T) {
 
 	// add markets
 	{
-		r1, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, cliTester.DenomDFI)
+		r1, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, cliTester.DenomXFI)
 		r1.CheckSucceeded()
-		r2, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomETH, cliTester.DenomDFI)
+		r2, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomETH, cliTester.DenomXFI)
 		r2.CheckSucceeded()
 	}
 
@@ -810,7 +810,7 @@ func TestMarkets_REST(t *testing.T) {
 
 		// already existing market
 		{
-			r, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, cliTester.DenomDFI)
+			r, _ := ct.RestTxMarketsAdd(ownerName, cliTester.DenomBTC, cliTester.DenomXFI)
 			r.CheckFailed(http.StatusOK, markets.ErrMarketExists)
 		}
 	}
@@ -823,14 +823,14 @@ func TestMarkets_REST(t *testing.T) {
 			r.CheckFailed(http.StatusInternalServerError, markets.ErrWrongID)
 		}
 
-		// existing marketID (btc-dfi)
+		// existing marketID (btc-xfi)
 		{
 			r, market := ct.RestQueryMarket(dnTypes.NewIDFromUint64(0))
 			r.CheckSucceeded()
 
 			require.Equal(t, market.ID.UInt64(), uint64(0))
 			require.Equal(t, market.BaseAssetDenom, cliTester.DenomBTC)
-			require.Equal(t, market.QuoteAssetDenom, cliTester.DenomDFI)
+			require.Equal(t, market.QuoteAssetDenom, cliTester.DenomXFI)
 		}
 	}
 
@@ -881,7 +881,7 @@ func TestMarkets_REST(t *testing.T) {
 
 		// check quoteDenom filter
 		{
-			quoteDenom := cliTester.DenomDFI
+			quoteDenom := cliTester.DenomXFI
 			r, markets := ct.RestQueryMarkets(-1, -1, nil, &quoteDenom)
 			r.CheckSucceeded()
 
@@ -893,7 +893,7 @@ func TestMarkets_REST(t *testing.T) {
 		// check multiple filters
 		{
 			baseDeno := cliTester.DenomBTC
-			quoteDenom := cliTester.DenomDFI
+			quoteDenom := cliTester.DenomXFI
 			r, markets := ct.RestQueryMarkets(-1, -1, &baseDeno, &quoteDenom)
 			r.CheckSucceeded()
 
@@ -906,12 +906,12 @@ func TestOrders_REST(t *testing.T) {
 	t.Parallel()
 
 	const (
-		DecimalsDFI = "1000000000000000000"
+		DecimalsXFI = "1000000000000000000"
 		DecimalsETH = "1000000000000000000"
 		DecimalsBTC = "100000000"
 	)
 
-	oneDfi := sdk.NewUintFromString(DecimalsDFI)
+	oneXfi := sdk.NewUintFromString(DecimalsXFI)
 	oneBtc := sdk.NewUintFromString(DecimalsBTC)
 	oneEth := sdk.NewUintFromString(DecimalsETH)
 	accountBalances := []cliTester.StringPair{
@@ -924,8 +924,8 @@ func TestOrders_REST(t *testing.T) {
 			Value: sdk.NewUint(100000000).Mul(oneEth).String(),
 		},
 		{
-			Key:   cliTester.DenomDFI,
-			Value: sdk.NewUint(100000000).Mul(oneDfi).String(),
+			Key:   cliTester.DenomXFI,
+			Value: sdk.NewUint(100000000).Mul(oneXfi).String(),
 		},
 	}
 	accountOpts := []cliTester.AccountOption{
@@ -944,13 +944,13 @@ func TestOrders_REST(t *testing.T) {
 	ownerName1, ownerName2 := accountOpts[0].Name, accountOpts[1].Name
 	ownerAddr1, ownerAddr2 := ct.Accounts[ownerName1].Address, ct.Accounts[ownerName2].Address
 	marketID0, marketID1 := dnTypes.NewIDFromUint64(0), dnTypes.NewIDFromUint64(1)
-	assetCode0, assetCode1 := dnTypes.AssetCode("btc_dfi"), dnTypes.AssetCode("eth_dfi")
+	assetCode0, assetCode1 := dnTypes.AssetCode("btc_xfi"), dnTypes.AssetCode("eth_xfi")
 
 	// add market
 	{
-		r1, _ := ct.RestTxMarketsAdd(ownerName1, cliTester.DenomBTC, cliTester.DenomDFI)
+		r1, _ := ct.RestTxMarketsAdd(ownerName1, cliTester.DenomBTC, cliTester.DenomXFI)
 		r1.CheckSucceeded()
-		r2, _ := ct.RestTxMarketsAdd(ownerName1, cliTester.DenomETH, cliTester.DenomDFI)
+		r2, _ := ct.RestTxMarketsAdd(ownerName1, cliTester.DenomETH, cliTester.DenomXFI)
 		r2.CheckSucceeded()
 	}
 
@@ -1205,12 +1205,12 @@ func TestOrders_REST(t *testing.T) {
 					From:    ownerAddr1,
 					Fees: sdk.Coins{
 						sdk.Coin{
-							Denom:  "dfi",
+							Denom:  "xfi",
 							Amount: sdk.NewIntFromUint64(1),
 						},
 					},
 				},
-				AssetCode: dnTypes.AssetCode("btc_dfi"),
+				AssetCode: dnTypes.AssetCode("btc_xfi"),
 				Direction: orders.Direction("ask"),
 				Price:     "100",
 				Quantity:  "10",
@@ -1241,7 +1241,7 @@ func TestOrders_REST(t *testing.T) {
 					From:    ownerAddr1,
 					Fees: sdk.Coins{
 						sdk.Coin{
-							Denom:  "dfi",
+							Denom:  "xfi",
 							Amount: sdk.NewIntFromUint64(1),
 						},
 					},

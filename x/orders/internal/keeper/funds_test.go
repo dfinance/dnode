@@ -33,7 +33,7 @@ func TestOrdersKeeper_OrderFill(t *testing.T) {
 	_, _, addr := authTypes.KeyTestPubAddr()
 	curBaseBalance, ok := sdk.NewIntFromString("100000000000") // 1000 btc
 	require.True(t, ok)
-	curQuoteBalance, ok := sdk.NewIntFromString("1000000000000000000000") // 1000 dfi
+	curQuoteBalance, ok := sdk.NewIntFromString("1000000000000000000000") // 1000 xfi
 	require.True(t, ok)
 
 	acc := input.accountKeeper.NewAccountWithAddress(input.ctx, addr)
@@ -54,12 +54,12 @@ func TestOrdersKeeper_OrderFill(t *testing.T) {
 	assetCode := helperTypes.AssetCode(market.GetAssetCode())
 
 	// post orders
-	askPrice := sdk.NewUintFromString("10000000000000000000") // 10 dfi
+	askPrice := sdk.NewUintFromString("10000000000000000000") // 10 xfi
 	askQuantity := sdk.NewUintFromString("5000000000")        // 50 btc
 	askOrder, err := input.keeper.PostOrder(input.ctx, addr, assetCode, types.Ask, askPrice, askQuantity, 60)
 	require.NoError(t, err)
 
-	bidPrice := sdk.NewUintFromString("25000000000000000000") // 25 dfi
+	bidPrice := sdk.NewUintFromString("25000000000000000000") // 25 xfi
 	bidQuantity := sdk.NewUintFromString("2500000000")        // 25 btc
 	bidOrder, err := input.keeper.PostOrder(input.ctx, addr, assetCode, types.Bid, bidPrice, bidQuantity, 60)
 	require.NoError(t, err)
@@ -72,7 +72,7 @@ func TestOrdersKeeper_OrderFill(t *testing.T) {
 	{
 		// ask order
 		{
-			clearancePrice := sdk.NewUintFromString("15000000000000000000") // 15 dfi
+			clearancePrice := sdk.NewUintFromString("15000000000000000000") // 15 xfi
 			fillQuantity := askQuantity.Quo(sdk.NewUint(2))
 			unfillQuantity := askOrder.Quantity.Sub(fillQuantity)
 			fill := types.OrderFill{
@@ -110,7 +110,7 @@ func TestOrdersKeeper_OrderFill(t *testing.T) {
 
 		// bid order
 		{
-			clearancePrice := sdk.NewUintFromString("20000000000000000000") // 20 dfi (with refund)
+			clearancePrice := sdk.NewUintFromString("20000000000000000000") // 20 xfi (with refund)
 			fillQuantity := bidQuantity.Quo(sdk.NewUint(2))
 			unfillQuantity := bidOrder.Quantity.Sub(fillQuantity)
 			fill := types.OrderFill{
@@ -152,7 +152,7 @@ func TestOrdersKeeper_OrderFill(t *testing.T) {
 	{
 		// ask order
 		{
-			clearancePrice := sdk.NewUintFromString("20000000000000000000") // 20 dfi
+			clearancePrice := sdk.NewUintFromString("20000000000000000000") // 20 xfi
 			fillQuantity := askQuantity.Quo(sdk.NewUint(2))
 			fill := types.OrderFill{
 				Order:            askOrder,
@@ -184,7 +184,7 @@ func TestOrdersKeeper_OrderFill(t *testing.T) {
 
 		// bid order
 		{
-			clearancePrice := sdk.NewUintFromString("25000000000000000000") // 25 dfi (no refund)
+			clearancePrice := sdk.NewUintFromString("25000000000000000000") // 25 xfi (no refund)
 			fillQuantity := bidQuantity.Quo(sdk.NewUint(2))
 			fill := types.OrderFill{
 				Order:            bidOrder,

@@ -907,7 +907,7 @@ definitions:
     properties:
       asset_code:
         description: 'Market assetCode in the following format: {base_denomination_symbol}_{quote_denomination_symbol}'
-        example: btc_dfi
+        example: btc_xfi
         type: string
       base_req:
         $ref: '#/definitions/rest.BaseReq'
@@ -917,7 +917,7 @@ definitions:
         example: ask
         type: string
       price:
-        description: QuoteAsset price with decimals (1.0 DFI with 18 decimals -> 1000000000000000000)
+        description: QuoteAsset price with decimals (1.0 XFI with 18 decimals -> 1000000000000000000)
         example: "100"
         type: string
       quantity:
@@ -933,7 +933,7 @@ definitions:
     properties:
       asset_code:
         description: AssetCode
-        example: btc_dfi
+        example: btc_xfi
         type: string
       base_req:
         $ref: '#/definitions/rest.BaseReq'
@@ -1071,7 +1071,7 @@ definitions:
         type: boolean
       asset_code:
         description: Asset code
-        example: btc_dfi
+        example: btc_xfi
         type: string
       oracles:
         $ref: '#/definitions/types.Oracles'
@@ -1195,7 +1195,7 @@ definitions:
         type: integer
       denom:
         description: Currency denom (symbol)
-        example: dfi
+        example: xfi
         type: string
       info_path_hex:
         description: Path used to store CurrencyInfo for currency denom (0x1::Dfinance::Info<Coin>)
@@ -1209,7 +1209,7 @@ definitions:
     properties:
       asset_code:
         description: Asset code
-        example: btc_dfi
+        example: btc_xfi
         type: string
       price:
         description: Price
@@ -1261,7 +1261,7 @@ definitions:
     properties:
       coin:
         description: Issuing coin
-        example: 100dfi
+        example: 100xfi
         type: string
       payee:
         description: Target account for increasing coin balance
@@ -1282,7 +1282,7 @@ definitions:
         type: string
       quote_asset_denom:
         description: Quote asset denomination (for ex. dfi)
-        example: dfi
+        example: xfi
         type: string
     type: object
   types.MarketExtended:
@@ -1398,7 +1398,7 @@ definitions:
     properties:
       asset_code:
         description: Asset code
-        example: btc_dfi
+        example: btc_xfi
         type: string
       oracle_address:
         description: Source oracle address
@@ -1549,7 +1549,7 @@ definitions:
     properties:
       coin:
         description: Target currency coin
-        example: 100dfi
+        example: 100xfi
         type: string
       id:
         description: Withdraw unique ID

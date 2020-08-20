@@ -37,11 +37,11 @@ func TestOracleKeeper_Genesis_Init(t *testing.T) {
 	{
 		params := input.keeper.GetParams(ctx)
 		params.Assets = types.Assets{
-			types.NewAsset(dnTypes.AssetCode("eth_dfi"), types.Oracles{}, true),
+			types.NewAsset(dnTypes.AssetCode("eth_xfi"), types.Oracles{}, true),
 		}
 
 		cpList := types.CurrentPrices{
-			NewMockCurrentPrice("btc_dfi", 100),
+			NewMockCurrentPrice("btc_xfi", 100),
 		}
 
 		state := types.GenesisState{
@@ -70,17 +70,17 @@ func TestOracleKeeper_Genesis_Init(t *testing.T) {
 		}
 
 		params.Assets = types.Assets{
-			types.NewAsset(dnTypes.AssetCode("btc_dfi"), oracles, true),
-			types.NewAsset(dnTypes.AssetCode("eth_dfi"), oracles, true),
-			types.NewAsset(dnTypes.AssetCode("dfi_btc"), oracles, true),
-			types.NewAsset(dnTypes.AssetCode("usdt_dfi"), oracles, true),
+			types.NewAsset(dnTypes.AssetCode("btc_xfi"), oracles, true),
+			types.NewAsset(dnTypes.AssetCode("eth_xfi"), oracles, true),
+			types.NewAsset(dnTypes.AssetCode("xfi_btc"), oracles, true),
+			types.NewAsset(dnTypes.AssetCode("usdt_xfi"), oracles, true),
 		}
 
 		cpList := types.CurrentPrices{
-			NewMockCurrentPrice("btc_dfi", 100),
-			NewMockCurrentPrice("eth_dfi", 200),
-			NewMockCurrentPrice("dfi_btc", 300),
-			NewMockCurrentPrice("usdt_dfi", 400),
+			NewMockCurrentPrice("btc_xfi", 100),
+			NewMockCurrentPrice("eth_xfi", 200),
+			NewMockCurrentPrice("xfi_btc", 300),
+			NewMockCurrentPrice("usdt_xfi", 400),
 		}
 
 		state := types.GenesisState{

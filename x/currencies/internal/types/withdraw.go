@@ -18,7 +18,7 @@ type Withdraw struct {
 	// Withdraw unique ID
 	ID dnTypes.ID `json:"id" yaml:"id" format:"string representation for big.Uint" swaggertype:"string" example:"0"`
 	// Target currency coin
-	Coin sdk.Coin `json:"coin" yaml:"coin" swaggertype:"string" example:"100dfi"`
+	Coin sdk.Coin `json:"coin" yaml:"coin" swaggertype:"string" example:"100xfi"`
 	// Target account for reducing coin balance
 	Spender sdk.AccAddress `json:"spender" yaml:"spender" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Second blockchain: spender account

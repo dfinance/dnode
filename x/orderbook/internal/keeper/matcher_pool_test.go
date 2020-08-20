@@ -235,7 +235,7 @@ func TestOBKeeper_Matching_XARExample(t *testing.T) {
 	// End-to-end test with XAR example.
 	inputs := MatchingPoolInput{
 		Markets: []MatchingPoolMarketInput{
-			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
+			{BaseDenom: "btc", QuoteDenom: "xfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
 			{MarketID: 0, Direction: orders.BidDirection, OrderID: 5, Price: 12, InQuantity: 100, OutQuantity: 100},
@@ -265,7 +265,7 @@ func TestOBKeeper_Matching_NotionExample(t *testing.T) {
 	// End-to-end test with Dfinance Notion example.
 	inputs := MatchingPoolInput{
 		Markets: []MatchingPoolMarketInput{
-			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
+			{BaseDenom: "btc", QuoteDenom: "xfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
 			{MarketID: 0, Direction: orders.AskDirection, OrderID: 1, Price: 50, InQuantity: 150, OutQuantity: 101},
@@ -296,7 +296,7 @@ func TestOBKeeper_Matching_ProRata(t *testing.T) {
 	// Ask amount is twice larger than Bid amount (ProRata = 2.0): only half of Asks should be filled.
 	inputs := MatchingPoolInput{
 		Markets: []MatchingPoolMarketInput{
-			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
+			{BaseDenom: "btc", QuoteDenom: "xfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
 			{MarketID: 0, Direction: orders.AskDirection, OrderID: 7, Price: 50, InQuantity: 100, OutQuantity: 0},
@@ -326,7 +326,7 @@ func TestOBKeeper_Matching_FillPriority(t *testing.T) {
 	// Order #4 would be filled the last and MatchedAskVolume by then would be around 24.
 	inputs := MatchingPoolInput{
 		Markets: []MatchingPoolMarketInput{
-			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
+			{BaseDenom: "btc", QuoteDenom: "xfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
 			{MarketID: 0, Direction: orders.AskDirection, OrderID: 0, Price: 50, InQuantity: 25, OutFillSeq: 2},
@@ -359,7 +359,7 @@ func TestOBKeeper_Matching_TwoOrders(t *testing.T) {
 	// Aggregates will "draw" two parallel lines (with the same Quantity) and CP would be found by min diff (left).
 	inputs := MatchingPoolInput{
 		Markets: []MatchingPoolMarketInput{
-			{BaseDenom: "btc", QuoteDenom: "dfi", BaseDecimals: 0, QuoteDecimals: 0},
+			{BaseDenom: "btc", QuoteDenom: "xfi", BaseDecimals: 0, QuoteDecimals: 0},
 		},
 		Orders: []MatchingPoolOrderInput{
 			{MarketID: 0, Direction: orders.AskDirection, OrderID: 0, Price: 50, InQuantity: 50, OutQuantity: 50},

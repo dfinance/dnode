@@ -71,7 +71,7 @@ func DefaultGenesisState() GenesisState {
 	state := GenesisState{
 		CurrenciesParams: CurrenciesParams{
 			{
-				Denom:          "dfi",
+				Denom:          "xfi",
 				Decimals:       18,
 				BalancePathHex: "01608540feb9c6bd277405cfdc0e9140c1431f236f7d97865575e830af3dd67e7e",
 				InfoPathHex:    "01f3a1f15d7b13931f3bd5f957ad154b5cbaa0e1a2c3d4d967f286e8800eeb510d",

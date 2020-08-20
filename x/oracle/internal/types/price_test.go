@@ -23,14 +23,14 @@ func NewMockCurrentPrice(assetCode string, price int64) CurrentPrice {
 func TestOracle_Price_Valid(t *testing.T) {
 	// ok
 	{
-		price := NewMockCurrentPrice("btc_dfi", 100)
+		price := NewMockCurrentPrice("btc_xfi", 100)
 		err := price.Valid()
 		require.Nil(t, err)
 	}
 
 	// wrong asset code
 	{
-		price := NewMockCurrentPrice("btcDfi", 100)
+		price := NewMockCurrentPrice("btcXfi", 100)
 		err := price.Valid()
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "asset_code")
@@ -38,7 +38,7 @@ func TestOracle_Price_Valid(t *testing.T) {
 
 	// wrong price: zero
 	{
-		price := NewMockCurrentPrice("btc_dfi", 0)
+		price := NewMockCurrentPrice("btc_xfi", 0)
 		err := price.Valid()
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "price")
@@ -47,7 +47,7 @@ func TestOracle_Price_Valid(t *testing.T) {
 
 	// wrong price: negative
 	{
-		price := NewMockCurrentPrice("btc_dfi", -1)
+		price := NewMockCurrentPrice("btc_xfi", -1)
 		err := price.Valid()
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "price")
@@ -56,7 +56,7 @@ func TestOracle_Price_Valid(t *testing.T) {
 
 	// wrong ReceivedAt: zero
 	{
-		price := NewMockCurrentPrice("btc_dfi", 100)
+		price := NewMockCurrentPrice("btc_xfi", 100)
 		price.ReceivedAt = time.Time{}
 		err := price.Valid()
 		require.Error(t, err)

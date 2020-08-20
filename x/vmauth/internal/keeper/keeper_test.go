@@ -34,7 +34,7 @@ func TestVMAuthKeeper_SetAccount(t *testing.T) {
 
 	input := NewTestInput(t)
 	keeper, ccsStorage, ctx := input.accountKeeper, input.ccsStorage, input.ctx
-	acc := input.CreateAccount(t, sdk.NewCoins(sdk.NewCoin("dfi", sdk.OneInt())))
+	acc := input.CreateAccount(t, sdk.NewCoins(sdk.NewCoin("xfi", sdk.OneInt())))
 	input.accountKeeper.SetAccount(input.ctx, acc)
 
 	// check one coin exists
@@ -89,7 +89,7 @@ func TestVMAuthKeeper_SetAccount(t *testing.T) {
 	// one resource should be added, the rest should be updated
 	{
 		coins := sdk.NewCoins(
-			sdk.NewCoin("dfi", sdk.NewInt(100)),
+			sdk.NewCoin("xfi", sdk.NewInt(100)),
 			sdk.NewCoin("eth", sdk.NewInt(200)),
 			sdk.NewCoin("btc", sdk.NewInt(300)),
 		)
@@ -136,7 +136,7 @@ func TestVMAuthKeeper_GetExistingAccount(t *testing.T) {
 
 	// create resources
 	coins := sdk.NewCoins(
-		sdk.NewCoin("dfi", sdk.NewInt(100)),
+		sdk.NewCoin("xfi", sdk.NewInt(100)),
 		sdk.NewCoin("eth", sdk.NewInt(200)),
 		sdk.NewCoin("btc", sdk.NewInt(300)),
 	)
@@ -156,7 +156,7 @@ func TestVMAuthKeeper_RemoveAccount(t *testing.T) {
 	keeper, ccsStorage, ctx := input.accountKeeper, input.ccsStorage, input.ctx
 
 	coins := sdk.NewCoins(
-		sdk.NewCoin("dfi", sdk.NewInt(100)),
+		sdk.NewCoin("xfi", sdk.NewInt(100)),
 		sdk.NewCoin("eth", sdk.NewInt(200)),
 		sdk.NewCoin("btc", sdk.NewInt(300)),
 	)
@@ -210,7 +210,7 @@ func TestVMAccountKeeper_RemoveBalance(t *testing.T) {
 	keeper, ccsStorage, vmStorage, ctx := input.accountKeeper, input.ccsStorage, input.vmStorage, input.ctx
 
 	coins := sdk.NewCoins(
-		sdk.NewCoin("dfi", sdk.NewInt(100)),
+		sdk.NewCoin("xfi", sdk.NewInt(100)),
 		sdk.NewCoin("eth", sdk.NewInt(200)),
 	)
 	acc := input.CreateAccount(t, coins)
@@ -229,7 +229,7 @@ func TestVMAccountKeeper_RemoveBalance(t *testing.T) {
 	// balance should be removed from account coins
 	acc = keeper.GetAccount(ctx, acc.GetAddress())
 	require.Len(t, acc.GetCoins(), 1)
-	require.Equal(t, acc.GetCoins()[0].Denom, "dfi")
+	require.Equal(t, acc.GetCoins()[0].Denom, "xfi")
 }
 
 // Test balance resource modification without keeper involvement.
@@ -240,7 +240,7 @@ func TestVMAccountKeeper_ModifyBalance(t *testing.T) {
 	keeper, ccsStorage, vmStorage, ctx := input.accountKeeper, input.ccsStorage, input.vmStorage, input.ctx
 
 	coins := sdk.NewCoins(
-		sdk.NewCoin("dfi", sdk.NewInt(100)),
+		sdk.NewCoin("xfi", sdk.NewInt(100)),
 		sdk.NewCoin("eth", sdk.NewInt(200)),
 	)
 	acc := input.CreateAccount(t, coins)
@@ -262,7 +262,7 @@ func TestVMAccountKeeper_ModifyBalance(t *testing.T) {
 	// check keeper "caught" that modification
 	acc = keeper.GetAccount(ctx, acc.GetAddress())
 	require.Len(t, acc.GetCoins(), 1)
-	require.Equal(t, acc.GetCoins()[0].Denom, "dfi")
+	require.Equal(t, acc.GetCoins()[0].Denom, "xfi")
 }
 
 // Check bank - vmauth integration works.
@@ -273,17 +273,17 @@ func TestVMAccountKeeper_SendBankKeeper(t *testing.T) {
 	keeper, bank, ccsStorage, ctx := input.accountKeeper, input.bankKeeper, input.ccsStorage, input.ctx
 
 	// coins
-	dfiValue := sdk.NewCoin("dfi", sdk.NewInt(100))
+	xfiValue := sdk.NewCoin("xfi", sdk.NewInt(100))
 	ethValue := sdk.NewCoin("eth", sdk.NewInt(1000))
 
-	dfiHalf := dfiValue
-	dfiHalf.Amount = dfiHalf.Amount.QuoRaw(2)
+	xfiHalf := xfiValue
+	xfiHalf.Amount = xfiHalf.Amount.QuoRaw(2)
 
 	ethHalf := ethValue
 	ethHalf.Amount = ethHalf.Amount.QuoRaw(2)
 
 	// set payer
-	payerIntitialCoins := sdk.NewCoins(dfiHalf, ethValue)
+	payerIntitialCoins := sdk.NewCoins(xfiHalf, ethValue)
 	payerAcc := input.CreateAccount(t, payerIntitialCoins)
 	keeper.SetAccount(ctx, payerAcc)
 
@@ -294,7 +294,7 @@ func TestVMAccountKeeper_SendBankKeeper(t *testing.T) {
 	{
 		transferCoins := sdk.NewCoins(ethHalf)
 
-		// payer loses ethHalf, ethHalf and dfiHalf are left
+		// payer loses ethHalf, ethHalf and xfiHalf are left
 		payerCurCoins, err := bank.SubtractCoins(ctx, payerAcc.GetAddress(), transferCoins)
 		require.NoError(t, err)
 
@@ -311,7 +311,7 @@ func TestVMAccountKeeper_SendBankKeeper(t *testing.T) {
 	{
 		transferCoins := sdk.NewCoins(ethHalf)
 
-		// payer loses ethHalf (no left), dfiHalf is left
+		// payer loses ethHalf (no left), xfiHalf is left
 		payerCurCoins, err := bank.SubtractCoins(ctx, payerAcc.GetAddress(), transferCoins)
 		require.NoError(t, err)
 
@@ -321,7 +321,7 @@ func TestVMAccountKeeper_SendBankKeeper(t *testing.T) {
 		require.True(t, payeeCurCoins.IsEqual(sdk.NewCoins(ethValue)))
 
 		payerAcc = keeper.GetAccount(ctx, payerAcc.GetAddress())
-		require.True(t, payerCurCoins.IsEqual(sdk.NewCoins(dfiHalf)))
+		require.True(t, payerCurCoins.IsEqual(sdk.NewCoins(xfiHalf)))
 	}
 
 	// check eth balance still exists
@@ -332,8 +332,8 @@ func TestVMAccountKeeper_SendBankKeeper(t *testing.T) {
 
 		for _, balance := range balances {
 			switch balance.Denom {
-			case "dfi":
-				require.Equal(t, dfiHalf.Amount.String(), balance.Resource.Value.String())
+			case "xfi":
+				require.Equal(t, xfiHalf.Amount.String(), balance.Resource.Value.String())
 			case "eth":
 				require.EqualValues(t, balance.Resource.Value.Uint64(), 0)
 			default:
