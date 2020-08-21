@@ -78,9 +78,9 @@ script {
 	use 0x1::Event;
 	use 0x1::Coins;
 
-	fun main(_account: &signer) {
+	fun main(account: &signer) {
 		let price = Coins::get_price<Coins::ETH, Coins::USDT>();
-		Event::emit<u128>(price);
+		Event::emit<u128>(account, price);
 	}
 }
 `
@@ -686,17 +686,17 @@ func TestVMKeeper_Path(t *testing.T) {
 		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
-	// Check vmauth module path: DFI
-	testID = "VMAuth DFI"
+	// Check vmauth module path: XFI
+	testID = "VMAuth XFI"
 	{
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
     			use 0x1::Account;
-				use 0x1::DFI;
+				use 0x1::XFI;
 
 				fun main(account: &signer) {
-					let _ = Account::balance<DFI::T>(account);
+					let _ = Account::balance<XFI::T>(account);
 				}
 			}
 		`
@@ -805,10 +805,10 @@ func TestVMKeeper_Path(t *testing.T) {
 		scriptSrc := `
 			script {
 				use 0x1::Dfinance;
-				use 0x1::DFI;
+				use 0x1::XFI;
 
 				fun main() {
-					let _ = Dfinance::denom<DFI::T>();
+					let _ = Dfinance::denom<XFI::T>();
 				}
 			}
 		`
@@ -972,13 +972,13 @@ func TestVMKeeper_EventTypeSerialization(t *testing.T) {
 		        field_VT: VT
 		    }
 		
-		    public fun NewFooEvent<T, VT>(arg_T: T, arg_VT: VT): FooEvent<T, VT> {
+		    public fun NewFooEvent<T, VT>(account: &signer, arg_T: T, arg_VT: VT): FooEvent<T, VT> {
 		        let fooEvent = FooEvent<T, VT> {
 		            field_T:  arg_T,
 		            field_VT: arg_VT
 		        };
 				
-				0x1::Event::emit<bool>(true);
+				0x1::Event::emit<bool>(account, true);
 		
 		        fooEvent
 		    }
@@ -988,18 +988,18 @@ func TestVMKeeper_EventTypeSerialization(t *testing.T) {
 		script {
 			use %s::Foo;
 			
-			fun main(_account: &signer) {
+			fun main(account: &signer) {
 				// Event with single tag
-				0x1::Event::emit<u8>(128);
+				0x1::Event::emit<u8>(account, 128);
 				
 				// Event with single vector
-				0x1::Event::emit<vector<u8>>(x"0102");
+				0x1::Event::emit<vector<u8>>(account, x"0102");
 				
 				// Two events:
 				//   1. Module: single tag
 				//   2. Script: generic struct with tag, vector
-				let fooEvent = Foo::NewFooEvent<u64, vector<u8>>(1000, x"0102");
-				0x1::Event::emit<Foo::FooEvent<u64, vector<u8>>>(fooEvent);
+				let fooEvent = Foo::NewFooEvent<u64, vector<u8>>(account, 1000, x"0102");
+				0x1::Event::emit<Foo::FooEvent<u64, vector<u8>>>(account, fooEvent);
     		}
 		}
 	`
@@ -1086,7 +1086,7 @@ func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 				value: T
 			}
 		
-			public fun test() {
+			public fun test(account: &signer) {
 				let a = A {
 					value: 10
 				};
@@ -1103,7 +1103,7 @@ func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 					value: c
 				};
 		
-				0x1::Event::emit<D<C<B<A>>>>(d);
+				0x1::Event::emit<D<C<B<A>>>>(account, d);
 			}
 		
 		}
@@ -1112,8 +1112,8 @@ func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 		script {
 			use %s::GasEvent;
 
-			fun main() {
-				GasEvent::test();
+			fun main(account: &signer) {
+				GasEvent::test(account);
 			}
 		}
 	`
@@ -1209,7 +1209,7 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 				value: T
 			}
 		
-			public fun test() {
+			public fun test(account: &signer) {
 				let a = A {
 					value: 10
 				};
@@ -1234,7 +1234,7 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 					value: v
 				};
 		
-				0x1::Event::emit<M<V<Z<C<B<A>>>>>>(m);
+				0x1::Event::emit<M<V<Z<C<B<A>>>>>>(account, m);
 			}
 		
 		}
@@ -1243,8 +1243,8 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 		script {
 			use %s::OutOfGasEvent;
 
-			fun main() {
-				OutOfGasEvent::test();
+			fun main(account: &signer) {
+				OutOfGasEvent::test(account);
 			}
 		}
 	`

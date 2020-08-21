@@ -4,9 +4,7 @@
 package keeper
 
 import (
-	"encoding/hex"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"net"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -57,10 +55,6 @@ func (k Keeper) ExecuteScript(ctx sdk.Context, msg types.MsgExecuteScript) error
 	if sdkErr != nil {
 		return sdkErr
 	}
-
-	a, err := proto.Marshal(req)
-	xx := hex.EncodeToString(a)
-	fmt.Println(xx)
 
 	exec, err := k.sendExecuteReq(ctx, nil, req)
 	if err != nil {
