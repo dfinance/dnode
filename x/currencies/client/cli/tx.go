@@ -19,7 +19,7 @@ func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "withdraw [coin] [pegZonePayee] [pegZoneChainID]",
 		Short:   "Withdraw issued currency from dfinance chain to pegZone chain, reducing spender balance",
-		Example: "withdraw 100dfi {account} testnet --from {account}",
+		Example: "withdraw 100xfi {account} testnet --from {account}",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
@@ -61,7 +61,7 @@ func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
 		Use:     "add-currency-proposal [denom] [decimals] [vmBalancePathHex] [vmInfoPathHex]",
 		Args:    cobra.ExactArgs(4),
 		Short:   "Submit currency add proposal, creating non-token currency",
-		Example: "add-currency-proposal dfi 18 {balancePath} {infoPath} --deposit 100dfi --fees 1dfi",
+		Example: "add-currency-proposal xfi 18 {balancePath} {infoPath} --deposit 100xfi --fees 1xfi",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 

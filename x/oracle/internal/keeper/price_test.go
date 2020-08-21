@@ -180,7 +180,7 @@ func TestOracleKeeper_CurrentPrice(t *testing.T) {
 	require.Equal(t, price.Price.Equal(sdk.NewInt(34500000)), true)
 
 	price2 := types.CurrentPrice{
-		AssetCode:  dnTypes.AssetCode("usdt_dfi"),
+		AssetCode:  dnTypes.AssetCode("usdt_xfi"),
 		Price:      sdk.NewIntFromUint64(1000000),
 		ReceivedAt: time.Now().Add(-1 * time.Hour),
 	}

@@ -14,7 +14,7 @@ import (
 // For token currencies, CurrencyInfo is created by VM.
 type ResCurrencyInfo struct {
 	// Currency denom ([]byte is used for VM)
-	Denom []byte `json:"denom" yaml:"denom" swaggertype:"string" example:"dfi"`
+	Denom []byte `json:"denom" yaml:"denom" swaggertype:"string" example:"xfi"`
 	// Number of currency decimals
 	Decimals uint8 `json:"decimals" yaml:"decimals"`
 	// If true, currency is created by DVM using 0x1::Dfinance::tokenize func

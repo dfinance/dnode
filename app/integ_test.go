@@ -29,10 +29,10 @@ func TestInteg_ConsensusFailure(t *testing.T) {
 	const script = `
 		script {
 			use 0x1::Account;
-			use 0x1::DFI;
+			use 0x1::XFI;
 			
 			fun main(account: &signer, recipient: address, amount: u128) {
-				Account::pay_from_sender<DFI::T>(account, recipient, amount);
+				Account::pay_from_sender<XFI::T>(account, recipient, amount);
 			}
 		}
 	`
@@ -95,11 +95,11 @@ func TestIntegVM_ExecuteScriptViaCLI(t *testing.T) {
 	const script = `
 		script {
 			use 0x1::Account;
-			use 0x1::DFI;
+			use 0x1::XFI;
 
 			fun main(account: &signer, amount: u128) {
-				let dfi = Account::withdraw_from_sender<DFI::T>(account, amount);
-				Account::deposit_to_sender<DFI::T>(account, dfi);
+				let xfi = Account::withdraw_from_sender<XFI::T>(account, amount);
+				Account::deposit_to_sender<XFI::T>(account, xfi);
 			}
 		}
 	`
@@ -182,11 +182,11 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 	const script = `
 		script {
 			use 0x1::Account;
-			use 0x1::DFI;
+			use 0x1::XFI;
 
 			fun main(account: &signer, amount: u128) {
-				let dfi = Account::withdraw_from_sender<DFI::T>(account, amount);
-				Account::deposit_to_sender<DFI::T>(account, dfi);
+				let xfi = Account::withdraw_from_sender<XFI::T>(account, amount);
+				Account::deposit_to_sender<XFI::T>(account, xfi);
 			}
 		}
 	`
@@ -507,11 +507,11 @@ func TestIntegVM_CommunicationUDS(t *testing.T) {
 	const script = `
 		script {
 			use 0x1::Account;
-			use 0x1::DFI;
+			use 0x1::XFI;
 
 			fun main(account: &signer) {
-				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
-				Account::deposit_to_sender<DFI::T>(account, dfi);
+				let xfi = Account::withdraw_from_sender<XFI::T>(account, 1);
+				Account::deposit_to_sender<XFI::T>(account, xfi);
 			}
 		}
 	`

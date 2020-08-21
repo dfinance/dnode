@@ -14,7 +14,7 @@ func TestOracle_Params_Valid(t *testing.T) {
 	t.Parallel()
 
 	oracles := []Oracle{NewOracle(sdk.AccAddress([]byte("oracle")))}
-	asset := NewAsset("btc_dfi", oracles, true)
+	asset := NewAsset("btc_xfi", oracles, true)
 
 	// ok
 	{
@@ -30,7 +30,7 @@ func TestOracle_Params_Valid(t *testing.T) {
 
 	// fail asset
 	{
-		params := Params{Assets: []Asset{NewAsset("dfi", oracles, true)}, Nominees: []string{""}}
+		params := Params{Assets: []Asset{NewAsset("xfi", oracles, true)}, Nominees: []string{""}}
 		require.Error(t, params.Validate())
 	}
 }

@@ -77,15 +77,15 @@ module Swap {
 const createSwapScriptSrcFmt = `
 script {
     use {{sender}}::Swap;
-    use 0x1::DFI;
+    use 0x1::XFI;
     use 0x1::Coins;
     use 0x1::Account;
 
     fun main(sender: &signer, amount: u128, price: u128) {
-        let dfi = Account::withdraw_from_sender(sender, amount);
+        let xfi = Account::withdraw_from_sender(sender, amount);
 
-        // Deposit DFI coins in exchange to BTC.
-        Swap::create<DFI::T, Coins::BTC>(sender, dfi, price);
+        // Deposit XFI coins in exchange to BTC.
+        Swap::create<XFI::T, Coins::BTC>(sender, xfi, price);
     }
 }
 `
@@ -93,7 +93,7 @@ script {
 const swapSwapScriptSrcFmt = `
 script {
     use {{sender}}::Swap;
-    use 0x1::DFI;
+    use 0x1::XFI;
     use 0x1::Coins;
     use 0x1::Account;
 
@@ -101,15 +101,15 @@ script {
         let btc = Account::withdraw_from_sender(sender, price);
 
         // Deposit BTC to swap coins.
-        Swap::swap<DFI::T, Coins::BTC>(sender, seller, btc);
+        Swap::swap<XFI::T, Coins::BTC>(sender, seller, btc);
     }
 }
 `
 
 // Test checks Swap Move module without crisis module panic (checks vmauth <-> ccstorage integration).
 // 1. Issue BTCs to client2
-// 2. Create Swap to exchange client1 DFIs for BTCs (client1's DFIs are locked within Move module)
-// 3. Execute Swap transferring BTCs to client1 and DFIs to client2
+// 2. Create Swap to exchange client1 XFIs for BTCs (client1's XFIs are locked within Move module)
+// 3. Execute Swap transferring BTCs to client1 and XFIs to client2
 // 4. Verify balances are updated
 func TestIntegApp_Crisis(t *testing.T) {
 	app, dvmAddr, appStop := NewTestDnAppDVM(t, log.AllowInfoWith("module", "x/crisis"))
@@ -137,19 +137,19 @@ func TestIntegApp_Crisis(t *testing.T) {
 		return diffs
 	}
 
-	getDfiBtcAccCoins := func(addr sdk.AccAddress) (sdk.Coin, sdk.Coin) {
-		dfiCoin := sdk.NewCoin(dnConfig.MainDenom, sdk.ZeroInt())
+	getXfiBtcAccCoins := func(addr sdk.AccAddress) (sdk.Coin, sdk.Coin) {
+		xfiCoin := sdk.NewCoin(dnConfig.MainDenom, sdk.ZeroInt())
 		btcCoin := sdk.NewCoin("btc", sdk.ZeroInt())
 		acc := GetAccountCheckTx(app, addr)
 		for _, coin := range acc.GetCoins() {
 			switch coin.Denom {
-			case dfiCoin.Denom:
-				dfiCoin = coin
+			case xfiCoin.Denom:
+				xfiCoin = coin
 			case btcCoin.Denom:
 				btcCoin = coin
 			}
 		}
-		return dfiCoin, btcCoin
+		return xfiCoin, btcCoin
 	}
 
 	// compile and deploy module
@@ -185,12 +185,12 @@ func TestIntegApp_Crisis(t *testing.T) {
 		t.Logf(">> Issue 1.0 btc to client2, supply diff:\n%s", strings.Join(verboseSuppliesDiff(suppliesDiff), "\n"))
 	}
 
-	// client1 offers 1.0 DFI for 0.5 BTC
+	// client1 offers 1.0 XFI for 0.5 BTC
 	offerAmount, _ := sdk.NewIntFromString("1000000000000000000")
 	priceAmount, _ := sdk.NewIntFromString("50000000")
 
 	// save client1 balances before Swap lock
-	client1DfiBeforeLock, _ := getDfiBtcAccCoins(client1Addr)
+	client1XfiBeforeLock, _ := getXfiBtcAccCoins(client1Addr)
 
 	// compile and execute create swap script
 	{
@@ -239,19 +239,19 @@ func TestIntegApp_Crisis(t *testing.T) {
 
 	// check client1 balance after Swap lock
 	{
-		client1DfiAfterLock, _ := getDfiBtcAccCoins(client1Addr)
-		t.Logf("client1 before/after Swap lock: %s / %s", client1DfiBeforeLock, client1DfiAfterLock)
+		client1XfiAfterLock, _ := getXfiBtcAccCoins(client1Addr)
+		t.Logf("client1 before/after Swap lock: %s / %s", client1XfiBeforeLock, client1XfiAfterLock)
 
 		// calc expected amount including fee
-		expectedAmount := client1DfiBeforeLock.Amount
+		expectedAmount := client1XfiBeforeLock.Amount
 		expectedAmount = expectedAmount.Sub(offerAmount)
 		expectedAmount = expectedAmount.Sub(sdk.OneInt())
-		require.True(t, client1DfiAfterLock.Amount.Equal(expectedAmount))
+		require.True(t, client1XfiAfterLock.Amount.Equal(expectedAmount))
 	}
 
 	// save client balances before swap execution
-	client1DfiBeforeExecution, client1BtcBeforeExecution := getDfiBtcAccCoins(client1Addr)
-	client2DfiBeforeExecution, client2BtcBeforeExecution := getDfiBtcAccCoins(client2Addr)
+	client1XfiBeforeExecution, client1BtcBeforeExecution := getXfiBtcAccCoins(client1Addr)
+	client2XfiBeforeExecution, client2BtcBeforeExecution := getXfiBtcAccCoins(client2Addr)
 
 	// compile and execute swap execute script
 	{
@@ -287,16 +287,16 @@ func TestIntegApp_Crisis(t *testing.T) {
 
 	// check balances after Swap execution
 	{
-		client1DfiAfterExecution, client1BtcAfterExecution := getDfiBtcAccCoins(client1Addr)
-		client2DfiAfterExecution, client2BtcAfterExecution := getDfiBtcAccCoins(client2Addr)
+		client1XfiAfterExecution, client1BtcAfterExecution := getXfiBtcAccCoins(client1Addr)
+		client2XfiAfterExecution, client2BtcAfterExecution := getXfiBtcAccCoins(client2Addr)
 
-		t.Logf("client1 before/after Swap execution: %s / %s, %s / %s", client1DfiBeforeExecution, client1DfiAfterExecution, client1BtcBeforeExecution, client1BtcAfterExecution)
-		t.Logf("client2 before/after Swap execution: %s / %s, %s / %s", client2DfiBeforeExecution, client2DfiAfterExecution, client2BtcBeforeExecution, client2BtcAfterExecution)
+		t.Logf("client1 before/after Swap execution: %s / %s, %s / %s", client1XfiBeforeExecution, client1XfiAfterExecution, client1BtcBeforeExecution, client1BtcAfterExecution)
+		t.Logf("client2 before/after Swap execution: %s / %s, %s / %s", client2XfiBeforeExecution, client2XfiAfterExecution, client2BtcBeforeExecution, client2BtcAfterExecution)
 
 		// client1
 		{
-			// dfi
-			require.True(t, client1DfiAfterExecution.IsEqual(client1DfiBeforeExecution))
+			// xfi
+			require.True(t, client1XfiAfterExecution.IsEqual(client1XfiBeforeExecution))
 			// btc
 			expectedBtcAmount := client1BtcBeforeExecution.Amount
 			expectedBtcAmount = expectedBtcAmount.Add(priceAmount)
@@ -304,11 +304,11 @@ func TestIntegApp_Crisis(t *testing.T) {
 		}
 		// client2
 		{
-			// dfi (including fee)
-			expectedDfiAmount := client2DfiBeforeExecution.Amount
-			expectedDfiAmount = expectedDfiAmount.Add(offerAmount)
-			expectedDfiAmount = expectedDfiAmount.Sub(sdk.OneInt())
-			require.True(t, client2DfiAfterExecution.Amount.Equal(expectedDfiAmount))
+			// xfi (including fee)
+			expectedXfiAmount := client2XfiBeforeExecution.Amount
+			expectedXfiAmount = expectedXfiAmount.Add(offerAmount)
+			expectedXfiAmount = expectedXfiAmount.Sub(sdk.OneInt())
+			require.True(t, client2XfiAfterExecution.Amount.Equal(expectedXfiAmount))
 			// btc
 			expectedBtcAmount := client2BtcBeforeExecution.Amount
 			expectedBtcAmount = expectedBtcAmount.Sub(priceAmount)

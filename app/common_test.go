@@ -516,7 +516,7 @@ func GenTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	return auth.NewStdTx(msgs, fee, sigs, memo)
 }
 
-// GenDefCoins returns Coins with dfi amount.
+// GenDefCoins returns Coins with xfi amount.
 func GenDefCoins(t *testing.T) sdk.Coins {
 	coins, err := sdk.ParseCoins("1000000000000000000000" + dnConfig.MainDenom)
 	if t != nil {

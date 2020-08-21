@@ -76,7 +76,7 @@ func NewTestInput(t *testing.T, customMarketsPerms perms.Permissions) TestInput 
 		baseBtcDecimals: 8,
 		baseEthDenom:    "eth",
 		baseEthDecimals: 18,
-		quoteDenom:      "dfi",
+		quoteDenom:      "xfi",
 		quoteDecimals:   18,
 	}
 
@@ -155,7 +155,7 @@ func (i *TestInput) GetAccountBalance(address sdk.AccAddress, baseDenom string) 
 	return
 }
 
-func NewBtcDfiMockOrder(direction types.Direction) types.Order {
+func NewBtcXfiMockOrder(direction types.Direction) types.Order {
 	now := time.Now()
 
 	return types.Order{
@@ -168,7 +168,7 @@ func NewBtcDfiMockOrder(direction types.Direction) types.Order {
 				Decimals: 8,
 			},
 			QuoteCurrency: ccstorage.Currency{
-				Denom:    "dfi",
+				Denom:    "xfi",
 				Decimals: 18,
 			},
 		},
@@ -181,7 +181,7 @@ func NewBtcDfiMockOrder(direction types.Direction) types.Order {
 	}
 }
 
-func NewEthDfiMockOrder(direction types.Direction) types.Order {
+func NewEthXfiMockOrder(direction types.Direction) types.Order {
 	now := time.Now()
 
 	return types.Order{
@@ -194,7 +194,7 @@ func NewEthDfiMockOrder(direction types.Direction) types.Order {
 				Decimals: 18,
 			},
 			QuoteCurrency: ccstorage.Currency{
-				Denom:    "dfi",
+				Denom:    "xfi",
 				Decimals: 18,
 			},
 		},
