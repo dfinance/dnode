@@ -30,22 +30,22 @@ const sendScript = `
 script {
 	use 0x1::Account;
 	use 0x1::Coins;
-	use 0x1::DFI;
+	use 0x1::XFI;
 	use 0x1::Dfinance;
 	use 0x1::Compare;
 	
 	fun main(account: &signer, recipient: address, dfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
-		Account::pay_from_sender<DFI::T>(account, recipient, dfi_amount);
+		Account::pay_from_sender<XFI::T>(account, recipient, dfi_amount);
 		Account::pay_from_sender<Coins::ETH>(account, recipient, eth_amount);
 		Account::pay_from_sender<Coins::BTC>(account, recipient, btc_amount);
 		Account::pay_from_sender<Coins::USDT>(account, recipient, usdt_amount);
 
-		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<DFI::T>(), &b"dfi") == 0, 1);
+		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<XFI::T>(), &b"dfi") == 0, 1);
 		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::ETH>(), &b"eth") == 0, 2);
 		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::BTC>(), &b"btc") == 0, 3);
 		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::USDT>(), &b"usdt") == 0, 4);
 
-		assert(Dfinance::decimals<DFI::T>() == 18, 5);
+		assert(Dfinance::decimals<XFI::T>() == 18, 5);
 		assert(Dfinance::decimals<Coins::ETH>() == 18, 6);
 		assert(Dfinance::decimals<Coins::BTC>() == 8, 7);
 		assert(Dfinance::decimals<Coins::USDT>() == 6, 8);
@@ -66,9 +66,9 @@ script {
 	use 0x1::Event;
 	use {{sender}}::Math;
 	
-	fun main(_account: &signer, a: u64, b: u64) {
+	fun main(account: &signer, a: u64, b: u64) {
 		let c = Math::add(a, b);
-		Event::emit<u64>(c);
+		Event::emit<u64>(account, c);
 	}
 }
 `

@@ -404,7 +404,7 @@ func startDVMContainer(t *testing.T, dsPort int) (stopFunc func()) {
 	vmUrl, err := url.Parse(*vmAddress)
 	require.NoError(t, err, "parsing vmAddress")
 
-	containerStop := tests.LaunchDVMWithNetTransport(t, vmUrl.Port(), strconv.Itoa(dsPort), false)
+	containerStop := tests.LaunchDVMWithNetTransport(t, vmUrl.Port(), strconv.Itoa(dsPort), true)
 	*vmCompiler = "127.0.0.1:" + vmUrl.Port()
 
 	return containerStop
