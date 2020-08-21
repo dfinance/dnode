@@ -100,7 +100,7 @@ func NewTestInput(t *testing.T) TestInput {
 
 	input.stdNominee = input.addresses[accountsQuantity-1].String()
 
-	input.stdAssetCode = dnTypes.AssetCode("btc_dfi")
+	input.stdAssetCode = dnTypes.AssetCode("btc_xfi")
 
 	input.stdAssets = types.Assets{types.NewAsset(input.stdAssetCode, []types.Oracle{}, true)}
 

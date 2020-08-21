@@ -17,7 +17,7 @@ const (
 // CurrentPrice contains meta of the current price for the particular asset.
 type CurrentPrice struct {
 	// Asset code
-	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_dfi"`
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_xfi"`
 	// Price
 	Price sdk.Int `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
 	// UNIX Timestamp price createdAt [sec]
@@ -55,7 +55,7 @@ type CurrentPrices []CurrentPrice
 // PostedPrice contains price for an asset posted by a specific oracle.
 type PostedPrice struct {
 	// Asset code
-	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_dfi"`
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_xfi"`
 	// Source oracle address
 	OracleAddress sdk.AccAddress `json:"oracle_address" yaml:"oracle_address" swaggertype:"string" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// Price

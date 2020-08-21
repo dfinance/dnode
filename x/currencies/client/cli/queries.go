@@ -19,7 +19,7 @@ func GetCurrency(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "currency [denom]",
 		Short:   "Get currency by denom",
-		Example: "currency dfi",
+		Example: "currency xfi",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -79,10 +79,10 @@ func GetCurrencies(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetIssue returns query command that returns issue by id.
 func GetIssue(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "issue [issueID]",
-		Short: "Get issue by ID",
+		Use:     "issue [issueID]",
+		Short:   "Get issue by ID",
 		Example: "issue issue1",
-		Args:  cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 

@@ -14,13 +14,13 @@ import (
 func TestOrders_PostOrderMsg_Valid(t *testing.T) {
 	ownerAddr := sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h")
 
-	msg := NewMsgPost(ownerAddr, dnTypes.AssetCode("btc_dfi"), Bid, sdk.OneUint(), sdk.OneUint(), 60)
+	msg := NewMsgPost(ownerAddr, dnTypes.AssetCode("btc_xfi"), Bid, sdk.OneUint(), sdk.OneUint(), 60)
 	require.NoError(t, msg.ValidateBasic())
 }
 
 func TestOrders_PostOrderMsg_Invalid(t *testing.T) {
 	ownerAddr := sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h")
-	assetCode := dnTypes.AssetCode("btc_dfi")
+	assetCode := dnTypes.AssetCode("btc_xfi")
 	direction := Bid
 	price := sdk.OneUint()
 	quantity := sdk.OneUint()

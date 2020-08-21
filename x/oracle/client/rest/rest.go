@@ -22,7 +22,7 @@ const (
 type PostPriceReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// AssetCode
-	AssetCode string `json:"asset_code" example:"btc_dfi"`
+	AssetCode string `json:"asset_code" example:"btc_xfi"`
 	// Price in big.Int format
 	Price string `json:"price" example:"100"`
 	// Timestamp price createdAt

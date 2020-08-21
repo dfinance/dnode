@@ -177,7 +177,7 @@ func TestOracle_AddOracle(t *testing.T) {
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 	CheckSetGenesisMockVM(t, app, genAccs)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], dnTypes.AssetCode("btc_dfi")
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], dnTypes.AssetCode("btc_xfi")
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -261,7 +261,7 @@ func TestOracle_SetOracles(t *testing.T) {
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 	CheckSetGenesisMockVM(t, app, genAccs)
 
-	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], dnTypes.AssetCode("btc_dfi")
+	nomineeAddr, nomineePrivKey, assetCode := genAddrs[0], genPrivKeys[0], dnTypes.AssetCode("btc_xfi")
 
 	newOracleAcc1, err := sdk.AccAddressFromHex(secp256k1.GenPrivKey().PubKey().Address().String())
 	require.NoError(t, err)
@@ -487,7 +487,7 @@ func TestOracle_PostPrices(t *testing.T) {
 	genAccs, genAddrs, _, genPrivKeys := CreateGenAccounts(7, GenDefCoins(t))
 	CheckSetGenesisMockVM(t, app, genAccs)
 
-	assetCode := dnTypes.AssetCode("btc_dfi")
+	assetCode := dnTypes.AssetCode("btc_xfi")
 
 	// set params (add asset with oracle 0 / nominees)
 	{

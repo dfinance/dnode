@@ -64,7 +64,7 @@ const (
 		"currencies": [
 			{
 				"path": "01f3a1f15d7b13931f3bd5f957ad154b5cbaa0e1a2c3d4d967f286e8800eeb510d",
-          		"denom": "dfi",
+          		"denom": "xfi",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},

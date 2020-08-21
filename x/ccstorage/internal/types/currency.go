@@ -12,7 +12,7 @@ import (
 // Currency is an info object with currency params.
 type Currency struct {
 	// Currency denom (symbol)
-	Denom string `json:"denom" yaml:"denom" example:"dfi"`
+	Denom string `json:"denom" yaml:"denom" example:"xfi"`
 	// Number of currency decimals
 	Decimals uint8 `json:"decimals" yaml:"decimals" example:"0"`
 	// Path used to store account balance for currency denom (0x1::Dfinance::T<Coin>)

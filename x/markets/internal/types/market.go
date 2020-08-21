@@ -18,8 +18,8 @@ type Market struct {
 	ID dnTypes.ID `json:"id" yaml:"id" format:"string representation for big.Uint" swaggertype:"string" example:"0"`
 	// Base asset denomination (for ex. btc)
 	BaseAssetDenom string `json:"base_asset_denom" yaml:"base_asset_denom" example:"btc"`
-	// Quote asset denomination (for ex. dfi)
-	QuoteAssetDenom string `json:"quote_asset_denom" yaml:"quote_asset_denom" example:"dfi"`
+	// Quote asset denomination (for ex. xfi)
+	QuoteAssetDenom string `json:"quote_asset_denom" yaml:"quote_asset_denom" example:"xfi"`
 }
 
 // Valid check object validity.
