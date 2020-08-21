@@ -22,11 +22,11 @@ func TestIntegVM_CommunicationUDSOverDocker(t *testing.T) {
 	const script = `
 		script {
 			use 0x1::Account;
-			use 0x1::DFI;
+			use 0x1::XFI;
 
 			fun main(account: &signer) {
-				let dfi = Account::withdraw_from_sender<DFI::T>(account, 1);
-				Account::deposit_to_sender<DFI::T>(account, dfi);
+				let xfi = Account::withdraw_from_sender<XFI::T>(account, 1);
+				Account::deposit_to_sender<XFI::T>(account, xfi);
 			}
 	}
 `

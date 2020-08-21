@@ -14,7 +14,7 @@ func TestMarkets_MsgCreateMarket_Valid(t *testing.T) {
 
 	addr := sdk.AccAddress("wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h")
 
-	msg := NewMsgCreateMarket(addr, "btc", "dfi")
+	msg := NewMsgCreateMarket(addr, "btc", "xfi")
 	require.NoError(t, msg.ValidateBasic())
 }
 
@@ -23,14 +23,14 @@ func TestMarkets_MsgCreateMarket_Invalid(t *testing.T) {
 
 	// empty from
 	{
-		msg := NewMsgCreateMarket(sdk.AccAddress{}, "btc", "dfi")
+		msg := NewMsgCreateMarket(sdk.AccAddress{}, "btc", "xfi")
 		require.Error(t, msg.ValidateBasic())
 
 	}
 
 	// empty baseDenom
 	{
-		msg := NewMsgCreateMarket(sdk.AccAddress{}, "", "dfi")
+		msg := NewMsgCreateMarket(sdk.AccAddress{}, "", "xfi")
 		require.Error(t, msg.ValidateBasic())
 
 	}

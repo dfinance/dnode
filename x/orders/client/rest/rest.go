@@ -23,17 +23,17 @@ const (
 )
 
 type PostOrderReq struct {
-	BaseReq   rest.BaseReq      `json:"base_req" yaml:"base_req"`
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// Market assetCode in the following format: {base_denomination_symbol}_{quote_denomination_symbol}
-	AssetCode dnTypes.AssetCode `json:"asset_code" example:"btc_dfi"`
+	AssetCode dnTypes.AssetCode `json:"asset_code" example:"btc_xfi"`
 	// Order type (ask/bid)
-	Direction types.Direction   `json:"direction" example:"ask"`
-	// QuoteAsset price with decimals (1.0 DFI with 18 decimals -> 1000000000000000000)
-	Price     string            `json:"price" example:"100"`
+	Direction types.Direction `json:"direction" example:"ask"`
+	// QuoteAsset price with decimals (1.0 XFI with 18 decimals -> 1000000000000000000)
+	Price string `json:"price" example:"100"`
 	// BaseAsset quantity with decimals (1.0 BTC with 8 decimals -> 100000000)
-	Quantity  string            `json:"quantity" example:"10"`
+	Quantity string `json:"quantity" example:"10"`
 	// Order TTL [s]
-	TtlInSec  string            `json:"ttl_in_sec" example:"3"`
+	TtlInSec string `json:"ttl_in_sec" example:"3"`
 }
 
 type RevokeOrderReq struct {

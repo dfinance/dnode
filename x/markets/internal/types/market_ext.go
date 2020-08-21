@@ -19,7 +19,7 @@ type MarketExtended struct {
 	ID dnTypes.ID `json:"id" yaml:"id" format:"string representation for big.Uint" swaggertype:"string" example:"0"`
 	// Base asset currency (for ex. btc)
 	BaseCurrency ccstorage.Currency `json:"base_currency" yaml:"base_currency"`
-	// Quote asset currency (for ex. dfi)
+	// Quote asset currency (for ex. xfi)
 	QuoteCurrency ccstorage.Currency `json:"quote_currency" yaml:"quote_currency"`
 }
 

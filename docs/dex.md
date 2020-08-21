@@ -17,10 +17,10 @@ Market defines which asset acts as a Base asset and which as a Quote asset.
 To create a Market corresponding currencies (Base, Quote) must be registered in the chain.
 Here is an example of creating the Market using CLI:
 
-    dncli tx markets add btc dfi --from {accountAddress}
+    dncli tx markets add btc xfi --from {accountAddress}
 
 * `btc` - Base asset;
-* `dfi` - Quote asset;
+* `xfi` - Quote asset;
 
 ### Query
 
@@ -32,7 +32,7 @@ To query an existing Market(s) we have two options.
 
 2. Query all / filtered Markets:
 
-        dncli markets list --page=1 --limit=10 --base-asset-denom=btc --quote-asset-denom=dfi
+        dncli markets list --page=1 --limit=10 --base-asset-denom=btc --quote-asset-denom=xfi
 
     * `page, limit` - pagination arguments (optional);
     * `base-asset-denom` - filter by Base asset (optional);
@@ -69,12 +69,12 @@ Order creation example:
 **Important**
 
 Price / quantity values should be defined bering in mind currency decimals.
-For example, we are posting an order for btc-dfi market with marketID `0`.
+For example, we are posting an order for btc-xfi market with marketID `0`.
 BTC is a Base asset currency with 8 decimals.
-DFI is a Quote asset currency with 18 decimals.
+XFI is a Quote asset currency with 18 decimals.
 In that case, the example above can interpreted as:
 * `500000` BTCs -> `0.005` portion of BTC;
-* `10000000000000` DFIs -> `0.00001` portions of DFI;
+* `10000000000000` XFIs -> `0.00001` portions of XFI;
 
 ### Revoking
 

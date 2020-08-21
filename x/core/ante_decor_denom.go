@@ -8,7 +8,7 @@ import (
 	"github.com/dfinance/dnode/cmd/config"
 )
 
-// DenomDecorator catches and prevents transactions without fees and fees not in "dfi" currency
+// DenomDecorator catches and prevents transactions without fees and fees not in "xfi" currency
 type DenomDecorator struct{}
 
 func NewDenomDecorator() DenomDecorator {

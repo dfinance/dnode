@@ -38,18 +38,18 @@ func TestOrdersKeeper_Genesis_Init(t *testing.T) {
 	// import and export
 	{
 
-		m, err := keeper.marketKeeper.Add(ctx, "btc", "dfi")
+		m, err := keeper.marketKeeper.Add(ctx, "btc", "xfi")
 		require.Nil(t, err)
 
 		exM, err := keeper.marketKeeper.GetExtended(ctx, m.ID)
 		require.Nil(t, err)
 
-		order := NewBtcDfiMockOrder(types.Ask)
+		order := NewBtcXfiMockOrder(types.Ask)
 		order.ID = keeper.nextID(ctx)
 		order.Market = exM
 		keeper.setID(ctx, order.ID)
 
-		order2 := NewBtcDfiMockOrder(types.Bid)
+		order2 := NewBtcXfiMockOrder(types.Bid)
 		order2.ID = keeper.nextID(ctx)
 		order2.Market = exM
 		keeper.setID(ctx, order2.ID)

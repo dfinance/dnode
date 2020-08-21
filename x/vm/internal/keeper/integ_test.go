@@ -30,22 +30,22 @@ const sendScript = `
 script {
 	use 0x1::Account;
 	use 0x1::Coins;
-	use 0x1::DFI;
+	use 0x1::XFI;
 	use 0x1::Dfinance;
 	use 0x1::Compare;
 	
-	fun main(account: &signer, recipient: address, dfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
-		Account::pay_from_sender<DFI::T>(account, recipient, dfi_amount);
+	fun main(account: &signer, recipient: address, xfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
+		Account::pay_from_sender<XFI::T>(account, recipient, xfi_amount);
 		Account::pay_from_sender<Coins::ETH>(account, recipient, eth_amount);
 		Account::pay_from_sender<Coins::BTC>(account, recipient, btc_amount);
 		Account::pay_from_sender<Coins::USDT>(account, recipient, usdt_amount);
 
-		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<DFI::T>(), &b"dfi") == 0, 1);
+		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<XFI::T>(), &b"xfi") == 0, 1);
 		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::ETH>(), &b"eth") == 0, 2);
 		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::BTC>(), &b"btc") == 0, 3);
 		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::USDT>(), &b"usdt") == 0, 4);
 
-		assert(Dfinance::decimals<DFI::T>() == 18, 5);
+		assert(Dfinance::decimals<XFI::T>() == 18, 5);
 		assert(Dfinance::decimals<Coins::ETH>() == 18, 6);
 		assert(Dfinance::decimals<Coins::BTC>() == 8, 7);
 		assert(Dfinance::decimals<Coins::USDT>() == 6, 8);
@@ -88,12 +88,12 @@ script {
 const errorScript = `
 script {
 	use 0x1::Account;
-	use 0x1::DFI;
+	use 0x1::XFI;
 	use 0x1::Coins;
 	use 0x1::Event;
 
 	fun main(account: &signer, c: u64) {
-		let a = Account::withdraw_from_sender<DFI::T>(account, 523);
+		let a = Account::withdraw_from_sender<XFI::T>(account, 523);
 		let b = Account::withdraw_from_sender<Coins::BTC>(account, 1);
 	
 		Event::emit<u64>(10);
@@ -182,7 +182,7 @@ func newKeepEvents() sdk.Events {
 	})
 }
 
-// Test transfer of dfi between two accounts in dfi.
+// Test transfer of xfi between two accounts in xfi.
 func TestVMKeeper_DeployContractTransfer(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
@@ -199,14 +199,14 @@ func TestVMKeeper_DeployContractTransfer(t *testing.T) {
 
 	baseAmount := sdk.NewInt(1000)
 	putCoins := sdk.NewCoins(
-		sdk.NewCoin("dfi", baseAmount),
+		sdk.NewCoin("xfi", baseAmount),
 		sdk.NewCoin("eth", baseAmount),
 		sdk.NewCoin("btc", baseAmount),
 		sdk.NewCoin("usdt", baseAmount),
 	)
 
 	denoms := make([]string, 4)
-	denoms[0] = "dfi"
+	denoms[0] = "xfi"
 	denoms[1] = "eth"
 	denoms[2] = "btc"
 	denoms[3] = "usdt"
@@ -483,7 +483,7 @@ func TestVMKeeper_ErrorScript(t *testing.T) {
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
 	coins := sdk.NewCoins(
-		sdk.NewCoin("dfi", sdk.NewInt(1000000000000000)),
+		sdk.NewCoin("xfi", sdk.NewInt(1000000000000000)),
 		sdk.NewCoin("btc", sdk.NewInt(1)),
 	)
 
@@ -531,7 +531,7 @@ func TestVMKeeper_AllArgsTypes(t *testing.T) {
 	input := newTestInput(false)
 
 	// Create account
-	accCoins := sdk.NewCoins(sdk.NewCoin("dfi", sdk.NewInt(1000)))
+	accCoins := sdk.NewCoins(sdk.NewCoin("xfi", sdk.NewInt(1000)))
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
 	acc1.SetCoins(accCoins)
@@ -610,7 +610,7 @@ func TestVMKeeper_Path(t *testing.T) {
 	// Create account
 	baseAmount := sdk.NewInt(1000)
 	accCoins := sdk.NewCoins(
-		sdk.NewCoin("dfi", baseAmount),
+		sdk.NewCoin("xfi", baseAmount),
 		sdk.NewCoin("eth", baseAmount),
 		sdk.NewCoin("btc", baseAmount),
 		sdk.NewCoin("usdt", baseAmount),
@@ -686,17 +686,17 @@ func TestVMKeeper_Path(t *testing.T) {
 		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
-	// Check vmauth module path: DFI
-	testID = "VMAuth DFI"
+	// Check vmauth module path: XFI
+	testID = "VMAuth XFI"
 	{
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
     			use 0x1::Account;
-				use 0x1::DFI;
+				use 0x1::XFI;
 
 				fun main(account: &signer) {
-					let _ = Account::balance<DFI::T>(account);
+					let _ = Account::balance<XFI::T>(account);
 				}
 			}
 		`
@@ -798,17 +798,17 @@ func TestVMKeeper_Path(t *testing.T) {
 		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
-	// Check currencies_register module path: DFI
-	testID = "CurrencyInfo DFI"
+	// Check currencies_register module path: XFI
+	testID = "CurrencyInfo XFI"
 	{
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
 				use 0x1::Dfinance;
-				use 0x1::DFI;
+				use 0x1::XFI;
 
 				fun main() {
-					let _ = Dfinance::denom<DFI::T>();
+					let _ = Dfinance::denom<XFI::T>();
 				}
 			}
 		`
@@ -1313,7 +1313,7 @@ func TestResearch_LCS(t *testing.T) {
 	{
 		baseAmount := sdk.NewInt(1000)
 		accCoins := sdk.NewCoins(
-			sdk.NewCoin("dfi", baseAmount),
+			sdk.NewCoin("xfi", baseAmount),
 			sdk.NewCoin("eth", baseAmount),
 			sdk.NewCoin("btc", baseAmount),
 			sdk.NewCoin("usdt", baseAmount),

@@ -20,12 +20,12 @@ func TestMarkets_Genesis_Valid(t *testing.T) {
 			Market{
 				ID:              dnTypes.NewIDFromUint64(0),
 				BaseAssetDenom:  "btc",
-				QuoteAssetDenom: "dfi",
+				QuoteAssetDenom: "xfi",
 			},
 			Market{
 				ID:              dnTypes.NewIDFromUint64(1),
 				BaseAssetDenom:  "eth",
-				QuoteAssetDenom: "dfi",
+				QuoteAssetDenom: "xfi",
 			},
 		},
 		LastMarketID: &lastID,
@@ -44,7 +44,7 @@ func TestMarkets_Genesis_Invalid(t *testing.T) {
 				Market{
 					ID:              dnTypes.ID(sdk.Uint{}),
 					BaseAssetDenom:  "btc",
-					QuoteAssetDenom: "dfi",
+					QuoteAssetDenom: "xfi",
 				},
 			},
 			LastMarketID: &lastID,
@@ -60,7 +60,7 @@ func TestMarkets_Genesis_Invalid(t *testing.T) {
 				Market{
 					ID:              dnTypes.NewIDFromUint64(0),
 					BaseAssetDenom:  "BTC",
-					QuoteAssetDenom: "dfi",
+					QuoteAssetDenom: "xfi",
 				},
 			},
 			LastMarketID: &lastID,
@@ -76,7 +76,7 @@ func TestMarkets_Genesis_Invalid(t *testing.T) {
 				Market{
 					ID:              dnTypes.NewIDFromUint64(0),
 					BaseAssetDenom:  "btc",
-					QuoteAssetDenom: "dfi_1",
+					QuoteAssetDenom: "xfi_1",
 				},
 			},
 			LastMarketID: &lastID,
@@ -92,7 +92,7 @@ func TestMarkets_Genesis_Invalid(t *testing.T) {
 				Market{
 					ID:              dnTypes.NewIDFromUint64(0),
 					BaseAssetDenom:  "btc",
-					QuoteAssetDenom: "dfi",
+					QuoteAssetDenom: "xfi",
 				},
 				Market{
 					ID:              dnTypes.NewIDFromUint64(1),
@@ -117,7 +117,7 @@ func TestMarkets_Genesis_Invalid(t *testing.T) {
 				Market{
 					ID:              dnTypes.NewIDFromUint64(0),
 					BaseAssetDenom:  "btc",
-					QuoteAssetDenom: "dfi",
+					QuoteAssetDenom: "xfi",
 				},
 			},
 		}
@@ -141,7 +141,7 @@ func TestMarkets_Genesis_Invalid(t *testing.T) {
 				Market{
 					ID:              dnTypes.NewIDFromUint64(0),
 					BaseAssetDenom:  "btc",
-					QuoteAssetDenom: "dfi",
+					QuoteAssetDenom: "xfi",
 				},
 				Market{
 					ID:              dnTypes.NewIDFromUint64(1),

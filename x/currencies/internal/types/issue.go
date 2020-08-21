@@ -11,7 +11,7 @@ import (
 // Issue is an info about issuing currency to the payee (recipient).
 type Issue struct {
 	// Issuing coin
-	Coin sdk.Coin `json:"coin" yaml:"coin" swaggertype:"string" example:"100dfi"`
+	Coin sdk.Coin `json:"coin" yaml:"coin" swaggertype:"string" example:"100xfi"`
 	// Target account for increasing coin balance
 	Payee sdk.AccAddress `json:"payee" yaml:"payee" swaggertype:"string" format:"bech32" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 }

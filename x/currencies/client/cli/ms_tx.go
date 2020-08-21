@@ -18,7 +18,7 @@ func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "ms-issue [issueID] [coin] [payee]",
 		Short:   "Issue new currency via multi signature, increasing payee coin balance",
-		Example: "ms-issue issue1 100dfi {account} --from {account}",
+		Example: "ms-issue issue1 100xfi {account} --from {account}",
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())

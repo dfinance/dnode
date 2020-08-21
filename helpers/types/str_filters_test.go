@@ -71,13 +71,13 @@ func Test_assetCodeFilter(t *testing.T) {
 
 func Test_denomFilter(t *testing.T) {
 	// ok
-	require.NoError(t, DenomFilter("dfi"))
+	require.NoError(t, DenomFilter("xfi"))
 
 	// fail: empty
 	require.Error(t, DenomFilter(""))
 
 	// fail: non lower cased letter
-	require.Error(t, DenomFilter("Dfi"))
+	require.Error(t, DenomFilter("Xfi"))
 
 	// fail: non ASCII symbol
 	require.Error(t, DenomFilter("eth®"))
