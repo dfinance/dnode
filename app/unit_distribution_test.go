@@ -51,7 +51,7 @@ func TestDistribution_MessagesNotWorking(t *testing.T) {
 		CheckDeliverSpecificErrorTx(t, app, tx, errors.ErrUnknownRequest)
 	}
 
-	// check fund community pool.
+	// check set withdraw address.
 	{
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, nodeAddress), nodePrivKey
 		withdrawAddress := distribution.NewMsgSetWithdrawAddress(nodeAddress, sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address()))
