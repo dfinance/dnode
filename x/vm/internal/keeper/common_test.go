@@ -63,7 +63,7 @@ const (
 	CoinsInfo = `{ 
 		"currencies": [
 			{
-				"path": "01f3a1f15d7b13931f3bd5f957ad154b5cbaa0e1a2c3d4d967f286e8800eeb510d",
+				"path": "01b9ed21c23abf8c7a53fb868a36e106d45394c30127fb722f8dd2d45aae719585",
           		"denom": "xfi",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
@@ -404,7 +404,7 @@ func startDVMContainer(t *testing.T, dsPort int) (stopFunc func()) {
 	vmUrl, err := url.Parse(*vmAddress)
 	require.NoError(t, err, "parsing vmAddress")
 
-	containerStop := tests.LaunchDVMWithNetTransport(t, vmUrl.Port(), strconv.Itoa(dsPort), true)
+	containerStop := tests.LaunchDVMWithNetTransport(t, vmUrl.Port(), strconv.Itoa(dsPort), false)
 	*vmCompiler = "127.0.0.1:" + vmUrl.Port()
 
 	return containerStop
