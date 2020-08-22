@@ -62,22 +62,22 @@ func NewContractEvents(exec *vm_grpc.VMExecuteResponse) sdk.Events {
 		var majorStatus uint64
 		subStatus := uint64(0)
 
-		switch sErr.(type) {
+		switch sErr := sErr.(type) {
 		case *vm_grpc.VMStatus_Abort:
 			majorStatus = VMAbortedCode
-			abort := sErr.(*vm_grpc.VMStatus_Abort).Abort
+			abort := sErr.Abort
 			if abort != nil {
 				subStatus = abort.GetAbortCode()
 				attributes = append(attributes, processAbortLocation(abort.AbortLocation)...)
 			}
 		case *vm_grpc.VMStatus_ExecutionFailure:
-			executionFailure := sErr.(*vm_grpc.VMStatus_ExecutionFailure).ExecutionFailure
+			executionFailure := sErr.ExecutionFailure
 			if executionFailure != nil {
 				majorStatus = executionFailure.GetStatusCode()
 				attributes = append(attributes, processAbortLocation(executionFailure.AbortLocation)...)
 			}
 		case *vm_grpc.VMStatus_MoveError:
-			majorStatus = sErr.(*vm_grpc.VMStatus_MoveError).MoveError.GetStatusCode()
+			majorStatus = sErr.MoveError.GetStatusCode()
 		}
 
 		attributes = append(
