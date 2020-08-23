@@ -41,21 +41,49 @@ func TestVM_KeepEvent(t *testing.T) {
 func TestVM_DiscardEvent(t *testing.T) {
 	t.Parallel()
 
-	// "discard" with empty error
+	// "panic" with empty VMStatus_Abort
 	{
 		exec := &vm_grpc.VMExecuteResponse{
 			Status: &vm_grpc.VMStatus{
 				Error: &vm_grpc.VMStatus_Abort{},
 			},
 		}
-		events := NewContractEvents(exec)
 
-		require.Len(t, events, 1)
+		defer func() {
+			require.NotNil(t, recover())
+		}()
 
-		event0 := events[0]
-		require.Equal(t, EventTypeContractStatus, event0.Type)
-		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
-		require.EqualValues(t, AttributeValueStatusDiscard, event0.Attributes[0].Value)
+		NewContractEvents(exec)
+	}
+
+	// "panic" with empty VMStatus_ExecutionFailure
+	{
+		exec := &vm_grpc.VMExecuteResponse{
+			Status: &vm_grpc.VMStatus{
+				Error: &vm_grpc.VMStatus_ExecutionFailure{},
+			},
+		}
+
+		defer func() {
+			require.NotNil(t, recover())
+		}()
+
+		NewContractEvents(exec)
+	}
+
+	// "panic" with empty VMStatus_MoveError
+	{
+		exec := &vm_grpc.VMExecuteResponse{
+			Status: &vm_grpc.VMStatus{
+				Error: &vm_grpc.VMStatus_MoveError{},
+			},
+		}
+
+		defer func() {
+			require.NotNil(t, recover())
+		}()
+
+		NewContractEvents(exec)
 	}
 
 	// "discard" with abort error and abort location

@@ -116,7 +116,11 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 
 	resp := &vm_grpc.VMExecuteResponse{
 		Status: &vm_grpc.VMStatus{
-			Error: &vm_grpc.VMStatus_ExecutionFailure{},
+			Error: &vm_grpc.VMStatus_ExecutionFailure{
+				ExecutionFailure: &vm_grpc.Failure{
+					StatusCode: 100,
+				},
+			},
 			Message: &vm_grpc.Message{
 				Text: "this is another errorr!!!1111",
 			},
@@ -134,7 +138,11 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 	// discard without status
 	resp = &vm_grpc.VMExecuteResponse{
 		Status: &vm_grpc.VMStatus{
-			Error: &vm_grpc.VMStatus_ExecutionFailure{},
+			Error: &vm_grpc.VMStatus_ExecutionFailure{
+				ExecutionFailure: &vm_grpc.Failure{
+					StatusCode: 100,
+				},
+			},
 		},
 	}
 
@@ -144,7 +152,11 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 	procEvents = ctx.EventManager().Events()
 	expectedEvents = types.NewContractEvents(&vm_grpc.VMExecuteResponse{
 		Status: &vm_grpc.VMStatus{
-			Error: &vm_grpc.VMStatus_ExecutionFailure{},
+			Error: &vm_grpc.VMStatus_ExecutionFailure{
+				ExecutionFailure: &vm_grpc.Failure{
+					StatusCode: 100,
+				},
+			},
 		},
 	})
 	require.Len(t, procEvents, 2)

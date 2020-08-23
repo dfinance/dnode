@@ -194,7 +194,7 @@ const (
 	}`
 
 	VMErrUnknown   = "unknown"
-	VMExecutedCode = "4001"
+	VMExecutedCode = 4001
 	VMAbortedCode  = 4016
 )
 

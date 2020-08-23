@@ -43,13 +43,15 @@ func NewContractEvents(exec *vm_grpc.VMExecuteResponse) sdk.Events {
 		panic(fmt.Errorf("building contract sdk.Events: exec.Status is nil"))
 	}
 
+	majorStatus, subStatus := GetStatusCodesFromVMStatus(status)
+
 	if status.GetError() == nil {
 		return sdk.Events{
 			sdk.NewEvent(
 				EventTypeContractStatus,
 				sdk.NewAttribute(AttributeStatus, AttributeValueStatusKeep),
-				sdk.NewAttribute(AttributeErrMajorStatus, VMExecutedCode),
-				sdk.NewAttribute(AttributeErrSubStatus, "0"),
+				sdk.NewAttribute(AttributeErrMajorStatus, strconv.FormatUint(majorStatus, 10)),
+				sdk.NewAttribute(AttributeErrSubStatus, strconv.FormatUint(subStatus, 10)),
 			),
 		}
 	}
@@ -59,25 +61,15 @@ func NewContractEvents(exec *vm_grpc.VMExecuteResponse) sdk.Events {
 	attributes[0] = sdk.NewAttribute(AttributeStatus, AttributeValueStatusDiscard)
 
 	if sErr := status.GetError(); sErr != nil {
-		var majorStatus uint64
-		subStatus := uint64(0)
-
 		switch sErr := sErr.(type) {
 		case *vm_grpc.VMStatus_Abort:
-			majorStatus = VMAbortedCode
-			abort := sErr.Abort
-			if abort != nil {
-				subStatus = abort.GetAbortCode()
-				attributes = append(attributes, processAbortLocation(abort.AbortLocation)...)
+			if sErr.Abort != nil {
+				attributes = append(attributes, processAbortLocation(sErr.Abort.AbortLocation)...)
 			}
 		case *vm_grpc.VMStatus_ExecutionFailure:
-			executionFailure := sErr.ExecutionFailure
-			if executionFailure != nil {
-				majorStatus = executionFailure.GetStatusCode()
-				attributes = append(attributes, processAbortLocation(executionFailure.AbortLocation)...)
+			if sErr.ExecutionFailure != nil {
+				attributes = append(attributes, processAbortLocation(sErr.ExecutionFailure.AbortLocation)...)
 			}
-		case *vm_grpc.VMStatus_MoveError:
-			majorStatus = sErr.MoveError.GetStatusCode()
 		}
 
 		attributes = append(
