@@ -10,7 +10,7 @@ require (
 	github.com/containerd/containerd v1.3.3 // indirect
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
 	github.com/cosmos/cosmos-sdk v0.39.0
-	github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26
+	github.com/dfinance/dvm-proto/go v0.0.0-20200806082036-06b76cf8c183
 	github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3

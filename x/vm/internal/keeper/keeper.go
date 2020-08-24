@@ -118,11 +118,9 @@ func (k Keeper) DeployContractDryRun(ctx sdk.Context, msg types.MsgDeployModule)
 		return sdkErrors.Wrap(types.ErrVMCrashed, dvmErr.Error())
 	}
 
-	if exec.Status != vm_grpc.ContractStatus_Discard {
-		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
-			statusMsg := types.StringifyVMExecStatus(exec.Status, exec.StatusStruct)
-			return sdkErrors.Wrap(types.ErrWrongExecutionResponse, statusMsg)
-		}
+	if exec.GetStatus().GetError() != nil {
+		statusMsg := types.StringifyVMExecStatus(exec.Status)
+		return sdkErrors.Wrap(types.ErrWrongExecutionResponse, statusMsg)
 	}
 
 	return nil

@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/crypto/tmhash"
-
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
@@ -98,14 +96,8 @@ func (k Keeper) processExecution(ctx sdk.Context, exec *vm_grpc.VMExecuteRespons
 	ctx.EventManager().EmitEvent(dnTypes.NewModuleNameEvent(types.ModuleName))
 	ctx.EventManager().EmitEvents(types.NewContractEvents(exec))
 
-	// process "keep" status
-	if exec.Status == vm_grpc.ContractStatus_Keep {
-		// return on "error" status
-		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != types.VMCodeExecuted {
-			types.PrintVMStackTrace(tmhash.Sum(ctx.TxBytes()), k.GetLogger(ctx), exec)
-			return
-		}
-
+	// process success status
+	if exec.GetStatus().GetError() == nil {
 		k.processWriteSet(ctx, exec.WriteSet)
 
 		// emit VM events (panic on "out of gas", emitted events stays in the EventManager)

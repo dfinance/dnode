@@ -115,7 +115,7 @@ func (server vmServer) PublishModule(context.Context, *vm_grpc.VMPublishModule) 
 		WriteSet: values,
 		Events:   nil,
 		GasUsed:  10000,
-		Status:   vm_grpc.ContractStatus_Keep,
+		Status:   &vm_grpc.VMStatus{},
 	}, nil
 }
 
@@ -148,7 +148,7 @@ func (server vmServer) ExecuteScript(context.Context, *vm_grpc.VMExecuteScript) 
 		WriteSet: values,
 		Events:   events,
 		GasUsed:  10000,
-		Status:   vm_grpc.ContractStatus_Keep,
+		Status:   &vm_grpc.VMStatus{},
 	}, nil
 }
 
@@ -278,6 +278,7 @@ func newTestInput(launchMock bool) testInput {
 		panic(err)
 	}
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, logger)
+	input.ctx = input.ctx.WithGasMeter(sdk.NewGasMeter(10000000))
 
 	// create keepers
 	input.pk = params.NewKeeper(input.cdc, input.keyParams, input.tkeyParams)
