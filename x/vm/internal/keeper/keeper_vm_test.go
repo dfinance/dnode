@@ -5,6 +5,7 @@ package keeper
 import (
 	"bytes"
 	"encoding/binary"
+	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -115,7 +116,11 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 
 	resp := &vm_grpc.VMExecuteResponse{
 		Status: &vm_grpc.VMStatus{
-			Error: &vm_grpc.VMStatus_ExecutionFailure{},
+			Error: &vm_grpc.VMStatus_ExecutionFailure{
+				ExecutionFailure: &vm_grpc.Failure{
+					StatusCode: 100,
+				},
+			},
 			Message: &vm_grpc.Message{
 				Text: "this is another errorr!!!1111",
 			},
@@ -133,7 +138,11 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 	// discard without status
 	resp = &vm_grpc.VMExecuteResponse{
 		Status: &vm_grpc.VMStatus{
-			Error: &vm_grpc.VMStatus_ExecutionFailure{},
+			Error: &vm_grpc.VMStatus_ExecutionFailure{
+				ExecutionFailure: &vm_grpc.Failure{
+					StatusCode: 100,
+				},
+			},
 		},
 	}
 
@@ -143,7 +152,11 @@ func TestVMKeeper_ProcessExecution(t *testing.T) {
 	procEvents = ctx.EventManager().Events()
 	expectedEvents = types.NewContractEvents(&vm_grpc.VMExecuteResponse{
 		Status: &vm_grpc.VMStatus{
-			Error: &vm_grpc.VMStatus_ExecutionFailure{},
+			Error: &vm_grpc.VMStatus_ExecutionFailure{
+				ExecutionFailure: &vm_grpc.Failure{
+					StatusCode: 100,
+				},
+			},
 		},
 	})
 	require.Len(t, procEvents, 2)
@@ -347,7 +360,11 @@ func TestVMKeeper_ExecKeepAndError(t *testing.T) {
 		WriteSet: nil,
 		Events:   nil,
 		Status: &vm_grpc.VMStatus{
-			Error: &vm_grpc.VMStatus_MoveError{},
+			Error: &vm_grpc.VMStatus_MoveError{
+				MoveError: &vm_grpc.MoveError{
+					StatusCode: 3002,
+				},
+			},
 			Message: &vm_grpc.Message{
 				Text: errMessage,
 			},
@@ -364,6 +381,14 @@ func TestVMKeeper_ExecKeepAndError(t *testing.T) {
 	require.EqualValues(t, types.EventTypeContractStatus, events[1].Type)
 	require.EqualValues(t, types.AttributeStatus, events[1].Attributes[0].Key)
 	require.EqualValues(t, types.AttributeValueStatusDiscard, events[1].Attributes[0].Value)
-	require.EqualValues(t, types.AttributeErrMessage, events[1].Attributes[1].Key)
-	require.EqualValues(t, errMessage, events[1].Attributes[1].Value)
+
+	require.EqualValues(t, types.AttributeErrMajorStatus, events[1].Attributes[1].Key)
+	majorCode := resp.Status.Error.(*vm_grpc.VMStatus_MoveError).MoveError.StatusCode
+	require.EqualValues(t, strconv.FormatUint(majorCode, 10), events[1].Attributes[1].Value)
+
+	require.EqualValues(t, types.AttributeErrSubStatus, events[1].Attributes[2].Key)
+	require.EqualValues(t, "0", events[1].Attributes[2].Value)
+
+	require.EqualValues(t, types.AttributeErrMessage, events[1].Attributes[3].Key)
+	require.EqualValues(t, errMessage, events[1].Attributes[3].Value)
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -186,20 +187,47 @@ func StringifyVMWriteSet(value *vm_grpc.VMValue) string {
 
 // StringifyVMExecStatus converts vm_grpc.ContractStatus to string representation.
 func StringifyVMExecStatus(status *vm_grpc.VMStatus) string {
-	if status == nil {
-		return ""
-	}
 
 	strBuilder := strings.Builder{}
-
 	strBuilder.WriteString(fmt.Sprintf("Exec %q status:\n", status.String()))
-	if status.GetError() != nil {
-		strBuilder.WriteString(fmt.Sprintf("  Message: %s", status.GetMessage().GetText()))
+
+	if status != nil {
+		majorStatus, subStatus := GetStatusCodesFromVMStatus(status)
+
+		strBuilder.WriteString(fmt.Sprintf("  Major code: %d\n", majorStatus))
+		strBuilder.WriteString(fmt.Sprintf("  Major status: %s\n", GetStrCode(strconv.FormatUint(majorStatus, 10))))
+		strBuilder.WriteString(fmt.Sprintf("  Sub code: %d\n", subStatus))
+		strBuilder.WriteString(fmt.Sprintf("  Message: %s", status.GetMessage()))
 	} else {
 		strBuilder.WriteString("  VMStatus: nil")
 	}
 
 	return strBuilder.String()
+}
+
+func GetStatusCodesFromVMStatus(status *vm_grpc.VMStatus) (majorStatus, subStatus uint64) {
+	switch sErr := status.GetError().(type) {
+	case *vm_grpc.VMStatus_Abort:
+		majorStatus = VMAbortedCode
+		if sErr.Abort == nil {
+			panic(fmt.Errorf("getting status codes: VMStatus_Abort.Abort is nil"))
+		}
+		subStatus = sErr.Abort.GetAbortCode()
+	case *vm_grpc.VMStatus_ExecutionFailure:
+		if sErr.ExecutionFailure == nil {
+			panic(fmt.Errorf("getting status codes: VMStatus_ExecutionFailure.ExecutionFailure is nil"))
+		}
+		majorStatus = sErr.ExecutionFailure.GetStatusCode()
+	case *vm_grpc.VMStatus_MoveError:
+		if sErr.MoveError == nil {
+			panic(fmt.Errorf("getting status codes: VMStatus_MoveError.MoveError is nil"))
+		}
+		majorStatus = sErr.MoveError.GetStatusCode()
+	case nil:
+		majorStatus = VMExecutedCode
+	}
+
+	return
 }
 
 // StringifyVMEvent converts vm_grpc.VMEvent to string representation.
