@@ -105,14 +105,14 @@ func TestVMKeeper_NewContract(t *testing.T) {
 	maxGas := uint64(1000000)
 
 	contractModule := NewDeployContract(addr, maxGas, code)
-	require.Equal(t, common_vm.Bech32ToLibra(addr), contractModule.Address)
+	require.Equal(t, common_vm.Bech32ToLibra(addr), contractModule.Sender)
 	require.Equal(t, maxGas, contractModule.MaxGasAmount)
 	require.Equal(t, uint64(types.VmGasPrice), contractModule.GasUnitPrice)
 	require.Equal(t, code, contractModule.Code)
 
 	contractScript, err := NewExecuteContract(addr, maxGas, code, argInputs)
 	require.NoError(t, err)
-	require.Equal(t, common_vm.Bech32ToLibra(addr), contractScript.Address)
+	require.Equal(t, [][]byte{common_vm.Bech32ToLibra(addr)}, contractScript.Senders)
 	require.Equal(t, maxGas, contractScript.MaxGasAmount)
 	require.Equal(t, uint64(types.VmGasPrice), contractScript.GasUnitPrice)
 	require.Equal(t, code, contractScript.Code)
@@ -152,7 +152,7 @@ func TestVMKeeper_NewDeployRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	require.EqualValues(t, common_vm.Bech32ToLibra(addr), req.Address)
+	require.EqualValues(t, common_vm.Bech32ToLibra(addr), req.Sender)
 	require.EqualValues(t, gasLimit, req.MaxGasAmount)
 	require.EqualValues(t, types.VmGasPrice, req.GasUnitPrice)
 	require.EqualValues(t, code, req.Code)

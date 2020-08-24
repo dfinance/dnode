@@ -47,7 +47,7 @@ func getVMLimitedGas(gas sdk.Gas) sdk.Gas {
 // NewDeployContract creates an object used for publish module requests.
 func NewDeployContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte) *vm_grpc.VMPublishModule {
 	return &vm_grpc.VMPublishModule{
-		Address:      common_vm.Bech32ToLibra(address),
+		Sender:       common_vm.Bech32ToLibra(address),
 		MaxGasAmount: getVMLimitedGas(maxGas),
 		GasUnitPrice: types.VmGasPrice,
 		Code:         code,
@@ -65,7 +65,7 @@ func NewExecuteContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, arg
 	}
 
 	return &vm_grpc.VMExecuteScript{
-		Address:      common_vm.Bech32ToLibra(address),
+		Senders:      [][]byte{common_vm.Bech32ToLibra(address)},
 		MaxGasAmount: getVMLimitedGas(maxGas),
 		GasUnitPrice: types.VmGasPrice,
 		Code:         code,
