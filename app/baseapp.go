@@ -108,6 +108,9 @@ type BaseApp struct { // nolint: maligned
 
 	// trace set will return full stack traces for errors in ABCI Log field
 	trace bool
+
+	// list of denied messages, e.g.: moduleName: {msgType},
+	msgsDeniedList map[string][]string
 }
 
 // NewBaseApp returns a reference to an initialized BaseApp. It accepts a
@@ -116,7 +119,7 @@ type BaseApp struct { // nolint: maligned
 //
 // NOTE: The db is used to store the version number for now.
 func NewBaseApp(
-	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder, options ...func(*BaseApp),
+	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder, msgsDeniedList map[string][]string, options ...func(*BaseApp),
 ) *BaseApp {
 
 	app := &BaseApp{
@@ -130,6 +133,7 @@ func NewBaseApp(
 		txDecoder:      txDecoder,
 		fauxMerkleMode: false,
 		trace:          false,
+		msgsDeniedList: msgsDeniedList,
 	}
 	for _, option := range options {
 		option(app)
@@ -676,6 +680,16 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		}
 
 		msgRoute := msg.Route()
+
+		// Check if message denied.
+		if types, hasFound := app.msgsDeniedList[msgRoute]; hasFound {
+			for _, _type := range types {
+				if _type == msg.Type() {
+					return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "message route denied: %s/%s; message index: %d", msgRoute, msg.Type(), i)
+				}
+			}
+		}
+
 		handler := app.router.Route(ctx, msgRoute)
 		if handler == nil {
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message route: %s; message index: %d", msgRoute, i)

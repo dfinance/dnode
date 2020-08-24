@@ -230,6 +230,19 @@ func TestCurrencies_CLI(t *testing.T) {
 	}
 }
 
+// Check that distribution commands in CLI disabled.
+func TestDisableRewards_CLI(t *testing.T) {
+	t.Parallel()
+
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+
+	code, stdOut, _ := ct.TxDistributionWithoutParams().Send()
+
+	require.Equal(t, 0, code)
+	require.NotContains(t, string(stdOut), "distribution")
+}
+
 func TestOracle_CLI(t *testing.T) {
 	t.Parallel()
 

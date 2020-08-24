@@ -100,6 +100,16 @@ var (
 		orders.ModuleName:         {supply.Burner},
 		gov.ModuleName:            {supply.Burner},
 	}
+
+	// Denied messages types.
+	msgsDeniedList = map[string][]string{
+		distribution.ModuleName: {
+			distribution.MsgWithdrawDelegatorReward{}.Type(),
+			distribution.MsgWithdrawValidatorCommission{}.Type(),
+			distribution.TypeMsgFundCommunityPool,
+			distribution.MsgSetWithdrawAddress{}.Type(),
+		},
+	}
 )
 
 // DN Service App implements DN mains logic.
@@ -190,7 +200,7 @@ func MakeCodec() *codec.Codec {
 func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
-	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
+	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), msgsDeniedList, baseAppOptions...)
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(
