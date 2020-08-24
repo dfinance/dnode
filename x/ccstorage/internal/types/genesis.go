@@ -74,7 +74,7 @@ func DefaultGenesisState() GenesisState {
 				Denom:          "xfi",
 				Decimals:       18,
 				BalancePathHex: "01226844e85ad6e3867f4ff1a4300e71ed6057538631a5a5330512772b7104b585",
-				InfoPathHex:    "012a00668b5325f832c28a24eb83dffa8295170c80345fbfbf99a5263f962c76f4",
+				InfoPathHex:    "01b9ed21c23abf8c7a53fb868a36e106d45394c30127fb722f8dd2d45aae719585",
 			},
 			{
 				Denom:          "eth",
