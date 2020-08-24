@@ -152,8 +152,6 @@ github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26 h1:HjCcumhDV
 github.com/dfinance/dvm-proto/go v0.0.0-20200629145843-bfdcef619a26/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
 github.com/dfinance/dvm-proto/go v0.0.0-20200806082036-06b76cf8c183 h1:h1gLIUPEbVIVHSrJvC9FPpaVKHXmVmUYAoEEoH/ZxeE=
 github.com/dfinance/dvm-proto/go v0.0.0-20200806082036-06b76cf8c183/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
-github.com/dfinance/dvm-proto/go v0.0.0-20200819065410-6b70956c85de h1:PZfrjeOs9epAU0n+FpX/JAr/e+5m5/GdfUsgtO8gCOY=
-github.com/dfinance/dvm-proto/go v0.0.0-20200819065410-6b70956c85de/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
 github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8 h1:SpACwa85hu9vFveIBPE4Xe28KiSrwxU8Lge3Pcdtr8s=
 github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8/go.mod h1:/0gr38+QzVxCNSNKc/WjGKtdTfV8NtMagCNO0/VjOQU=
 github.com/dfinance/glav v0.0.0-20200810142408-b45f02eb7f56 h1:fHl+W6KAqVKdTmwpmpAQX8z0ZSH4qf3FS4X/dNJk3cc=
