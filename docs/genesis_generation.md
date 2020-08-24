@@ -62,10 +62,10 @@ It should be done before the next commands, refer to the tutorial **[how to init
 The following commands might be omitted as [`xfi`, `eth`, `usdt`, `btc`] currencies already exist in the default generated genesis above.
 Currencies can be added to the chain later using `gov` proposals.
 
-    dnode set-currency-info xfi  18 01608540feb9c6bd277405cfdc0e9140c1431f236f7d97865575e830af3dd67e7e 01f3a1f15d7b13931f3bd5f957ad154b5cbaa0e1a2c3d4d967f286e8800eeb510d
-    dnode set-currency-info eth  18 0138f4f2895881c804de0e57ced1d44f02e976f9c6561c889f7b7eef8e660d2c9a 012a00668b5325f832c28a24eb83dffa8295170c80345fbfbf99a5263f962c76f4
-    dnode set-currency-info usdt 6  01a04b6467f35792e0fda5638a509cc807b3b289a4e0ea10794c7db5dc1a63d481 01d058943a984bc02bc4a8547e7c0d780c59334e9aa415b90c87e70d140b2137b8
-    dnode set-currency-info btc  8  019a2b233aea4cab2e5b6701280f8302be41ea5731af93858fd96e038499eda072 019fdf92aeba5356ec5455b1246c2e1b71d5c7192c6e5a1b50444dafaedc1c40c9
+    dnode set-currency xfi  18 01226844e85ad6e3867f4ff1a4300e71ed6057538631a5a5330512772b7104b585 01b9ed21c23abf8c7a53fb868a36e106d45394c30127fb722f8dd2d45aae719585
+    dnode set-currency eth  18 0138f4f2895881c804de0e57ced1d44f02e976f9c6561c889f7b7eef8e660d2c9a 012a00668b5325f832c28a24eb83dffa8295170c80345fbfbf99a5263f962c76f4
+    dnode set-currency usdt 6  01a04b6467f35792e0fda5638a509cc807b3b289a4e0ea10794c7db5dc1a63d481 01d058943a984bc02bc4a8547e7c0d780c59334e9aa415b90c87e70d140b2137b8
+    dnode set-currency btc  8  019a2b233aea4cab2e5b6701280f8302be41ea5731af93858fd96e038499eda072 019fdf92aeba5356ec5455b1246c2e1b71d5c7192c6e5a1b50444dafaedc1c40c9
 
 We can also add DEX markets to genesis (markets can be added later via non-genesis Tx command as well):
 
