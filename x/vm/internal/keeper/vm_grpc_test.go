@@ -3,9 +3,6 @@
 package keeper
 
 import (
-	"encoding/hex"
-	"fmt"
-	"github.com/golang/protobuf/proto"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/store"
@@ -154,10 +151,6 @@ func TestVMKeeper_NewDeployRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	a, err := proto.Marshal(req)
-	xx := hex.EncodeToString(a)
-	fmt.Println(xx)
 
 	require.EqualValues(t, common_vm.Bech32ToLibra(addr), req.Sender)
 	require.EqualValues(t, gasLimit, req.MaxGasAmount)
