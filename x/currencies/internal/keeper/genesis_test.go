@@ -24,7 +24,7 @@ func TestCurrenciesKeeper_Genesis(t *testing.T) {
 		Issues: []types.GenesisIssue{
 			{
 				Issue: types.NewIssue(
-					sdk.NewCoin("dfi", sdk.NewInt(150)),
+					sdk.NewCoin("xfi", sdk.NewInt(150)),
 					sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address()),
 				),
 				ID: "issue1",
@@ -40,7 +40,7 @@ func TestCurrenciesKeeper_Genesis(t *testing.T) {
 		Withdraws: types.Withdraws{
 			types.NewWithdraw(
 				dnTypes.NewIDFromUint64(0),
-				sdk.NewCoin("dfi", sdk.NewInt(100)),
+				sdk.NewCoin("xfi", sdk.NewInt(100)),
 				sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address()),
 				"pgAcc1",
 				"pgID",

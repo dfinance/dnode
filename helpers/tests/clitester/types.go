@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	DenomDFI  = "dfi"
+	DenomXFI  = "xfi"
 	DenomETH  = "eth"
 	DenomBTC  = "btc"
 	DenomUSDT = "usdt"

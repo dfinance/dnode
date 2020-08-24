@@ -24,7 +24,7 @@ func TestVM_KeepEvent(t *testing.T) {
 	// "keep" no error
 	{
 		exec := &vm_grpc.VMExecuteResponse{
-			Status: vm_grpc.ContractStatus_Keep,
+			Status: &vm_grpc.VMStatus{},
 		}
 		events := NewContractEvents(exec)
 
@@ -34,37 +34,6 @@ func TestVM_KeepEvent(t *testing.T) {
 		require.Equal(t, EventTypeContractStatus, event0.Type)
 		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
 		require.EqualValues(t, AttributeValueStatusKeep, event0.Attributes[0].Value)
-	}
-
-	// "keep" with error
-	{
-		exec := &vm_grpc.VMExecuteResponse{
-			Status: vm_grpc.ContractStatus_Keep,
-			StatusStruct: &vm_grpc.VMStatus{
-				MajorStatus: 100,
-				SubStatus:   200,
-				Message:     "this is error!!111",
-			},
-		}
-		events := NewContractEvents(exec)
-
-		require.Len(t, events, 2)
-
-		event0 := events[0]
-		require.Equal(t, EventTypeContractStatus, event0.Type)
-		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
-		require.EqualValues(t, AttributeValueStatusKeep, event0.Attributes[0].Value)
-
-		event1 := events[1]
-		require.Equal(t, EventTypeContractStatus, event1.Type)
-		require.EqualValues(t, AttributeStatus, event1.Attributes[0].Key)
-		require.EqualValues(t, AttributeValueStatusError, event1.Attributes[0].Value)
-		require.EqualValues(t, AttributeErrMajorStatus, event1.Attributes[1].Key)
-		require.EqualValues(t, strconv.FormatUint(100, 10), event1.Attributes[1].Value)
-		require.EqualValues(t, AttributeErrSubStatus, event1.Attributes[2].Key)
-		require.EqualValues(t, strconv.FormatUint(200, 10), event1.Attributes[2].Value)
-		require.EqualValues(t, AttributeErrMessage, event1.Attributes[3].Key)
-		require.NotEmpty(t, event1.Attributes[3].Value)
 	}
 }
 
@@ -72,10 +41,71 @@ func TestVM_KeepEvent(t *testing.T) {
 func TestVM_DiscardEvent(t *testing.T) {
 	t.Parallel()
 
-	// "discard" no error
+	// "panic" with empty VMStatus_Abort
 	{
 		exec := &vm_grpc.VMExecuteResponse{
-			Status: vm_grpc.ContractStatus_Discard,
+			Status: &vm_grpc.VMStatus{
+				Error: &vm_grpc.VMStatus_Abort{},
+			},
+		}
+
+		defer func() {
+			require.NotNil(t, recover())
+		}()
+
+		NewContractEvents(exec)
+	}
+
+	// "panic" with empty VMStatus_ExecutionFailure
+	{
+		exec := &vm_grpc.VMExecuteResponse{
+			Status: &vm_grpc.VMStatus{
+				Error: &vm_grpc.VMStatus_ExecutionFailure{},
+			},
+		}
+
+		defer func() {
+			require.NotNil(t, recover())
+		}()
+
+		NewContractEvents(exec)
+	}
+
+	// "panic" with empty VMStatus_MoveError
+	{
+		exec := &vm_grpc.VMExecuteResponse{
+			Status: &vm_grpc.VMStatus{
+				Error: &vm_grpc.VMStatus_MoveError{},
+			},
+		}
+
+		defer func() {
+			require.NotNil(t, recover())
+		}()
+
+		NewContractEvents(exec)
+	}
+
+	// "discard" with abort error and abort location
+	{
+		abortCode := uint64(500)
+		abortLocationModule := "AbortModule"
+		abortLocationAddress := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+		errMessage := "this is error!!111"
+
+		exec := &vm_grpc.VMExecuteResponse{
+			Status: &vm_grpc.VMStatus{
+				Error: &vm_grpc.VMStatus_Abort{
+					Abort: &vm_grpc.Abort{
+						AbortCode: abortCode,
+						AbortLocation: &vm_grpc.AbortLocation{
+							Module:  abortLocationModule,
+							Address: abortLocationAddress.Bytes(),
+						},
+					},
+				},
+				Message: &vm_grpc.Message{Text: errMessage},
+			},
 		}
 		events := NewContractEvents(exec)
 
@@ -83,18 +113,39 @@ func TestVM_DiscardEvent(t *testing.T) {
 
 		event0 := events[0]
 		require.Equal(t, EventTypeContractStatus, event0.Type)
+
 		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
 		require.EqualValues(t, AttributeValueStatusDiscard, event0.Attributes[0].Value)
+
+		require.EqualValues(t, AttributeErrLocationAddress, event0.Attributes[1].Key)
+		require.EqualValues(t, abortLocationAddress, event0.Attributes[1].Value)
+
+		require.EqualValues(t, AttributeErrLocationModule, event0.Attributes[2].Key)
+		require.EqualValues(t, abortLocationModule, event0.Attributes[2].Value)
+
+		require.EqualValues(t, AttributeErrMajorStatus, event0.Attributes[3].Key)
+		require.EqualValues(t, strconv.FormatUint(VMAbortedCode, 10), event0.Attributes[3].Value)
+
+		require.EqualValues(t, AttributeErrSubStatus, event0.Attributes[4].Key)
+		require.EqualValues(t, strconv.FormatUint(abortCode, 10), event0.Attributes[4].Value)
+
+		require.EqualValues(t, errMessage, event0.Attributes[5].Value)
 	}
 
-	// "discard" with error
+	// "discard" with error without abort location
 	{
+		statusCode := uint64(500)
+		errMessage := "this is error!!111"
 		exec := &vm_grpc.VMExecuteResponse{
-			Status: vm_grpc.ContractStatus_Discard,
-			StatusStruct: &vm_grpc.VMStatus{
-				MajorStatus: 0,
-				SubStatus:   1,
-				Message:     "this is error!!111",
+			Status: &vm_grpc.VMStatus{
+				Error: &vm_grpc.VMStatus_ExecutionFailure{
+					ExecutionFailure: &vm_grpc.Failure{
+						StatusCode: statusCode,
+					},
+				},
+				Message: &vm_grpc.Message{
+					Text: errMessage,
+				},
 			},
 		}
 		events := NewContractEvents(exec)
@@ -105,12 +156,15 @@ func TestVM_DiscardEvent(t *testing.T) {
 		require.Equal(t, EventTypeContractStatus, event0.Type)
 		require.EqualValues(t, AttributeStatus, event0.Attributes[0].Key)
 		require.EqualValues(t, AttributeValueStatusDiscard, event0.Attributes[0].Value)
+
 		require.EqualValues(t, AttributeErrMajorStatus, event0.Attributes[1].Key)
-		require.EqualValues(t, strconv.FormatUint(0, 10), event0.Attributes[1].Value)
+		require.EqualValues(t, strconv.FormatUint(statusCode, 10), event0.Attributes[1].Value)
+
 		require.EqualValues(t, AttributeErrSubStatus, event0.Attributes[2].Key)
-		require.EqualValues(t, strconv.FormatUint(1, 10), event0.Attributes[2].Value)
+		require.EqualValues(t, "0", event0.Attributes[2].Value)
+
 		require.EqualValues(t, AttributeErrMessage, event0.Attributes[3].Key)
-		require.NotEmpty(t, event0.Attributes[3].Value)
+		require.EqualValues(t, errMessage, event0.Attributes[3].Value)
 	}
 }
 

@@ -358,13 +358,13 @@ func TestCurrenciesApp_Supply(t *testing.T) {
 		checkSupplies("initial")
 	}
 
-	// issue 50.0 dfi to account1
+	// issue 50.0 xfi to account1
 	{
 		amount, _ := sdk.NewIntFromString("50000000000000000000")
-		coin := sdk.NewCoin("dfi", amount)
+		coin := sdk.NewCoin("xfi", amount)
 		IssueCurrency(t, app, coin, "1", issue1ID, uint(0), genAccs, genPrivKeys, true)
 
-		checkSupplies("50.0 dfi issued to acc #1")
+		checkSupplies("50.0 xfi issued to acc #1")
 	}
 
 	// issue 5.0 btc to account2

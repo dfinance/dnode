@@ -244,8 +244,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.InitializeVMDataServer(config.DataListen)
 	app.InitializeVMConnection(config.Address)
 
-	// Reduce ConsensusPower reduction coefficient (1 dfi == 1 power unit)
-	// 1 dfi == 1000000000000000000
+	// Reduce ConsensusPower reduction coefficient (1 xfi == 1 power unit)
+	// 1 xfi == 1000000000000000000
 	sdk.PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
 	var err error

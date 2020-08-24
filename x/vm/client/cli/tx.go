@@ -24,7 +24,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "execute [moveFile] [arg1,arg2,arg3,..]",
 		Short:   "Execute Move script",
-		Example: "execute ./script.move.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"DFI_ETH\" --from my_account --fees 10000dfi --gas 500000",
+		Example: "execute ./script.move.json wallet1jk4ld0uu6wdrj9t8u3gghm9jt583hxx7xp7he8 100 true \"my string\" \"68656c6c6f2c20776f726c6421\" #\"XFI_ETH\" --from my_account --fees 10000xfi --gas 500000",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
@@ -79,7 +79,7 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "publish [moveFile]",
 		Short:   "Publish Move module",
-		Example: "publish ./my_module.move.json --from my_account --fees 10000dfi --gas 500000",
+		Example: "publish ./my_module.move.json --from my_account --fees 10000xfi --gas 500000",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
@@ -118,7 +118,7 @@ func UpdateStdlibProposal(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "update-stdlib-proposal [moveFile] [plannedBlockHeight] [sourceUrl] [updateDescription]",
 		Short:   "Submit a DVM stdlib update proposal",
-		Example: "update-stdlib-proposal ./update.move.json 1000 http://github.com/repo 'fix for Foo module' --deposit 10000dfi --from my_account --fees 10000dfi",
+		Example: "update-stdlib-proposal ./update.move.json 1000 http://github.com/repo 'fix for Foo module' --deposit 10000xfi --from my_account --fees 10000xfi",
 		Args:    cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())

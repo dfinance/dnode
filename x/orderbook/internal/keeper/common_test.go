@@ -80,7 +80,7 @@ func NewTestInput(t *testing.T) TestInput {
 		baseBtcDecimals: 8,
 		baseEthDenom:    "eth",
 		baseEthDecimals: 18,
-		quoteDenom:      "dfi",
+		quoteDenom:      "xfi",
 		quoteDecimals:   18,
 	}
 

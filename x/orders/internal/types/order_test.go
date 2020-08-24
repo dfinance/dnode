@@ -27,7 +27,7 @@ func NewMockOrder() Order {
 				Decimals: 8,
 			},
 			QuoteCurrency: ccstorage.Currency{
-				Denom:    "dfi",
+				Denom:    "xfi",
 				Decimals: 18,
 			},
 		},

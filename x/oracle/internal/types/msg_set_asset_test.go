@@ -16,7 +16,7 @@ func TestOracleMsg_SetAsset(t *testing.T) {
 	t.Parallel()
 
 	nominee := sdk.AccAddress([]byte("someName"))
-	assetCode := dnTypes.AssetCode("btc_dfi")
+	assetCode := dnTypes.AssetCode("btc_xfi")
 	oracles := Oracles([]Oracle{NewOracle(sdk.AccAddress([]byte("someName")))})
 	asset := NewAsset(assetCode, oracles, true)
 

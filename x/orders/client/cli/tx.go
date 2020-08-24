@@ -17,7 +17,7 @@ import (
 func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "post [asset_code] [direction] [price] [quantity] [TTL_in_sec]",
-		Example: "post btc_dfi bid 100 100000000 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
+		Example: "post btc_xfi bid 100 100000000 --from wallet1a7280dyzp487r7wghr99f6r3h2h2z4gk4d740m",
 		Short:   "Post a new order",
 		Args:    cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -65,7 +65,7 @@ func GetCmdPostOrder(cdc *codec.Codec) *cobra.Command {
 	helpers.BuildCmdHelp(cmd, []string{
 		"asset code in {base denomination_symbol}_{quote_denomination_symbol} format",
 		"order type [bid/ask]",
-		"quoteAsset price with decimals (1.0 DFI with 18 decimals -> 1000000000000000000)",
+		"quoteAsset price with decimals (1.0 XFI with 18 decimals -> 1000000000000000000)",
 		"baseAsset quantity with decimals (1.0 BTC with 8 decimals -> 100000000)",
 		"order TTL [s]",
 	})

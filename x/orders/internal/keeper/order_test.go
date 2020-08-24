@@ -25,7 +25,7 @@ func TestOrdersKeeper_StoreIO(t *testing.T) {
 	}
 
 	// add order
-	inOrder := NewBtcDfiMockOrder(types.Bid)
+	inOrder := NewBtcXfiMockOrder(types.Bid)
 	{
 		input.keeper.set(input.ctx, inOrder)
 
@@ -56,25 +56,25 @@ func TestOrdersKeeper_List(t *testing.T) {
 		require.Len(t, outOrders, 0)
 	}
 
-	order1 := NewBtcDfiMockOrder(types.Ask)
+	order1 := NewBtcXfiMockOrder(types.Ask)
 	order1.ID = dnTypes.NewIDFromUint64(0)
 	order1.Price = order1.Price.AddUint64(1000)
 	order1.Quantity = order1.Quantity.AddUint64(1000)
 	input.keeper.set(input.ctx, order1)
 
-	order2 := NewEthDfiMockOrder(types.Bid)
+	order2 := NewEthXfiMockOrder(types.Bid)
 	order2.ID = dnTypes.NewIDFromUint64(1)
 	order2.Price = order2.Price.AddUint64(1000)
 	order2.Quantity = order2.Quantity.AddUint64(1000)
 	input.keeper.set(input.ctx, order2)
 
-	order3 := NewBtcDfiMockOrder(types.Bid)
+	order3 := NewBtcXfiMockOrder(types.Bid)
 	order3.ID = dnTypes.NewIDFromUint64(2)
 	order3.Price = order3.Price.SubUint64(1000)
 	order3.Quantity = order3.Quantity.SubUint64(1000)
 	input.keeper.set(input.ctx, order3)
 
-	order4 := NewEthDfiMockOrder(types.Ask)
+	order4 := NewEthXfiMockOrder(types.Ask)
 	order4.ID = dnTypes.NewIDFromUint64(3)
 	order4.Price = order4.Price.SubUint64(1000)
 	order4.Quantity = order4.Quantity.SubUint64(1000)

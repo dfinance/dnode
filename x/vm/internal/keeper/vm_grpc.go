@@ -11,6 +11,10 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
+const (
+	VMMaxGasLimit = ^uint64(0)/1000 - 1
+)
+
 // VMClient is an aggregated gRPC VM services client.
 type VMClient struct {
 	vm_grpc.VMCompilerClient
@@ -32,11 +36,19 @@ func GetFreeGas(ctx sdk.Context) sdk.Gas {
 	return ctx.GasMeter().Limit() - ctx.GasMeter().GasConsumed()
 }
 
+// getVMLimitedGas returns gas less than VM max limit.
+func getVMLimitedGas(gas sdk.Gas) sdk.Gas {
+	if gas > VMMaxGasLimit {
+		return VMMaxGasLimit
+	}
+	return gas
+}
+
 // NewDeployContract creates an object used for publish module requests.
 func NewDeployContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte) *vm_grpc.VMPublishModule {
 	return &vm_grpc.VMPublishModule{
 		Address:      common_vm.Bech32ToLibra(address),
-		MaxGasAmount: maxGas,
+		MaxGasAmount: getVMLimitedGas(maxGas),
 		GasUnitPrice: types.VmGasPrice,
 		Code:         code,
 	}
@@ -54,7 +66,7 @@ func NewExecuteContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, arg
 
 	return &vm_grpc.VMExecuteScript{
 		Address:      common_vm.Bech32ToLibra(address),
-		MaxGasAmount: maxGas,
+		MaxGasAmount: getVMLimitedGas(maxGas),
 		GasUnitPrice: types.VmGasPrice,
 		Code:         code,
 		TypeParams:   nil,

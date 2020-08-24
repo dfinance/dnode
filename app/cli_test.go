@@ -254,7 +254,7 @@ func TestOracle_CLI(t *testing.T) {
 	go cliTester.PrintEvents(t, wsChs, "oracle")
 
 	nomineeAddr := ct.Accounts["nominee"].Address
-	assetCode := dnTypes.AssetCode("eth_dfi")
+	assetCode := dnTypes.AssetCode("eth_xfi")
 	assetOracle1, assetOracle2, assetOracle3 := ct.Accounts["oracle1"].Address, ct.Accounts["oracle2"].Address, ct.Accounts["oracle3"].Address
 
 	// check add asset Tx
@@ -975,8 +975,8 @@ func TestMarkets_CLI(t *testing.T) {
 	ownerAddr := ct.Accounts["validator1"].Address
 
 	// add markets
-	ct.TxMarketsAdd(ownerAddr, cliTester.DenomBTC, cliTester.DenomDFI).CheckSucceeded()
-	ct.TxMarketsAdd(ownerAddr, cliTester.DenomETH, cliTester.DenomDFI).CheckSucceeded()
+	ct.TxMarketsAdd(ownerAddr, cliTester.DenomBTC, cliTester.DenomXFI).CheckSucceeded()
+	ct.TxMarketsAdd(ownerAddr, cliTester.DenomETH, cliTester.DenomXFI).CheckSucceeded()
 
 	// check addMarket Tx
 	{
@@ -994,7 +994,7 @@ func TestMarkets_CLI(t *testing.T) {
 
 		// already existing market
 		{
-			tx := ct.TxMarketsAdd(ownerAddr, cliTester.DenomBTC, cliTester.DenomDFI)
+			tx := ct.TxMarketsAdd(ownerAddr, cliTester.DenomBTC, cliTester.DenomXFI)
 			tx.CheckFailedWithSDKError(markets.ErrMarketExists)
 		}
 	}
@@ -1007,14 +1007,14 @@ func TestMarkets_CLI(t *testing.T) {
 			q.CheckFailedWithErrorSubstring("wrong ID")
 		}
 
-		// existing marketID (btc-dfi)
+		// existing marketID (btc-xfi)
 		{
 			q, market := ct.QueryMarketsMarket(dnTypes.NewIDFromUint64(0))
 			q.CheckSucceeded()
 
 			require.Equal(t, market.ID.UInt64(), uint64(0))
 			require.Equal(t, market.BaseAssetDenom, cliTester.DenomBTC)
-			require.Equal(t, market.QuoteAssetDenom, cliTester.DenomDFI)
+			require.Equal(t, market.QuoteAssetDenom, cliTester.DenomXFI)
 		}
 	}
 
@@ -1065,7 +1065,7 @@ func TestMarkets_CLI(t *testing.T) {
 
 		// check quoteDenom filter
 		{
-			quoteDenom := cliTester.DenomDFI
+			quoteDenom := cliTester.DenomXFI
 			q, markets := ct.QueryMarketsList(-1, -1, nil, &quoteDenom)
 			q.CheckSucceeded()
 
@@ -1077,7 +1077,7 @@ func TestMarkets_CLI(t *testing.T) {
 		// check multiple filters
 		{
 			baseDeno := cliTester.DenomBTC
-			quoteDenom := cliTester.DenomDFI
+			quoteDenom := cliTester.DenomXFI
 			q, markets := ct.QueryMarketsList(-1, -1, &baseDeno, &quoteDenom)
 			q.CheckSucceeded()
 
@@ -1090,12 +1090,12 @@ func TestOrders_CLI(t *testing.T) {
 	t.Parallel()
 
 	const (
-		DecimalsDFI = "1000000000000000000"
+		DecimalsXFI = "1000000000000000000"
 		DecimalsETH = "1000000000000000000"
 		DecimalsBTC = "100000000"
 	)
 
-	oneDfi := sdk.NewUintFromString(DecimalsDFI)
+	oneXfi := sdk.NewUintFromString(DecimalsXFI)
 	oneBtc := sdk.NewUintFromString(DecimalsBTC)
 	oneEth := sdk.NewUintFromString(DecimalsETH)
 	accountBalances := []cliTester.StringPair{
@@ -1108,8 +1108,8 @@ func TestOrders_CLI(t *testing.T) {
 			Value: sdk.NewUint(100000000).Mul(oneEth).String(),
 		},
 		{
-			Key:   cliTester.DenomDFI,
-			Value: sdk.NewUint(100000000).Mul(oneDfi).String(),
+			Key:   cliTester.DenomXFI,
+			Value: sdk.NewUint(100000000).Mul(oneXfi).String(),
 		},
 	}
 	accountOpts := []cliTester.AccountOption{
@@ -1127,15 +1127,15 @@ func TestOrders_CLI(t *testing.T) {
 	ownerAddr1 := ct.Accounts[accountOpts[0].Name].Address
 	ownerAddr2 := ct.Accounts[accountOpts[1].Name].Address
 	marketID0, marketID1 := dnTypes.NewIDFromUint64(0), dnTypes.NewIDFromUint64(1)
-	assetCode0, assetCode1 := dnTypes.AssetCode("btc_dfi"), dnTypes.AssetCode("eth_dfi")
+	assetCode0, assetCode1 := dnTypes.AssetCode("btc_xfi"), dnTypes.AssetCode("eth_xfi")
 
 	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestOrders_CLI", []string{"message.module='orders'"}, 10)
 	defer wsStop()
 	go cliTester.PrintEvents(t, wsChs, "orders")
 
 	// add market
-	ct.TxMarketsAdd(ownerAddr1, cliTester.DenomBTC, cliTester.DenomDFI).CheckSucceeded()
-	ct.TxMarketsAdd(ownerAddr1, cliTester.DenomETH, cliTester.DenomDFI).CheckSucceeded()
+	ct.TxMarketsAdd(ownerAddr1, cliTester.DenomBTC, cliTester.DenomXFI).CheckSucceeded()
+	ct.TxMarketsAdd(ownerAddr1, cliTester.DenomETH, cliTester.DenomXFI).CheckSucceeded()
 
 	// check AddOrder Tx
 	{
