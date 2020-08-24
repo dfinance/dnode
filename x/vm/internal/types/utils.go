@@ -187,12 +187,11 @@ func StringifyVMWriteSet(value *vm_grpc.VMValue) string {
 
 // StringifyVMExecStatus converts vm_grpc.ContractStatus to string representation.
 func StringifyVMExecStatus(status *vm_grpc.VMStatus) string {
-
 	strBuilder := strings.Builder{}
 	strBuilder.WriteString(fmt.Sprintf("Exec %q status:\n", status.String()))
 
 	if status != nil {
-		majorStatus, subStatus := GetStatusCodesFromVMStatus(status)
+		majorStatus, subStatus, _ := GetStatusCodesFromVMStatus(status)
 
 		strBuilder.WriteString(fmt.Sprintf("  Major code: %d\n", majorStatus))
 		strBuilder.WriteString(fmt.Sprintf("  Major status: %s\n", GetStrCode(strconv.FormatUint(majorStatus, 10))))
@@ -205,7 +204,9 @@ func StringifyVMExecStatus(status *vm_grpc.VMStatus) string {
 	return strBuilder.String()
 }
 
-func GetStatusCodesFromVMStatus(status *vm_grpc.VMStatus) (majorStatus, subStatus uint64) {
+// GetStatusCodesFromVMStatus extracts majorStatus, subStatus and abortLocation from vm_grpc.VMStatus
+// panic if error exist but error object == nil
+func GetStatusCodesFromVMStatus(status *vm_grpc.VMStatus) (majorStatus, subStatus uint64, location *vm_grpc.AbortLocation) {
 	switch sErr := status.GetError().(type) {
 	case *vm_grpc.VMStatus_Abort:
 		majorStatus = VMAbortedCode
@@ -213,11 +214,17 @@ func GetStatusCodesFromVMStatus(status *vm_grpc.VMStatus) (majorStatus, subStatu
 			panic(fmt.Errorf("getting status codes: VMStatus_Abort.Abort is nil"))
 		}
 		subStatus = sErr.Abort.GetAbortCode()
+		if l := sErr.Abort.GetAbortLocation(); l != nil {
+			location = l
+		}
 	case *vm_grpc.VMStatus_ExecutionFailure:
 		if sErr.ExecutionFailure == nil {
 			panic(fmt.Errorf("getting status codes: VMStatus_ExecutionFailure.ExecutionFailure is nil"))
 		}
 		majorStatus = sErr.ExecutionFailure.GetStatusCode()
+		if l := sErr.ExecutionFailure.GetAbortLocation(); l != nil {
+			location = l
+		}
 	case *vm_grpc.VMStatus_MoveError:
 		if sErr.MoveError == nil {
 			panic(fmt.Errorf("getting status codes: VMStatus_MoveError.MoveError is nil"))

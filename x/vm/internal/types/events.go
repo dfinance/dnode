@@ -33,6 +33,7 @@ const (
 
 // NewContractEvents creates Events on successful / failed VM execution.
 // "keep" status emits two events, "discard" status emits one event.
+// panic if vm_grpc.VMExecuteResponse or vm_grpc.VMExecuteResponse.Status == nil
 func NewContractEvents(exec *vm_grpc.VMExecuteResponse) sdk.Events {
 	if exec == nil {
 		panic(fmt.Errorf("building contract sdk.Events: exec is nil"))
@@ -43,15 +44,11 @@ func NewContractEvents(exec *vm_grpc.VMExecuteResponse) sdk.Events {
 		panic(fmt.Errorf("building contract sdk.Events: exec.Status is nil"))
 	}
 
-	majorStatus, subStatus := GetStatusCodesFromVMStatus(status)
-
 	if status.GetError() == nil {
 		return sdk.Events{
 			sdk.NewEvent(
 				EventTypeContractStatus,
 				sdk.NewAttribute(AttributeStatus, AttributeValueStatusKeep),
-				sdk.NewAttribute(AttributeErrMajorStatus, strconv.FormatUint(majorStatus, 10)),
-				sdk.NewAttribute(AttributeErrSubStatus, strconv.FormatUint(subStatus, 10)),
 			),
 		}
 	}
@@ -61,14 +58,16 @@ func NewContractEvents(exec *vm_grpc.VMExecuteResponse) sdk.Events {
 	attributes[0] = sdk.NewAttribute(AttributeStatus, AttributeValueStatusDiscard)
 
 	if sErr := status.GetError(); sErr != nil {
-		switch sErr := sErr.(type) {
-		case *vm_grpc.VMStatus_Abort:
-			if sErr.Abort != nil {
-				attributes = append(attributes, processAbortLocation(sErr.Abort.AbortLocation)...)
+		majorStatus, subStatus, abortLocation := GetStatusCodesFromVMStatus(status)
+
+		if abortLocation != nil {
+			if abortLocation.GetAddress() != nil {
+				address := abortLocation.GetAddress()
+				attributes = append(attributes, sdk.NewAttribute(AttributeErrLocationAddress, string(address)))
 			}
-		case *vm_grpc.VMStatus_ExecutionFailure:
-			if sErr.ExecutionFailure != nil {
-				attributes = append(attributes, processAbortLocation(sErr.ExecutionFailure.AbortLocation)...)
+
+			if abortLocation.GetModule() != "" {
+				attributes = append(attributes, sdk.NewAttribute(AttributeErrLocationModule, abortLocation.GetModule()))
 			}
 		}
 
@@ -109,20 +108,4 @@ func GetEventSourceAttribute(senderModule *vm_grpc.ModuleIdent) string {
 	}
 
 	return fmt.Sprintf(AttributeValueSourceModuleFmt, StringifySenderAddress(senderModule.Address), senderModule.Name)
-}
-
-func processAbortLocation(abortLocation *vm_grpc.AbortLocation) (attributes []sdk.Attribute) {
-	if abortLocation != nil {
-		attributes = make([]sdk.Attribute, 0, 2)
-		if abortLocation.GetAddress() != nil {
-			address := abortLocation.GetAddress()
-			attributes = append(attributes, sdk.NewAttribute(AttributeErrLocationAddress, string(address)))
-		}
-
-		if abortLocation.GetModule() != "" {
-			attributes = append(attributes, sdk.NewAttribute(AttributeErrLocationModule, abortLocation.GetModule()))
-		}
-	}
-
-	return
 }
