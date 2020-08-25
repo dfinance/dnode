@@ -51,7 +51,7 @@ func (c Currency) InfoPath() []byte {
 
 // InfoPathHex return string representation for InfoPath.
 func (c Currency) InfoPathHex() string {
-	return hex.EncodeToString(c.BalancePath())
+	return hex.EncodeToString(c.InfoPath())
 }
 
 // UintToDec converts sdk.Uint to sdk.Dec using currency decimals.
