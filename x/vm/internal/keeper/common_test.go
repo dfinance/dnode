@@ -61,9 +61,9 @@ const (
 	FlagCompiler  = "vm.compiler"
 
 	CoinsInfo = `{ 
-		"currencies": [
-			{
-				"denom": "xfi",
+    	"currencies": [
+        	{
+          		"denom": "xfi",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
