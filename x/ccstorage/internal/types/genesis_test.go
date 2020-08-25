@@ -20,20 +20,8 @@ func TestCCS_GenesisParams_Validate(t *testing.T) {
 
 	// fail: invalid denom
 	{
-		param1 := CurrencyParams{"dfi1", 0}
+		param1 := CurrencyParams{"xfi1", 0}
 		require.Error(t, param1.Validate())
-
-		param2 := CurrencyParams{"dfi",0, "0102", ""}
-		require.Error(t, param2.Validate())
-	}
-
-	// fail: invalid hex path
-	{
-		param1 := CurrencyParams{"dfi",0, "z", "AABB"}
-		require.Error(t, param1.Validate())
-
-		param2 := CurrencyParams{"dfi",0, "0102", "z"}
-		require.Error(t, param2.Validate())
 	}
 }
 
