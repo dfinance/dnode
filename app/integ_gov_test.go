@@ -55,10 +55,10 @@ const govScript = `
 `
 
 func TestIntegGov_StdlibUpdate(t *testing.T) {
-	const (
-		modulePath = "0058e1e3e2f8edf7df0c4b1ab8c1c8ec661b3210b29c85b1449ac6214c6476b0e8"
-	)
+	var moduleAddressByte [20]byte
+	copy(moduleAddressByte[:], common_vm.StdLibAddress[:20])
 
+	modulePath := hex.EncodeToString(glav.ModuleAccessVector(moduleAddressByte, "Foo"))
 	moduleAddr := hex.EncodeToString(common_vm.StdLibAddress)
 
 	ct := cliTester.New(
