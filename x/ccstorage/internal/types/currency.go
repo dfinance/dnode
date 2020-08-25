@@ -39,7 +39,7 @@ func (c Currency) BalancePath() []byte {
 	return glav.BalanceVector(c.Denom)
 }
 
-// BalancePathHex return string representation for InfoPath.
+// BalancePathHex return string representation for BalancePath.
 func (c Currency) BalancePathHex() string {
 	return hex.EncodeToString(c.BalancePath())
 }
