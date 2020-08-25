@@ -16,7 +16,7 @@ func TestOracleMsg_AddOracle(t *testing.T) {
 
 	nominee := sdk.AccAddress([]byte("someName"))
 	oracle := sdk.AccAddress([]byte("someOracle"))
-	assetCode := dnTypes.AssetCode("btn_dfi")
+	assetCode := dnTypes.AssetCode("btn_xfi")
 
 	t.Run("GetSign", func(t *testing.T) {
 		target := NewMsgAddOracle(nominee, assetCode, oracle)

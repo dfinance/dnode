@@ -12,7 +12,7 @@ import (
 // Asset struct that represents an asset in the oracle.
 type Asset struct {
 	// Asset code
-	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_dfi"`
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_xfi"`
 	// List of registered RawPrice sources
 	Oracles Oracles `json:"oracles" yaml:"oracles"`
 	// Not used ATM
@@ -58,7 +58,7 @@ func (list Assets) String() string {
 	strBuilder.WriteString("Assets:\n")
 	for i, asset := range list {
 		strBuilder.WriteString(asset.String())
-		if i < len(list) - 1 {
+		if i < len(list)-1 {
 			strBuilder.WriteString("\n")
 		}
 	}

@@ -78,26 +78,36 @@ func TestVM_NewVMStatusFromABCILogs(t *testing.T) {
 		Logs: types.ABCIMessageLogs{
 			types.NewABCIMessageLog(0, "",
 				NewContractEvents(&vm_grpc.VMExecuteResponse{
-					Status: vm_grpc.ContractStatus_Keep,
-					StatusStruct: &vm_grpc.VMStatus{
-						MajorStatus: codes[0],
-						SubStatus:   0,
-						Message:     msgs[0],
+					Status: &vm_grpc.VMStatus{
+						Error: &vm_grpc.VMStatus_ExecutionFailure{
+							ExecutionFailure: &vm_grpc.Failure{
+								StatusCode: codes[0],
+							},
+						},
+						Message: &vm_grpc.Message{
+							Text: msgs[0],
+						},
 					},
 				}),
 			),
 			types.NewABCIMessageLog(1, "",
 				NewContractEvents(&vm_grpc.VMExecuteResponse{
-					Status: vm_grpc.ContractStatus_Discard,
-					StatusStruct: &vm_grpc.VMStatus{
-						MajorStatus: codes[1],
-						SubStatus:   0,
-						Message:     msgs[1],
+					Status: &vm_grpc.VMStatus{
+						Error: &vm_grpc.VMStatus_ExecutionFailure{
+							ExecutionFailure: &vm_grpc.Failure{
+								StatusCode: codes[1],
+							},
+						},
+						Message: &vm_grpc.Message{
+							Text: msgs[1],
+						},
 					},
 				}),
 			),
 			types.NewABCIMessageLog(2, "",
-				NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Keep}),
+				NewContractEvents(&vm_grpc.VMExecuteResponse{
+					Status: &vm_grpc.VMStatus{},
+				}),
 			),
 		},
 	}

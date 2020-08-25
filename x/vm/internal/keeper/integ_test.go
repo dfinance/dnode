@@ -30,22 +30,22 @@ const sendScript = `
 script {
 	use 0x1::Account;
 	use 0x1::Coins;
-	use 0x1::DFI;
+	use 0x1::XFI;
 	use 0x1::Dfinance;
 	use 0x1::Compare;
 	
-	fun main(account: &signer, recipient: address, dfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
-		Account::pay_from_sender<DFI::T>(account, recipient, dfi_amount);
+	fun main(account: &signer, recipient: address, xfi_amount: u128, eth_amount: u128, btc_amount: u128, usdt_amount: u128) {
+		Account::pay_from_sender<XFI::T>(account, recipient, xfi_amount);
 		Account::pay_from_sender<Coins::ETH>(account, recipient, eth_amount);
 		Account::pay_from_sender<Coins::BTC>(account, recipient, btc_amount);
 		Account::pay_from_sender<Coins::USDT>(account, recipient, usdt_amount);
 
-		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<DFI::T>(), &b"dfi") == 0, 1);
+		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<XFI::T>(), &b"xfi") == 0, 1);
 		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::ETH>(), &b"eth") == 0, 2);
 		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::BTC>(), &b"btc") == 0, 3);
 		assert(Compare::cmp_lcs_bytes(&Dfinance::denom<Coins::USDT>(), &b"usdt") == 0, 4);
 
-		assert(Dfinance::decimals<DFI::T>() == 18, 5);
+		assert(Dfinance::decimals<XFI::T>() == 18, 5);
 		assert(Dfinance::decimals<Coins::ETH>() == 18, 6);
 		assert(Dfinance::decimals<Coins::BTC>() == 8, 7);
 		assert(Dfinance::decimals<Coins::USDT>() == 6, 8);
@@ -66,9 +66,9 @@ script {
 	use 0x1::Event;
 	use {{sender}}::Math;
 	
-	fun main(_account: &signer, a: u64, b: u64) {
+	fun main(account: &signer, a: u64, b: u64) {
 		let c = Math::add(a, b);
-		Event::emit<u64>(c);
+		Event::emit<u64>(account, c);
 	}
 }
 `
@@ -78,9 +78,9 @@ script {
 	use 0x1::Event;
 	use 0x1::Coins;
 
-	fun main(_account: &signer) {
+	fun main(account: &signer) {
 		let price = Coins::get_price<Coins::ETH, Coins::USDT>();
-		Event::emit<u128>(price);
+		Event::emit<u128>(account, price);
 	}
 }
 `
@@ -88,15 +88,15 @@ script {
 const errorScript = `
 script {
 	use 0x1::Account;
-	use 0x1::DFI;
+	use 0x1::XFI;
 	use 0x1::Coins;
 	use 0x1::Event;
 
 	fun main(account: &signer, c: u64) {
-		let a = Account::withdraw_from_sender<DFI::T>(account, 523);
+		let a = Account::withdraw_from_sender<XFI::T>(account, 523);
 		let b = Account::withdraw_from_sender<Coins::BTC>(account, 1);
 	
-		Event::emit<u64>(10);
+		Event::emit<u64>(account, 10);
 	
 		assert(c == 1000, 122);
 		Account::deposit_to_sender(account, a);
@@ -134,26 +134,6 @@ func printEvent(event sdk.Event, t *testing.T) {
 	}
 }
 
-// check that sub status exists.
-func checkEventSubStatus(events sdk.Events, subStatus uint64, t *testing.T) {
-	found := false
-
-	for _, event := range events {
-		if event.Type == types.EventTypeContractStatus {
-			// find error
-			for _, attr := range event.Attributes {
-				if string(attr.Key) == types.AttributeErrSubStatus {
-					require.EqualValues(t, attr.Value, []byte(strconv.FormatUint(subStatus, 10)), "wrong value for sub status")
-
-					found = true
-				}
-			}
-		}
-	}
-
-	require.True(t, found, "sub status not found")
-}
-
 // check script doesn't contains errors.
 func checkNoEventErrors(events sdk.Events, t *testing.T) {
 	for _, event := range events {
@@ -164,15 +144,27 @@ func checkNoEventErrors(events sdk.Events, t *testing.T) {
 						printEvent(event, t)
 						t.Fatalf("should not contains error event")
 					}
+				}
+			}
+		}
+	}
+}
 
-					if string(attr.Value) == types.AttributeValueStatusError {
-						printEvent(event, t)
-						t.Fatalf("should not contains error event")
+// check events contains errors.
+func checkEventErrors(events sdk.Events) bool {
+	for _, event := range events {
+		if event.Type == types.EventTypeContractStatus {
+			for _, attr := range event.Attributes {
+				if string(attr.Key) == types.AttributeStatus {
+					if string(attr.Value) == types.AttributeValueStatusDiscard {
+						return true
 					}
 				}
 			}
 		}
 	}
+
+	return false
 }
 
 // check that eventsA contains every event of eventsB
@@ -185,10 +177,12 @@ func checkEventsContainsEvery(t *testing.T, eventsA, eventsB sdk.Events) {
 
 // creates "keep" without an error events.
 func newKeepEvents() sdk.Events {
-	return types.NewContractEvents(&vm_grpc.VMExecuteResponse{Status: vm_grpc.ContractStatus_Keep})
+	return types.NewContractEvents(&vm_grpc.VMExecuteResponse{
+		Status: &vm_grpc.VMStatus{},
+	})
 }
 
-// Test transfer of dfi between two accounts in dfi.
+// Test transfer of xfi between two accounts in xfi.
 func TestVMKeeper_DeployContractTransfer(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
@@ -205,14 +199,14 @@ func TestVMKeeper_DeployContractTransfer(t *testing.T) {
 
 	baseAmount := sdk.NewInt(1000)
 	putCoins := sdk.NewCoins(
-		sdk.NewCoin("dfi", baseAmount),
+		sdk.NewCoin("xfi", baseAmount),
 		sdk.NewCoin("eth", baseAmount),
 		sdk.NewCoin("btc", baseAmount),
 		sdk.NewCoin("usdt", baseAmount),
 	)
 
 	denoms := make([]string, 4)
-	denoms[0] = "dfi"
+	denoms[0] = "xfi"
 	denoms[1] = "eth"
 	denoms[2] = "btc"
 	denoms[3] = "usdt"
@@ -489,7 +483,7 @@ func TestVMKeeper_ErrorScript(t *testing.T) {
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
 	coins := sdk.NewCoins(
-		sdk.NewCoin("dfi", sdk.NewInt(1000000000000000)),
+		sdk.NewCoin("xfi", sdk.NewInt(1000000000000000)),
 		sdk.NewCoin("btc", sdk.NewInt(1)),
 	)
 
@@ -520,18 +514,14 @@ func TestVMKeeper_ErrorScript(t *testing.T) {
 	require.NoError(t, err)
 
 	events := input.ctx.EventManager().Events()
-	checkEventsContainsEvery(t, events, newKeepEvents())
-	for _, e := range events {
-		printEvent(e, t)
-	}
-	checkEventSubStatus(events, 122, t)
+	require.True(t, checkEventErrors(events))
 
 	// first of all - check balance
 	// then check that error still there
 	// then check that no events there only error and keep status
 	getAcc := input.ak.GetAccount(input.ctx, addr1)
 	require.True(t, getAcc.GetCoins().IsEqual(coins))
-	require.Len(t, events, 3)
+	require.Len(t, events, 2)
 }
 
 func TestVMKeeper_AllArgsTypes(t *testing.T) {
@@ -541,7 +531,7 @@ func TestVMKeeper_AllArgsTypes(t *testing.T) {
 	input := newTestInput(false)
 
 	// Create account
-	accCoins := sdk.NewCoins(sdk.NewCoin("dfi", sdk.NewInt(1000)))
+	accCoins := sdk.NewCoins(sdk.NewCoin("xfi", sdk.NewInt(1000)))
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
 	acc1.SetCoins(accCoins)
@@ -620,7 +610,7 @@ func TestVMKeeper_Path(t *testing.T) {
 	// Create account
 	baseAmount := sdk.NewInt(1000)
 	accCoins := sdk.NewCoins(
-		sdk.NewCoin("dfi", baseAmount),
+		sdk.NewCoin("xfi", baseAmount),
 		sdk.NewCoin("eth", baseAmount),
 		sdk.NewCoin("btc", baseAmount),
 		sdk.NewCoin("usdt", baseAmount),
@@ -696,17 +686,17 @@ func TestVMKeeper_Path(t *testing.T) {
 		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
-	// Check vmauth module path: DFI
-	testID = "VMAuth DFI"
+	// Check vmauth module path: XFI
+	testID = "VMAuth XFI"
 	{
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
     			use 0x1::Account;
-				use 0x1::DFI;
+				use 0x1::XFI;
 
 				fun main(account: &signer) {
-					let _ = Account::balance<DFI::T>(account);
+					let _ = Account::balance<XFI::T>(account);
 				}
 			}
 		`
@@ -808,17 +798,17 @@ func TestVMKeeper_Path(t *testing.T) {
 		checkNoEventErrors(input.ctx.EventManager().Events(), t)
 	}
 
-	// Check currencies_register module path: DFI
-	testID = "CurrencyInfo DFI"
+	// Check currencies_register module path: XFI
+	testID = "CurrencyInfo XFI"
 	{
 		t.Logf("%s: script compile", testID)
 		scriptSrc := `
 			script {
 				use 0x1::Dfinance;
-				use 0x1::DFI;
+				use 0x1::XFI;
 
 				fun main() {
-					let _ = Dfinance::denom<DFI::T>();
+					let _ = Dfinance::denom<XFI::T>();
 				}
 			}
 		`
@@ -982,13 +972,13 @@ func TestVMKeeper_EventTypeSerialization(t *testing.T) {
 		        field_VT: VT
 		    }
 		
-		    public fun NewFooEvent<T, VT>(arg_T: T, arg_VT: VT): FooEvent<T, VT> {
+		    public fun NewFooEvent<T, VT>(account: &signer, arg_T: T, arg_VT: VT): FooEvent<T, VT> {
 		        let fooEvent = FooEvent<T, VT> {
 		            field_T:  arg_T,
 		            field_VT: arg_VT
 		        };
 				
-				0x1::Event::emit<bool>(true);
+				0x1::Event::emit<bool>(account, true);
 		
 		        fooEvent
 		    }
@@ -998,18 +988,18 @@ func TestVMKeeper_EventTypeSerialization(t *testing.T) {
 		script {
 			use %s::Foo;
 			
-			fun main(_account: &signer) {
+			fun main(account: &signer) {
 				// Event with single tag
-				0x1::Event::emit<u8>(128);
+				0x1::Event::emit<u8>(account, 128);
 				
 				// Event with single vector
-				0x1::Event::emit<vector<u8>>(x"0102");
+				0x1::Event::emit<vector<u8>>(account, x"0102");
 				
 				// Two events:
 				//   1. Module: single tag
 				//   2. Script: generic struct with tag, vector
-				let fooEvent = Foo::NewFooEvent<u64, vector<u8>>(1000, x"0102");
-				0x1::Event::emit<Foo::FooEvent<u64, vector<u8>>>(fooEvent);
+				let fooEvent = Foo::NewFooEvent<u64, vector<u8>>(account, 1000, x"0102");
+				0x1::Event::emit<Foo::FooEvent<u64, vector<u8>>>(account, fooEvent);
     		}
 		}
 	`
@@ -1096,7 +1086,7 @@ func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 				value: T
 			}
 		
-			public fun test() {
+			public fun test(account: &signer) {
 				let a = A {
 					value: 10
 				};
@@ -1113,7 +1103,7 @@ func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 					value: c
 				};
 		
-				0x1::Event::emit<D<C<B<A>>>>(d);
+				0x1::Event::emit<D<C<B<A>>>>(account, d);
 			}
 		
 		}
@@ -1122,8 +1112,8 @@ func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 		script {
 			use %s::GasEvent;
 
-			fun main() {
-				GasEvent::test();
+			fun main(account: &signer) {
+				GasEvent::test(account);
 			}
 		}
 	`
@@ -1219,7 +1209,7 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 				value: T
 			}
 		
-			public fun test() {
+			public fun test(account: &signer) {
 				let a = A {
 					value: 10
 				};
@@ -1244,7 +1234,7 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 					value: v
 				};
 		
-				0x1::Event::emit<M<V<Z<C<B<A>>>>>>(m);
+				0x1::Event::emit<M<V<Z<C<B<A>>>>>>(account, m);
 			}
 		
 		}
@@ -1253,8 +1243,8 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 		script {
 			use %s::OutOfGasEvent;
 
-			fun main() {
-				OutOfGasEvent::test();
+			fun main(account: &signer) {
+				OutOfGasEvent::test(account);
 			}
 		}
 	`
@@ -1323,7 +1313,7 @@ func TestResearch_LCS(t *testing.T) {
 	{
 		baseAmount := sdk.NewInt(1000)
 		accCoins := sdk.NewCoins(
-			sdk.NewCoin("dfi", baseAmount),
+			sdk.NewCoin("xfi", baseAmount),
 			sdk.NewCoin("eth", baseAmount),
 			sdk.NewCoin("btc", baseAmount),
 			sdk.NewCoin("usdt", baseAmount),

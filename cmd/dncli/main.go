@@ -16,6 +16,7 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -31,6 +32,11 @@ import (
 const (
 	// Default gas for CLI.
 	DefaultGas = 500000
+)
+
+var (
+	// Denied tx commands.
+	txCommandsDenied = []string{distribution.ModuleName}
 )
 
 // Entry function for DN CLI.
@@ -144,6 +150,13 @@ func SetDefaultFeeForTxCmd(cmd *cobra.Command) {
 	}
 
 	for _, child := range cmd.Commands() {
+		for _, deniedCmd := range txCommandsDenied {
+			if deniedCmd == child.Use {
+				cmd.RemoveCommand(child)
+				continue
+			}
+		}
+
 		SetDefaultFeeForTxCmd(child)
 	}
 }

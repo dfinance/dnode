@@ -15,7 +15,7 @@ func GetCmdAddMarket(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "add [base_denom] [quote_denom]",
 		Short:   "Add a new market",
-		Example: "add dfi eth",
+		Example: "add xfi eth",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())

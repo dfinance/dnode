@@ -55,11 +55,12 @@ func (s *MockDVM) PublishModule(ctx context.Context, in *vm_grpc.VMPublishModule
 	resp := &vm_grpc.VMExecuteResponse{}
 	if !s.failResponse {
 		resp = &vm_grpc.VMExecuteResponse{
-			WriteSet:     nil,
-			Events:       nil,
-			GasUsed:      1,
-			Status:       vm_grpc.ContractStatus_Discard,
-			StatusStruct: nil,
+			WriteSet: nil,
+			Events:   nil,
+			GasUsed:  1,
+			Status: &vm_grpc.VMStatus{
+				Error: &vm_grpc.VMStatus_Abort{},
+			},
 		}
 	}
 

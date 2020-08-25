@@ -4,11 +4,6 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-const (
-	// VM related status codes
-	VMCodeExecuted = 4001
-)
-
 var (
 	ErrInternal      = sdkErrors.Register(ModuleName, 100, "internal")
 	ErrEmptyContract = sdkErrors.Register(ModuleName, 101, "contract code is empty")

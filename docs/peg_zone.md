@@ -64,7 +64,7 @@ To issue new currency:
     dncli tx currencies ms-issue [issueID] [coin] [recipient]  --from validators1
 
 * **issueID** - call unique ID, required to prevent double spend on issuing new currencies, usually it's sha256(chainId + symbol + txHash), serialized to hex;
-* **coin** - issue denomination symbol and amount in coin format (100dfi);
+* **coin** - issue denomination symbol and amount in coin format (100xfi);
 * **recipient** - DN address of account who's receiving coins;
 
 To withdraw currency from any account call:

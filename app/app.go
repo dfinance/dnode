@@ -100,6 +100,16 @@ var (
 		orders.ModuleName:         {supply.Burner},
 		gov.ModuleName:            {supply.Burner},
 	}
+
+	// Denied messages types.
+	msgsDeniedList = map[string][]string{
+		distribution.ModuleName: {
+			distribution.MsgWithdrawDelegatorReward{}.Type(),
+			distribution.MsgWithdrawValidatorCommission{}.Type(),
+			distribution.TypeMsgFundCommunityPool,
+			distribution.MsgSetWithdrawAddress{}.Type(),
+		},
+	}
 )
 
 // DN Service App implements DN mains logic.
@@ -190,7 +200,7 @@ func MakeCodec() *codec.Codec {
 func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
-	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
+	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), msgsDeniedList, baseAppOptions...)
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(
@@ -234,8 +244,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.InitializeVMDataServer(config.DataListen)
 	app.InitializeVMConnection(config.Address)
 
-	// Reduce ConsensusPower reduction coefficient (1 dfi == 1 power unit)
-	// 1 dfi == 1000000000000000000
+	// Reduce ConsensusPower reduction coefficient (1 xfi == 1 power unit)
+	// 1 xfi == 1000000000000000000
 	sdk.PowerReduction = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
 	var err error

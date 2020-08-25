@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DecimalsDFI = "1000000000000000000"
+	DecimalsXFI = "1000000000000000000"
 	DecimalsBTC = "100000000"
 )
 
@@ -28,18 +28,18 @@ func Test_SB_Trading(t *testing.T) {
 		initOrders          = 50
 	)
 
-	oneDfi := sdk.NewUintFromString(DecimalsDFI)
+	oneXfi := sdk.NewUintFromString(DecimalsXFI)
 	oneBtc := sdk.NewUintFromString(DecimalsBTC)
 	markets := []watcher.Market{
 		watcher.Market{
 			BaseDenom:            "btc",
-			QuoteDenom:           "dfi",
+			QuoteDenom:           "xfi",
 			OrderTtlInSec:        60,
-			MMakingMinPrice:      sdk.NewUint(10).Mul(oneDfi),
-			MMakingMaxPrice:      sdk.NewUint(10000).Mul(oneDfi),
+			MMakingMinPrice:      sdk.NewUint(10).Mul(oneXfi),
+			MMakingMaxPrice:      sdk.NewUint(10000).Mul(oneXfi),
 			MMakingMinBaseVolume: sdk.NewUint(1).Mul(oneBtc),
 			BaseSupply:           sdk.NewUint(10000).Mul(oneBtc),
-			QuoteSupply:          sdk.NewUint(100000000).Mul(oneDfi),
+			QuoteSupply:          sdk.NewUint(100000000).Mul(oneXfi),
 			MMakingInitOrders:    initOrders,
 			PriceDampingPercent:  5,
 		},

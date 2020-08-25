@@ -13,14 +13,16 @@ const (
 	EventTypeContractStatus = ModuleName + ".contract_status"
 	EventTypeMoveEvent      = ModuleName + ".contract_events"
 	//
-	AttributeStatus         = "status"
-	AttributeErrMajorStatus = "major_status"
-	AttributeErrSubStatus   = "sub_status"
-	AttributeErrMessage     = "message"
-	AttributeVmEventSender  = "sender_address"
-	AttributeVmEventSource  = "source"
-	AttributeVmEventType    = "type"
-	AttributeVmEventData    = "data"
+	AttributeStatus             = "status"
+	AttributeErrMajorStatus     = "major_status"
+	AttributeErrSubStatus       = "sub_status"
+	AttributeErrMessage         = "message"
+	AttributeErrLocationAddress = "location_address"
+	AttributeErrLocationModule  = "location_module"
+	AttributeVmEventSender      = "sender_address"
+	AttributeVmEventSource      = "source"
+	AttributeVmEventType        = "type"
+	AttributeVmEventData        = "data"
 	//
 	AttributeValueStatusKeep      = "keep"
 	AttributeValueStatusDiscard   = "discard"
@@ -31,54 +33,56 @@ const (
 
 // NewContractEvents creates Events on successful / failed VM execution.
 // "keep" status emits two events, "discard" status emits one event.
+// panic if vm_grpc.VMExecuteResponse or vm_grpc.VMExecuteResponse.Status == nil
 func NewContractEvents(exec *vm_grpc.VMExecuteResponse) sdk.Events {
 	if exec == nil {
 		panic(fmt.Errorf("building contract sdk.Events: exec is nil"))
 	}
 
-	statusStructAttributes := func() []sdk.Attribute {
-		if exec.StatusStruct == nil {
-			return nil
-		}
-
-		return []sdk.Attribute{
-			sdk.NewAttribute(AttributeErrMajorStatus, strconv.FormatUint(exec.StatusStruct.MajorStatus, 10)),
-			sdk.NewAttribute(AttributeErrSubStatus, strconv.FormatUint(exec.StatusStruct.SubStatus, 10)),
-			sdk.NewAttribute(AttributeErrMessage, exec.StatusStruct.Message),
-		}
+	status := exec.GetStatus()
+	if status == nil {
+		panic(fmt.Errorf("building contract sdk.Events: exec.Status is nil"))
 	}
 
-	var events sdk.Events
-	switch exec.Status {
-	case vm_grpc.ContractStatus_Keep:
-		// "keep" event
-		events = append(events, sdk.NewEvent(
-			EventTypeContractStatus,
-			sdk.NewAttribute(AttributeStatus, AttributeValueStatusKeep),
-		))
-
-		// "error" event
-		if exec.StatusStruct != nil && exec.StatusStruct.MajorStatus != VMCodeExecuted {
-			event := sdk.NewEvent(
+	if status.GetError() == nil {
+		return sdk.Events{
+			sdk.NewEvent(
 				EventTypeContractStatus,
-				sdk.NewAttribute(AttributeStatus, AttributeValueStatusError),
-			)
-			event = event.AppendAttributes(statusStructAttributes()...)
-
-			events = append(events, event)
+				sdk.NewAttribute(AttributeStatus, AttributeValueStatusKeep),
+			),
 		}
-	case vm_grpc.ContractStatus_Discard:
-		// "discard" event
-		event := sdk.NewEvent(
-			EventTypeContractStatus,
-			sdk.NewAttribute(AttributeStatus, AttributeValueStatusDiscard),
-		)
-		event = event.AppendAttributes(statusStructAttributes()...)
-
-		events = append(events, event)
 	}
 
-	return events
+	// Allocate memory for 5 possible attributes: status, abort location 2 attributes, major and sub codes
+	attributes := make([]sdk.Attribute, 1, 5)
+	attributes[0] = sdk.NewAttribute(AttributeStatus, AttributeValueStatusDiscard)
+
+	if sErr := status.GetError(); sErr != nil {
+		majorStatus, subStatus, abortLocation := GetStatusCodesFromVMStatus(status)
+
+		if abortLocation != nil {
+			if abortLocation.GetAddress() != nil {
+				address := abortLocation.GetAddress()
+				attributes = append(attributes, sdk.NewAttribute(AttributeErrLocationAddress, string(address)))
+			}
+
+			if abortLocation.GetModule() != "" {
+				attributes = append(attributes, sdk.NewAttribute(AttributeErrLocationModule, abortLocation.GetModule()))
+			}
+		}
+
+		attributes = append(
+			attributes,
+			sdk.NewAttribute(AttributeErrMajorStatus, strconv.FormatUint(majorStatus, 10)),
+			sdk.NewAttribute(AttributeErrSubStatus, strconv.FormatUint(subStatus, 10)),
+		)
+
+		if status.GetMessage() != nil {
+			attributes = append(attributes, sdk.NewAttribute(AttributeErrMessage, status.GetMessage().GetText()))
+		}
+	}
+
+	return sdk.Events{sdk.NewEvent(EventTypeContractStatus, attributes...)}
 }
 
 // NewMoveEvent converts VM event to SDK event.

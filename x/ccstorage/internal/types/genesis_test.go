@@ -14,7 +14,7 @@ func TestCCS_GenesisParams_Validate(t *testing.T) {
 
 	// ok
 	{
-		param := CurrencyParams{"dfi", 0}
+		param := CurrencyParams{"xfi", 0}
 		require.NoError(t, param.Validate())
 	}
 
@@ -22,6 +22,18 @@ func TestCCS_GenesisParams_Validate(t *testing.T) {
 	{
 		param1 := CurrencyParams{"dfi1", 0}
 		require.Error(t, param1.Validate())
+
+		param2 := CurrencyParams{"dfi",0, "0102", ""}
+		require.Error(t, param2.Validate())
+	}
+
+	// fail: invalid hex path
+	{
+		param1 := CurrencyParams{"dfi",0, "z", "AABB"}
+		require.Error(t, param1.Validate())
+
+		param2 := CurrencyParams{"dfi",0, "0102", "z"}
+		require.Error(t, param2.Validate())
 	}
 }
 
@@ -39,7 +51,7 @@ func TestCCS_Genesis_Validate(t *testing.T) {
 	// ok: new 1
 	{
 		state.CurrenciesParams = append(state.CurrenciesParams, CurrencyParams{
-			Denom:    "dfi",
+			Denom:    "xfi",
 			Decimals: 0,
 		})
 		require.NoError(t, state.Validate())

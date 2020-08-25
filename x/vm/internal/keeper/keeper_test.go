@@ -78,6 +78,4 @@ func TestVMKeeper_ExecuteScriptMock(t *testing.T) {
 	require.EqualValues(t, types.EventTypeContractStatus, events[1].Type)
 	require.EqualValues(t, types.AttributeStatus, events[1].Attributes[0].Key)
 	require.EqualValues(t, types.AttributeValueStatusKeep, events[1].Attributes[0].Value)
-
-	require.EqualValues(t, types.EventTypeMoveEvent, events[2].Type)
 }

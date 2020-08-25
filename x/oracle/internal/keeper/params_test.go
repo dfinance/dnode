@@ -18,7 +18,7 @@ func TestOracleKeeper_Params(t *testing.T) {
 	keeper := input.keeper
 	ctx := input.ctx
 
-	assetCode := dnTypes.AssetCode("btc_dfi")
+	assetCode := dnTypes.AssetCode("btc_xfi")
 
 	assetsMock := []types.Asset{
 		types.Asset{AssetCode: assetCode, Oracles: []types.Oracle{}, Active: true},

@@ -21,7 +21,7 @@ func AddMarketGenCmd(ctx *server.Context, cdc *codec.Codec, defaultNodeHome stri
 	cmd := &cobra.Command{
 		Use:     "add-market-gen [base_denom] [quote_denom]",
 		Short:   "Add market to genesis.json",
-		Example: "add-market-gen dfi eth",
+		Example: "add-market-gen xfi eth",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config
