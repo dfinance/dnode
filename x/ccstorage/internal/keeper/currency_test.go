@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/dfinance/glav"
 	"github.com/stretchr/testify/require"
 
 	"github.com/dfinance/dnode/x/ccstorage/internal/types"
@@ -20,10 +21,8 @@ func TestCCSKeeper_CreateCurrency(t *testing.T) {
 	ctx, keeper := input.ctx, input.keeper
 
 	params := types.CurrencyParams{
-		Denom:          "test",
-		Decimals:       8,
-		BalancePathHex: "010203",
-		InfoPathHex:    "AABBCC",
+		Denom:    "test",
+		Decimals: 8,
 	}
 	denom := params.Denom
 
@@ -38,8 +37,6 @@ func TestCCSKeeper_CreateCurrency(t *testing.T) {
 		require.Equal(t, denom, currency.Denom)
 		require.EqualValues(t, params.Decimals, currency.Decimals)
 		require.True(t, currency.Supply.IsZero())
-		require.Equal(t, params.BalancePathHex, currency.BalancePathHex)
-		require.Equal(t, params.InfoPathHex, currency.InfoPathHex)
 		require.True(t, keeper.HasCurrency(ctx, denom))
 
 		// check currencyInfo
@@ -52,10 +49,8 @@ func TestCCSKeeper_CreateCurrency(t *testing.T) {
 		require.False(t, curInfo.IsToken)
 
 		// check VM paths
-		curBalancePath, err := keeper.GetCurrencyBalancePath(ctx, denom)
-		require.NoError(t, err)
-		curInfoPath, err := keeper.GetCurrencyInfoPath(ctx, denom)
-		require.NoError(t, err)
+		curBalancePath := glav.BalanceVector(denom)
+		curInfoPath := glav.CurrencyInfoVector(denom)
 
 		require.EqualValues(t, currency.BalancePath(), curBalancePath)
 		require.EqualValues(t, currency.InfoPath(), curInfoPath)
@@ -77,10 +72,8 @@ func TestCCSKeeper_GetCurrency(t *testing.T) {
 
 	// create currency
 	params := types.CurrencyParams{
-		Denom:          "test",
-		Decimals:       uint8(8),
-		BalancePathHex: "010203",
-		InfoPathHex:    "AABBCC",
+		Denom:    "test",
+		Decimals: uint8(8),
 	}
 	denom := params.Denom
 
@@ -117,10 +110,8 @@ func TestCCSKeeper_Supply(t *testing.T) {
 	// create currency
 	curAmount := sdk.ZeroInt()
 	params := types.CurrencyParams{
-		Denom:          "test",
-		Decimals:       uint8(8),
-		BalancePathHex: "010203",
-		InfoPathHex:    "AABBCC",
+		Denom:    "test",
+		Decimals: uint8(8),
 	}
 	denom := params.Denom
 

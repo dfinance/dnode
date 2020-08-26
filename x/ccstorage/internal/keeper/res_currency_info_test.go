@@ -5,6 +5,7 @@ package keeper
 import (
 	"testing"
 
+	"github.com/dfinance/glav"
 	"github.com/stretchr/testify/require"
 
 	"github.com/dfinance/dnode/x/ccstorage/internal/types"
@@ -31,10 +32,8 @@ func TestCCSKeeper_GetStandardCurrencyInfo(t *testing.T) {
 			require.EqualValues(t, 0, curInfo.TotalSupply.Uint64())
 			require.False(t, curInfo.IsToken)
 
-			curBalancePath, err := keeper.GetCurrencyBalancePath(ctx, params.Denom)
-			require.NoError(t, err)
-			curInfoPath, err := keeper.GetCurrencyInfoPath(ctx, params.Denom)
-			require.NoError(t, err)
+			curBalancePath := glav.BalanceVector(params.Denom)
+			curInfoPath := glav.CurrencyInfoVector(params.Denom)
 
 			currency, err := keeper.GetCurrency(ctx, params.Denom)
 			require.NoError(t, err)

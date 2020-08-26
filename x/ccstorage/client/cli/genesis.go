@@ -17,9 +17,9 @@ import (
 // AddGenesisCurrencyInfo return genesis cmd which adds currency into node genesis state.
 func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "set-currency [denom] [decimals] [vmBalancePath] [vmInfoPath]",
+		Use:   "set-currency [denom] [decimals]",
 		Short: "Set currency to genesis state (non-token)",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			// setup viper config
 			config := ctx.Config
@@ -36,16 +36,6 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 				return err
 			}
 
-			balancePath, _, err := helpers.ParseHexStringParam("vmBalancePath", args[2], helpers.ParamTypeCliArg)
-			if err != nil {
-				return err
-			}
-
-			infoPath, _, err := helpers.ParseHexStringParam("vmInfoPath", args[3], helpers.ParamTypeCliArg)
-			if err != nil {
-				return err
-			}
-
 			// retrieve the app state
 			genFile := config.GenesisFile()
 			appState, genDoc, err := genutil.GenesisStateFromGenFile(cdc, genFile)
@@ -58,10 +48,8 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 
 			// update the state
 			params := types.CurrencyParams{
-				Denom:          denom,
-				Decimals:       decimals,
-				BalancePathHex: balancePath,
-				InfoPathHex:    infoPath,
+				Denom:    denom,
+				Decimals: decimals,
 			}
 			if err := params.Validate(); err != nil {
 				return fmt.Errorf("invalid params: %w", err)
@@ -97,8 +85,6 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 	helpers.BuildCmdHelp(cmd, []string{
 		"currency denomination symbol",
 		"currency decimals count",
-		"DVM account balance path",
-		"DVM CurrencyInfo path",
 	})
 
 	return cmd

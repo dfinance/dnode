@@ -2,17 +2,13 @@ package middlewares
 
 import (
 	"bytes"
-	"encoding/hex"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/glav"
 	"github.com/dfinance/lcs"
 
 	"github.com/dfinance/dnode/x/common_vm"
-)
-
-var (
-	hexTimePath = "01bb4980dfba817aaa64cb4b3a75ee1e1d8352111dead64c5c4f05fb7b4c85bb3e"
 )
 
 type CurrentTimestamp struct {
@@ -21,14 +17,9 @@ type CurrentTimestamp struct {
 
 // NewTimeMiddleware creates DS server middleware which return current block timestamp.
 func NewTimeMiddleware() common_vm.DSDataMiddleware {
-	bzPath, err := hex.DecodeString(hexTimePath)
-	if err != nil {
-		panic(err)
-	}
-
 	timeHeaderPath := vm_grpc.VMAccessPath{
 		Address: common_vm.StdLibAddress,
-		Path:    bzPath,
+		Path:    glav.TimeMetadataVector(),
 	}
 
 	return func(ctx sdk.Context, path *vm_grpc.VMAccessPath) (data []byte, err error) {

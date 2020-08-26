@@ -32,10 +32,8 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 
 	for _, currency := range k.GetCurrencies(ctx) {
 		state.CurrenciesParams = append(state.CurrenciesParams, types.CurrencyParams{
-			Denom:          currency.Denom,
-			Decimals:       currency.Decimals,
-			BalancePathHex: currency.BalancePathHex,
-			InfoPathHex:    currency.InfoPathHex,
+			Denom:    currency.Denom,
+			Decimals: currency.Decimals,
 		})
 	}
 

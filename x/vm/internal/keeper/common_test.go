@@ -61,27 +61,23 @@ const (
 	FlagCompiler  = "vm.compiler"
 
 	CoinsInfo = `{ 
-		"currencies": [
-			{
-				"path": "01b9ed21c23abf8c7a53fb868a36e106d45394c30127fb722f8dd2d45aae719585",
+    	"currencies": [
+        	{
           		"denom": "xfi",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
         	{
-          		"path": "012a00668b5325f832c28a24eb83dffa8295170c80345fbfbf99a5263f962c76f4",
           		"denom": "eth",
           		"decimals": 18,
           		"totalSupply": "100000000000000000000000000"
         	},
 			{
-          		"path": "01d058943a984bc02bc4a8547e7c0d780c59334e9aa415b90c87e70d140b2137b8",
           		"denom": "usdt",
           		"decimals": 6,
           		"totalSupply": "10000000000000"
         	},
         	{
-          		"path": "019fdf92aeba5356ec5455b1246c2e1b71d5c7192c6e5a1b50444dafaedc1c40c9",
           		"denom": "btc",
           		"decimals": 8,
           		"totalSupply": "100000000000000"

@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/glav"
 
 	"github.com/dfinance/dnode/x/ccstorage/internal/types"
 	"github.com/dfinance/dnode/x/common_vm"
@@ -83,23 +84,17 @@ func (k Keeper) RemoveAccountBalanceResources(ctx sdk.Context, addr sdk.AccAddre
 }
 
 // newBalance converts sdk.Coin for sdk.AccAddress to Balance.
-func (k Keeper) newBalance(ctx sdk.Context, addr sdk.AccAddress, coin sdk.Coin) (types.Balance, error) {
-	denom := coin.Denom
-	path, err := k.GetCurrencyBalancePath(ctx, denom)
-	if err != nil {
-		return types.Balance{}, fmt.Errorf("balance for %q denom: %w", denom, err)
-	}
-
+func (k Keeper) newBalance(addr sdk.AccAddress, coin sdk.Coin) types.Balance {
 	return types.Balance{
 		Denom: coin.Denom,
 		AccessPath: &vm_grpc.VMAccessPath{
 			Address: common_vm.Bech32ToLibra(addr),
-			Path:    path,
+			Path:    glav.BalanceVector(coin.Denom),
 		},
 		Resource: types.ResBalance{
 			Value: coin.Amount.BigInt(),
 		},
-	}, nil
+	}
 }
 
 // newBalances returns two Balance slices depending on account {coins} and all registered currencies;
@@ -111,11 +106,8 @@ func (k Keeper) newBalances(ctx sdk.Context, addr sdk.AccAddress, coins sdk.Coin
 	filledBalances = make(types.Balances, 0, len(coins))
 	foundAccDenoms := make(map[string]bool, len(coins))
 	for _, coin := range coins {
-		balance, err := k.newBalance(ctx, addr, coin)
-		if err != nil {
-			retErr = fmt.Errorf("writeBalances: %w", err)
-			return
-		}
+		balance := k.newBalance(addr, coin)
+
 		filledBalances = append(filledBalances, balance)
 		foundAccDenoms[coin.Denom] = true
 	}
@@ -124,11 +116,8 @@ func (k Keeper) newBalances(ctx sdk.Context, addr sdk.AccAddress, coins sdk.Coin
 	emptyBalances = make(types.Balances, 0)
 	for _, currency := range k.GetCurrencies(ctx) {
 		if !foundAccDenoms[currency.Denom] {
-			balance, err := k.newBalance(ctx, addr, sdk.NewCoin(currency.Denom, sdk.ZeroInt()))
-			if err != nil {
-				retErr = fmt.Errorf("delBalances: %w", err)
-				return
-			}
+			balance := k.newBalance(addr, sdk.NewCoin(currency.Denom, sdk.ZeroInt()))
+
 			emptyBalances = append(emptyBalances, balance)
 		}
 	}

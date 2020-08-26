@@ -17,10 +17,8 @@ func TestCCS_NewCurrencyInfo(t *testing.T) {
 
 	currency := NewCurrency(
 		CurrencyParams{
-			Denom:          "test",
-			Decimals:       4,
-			BalancePathHex: "",
-			InfoPathHex:    "",
+			Denom:    "test",
+			Decimals: 4,
 		},
 		sdk.NewIntFromUint64(100),
 	)

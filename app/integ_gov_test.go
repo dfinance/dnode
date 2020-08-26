@@ -8,6 +8,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/dfinance/glav"
 	"github.com/stretchr/testify/require"
 
 	"github.com/dfinance/dnode/cmd/config"
@@ -54,10 +55,11 @@ const govScript = `
 `
 
 func TestIntegGov_StdlibUpdate(t *testing.T) {
-	const (
-		moduleAddr = "0000000000000000000000000000000000000001"
-		modulePath = "0058e1e3e2f8edf7df0c4b1ab8c1c8ec661b3210b29c85b1449ac6214c6476b0e8"
-	)
+	var moduleAddressByte [20]byte
+	copy(moduleAddressByte[:], common_vm.StdLibAddress[:20])
+
+	modulePath := hex.EncodeToString(glav.ModuleAccessVector(moduleAddressByte, "Foo"))
+	moduleAddr := hex.EncodeToString(common_vm.StdLibAddress)
 
 	ct := cliTester.New(
 		t,
@@ -212,8 +214,9 @@ func TestIntegGov_RegisterCurrency(t *testing.T) {
 	// New currency info
 	crDenom := "tst"
 	crDecimals := uint8(8)
-	crBalancePathHex := "A1A2A3A4A5A6A7A8A9ABACADAEAFB1B2B3B4B5B6B7B8B9BABBBCBDBEBFC1C2C3C4"
-	crInfoPathHex    := "0102030405060708090A0B0C0D0E0FA1A2A3A4A5A6A7A8A9AAABACADAEAFB1B2B3"
+
+	crBalancePathHex := hex.EncodeToString(glav.BalanceVector(crDenom))
+	crInfoPathHex := hex.EncodeToString(glav.CurrencyInfoVector(crDenom))
 
 	// Check invalid arguments for AddCurrencyProposal Tx
 	{
