@@ -94,12 +94,18 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 
 			appGenState := mbm.DefaultGenesis()
 
-			// Change default staking denom.
+			// Change default staking denom, minSelfDelegation
+			minSelfDelegation, ok := sdk.NewIntFromString(DefMinSelfDelegation)
+			if !ok {
+				return fmt.Errorf("staking genState: default minSelfDelegation convertion failed: %s", DefMinSelfDelegation)
+			}
+
 			stakingDataBz := appGenState[staking.ModuleName]
 			var stakingGenState staking.GenesisState
 
 			cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
 			stakingGenState.Params.BondDenom = MainDenom
+			stakingGenState.Params.MinSelfDelegationLvl = minSelfDelegation
 			appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
 			// Change default mint stake.
