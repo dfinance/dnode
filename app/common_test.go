@@ -398,6 +398,7 @@ func GetGenesis(app *DnServiceApp, chainID, monikerID string, nodeAccPrivKey sec
 		commissionRate, _ := sdk.NewDecFromStr("0.100000000000000000")
 		commissionMaxRate, _ := sdk.NewDecFromStr("0.200000000000000000")
 		commissionChangeRate, _ := sdk.NewDecFromStr("0.010000000000000000")
+		minSelfDelegation := sdk.NewInt(staking.DefaultMinSelfDelegationLvl)
 		tokenAmount := sdk.TokensFromConsensusPower(1)
 
 		msg := staking.NewMsgCreateValidator(
@@ -406,7 +407,7 @@ func GetGenesis(app *DnServiceApp, chainID, monikerID string, nodeAccPrivKey sec
 			sdk.NewCoin(dnConfig.MainDenom, tokenAmount),
 			staking.NewDescription(monikerID, "", "", "", ""),
 			staking.NewCommissionRates(commissionRate, commissionMaxRate, commissionChangeRate),
-			sdk.OneInt(),
+			minSelfDelegation,
 		)
 
 		txFee := auth.StdFee{

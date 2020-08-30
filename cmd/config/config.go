@@ -39,6 +39,9 @@ const (
 
 	// Invariants check period for crisis module (in blocks)
 	DefInvCheckPeriod = 10
+
+	// Default staking validator minSelfDelegation amount
+	DefMinSelfDelegation = "250000000000000000000000" // 250000 xfi
 )
 
 var (

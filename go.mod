@@ -2,6 +2,11 @@ module github.com/dfinance/dnode
 
 go 1.14
 
+replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.38.4-0.20200827093801-ea5361e994d8
+
+// Local development option
+//replace github.com/cosmos/cosmos-sdk => /Users/tiky/Go_Projects/src/github.com/dfinance/cosmos-sdk
+
 require (
 	github.com/99designs/keyring v1.1.3
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
@@ -9,18 +14,16 @@ require (
 	github.com/atlassian/go-sentry-api v0.0.0-20200117001222-a9ccec16c98b
 	github.com/containerd/containerd v1.3.3 // indirect
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
-	github.com/cosmos/cosmos-sdk v0.39.0
+	github.com/cosmos/cosmos-sdk v0.0.1
 	github.com/dfinance/dvm-proto/go v0.0.0-20200819065410-6b70956c85de
 	github.com/dfinance/glav v0.0.0-20200814081332-c4701f6c12a6
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3
-	github.com/g3co/go-swagger-merger v0.0.0-20200729134821-4edc8debe55f // indirect
 	github.com/getsentry/sentry-go v0.5.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/spec v0.19.9 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/gogo/protobuf v1.3.1
-	github.com/golang/protobuf v1.4.1
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
@@ -38,9 +41,8 @@ require (
 	github.com/swaggo/http-swagger v0.0.0-20200308142732-58ac5e232fba
 	github.com/swaggo/swag v1.6.7
 	github.com/tendermint/go-amino v0.15.1
-	github.com/tendermint/tendermint v0.33.6
+	github.com/tendermint/tendermint v0.33.7
 	github.com/tendermint/tm-db v0.5.1
-	github.com/urfave/cli/v2 v2.2.0 // indirect
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc // indirect
 	golang.org/x/tools v0.0.0-20200818005847-188abfa75333 // indirect
 	google.golang.org/grpc v1.30.0
