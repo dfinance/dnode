@@ -179,7 +179,7 @@ func TestCCSKeeper_newBalances(t *testing.T) {
 		filledBalances, emptyBalances, err := keeper.newBalances(ctx, addr, inputs.Coins())
 		inputs.CheckNewBalances(t, filledBalances, emptyBalances, err)
 		require.Len(t, filledBalances, len(inputs)/2)
-		require.Len(t, emptyBalances, len(inputs)/2)
+		require.Len(t, emptyBalances, len(inputs)-len(inputs)/2)
 	}
 
 	// all filled

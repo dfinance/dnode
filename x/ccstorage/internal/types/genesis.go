@@ -57,6 +57,10 @@ func DefaultGenesisState() GenesisState {
 				Decimals: 18,
 			},
 			{
+				Denom:    "sxfi",
+				Decimals: 18,
+			},
+			{
 				Denom:    "eth",
 				Decimals: 18,
 			},

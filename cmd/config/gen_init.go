@@ -99,7 +99,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			var stakingGenState staking.GenesisState
 
 			cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
-			stakingGenState.Params.BondDenom = MainDenom
+			stakingGenState.Params.BondDenom = SXFIDenom
 			appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
 			// Change default mint stake.

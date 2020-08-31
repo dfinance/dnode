@@ -160,7 +160,7 @@ func (ct *CLITester) initChain() {
 
 	// validator genTX
 	{
-		stakingCoin := ct.Accounts["pos"].Coins[config.MainDenom]
+		stakingCoin := ct.Accounts["pos"].Coins[config.SXFIDenom]
 		stakingCoin.Amount = stakingCoin.Amount.QuoRaw(4)
 
 		cmd := ct.newWbdCmd().
