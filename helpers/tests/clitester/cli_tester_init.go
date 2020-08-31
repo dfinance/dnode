@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	sdkKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
@@ -160,14 +161,18 @@ func (ct *CLITester) initChain() {
 
 	// validator genTX
 	{
+		minSelfDelegation, ok := sdk.NewIntFromString(dnConfig.DefMinSelfDelegation)
+		require.True(ct.t, ok, "DefMinSelfDelegation conversion failed")
+
 		stakingCoin := ct.Accounts["pos"].Coins[config.SXFIDenom]
-		stakingCoin.Amount = stakingCoin.Amount.QuoRaw(4)
+		stakingCoin.Amount = minSelfDelegation
 
 		cmd := ct.newWbdCmd().
 			AddArg("", "gentx").
 			AddArg("home-client", ct.Dirs.DncliDir).
 			AddArg("name", "pos").
 			AddArg("amount", stakingCoin.String()).
+			AddArg("min-self-delegation", minSelfDelegation.String()).
 			AddArg("keyring-backend", string(ct.keyringBackend))
 
 		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase)

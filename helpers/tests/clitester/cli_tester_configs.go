@@ -123,7 +123,7 @@ func NewAccountMap() (accounts map[string]*CLIAccount, retErr error) {
 		return
 	}
 
-	bigAmount, ok := sdk.NewIntFromString("100000000000000000000000") // 100000xfi
+	bigAmount, ok := sdk.NewIntFromString("1000000000000000000000000") // 1000000xfi
 	if !ok {
 		retErr = fmt.Errorf("NewInt for bigAmount")
 		return
