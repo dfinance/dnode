@@ -48,3 +48,40 @@ Modules can be updated individually (adding new features for example) and in bat
 * `--deposit 100xfi` - deposit value (amount is transferred from the proposer);
 
 Stdlib update is verified on proposal submission and scheduled to execute at the specified block height.
+
+### Parameter change proposal
+
+For create module parameter change proposal call command: 
+
+    dncli tx gov submit-proposal param-change ./param.json
+    
+Proposal file `./param.json` should contain JSON following structure.
+    
+    {
+      "title": "Staking Param Change",
+      "description": "Update max validators",
+      "changes": [
+        {
+          "subspace": "staking",
+          "key": "MaxValidators",
+          "value": "105"
+        }
+      ],
+      "deposit": [
+        {
+          "denom": "xfi",
+          "amount": "10000"
+        }
+      ]
+    }
+    
+* `title` -  proposal title
+* `description` -  proposal description
+* `deposit` -  array of currencies
+  * `denom` - currency denom
+  * `amount` - amount
+* `changes` - array of parameter change structure
+  * `subspace` - module name
+  * `key` - parameter name
+  * `value` - new parameter value
+  
