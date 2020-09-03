@@ -51,11 +51,11 @@ Stdlib update is verified on proposal submission and scheduled to execute at the
 
 ### Parameter change proposal
 
-For create module parameter change proposal call command: 
+For create  a module parameter change proposal, call the command: 
 
     dncli tx gov submit-proposal param-change ./param.json
     
-Proposal file `./param.json` should contain JSON following structure.
+Proposal file `./param.json` should contain the following JSON structure.
     
     {
       "title": "Staking Param Change",
@@ -80,7 +80,7 @@ Proposal file `./param.json` should contain JSON following structure.
 * `deposit` -  array of currencies
   * `denom` - currency denom
   * `amount` - amount
-* `changes` - array of parameter change structure
+* `changes` - array of the parameter change structure
   * `subspace` - module name
   * `key` - parameter name
   * `value` - new parameter value
