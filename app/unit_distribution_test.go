@@ -46,7 +46,7 @@ func TestDistribution_MessagesNotWorking(t *testing.T) {
 	// check fund community pool.
 	{
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, nodeAddress), nodePrivKey
-		withdrawComissionMsg := distribution.MsgFundCommunityPool(sdk.NewCoins(sdk.NewCoin(config.MainDenom, sdk.NewInt(1))), nodeAddress)
+		withdrawComissionMsg := distribution.NewMsgFundPublicTreasuryPool(sdk.NewCoins(sdk.NewCoin(config.MainDenom, sdk.NewInt(1))), nodeAddress)
 		tx := GenTx([]sdk.Msg{withdrawComissionMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverSpecificErrorTx(t, app, tx, errors.ErrUnknownRequest)
 	}

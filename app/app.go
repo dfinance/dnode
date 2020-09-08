@@ -92,7 +92,7 @@ var (
 	)
 
 	maccPerms = map[string][]string{
-		auth.FeeCollectorName:     nil,
+		auth.FeeCollectorName:     {supply.Burner},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		mint.ModuleName:           {supply.Minter},
@@ -106,7 +106,7 @@ var (
 		distribution.ModuleName: {
 			distribution.MsgWithdrawDelegatorReward{}.Type(),
 			distribution.MsgWithdrawValidatorCommission{}.Type(),
-			distribution.TypeMsgFundCommunityPool,
+			distribution.TypeMsgFundPublicTreasuryPool,
 			distribution.MsgSetWithdrawAddress{}.Type(),
 		},
 	}
@@ -459,6 +459,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.govRouter = gov.NewRouter()
 	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
 	app.govRouter.AddRoute(currencies.GovRouterKey, currencies.NewGovHandler(app.ccKeeper))
+	app.govRouter.AddRoute(distribution.RouterKey, distribution.NewProposalHandler(app.distrKeeper))
 	app.govRouter.AddRoute(upgrade.ModuleName, upgrade.NewSoftwareUpgradeProposalHandler(app.upgradeKeeper))
 
 	app.govKeeper = gov.NewKeeper(
@@ -483,7 +484,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		mint.NewAppModule(app.mintKeeper),
 		evidence.NewAppModule(app.evidenceKeeper),
-		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
+		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper, app.mintKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		currencies.NewAppMsModule(app.ccKeeper, app.ccsKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
