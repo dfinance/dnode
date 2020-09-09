@@ -266,6 +266,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		tkeys[params.TStoreKey],
 	)
 
+	app.paramsKeeper.SetRestrictedParams(params.RestrictedParams{})
+
 	// UpgradeKeeper halts chain on software update proposal in order to restart it with newer version.
 	app.upgradeKeeper = upgrade.NewKeeper(
 		make(map[int64]bool),
