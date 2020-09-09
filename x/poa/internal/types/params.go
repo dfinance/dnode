@@ -9,7 +9,7 @@ import (
 // Default parameters values.
 const (
 	DefaultMaxValidators uint16 = 11
-	DefaultMinValidators uint16 = 3
+	DefaultMinValidators uint16 = 1
 )
 
 // Parameter store key.
