@@ -15,10 +15,18 @@ func NewMsHandler(keeper keeper.Keeper) msmodule.MsHandler {
 		switch msg := msg.(type) {
 		case MsgIssueCurrency:
 			return handleMsMsgIssueCurrency(ctx, keeper, msg)
+
+		case MsgUnstakeCurrency:
+			return handleMsMsgUnstakeCurrency(ctx, keeper, msg)
+
 		default:
 			return sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized %s module multisig msg type: %v", ModuleName, msg.Type())
 		}
 	}
+}
+
+func handleMsMsgUnstakeCurrency(ctx sdk.Context, keeper keeper.Keeper, currency MsgUnstakeCurrency) error {
+	return nil
 }
 
 // handleMsMsgIssueCurrency hanldes MsgIssueCurrency multisig message.

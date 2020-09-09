@@ -13,7 +13,8 @@ func NewHandler(keeper keeper.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		switch msg := msg.(type) {
 		case MsgWithdrawCurrency:
-			return handleMsgWithdraw(ctx, keeper, msg)
+			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "withdraw message disabled in current version")
+
 		default:
 			return nil, sdkErrors.Wrapf(sdkErrors.ErrUnknownRequest, "unrecognized currencies msg type: %v", msg.Type())
 		}

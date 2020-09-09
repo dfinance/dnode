@@ -13,6 +13,7 @@ type (
 	Withdraws           = types.Withdraws
 	MsgIssueCurrency    = types.MsgIssueCurrency
 	MsgWithdrawCurrency = types.MsgWithdrawCurrency
+	MsgUnstakeCurrency  = types.MsgUnstakeCurrency
 	AddCurrencyProposal = types.AddCurrencyProposal
 	CurrencyReq         = types.CurrencyReq
 	IssueReq            = types.IssueReq
