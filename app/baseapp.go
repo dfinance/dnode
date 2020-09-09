@@ -15,12 +15,15 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -674,6 +677,32 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 
 	// NOTE: GasWanted is determined by the AnteHandler and GasUsed by the GasMeter.
 	for i, msg := range msgs {
+		// disallow sxfi bank transactions
+		if msg, ok := msg.(bank.MsgSend); ok {
+			for i := range msg.Amount {
+				if msg.Amount.GetDenomByIndex(i) == config.SXFIDenom {
+					return nil, sdkerrors.Wrapf(
+						sdkerrors.ErrInvalidRequest,
+						"bank transactions is disallowed for %s token",
+						config.SXFIDenom,
+					)
+				}
+			}
+		}
+
+		// allow just sxfi token for gov deposit
+		if msg, ok := msg.(gov.MsgDeposit); ok {
+			for i := range msg.Amount {
+				if msg.Amount.GetDenomByIndex(i) != config.SXFIDenom {
+					return nil, sdkerrors.Wrapf(
+						sdkerrors.ErrInvalidRequest,
+						"gov deposit allowed just by %s token",
+						config.SXFIDenom,
+					)
+				}
+			}
+		}
+
 		// skip actual execution for (Re)CheckTx mode
 		if mode == runTxModeCheck || mode == runTxModeReCheck {
 			break

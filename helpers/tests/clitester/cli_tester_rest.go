@@ -10,6 +10,8 @@ import (
 	restTypes "github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	sdkAuthRest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/stretchr/testify/require"
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
@@ -492,6 +494,44 @@ func (ct *CLITester) RestTxOrdersPostOrderRaw(accName string, accAddress sdk.Acc
 	}
 
 	return ct.newRestTxRequestRaw(accName, accNumber, accSequence, msg, true)
+}
+
+func (ct *CLITester) RestTxBankTransfer(from, to string, amount uint64, denom string) (*RestRequest, *sdk.TxResponse) {
+	fromAcc := ct.Accounts[from]
+	require.NotNil(ct.t, fromAcc, "account %s: not found", from)
+
+	toAcc := ct.Accounts[to]
+	require.NotNil(ct.t, toAcc, "account %s: not found", to)
+
+	accQuery, acc := ct.QueryAccount(fromAcc.Address)
+	accQuery.CheckSucceeded()
+
+	fromHexAcc, err := sdk.AccAddressFromBech32(fromAcc.Address)
+	require.Nil(ct.t, err)
+
+	toHexAcc, err := sdk.AccAddressFromBech32(toAcc.Address)
+	require.Nil(ct.t, err)
+
+	coins := sdk.NewCoins(sdk.NewCoin(denom, sdk.NewIntFromUint64(amount)))
+	msg := bank.NewMsgSend(fromHexAcc, toHexAcc, coins)
+
+	return ct.newRestTxRequest(from, acc, msg, false)
+}
+
+func (ct *CLITester) RestTxGovTransfer(from string, proposalId uint64, amount uint64, denom string) (*RestRequest, *sdk.TxResponse) {
+	fromAcc := ct.Accounts[from]
+	require.NotNil(ct.t, fromAcc, "account %s: not found", from)
+
+	accQuery, acc := ct.QueryAccount(fromAcc.Address)
+	accQuery.CheckSucceeded()
+
+	fromHexAcc, err := sdk.AccAddressFromBech32(fromAcc.Address)
+	require.Nil(ct.t, err)
+
+	coins := sdk.NewCoins(sdk.NewCoin(denom, sdk.NewIntFromUint64(amount)))
+	msg := gov.NewMsgDeposit(fromHexAcc, proposalId, coins)
+
+	return ct.newRestTxRequest(from, acc, msg, false)
 }
 
 func (ct *CLITester) RestTxMarketsAdd(accName, baseDenom, quoteDenom string) (*RestRequest, *sdk.TxResponse) {

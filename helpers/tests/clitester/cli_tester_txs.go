@@ -13,6 +13,33 @@ import (
 	"github.com/dfinance/dnode/x/orders"
 )
 
+func (ct *CLITester) TxBankSend(fromAddr, toAddr string, amount uint64, denom string) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"bank",
+		fromAddr,
+		"send",
+		fromAddr,
+		toAddr,
+		sdk.NewCoin(denom, sdk.NewIntFromUint64(amount)).String(),
+	)
+
+	return r
+}
+
+func (ct *CLITester) TxStake(fromAddr, validator string, amount int64, denom string) *TxRequest {
+	r := ct.newTxRequest()
+	r.SetCmd(
+		"staking",
+		fromAddr,
+		"delegate",
+		validator,
+		sdk.NewCoin(denom, sdk.NewInt(amount)).String(),
+	)
+
+	return r
+}
+
 func (ct *CLITester) TxCurrenciesIssue(payeeAddr, fromAddr, issueID, denom string, amount sdk.Int) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
@@ -286,11 +313,11 @@ func (ct *CLITester) TxCCAddCurrencyProposal(fromAddress, denom, balancePath, in
 	return r
 }
 
-func (ct *CLITester) TxGovDeposit(fromAddress string, id uint64, deposit sdk.Coin) *TxRequest {
+func (ct *CLITester) TxGovDeposit(fromAddress string, id uint64, amount uint64, denom string) *TxRequest {
 	cmdArgs := []string{
 		"deposit",
 		strconv.FormatUint(id, 10),
-		deposit.String(),
+		sdk.NewCoin(denom, sdk.NewIntFromUint64(amount)).String(),
 	}
 
 	r := ct.newTxRequest()

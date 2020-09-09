@@ -29,6 +29,7 @@ import (
 
 const (
 	DenomXFI  = "xfi"
+	DenomSXFI = "sxfi"
 	DenomETH  = "eth"
 	DenomBTC  = "btc"
 	DenomUSDT = "usdt"
