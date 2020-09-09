@@ -133,7 +133,7 @@ func TestVMKeeper_RetryMechanism(t *testing.T) {
 
 	// fail: by attempts
 	{
-		keeper.config.MaxAttempts, keeper.config.ReqTimeoutInMs = 5, 100
+		keeper.config.MaxAttempts, keeper.config.ReqTimeoutInMs = 5, 1000
 
 		mockDvmServer.SetExecutionFail()
 		mockDvmServer.SetExecutionDelay(50 * time.Millisecond)
