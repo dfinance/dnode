@@ -103,9 +103,7 @@ type SimReportConsoleWriter struct{
 }
 
 func (w *SimReportConsoleWriter) Write(item SimReportItem) {
-	now := time.Now()
-	reportingDur := now.Sub(w.startedAt)
-	w.startedAt = now
+	reportingDur := time.Now().Sub(w.startedAt)
 
 	str := strings.Builder{}
 
