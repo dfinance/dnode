@@ -9,11 +9,11 @@ First of all we need to create genesis configuration and set name for the node:
 Now configure CLI client:
 
     dncli config chain-id dn-testnet
-    dncli config output json
-    dncli config indent true
-    dncli config trust-node true
-    dncli config compiler tcp://127.0.0.1:50051
-    dncli config node http://127.0.0.1:26657
+    dncli config output json --home damir/.dncli 
+    dncli config indent true --home damir/.dncli
+    dncli config trust-node true --home damir/.dncli
+    dncli config compiler tcp://127.0.0.1:50051 --home damir/.dncli
+    dncli config node http://127.0.0.1:26657 --home damir/.dncli
 
 If you want to keep your keys in file based storage, instead of OS keystorage, configure it:
 
@@ -25,8 +25,6 @@ Then let's create accounts:
     dncli keys add bank
     dncli keys add nominee
     dncli keys add validator1
-    dncli keys add validator2
-    dncli keys add validator3
     dncli keys add orders
     dncli keys add gov
 
@@ -58,11 +56,11 @@ It should be done before the next commands, refer to the tutorial **[how to init
 The following commands might be omitted as [`xfi`, `eth`, `usdt`, `btc`] currencies already exist in the default generated genesis above.
 Currencies can be added to the chain later using `gov` proposals.
 
-    dnode set-currency sxfi  18
-    dnode set-currency xfi  18
-    dnode set-currency eth  18
-    dnode set-currency usdt 6
-    dnode set-currency btc  8
+    dnode set-currency sxfi  18  --home damir/.dnode
+    dnode set-currency xfi  18  --home damir/.dnode
+    dnode set-currency eth  18  --home damir/.dnode
+    dnode set-currency usdt 6  --home damir/.dnode
+    dnode set-currency btc  8  --home damir/.dnode
 
 We can also add DEX markets to genesis (markets can be added later via non-genesis Tx command as well):
 
@@ -72,7 +70,7 @@ We can also add DEX markets to genesis (markets can be added later via non-genes
 
 Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 
-    dnode gentx --name pos --amount 1000000000000000000000000sxfi --min-self-delegation 1000000000000000000000000
+    dnode gentx --name pos --amount 1000000000000000000000000sxfi --min-self-delegation 1000000000000000000000000 --home damir/.dnode --keyring-backend file --home-client damir/.dncli
 
 The output like:
 

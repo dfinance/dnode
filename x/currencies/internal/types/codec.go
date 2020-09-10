@@ -11,6 +11,7 @@ const (
 	CodecNameMsgIssueCurrency    = ModuleName + "/IssueCurrency"
 	CodecNameMsgWithdrawCurrency = ModuleName + "/WithdrawCurrency"
 	CodecNameAddCurrencyProposal = ModuleName + "/AddCurrencyProposal"
+	CodecNameMsgUnstakeCurrency  = ModuleName + "/UnstakeCurrency"
 )
 
 var ModuleCdc *codec.Codec
@@ -20,6 +21,7 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgIssueCurrency{}, CodecNameMsgIssueCurrency, nil)
 	cdc.RegisterConcrete(MsgWithdrawCurrency{}, CodecNameMsgWithdrawCurrency, nil)
 	cdc.RegisterConcrete(AddCurrencyProposal{}, CodecNameAddCurrencyProposal, nil)
+	cdc.RegisterConcrete(MsgUnstakeCurrency{}, CodecNameMsgUnstakeCurrency, nil)
 }
 
 func init() {
@@ -29,6 +31,7 @@ func init() {
 	ModuleCdc = cdc.Seal()
 
 	msClient.RegisterMultiSigTypeCodec(MsgIssueCurrency{}, CodecNameMsgIssueCurrency)
+	msClient.RegisterMultiSigTypeCodec(MsgUnstakeCurrency{}, CodecNameMsgUnstakeCurrency)
 	msClient.RegisterMultiSigTypeCodec(MsgWithdrawCurrency{}, CodecNameMsgWithdrawCurrency)
 
 	gov.RegisterProposalType(ProposalTypeAddCurrency)
