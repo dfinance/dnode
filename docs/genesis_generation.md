@@ -45,14 +45,10 @@ Now let's add genesis accounts and initiate genesis PoA validators.
     dnode add-genesis-account [bank-address] 95000000000000000000000000xfi,100000000000000btc,10000000000000usdt
     dnode add-genesis-account [nominee]      1000000000000000000000000xfi
     dnode add-genesis-account [validator-1-address] 1000000000000000000000000xfi
-    dnode add-genesis-account [validator-2-address] 1000000000000000000000000xfi
-    dnode add-genesis-account [validator-3-address] 1000000000000000000000000xfi
     dnode add-genesis-account [orders-address] 1000000000000000000000000xfi --module-name orders
     dnode add-genesis-account [gov-address] 1000000000000000000000000xfi --module-name gov
 
     dnode add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
-    dnode add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
-    dnode add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
 
 Replace expressions in brackets with correct addresses, include Ethereum addresses.
 
