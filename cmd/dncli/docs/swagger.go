@@ -627,8 +627,6 @@ definitions:
     $ref: '#/definitions/types.Currencies'
   ccstorage.Currency:
     $ref: '#/definitions/types.Currency'
-  crypto.PubKey:
-    type: object
   markets.MarketExtended:
     $ref: '#/definitions/types.MarketExtended'
   msmodule.MsMsg:
@@ -1004,6 +1002,20 @@ definitions:
         format: bech32/hex
         type: string
     type: object
+  rest.UnstakeReq:
+    properties:
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      id:
+        description: Unstake unique ID (could be txHash of transaction in another blockchain)
+        type: string
+      staker:
+        description: Staker account (whose balance is increased)
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32/hex
+        type: string
+    type: object
   rest.VmData:
     properties:
       height:
@@ -1162,33 +1174,12 @@ definitions:
     items:
       $ref: '#/definitions/types.Coin'
     type: array
-  types.Commission:
-    properties:
-      max_change_rate:
-        $ref: '#/definitions/types.Dec'
-        description: maximum daily increase of the validator commission, as a fraction
-        type: object
-      max_rate:
-        $ref: '#/definitions/types.Dec'
-        description: maximum commission rate which validator can ever charge, as a fraction
-        type: object
-      rate:
-        $ref: '#/definitions/types.Dec'
-        description: the commission rate charged to delegators, as a fraction
-        type: object
-      update_time:
-        description: the last time the commission rate was changed
-        type: string
-    type: object
   types.Currencies:
     items:
       $ref: '#/definitions/types.Currency'
     type: array
   types.Currency:
     properties:
-      balance_path_hex:
-        description: Path used to store account balance for currency denom (0x1::Dfinance::T<Coin>)
-        type: string
       decimals:
         description: Number of currency decimals
         example: 0
@@ -1196,9 +1187,6 @@ definitions:
       denom:
         description: Currency denom (symbol)
         example: xfi
-        type: string
-      info_path_hex:
-        description: Path used to store CurrencyInfo for currency denom (0x1::Dfinance::Info<Coin>)
         type: string
       supply:
         description: Total amount of currency coins in Bank
@@ -1235,24 +1223,6 @@ definitions:
     items:
       $ref: '#/definitions/types.DecCoin'
     type: array
-  types.Description:
-    properties:
-      details:
-        description: optional details
-        type: string
-      identity:
-        description: optional identity signature (ex. UPort or Keybase)
-        type: string
-      moniker:
-        description: name
-        type: string
-      security_contact:
-        description: optional security contact info
-        type: string
-      website:
-        description: optional website link
-        type: string
-    type: object
   types.ID:
     $ref: '#/definitions/sdk.Uint'
   types.Int:
@@ -1281,7 +1251,7 @@ definitions:
         format: string representation for big.Uint
         type: string
       quote_asset_denom:
-        description: Quote asset denomination (for ex. dfi)
+        description: Quote asset denomination (for ex. xfi)
         example: xfi
         type: string
     type: object
@@ -1298,7 +1268,7 @@ definitions:
         type: string
       quote_currency:
         $ref: '#/definitions/ccstorage.Currency'
-        description: Quote asset currency (for ex. dfi)
+        description: Quote asset currency (for ex. xfi)
         type: object
     type: object
   types.Markets:
@@ -1477,53 +1447,6 @@ definitions:
     items:
       $ref: '#/definitions/types.VMStatus'
     type: array
-  types.ValAddress:
-    items:
-      type: integer
-    type: array
-  types.Validator:
-    properties:
-      commission:
-        $ref: '#/definitions/types.Commission'
-        description: commission parameters
-        type: object
-      consensus_pubkey:
-        $ref: '#/definitions/crypto.PubKey'
-        description: the consensus public key of the validator; bech encoded in JSON
-        type: object
-      delegator_shares:
-        $ref: '#/definitions/types.Dec'
-        description: total shares issued to a validator's delegators
-        type: object
-      description:
-        $ref: '#/definitions/types.Description'
-        description: description terms for the validator
-        type: object
-      jailed:
-        description: has the validator been jailed from bonded status?
-        type: boolean
-      min_self_delegation:
-        $ref: '#/definitions/types.Int'
-        description: validator's self declared minimum self delegation
-        type: object
-      operator_address:
-        $ref: '#/definitions/types.ValAddress'
-        description: address of the validator's operator; bech encoded in JSON
-        type: object
-      status:
-        description: validator status (bonded/unbonding/unbonded)
-        type: string
-      tokens:
-        $ref: '#/definitions/types.Int'
-        description: delegated tokens (incl. self-delegation)
-        type: object
-      unbonding_height:
-        description: if unbonding, height at which this validator has begun unbonding
-        type: integer
-      unbonding_time:
-        description: if unbonding, min time for the validator to complete unbonding
-        type: string
-    type: object
   types.Validators:
     items:
       $ref: '#/definitions/types.Validator'
@@ -1786,7 +1709,7 @@ paths:
       consumes:
       - application/json
       description: Get submit new issue multi signature message stdTx object
-      operationId: currenciesSubmitIssue
+      operationId: currenciesSubmitUnstake
       parameters:
       - description: Submit issue request
         in: body
@@ -1836,6 +1759,37 @@ paths:
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get currency issue
+      tags:
+      - Currencies
+  /currencies/unstake:
+    put:
+      consumes:
+      - application/json
+      description: Get new unstake multi signature message stdTx object
+      operationId: currenciesSubmitIssue
+      parameters:
+      - description: Submit unstake request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.UnstakeReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespStdTx'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Unstake tx
       tags:
       - Currencies
   /currencies/withdraw:

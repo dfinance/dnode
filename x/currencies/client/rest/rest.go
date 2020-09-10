@@ -240,18 +240,18 @@ func getWithdraw(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// Submit unstake godoc
+// SubmitIssue godoc
 // @Tags Currencies
-// @Summary Unstake tx
-// @Description Get new unstake multi signature message stdTx object
-// @ID currenciesSubmitIssue
+// @Summary Submit issue
+// @Description Get submit new issue multi signature message stdTx object
+// @ID currenciesSubmitUnstake
 // @Accept  json
 // @Produce json
-// @Param request body UnstakeReq true "Submit unstake request"
+// @Param request body SubmitIssueReq true "Submit issue request"
 // @Success 200 {object} CCRespStdTx
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
-// @Router /currencies/unstake [put]
+// @Router /currencies/issue [put]
 func submitIssue(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs
@@ -302,18 +302,18 @@ func submitIssue(cliCtx context.CLIContext) http.HandlerFunc {
 	}
 }
 
-// SubmitIssue godoc
+// Submit unstake godoc
 // @Tags Currencies
-// @Summary Submit issue
-// @Description Get submit new issue multi signature message stdTx object
-// @ID currenciesSubmitUnstake
+// @Summary Unstake tx
+// @Description Get new unstake multi signature message stdTx object
+// @ID currenciesSubmitIssue
 // @Accept  json
 // @Produce json
-// @Param request body SubmitIssueReq true "Submit issue request"
+// @Param request body UnstakeReq true "Submit unstake request"
 // @Success 200 {object} CCRespStdTx
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
-// @Router /currencies/issue [put]
+// @Router /currencies/unstake [put]
 func submitUnstake(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// parse inputs
