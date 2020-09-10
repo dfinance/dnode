@@ -49,7 +49,7 @@ func TestBankSXFI_CLI(t *testing.T) {
 
 	// ok for xfi denom
 	{
-		q := ct.TxBankSend(ct.Accounts[cliTester.DenomSXFI].Address, ct.Accounts["validator1"].Address, 1, cliTester.DenomXFI)
+		q := ct.TxBankSend(ct.Accounts["plain"].Address, ct.Accounts["validator1"].Address, 1, cliTester.DenomXFI)
 		q.CheckSucceeded()
 	}
 }
