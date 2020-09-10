@@ -41,7 +41,7 @@ Copy addresses and private keys from output, they would be used later.
 
 Now let's add genesis accounts and initiate genesis PoA validators.
 
-    dnode add-genesis-account [pos-address]  1000000000000000000000000xfi
+    dnode add-genesis-account [pos-address]  1000000000000000000000000sxfi
     dnode add-genesis-account [bank-address] 95000000000000000000000000xfi,100000000000000btc,10000000000000usdt
     dnode add-genesis-account [nominee]      1000000000000000000000000xfi
     dnode add-genesis-account [validator-1-address] 1000000000000000000000000xfi
@@ -62,6 +62,7 @@ It should be done before the next commands, refer to the tutorial **[how to init
 The following commands might be omitted as [`xfi`, `eth`, `usdt`, `btc`] currencies already exist in the default generated genesis above.
 Currencies can be added to the chain later using `gov` proposals.
 
+    dnode set-currency sxfi  18
     dnode set-currency xfi  18
     dnode set-currency eth  18
     dnode set-currency usdt 6
@@ -75,7 +76,7 @@ We can also add DEX markets to genesis (markets can be added later via non-genes
 
 Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 
-    dnode gentx --name pos --amount 1000000000000000000000000xfi
+    dnode gentx --name pos --amount 1000000000000000000000000sxfi --min-self-delegation 1000000000000000000000000
 
 The output like:
 
