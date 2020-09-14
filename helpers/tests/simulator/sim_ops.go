@@ -2,7 +2,6 @@ package simulator
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -57,36 +56,20 @@ func NewCreateValidatorOp(period time.Duration) *SimOperation {
 // Accounts priority - didn't delegate to target validator and has enough coins.
 func NewDelegateOp(period time.Duration, amount sdk.Coin) *SimOperation {
 	handler := func(s *Simulator) bool {
-		// sort validators by their tokens (first - min tokens)
-		validators := s.GetValidators()
+		validators := s.GetValidatorSortedByStake(false)
 		if len(validators) == 0 {
 			return false
 		}
-
-		sort.Slice(validators, func(i, j int) bool {
-			if validators[i].Tokens.LT(validators[j].Tokens) {
-				return true
-			}
-			return false
-		})
-		targetVal := validators[0]
-
-		// find an account which didn't delegate to this validator yet and has enough funds
-		hasEnoughCoins := func(acc *SimAccount) bool {
-			accCoin := acc.Coins.AmountOf(amount.Denom)
-			if accCoin.LT(amount.Amount) {
-				return false
-			}
-			return true
-		}
+		validator := validators[0]
 
 		var targetAcc *SimAccount
-		for _, acc := range s.accounts {
-			if acc.HasDelegation(targetVal.OperatorAddress) {
+		accList := s.GetShuffledAccounts()
+		for _, acc := range accList {
+			if acc.HasDelegation(validator.OperatorAddress) {
 				continue
 			}
 
-			if hasEnoughCoins(acc) {
+			if acc.HasEnoughCoins(amount) {
 				targetAcc = acc
 				break
 			}
@@ -94,8 +77,8 @@ func NewDelegateOp(period time.Duration, amount sdk.Coin) *SimOperation {
 
 		// if account wasn't found, find the first with enough coins
 		if targetAcc == nil {
-			for _, acc := range s.accounts {
-				if hasEnoughCoins(acc) {
+			for _, acc := range accList {
+				if acc.HasEnoughCoins(amount) {
 					targetAcc = acc
 					break
 				}
@@ -108,19 +91,114 @@ func NewDelegateOp(period time.Duration, amount sdk.Coin) *SimOperation {
 		}
 
 		// delegate
-		s.TxStakingDelegate(targetAcc, targetVal, amount)
+		s.TxStakingDelegate(targetAcc, validator, amount)
 
 		// update account
 		s.UpdateAccount(targetAcc)
-		delegation := s.QueryStakingDelegation(targetAcc, targetVal)
+		delegation := s.QueryStakingDelegation(targetAcc, validator)
 		targetAcc.AddDelegation(&delegation)
 
 		// update validator
-		s.UpdateValidator(targetVal)
+		s.UpdateValidator(validator)
 
-		s.logger.Info(fmt.Sprintf("DelegateOp: delegated %s from %s to %s", amount, targetAcc.Address, targetVal.OperatorAddress))
+		s.logger.Info(fmt.Sprintf("DelegateOp: delegated %s from %s to %s", amount, targetAcc.Address, validator.OperatorAddress))
 
 		return true
+	}
+
+	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+}
+
+// NewRedelegateOp picks a validator and redelegate tokens to other validator.
+func NewRedelegateOp(period time.Duration) *SimOperation {
+	handler := func(s *Simulator) bool {
+		accList := s.GetShuffledAccounts()
+
+		// find dstValidator with the minimal stake
+		validators := s.GetValidatorSortedByStake(false)
+		if len(validators) == 0 {
+			return false
+		}
+		dstValidator := validators[0]
+
+		rdlInProcess := s.QueryAllRedelegations()
+		isInProcess := func(signer sdk.Address, src, dst sdk.ValAddress) bool {
+			for _, rp := range rdlInProcess {
+				if rp.DelegatorAddress.Equals(signer) && rp.ValidatorDstAddress.Equals(src) {
+					return true
+				}
+
+				if rp.ValidatorDstAddress.Equals(dst) && rp.ValidatorSrcAddress.Equals(src) {
+					return true
+				}
+
+				if rp.ValidatorDstAddress.Equals(src) && rp.ValidatorSrcAddress.Equals(dst) {
+					return true
+				}
+			}
+
+			return false
+		}
+
+		for _, acc := range accList {
+			delegations := GetSortedDelegation(s.QueryAccountDelegations(acc.Address), true)
+			// trying find max delegations to the foreign dstValidator
+			for _, delegation := range delegations {
+				if !dstValidator.OperatorAddress.Equals(delegation.ValidatorAddress) {
+					if isInProcess(acc.Address, delegation.ValidatorAddress, dstValidator.OperatorAddress) {
+						continue
+					}
+
+					srcValidator := s.GetValidatorByAddress(delegation.ValidatorAddress)
+
+					redelegationAmount := delegation.Balance.Amount.Quo(sdk.NewIntFromUint64(3))
+					rdCoin := sdk.NewCoin(delegation.Balance.Denom, redelegationAmount)
+
+					s.TxStakingRedelegate(acc, srcValidator.OperatorAddress, dstValidator.OperatorAddress, rdCoin)
+					s.UpdateValidator(srcValidator)
+
+					return true
+				}
+			}
+		}
+
+		return true
+	}
+
+	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+}
+
+// NewUndelegateOp picks a validator and redelegate tokens to other validator.
+func NewUndelegateOp(period time.Duration) *SimOperation {
+	handler := func(s *Simulator) bool {
+		accList := s.GetShuffledAccounts()
+
+		validators := s.GetValidatorSortedByStake(false)
+		if len(validators) == 0 {
+			return false
+		}
+		validator := validators[0]
+
+		//TODO: get undelegation process list
+
+		for _, acc := range accList {
+			delegations := GetSortedDelegation(s.QueryAccountDelegations(acc.Address), true)
+			for _, delegation := range delegations {
+				if !validator.OperatorAddress.Equals(delegation.ValidatorAddress) {
+					srcValidator := s.GetValidatorByAddress(delegation.ValidatorAddress)
+
+					unstakeAmount := delegation.Balance.Amount.Quo(sdk.NewIntFromUint64(2))
+					rdCoin := sdk.NewCoin(delegation.Balance.Denom, unstakeAmount)
+
+					s.TxStakingUndelegate(acc, srcValidator.OperatorAddress, rdCoin)
+					s.UpdateValidator(srcValidator)
+
+					return true
+				}
+			}
+		}
+
+		return false
 	}
 
 	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)

@@ -36,14 +36,15 @@ func TestSimInflation(t *testing.T) {
 		OperationsOption(
 			NewReportOp(1*time.Hour, NewSimReportConsoleWriter()),
 			NewCreateValidatorOp(30*time.Minute),
-			NewDelegateOp(60 * time.Minute, delegationCoin),
+			NewDelegateOp(60*time.Minute, delegationCoin),
+			NewRedelegateOp(120*time.Minute),
 		),
 	)
 	s.Start()
 
 	// work loop
 	_, simDur := s.SimulatedDur()
-	for ; simDur < expSimDur; {
+	for simDur < expSimDur {
 		s.Next()
 
 		_, simDur = s.SimulatedDur()

@@ -90,3 +90,28 @@ func (s *Simulator) TxStakingDelegate(simAcc *SimAccount, validator *staking.Val
 	}
 	s.DeliverTx(s.GenTx(msg, simAcc), nil)
 }
+
+// TxStakingRedelegate redelegates amount from one validator to other.
+func (s *Simulator) TxStakingRedelegate(simAcc *SimAccount, valSrc, valDst sdk.ValAddress, amount sdk.Coin) {
+	require.NotNil(s.t, simAcc)
+
+	msg := staking.MsgBeginRedelegate{
+		DelegatorAddress:    simAcc.Address,
+		ValidatorSrcAddress: valSrc,
+		ValidatorDstAddress: valDst,
+		Amount:              amount,
+	}
+	s.DeliverTx(s.GenTx(msg, simAcc), nil)
+}
+
+// TxStakingUndelegate undelegates amount from validator.
+func (s *Simulator) TxStakingUndelegate(simAcc *SimAccount, validatorAddr sdk.ValAddress, amount sdk.Coin) {
+	require.NotNil(s.t, simAcc)
+
+	msg := staking.MsgUndelegate{
+		DelegatorAddress: simAcc.Address,
+		ValidatorAddress: validatorAddr,
+		Amount:           amount,
+	}
+	s.DeliverTx(s.GenTx(msg, simAcc), nil)
+}

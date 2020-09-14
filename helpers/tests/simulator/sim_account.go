@@ -8,6 +8,7 @@ import (
 )
 
 type SimAccount struct {
+	Name              string
 	Address           sdk.AccAddress
 	Number            uint64
 	PrivateKey        secp256k1.PrivKeySecp256k1
@@ -40,4 +41,12 @@ func (a *SimAccount) AddDelegation(delegation *staking.DelegationResponse) {
 	}
 
 	a.Delegations = append(a.Delegations, delegation)
+}
+
+func (a SimAccount) HasEnoughCoins(amount sdk.Coin) bool {
+	accCoin := a.Coins.AmountOf(amount.Denom)
+	if accCoin.LT(amount.Amount) {
+		return false
+	}
+	return true
 }

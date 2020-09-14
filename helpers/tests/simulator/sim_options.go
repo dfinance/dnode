@@ -5,6 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/tendermint/tendermint/libs/log"
+	"strconv"
 )
 
 type SimOption func(s *Simulator)
@@ -32,6 +33,7 @@ func GenerateWalletAccountsOption(walletsQuantity, poaValidatorsQuantity uint, g
 		for i := uint(0); i < walletsQuantity; i++ {
 			acc := &SimAccount{
 				Coins: genCoins,
+				Name:  "account_" + strconv.Itoa(int(i+1)),
 			}
 			if poaValidatorsQuantity > 0 {
 				acc.IsPoAValidator = true

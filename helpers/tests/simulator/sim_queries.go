@@ -100,6 +100,71 @@ func (s *Simulator) QueryStakingDelegation(simAcc *SimAccount, val *staking.Vali
 	return res
 }
 
+// QueryAccountDelegations queries staking module for getting delegations.
+func (s *Simulator) QueryAccountDelegations(delegator sdk.AccAddress) staking.DelegationResponses {
+	res := make(staking.DelegationResponses, 0)
+	resp := s.RunQuery(
+		staking.QueryDelegatorParams{
+			DelegatorAddr: delegator,
+		},
+		"/custom/"+staking.QuerierRoute+"/"+staking.QueryDelegatorDelegations,
+		&res,
+	)
+	require.True(s.t, resp.IsOK())
+
+	return res
+}
+
+// QueryRedelegations queries staking module for getting redelegations.
+func (s *Simulator) QueryRedelegations(delegator sdk.AccAddress, valSrc, valDst sdk.ValAddress) (staking.RedelegationResponses, bool) {
+	res := make(staking.RedelegationResponses, 0)
+	resp := s.RunQuery(
+		staking.QueryRedelegationParams{
+			DelegatorAddr:    delegator,
+			SrcValidatorAddr: valSrc,
+			DstValidatorAddr: valDst,
+		},
+		"/custom/"+staking.QuerierRoute+"/"+staking.QueryRedelegations,
+		&res,
+	)
+
+	if resp.Code == staking.ErrNoRedelegation.ABCICode() {
+		return res, false
+	}
+
+	require.True(s.t, resp.IsOK())
+
+	return res, true
+}
+
+// QueryAllRedelegations queries staking module for getting all redelegations.
+func (s *Simulator) QueryAllRedelegations() staking.RedelegationResponses {
+	res := make(staking.RedelegationResponses, 0)
+	resp := s.RunQuery(
+		staking.QueryRedelegationParams{},
+		"/custom/"+staking.QuerierRoute+"/"+staking.QueryRedelegations,
+		&res,
+	)
+
+	require.True(s.t, resp.IsOK())
+
+	return res
+}
+
+// QueryAllUndelegations queries staking module for getting all undelegations.
+func (s *Simulator) QueryAllUndelegations() staking.RedelegationResponses {
+	res := make(staking.RedelegationResponses, 0)
+	resp := s.RunQuery(
+		staking.QueryRedelegationParams{},
+		"/custom/"+staking.QuerierRoute+"/"+staking.QueryUnbondingDelegation,
+		&res,
+	)
+
+	require.True(s.t, resp.IsOK())
+
+	return res
+}
+
 // QueryMintParams queries mint module parameters.
 func (s *Simulator) QueryMintParams() (res mint.Params) {
 	resp := s.RunQuery(

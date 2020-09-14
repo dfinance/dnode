@@ -231,39 +231,6 @@ func (s *Simulator) SimulatedDur() (int64, time.Duration) {
 	return s.app.LastBlockHeight(), s.prevBlockTime.Sub(EmulatedTimeHead)
 }
 
-// UpdateAccount updates account balance.
-func (s *Simulator) UpdateAccount(simAcc *SimAccount) {
-	require.NotNil(s.t, simAcc)
-
-	updAcc := s.QueryAuthAccount(simAcc.Address)
-	simAcc.Coins = updAcc.GetCoins()
-}
-
-// UpdateValidator updates validator status.
-func (s *Simulator) UpdateValidator(val *staking.Validator) {
-	require.NotNil(s.t, val)
-
-	updVal := s.QueryStakingValidator(val.OperatorAddress)
-	val.Status = updVal.Status
-	val.Jailed = updVal.Jailed
-	val.Tokens = updVal.Tokens
-	val.DelegatorShares = updVal.DelegatorShares
-	val.UnbondingHeight = updVal.UnbondingHeight
-	val.UnbondingCompletionTime = updVal.UnbondingCompletionTime
-}
-
-// GetValidators returns all known to Simulator validators.
-func (s *Simulator) GetValidators() []*staking.Validator {
-	validators := make([]*staking.Validator, 0)
-	for _, acc := range s.accounts {
-		if acc.OperatedValidator != nil {
-			validators = append(validators, acc.OperatedValidator)
-		}
-	}
-
-	return validators
-}
-
 // Next creates a new block(s): single (no operations) / multiple.
 func (s *Simulator) Next() {
 	blockCreated := false

@@ -21,8 +21,9 @@ type SimReportItem struct {
 	BlockTime     time.Time     // block time
 	SimulationDur time.Duration // simulation duration
 	//
-	StakingBonded    sdk.Int // bonded tokens (staking pool)
-	StakingNotBonded sdk.Int // not bonded tokens (staking pool)
+	StakingBonded          sdk.Int // bonded tokens (staking pool)
+	StakingNotBonded       sdk.Int // not bonded tokens (staking pool)
+	RedelegationsInProcess int     // not bonded tokens (staking pool)
 	//
 	MintMinInflation     sdk.Dec // annual min inflation
 	MintMaxInflation     sdk.Dec // annual max inflation
@@ -52,6 +53,7 @@ func NewReportOp(period time.Duration, writer SimReportWriter) *SimOperation {
 		_, simDur := s.SimulatedDur()
 		// staking
 		stakingPool := s.QueryStakingPool()
+		redelegationsPool := s.QueryAllRedelegations()
 		// mint
 		mintParams := s.QueryMintParams()
 		mintAnnualProvisions := s.QueryMintAnnualProvisions()
@@ -70,8 +72,9 @@ func NewReportOp(period time.Duration, writer SimReportWriter) *SimOperation {
 			BlockTime:     simBlockTime,
 			SimulationDur: simDur,
 			//
-			StakingBonded:    stakingPool.BondedTokens,
-			StakingNotBonded: stakingPool.NotBondedTokens,
+			StakingBonded:          stakingPool.BondedTokens,
+			StakingNotBonded:       stakingPool.NotBondedTokens,
+			RedelegationsInProcess: len(redelegationsPool),
 			//
 			MintMinInflation:     mintParams.InflationMin,
 			MintMaxInflation:     mintParams.InflationMax,
@@ -98,7 +101,7 @@ func NewReportOp(period time.Duration, writer SimReportWriter) *SimOperation {
 	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
 }
 
-type SimReportConsoleWriter struct{
+type SimReportConsoleWriter struct {
 	startedAt time.Time
 }
 
@@ -112,6 +115,7 @@ func (w *SimReportConsoleWriter) Write(item SimReportItem) {
 	str.WriteString(fmt.Sprintf("  BlockTime:                 %s\n", item.BlockTime.Format("02.01.2006T15:04:05")))
 	str.WriteString(fmt.Sprintf("  SimDuration:               %v\n", FormatDuration(item.SimulationDur)))
 	str.WriteString(fmt.Sprintf("   Staking: Bonded:          %s\n", item.StakingBonded))
+	str.WriteString(fmt.Sprintf("   Staking: Redelegations:   %d\n", item.RedelegationsInProcess))
 	str.WriteString(fmt.Sprintf("   Staking: NotBonded:       %s\n", item.StakingNotBonded))
 	str.WriteString(fmt.Sprintf("    Mint: MinInflation:      %s\n", item.MintMinInflation))
 	str.WriteString(fmt.Sprintf("    Mint: MaxInflation:      %s\n", item.MintMaxInflation))
