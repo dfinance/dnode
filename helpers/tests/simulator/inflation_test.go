@@ -38,6 +38,7 @@ func TestSimInflation(t *testing.T) {
 			NewCreateValidatorOp(30*time.Minute),
 			NewDelegateOp(60*time.Minute, delegationCoin),
 			NewRedelegateOp(120*time.Minute),
+			NewUndelegateOp(90*time.Minute),
 		),
 	)
 	s.Start()

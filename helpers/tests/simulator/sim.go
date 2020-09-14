@@ -147,6 +147,7 @@ func (s *Simulator) Start() {
 
 		state.Params.BondDenom = config.MainDenom
 		state.Params.MinSelfDelegationLvl = s.minSelfDelegationLvl
+		state.Params.UnbondingTime = 15 * time.Hour
 
 		s.genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
 	}

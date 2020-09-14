@@ -151,11 +151,12 @@ func NewRedelegateOp(period time.Duration) *SimOperation {
 
 					srcValidator := s.GetValidatorByAddress(delegation.ValidatorAddress)
 
-					redelegationAmount := delegation.Balance.Amount.Quo(sdk.NewIntFromUint64(3))
+					redelegationAmount := delegation.Balance.Amount.Quo(sdk.NewIntFromUint64(2))
 					rdCoin := sdk.NewCoin(delegation.Balance.Denom, redelegationAmount)
 
 					s.TxStakingRedelegate(acc, srcValidator.OperatorAddress, dstValidator.OperatorAddress, rdCoin)
 					s.UpdateValidator(srcValidator)
+					s.UpdateValidator(dstValidator)
 
 					return true
 				}
@@ -179,12 +180,52 @@ func NewUndelegateOp(period time.Duration) *SimOperation {
 		}
 		validator := validators[0]
 
-		//TODO: get undelegation process list
+		for _, acc := range accList {
+			delegations := GetSortedDelegation(s.QueryAccountDelegations(acc.Address), true)
+			for _, delegation := range delegations {
+				if !validator.OperatorAddress.Equals(delegation.ValidatorAddress) {
+					if s.QueryHasUndelegation(acc.Address, delegation.ValidatorAddress) {
+						continue
+					}
+
+					srcValidator := s.GetValidatorByAddress(delegation.ValidatorAddress)
+
+					unstakeAmount := delegation.Balance.Amount.Quo(sdk.NewIntFromUint64(2))
+					rdCoin := sdk.NewCoin(delegation.Balance.Denom, unstakeAmount)
+
+					s.TxStakingUndelegate(acc, srcValidator.OperatorAddress, rdCoin)
+					s.UpdateValidator(srcValidator)
+
+					return true
+				}
+			}
+		}
+
+		return false
+	}
+
+	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+}
+
+// NewUndelegateOp picks a validator and redelegate tokens to other validator.
+func NewTakeReward(period time.Duration) *SimOperation {
+	handler := func(s *Simulator) bool {
+		accList := s.GetShuffledAccounts()
+
+		validators := s.GetValidatorSortedByStake(false)
+		if len(validators) == 0 {
+			return false
+		}
+		validator := validators[0]
 
 		for _, acc := range accList {
 			delegations := GetSortedDelegation(s.QueryAccountDelegations(acc.Address), true)
 			for _, delegation := range delegations {
 				if !validator.OperatorAddress.Equals(delegation.ValidatorAddress) {
+					if s.QueryHasUndelegation(acc.Address, delegation.ValidatorAddress) {
+						continue
+					}
+
 					srcValidator := s.GetValidatorByAddress(delegation.ValidatorAddress)
 
 					unstakeAmount := delegation.Balance.Amount.Quo(sdk.NewIntFromUint64(2))

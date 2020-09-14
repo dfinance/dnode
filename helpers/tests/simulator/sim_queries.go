@@ -152,17 +152,38 @@ func (s *Simulator) QueryAllRedelegations() staking.RedelegationResponses {
 }
 
 // QueryAllUndelegations queries staking module for getting all undelegations.
-func (s *Simulator) QueryAllUndelegations() staking.RedelegationResponses {
-	res := make(staking.RedelegationResponses, 0)
+func (s *Simulator) QueryAllUndelegations() staking.UnbondingDelegations {
+	res := make(staking.UnbondingDelegations, 0)
 	resp := s.RunQuery(
 		staking.QueryRedelegationParams{},
-		"/custom/"+staking.QuerierRoute+"/"+staking.QueryUnbondingDelegation,
+		"/custom/"+staking.QuerierRoute+"/"+staking.QueryDelegatorUnbondingDelegations,
 		&res,
 	)
 
 	require.True(s.t, resp.IsOK())
 
 	return res
+}
+
+// QueryHasUndelegation queries staking module for getting delegator undelegations.
+func (s *Simulator) QueryHasUndelegation(addr sdk.AccAddress, val sdk.ValAddress) bool {
+	res := staking.UnbondingDelegation{}
+	resp := s.RunQuery(
+		staking.QueryBondsParams{
+			DelegatorAddr: addr,
+			ValidatorAddr: val,
+		},
+		"/custom/"+staking.QuerierRoute+"/"+staking.QueryUnbondingDelegation,
+		&res,
+	)
+
+	if resp.Code == staking.ErrNoUnbondingDelegation.ABCICode() {
+		return false
+	}
+
+	require.True(s.t, resp.IsOK())
+
+	return true
 }
 
 // QueryMintParams queries mint module parameters.
