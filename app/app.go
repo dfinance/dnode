@@ -104,7 +104,7 @@ var (
 	// Denied messages types.
 	msgsDeniedList = map[string][]string{
 		distribution.ModuleName: {
-			distribution.MsgWithdrawDelegatorReward{}.Type(),
+			//distribution.MsgWithdrawDelegatorReward{}.Type(),
 			distribution.MsgWithdrawValidatorCommission{}.Type(),
 			distribution.TypeMsgFundPublicTreasuryPool,
 			distribution.MsgSetWithdrawAddress{}.Type(),

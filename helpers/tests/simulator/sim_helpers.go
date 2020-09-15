@@ -2,6 +2,7 @@ package simulator
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/require"
 	"math/rand"
@@ -86,6 +87,7 @@ func (s Simulator) GetShuffledAccounts() []*SimAccount {
 	return tmpAcc
 }
 
+// GetSortedDelegation returns delegation sorted list.
 func GetSortedDelegation(responses staking.DelegationResponses, desc bool) staking.DelegationResponses {
 	sort.Slice(responses, func(i, j int) bool {
 		if responses[i].Balance.Amount.GT(responses[j].Balance.Amount) {
@@ -95,4 +97,17 @@ func GetSortedDelegation(responses staking.DelegationResponses, desc bool) staki
 	})
 
 	return responses
+}
+
+// ShuffleRewards returns rewards in the random order.
+func ShuffleRewards(rewards []distribution.DelegationDelegatorReward) []distribution.DelegationDelegatorReward {
+	tmp := make([]distribution.DelegationDelegatorReward, len(rewards))
+	copy(tmp, rewards)
+
+	for i := range tmp {
+		j := rand.Intn(i + 1)
+		tmp[i], tmp[j] = tmp[j], tmp[i]
+	}
+
+	return tmp
 }

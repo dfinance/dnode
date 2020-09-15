@@ -38,6 +38,8 @@ type SimReportItem struct {
 	SupplyTotal sdk.Int // total supply
 	//
 	StatsBondedRation sdk.Dec // BondedTokens / TotalSupply ratio
+	//
+	Counters Counter
 }
 
 // NewReportOp captures report.
@@ -87,6 +89,8 @@ func NewReportOp(period time.Duration, writer SimReportWriter) *SimOperation {
 			DistHARP:                   harpPool.AmountOf(config.MainDenom),
 			//
 			SupplyTotal: totalSupply.AmountOf(config.MainDenom),
+			//
+			Counters: s.counter,
 		}
 
 		// calculate statistics
@@ -127,6 +131,11 @@ func (w *SimReportConsoleWriter) Write(item SimReportItem) {
 	str.WriteString(fmt.Sprintf("   Dist: HARP:               %s\n", item.DistHARP))
 	str.WriteString(fmt.Sprintf("    Supply: Total:           %s\n", item.SupplyTotal))
 	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply: %s\n", item.StatsBondedRation))
+	str.WriteString(fmt.Sprintf("  Counters:                    \n"))
+	str.WriteString(fmt.Sprintf("   Delegations:              %d\n", item.Counters.Delegations))
+	str.WriteString(fmt.Sprintf("   Redelegations:            %d\n", item.Counters.Redelegations))
+	str.WriteString(fmt.Sprintf("   Undelegations:            %d\n", item.Counters.Undelegations))
+	str.WriteString(fmt.Sprintf("   Rewards:                  %d\n", item.Counters.Rewards))
 
 	fmt.Println(str.String())
 }

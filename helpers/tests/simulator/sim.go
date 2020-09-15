@@ -53,6 +53,15 @@ type Simulator struct {
 	cdc           *codec.Codec
 	logger        log.Logger
 	app           *app.DnServiceApp
+	// stat
+	counter Counter
+}
+
+type Counter struct {
+	Delegations   int64
+	Undelegations int64
+	Redelegations int64
+	Rewards       int64
 }
 
 // Start creates the genesisState and perform ChainInit.

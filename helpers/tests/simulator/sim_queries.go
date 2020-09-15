@@ -187,6 +187,22 @@ func (s *Simulator) QueryHasUndelegation(addr sdk.AccAddress, val sdk.ValAddress
 }
 
 // QueryMintParams queries mint module parameters.
+func (s *Simulator) QueryDistributionRewards(acc sdk.AccAddress) distribution.QueryDelegatorTotalRewardsResponse {
+	res := distribution.QueryDelegatorTotalRewardsResponse{}
+
+	resp := s.RunQuery(
+		distribution.QueryDelegatorParams{
+			DelegatorAddress: acc,
+		},
+		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryDelegatorTotalRewards,
+		&res,
+	)
+
+	require.True(s.t, resp.IsOK())
+	return res
+}
+
+// QueryMintParams queries mint module parameters.
 func (s *Simulator) QueryMintParams() (res mint.Params) {
 	resp := s.RunQuery(
 		nil,

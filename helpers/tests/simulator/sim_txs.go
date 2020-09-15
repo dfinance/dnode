@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -113,5 +114,17 @@ func (s *Simulator) TxStakingUndelegate(simAcc *SimAccount, validatorAddr sdk.Va
 		ValidatorAddress: validatorAddr,
 		Amount:           amount,
 	}
+	s.DeliverTx(s.GenTx(msg, simAcc), nil)
+}
+
+// TxDistributionReward taking reward.
+func (s *Simulator) TxDistributionReward(simAcc *SimAccount, validatorAddr sdk.ValAddress) {
+	require.NotNil(s.t, simAcc)
+
+	msg := distribution.MsgWithdrawDelegatorReward{
+		DelegatorAddress: simAcc.Address,
+		ValidatorAddress: validatorAddr,
+	}
+
 	s.DeliverTx(s.GenTx(msg, simAcc), nil)
 }

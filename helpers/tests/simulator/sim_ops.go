@@ -100,6 +100,7 @@ func NewDelegateOp(period time.Duration, amount sdk.Coin) *SimOperation {
 
 		// update validator
 		s.UpdateValidator(validator)
+		s.counter.Delegations++
 
 		s.logger.Info(fmt.Sprintf("DelegateOp: delegated %s from %s to %s", amount, targetAcc.Address, validator.OperatorAddress))
 
@@ -157,6 +158,7 @@ func NewRedelegateOp(period time.Duration) *SimOperation {
 					s.TxStakingRedelegate(acc, srcValidator.OperatorAddress, dstValidator.OperatorAddress, rdCoin)
 					s.UpdateValidator(srcValidator)
 					s.UpdateValidator(dstValidator)
+					s.counter.Redelegations++
 
 					return true
 				}
@@ -169,7 +171,7 @@ func NewRedelegateOp(period time.Duration) *SimOperation {
 	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
 }
 
-// NewUndelegateOp picks a validator and redelegate tokens to other validator.
+// NewUndelegateOp picks a validator and undelegate tokens.
 func NewUndelegateOp(period time.Duration) *SimOperation {
 	handler := func(s *Simulator) bool {
 		accList := s.GetShuffledAccounts()
@@ -195,6 +197,8 @@ func NewUndelegateOp(period time.Duration) *SimOperation {
 
 					s.TxStakingUndelegate(acc, srcValidator.OperatorAddress, rdCoin)
 					s.UpdateValidator(srcValidator)
+					s.UpdateAccount(acc)
+					s.counter.Undelegations++
 
 					return true
 				}
@@ -207,35 +211,17 @@ func NewUndelegateOp(period time.Duration) *SimOperation {
 	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
 }
 
-// NewUndelegateOp picks a validator and redelegate tokens to other validator.
+// NewTakeReward take rewards from validator.
 func NewTakeReward(period time.Duration) *SimOperation {
 	handler := func(s *Simulator) bool {
 		accList := s.GetShuffledAccounts()
 
-		validators := s.GetValidatorSortedByStake(false)
-		if len(validators) == 0 {
-			return false
-		}
-		validator := validators[0]
-
 		for _, acc := range accList {
-			delegations := GetSortedDelegation(s.QueryAccountDelegations(acc.Address), true)
-			for _, delegation := range delegations {
-				if !validator.OperatorAddress.Equals(delegation.ValidatorAddress) {
-					if s.QueryHasUndelegation(acc.Address, delegation.ValidatorAddress) {
-						continue
-					}
-
-					srcValidator := s.GetValidatorByAddress(delegation.ValidatorAddress)
-
-					unstakeAmount := delegation.Balance.Amount.Quo(sdk.NewIntFromUint64(2))
-					rdCoin := sdk.NewCoin(delegation.Balance.Denom, unstakeAmount)
-
-					s.TxStakingUndelegate(acc, srcValidator.OperatorAddress, rdCoin)
-					s.UpdateValidator(srcValidator)
-
-					return true
-				}
+			for _, reward := range ShuffleRewards(s.QueryDistributionRewards(acc.Address).Rewards) {
+				s.TxDistributionReward(acc, reward.ValidatorAddress)
+				s.UpdateAccount(acc)
+				s.counter.Rewards++
+				return true
 			}
 		}
 
