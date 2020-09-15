@@ -45,8 +45,5 @@ func (a *SimAccount) AddDelegation(delegation *staking.DelegationResponse) {
 
 func (a SimAccount) HasEnoughCoins(amount sdk.Coin) bool {
 	accCoin := a.Coins.AmountOf(amount.Denom)
-	if accCoin.LT(amount.Amount) {
-		return false
-	}
-	return true
+	return !accCoin.LT(amount.Amount)
 }

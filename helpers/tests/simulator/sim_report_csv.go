@@ -83,5 +83,5 @@ func (w *SimReportCSVWriter) Write(item SimReportItem) {
 		strconv.FormatInt(item.Counters.Rewards, 10),
 	}
 
-	w.writer.Write(data)
+	_ = w.writer.Write(data)
 }
