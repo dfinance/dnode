@@ -41,16 +41,16 @@ func TestBankSXFI_CLI(t *testing.T) {
 	defer wsStop()
 	go cliTester.PrintEvents(t, wsChs, "bank")
 
-	// fail for sxfi denom
-	{
-		q := ct.TxBankSend(ct.Accounts[cliTester.DenomSXFI].Address, ct.Accounts["validator1"].Address, 1, cliTester.DenomSXFI)
-		q.CheckFailedWithSDKError(sdkErrors.ErrInvalidRequest)
-	}
-
 	// ok for xfi denom
 	{
 		q := ct.TxBankSend(ct.Accounts[cliTester.DenomSXFI].Address, ct.Accounts["validator1"].Address, 1, cliTester.DenomXFI)
 		q.CheckSucceeded()
+	}
+
+	// fail for sxfi denom
+	{
+		q := ct.TxBankSend(ct.Accounts[cliTester.DenomSXFI].Address, ct.Accounts["validator1"].Address, 1, cliTester.DenomSXFI)
+		q.CheckFailedWithSDKError(sdkErrors.ErrInvalidRequest)
 	}
 }
 
