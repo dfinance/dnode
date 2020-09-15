@@ -8,6 +8,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/mint"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/spf13/viper"
 	tmOs "github.com/tendermint/tendermint/libs/os"
 )
@@ -61,7 +63,8 @@ type VMConfig struct {
 
 // Custom restriction params for application
 type AppRestrictions struct {
-	MsgDeniedList map[string][]string
+	MsgDeniedList  map[string][]string
+	ParamsProposal params.RestrictedParams
 }
 
 // Default VM configuration.
@@ -137,6 +140,13 @@ func GetAppRestrictions() AppRestrictions {
 				distribution.TypeMsgFundPublicTreasuryPool,
 				distribution.MsgSetWithdrawAddress{}.Type(),
 			},
+		},
+		ParamsProposal: params.RestrictedParams{
+			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyValidatorsPoolTax)},
+			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyLiquidityProvidersPoolTax)},
+			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyPublicTreasuryPoolTax)},
+			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyHARPTax)},
+			params.RestrictedParam{Subspace: mint.ModuleName, Key: string(mint.KeyFoundationAllocationRatio)},
 		},
 	}
 }
