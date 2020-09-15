@@ -145,11 +145,6 @@ type DnServiceApp struct {
 	invariantsCheckPeriod uint // in blocks
 }
 
-// Custom restriction params for application
-type AppRestrictions struct {
-	MsgDeniedList map[string][]string
-}
-
 // Initialize connection to VM server.
 func (app *DnServiceApp) InitializeVMConnection(addr string) {
 	var err error
@@ -192,7 +187,7 @@ func MakeCodec() *codec.Codec {
 }
 
 // NewDnServiceApp is a constructor function for dfinance blockchain.
-func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, restrictions AppRestrictions, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
+func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, restrictions config.AppRestrictions, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
 	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), restrictions.MsgDeniedList, baseAppOptions...)
