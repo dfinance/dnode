@@ -110,7 +110,7 @@ type SimReportConsoleWriter struct {
 }
 
 func (w *SimReportConsoleWriter) Write(item SimReportItem) {
-	reportingDur := time.Now().Sub(w.startedAt)
+	reportingDur := time.Since(w.startedAt)
 
 	str := strings.Builder{}
 
@@ -131,7 +131,7 @@ func (w *SimReportConsoleWriter) Write(item SimReportItem) {
 	str.WriteString(fmt.Sprintf("   Dist: HARP:               %s\n", item.DistHARP))
 	str.WriteString(fmt.Sprintf("    Supply: Total:           %s\n", item.SupplyTotal))
 	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply: %s\n", item.StatsBondedRation))
-	str.WriteString(fmt.Sprintf("  Counters:                    \n"))
+	str.WriteString("  Counters:                    \n")
 	str.WriteString(fmt.Sprintf("   Delegations:              %d\n", item.Counters.Delegations))
 	str.WriteString(fmt.Sprintf("   Redelegations:            %d\n", item.Counters.Redelegations))
 	str.WriteString(fmt.Sprintf("   Undelegations:            %d\n", item.Counters.Undelegations))
