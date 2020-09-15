@@ -23,7 +23,7 @@ type SimReportItem struct {
 	//
 	StakingBonded          sdk.Int // bonded tokens (staking pool)
 	StakingNotBonded       sdk.Int // not bonded tokens (staking pool)
-	RedelegationsInProcess int     // not bonded tokens (staking pool)
+	RedelegationsInProcess int     // not finished redelegations
 	//
 	MintMinInflation     sdk.Dec // annual min inflation
 	MintMaxInflation     sdk.Dec // annual max inflation

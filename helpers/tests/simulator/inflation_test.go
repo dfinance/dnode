@@ -1,3 +1,5 @@
+// +build simulator
+
 package simulator
 
 import (
@@ -10,6 +12,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/dfinance/dnode/cmd/config"
+)
+
+const (
+	reportFileName = "/tmp/report.csv"
 )
 
 func TestSimInflation(t *testing.T) {
@@ -27,6 +33,9 @@ func TestSimInflation(t *testing.T) {
 	distParams := distribution.DefaultParams()
 	distParams.PublicTreasuryPoolCapacity = treasuryCapacity
 
+	reportWriter, writerClose := NewSimReportCSVWriter(t, reportFileName)
+	defer writerClose()
+
 	// create simulator
 	s := NewSimulator(t,
 		GenerateWalletAccountsOption(5, 3, sdk.NewCoins(genCoin)),
@@ -34,12 +43,13 @@ func TestSimInflation(t *testing.T) {
 		LogOption(log.AllowInfoWith("module", "x/distribution")),
 		DistributionParamsOption(distParams),
 		OperationsOption(
+			NewReportOp(1*time.Hour, reportWriter),
 			NewReportOp(1*time.Hour, NewSimReportConsoleWriter()),
 			NewCreateValidatorOp(30*time.Minute),
 			NewDelegateOp(60*time.Minute, delegationCoin),
 			NewRedelegateOp(120*time.Minute),
 			NewUndelegateOp(90*time.Minute),
-			NewTakeReward(50*time.Minute),
+			NewTakeReward(30*time.Minute),
 		),
 	)
 	s.Start()
