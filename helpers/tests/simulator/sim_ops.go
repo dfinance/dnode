@@ -22,7 +22,7 @@ func NewCreateValidatorOp(period time.Duration) *SimOperation {
 		}
 
 		if simAcc == nil {
-			return false
+			return true
 		}
 
 		// define commissions
