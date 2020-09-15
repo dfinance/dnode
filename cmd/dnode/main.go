@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
 	genutilCli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/spf13/cobra"
@@ -95,6 +96,19 @@ func main() {
 	}
 }
 
+func getAppRestrictions() app.AppRestrictions {
+	return app.AppRestrictions{
+		MsgDeniedList: map[string][]string{
+			distribution.ModuleName: {
+				distribution.MsgWithdrawDelegatorReward{}.Type(),
+				distribution.MsgWithdrawValidatorCommission{}.Type(),
+				distribution.TypeMsgFundPublicTreasuryPool,
+				distribution.MsgSetWithdrawAddress{}.Type(),
+			},
+		},
+	}
+}
+
 // Creating new DN app.
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
 	// read VM config
@@ -103,7 +117,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		panic(err)
 	}
 
-	return app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod)
+	return app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod, getAppRestrictions())
 }
 
 // Exports genesis data and validators.
@@ -116,7 +130,7 @@ func exportAppStateAndTMValidators(
 	}
 
 	if height != -1 {
-		dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod)
+		dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod, getAppRestrictions())
 		err := dnApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -124,7 +138,7 @@ func exportAppStateAndTMValidators(
 		return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod)
+	dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod, getAppRestrictions())
 	return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }
 

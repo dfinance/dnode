@@ -215,7 +215,7 @@ func NewTestDnAppMockVM(logOpts ...log.Option) (*DnServiceApp, func()) {
 	logger = log.NewFilter(logger, logOpts...)
 
 	// use invariants check period 1 for high pressure tests
-	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1)
+	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1, AppRestrictions{})
 
 	stopFunc := func() {
 		app.CloseConnections()
@@ -250,7 +250,7 @@ func NewTestDnAppDVM(t *testing.T, logOpts ...log.Option) (*DnServiceApp, string
 	logger = log.NewFilter(logger, logOpts...)
 
 	// use invariants check period 1 for high pressure tests
-	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1)
+	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1, AppRestrictions{})
 
 	// start DS server
 	dsContext := app.GetDSContext()
