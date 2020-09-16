@@ -58,11 +58,11 @@ func TestVMKeeper_RetryMechanism(t *testing.T) {
 
 	// ok: in one attempt (settings with limit)
 	{
-		keeper.config.MaxAttempts, keeper.config.ReqTimeoutInMs = 1, 100
+		keeper.config.MaxAttempts, keeper.config.ReqTimeoutInMs = 1, 5000
 
 		mockDvmServer.SetExecutionOK()
 		mockDvmServer.SetResponseOK()
-		mockDvmServer.SetExecutionDelay(50 * time.Millisecond)
+		mockDvmServer.SetExecutionDelay(10 * time.Millisecond)
 
 		_, err := keeper.sendExecuteReq(ctx, deployReq, nil)
 		require.NoError(t, err)
@@ -82,12 +82,12 @@ func TestVMKeeper_RetryMechanism(t *testing.T) {
 
 	// ok: in multiple attempts (with request timeout)
 	{
-		keeper.config.MaxAttempts, keeper.config.ReqTimeoutInMs = 10, 200
+		keeper.config.MaxAttempts, keeper.config.ReqTimeoutInMs = 10, 5000
 
 		mockDvmServer.SetExecutionOK()
 		mockDvmServer.SetResponseOK()
 		mockDvmServer.SetSequentialFailingCount(5)
-		mockDvmServer.SetExecutionDelay(100 * time.Millisecond)
+		mockDvmServer.SetExecutionDelay(10 * time.Millisecond)
 
 		_, err := keeper.sendExecuteReq(ctx, deployReq, nil)
 		require.NoError(t, err)
