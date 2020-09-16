@@ -120,11 +120,11 @@ func TestVMKeeper_RetryMechanism(t *testing.T) {
 
 	// fail: by timeout (deadline)
 	{
-		keeper.config.MaxAttempts, keeper.config.ReqTimeoutInMs = 5, 100
+		keeper.config.MaxAttempts, keeper.config.ReqTimeoutInMs = 5, 30
 
 		mockDvmServer.SetExecutionOK()
 		mockDvmServer.SetResponseOK()
-		mockDvmServer.SetExecutionDelay(200 * time.Millisecond)
+		mockDvmServer.SetExecutionDelay(300 * time.Millisecond)
 
 		_, err := keeper.sendExecuteReq(ctx, deployReq, nil)
 		require.Error(t, err)
