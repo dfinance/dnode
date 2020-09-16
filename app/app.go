@@ -100,16 +100,6 @@ var (
 		orders.ModuleName:         {supply.Burner},
 		gov.ModuleName:            {supply.Burner},
 	}
-
-	// Denied messages types.
-	msgsDeniedList = map[string][]string{
-		distribution.ModuleName: {
-			distribution.MsgWithdrawDelegatorReward{}.Type(),
-			distribution.MsgWithdrawValidatorCommission{}.Type(),
-			distribution.TypeMsgFundPublicTreasuryPool,
-			distribution.MsgSetWithdrawAddress{}.Type(),
-		},
-	}
 )
 
 // DN Service App implements DN mains logic.
@@ -197,10 +187,10 @@ func MakeCodec() *codec.Codec {
 }
 
 // NewDnServiceApp is a constructor function for dfinance blockchain.
-func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
+func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, restrictions config.AppRestrictions, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
-	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), msgsDeniedList, baseAppOptions...)
+	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), restrictions.MsgDeniedList, baseAppOptions...)
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(
@@ -264,6 +254,8 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		keys[params.StoreKey],
 		tkeys[params.TStoreKey],
 	)
+
+	app.paramsKeeper.SetRestrictedParams(restrictions.ParamsProposal)
 
 	// UpgradeKeeper halts chain on software update proposal in order to restart it with newer version.
 	app.upgradeKeeper = upgrade.NewKeeper(

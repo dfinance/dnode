@@ -359,7 +359,7 @@ func NewSimulator(t *testing.T, options ...SimOption) *Simulator {
 	}
 
 	// set application
-	s.app = app.NewDnServiceApp(logger, dbm.NewMemDB(), vmConfig, s.invariantCheckPeriod)
+	s.app = app.NewDnServiceApp(logger, dbm.NewMemDB(), vmConfig, s.invariantCheckPeriod, config.AppRestrictions{})
 
 	return s
 }

@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/mint"
+	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/spf13/viper"
 	tmOs "github.com/tendermint/tendermint/libs/os"
 )
@@ -56,6 +59,12 @@ type VMConfig struct {
 	// Retry policy
 	MaxAttempts    uint `mapstructure:"vm_retry_max_attempts"`   // maximum attempts for retry (0 - infinity)
 	ReqTimeoutInMs uint `mapstructure:"vm_retry_req_timeout_ms"` // request timeout per attempt (0 - infinity) [ms]
+}
+
+// Custom restriction params for application
+type AppRestrictions struct {
+	MsgDeniedList  map[string][]string
+	ParamsProposal params.RestrictedParams
 }
 
 // Default VM configuration.
@@ -120,4 +129,24 @@ func init() {
 	}
 
 	GovMinDeposit = sdk.NewCoin(MainDenom, minDepositAmount)
+}
+
+func GetAppRestrictions() AppRestrictions {
+	return AppRestrictions{
+		MsgDeniedList: map[string][]string{
+			distribution.ModuleName: {
+				distribution.MsgWithdrawDelegatorReward{}.Type(),
+				distribution.MsgWithdrawValidatorCommission{}.Type(),
+				distribution.TypeMsgFundPublicTreasuryPool,
+				distribution.MsgSetWithdrawAddress{}.Type(),
+			},
+		},
+		ParamsProposal: params.RestrictedParams{
+			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyValidatorsPoolTax)},
+			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyLiquidityProvidersPoolTax)},
+			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyPublicTreasuryPoolTax)},
+			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyHARPTax)},
+			params.RestrictedParam{Subspace: mint.ModuleName, Key: string(mint.KeyFoundationAllocationRatio)},
+		},
+	}
 }
