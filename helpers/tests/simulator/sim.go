@@ -229,7 +229,7 @@ func (s *Simulator) Start() {
 
 	// update node account delegations
 	delegation := s.QueryStakingDelegation(s.accounts[0], s.accounts[0].OperatedValidator)
-	s.accounts[0].AddDelegation(&delegation)
+	s.accounts[0].Delegations = append(s.accounts[0].Delegations, delegation)
 }
 
 // GetCheckCtx returns a new CheckTx Context.

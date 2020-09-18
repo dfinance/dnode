@@ -96,8 +96,7 @@ func NewDelegateOp(period time.Duration, amount sdk.Coin) *SimOperation {
 
 		// update account
 		s.UpdateAccount(targetAcc)
-		delegation := s.QueryStakingDelegation(targetAcc, validator)
-		targetAcc.AddDelegation(&delegation)
+		targetAcc.UpdateDelegation(s.QueryAccountDelegations(targetAcc.Address))
 
 		// update validator
 		s.UpdateValidator(validator)

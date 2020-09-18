@@ -16,7 +16,7 @@ type SimAccount struct {
 	Coins             sdk.Coins
 	IsPoAValidator    bool
 	OperatedValidator *staking.Validator
-	Delegations       []*staking.DelegationResponse
+	Delegations       []staking.DelegationResponse
 }
 
 // HasDelegation checks if account has already delegated to the specified validator.
@@ -31,16 +31,8 @@ func (a *SimAccount) HasDelegation(valAddress sdk.ValAddress) bool {
 }
 
 // AddDelegation appends delegation / updates an existing one.
-func (a *SimAccount) AddDelegation(delegation *staking.DelegationResponse) {
-	for i := 0; i < len(a.Delegations); i++ {
-		existingDelegation := a.Delegations[i]
-		if existingDelegation.ValidatorAddress.Equals(delegation.ValidatorAddress) {
-			a.Delegations[i] = delegation
-			return
-		}
-	}
-
-	a.Delegations = append(a.Delegations, delegation)
+func (a *SimAccount) UpdateDelegation(delegations staking.DelegationResponses) {
+	a.Delegations = delegations
 }
 
 func (a SimAccount) HasEnoughCoins(amount sdk.Coin) bool {
