@@ -202,6 +202,7 @@ func NewUndelegateOp(period time.Duration) *SimOperation {
 
 					s.defferQueue.Add(s.prevBlockTime.Add(UnbondingTime+5*time.Minute), func() {
 						s.UpdateAccount(acc)
+						s.UpdateValidator(srcValidator)
 					})
 
 					s.counter.Undelegations++
