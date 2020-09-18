@@ -37,7 +37,7 @@ func TestSimInflation(t *testing.T) {
 	defer writerClose()
 
 	// create simulator
-	s := NewSimulator(t,
+	s := NewSimulator(t, NewDefferOps(),
 		GenerateWalletAccountsOption(5, 3, sdk.NewCoins(genCoin)),
 		LogOption(log.AllowInfoWith("module", "x/mint")),
 		LogOption(log.AllowInfoWith("module", "x/distribution")),
@@ -50,6 +50,7 @@ func TestSimInflation(t *testing.T) {
 			NewRedelegateOp(120*time.Minute),
 			NewUndelegateOp(90*time.Minute),
 			NewTakeReward(30*time.Minute),
+			NewTakeCommission(60*time.Minute),
 		),
 	)
 	s.Start()

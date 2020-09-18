@@ -264,3 +264,17 @@ func (s *Simulator) QuerySupplyTotal() (res sdk.Coins) {
 
 	return res
 }
+
+// QueryDistPool queries distribution module pool supply.
+func (s *Simulator) QueryDistributionCommission(val sdk.ValAddress) (res distribution.ValidatorAccumulatedCommission) {
+	resp := s.RunQuery(
+		distribution.QueryValidatorCommissionParams{
+			ValidatorAddress: val,
+		},
+		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryValidatorCommission,
+		&res,
+	)
+	require.True(s.t, resp.IsOK())
+
+	return res
+}

@@ -29,6 +29,10 @@ import (
 	"github.com/dfinance/dnode/x/poa"
 )
 
+const (
+	UnbondingTime = 5 * time.Hour
+)
+
 var (
 	EmulatedTimeHead = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 )
@@ -53,6 +57,7 @@ type Simulator struct {
 	cdc           *codec.Codec
 	logger        log.Logger
 	app           *app.DnServiceApp
+	defferQueue   *DefferOps
 	// stat
 	counter Counter
 }
@@ -62,6 +67,7 @@ type Counter struct {
 	Undelegations int64
 	Redelegations int64
 	Rewards       int64
+	Commissions   int64
 }
 
 // Start creates the genesisState and perform ChainInit.
@@ -156,7 +162,7 @@ func (s *Simulator) Start() {
 
 		state.Params.BondDenom = config.MainDenom
 		state.Params.MinSelfDelegationLvl = s.minSelfDelegationLvl
-		state.Params.UnbondingTime = 15 * time.Hour
+		state.Params.UnbondingTime = UnbondingTime
 
 		s.genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
 	}
@@ -253,6 +259,8 @@ func (s *Simulator) Next() {
 		s.beginBlock()
 		s.endBlock()
 	}
+
+	s.defferQueue.Exec(s.prevBlockTime)
 }
 
 // BeginBlock starts a new block with blockTime [5s:7s] and randomly selected validator.
@@ -303,7 +311,7 @@ func (s *Simulator) endBlock() {
 }
 
 // NewSimulator creates a new Simulator.
-func NewSimulator(t *testing.T, options ...SimOption) *Simulator {
+func NewSimulator(t *testing.T, defferQueue *DefferOps, options ...SimOption) *Simulator {
 	// defaults init
 	minSelfDelegation, ok := sdk.NewIntFromString(config.DefMinSelfDelegation)
 	require.True(t, ok)
@@ -339,6 +347,7 @@ func NewSimulator(t *testing.T, options ...SimOption) *Simulator {
 		logger:        log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("simulator"),
 		t:             t,
 		cdc:           app.MakeCodec(),
+		defferQueue:   defferQueue,
 	}
 
 	for _, option := range options {

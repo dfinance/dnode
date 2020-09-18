@@ -136,6 +136,7 @@ func (w *SimReportConsoleWriter) Write(item SimReportItem) {
 	str.WriteString(fmt.Sprintf("   Redelegations:            %d\n", item.Counters.Redelegations))
 	str.WriteString(fmt.Sprintf("   Undelegations:            %d\n", item.Counters.Undelegations))
 	str.WriteString(fmt.Sprintf("   Rewards:                  %d\n", item.Counters.Rewards))
+	str.WriteString(fmt.Sprintf("   Commissions:              %d\n", item.Counters.Commissions))
 
 	fmt.Println(str.String())
 }

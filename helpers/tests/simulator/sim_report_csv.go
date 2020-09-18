@@ -37,6 +37,7 @@ var Headers = []string{
 	"Counters: Redelegations:",
 	"Counters: Undelegations:",
 	"Counters: Rewards:",
+	"Counters: Commissions:",
 }
 
 func NewSimReportCSVWriter(t *testing.T, fileName string) (*SimReportCSVWriter, CSVWriterClose) {
@@ -81,6 +82,7 @@ func (w *SimReportCSVWriter) Write(item SimReportItem) {
 		strconv.FormatInt(item.Counters.Redelegations, 10),
 		strconv.FormatInt(item.Counters.Undelegations, 10),
 		strconv.FormatInt(item.Counters.Rewards, 10),
+		strconv.FormatInt(item.Counters.Commissions, 10),
 	}
 
 	_ = w.writer.Write(data)

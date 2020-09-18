@@ -2,10 +2,9 @@ package simulator
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/x/distribution"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
@@ -123,6 +122,17 @@ func (s *Simulator) TxDistributionReward(simAcc *SimAccount, validatorAddr sdk.V
 
 	msg := distribution.MsgWithdrawDelegatorReward{
 		DelegatorAddress: simAcc.Address,
+		ValidatorAddress: validatorAddr,
+	}
+
+	s.DeliverTx(s.GenTx(msg, simAcc), nil)
+}
+
+// TxDistributionReward taking reward.
+func (s *Simulator) TxDistributionCommission(simAcc *SimAccount, validatorAddr sdk.ValAddress) {
+	require.NotNil(s.t, simAcc)
+
+	msg := distribution.MsgWithdrawValidatorCommission{
 		ValidatorAddress: validatorAddr,
 	}
 

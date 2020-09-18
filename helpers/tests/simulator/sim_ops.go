@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -198,6 +199,11 @@ func NewUndelegateOp(period time.Duration) *SimOperation {
 					s.TxStakingUndelegate(acc, srcValidator.OperatorAddress, rdCoin)
 					s.UpdateValidator(srcValidator)
 					s.UpdateAccount(acc)
+
+					s.defferQueue.Add(s.prevBlockTime.Add(UnbondingTime+5*time.Minute), func() {
+						s.UpdateAccount(acc)
+					})
+
 					s.counter.Undelegations++
 
 					return true
@@ -211,7 +217,7 @@ func NewUndelegateOp(period time.Duration) *SimOperation {
 	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
 }
 
-// NewTakeReward take rewards from validator.
+// NewTakeReward take rewards.
 func NewTakeReward(period time.Duration) *SimOperation {
 	handler := func(s *Simulator) bool {
 		accList := s.GetShuffledAccounts()
@@ -226,6 +232,24 @@ func NewTakeReward(period time.Duration) *SimOperation {
 		}
 
 		return false
+	}
+
+	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+}
+
+// NewTakeCommission takes commissions from distribution.
+func NewTakeCommission(period time.Duration) *SimOperation {
+	handler := func(s *Simulator) bool {
+		acc := s.accounts[rand.Intn(len(s.accounts))]
+
+		if acc.OperatedValidator == nil {
+			return false
+		}
+
+		s.TxDistributionCommission(acc, acc.OperatedValidator.OperatorAddress)
+		s.UpdateAccount(acc)
+		s.counter.Commissions++
+		return true
 	}
 
 	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
