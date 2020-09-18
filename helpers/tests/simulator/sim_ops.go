@@ -159,6 +159,7 @@ func NewRedelegateOp(period time.Duration) *SimOperation {
 					s.TxStakingRedelegate(acc, srcValidator.OperatorAddress, dstValidator.OperatorAddress, rdCoin)
 					s.UpdateValidator(srcValidator)
 					s.UpdateValidator(dstValidator)
+					s.UpdateAccount(acc)
 					s.counter.Redelegations++
 
 					return true
