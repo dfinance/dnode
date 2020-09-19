@@ -42,6 +42,9 @@ test-rest: install
 test-integ: install
 	@echo "--> Testing: dnode <-> dvm integration tests (using Binary)"
 	DN_DVM_INTEG_TESTS_USE=binary go test ./... -v -tags=integ -count=1
+simulate:
+	#go test ./helpers/tests/simulator -run TestSimInflation -tags=simulator -v -timeout=24h -memprofile memprofile.out
+	go test ./helpers/tests/simulator -run TestSimInflation -tags=simulator -v -timeout=24h
 
 go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"

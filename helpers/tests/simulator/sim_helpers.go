@@ -14,12 +14,13 @@ func (s *Simulator) GetRandomAccount() *SimAccount {
 	return s.accounts[rand.Intn(aMaxIndex)]
 }
 
-// UpdateAccount updates account balance.
+// UpdateAccount updates account balance and active delegations.
 func (s *Simulator) UpdateAccount(simAcc *SimAccount) {
 	require.NotNil(s.t, simAcc)
 
 	updAcc := s.QueryAuthAccount(simAcc.Address)
 	simAcc.Coins = updAcc.GetCoins()
+	simAcc.Delegations = s.QueryStakeDelDelegations(simAcc.Address)
 }
 
 // GetValidatorByAddress returns validator.
@@ -39,7 +40,7 @@ func (s *Simulator) GetValidatorByAddress(address sdk.ValAddress) *staking.Valid
 func (s *Simulator) UpdateValidator(val *staking.Validator) {
 	require.NotNil(s.t, val)
 
-	updVal := s.QueryStakingValidator(val.OperatorAddress)
+	updVal := s.QueryStakeValidator(val.OperatorAddress)
 	val.Status = updVal.Status
 	val.Jailed = updVal.Jailed
 	val.Tokens = updVal.Tokens
@@ -97,6 +98,19 @@ func GetSortedDelegation(responses staking.DelegationResponses, desc bool) staki
 	})
 
 	return responses
+}
+
+// GetShuffledDelegations returns delegations in the random order.
+func GetShuffledDelegations(delegations staking.DelegationResponses) staking.DelegationResponses {
+	tmp := make(staking.DelegationResponses, len(delegations))
+	copy(tmp, delegations)
+
+	for i := range tmp {
+		j := rand.Intn(i + 1)
+		tmp[i], tmp[j] = tmp[j], tmp[i]
+	}
+
+	return tmp
 }
 
 // ShuffleRewards returns rewards in the random order.

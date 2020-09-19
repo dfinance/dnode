@@ -2,16 +2,15 @@ package simulator
 
 import (
 	"encoding/csv"
-	"github.com/stretchr/testify/require"
 	"os"
 	"strconv"
 	"testing"
-	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 type SimReportCSVWriter struct {
-	startedAt time.Time
-	writer    *csv.Writer
+	writer *csv.Writer
 }
 
 type CSVWriterClose func()
@@ -37,11 +36,13 @@ var Headers = []string{
 	"Counters: Redelegations:",
 	"Counters: Undelegations:",
 	"Counters: Rewards:",
+	"Counters: RewardsCollected:",
 	"Counters: Commissions:",
+	"Counters: CommissionsCollected:",
 }
 
-func NewSimReportCSVWriter(t *testing.T, fileName string) (*SimReportCSVWriter, CSVWriterClose) {
-	file, err := os.Create(fileName)
+func NewSimReportCSVWriter(t *testing.T, filePath string) (*SimReportCSVWriter, CSVWriterClose) {
+	file, err := os.Create(filePath)
 	require.Nil(t, err)
 
 	closeFn := func() {
@@ -53,8 +54,7 @@ func NewSimReportCSVWriter(t *testing.T, fileName string) (*SimReportCSVWriter, 
 	require.Nil(t, err)
 
 	return &SimReportCSVWriter{
-		startedAt: time.Now(),
-		writer:    writer,
+		writer: writer,
 	}, closeFn
 }
 
@@ -77,12 +77,14 @@ func (w *SimReportCSVWriter) Write(item SimReportItem) {
 		item.DistLiquidityProvidersPool.String(),
 		item.DistHARP.String(),
 		item.SupplyTotal.String(),
-		item.StatsBondedRation.String(),
+		item.StatsBondedRatio.String(),
 		strconv.FormatInt(item.Counters.Delegations, 10),
 		strconv.FormatInt(item.Counters.Redelegations, 10),
 		strconv.FormatInt(item.Counters.Undelegations, 10),
 		strconv.FormatInt(item.Counters.Rewards, 10),
+		item.Counters.RewardsCollected.String(),
 		strconv.FormatInt(item.Counters.Commissions, 10),
+		item.Counters.CommissionsCollected.String(),
 	}
 
 	_ = w.writer.Write(data)

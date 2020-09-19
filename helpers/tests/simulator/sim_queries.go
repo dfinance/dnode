@@ -39,8 +39,8 @@ func (s *Simulator) QueryAuthAccount(addr sdk.AccAddress) (res auth.BaseAccount)
 	return res
 }
 
-// QueryStakingValidators queries all validators with specified status and pagination.
-func (s *Simulator) QueryStakingValidators(page, limit int, status string) []staking.Validator {
+// QueryStakeValidators queries all validators with specified status and pagination.
+func (s *Simulator) QueryStakeValidators(page, limit int, status string) []staking.Validator {
 	res := make([]staking.Validator, 0)
 	resp := s.RunQuery(
 		staking.QueryValidatorsParams{
@@ -56,8 +56,8 @@ func (s *Simulator) QueryStakingValidators(page, limit int, status string) []sta
 	return res
 }
 
-// QueryStakingValidator queries validator by its operator address.
-func (s *Simulator) QueryStakingValidator(valAddr sdk.ValAddress) (res staking.Validator) {
+// QueryStakeValidator queries validator by its operator address.
+func (s *Simulator) QueryStakeValidator(valAddr sdk.ValAddress) (res staking.Validator) {
 	resp := s.RunQuery(
 		staking.QueryValidatorParams{
 			ValidatorAddr: valAddr,
@@ -70,8 +70,8 @@ func (s *Simulator) QueryStakingValidator(valAddr sdk.ValAddress) (res staking.V
 	return res
 }
 
-// QueryStakingPool queries bonded / unbonded pool state.
-func (s *Simulator) QueryStakingPool() (res staking.Pool) {
+// QueryStakePools queries bonded / unbonded pool state.
+func (s *Simulator) QueryStakePools() (res staking.Pool) {
 	resp := s.RunQuery(
 		nil,
 		"/custom/"+staking.QuerierRoute+"/"+staking.QueryPool,
@@ -82,8 +82,8 @@ func (s *Simulator) QueryStakingPool() (res staking.Pool) {
 	return res
 }
 
-// QueryStakingDelegation queries delegation for specified delegator and validator.
-func (s *Simulator) QueryStakingDelegation(simAcc *SimAccount, val *staking.Validator) (res staking.DelegationResponse) {
+// QueryStakeDelegation queries delegation for specified delegator and validator.
+func (s *Simulator) QueryStakeDelegation(simAcc *SimAccount, val *staking.Validator) (res staking.DelegationResponse) {
 	require.NotNil(s.t, simAcc)
 	require.NotNil(s.t, val)
 
@@ -100,9 +100,8 @@ func (s *Simulator) QueryStakingDelegation(simAcc *SimAccount, val *staking.Vali
 	return res
 }
 
-// QueryAccountDelegations queries staking module for getting delegations.
-func (s *Simulator) QueryAccountDelegations(delegator sdk.AccAddress) staking.DelegationResponses {
-	res := make(staking.DelegationResponses, 0)
+// QueryStakeDelDelegations queries delegator delegations.
+func (s *Simulator) QueryStakeDelDelegations(delegator sdk.AccAddress) (res staking.DelegationResponses) {
 	resp := s.RunQuery(
 		staking.QueryDelegatorParams{
 			DelegatorAddr: delegator,
@@ -112,12 +111,27 @@ func (s *Simulator) QueryAccountDelegations(delegator sdk.AccAddress) staking.De
 	)
 	require.True(s.t, resp.IsOK())
 
+	return
+}
+
+// QueryStakeValDelegations queries delegations for specified validator.
+func (s *Simulator) QueryStakeValDelegations(val *staking.Validator) (res staking.DelegationResponses) {
+	require.NotNil(s.t, val)
+
+	resp := s.RunQuery(
+		staking.QueryValidatorParams{
+			ValidatorAddr: val.OperatorAddress,
+		},
+		"/custom/"+staking.QuerierRoute+"/"+staking.QueryValidatorDelegations,
+		&res,
+	)
+	require.True(s.t, resp.IsOK())
+
 	return res
 }
 
-// QueryRedelegations queries staking module for getting redelegations.
-func (s *Simulator) QueryRedelegations(delegator sdk.AccAddress, valSrc, valDst sdk.ValAddress) (staking.RedelegationResponses, bool) {
-	res := make(staking.RedelegationResponses, 0)
+// QueryStakeRedelegations queries redelegations.
+func (s *Simulator) QueryStakeRedelegations(delegator sdk.AccAddress, valSrc, valDst sdk.ValAddress) (res staking.RedelegationResponses) {
 	resp := s.RunQuery(
 		staking.QueryRedelegationParams{
 			DelegatorAddr:    delegator,
@@ -129,49 +143,34 @@ func (s *Simulator) QueryRedelegations(delegator sdk.AccAddress, valSrc, valDst 
 	)
 
 	if resp.Code == staking.ErrNoRedelegation.ABCICode() {
-		return res, false
+		return
 	}
-
 	require.True(s.t, resp.IsOK())
 
-	return res, true
+	return
 }
 
-// QueryAllRedelegations queries staking module for getting all redelegations.
-func (s *Simulator) QueryAllRedelegations() staking.RedelegationResponses {
-	res := make(staking.RedelegationResponses, 0)
+// QueryStakeDelUnbondingDelegations queries delegator unbonding delegations.
+func (s *Simulator) QueryStakeDelUnbondingDelegations(delegatorAddr sdk.AccAddress) (res staking.UnbondingDelegations) {
 	resp := s.RunQuery(
-		staking.QueryRedelegationParams{},
-		"/custom/"+staking.QuerierRoute+"/"+staking.QueryRedelegations,
-		&res,
-	)
-
-	require.True(s.t, resp.IsOK())
-
-	return res
-}
-
-// QueryAllUndelegations queries staking module for getting all undelegations.
-func (s *Simulator) QueryAllUndelegations() staking.UnbondingDelegations {
-	res := make(staking.UnbondingDelegations, 0)
-	resp := s.RunQuery(
-		staking.QueryRedelegationParams{},
+		staking.QueryDelegatorParams{
+			DelegatorAddr: delegatorAddr,
+		},
 		"/custom/"+staking.QuerierRoute+"/"+staking.QueryDelegatorUnbondingDelegations,
 		&res,
 	)
-
 	require.True(s.t, resp.IsOK())
 
 	return res
 }
 
-// QueryHasUndelegation queries staking module for getting delegator undelegations.
-func (s *Simulator) QueryHasUndelegation(addr sdk.AccAddress, val sdk.ValAddress) bool {
-	res := staking.UnbondingDelegation{}
+// QueryStakeDelHasUnbondingDelegation check if delegator has unbonding delegation for specified validator.
+func (s *Simulator) QueryStakeDelHasUnbondingDelegation(delAddr sdk.AccAddress, valAddr sdk.ValAddress) bool {
+	res := staking.QueryBondsParams{}
 	resp := s.RunQuery(
 		staking.QueryBondsParams{
-			DelegatorAddr: addr,
-			ValidatorAddr: val,
+			DelegatorAddr: delAddr,
+			ValidatorAddr: valAddr,
 		},
 		"/custom/"+staking.QuerierRoute+"/"+staking.QueryUnbondingDelegation,
 		&res,
@@ -180,29 +179,12 @@ func (s *Simulator) QueryHasUndelegation(addr sdk.AccAddress, val sdk.ValAddress
 	if resp.Code == staking.ErrNoUnbondingDelegation.ABCICode() {
 		return false
 	}
-
 	require.True(s.t, resp.IsOK())
 
 	return true
 }
 
-// QueryMintParams queries mint module parameters.
-func (s *Simulator) QueryDistributionRewards(acc sdk.AccAddress) distribution.QueryDelegatorTotalRewardsResponse {
-	res := distribution.QueryDelegatorTotalRewardsResponse{}
-
-	resp := s.RunQuery(
-		distribution.QueryDelegatorParams{
-			DelegatorAddress: acc,
-		},
-		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryDelegatorTotalRewards,
-		&res,
-	)
-
-	require.True(s.t, resp.IsOK())
-	return res
-}
-
-// QueryMintParams queries mint module parameters.
+// QueryMintParams queries mint parameters.
 func (s *Simulator) QueryMintParams() (res mint.Params) {
 	resp := s.RunQuery(
 		nil,
@@ -214,7 +196,7 @@ func (s *Simulator) QueryMintParams() (res mint.Params) {
 	return res
 }
 
-// QueryMintParams queries mint module annual provisions.
+// QueryMintParams queries mint annual provisions.
 func (s *Simulator) QueryMintAnnualProvisions() (res sdk.Dec) {
 	resp := s.RunQuery(
 		nil,
@@ -226,7 +208,7 @@ func (s *Simulator) QueryMintAnnualProvisions() (res sdk.Dec) {
 	return res
 }
 
-// QueryMintParams queries mint module annual provisions.
+// QueryMintParams queries mint blocksPerYear estimation.
 func (s *Simulator) QueryMintBlocksPerYearEstimation() (res uint64) {
 	resp := s.RunQuery(
 		nil,
@@ -238,7 +220,7 @@ func (s *Simulator) QueryMintBlocksPerYearEstimation() (res uint64) {
 	return res
 }
 
-// QueryDistPool queries distribution module pool supply.
+// QueryDistPool queries distribution pools supply.
 func (s *Simulator) QueryDistPool(poolName distribution.RewardPoolName) (res sdk.DecCoins) {
 	resp := s.RunQuery(
 		nil,
@@ -250,14 +232,42 @@ func (s *Simulator) QueryDistPool(poolName distribution.RewardPoolName) (res sdk
 	return res
 }
 
-// QueryDistPool queries distribution module pool supply.
-func (s *Simulator) QuerySupplyTotal() (res sdk.Coins) {
+// QueryDistDelReward queries current delegator rewards for specified validator.
+func (s *Simulator) QueryDistDelReward(accAddr sdk.AccAddress, valAddr sdk.ValAddress) (res sdk.DecCoins) {
 	resp := s.RunQuery(
-		supply.QueryTotalSupplyParams{
-			Page:  1,
-			Limit: 50,
+		distribution.QueryDelegationRewardsParams{
+			DelegatorAddress: accAddr,
+			ValidatorAddress: valAddr,
 		},
-		"/custom/"+supply.QuerierRoute+"/"+supply.QueryTotalSupply,
+		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryDelegationRewards,
+		&res,
+	)
+	require.True(s.t, resp.IsOK())
+
+	return
+}
+
+// QueryDistDelRewards queries current delegator rewards.
+func (s *Simulator) QueryDistDelRewards(acc sdk.AccAddress) (res distribution.QueryDelegatorTotalRewardsResponse) {
+	resp := s.RunQuery(
+		distribution.QueryDelegatorParams{
+			DelegatorAddress: acc,
+		},
+		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryDelegatorTotalRewards,
+		&res,
+	)
+	require.True(s.t, resp.IsOK())
+
+	return
+}
+
+// QueryDistrValCommission queries current validator commission rewards.
+func (s *Simulator) QueryDistrValCommission(val sdk.ValAddress) (res distribution.ValidatorAccumulatedCommission) {
+	resp := s.RunQuery(
+		distribution.QueryValidatorCommissionParams{
+			ValidatorAddress: val,
+		},
+		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryValidatorCommission,
 		&res,
 	)
 	require.True(s.t, resp.IsOK())
@@ -265,13 +275,14 @@ func (s *Simulator) QuerySupplyTotal() (res sdk.Coins) {
 	return res
 }
 
-// QueryDistPool queries distribution module pool supply.
-func (s *Simulator) QueryDistributionCommission(val sdk.ValAddress) (res distribution.ValidatorAccumulatedCommission) {
+// QueryDistPool queries supply total supply.
+func (s *Simulator) QuerySupplyTotal() (res sdk.Coins) {
 	resp := s.RunQuery(
-		distribution.QueryValidatorCommissionParams{
-			ValidatorAddress: val,
+		supply.QueryTotalSupplyParams{
+			Page:  1,
+			Limit: 50,
 		},
-		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryValidatorCommission,
+		"/custom/"+supply.QuerierRoute+"/"+supply.QueryTotalSupply,
 		&res,
 	)
 	require.True(s.t, resp.IsOK())

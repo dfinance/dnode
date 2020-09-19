@@ -4,11 +4,18 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/mint"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/tendermint/tendermint/libs/log"
 	"strconv"
 )
 
 type SimOption func(s *Simulator)
+
+func InMemoryDBOption() SimOption {
+	return func(s *Simulator) {
+		s.useInMemDB = true
+	}
+}
 
 func InvariantCheckPeriodOption(period uint) SimOption {
 	return func(s *Simulator) {
@@ -59,6 +66,17 @@ func MintParamsOption(params mint.Params) SimOption {
 
 		state.Params = params
 		s.genesisState[mint.ModuleName] = s.cdc.MustMarshalJSON(state)
+	}
+}
+
+func StakingParamsOption(params staking.Params) SimOption {
+	return func(s *Simulator) {
+		state := staking.GenesisState{}
+		stateBz := s.genesisState[staking.ModuleName]
+		s.cdc.MustUnmarshalJSON(stateBz, &state)
+
+		state.Params = params
+		s.genesisState[staking.ModuleName] = s.cdc.MustMarshalJSON(state)
 	}
 }
 

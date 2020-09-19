@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -29,10 +30,6 @@ import (
 	"github.com/dfinance/dnode/x/poa"
 )
 
-const (
-	UnbondingTime = 5 * time.Hour
-)
-
 var (
 	EmulatedTimeHead = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 )
@@ -46,11 +43,16 @@ type Simulator struct {
 	nodeValidatorConfig  SimValidatorConfig
 	operations           []*SimOperation
 	accounts             []*SimAccount
+	useInMemDB           bool
 	// predefined settings
 	chainID   string
 	monikerID string
 	defFee    sdk.Coin
 	defGas    uint64
+	// read-only params
+	unbondingDur time.Duration
+	stakingDenom string
+	workingDir   string
 	// state
 	prevBlockTime time.Time
 	t             *testing.T
@@ -63,11 +65,18 @@ type Simulator struct {
 }
 
 type Counter struct {
-	Delegations   int64
-	Undelegations int64
-	Redelegations int64
-	Rewards       int64
-	Commissions   int64
+	Delegations          int64
+	Undelegations        int64
+	Redelegations        int64
+	Rewards              int64
+	Commissions          int64
+	RewardsCollected     sdk.Int
+	CommissionsCollected sdk.Int
+}
+
+// BuildTmpFilePath builds file name inside of the Simulator working dir.
+func (s *Simulator) BuildTmpFilePath(fileName string) string {
+	return path.Join(s.workingDir, fileName)
 }
 
 // Start creates the genesisState and perform ChainInit.
@@ -162,9 +171,11 @@ func (s *Simulator) Start() {
 
 		state.Params.BondDenom = config.MainDenom
 		state.Params.MinSelfDelegationLvl = s.minSelfDelegationLvl
-		state.Params.UnbondingTime = UnbondingTime
 
 		s.genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
+
+		s.unbondingDur = state.Params.UnbondingTime
+		s.stakingDenom = state.Params.BondDenom
 	}
 	// mint
 	{
@@ -223,13 +234,15 @@ func (s *Simulator) Start() {
 	s.app.Commit()
 
 	// get node validator
-	validators := s.QueryStakingValidators(1, 10, sdk.BondStatusBonded)
+	validators := s.QueryStakeValidators(1, 10, sdk.BondStatusBonded)
 	require.Len(s.t, validators, 1)
 	s.accounts[0].OperatedValidator = &validators[0]
 
 	// update node account delegations
-	delegation := s.QueryStakingDelegation(s.accounts[0], s.accounts[0].OperatedValidator)
+	delegation := s.QueryStakeDelegation(s.accounts[0], s.accounts[0].OperatedValidator)
 	s.accounts[0].Delegations = append(s.accounts[0].Delegations, delegation)
+
+	s.t.Logf("Simulator working / output directory: %s", s.workingDir)
 }
 
 // GetCheckCtx returns a new CheckTx Context.
@@ -311,7 +324,7 @@ func (s *Simulator) endBlock() {
 }
 
 // NewSimulator creates a new Simulator.
-func NewSimulator(t *testing.T, defferQueue *DefferOps, options ...SimOption) *Simulator {
+func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, options ...SimOption) *Simulator {
 	// defaults init
 	minSelfDelegation, ok := sdk.NewIntFromString(config.DefMinSelfDelegation)
 	require.True(t, ok)
@@ -343,12 +356,16 @@ func NewSimulator(t *testing.T, defferQueue *DefferOps, options ...SimOption) *S
 		monikerID: "simMoniker",
 		defGas:    500000,
 		//
+		workingDir: workingDir,
+		//
 		prevBlockTime: EmulatedTimeHead,
 		logger:        log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("simulator"),
 		t:             t,
 		cdc:           app.MakeCodec(),
 		defferQueue:   defferQueue,
 	}
+	s.counter.RewardsCollected = sdk.ZeroInt()
+	s.counter.CommissionsCollected = sdk.ZeroInt()
 
 	for _, option := range options {
 		option(s)
@@ -367,8 +384,16 @@ func NewSimulator(t *testing.T, defferQueue *DefferOps, options ...SimOption) *S
 		ReqTimeoutInMs: 0,
 	}
 
+	// create DB
+	var db dbm.DB
+	if s.useInMemDB {
+		db = dbm.NewMemDB()
+	} else {
+		db = dbm.NewDB("simulator", dbm.GoLevelDBBackend, s.workingDir)
+	}
+
 	// set application
-	s.app = app.NewDnServiceApp(logger, dbm.NewMemDB(), vmConfig, s.invariantCheckPeriod, config.AppRestrictions{})
+	s.app = app.NewDnServiceApp(logger, db, vmConfig, s.invariantCheckPeriod, config.AppRestrictions{})
 
 	return s
 }

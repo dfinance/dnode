@@ -23,7 +23,7 @@ type SimReportItem struct {
 	//
 	StakingBonded          sdk.Int // bonded tokens (staking pool)
 	StakingNotBonded       sdk.Int // not bonded tokens (staking pool)
-	RedelegationsInProcess int     // not finished redelegations
+	RedelegationsInProcess int     // redelegations in progress
 	//
 	MintMinInflation     sdk.Dec // annual min inflation
 	MintMaxInflation     sdk.Dec // annual max inflation
@@ -37,13 +37,13 @@ type SimReportItem struct {
 	//
 	SupplyTotal sdk.Int // total supply
 	//
-	StatsBondedRation sdk.Dec // BondedTokens / TotalSupply ratio
+	StatsBondedRatio sdk.Dec // BondedTokens / TotalSupply ratio
 	//
 	Counters Counter
 }
 
 // NewReportOp captures report.
-func NewReportOp(period time.Duration, writer SimReportWriter) *SimOperation {
+func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *SimOperation {
 	reportItemIdx := 1
 
 	handler := func(s *Simulator) bool {
@@ -54,8 +54,11 @@ func NewReportOp(period time.Duration, writer SimReportWriter) *SimOperation {
 		simBlockTime := s.prevBlockTime
 		_, simDur := s.SimulatedDur()
 		// staking
-		stakingPool := s.QueryStakingPool()
-		redelegationsPool := s.QueryAllRedelegations()
+		stakingPool := s.QueryStakePools()
+		acitveRedelegations := 0
+		for _, acc := range s.accounts {
+			acitveRedelegations += len(s.QueryStakeRedelegations(acc.Address, sdk.ValAddress{}, sdk.ValAddress{}))
+		}
 		// mint
 		mintParams := s.QueryMintParams()
 		mintAnnualProvisions := s.QueryMintAnnualProvisions()
@@ -76,7 +79,7 @@ func NewReportOp(period time.Duration, writer SimReportWriter) *SimOperation {
 			//
 			StakingBonded:          stakingPool.BondedTokens,
 			StakingNotBonded:       stakingPool.NotBondedTokens,
-			RedelegationsInProcess: len(redelegationsPool),
+			RedelegationsInProcess: acitveRedelegations,
 			//
 			MintMinInflation:     mintParams.InflationMin,
 			MintMaxInflation:     mintParams.InflationMax,
@@ -94,10 +97,17 @@ func NewReportOp(period time.Duration, writer SimReportWriter) *SimOperation {
 		}
 
 		// calculate statistics
-		item.StatsBondedRation = sdk.NewDecFromInt(item.StakingBonded).Quo(sdk.NewDecFromInt(item.SupplyTotal))
+		item.StatsBondedRatio = sdk.NewDecFromInt(item.StakingBonded).Quo(sdk.NewDecFromInt(item.SupplyTotal))
 		reportItemIdx++
 
-		writer.Write(item)
+		for _, writer := range writers {
+			writer.Write(item)
+		}
+
+		if debug {
+			debugItem := BuildDebugReportItem(s)
+			fmt.Println(debugItem.String())
+		}
 
 		return true
 	}
@@ -106,7 +116,8 @@ func NewReportOp(period time.Duration, writer SimReportWriter) *SimOperation {
 }
 
 type SimReportConsoleWriter struct {
-	startedAt time.Time
+	startedAt           time.Time
+	amountDecimalsRatio sdk.Dec
 }
 
 func (w *SimReportConsoleWriter) Write(item SimReportItem) {
@@ -118,33 +129,55 @@ func (w *SimReportConsoleWriter) Write(item SimReportItem) {
 	str.WriteString(fmt.Sprintf("  BlockHeight:               %d\n", item.BlockHeight))
 	str.WriteString(fmt.Sprintf("  BlockTime:                 %s\n", item.BlockTime.Format("02.01.2006T15:04:05")))
 	str.WriteString(fmt.Sprintf("  SimDuration:               %v\n", FormatDuration(item.SimulationDur)))
-	str.WriteString(fmt.Sprintf("   Staking: Bonded:          %s\n", item.StakingBonded))
+	str.WriteString(fmt.Sprintf("   Staking: Bonded:          %s\n", w.FormatIntDecimals(item.StakingBonded)))
+	str.WriteString(fmt.Sprintf("   Staking: NotBonded:       %s\n", w.FormatIntDecimals(item.StakingNotBonded)))
 	str.WriteString(fmt.Sprintf("   Staking: Redelegations:   %d\n", item.RedelegationsInProcess))
-	str.WriteString(fmt.Sprintf("   Staking: NotBonded:       %s\n", item.StakingNotBonded))
 	str.WriteString(fmt.Sprintf("    Mint: MinInflation:      %s\n", item.MintMinInflation))
 	str.WriteString(fmt.Sprintf("    Mint: MaxInflation:      %s\n", item.MintMaxInflation))
-	str.WriteString(fmt.Sprintf("    Mint: AnnualProvision:   %s\n", item.MintAnnualProvisions))
+	str.WriteString(fmt.Sprintf("    Mint: AnnualProvision:   %s\n", w.FormatDecDecimals(item.MintAnnualProvisions)))
 	str.WriteString(fmt.Sprintf("    Mint: BlocksPerYear:     %d\n", item.MintBlocksPerYear))
-	str.WriteString(fmt.Sprintf("   Dist: FoundationPool:     %s\n", item.DistFoundationPool))
-	str.WriteString(fmt.Sprintf("   Dist: PTreasuryPool:      %s\n", item.DistPublicTreasuryPool))
-	str.WriteString(fmt.Sprintf("   Dist: LiquidityPPool:     %s\n", item.DistLiquidityProvidersPool))
-	str.WriteString(fmt.Sprintf("   Dist: HARP:               %s\n", item.DistHARP))
-	str.WriteString(fmt.Sprintf("    Supply: Total:           %s\n", item.SupplyTotal))
-	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply: %s\n", item.StatsBondedRation))
-	str.WriteString("  Counters:                    \n")
-	str.WriteString(fmt.Sprintf("   Delegations:              %d\n", item.Counters.Delegations))
-	str.WriteString(fmt.Sprintf("   Redelegations:            %d\n", item.Counters.Redelegations))
-	str.WriteString(fmt.Sprintf("   Undelegations:            %d\n", item.Counters.Undelegations))
-	str.WriteString(fmt.Sprintf("   Rewards:                  %d\n", item.Counters.Rewards))
-	str.WriteString(fmt.Sprintf("   Commissions:              %d\n", item.Counters.Commissions))
+	str.WriteString(fmt.Sprintf("     Dist: FoundationPool:   %s\n", w.FormatDecDecimals(item.DistFoundationPool)))
+	str.WriteString(fmt.Sprintf("     Dist: PTreasuryPool:    %s\n", w.FormatDecDecimals(item.DistPublicTreasuryPool)))
+	str.WriteString(fmt.Sprintf("     Dist: LiquidityPPool:   %s\n", w.FormatDecDecimals(item.DistLiquidityProvidersPool)))
+	str.WriteString(fmt.Sprintf("     Dist: HARP:             %s\n", w.FormatDecDecimals(item.DistHARP)))
+	str.WriteString(fmt.Sprintf("      Supply: Total:         %s\n", w.FormatIntDecimals(item.SupplyTotal)))
+	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply: %s\n", item.StatsBondedRatio))
+	str.WriteString(fmt.Sprintf("  Counters:\n"))
+	str.WriteString(fmt.Sprintf("    Delegations:             %d\n", item.Counters.Delegations))
+	str.WriteString(fmt.Sprintf("    Redelegations:           %d\n", item.Counters.Redelegations))
+	str.WriteString(fmt.Sprintf("    Undelegations:           %d\n", item.Counters.Undelegations))
+	str.WriteString(fmt.Sprintf("    Rewards:                 %d\n", item.Counters.Rewards))
+	str.WriteString(fmt.Sprintf("    RewardsCollected:        %s\n", w.FormatIntDecimals(item.Counters.RewardsCollected)))
+	str.WriteString(fmt.Sprintf("    Commissions:             %d\n", item.Counters.Commissions))
+	str.WriteString(fmt.Sprintf("    CommissionsCollected:    %s\n", w.FormatIntDecimals(item.Counters.CommissionsCollected)))
 
 	fmt.Println(str.String())
 }
 
-func NewSimReportConsoleWriter() *SimReportConsoleWriter {
-	return &SimReportConsoleWriter{
-		startedAt: time.Now(),
+func (w *SimReportConsoleWriter) FormatIntDecimals(value sdk.Int) string {
+	valueDec := sdk.NewDecFromInt(value)
+	fixedDec := valueDec.Mul(w.amountDecimalsRatio)
+
+	return fixedDec.String()
+}
+
+func (w *SimReportConsoleWriter) FormatDecDecimals(value sdk.Dec) string {
+	fixedDec := value.Mul(w.amountDecimalsRatio)
+
+	return fixedDec.String()
+}
+
+func NewSimReportConsoleWriter(decimals uint8) *SimReportConsoleWriter {
+	w := &SimReportConsoleWriter{
+		startedAt:           time.Now(),
+		amountDecimalsRatio: sdk.NewDecWithPrec(1, 0),
 	}
+
+	if decimals > 0 {
+		w.amountDecimalsRatio = sdk.NewDecWithPrec(1, int64(decimals))
+	}
+
+	return w
 }
 
 // FormatDuration yet another duration formatter.

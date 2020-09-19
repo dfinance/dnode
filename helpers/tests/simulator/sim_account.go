@@ -29,13 +29,3 @@ func (a *SimAccount) HasDelegation(valAddress sdk.ValAddress) bool {
 
 	return false
 }
-
-// AddDelegation appends delegation / updates an existing one.
-func (a *SimAccount) UpdateDelegation(delegations staking.DelegationResponses) {
-	a.Delegations = delegations
-}
-
-func (a SimAccount) HasEnoughCoins(amount sdk.Coin) bool {
-	accCoin := a.Coins.AmountOf(amount.Denom)
-	return !accCoin.LT(amount.Amount)
-}
