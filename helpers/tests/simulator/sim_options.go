@@ -1,12 +1,14 @@
 package simulator
 
 import (
+	"strconv"
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/tendermint/tendermint/libs/log"
-	"strconv"
 )
 
 type SimOption func(s *Simulator)
@@ -14,6 +16,13 @@ type SimOption func(s *Simulator)
 func InMemoryDBOption() SimOption {
 	return func(s *Simulator) {
 		s.useInMemDB = true
+	}
+}
+
+func BlockTimeOption(min, max time.Duration) SimOption {
+	return func(s *Simulator) {
+		s.minBlockDur = min
+		s.maxBlockDur = max
 	}
 }
 
@@ -35,7 +44,7 @@ func OperationsOption(ops ...*SimOperation) SimOption {
 	}
 }
 
-func GenerateWalletAccountsOption(walletsQuantity, poaValidatorsQuantity uint, genCoins sdk.Coins) SimOption {
+func GenerateWalletAccountsOption(walletsQuantity, poaValidatorsQuantity, tmValidatorQuantity uint, genCoins sdk.Coins) SimOption {
 	return func(s *Simulator) {
 		for i := uint(0); i < walletsQuantity; i++ {
 			acc := &SimAccount{
@@ -45,6 +54,9 @@ func GenerateWalletAccountsOption(walletsQuantity, poaValidatorsQuantity uint, g
 			if poaValidatorsQuantity > 0 {
 				acc.IsPoAValidator = true
 				poaValidatorsQuantity--
+			}
+			if tmValidatorQuantity > 0 {
+				acc.CreateValidator = true
 			}
 
 			s.accounts = append(s.accounts, acc)

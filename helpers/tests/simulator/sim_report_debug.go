@@ -56,25 +56,7 @@ func (r SimDebugReportItem) String() string {
 func BuildDebugReportItem(s *Simulator) SimDebugReportItem {
 	r := SimDebugReportItem{}
 
-	// get all validators with delegations
-	valsPage := 1
-	validators := make([]staking.Validator, 0)
-	for {
-		rcvBondedVals := s.QueryStakeValidators(valsPage, 100, sdk.Bonded.String())
-		rcvUnbondingVals := s.QueryStakeValidators(valsPage, 100, sdk.Unbonding.String())
-		rcvUnbondedVals := s.QueryStakeValidators(valsPage, 100, sdk.Unbonded.String())
-
-		validators = append(validators, rcvBondedVals...)
-		validators = append(validators, rcvUnbondingVals...)
-		validators = append(validators, rcvUnbondedVals...)
-
-		if (len(rcvBondedVals) + len(rcvUnbondingVals) + len(rcvUnbondedVals)) == 0 {
-			break
-		}
-		valsPage++
-	}
-
-	for _, v := range validators {
+	for _, v := range s.QueryReadAllValidators() {
 		dels := s.QueryStakeValDelegations(&v)
 		r.Validators = append(r.Validators, DebugValidatorData{
 			Validator:   v,

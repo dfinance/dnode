@@ -289,3 +289,24 @@ func (s *Simulator) QuerySupplyTotal() (res sdk.Coins) {
 
 	return res
 }
+
+// QueryReadAllValidators reads out all validators independent of their status.
+func (s *Simulator) QueryReadAllValidators() (validators staking.Validators) {
+	valsPage := 1
+	for {
+		rcvBondedVals := s.QueryStakeValidators(valsPage, 100, sdk.Bonded.String())
+		rcvUnbondingVals := s.QueryStakeValidators(valsPage, 100, sdk.Unbonding.String())
+		rcvUnbondedVals := s.QueryStakeValidators(valsPage, 100, sdk.Unbonded.String())
+
+		validators = append(validators, rcvBondedVals...)
+		validators = append(validators, rcvUnbondingVals...)
+		validators = append(validators, rcvUnbondedVals...)
+
+		if (len(rcvBondedVals) + len(rcvUnbondingVals) + len(rcvUnbondedVals)) == 0 {
+			break
+		}
+		valsPage++
+	}
+
+	return
+}

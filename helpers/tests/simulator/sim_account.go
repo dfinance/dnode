@@ -15,6 +15,7 @@ type SimAccount struct {
 	PublicKey         crypto.PubKey
 	Coins             sdk.Coins
 	IsPoAValidator    bool
+	CreateValidator   bool
 	OperatedValidator *staking.Validator
 	Delegations       []staking.DelegationResponse
 }

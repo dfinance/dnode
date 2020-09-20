@@ -44,6 +44,8 @@ type Simulator struct {
 	operations           []*SimOperation
 	accounts             []*SimAccount
 	useInMemDB           bool
+	minBlockDur          time.Duration
+	maxBlockDur          time.Duration
 	// predefined settings
 	chainID   string
 	monikerID string
@@ -88,7 +90,26 @@ func (s *Simulator) Start() {
 	poaAccs := make([]*SimAccount, 0)
 	for accIdx := 0; accIdx < len(s.accounts); accIdx++ {
 		acc := s.accounts[accIdx]
-		acc.PrivateKey = secp256k1.GenPrivKey()
+
+		// gen unique privKey
+		for {
+			acc.PrivateKey = secp256k1.GenPrivKey()
+			//
+			isUnique := true
+			for idx := 0; idx < len(s.accounts); idx++ {
+				if idx == accIdx {
+					continue
+				}
+				if s.accounts[idx].PrivateKey.Equals(acc.PrivateKey) {
+					isUnique = false
+					break
+				}
+			}
+			if isUnique {
+				break
+			}
+		}
+
 		acc.PublicKey = acc.PrivateKey.PubKey()
 		acc.Address = sdk.AccAddress(acc.PublicKey.Address())
 		acc.Number = uint64(len(s.accounts) + accIdx)
@@ -278,19 +299,14 @@ func (s *Simulator) Next() {
 
 // BeginBlock starts a new block with blockTime [5s:7s] and randomly selected validator.
 func (s *Simulator) beginBlock() {
-	const (
-		minBlockDur = 5 * time.Second
-		maxBlockDur = 7 * time.Second
-	)
-
 	// calculate next block height and time
 	nextHeight := s.app.LastBlockHeight() + 1
-	nextBlockDur := minBlockDur + time.Duration(rand.Int63n(int64(maxBlockDur-minBlockDur)))
+	nextBlockDur := s.minBlockDur + time.Duration(rand.Int63n(int64(s.maxBlockDur-s.minBlockDur)))
 	nextBlockTime := s.prevBlockTime.Add(nextBlockDur)
 	s.prevBlockTime = nextBlockTime
 
 	// pick next proposer
-	validators := s.GetValidators()
+	validators := s.GetValidators(true, false, false)
 	proposerIdx := rand.Intn(len(validators))
 	proposer := validators[proposerIdx]
 
@@ -350,7 +366,9 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 				MaxChangeRate: nodeValCommissionMaxChangeRate,
 			},
 		},
-		accounts: make([]*SimAccount, 0),
+		accounts:    make([]*SimAccount, 0),
+		minBlockDur: 5 * time.Second,
+		maxBlockDur: 6 * time.Second,
 		//
 		chainID:   "simChainID",
 		monikerID: "simMoniker",

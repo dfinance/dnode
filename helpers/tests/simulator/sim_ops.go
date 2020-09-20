@@ -14,13 +14,16 @@ func NewCreateValidatorOp(period time.Duration) *SimOperation {
 	handler := func(s *Simulator) bool {
 		// find account without validator
 		var simAcc *SimAccount
-		for i := 0; i < len(s.accounts); i++ {
-			if s.accounts[i].OperatedValidator == nil {
-				simAcc = s.accounts[i]
+		for _, acc := range s.accounts {
+			if !acc.CreateValidator {
+				continue
+			}
+
+			if acc.OperatedValidator == nil {
+				simAcc = acc
 				break
 			}
 		}
-
 		if simAcc == nil {
 			return true
 		}
@@ -37,13 +40,15 @@ func NewCreateValidatorOp(period time.Duration) *SimOperation {
 
 		// create
 		s.TxStakingCreateValidator(simAcc, staking.NewCommissionRates(comRate, comMaxRate, comMaxChangeRate))
-		validator := s.QueryStakeValidator(sdk.ValAddress(simAcc.Address))
+		s.beginBlock()
+		s.endBlock()
 
 		// update account
+		validator := s.QueryStakeValidator(sdk.ValAddress(simAcc.Address))
 		s.UpdateAccount(simAcc)
 		simAcc.OperatedValidator = &validator
 
-		s.logger.Info(fmt.Sprintf("ValidatorOp: created for %s", simAcc.Address))
+		s.logger.Info(fmt.Sprintf("ValidatorOp: %s (%s) created for %s", validator.OperatorAddress, validator.ConsAddress(), simAcc.Address))
 
 		return true
 	}

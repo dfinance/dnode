@@ -21,6 +21,10 @@ type SimReportItem struct {
 	BlockTime     time.Time     // block time
 	SimulationDur time.Duration // simulation duration
 	//
+	ValidatorsBonded    int // number of bonded validators
+	ValidatorsUnbonding int // number of unbonding validators
+	ValidatorsUnbonded  int // number of unbonded validators
+	//
 	StakingBonded          sdk.Int // bonded tokens (staking pool)
 	StakingNotBonded       sdk.Int // not bonded tokens (staking pool)
 	RedelegationsInProcess int     // redelegations in progress
@@ -59,6 +63,19 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 		for _, acc := range s.accounts {
 			acitveRedelegations += len(s.QueryStakeRedelegations(acc.Address, sdk.ValAddress{}, sdk.ValAddress{}))
 		}
+		// validators
+		bondedCnt, unbondingCnt, unbondedCnt := 0, 0, 0
+		for _, val := range s.QueryReadAllValidators() {
+			if val.IsBonded() {
+				bondedCnt++
+				continue
+			}
+			if val.IsUnbonding() {
+				unbondingCnt++
+				continue
+			}
+			unbondedCnt++
+		}
 		// mint
 		mintParams := s.QueryMintParams()
 		mintAnnualProvisions := s.QueryMintAnnualProvisions()
@@ -76,6 +93,10 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 			BlockHeight:   simBlockHeight,
 			BlockTime:     simBlockTime,
 			SimulationDur: simDur,
+			//
+			ValidatorsBonded:    bondedCnt,
+			ValidatorsUnbonding: unbondingCnt,
+			ValidatorsUnbonded:  unbondedCnt,
 			//
 			StakingBonded:          stakingPool.BondedTokens,
 			StakingNotBonded:       stakingPool.NotBondedTokens,
@@ -129,18 +150,21 @@ func (w *SimReportConsoleWriter) Write(item SimReportItem) {
 	str.WriteString(fmt.Sprintf("  BlockHeight:               %d\n", item.BlockHeight))
 	str.WriteString(fmt.Sprintf("  BlockTime:                 %s\n", item.BlockTime.Format("02.01.2006T15:04:05")))
 	str.WriteString(fmt.Sprintf("  SimDuration:               %v\n", FormatDuration(item.SimulationDur)))
-	str.WriteString(fmt.Sprintf("   Staking: Bonded:          %s\n", w.FormatIntDecimals(item.StakingBonded)))
-	str.WriteString(fmt.Sprintf("   Staking: NotBonded:       %s\n", w.FormatIntDecimals(item.StakingNotBonded)))
-	str.WriteString(fmt.Sprintf("   Staking: Redelegations:   %d\n", item.RedelegationsInProcess))
-	str.WriteString(fmt.Sprintf("    Mint: MinInflation:      %s\n", item.MintMinInflation))
-	str.WriteString(fmt.Sprintf("    Mint: MaxInflation:      %s\n", item.MintMaxInflation))
-	str.WriteString(fmt.Sprintf("    Mint: AnnualProvision:   %s\n", w.FormatDecDecimals(item.MintAnnualProvisions)))
-	str.WriteString(fmt.Sprintf("    Mint: BlocksPerYear:     %d\n", item.MintBlocksPerYear))
-	str.WriteString(fmt.Sprintf("     Dist: FoundationPool:   %s\n", w.FormatDecDecimals(item.DistFoundationPool)))
-	str.WriteString(fmt.Sprintf("     Dist: PTreasuryPool:    %s\n", w.FormatDecDecimals(item.DistPublicTreasuryPool)))
-	str.WriteString(fmt.Sprintf("     Dist: LiquidityPPool:   %s\n", w.FormatDecDecimals(item.DistLiquidityProvidersPool)))
-	str.WriteString(fmt.Sprintf("     Dist: HARP:             %s\n", w.FormatDecDecimals(item.DistHARP)))
-	str.WriteString(fmt.Sprintf("      Supply: Total:         %s\n", w.FormatIntDecimals(item.SupplyTotal)))
+	str.WriteString(fmt.Sprintf("   ValidatorsBonded:         %d\n", item.ValidatorsBonded))
+	str.WriteString(fmt.Sprintf("   ValidatorsUnbonding:      %d\n", item.ValidatorsUnbonding))
+	str.WriteString(fmt.Sprintf("   ValidatorsUnbonded:       %d\n", item.ValidatorsUnbonded))
+	str.WriteString(fmt.Sprintf("    Staking: Bonded:         %s\n", w.FormatIntDecimals(item.StakingBonded)))
+	str.WriteString(fmt.Sprintf("    Staking: NotBonded:      %s\n", w.FormatIntDecimals(item.StakingNotBonded)))
+	str.WriteString(fmt.Sprintf("    Staking: Redelegations:  %d\n", item.RedelegationsInProcess))
+	str.WriteString(fmt.Sprintf("     Mint: MinInflation:     %s\n", item.MintMinInflation))
+	str.WriteString(fmt.Sprintf("     Mint: MaxInflation:     %s\n", item.MintMaxInflation))
+	str.WriteString(fmt.Sprintf("     Mint: AnnualProvision:  %s\n", w.FormatDecDecimals(item.MintAnnualProvisions)))
+	str.WriteString(fmt.Sprintf("     Mint: BlocksPerYear:    %d\n", item.MintBlocksPerYear))
+	str.WriteString(fmt.Sprintf("      Dist: FoundationPool:  %s\n", w.FormatDecDecimals(item.DistFoundationPool)))
+	str.WriteString(fmt.Sprintf("      Dist: PTreasuryPool:   %s\n", w.FormatDecDecimals(item.DistPublicTreasuryPool)))
+	str.WriteString(fmt.Sprintf("      Dist: LiquidityPPool:  %s\n", w.FormatDecDecimals(item.DistLiquidityProvidersPool)))
+	str.WriteString(fmt.Sprintf("      Dist: HARP:            %s\n", w.FormatDecDecimals(item.DistHARP)))
+	str.WriteString(fmt.Sprintf("       Supply: Total:        %s\n", w.FormatIntDecimals(item.SupplyTotal)))
 	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply: %s\n", item.StatsBondedRatio))
 	str.WriteString(fmt.Sprintf("  Counters:\n"))
 	str.WriteString(fmt.Sprintf("    Delegations:             %d\n", item.Counters.Delegations))

@@ -50,11 +50,29 @@ func (s *Simulator) UpdateValidator(val *staking.Validator) {
 }
 
 // GetValidators returns all known to Simulator validators.
-func (s *Simulator) GetValidators() []*staking.Validator {
+func (s *Simulator) GetValidators(bonded, unbonding, unbonded bool) []*staking.Validator {
 	validators := make([]*staking.Validator, 0)
 	for _, acc := range s.accounts {
 		if acc.OperatedValidator != nil {
-			validators = append(validators, acc.OperatedValidator)
+			add := false
+			switch acc.OperatedValidator.Status {
+			case sdk.Bonded:
+				if bonded {
+					add = true
+				}
+			case sdk.Unbonding:
+				if unbonding {
+					add = true
+				}
+			case sdk.Unbonded:
+				if unbonded {
+					add = true
+				}
+			}
+
+			if add {
+				validators = append(validators, acc.OperatedValidator)
+			}
 		}
 	}
 
@@ -63,7 +81,7 @@ func (s *Simulator) GetValidators() []*staking.Validator {
 
 // GetValidatorWithMinimalStake returns validator with minimal stake or false in second value if validator not found.
 func (s *Simulator) GetValidatorSortedByStake(desc bool) []*staking.Validator {
-	validators := s.GetValidators()
+	validators := s.GetValidators(true, true, true)
 
 	sort.Slice(validators, func(i, j int) bool {
 		if validators[i].Tokens.GT(validators[j].Tokens) {

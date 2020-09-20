@@ -5,9 +5,11 @@ package simulator
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path"
 	"testing"
 	"time"
+	_ "net/http/pprof"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
@@ -19,6 +21,8 @@ import (
 )
 
 func TestSimInflation(t *testing.T) {
+	go http.ListenAndServe(":8090", nil)
+
 	expSimDur := 24 * 30 * 24 * time.Hour
 
 	// create a tmp directory
@@ -47,22 +51,26 @@ func TestSimInflation(t *testing.T) {
 
 	// create simulator
 	s := NewSimulator(t, workingDir, NewDefferOps(),
-		InMemoryDBOption(),
-		GenerateWalletAccountsOption(100, 3, sdk.NewCoins(genCoin)),
+		//InMemoryDBOption(),
+		BlockTimeOption(60*time.Second, 65*time.Second),
+		GenerateWalletAccountsOption(500, 3, 100, sdk.NewCoins(genCoin)),
+		LogOption(log.AllowInfoWith("module", "x/staking")),
 		LogOption(log.AllowInfoWith("module", "x/mint")),
 		LogOption(log.AllowInfoWith("module", "x/distribution")),
 		LogOption(log.AllowInfoWith("module", "x/slashing")),
-		LogOption(log.AllowInfoWith("module", "x/staking")),
+		LogOption(log.AllowInfoWith("module", "x/evidence")),
 		StakingParamsOption(stakingParams),
 		DistributionParamsOption(distParams),
 		InvariantCheckPeriodOption(1000),
 		OperationsOption(
-			NewSimInvariantsOp(6*time.Hour),
+			NewSimInvariantsOp(1*time.Hour),
+			NewForceUpdateOp(8 * time.Hour),
+			//
 			NewReportOp(24*time.Hour, false, NewSimReportConsoleWriter(18), reportWriter),
 			//
 			NewCreateValidatorOp(2*24*time.Hour),
-			NewDelegateOp(16*time.Hour, sdk.NewDecWithPrec(30, 2)),   // 30 %
-			NewRedelegateOp(20*time.Hour, sdk.NewDecWithPrec(20, 2)), // 30 %
+			NewDelegateOp(16*time.Hour, sdk.NewDecWithPrec(40, 2)),   // 40 %
+			NewRedelegateOp(20*time.Hour, sdk.NewDecWithPrec(20, 2)), // 20 %
 			NewUndelegateOp(48*time.Hour, sdk.NewDecWithPrec(25, 2)), // 25 %
 			//
 			NewGetDelRewardOp(120*time.Hour),
