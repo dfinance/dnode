@@ -139,8 +139,6 @@ func NewRedelegateOp(period time.Duration, redelegateRatio sdk.Dec) *SimOperatio
 				if rd.ValidatorSrcAddress.Equals(dstValAddr) || rd.ValidatorDstAddress.Equals(dstValAddr) {
 					return true
 				}
-
-				return false
 			}
 
 			return false

@@ -28,10 +28,7 @@ func (do *DefferOps) Add(st time.Time, f func()) {
 	})
 
 	sort.Slice(do.DefferQueue, func(i, j int) bool {
-		if do.DefferQueue[i].StartTime.Before(do.DefferQueue[j].StartTime) {
-			return true
-		}
-		return false
+		return do.DefferQueue[i].StartTime.Before(do.DefferQueue[j].StartTime)
 	})
 }
 
