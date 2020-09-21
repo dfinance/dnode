@@ -29,6 +29,37 @@ import (
 	"github.com/dfinance/dnode/x/vm"
 )
 
+// TestSXFIBankTransaction_REST transfers for sxfi token must be disallowed
+func TestSXFIBankTransaction_REST(t *testing.T) {
+	t.Parallel()
+
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	{
+		r1, _ := ct.RestTxBankTransfer("sxfi", "validator1", 1, cliTester.DenomSXFI)
+		r1.CheckFailed(200, sdkErrors.ErrInvalidRequest)
+	}
+
+	{
+		r1, _ := ct.RestTxBankTransfer("sxfi", "validator1", 1, cliTester.DenomXFI)
+		r1.CheckSucceeded()
+	}
+}
+
+// TestSXFIGovDeposit_REST gov deposit allowed just for sxfi token
+func TestSXFIGovDeposit_REST(t *testing.T) {
+	t.Parallel()
+
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+	ct.StartRestServer(false)
+
+	r1, _ := ct.RestTxGovTransfer(cliTester.DenomSXFI, 1, 1, cliTester.DenomXFI)
+	r1.CheckFailed(200, sdkErrors.ErrInvalidRequest)
+}
+
 func TestCurrencyMultisig_REST(t *testing.T) {
 	t.Parallel()
 

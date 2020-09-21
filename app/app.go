@@ -23,6 +23,7 @@ import (
 	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	paramsClient "github.com/cosmos/cosmos-sdk/x/params/client"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
@@ -88,7 +89,7 @@ var (
 		orders.AppModuleBasic{},
 		orderbook.AppModuleBasic{},
 		crisis.AppModuleBasic{},
-		gov.AppModuleBasic{},
+		gov.NewAppModuleBasic(paramsClient.ProposalHandler),
 	)
 
 	maccPerms = map[string][]string{
@@ -453,6 +454,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.govRouter.AddRoute(currencies.GovRouterKey, currencies.NewGovHandler(app.ccKeeper))
 	app.govRouter.AddRoute(distribution.RouterKey, distribution.NewProposalHandler(app.distrKeeper))
 	app.govRouter.AddRoute(upgrade.ModuleName, upgrade.NewSoftwareUpgradeProposalHandler(app.upgradeKeeper))
+	app.govRouter.AddRoute(params.ModuleName, params.NewParamChangeProposalHandler(app.paramsKeeper))
 
 	app.govKeeper = gov.NewKeeper(
 		cdc,

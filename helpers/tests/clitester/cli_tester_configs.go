@@ -131,6 +131,7 @@ func NewAccountMap() (accounts map[string]*CLIAccount, retErr error) {
 
 	accounts["pos"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
+			DenomSXFI:        sdk.NewCoin(DenomSXFI, bigAmount),
 			config.MainDenom: sdk.NewCoin(config.MainDenom, bigAmount),
 		},
 	}
@@ -142,6 +143,7 @@ func NewAccountMap() (accounts map[string]*CLIAccount, retErr error) {
 	accounts["validator1"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			DenomSXFI:        sdk.NewCoin(DenomSXFI, smallAmount),
 		},
 		IsPOAValidator: true,
 	}
@@ -209,6 +211,12 @@ func NewAccountMap() (accounts map[string]*CLIAccount, retErr error) {
 			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
 		},
 		IsModuleAcc: true,
+	}
+	accounts[DenomSXFI] = &CLIAccount{
+		Coins: map[string]sdk.Coin{
+			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			DenomSXFI:        sdk.NewCoin(DenomSXFI, smallAmount),
+		},
 	}
 
 	return

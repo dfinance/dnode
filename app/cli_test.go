@@ -11,6 +11,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -28,6 +29,74 @@ import (
 const (
 	NotFoundErrSubString = "The specified item could not be found in the keyring"
 )
+
+// TestBankSXFI_CLI transfers for sxfi token must be disallowed
+func TestBankSXFI_CLI(t *testing.T) {
+	t.Parallel()
+
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestBank_CLI", []string{"message.module='bank'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "bank")
+
+	// ok for xfi denom
+	{
+		q := ct.TxBankSend(ct.Accounts[cliTester.DenomSXFI].Address, ct.Accounts["validator1"].Address, 1, cliTester.DenomXFI)
+		q.CheckSucceeded()
+	}
+
+	// fail for sxfi denom
+	{
+		q := ct.TxBankSend(ct.Accounts[cliTester.DenomSXFI].Address, ct.Accounts["validator1"].Address, 1, cliTester.DenomSXFI)
+		q.CheckFailedWithSDKError(sdkErrors.ErrInvalidRequest)
+	}
+}
+
+// TestGovSXFI_CLI gov deposit allowed just for sxfi token
+func TestGovSXFI_CLI(t *testing.T) {
+	t.Parallel()
+
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestBank_CLI", []string{"message.module='bank'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "bank")
+
+	q := ct.TxGovDeposit(ct.Accounts[cliTester.DenomSXFI].Address, 1, 1, cliTester.DenomXFI)
+	q.CheckFailedWithSDKError(sdkErrors.ErrInvalidRequest)
+}
+
+// TestStakeSXFI_CLI staking allowed just for sxfi token
+func TestStakeSXFI_CLI(t *testing.T) {
+	t.Parallel()
+
+	ct := cliTester.New(t, false)
+	defer ct.Close()
+
+	wsStop, wsChs := ct.CheckWSsSubscribed(false, "TestBank_CLI", []string{"message.module='bank'"}, 10)
+	defer wsStop()
+	go cliTester.PrintEvents(t, wsChs, "bank")
+
+	qs, validators := ct.QueryStakingValidators()
+	_, err := qs.Execute()
+	require.Nil(t, err)
+	require.GreaterOrEqual(t, 1, len(*validators))
+
+	// wrong denom for staking
+	{
+		q := ct.TxStake(ct.Accounts[cliTester.DenomSXFI].Address, (*validators)[0].OperatorAddress.String(), 1, cliTester.DenomXFI)
+		q.CheckFailedWithSDKError(staking.ErrBadDenom)
+	}
+
+	// sxfi denom for staking
+	{
+		q := ct.TxStake(ct.Accounts[cliTester.DenomSXFI].Address, (*validators)[0].OperatorAddress.String(), 1, cliTester.DenomSXFI)
+		q.CheckSucceeded()
+	}
+}
 
 func TestCurrencies_CLI(t *testing.T) {
 	t.Parallel()

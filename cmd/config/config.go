@@ -16,6 +16,7 @@ import (
 
 const (
 	MainDenom            = "xfi"
+	SXFIDenom            = "sxfi"
 	DefaultFeeAmount     = "100000000000000"
 	DefaultFee           = DefaultFeeAmount + MainDenom
 	MainPrefix           = "wallet"                                                                  // Main prefix for all addresses.
@@ -38,13 +39,13 @@ const (
 	DefaultReqTimeout  = 0 // Default request timeout per attempt [ms].
 
 	// Default governance params.
-	DefaultGovMinDepositAmount = "100000000000000000000" // 100 xfi
+	DefaultGovMinDepositAmount = "100000000000000000000" // 100 sxfi
 
 	// Invariants check period for crisis module (in blocks)
 	DefInvCheckPeriod = 10
 
 	// Default staking validator minSelfDelegation amount
-	DefMinSelfDelegation = "250000000000000000000000" // 250000 xfi
+	DefMinSelfDelegation = "250000000000000000000000" // 250000 sxfi
 )
 
 var (
@@ -128,7 +129,7 @@ func init() {
 		panic("governance genesisState: minDeposit convertation failed")
 	}
 
-	GovMinDeposit = sdk.NewCoin(MainDenom, minDepositAmount)
+	GovMinDeposit = sdk.NewCoin(SXFIDenom, minDepositAmount)
 }
 
 func GetAppRestrictions() AppRestrictions {
