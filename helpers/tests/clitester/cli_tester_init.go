@@ -164,7 +164,7 @@ func (ct *CLITester) initChain() {
 		minSelfDelegation, ok := sdk.NewIntFromString(dnConfig.DefMinSelfDelegation)
 		require.True(ct.t, ok, "DefMinSelfDelegation conversion failed")
 
-		stakingCoin := ct.Accounts["pos"].Coins[config.SXFIDenom]
+		stakingCoin := ct.Accounts["pos"].Coins[config.StakingDenom]
 		stakingCoin.Amount = minSelfDelegation
 
 		cmd := ct.newWbdCmd().
