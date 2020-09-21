@@ -105,7 +105,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			var stakingGenState staking.GenesisState
 
 			cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
-			stakingGenState.Params.BondDenom = SXFIDenom
+			stakingGenState.Params.BondDenom = StakingDenom
 			stakingGenState.Params.MinSelfDelegationLvl = minSelfDelegation
 			appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
@@ -114,7 +114,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			var mintGenState mint.GenesisState
 
 			cdc.MustUnmarshalJSON(mintDataBz, &mintGenState)
-			mintGenState.Params.MintDenom = MainDenom
+			mintGenState.Params.MintDenom = StakingDenom
 			//
 			mintGenState.Params.InflationMax = sdk.NewDecWithPrec(50, 2)   // 50%
 			mintGenState.Params.InflationMin = sdk.NewDecWithPrec(1776, 4) // 17.76%

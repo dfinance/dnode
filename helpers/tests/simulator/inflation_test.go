@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	_ "net/http/pprof"
 	"path"
 	"testing"
 	"time"
-	_ "net/http/pprof"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
@@ -29,10 +29,13 @@ func TestSimInflation(t *testing.T) {
 	workingDir, err := ioutil.TempDir("/tmp", fmt.Sprintf("dnode-simulator-%s-", t.Name()))
 	require.NoError(t, err)
 
-	// genesis accounts balance (1M xfi)
+	// genesis accounts balance (1M xfi, 1M sxfi)
 	genAmount, ok := sdk.NewIntFromString("1000000000000000000000000")
 	require.True(t, ok)
-	genCoin := sdk.NewCoin(config.MainDenom, genAmount)
+	genCoins := sdk.NewCoins(
+		sdk.NewCoin(config.MainDenom, genAmount),
+		sdk.NewCoin(config.StakingDenom, genAmount),
+	)
 
 	// custom distribution params
 	treasuryCapacity, ok := sdk.NewIntFromString("250000000000000000000000")
@@ -42,8 +45,8 @@ func TestSimInflation(t *testing.T) {
 
 	// custom staking params
 	stakingParams := staking.DefaultParams()
-	stakingParams.UnbondingTime = 6 * time.Hour
-	stakingParams.MaxValidators = 50
+	stakingParams.UnbondingTime = 24 * time.Hour
+	stakingParams.MaxValidators = 100
 
 	// CSV report writer
 	reportWriter, writerClose := NewSimReportCSVWriter(t, path.Join(workingDir, "report.csv"))
@@ -53,7 +56,7 @@ func TestSimInflation(t *testing.T) {
 	s := NewSimulator(t, workingDir, NewDefferOps(),
 		//InMemoryDBOption(),
 		BlockTimeOption(60*time.Second, 65*time.Second),
-		GenerateWalletAccountsOption(500, 3, 100, sdk.NewCoins(genCoin)),
+		GenerateWalletAccountsOption(500, 3, 150, genCoins),
 		LogOption(log.AllowInfoWith("module", "x/staking")),
 		LogOption(log.AllowInfoWith("module", "x/mint")),
 		LogOption(log.AllowInfoWith("module", "x/distribution")),
@@ -64,12 +67,12 @@ func TestSimInflation(t *testing.T) {
 		InvariantCheckPeriodOption(1000),
 		OperationsOption(
 			NewSimInvariantsOp(1*time.Hour),
-			NewForceUpdateOp(8 * time.Hour),
+			NewForceUpdateOp(8*time.Hour),
 			//
-			NewReportOp(24*time.Hour, false, NewSimReportConsoleWriter(18), reportWriter),
+			NewReportOp(24*time.Hour, false, NewSimReportConsoleWriter(), reportWriter),
 			//
 			NewCreateValidatorOp(2*24*time.Hour),
-			NewDelegateOp(16*time.Hour, sdk.NewDecWithPrec(40, 2)),   // 40 %
+			NewDelegateOp(8*time.Hour, sdk.NewDecWithPrec(40, 2)),    // 40 %
 			NewRedelegateOp(20*time.Hour, sdk.NewDecWithPrec(20, 2)), // 20 %
 			NewUndelegateOp(48*time.Hour, sdk.NewDecWithPrec(25, 2)), // 25 %
 			//

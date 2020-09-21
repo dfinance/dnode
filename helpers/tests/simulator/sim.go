@@ -52,9 +52,14 @@ type Simulator struct {
 	defFee    sdk.Coin
 	defGas    uint64
 	// read-only params
-	unbondingDur time.Duration
-	stakingDenom string
-	workingDir   string
+	unbondingDur               time.Duration
+	mainDenom                  string
+	stakingDenom               string
+	mainDenomDecimals          uint8
+	stakingDenomDecimals       uint8
+	workingDir                 string
+	mainAmountDecimalsRatio    sdk.Dec
+	stakingAmountDecimalsRatio sdk.Dec
 	// state
 	prevBlockTime time.Time
 	t             *testing.T
@@ -190,20 +195,19 @@ func (s *Simulator) Start() {
 		state := staking.GenesisState{}
 		s.cdc.MustUnmarshalJSON(s.genesisState[staking.ModuleName], &state)
 
-		state.Params.BondDenom = config.MainDenom
+		state.Params.BondDenom = s.stakingDenom
 		state.Params.MinSelfDelegationLvl = s.minSelfDelegationLvl
 
 		s.genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
 
 		s.unbondingDur = state.Params.UnbondingTime
-		s.stakingDenom = state.Params.BondDenom
 	}
 	// mint
 	{
 		state := mint.GenesisState{}
 		s.cdc.MustUnmarshalJSON(s.genesisState[mint.ModuleName], &state)
 
-		state.Params.MintDenom = config.MainDenom
+		state.Params.MintDenom = s.stakingDenom
 
 		s.genesisState[mint.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
 	}
@@ -215,18 +219,18 @@ func (s *Simulator) Start() {
 		defFeeAmount, ok := sdk.NewIntFromString(config.DefaultFeeAmount)
 		require.True(s.t, ok)
 
-		state.ConstantFee.Denom = config.MainDenom
+		state.ConstantFee.Denom = s.mainDenom
 		state.ConstantFee.Amount = defFeeAmount
 
 		s.genesisState[crisis.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
 
-		s.defFee = sdk.NewCoin(config.MainDenom, defFeeAmount)
+		s.defFee = sdk.NewCoin(s.mainDenom, defFeeAmount)
 	}
 	// genutil, create node validator
 	{
 		nodeAcc := s.accounts[0]
 
-		selfDelegation := sdk.NewCoin(config.MainDenom, s.minSelfDelegationLvl)
+		selfDelegation := sdk.NewCoin(s.stakingDenom, s.minSelfDelegationLvl)
 		msg := staking.NewMsgCreateValidator(
 			nodeAcc.Address.Bytes(),
 			nodeAcc.PublicKey,
@@ -374,7 +378,13 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 		monikerID: "simMoniker",
 		defGas:    500000,
 		//
-		workingDir: workingDir,
+		mainDenom:                  config.MainDenom,
+		stakingDenom:               config.StakingDenom,
+		mainDenomDecimals:          18,
+		stakingDenomDecimals:       18,
+		mainAmountDecimalsRatio:    sdk.NewDecWithPrec(1, 0),
+		stakingAmountDecimalsRatio: sdk.NewDecWithPrec(1, 0),
+		workingDir:                 workingDir,
 		//
 		prevBlockTime: EmulatedTimeHead,
 		logger:        log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("simulator"),
@@ -387,6 +397,13 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 
 	for _, option := range options {
 		option(s)
+	}
+
+	if s.mainDenomDecimals > 0 {
+		s.mainAmountDecimalsRatio = sdk.NewDecWithPrec(1, int64(s.mainDenomDecimals))
+	}
+	if s.stakingDenomDecimals > 0 {
+		s.stakingAmountDecimalsRatio = sdk.NewDecWithPrec(1, int64(s.stakingDenomDecimals))
 	}
 
 	// set app logger

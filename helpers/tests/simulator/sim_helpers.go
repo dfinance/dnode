@@ -106,6 +106,41 @@ func (s Simulator) GetShuffledAccounts() []*SimAccount {
 	return tmpAcc
 }
 
+// GetAccountsSortedByBalance returns account sorted by staking denom list.
+func (s Simulator) GetAccountsSortedByBalance(desc bool) []*SimAccount {
+	tmpAccs := make([]*SimAccount, len(s.accounts))
+	copy(tmpAccs, s.accounts)
+
+	sort.Slice(tmpAccs, func(i, j int) bool {
+		iBalance := tmpAccs[i].Coins.AmountOf(s.stakingDenom)
+		jBalance := tmpAccs[j].Coins.AmountOf(s.stakingDenom)
+
+		if iBalance.GT(jBalance) {
+			return desc
+		}
+		return !desc
+	})
+
+	return tmpAccs
+}
+
+func (s *Simulator) FormatStakingCoin(coin sdk.Coin) string {
+	return s.FormatIntDecimals(coin.Amount, s.stakingAmountDecimalsRatio) + s.stakingDenom
+}
+
+func (s *Simulator) FormatIntDecimals(value sdk.Int, decRatio sdk.Dec) string {
+	valueDec := sdk.NewDecFromInt(value)
+	fixedDec := valueDec.Mul(decRatio)
+
+	return fixedDec.String()
+}
+
+func (s *Simulator) FormatDecDecimals(value sdk.Dec, decRatio sdk.Dec) string {
+	fixedDec := value.Mul(decRatio)
+
+	return fixedDec.String()
+}
+
 // GetSortedDelegation returns delegation sorted list.
 func GetSortedDelegation(responses staking.DelegationResponses, desc bool) staking.DelegationResponses {
 	sort.Slice(responses, func(i, j int) bool {

@@ -680,11 +680,11 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		// disallow sxfi bank transactions
 		if msg, ok := msg.(bank.MsgSend); ok {
 			for i := range msg.Amount {
-				if msg.Amount.GetDenomByIndex(i) == config.SXFIDenom {
+				if msg.Amount.GetDenomByIndex(i) == config.StakingDenom {
 					return nil, sdkerrors.Wrapf(
 						sdkerrors.ErrInvalidRequest,
 						"bank transactions is disallowed for %s token",
-						config.SXFIDenom,
+						config.StakingDenom,
 					)
 				}
 			}
@@ -693,11 +693,11 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		// allow just sxfi token for gov deposit
 		if msg, ok := msg.(gov.MsgDeposit); ok {
 			for i := range msg.Amount {
-				if msg.Amount.GetDenomByIndex(i) != config.SXFIDenom {
+				if msg.Amount.GetDenomByIndex(i) != config.StakingDenom {
 					return nil, sdkerrors.Wrapf(
 						sdkerrors.ErrInvalidRequest,
 						"gov deposit allowed just by %s token",
-						config.SXFIDenom,
+						config.StakingDenom,
 					)
 				}
 			}

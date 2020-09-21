@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
@@ -9,8 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
-
-	"github.com/dfinance/dnode/cmd/config"
 )
 
 // GenTxAdvanced returns a signed Tx with a single msg.
@@ -66,7 +65,7 @@ func (s *Simulator) DeliverTx(tx auth.StdTx, responseValue interface{}) {
 func (s *Simulator) TxStakingCreateValidator(simAcc *SimAccount, commissions staking.CommissionRates) {
 	require.NotNil(s.t, simAcc)
 
-	selfDelegation := sdk.NewCoin(config.MainDenom, s.minSelfDelegationLvl)
+	selfDelegation := sdk.NewCoin(s.stakingDenom, s.minSelfDelegationLvl)
 	msg := staking.NewMsgCreateValidator(
 		simAcc.Address.Bytes(),
 		simAcc.PublicKey,

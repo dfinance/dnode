@@ -76,7 +76,7 @@ func NewDelegateOp(period time.Duration, delegateRatio sdk.Dec) *SimOperation {
 		// pick a target account with enough coins
 		var delAmt sdk.Int
 		var targetAcc *SimAccount
-		for _, acc := range s.GetShuffledAccounts() {
+		for _, acc := range s.GetAccountsSortedByBalance(true) {
 			// estimate delegation amount
 			accCoinAmtDec := sdk.NewDecFromInt(acc.Coins.AmountOf(s.stakingDenom))
 			delAmt = accCoinAmtDec.Mul(delegateRatio).TruncateInt()
@@ -101,7 +101,7 @@ func NewDelegateOp(period time.Duration, delegateRatio sdk.Dec) *SimOperation {
 		// update stats
 		s.counter.Delegations++
 
-		s.logger.Info(fmt.Sprintf("DelegateOp: %s: %s -> %s", targetAcc.Address, delAmt, validator.OperatorAddress))
+		s.logger.Info(fmt.Sprintf("DelegateOp: %s: %s -> %s", targetAcc.Address, s.FormatStakingCoin(coin), validator.OperatorAddress))
 
 		return true
 	}
@@ -193,7 +193,7 @@ func NewRedelegateOp(period time.Duration, redelegateRatio sdk.Dec) *SimOperatio
 				// update stats
 				s.counter.Redelegations++
 
-				s.logger.Info(fmt.Sprintf("RedelegateOp: %s: %s -> %s -> %s", acc.Address, srcValidator.OperatorAddress, rdAmt, dstValidator.OperatorAddress))
+				s.logger.Info(fmt.Sprintf("RedelegateOp: %s: %s -> %s -> %s", acc.Address, srcValidator.OperatorAddress, s.FormatStakingCoin(coin), dstValidator.OperatorAddress))
 
 				return true
 			}
@@ -263,7 +263,7 @@ func NewUndelegateOp(period time.Duration, undelegateRatio sdk.Dec) *SimOperatio
 					s.UpdateAccount(acc)
 				})
 
-				s.logger.Info(fmt.Sprintf("UndelegateOp: %s: %s -> %s", acc.Address, validator.OperatorAddress, udAmt))
+				s.logger.Info(fmt.Sprintf("UndelegateOp: %s: %s -> %s", acc.Address, validator.OperatorAddress, s.FormatStakingCoin(coin)))
 
 				return true
 			}
@@ -291,6 +291,7 @@ func NewGetDelRewardOp(period time.Duration) *SimOperation {
 
 			rewardsDec := s.QueryDistDelReward(acc.Address, targetDelegation.ValidatorAddress)
 			rewards := rewardsDec.AmountOf(s.stakingDenom).TruncateInt()
+			rewardsCoin := sdk.NewCoin(s.stakingDenom, rewards)
 
 			// distribute
 			s.TxDistributionReward(acc, targetDelegation.ValidatorAddress)
@@ -301,7 +302,7 @@ func NewGetDelRewardOp(period time.Duration) *SimOperation {
 			s.counter.Rewards++
 			s.counter.RewardsCollected = s.counter.RewardsCollected.Add(rewards)
 
-			s.logger.Info(fmt.Sprintf("DelRewardOp: %s from %s: %s", acc.Address, targetDelegation.ValidatorAddress, rewards))
+			s.logger.Info(fmt.Sprintf("DelRewardOp: %s from %s: %s", acc.Address, targetDelegation.ValidatorAddress, s.FormatStakingCoin(rewardsCoin)))
 
 			return true
 		}
@@ -324,6 +325,7 @@ func NewGetValRewardOp(period time.Duration) *SimOperation {
 
 			rewardsDec := s.QueryDistrValCommission(acc.OperatedValidator.OperatorAddress)
 			rewards := rewardsDec.AmountOf(s.stakingDenom).TruncateInt()
+			rewardsCoin := sdk.NewCoin(s.stakingDenom, rewards)
 
 			// distribute
 			s.TxDistributionCommission(acc, acc.OperatedValidator.OperatorAddress)
@@ -334,7 +336,7 @@ func NewGetValRewardOp(period time.Duration) *SimOperation {
 			s.counter.Commissions++
 			s.counter.CommissionsCollected = s.counter.CommissionsCollected.Add(rewards)
 
-			s.logger.Info(fmt.Sprintf("ValRewardOp: %s for %s: %s", acc.OperatedValidator.OperatorAddress, acc.Address, rewards))
+			s.logger.Info(fmt.Sprintf("ValRewardOp: %s for %s: %s", acc.OperatedValidator.OperatorAddress, acc.Address, s.FormatStakingCoin(rewardsCoin)))
 
 			return true
 		}

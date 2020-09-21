@@ -16,7 +16,7 @@ import (
 
 const (
 	MainDenom            = "xfi"
-	SXFIDenom            = "sxfi"
+	StakingDenom         = "sxfi"
 	DefaultFeeAmount     = "100000000000000"
 	DefaultFee           = DefaultFeeAmount + MainDenom
 	MainPrefix           = "wallet"                                                                  // Main prefix for all addresses.
@@ -129,7 +129,7 @@ func init() {
 		panic("governance genesisState: minDeposit convertation failed")
 	}
 
-	GovMinDeposit = sdk.NewCoin(SXFIDenom, minDepositAmount)
+	GovMinDeposit = sdk.NewCoin(StakingDenom, minDepositAmount)
 }
 
 func GetAppRestrictions() AppRestrictions {
@@ -147,6 +147,7 @@ func GetAppRestrictions() AppRestrictions {
 			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyLiquidityProvidersPoolTax)},
 			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyPublicTreasuryPoolTax)},
 			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyHARPTax)},
+			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyFoundationNominees)},
 			params.RestrictedParam{Subspace: mint.ModuleName, Key: string(mint.KeyFoundationAllocationRatio)},
 		},
 	}

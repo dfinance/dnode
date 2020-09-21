@@ -10,11 +10,18 @@ import (
 
 type SimDebugReportItem struct {
 	Validators []DebugValidatorData
+	Accounts   []DebugAccoutData
 }
 
 type DebugValidatorData struct {
 	Validator   staking.Validator
 	Delegations staking.DelegationResponses
+}
+
+type DebugAccoutData struct {
+	Address            sdk.AccAddress
+	MainCoinBalance    sdk.Int
+	StakingCoinBalance sdk.Int
 }
 
 func (r SimDebugReportItem) String() string {
@@ -50,6 +57,13 @@ func (r SimDebugReportItem) String() string {
 		}
 	}
 
+	str.WriteString("Accounts:\n")
+	for i, accData := range r.Accounts {
+		str.WriteString(fmt.Sprintf("[%03d] %s\n", i, accData.Address))
+		str.WriteString(fmt.Sprintf("  Balance (main):    %s\n", accData.MainCoinBalance))
+		str.WriteString(fmt.Sprintf("  Balance (staking): %s\n", accData.StakingCoinBalance))
+	}
+
 	return str.String()
 }
 
@@ -61,6 +75,14 @@ func BuildDebugReportItem(s *Simulator) SimDebugReportItem {
 		r.Validators = append(r.Validators, DebugValidatorData{
 			Validator:   v,
 			Delegations: dels,
+		})
+	}
+
+	for _, acc := range s.GetAccountsSortedByBalance(true) {
+		r.Accounts = append(r.Accounts, DebugAccoutData{
+			Address:            acc.Address,
+			MainCoinBalance:    acc.Coins.AmountOf(s.mainDenom),
+			StakingCoinBalance: acc.Coins.AmountOf(s.stakingDenom),
 		})
 	}
 
