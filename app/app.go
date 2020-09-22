@@ -93,23 +93,13 @@ var (
 	)
 
 	maccPerms = map[string][]string{
-		auth.FeeCollectorName:     nil,
+		auth.FeeCollectorName:     {supply.Burner},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		mint.ModuleName:           {supply.Minter},
 		distribution.ModuleName:   nil,
 		orders.ModuleName:         {supply.Burner},
 		gov.ModuleName:            {supply.Burner},
-	}
-
-	// Denied messages types.
-	msgsDeniedList = map[string][]string{
-		distribution.ModuleName: {
-			distribution.MsgWithdrawDelegatorReward{}.Type(),
-			distribution.MsgWithdrawValidatorCommission{}.Type(),
-			distribution.TypeMsgFundCommunityPool,
-			distribution.MsgSetWithdrawAddress{}.Type(),
-		},
 	}
 )
 
@@ -198,10 +188,10 @@ func MakeCodec() *codec.Codec {
 }
 
 // NewDnServiceApp is a constructor function for dfinance blockchain.
-func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
+func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, restrictions config.AppRestrictions, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
-	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), msgsDeniedList, baseAppOptions...)
+	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), restrictions.MsgDeniedList, baseAppOptions...)
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(
@@ -266,7 +256,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		tkeys[params.TStoreKey],
 	)
 
-	app.paramsKeeper.SetRestrictedParams(params.RestrictedParams{})
+	app.paramsKeeper.SetRestrictedParams(restrictions.ParamsProposal)
 
 	// UpgradeKeeper halts chain on software update proposal in order to restart it with newer version.
 	app.upgradeKeeper = upgrade.NewKeeper(
@@ -462,6 +452,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 	app.govRouter = gov.NewRouter()
 	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
 	app.govRouter.AddRoute(currencies.GovRouterKey, currencies.NewGovHandler(app.ccKeeper))
+	app.govRouter.AddRoute(distribution.RouterKey, distribution.NewProposalHandler(app.distrKeeper))
 	app.govRouter.AddRoute(upgrade.ModuleName, upgrade.NewSoftwareUpgradeProposalHandler(app.upgradeKeeper))
 	app.govRouter.AddRoute(params.ModuleName, params.NewParamChangeProposalHandler(app.paramsKeeper))
 
@@ -487,7 +478,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		mint.NewAppModule(app.mintKeeper),
 		evidence.NewAppModule(app.evidenceKeeper),
-		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper),
+		distribution.NewAppModule(app.distrKeeper, app.accountKeeper, app.supplyKeeper, app.stakingKeeper, app.mintKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.accountKeeper, app.stakingKeeper),
 		currencies.NewAppMsModule(app.ccKeeper, app.ccsKeeper),
 		poa.NewAppMsModule(app.poaKeeper),
