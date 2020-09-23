@@ -30,7 +30,7 @@ func (a *ApiCli) GetAccount() (sequence uint64, baseBalance, quoteBalance sdk.Ui
 
 	q, acc := a.tester.QueryAccount(a.accountAddress)
 	if err := a.executeQuery(q); err != nil {
-		retErr = fmt.Errorf("QueryAccount: %w", err)
+		retErr = fmt.Errorf("QueryAuthAccount: %w", err)
 		return
 	}
 

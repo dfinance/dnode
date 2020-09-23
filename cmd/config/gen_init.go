@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/cosmos/cosmos-sdk/x/crisis"
+	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -104,19 +105,46 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			var stakingGenState staking.GenesisState
 
 			cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
-			stakingGenState.Params.BondDenom = SXFIDenom
+			stakingGenState.Params.BondDenom = StakingDenom
 			stakingGenState.Params.MinSelfDelegationLvl = minSelfDelegation
 			appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 
-			// Change default mint stake.
+			// Change default mint params
 			mintDataBz := appGenState[mint.ModuleName]
 			var mintGenState mint.GenesisState
 
 			cdc.MustUnmarshalJSON(mintDataBz, &mintGenState)
-			mintGenState.Params.MintDenom = MainDenom
+			mintGenState.Params.MintDenom = StakingDenom
+			//
+			mintGenState.Params.InflationMax = sdk.NewDecWithPrec(50, 2)   // 50%
+			mintGenState.Params.InflationMin = sdk.NewDecWithPrec(1776, 4) // 17.76%
+			//
+			mintGenState.Params.FeeBurningRatio = sdk.NewDecWithPrec(50, 2)           // 50%
+			mintGenState.Params.InfPwrBondedLockedRatio = sdk.NewDecWithPrec(4, 1)    // 40%
+			mintGenState.Params.FoundationAllocationRatio = sdk.NewDecWithPrec(45, 2) // 45%
+			//
+			mintGenState.Params.AvgBlockTimeWindow = 100 // 100 blocks
 			appGenState[mint.ModuleName] = cdc.MustMarshalJSON(mintGenState)
 
-			// Change default minimal governance deposit coin.
+			// Change default distribution params
+			distDataBz := appGenState[distribution.ModuleName]
+			var distGenState distribution.GenesisState
+
+			cdc.MustUnmarshalJSON(distDataBz, &distGenState)
+			distGenState.Params.ValidatorsPoolTax = sdk.NewDecWithPrec(4825, 4)         // 48.25%
+			distGenState.Params.LiquidityProvidersPoolTax = sdk.NewDecWithPrec(4825, 4) // 48.25%
+			distGenState.Params.PublicTreasuryPoolTax = sdk.NewDecWithPrec(15, 3)       // 1.5%
+			distGenState.Params.HARPTax = sdk.NewDecWithPrec(2, 2)                      // 2%
+			//
+			distGenState.Params.PublicTreasuryPoolCapacity = sdk.NewInt(250000) // 250K (doesn't include currency decimals)
+			//
+			distGenState.Params.BaseProposerReward = sdk.NewDecWithPrec(1, 2)  // 1%
+			distGenState.Params.BonusProposerReward = sdk.NewDecWithPrec(4, 2) // 4%
+			//
+			distGenState.Params.WithdrawAddrEnabled = true
+			appGenState[distribution.ModuleName] = cdc.MustMarshalJSON(distGenState)
+
+			// Change default minimal governance deposit coin
 			govDataBz := appGenState[gov.ModuleName]
 			var govGenState gov.GenesisState
 
