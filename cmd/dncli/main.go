@@ -143,6 +143,10 @@ func SetDefaultFeeForTxCmd(cmd *cobra.Command) {
 			return nil
 		}
 	}
+
+	for _, child := range cmd.Commands() {
+		SetDefaultFeeForTxCmd(child)
+	}
 }
 
 // DisableCommands disables cli commands.
