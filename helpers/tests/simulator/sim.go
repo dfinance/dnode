@@ -13,10 +13,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
@@ -26,7 +24,6 @@ import (
 	"github.com/dfinance/dnode/app"
 	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/genaccounts"
-	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/poa"
 )
 
@@ -133,42 +130,6 @@ func (s *Simulator) Start() {
 		if acc.IsPoAValidator {
 			poaAccs = append(poaAccs, acc)
 		}
-	}
-
-	// generate module accounts
-	// gov module
-	{
-		prvKey := secp256k1.GenPrivKey()
-		pubKey := prvKey.PubKey()
-		addr := sdk.AccAddress(pubKey.Address())
-
-		baseAcc := &auth.BaseAccount{
-			Address:       addr,
-			Coins:         sdk.NewCoins(),
-			PubKey:        pubKey,
-			AccountNumber: uint64(len(s.accounts)*2 + 0),
-		}
-
-		genAcc, err := genaccounts.NewGenesisAccountI(supply.NewModuleAccount(baseAcc, gov.ModuleName, supply.Burner))
-		require.NoError(s.t, err, "module account: gov")
-		genAccs = append(genAccs, genAcc)
-	}
-	// orders module
-	{
-		prvKey := secp256k1.GenPrivKey()
-		pubKey := prvKey.PubKey()
-		addr := sdk.AccAddress(pubKey.Address())
-
-		baseAcc := &auth.BaseAccount{
-			Address:       addr,
-			Coins:         sdk.NewCoins(),
-			PubKey:        pubKey,
-			AccountNumber: uint64(len(s.accounts)*2 + 1),
-		}
-
-		genAcc, err := genaccounts.NewGenesisAccountI(supply.NewModuleAccount(baseAcc, orders.ModuleName))
-		require.NoError(s.t, err, "module account: gov")
-		genAccs = append(genAccs, genAcc)
 	}
 
 	// update genesisState

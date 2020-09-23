@@ -79,20 +79,6 @@ func (s *Simulator) GetValidators(bonded, unbonding, unbonded bool) []*staking.V
 	return validators
 }
 
-// GetValidatorWithMinimalStake returns validator with minimal stake or false in second value if validator not found.
-func (s *Simulator) GetValidatorSortedByStake(desc bool) []*staking.Validator {
-	validators := s.GetValidators(true, true, true)
-
-	sort.Slice(validators, func(i, j int) bool {
-		if validators[i].Tokens.GT(validators[j].Tokens) {
-			return desc
-		}
-		return !desc
-	})
-
-	return validators
-}
-
 // GetShuffledAccounts returns random sorted account list.
 func (s Simulator) GetShuffledAccounts() []*SimAccount {
 	tmpAcc := make([]*SimAccount, len(s.accounts))
@@ -139,6 +125,18 @@ func (s *Simulator) FormatDecDecimals(value sdk.Dec, decRatio sdk.Dec) string {
 	fixedDec := value.Mul(decRatio)
 
 	return fixedDec.String()
+}
+
+// GetSortedByStakeValidator returns validators sorted by stake.
+func GetSortedByStakeValidator(validators []*staking.Validator, desc bool) []*staking.Validator {
+	sort.Slice(validators, func(i, j int) bool {
+		if validators[i].Tokens.GT(validators[j].Tokens) {
+			return desc
+		}
+		return !desc
+	})
+
+	return validators
 }
 
 // GetSortedDelegation returns delegation sorted list.
