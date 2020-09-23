@@ -9,11 +9,11 @@ First of all we need to create genesis configuration and set name for the node:
 Now configure CLI client:
 
     dncli config chain-id dn-testnet
-    dncli config output json --home damir/.dncli 
-    dncli config indent true --home damir/.dncli
-    dncli config trust-node true --home damir/.dncli
-    dncli config compiler tcp://127.0.0.1:50051 --home damir/.dncli
-    dncli config node http://127.0.0.1:26657 --home damir/.dncli
+    dncli config output json
+    dncli config indent true
+    dncli config trust-node true
+    dncli config compiler tcp://127.0.0.1:50051
+    dncli config node http://127.0.0.1:26657
 
 If you want to keep your keys in file based storage, instead of OS keystorage, configure it:
 
