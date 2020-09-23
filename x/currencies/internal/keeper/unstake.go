@@ -1,25 +1,33 @@
 package keeper
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-const (
-	stakingDenom = "sxfi"
+	"github.com/dfinance/dnode/x/currencies/internal/types"
 )
 
 func (k Keeper) UnstakeCurrency(ctx sdk.Context, staker sdk.AccAddress) error {
-	// TODO: check user balance and remove sxfi.
+	// Get staking denom (usually sxfi).
+	stakingDenom := k.stakingKeeper.BondDenom(ctx)
+
+	// Call ForceRemoveDelegator to remove all delegations.
+	err := k.stakingKeeper.ForceRemoveDelegator(ctx, staker)
+	if err != nil {
+		return sdkErrors.Wrapf(types.ErrForceUnstake, "error during force unstake delegations for %s: %v", staker, err)
+	}
+
+	// Check balance and remove sxfi.
 	balances := k.bankKeeper.GetCoins(ctx, staker)
 
 	for _, balance := range balances {
 		if balance.Denom == stakingDenom {
-			// Nullify user sxfi balance.
 			err := k.bankKeeper.SetCoins(ctx, staker, balances.Sub(sdk.Coins{balance}))
 			if err != nil {
-				return err
+				return sdkErrors.Wrapf(types.ErrNulifyBalance, "error during nullify user sxfi balance for %s: %v", staker, err)
 			}
 		}
 	}
 
-	// TODO: call ForceRemoveDelegator.
 	return nil
 }

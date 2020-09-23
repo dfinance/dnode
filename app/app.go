@@ -379,6 +379,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		app.bankKeeper,
 		app.supplyKeeper,
 		app.ccsKeeper,
+		&app.stakingKeeper,
 		appModulePerms(currencies.AvailablePermissions),
 	)
 

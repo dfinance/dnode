@@ -12,4 +12,6 @@ var (
 	ErrWrongWithdrawID    = sdkErrors.Register(ModuleName, 104, "wrong withdrawID")
 	ErrWrongPegZonePayee  = sdkErrors.Register(ModuleName, 105, "wrong PegZone payee")
 	ErrGovInvalidProposal = sdkErrors.Register(ModuleName, 200, "invalid proposal")
+	ErrForceUnstake       = sdkErrors.Register(ModuleName, 300, "force unstake")
+	ErrNulifyBalance      = sdkErrors.Register(ModuleName, 301, "nullify balance")
 )
