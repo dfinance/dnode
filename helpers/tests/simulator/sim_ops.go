@@ -60,14 +60,16 @@ func NewCreateValidatorOp(period time.Duration) *SimOperation {
 // SelfStake increment is allowed.
 // Delegation amount = current account balance * ratioCoef.
 // Op priorities:
-//   validator - lowest tokens amount;
+//   validator:
+//     - bonded;
+//     - lowest tokens amount;
 //   account - random, enough coins;
 func NewDelegateOp(period time.Duration, delegateRatio sdk.Dec) *SimOperation {
 	checkRatioArg("DelegateOp", "delegateRatio", delegateRatio)
 
 	handler := func(s *Simulator) bool {
 		// pick a validator with the lowest tokens amount
-		validators := s.GetValidatorSortedByStake(false)
+		validators := GetSortedByStakeValidator(s.GetValidators(true, false, false), false)
 		if len(validators) == 0 {
 			return false
 		}
@@ -112,7 +114,9 @@ func NewDelegateOp(period time.Duration, delegateRatio sdk.Dec) *SimOperation {
 // NewRedelegateOp picks a validator and redelegate tokens to an other validator.
 // Redelegation amount = current account delegation amount * ratioCoef.
 // Op priorities:
-//   dstValidator - lowest tokens amount;
+//   dstValidator:
+//     - bonded;
+//     - lowest tokens amount;
 //   srcValidator - highest account delegation shares;
 //   account:
 //     - random;
@@ -124,7 +128,7 @@ func NewRedelegateOp(period time.Duration, redelegateRatio sdk.Dec) *SimOperatio
 
 	handler := func(s *Simulator) bool {
 		// pick a dstValidator with the lowest tokens amount
-		validators := s.GetValidatorSortedByStake(false)
+		validators := GetSortedByStakeValidator(s.GetValidators(true, false, false), true)
 		if len(validators) == 0 {
 			return false
 		}
@@ -218,7 +222,7 @@ func NewUndelegateOp(period time.Duration, undelegateRatio sdk.Dec) *SimOperatio
 
 	handler := func(s *Simulator) bool {
 		// pick a validator with the highest tokens amount;
-		validators := s.GetValidatorSortedByStake(true)
+		validators := GetSortedByStakeValidator(s.GetValidators(true, true, true), true)
 		if len(validators) == 0 {
 			return false
 		}

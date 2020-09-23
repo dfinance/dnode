@@ -18,7 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authExported "github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
@@ -39,7 +38,6 @@ import (
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/oracle"
-	"github.com/dfinance/dnode/x/orders"
 	"github.com/dfinance/dnode/x/poa"
 	"github.com/dfinance/dnode/x/vm"
 )
@@ -287,37 +285,38 @@ func GetGenesis(app *DnServiceApp, chainID, monikerID string, nodeAccPrivKey sec
 
 	moduleAccs := make([]*supply.ModuleAccount, 0)
 	// generate module acconts
-	{
-		// gov module
-		{
-			privKey := secp256k1.GenPrivKey()
-			pubKey := privKey.PubKey()
-			addr := sdk.AccAddress(pubKey.Address())
-
-			acc := &auth.BaseAccount{
-				AccountNumber: nodeAcc.AccountNumber + 1,
-				Address:       addr,
-				Coins:         GenDefCoins(nil),
-				PubKey:        pubKey,
-			}
-			moduleAccs = append(moduleAccs, supply.NewModuleAccount(acc, gov.ModuleName, supply.Burner))
-		}
-
-		// orders module
-		{
-			privKey := secp256k1.GenPrivKey()
-			pubKey := privKey.PubKey()
-			addr := sdk.AccAddress(pubKey.Address())
-
-			acc := &auth.BaseAccount{
-				AccountNumber: nodeAcc.AccountNumber + 2,
-				Address:       addr,
-				Coins:         GenDefCoins(nil),
-				PubKey:        pubKey,
-			}
-			moduleAccs = append(moduleAccs, supply.NewModuleAccount(acc, orders.ModuleName, supply.Burner))
-		}
-	}
+	// THAT IS NOT NEEDED (saved as a reference)
+	//{
+	//	// gov module
+	//	{
+	//		privKey := secp256k1.GenPrivKey()
+	//		pubKey := privKey.PubKey()
+	//		addr := sdk.AccAddress(pubKey.Address())
+	//
+	//		acc := &auth.BaseAccount{
+	//			AccountNumber: nodeAcc.AccountNumber + 1,
+	//			Address:       addr,
+	//			Coins:         GenDefCoins(nil),
+	//			PubKey:        pubKey,
+	//		}
+	//		moduleAccs = append(moduleAccs, supply.NewModuleAccount(acc, gov.ModuleName, supply.Burner))
+	//	}
+	//
+	//	// orders module
+	//	{
+	//		privKey := secp256k1.GenPrivKey()
+	//		pubKey := privKey.PubKey()
+	//		addr := sdk.AccAddress(pubKey.Address())
+	//
+	//		acc := &auth.BaseAccount{
+	//			AccountNumber: nodeAcc.AccountNumber + 2,
+	//			Address:       addr,
+	//			Coins:         GenDefCoins(nil),
+	//			PubKey:        pubKey,
+	//		}
+	//		moduleAccs = append(moduleAccs, supply.NewModuleAccount(acc, orders.ModuleName, supply.Burner))
+	//	}
+	//}
 
 	// generate genesis state based on defaults
 	genesisState := ModuleBasics.DefaultGenesis()

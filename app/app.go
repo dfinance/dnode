@@ -93,13 +93,14 @@ var (
 	)
 
 	maccPerms = map[string][]string{
-		auth.FeeCollectorName:     {supply.Burner},
-		staking.BondedPoolName:    {supply.Burner, supply.Staking},
-		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		mint.ModuleName:           {supply.Minter},
-		distribution.ModuleName:   nil,
-		orders.ModuleName:         {supply.Burner},
-		gov.ModuleName:            {supply.Burner},
+		auth.FeeCollectorName:            {supply.Burner},
+		staking.BondedPoolName:           {supply.Burner, supply.Staking},
+		staking.NotBondedPoolName:        {supply.Burner, supply.Staking},
+		mint.ModuleName:                  {supply.Minter},
+		distribution.ModuleName:          nil,
+		distribution.RewardsBankPoolName: nil,
+		orders.ModuleName:                {supply.Burner},
+		gov.ModuleName:                   {supply.Burner},
 	}
 )
 
