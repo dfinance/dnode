@@ -13,6 +13,47 @@ import (
 	msClient "github.com/dfinance/dnode/x/multisig/client"
 )
 
+// PostMsUnstakeCurrency returns tx command which post a new multisig unstake request.
+func PostMsUnstakeCurrency(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "ms-unstake [unstakeID] [staker]",
+		Short:   "Issue new unstake command via multi signature",
+		Example: "ms-unstake 1 {account} --from {account}",
+		Args:    cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
+
+			// parse inputs
+			fromAddr, err := helpers.ParseFromFlag(cliCtx)
+			if err != nil {
+				return err
+			}
+
+			staker, err := helpers.ParseSdkAddressParam("staker", args[1], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			// prepare and send multisig message
+			msg := types.NewMsgUnstakeCurrency(args[0], staker)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			callMsg := msClient.NewMsgSubmitCall(msg, args[0], fromAddr)
+			if err := callMsg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			cliCtx.WithOutput(os.Stdout)
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBuilder, []sdk.Msg{callMsg})
+		},
+	}
+
+	return cmd
+}
+
 // PostMsIssueCurrency returns tx command which post a new multisig issue request.
 func PostMsIssueCurrency(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{

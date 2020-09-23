@@ -14,4 +14,5 @@ var (
 	ErrGovInvalidProposal = sdkErrors.Register(ModuleName, 200, "invalid proposal")
 	ErrForceUnstake       = sdkErrors.Register(ModuleName, 300, "force unstake")
 	ErrNulifyBalance      = sdkErrors.Register(ModuleName, 301, "nullify balance")
+	ErrAccountBanned      = sdkErrors.Register(ModuleName, 303, "account banned for staking operations")
 )

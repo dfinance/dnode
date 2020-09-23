@@ -25,7 +25,11 @@ func NewMsHandler(keeper keeper.Keeper) msmodule.MsHandler {
 	}
 }
 
-func handleMsMsgUnstakeCurrency(ctx sdk.Context, keeper keeper.Keeper, currency MsgUnstakeCurrency) error {
+func handleMsMsgUnstakeCurrency(ctx sdk.Context, keeper keeper.Keeper, msg MsgUnstakeCurrency) error {
+	if err := keeper.UnstakeCurrency(ctx, msg.Staker); err != nil {
+		return err
+	}
+
 	return nil
 }
 

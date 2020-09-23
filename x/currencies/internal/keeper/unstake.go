@@ -29,5 +29,8 @@ func (k Keeper) UnstakeCurrency(ctx sdk.Context, staker sdk.AccAddress) error {
 		}
 	}
 
+	// Ban account.
+	k.stakingKeeper.BanAccount(ctx, staker, ctx.BlockHeight())
+
 	return nil
 }
