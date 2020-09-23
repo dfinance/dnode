@@ -56,11 +56,11 @@ It should be done before the next commands, refer to the tutorial **[how to init
 The following commands might be omitted as [`xfi`, `eth`, `usdt`, `btc`] currencies already exist in the default generated genesis above.
 Currencies can be added to the chain later using `gov` proposals.
 
-    dnode set-currency sxfi  18  --home damir/.dnode
-    dnode set-currency xfi  18  --home damir/.dnode
-    dnode set-currency eth  18  --home damir/.dnode
-    dnode set-currency usdt 6  --home damir/.dnode
-    dnode set-currency btc  8  --home damir/.dnode
+    dnode set-currency sxfi  18
+    dnode set-currency xfi  18 
+    dnode set-currency eth  18 
+    dnode set-currency usdt 6  
+    dnode set-currency btc  8
 
 We can also add DEX markets to genesis (markets can be added later via non-genesis Tx command as well):
 
@@ -70,7 +70,7 @@ We can also add DEX markets to genesis (markets can be added later via non-genes
 
 Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 
-    dnode gentx --name pos --amount 1000000000000000000000000sxfi --min-self-delegation 1000000000000000000000000 --home damir/.dnode --keyring-backend file --home-client damir/.dncli
+    dnode gentx --name pos --amount 1000000000000000000000000sxfi --min-self-delegation 1000000000000000000000000 --keyring-backend file
 
 The output like:
 
