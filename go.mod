@@ -5,7 +5,7 @@ go 1.14
 replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.38.4-0.20200923132321-0b40b40d3bf8
 
 // Local development option
-//replace github.com/cosmos/cosmos-sdk => /Users/tiky/Go_Projects/src/github.com/dfinance/cosmos-sdk
+//replace github.com/cosmos/cosmos-sdk => /Users/boris/go/src/github.com/dfinance/cosmos-sdk
 
 require (
 	github.com/99designs/keyring v1.1.3
@@ -19,7 +19,6 @@ require (
 	github.com/dfinance/glav v0.0.0-20200814081332-c4701f6c12a6
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3
-	github.com/g3co/go-swagger-merger v0.0.0-20200729134821-4edc8debe55f // indirect
 	github.com/getsentry/sentry-go v0.5.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/spec v0.19.9 // indirect
@@ -44,7 +43,6 @@ require (
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.7
 	github.com/tendermint/tm-db v0.5.1
-	github.com/urfave/cli/v2 v2.2.0 // indirect
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73 // indirect
 	golang.org/x/tools v0.0.0-20200909210914-44a2922940c2 // indirect
 	google.golang.org/grpc v1.30.0
