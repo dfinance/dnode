@@ -16,7 +16,6 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
-	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -32,11 +31,6 @@ import (
 const (
 	// Default gas for CLI.
 	DefaultGas = 500000
-)
-
-var (
-	// Denied tx commands.
-	txCommandsDenied = []string{distribution.ModuleName}
 )
 
 // Entry function for DN CLI.
@@ -118,6 +112,7 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 	)
 
 	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
+	DisableCommands(queryCmd, dnConfig.GetAppRestrictions().DisabledQueryCmd)
 
 	return queryCmd
 }
@@ -148,16 +143,19 @@ func SetDefaultFeeForTxCmd(cmd *cobra.Command) {
 			return nil
 		}
 	}
+}
 
+// DisableCommands disables cli commands.
+func DisableCommands(cmd *cobra.Command, restrictedCmdList []string) {
 	for _, child := range cmd.Commands() {
-		for _, deniedCmd := range txCommandsDenied {
+		for _, deniedCmd := range restrictedCmdList {
 			if deniedCmd == child.Use {
 				cmd.RemoveCommand(child)
 				continue
 			}
 		}
 
-		SetDefaultFeeForTxCmd(child)
+		DisableCommands(child, restrictedCmdList)
 	}
 }
 
@@ -182,6 +180,7 @@ func txCmd(cdc *amino.Codec) *cobra.Command {
 
 	app.ModuleBasics.AddTxCommands(txCmd, cdc)
 	SetDefaultFeeForTxCmd(txCmd)
+	DisableCommands(txCmd, dnConfig.GetAppRestrictions().DisabledTxCmd)
 
 	return txCmd
 }
