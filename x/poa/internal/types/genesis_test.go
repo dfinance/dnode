@@ -67,10 +67,7 @@ func TestPOA_Genesis_Validate(t *testing.T) {
 				MaxValidators: DefaultMaxValidators,
 				MinValidators: DefaultMinValidators,
 			},
-			Validators: Validators{
-				NewValidator(sdk.AccAddress("addr1"), "0x6adaF04f4E2BA9CDdE3ec143bdcF02AD830c1b71"),
-				NewValidator(sdk.AccAddress("addr2"), "0x6adaF04f4E2BA9CDdE3ec143bdcF02AD830c1b72"),
-			},
+			Validators: Validators{},
 		}
 		require.Error(t, state.Validate(false))
 		require.NoError(t, state.Validate(true))

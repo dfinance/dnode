@@ -51,12 +51,14 @@ type TestInput struct {
 	keyPoa     *sdk.KVStoreKey
 	keyMS      *sdk.KVStoreKey
 	keyVMS     *sdk.KVStoreKey
+	keyStaking *sdk.KVStoreKey
 	//
 	accountKeeper auth.AccountKeeper
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
 	paramsKeeper  params.Keeper
 	ccsStorage    ccstorage.Keeper
+	stakingKeeper staking.Keeper
 	keeper        Keeper
 	//
 	vmStorage common_vm.VMStorage
@@ -88,6 +90,7 @@ func NewTestInput(t *testing.T) TestInput {
 		keyCCS:     sdk.NewKVStoreKey(ccstorage.StoreKey),
 		keyCC:      sdk.NewKVStoreKey(types.StoreKey),
 		keyVMS:     sdk.NewKVStoreKey(vm.StoreKey),
+		keyStaking: sdk.NewKVStoreKey(staking.StoreKey),
 		tkeyParams: sdk.NewTransientStoreKey(params.TStoreKey),
 	}
 
@@ -112,6 +115,7 @@ func NewTestInput(t *testing.T) TestInput {
 	mstore.MountStoreWithDB(input.keyCCS, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyCC, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.keyVMS, sdk.StoreTypeIAVL, db)
+	mstore.MountStoreWithDB(input.keyStaking, sdk.StoreTypeIAVL, db)
 	mstore.MountStoreWithDB(input.tkeyParams, sdk.StoreTypeTransient, db)
 	err := mstore.LoadLatestVersion()
 	if err != nil {
@@ -132,7 +136,9 @@ func NewTestInput(t *testing.T) TestInput {
 		input.vmStorage,
 		types.RequestCCStoragePerms(),
 	)
-	input.keeper = NewKeeper(input.cdc, input.keyCC, input.bankKeeper, input.supplyKeeper, input.ccsStorage)
+	//	cdc *codec.Codec, key sdk.StoreKey, supplyKeeper types.SupplyKeeper, paramstore params.Subspace,
+	input.stakingKeeper = staking.NewKeeper(input.cdc, input.keyStaking, input.supplyKeeper, input.paramsKeeper.Subspace(staking.DefaultParamspace))
+	input.keeper = NewKeeper(input.cdc, input.keyCC, input.bankKeeper, input.supplyKeeper, input.ccsStorage, &input.stakingKeeper)
 
 	// create context
 	input.ctx = sdk.NewContext(mstore, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
