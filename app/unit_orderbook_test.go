@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+	"github.com/tendermint/tendermint/libs/log"
 
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 )
@@ -28,7 +29,7 @@ func TestOB_BasicNoDecimalAssets(t *testing.T) {
 	baseSupply, quoteSupply := sdk.NewInt(1000), sdk.NewInt(1000)
 
 	client0Addr, client1Addr := genValidators[0].Address, genValidators[1].Address
-	tester := NewOrderBookTester(t, app)
+	tester := NewOrderBookTester(t, app, true)
 
 	marketID := dnTypes.ID{}
 	// init currencies and clients
@@ -89,7 +90,7 @@ func TestOB_BasicDiffDecimalAssets(t *testing.T) {
 	baseSupply, quoteSupply := sdk.NewInt(1000), sdk.NewInt(1000)
 
 	client0Addr, client1Addr := genValidators[0].Address, genValidators[1].Address
-	tester := NewOrderBookTester(t, app)
+	tester := NewOrderBookTester(t, app, true)
 
 	marketID := dnTypes.ID{}
 	// init currencies and clients
@@ -146,7 +147,12 @@ func TestOB_ManyOrders(t *testing.T) {
 
 	t.Parallel()
 
-	app, appStop := NewTestDnAppMockVM()
+	// avoid test logs spam
+	app, appStop := NewTestDnAppMockVM(
+		log.AllowErrorWith("module", "x/markets"),
+		log.AllowErrorWith("module", "x/orders"),
+		log.AllowErrorWith("module", "x/orderbook"),
+	)
 	defer appStop()
 
 	genValidators, _, _, _ := CreateGenAccounts(3, GenDefCoins(t))
@@ -190,7 +196,7 @@ func TestOB_ManyOrders(t *testing.T) {
 	t.Logf("QuoteAsset supply: %s", quoteSupply.String())
 
 	client0Addr, client1Addr := genValidators[0].Address, genValidators[1].Address
-	tester := NewOrderBookTester(t, app)
+	tester := NewOrderBookTester(t, app, true)
 
 	marketID := dnTypes.ID{}
 	// init currencies and clients

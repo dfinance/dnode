@@ -31,6 +31,8 @@ type OrderBookTester struct {
 	Markets map[string]markets.Market
 	// currencies info map (key: denom)
 	Currencies map[string]ccstorage.Currency
+	// disable all test logs
+	DisableLogs bool
 }
 
 type ClientTestState struct {
@@ -70,16 +72,26 @@ type OrderOutput struct {
 	PartialQuantity sdk.Uint
 }
 
-func NewOrderBookTester(t *testing.T, app *DnServiceApp) OrderBookTester {
+func NewOrderBookTester(t *testing.T, app *DnServiceApp, disableLogs bool) OrderBookTester {
 	tester := OrderBookTester{
-		t:          t,
-		app:        app,
-		Markets:    make(map[string]markets.Market),
-		Currencies: make(map[string]ccstorage.Currency),
-		Clients:    make([]*ClientTestState, 0),
+		t:           t,
+		app:         app,
+		Markets:     make(map[string]markets.Market),
+		Currencies:  make(map[string]ccstorage.Currency),
+		Clients:     make([]*ClientTestState, 0),
+		DisableLogs: disableLogs,
 	}
 
 	return tester
+}
+
+// Log
+func (tester *OrderBookTester) Logf(format string, args ...interface{}) {
+	if tester.DisableLogs {
+		return
+	}
+
+	tester.t.Logf(format, args...)
 }
 
 // Start a new block.
@@ -229,11 +241,11 @@ func (tester *OrderBookTester) SetOrderPartialFillOutput(clientAddr sdk.AccAddre
 
 // Get current clients balances and compare to expected output (if provided).
 func (tester *OrderBookTester) CheckClientsOutput() {
-	tester.t.Log()
+	tester.Logf("")
 
 	// iterate over all clients
 	for clientID, clientState := range tester.Clients {
-		tester.t.Logf("Client %d (%s): coin results:", clientID, clientState.Address)
+		tester.Logf("Client %d (%s): coin results:", clientID, clientState.Address)
 
 		// get current balances
 		acc := GetAccountCheckTx(tester.app, clientState.Address)
@@ -245,9 +257,9 @@ func (tester *OrderBookTester) CheckClientsOutput() {
 
 			// get currency info and print initial balance
 			ccInfo := tester.Currencies[denom]
-			tester.t.Logf("  %q asset:", denom)
-			tester.t.Logf("    initial:      %s (%s)", inputAmount, ccInfo.UintToDec(sdk.Uint(inputAmount)))
-			tester.t.Logf("    -> estimated: %s (%s)", estimatedAmount, ccInfo.UintToDec(sdk.Uint(estimatedAmount)))
+			tester.Logf("  %q asset:", denom)
+			tester.Logf("    initial:      %s (%s)", inputAmount, ccInfo.UintToDec(sdk.Uint(inputAmount)))
+			tester.Logf("    -> estimated: %s (%s)", estimatedAmount, ccInfo.UintToDec(sdk.Uint(estimatedAmount)))
 
 			// find matching output coin (empty if not found)
 			var outputCoin *sdk.Coin
@@ -259,10 +271,10 @@ func (tester *OrderBookTester) CheckClientsOutput() {
 				}
 			}
 			if outputCoin != nil {
-				tester.t.Logf("    -> actual:    %s (%s)", outputCoin.Amount, ccInfo.UintToDec(sdk.Uint(outputCoin.Amount)))
+				tester.Logf("    -> actual:    %s (%s)", outputCoin.Amount, ccInfo.UintToDec(sdk.Uint(outputCoin.Amount)))
 				outputAmount = outputCoin.Amount
 			} else {
-				tester.t.Logf("    -> actual:    empty")
+				tester.Logf("    -> actual:    empty")
 			}
 
 			// check estimated balances (after all the orders were processed)
@@ -281,7 +293,7 @@ func (tester *OrderBookTester) CheckClientsOutput() {
 
 // Get current order states and compare to expected output (if provided).
 func (tester *OrderBookTester) CheckOrdersOutput() {
-	tester.t.Log()
+	tester.Logf("")
 
 	ctx := GetContext(tester.app, true)
 	ordersList, err := tester.app.orderKeeper.GetList(ctx)
@@ -295,7 +307,7 @@ func (tester *OrderBookTester) CheckOrdersOutput() {
 
 	// iterate over all clients
 	for clientID, clientState := range tester.Clients {
-		tester.t.Logf("Client %d (%s): order results", clientID, clientState.Address)
+		tester.Logf("Client %d (%s): order results", clientID, clientState.Address)
 		// iterate over all client orders
 		for _, orderState := range clientState.Orders {
 			// prepare inputs for order checking
@@ -323,18 +335,18 @@ func (tester *OrderBookTester) PrintHistoryItems() {
 		historyItems = append(historyItems, historyItem)
 	}
 
-	tester.t.Logf("\n%s", historyItems.String())
+	tester.Logf("\n%s", historyItems.String())
 }
 
 func (tester *OrderBookTester) checkOrder(clientSt *ClientTestState, market markets.MarketExtended, orderSt *OrderTestState, historyItem orderbook.HistoryItem, orderOut *orders.Order) {
 	// print logs
-	tester.t.Logf("  Order %s (%s):", orderSt.ID, orderSt.Input.Direction)
-	tester.t.Logf("    quantity: %s (%s)", orderSt.Input.Quantity, market.BaseCurrency.UintToDec(orderSt.Input.Quantity))
+	tester.Logf("  Order %s (%s):", orderSt.ID, orderSt.Input.Direction)
+	tester.Logf("    quantity: %s (%s)", orderSt.Input.Quantity, market.BaseCurrency.UintToDec(orderSt.Input.Quantity))
 
 	if orderOut == nil {
-		tester.t.Logf("    -> fully filled")
+		tester.Logf("    -> fully filled")
 	} else {
-		tester.t.Logf("    -> partially filled: %s (%s)", orderOut.Quantity, market.BaseCurrency.UintToDec(orderOut.Quantity))
+		tester.Logf("    -> partially filled: %s (%s)", orderOut.Quantity, market.BaseCurrency.UintToDec(orderOut.Quantity))
 	}
 
 	// updated estimated client coin balance based on current order output
