@@ -152,5 +152,10 @@ func NewKeeper(
 		k.modulePerms.AutoAddRequester(requester)
 	}
 
+	// ensure orders module account is set
+	if addr := sk.GetModuleAddress(types.ModuleName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", types.ModuleName))
+	}
+
 	return k
 }

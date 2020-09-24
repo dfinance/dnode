@@ -95,7 +95,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 
 			appGenState := mbm.DefaultGenesis()
 
-			// Change default staking denom, minSelfDelegation
+			// Change default staking params: denom, minSelfDelegation
 			minSelfDelegation, ok := sdk.NewIntFromString(DefMinSelfDelegation)
 			if !ok {
 				return fmt.Errorf("staking genState: default minSelfDelegation convertion failed: %s", DefMinSelfDelegation)
@@ -162,6 +162,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			crisisGenState.ConstantFee.Amount = defFeeAmount
 			appGenState[crisis.ModuleName] = cdc.MustMarshalJSON(crisisGenState)
 
+			// Prepare genesis state
 			appState, err := codec.MarshalJSONIndent(cdc, appGenState)
 			if err != nil {
 				return errors.Wrap(err, "Failed to marshall default genesis state")
@@ -183,7 +184,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			genDoc.Validators = nil
 			genDoc.AppState = appState
 
-			// Setup max gas.
+			// Setup max gas
 			if genDoc.ConsensusParams == nil {
 				genDoc.ConsensusParams = tmTypes.DefaultConsensusParams()
 			}
