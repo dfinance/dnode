@@ -43,47 +43,53 @@ func TestVM_DiscardEvent(t *testing.T) {
 
 	// "panic" with empty VMStatus_Abort
 	{
-		exec := &vm_grpc.VMExecuteResponse{
-			Status: &vm_grpc.VMStatus{
-				Error: &vm_grpc.VMStatus_Abort{},
-			},
-		}
+		func() {
+			exec := &vm_grpc.VMExecuteResponse{
+				Status: &vm_grpc.VMStatus{
+					Error: &vm_grpc.VMStatus_Abort{},
+				},
+			}
 
-		defer func() {
-			require.NotNil(t, recover())
+			defer func() {
+				require.NotNil(t, recover())
+			}()
+
+			NewContractEvents(exec)
 		}()
-
-		NewContractEvents(exec)
 	}
 
 	// "panic" with empty VMStatus_ExecutionFailure
 	{
-		exec := &vm_grpc.VMExecuteResponse{
-			Status: &vm_grpc.VMStatus{
-				Error: &vm_grpc.VMStatus_ExecutionFailure{},
-			},
-		}
+		func() {
+			exec := &vm_grpc.VMExecuteResponse{
+				Status: &vm_grpc.VMStatus{
+					Error: &vm_grpc.VMStatus_ExecutionFailure{},
+				},
+			}
 
-		defer func() {
-			require.NotNil(t, recover())
+			defer func() {
+				require.NotNil(t, recover())
+			}()
+
+			NewContractEvents(exec)
 		}()
-
-		NewContractEvents(exec)
 	}
 
 	// "panic" with empty VMStatus_MoveError
 	{
-		exec := &vm_grpc.VMExecuteResponse{
-			Status: &vm_grpc.VMStatus{
-				Error: &vm_grpc.VMStatus_MoveError{},
-			},
-		}
+		func() {
+			exec := &vm_grpc.VMExecuteResponse{
+				Status: &vm_grpc.VMStatus{
+					Error: &vm_grpc.VMStatus_MoveError{},
+				},
+			}
 
-		defer func() {
-			require.NotNil(t, recover())
+			defer func() {
+				require.NotNil(t, recover())
+			}()
+
+			NewContractEvents(exec)
 		}()
-
-		NewContractEvents(exec)
 	}
 
 	// "discard" with abort error and abort location
