@@ -64,8 +64,10 @@ type VMConfig struct {
 
 // Custom restriction params for application
 type AppRestrictions struct {
-	MsgDeniedList  map[string][]string
-	ParamsProposal params.RestrictedParams
+	MsgDeniedList    map[string][]string
+	ParamsProposal   params.RestrictedParams
+	DisabledTxCmd    []string
+	DisabledQueryCmd []string
 }
 
 // Default VM configuration.
@@ -132,8 +134,13 @@ func init() {
 	GovMinDeposit = sdk.NewCoin(StakingDenom, minDepositAmount)
 }
 
+//GetAppRestrictions returns predefined parameter for remove or restrict standard app parameters.
 func GetAppRestrictions() AppRestrictions {
 	return AppRestrictions{
+		DisabledTxCmd: []string{
+			distribution.ModuleName,
+		},
+		DisabledQueryCmd: []string{},
 		MsgDeniedList: map[string][]string{
 			distribution.ModuleName: {
 				distribution.MsgWithdrawDelegatorReward{}.Type(),

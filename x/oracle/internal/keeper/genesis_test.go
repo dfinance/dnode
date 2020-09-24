@@ -35,28 +35,30 @@ func TestOracleKeeper_Genesis_Init(t *testing.T) {
 
 	// prices asset code doesnt exist in assets
 	{
-		params := input.keeper.GetParams(ctx)
-		params.Assets = types.Assets{
-			types.NewAsset(dnTypes.AssetCode("eth_xfi"), types.Oracles{}, true),
-		}
+		func() {
+			params := input.keeper.GetParams(ctx)
+			params.Assets = types.Assets{
+				types.NewAsset(dnTypes.AssetCode("eth_xfi"), types.Oracles{}, true),
+			}
 
-		cpList := types.CurrentPrices{
-			NewMockCurrentPrice("btc_xfi", 100),
-		}
+			cpList := types.CurrentPrices{
+				NewMockCurrentPrice("btc_xfi", 100),
+			}
 
-		state := types.GenesisState{
-			Params:        params,
-			CurrentPrices: cpList,
-		}
+			state := types.GenesisState{
+				Params:        params,
+				CurrentPrices: cpList,
+			}
 
-		defer func() {
-			r := recover()
-			require.NotNil(t, r)
-			require.Contains(t, r.(error).Error(), "asset_code")
-			require.Contains(t, r.(error).Error(), "does not exist")
+			defer func() {
+				r := recover()
+				require.NotNil(t, r)
+				require.Contains(t, r.(error).Error(), "asset_code")
+				require.Contains(t, r.(error).Error(), "does not exist")
+			}()
+
+			keeper.InitGenesis(ctx, cdc.MustMarshalJSON(state))
 		}()
-
-		keeper.InitGenesis(ctx, cdc.MustMarshalJSON(state))
 	}
 
 	//import and export
