@@ -15,6 +15,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/spf13/viper"
 	tmOs "github.com/tendermint/tendermint/libs/os"
+
+	"github.com/dfinance/dnode/x/currencies"
 )
 
 const (
@@ -162,6 +164,9 @@ func GetAppRestrictions() AppRestrictions {
 				distribution.MsgWithdrawValidatorCommission{}.Type(),
 				distribution.TypeMsgFundPublicTreasuryPool,
 				distribution.MsgSetWithdrawAddress{}.Type(),
+			},
+			currencies.ModuleName: {
+				currencies.MsgWithdrawCurrency{}.Type(),
 			},
 		},
 		ParamsProposal: params.RestrictedParams{
