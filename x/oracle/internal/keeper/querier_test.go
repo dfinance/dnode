@@ -32,12 +32,14 @@ func TestOracleKeeper_QueryCurrentPrice(t *testing.T) {
 
 	// empty params
 	{
-		defer func() {
-			r := recover()
-			require.NotNil(t, r)
-		}()
+		func() {
+			defer func() {
+				r := recover()
+				require.NotNil(t, r)
+			}()
 
-		_, _ = queryCurrentPrice(ctx, []string{}, abci.RequestQuery{}, keeper)
+			_, _ = queryCurrentPrice(ctx, []string{}, abci.RequestQuery{}, keeper)
+		}()
 	}
 }
 
@@ -68,21 +70,25 @@ func TestOracleKeeper_QueryRawPrices(t *testing.T) {
 
 	// empty params
 	{
-		defer func() {
-			r := recover()
-			require.NotNil(t, r)
-		}()
+		func() {
+			defer func() {
+				r := recover()
+				require.NotNil(t, r)
+			}()
 
-		_, _ = queryRawPrices(ctx, []string{}, abci.RequestQuery{}, keeper)
+			_, _ = queryRawPrices(ctx, []string{}, abci.RequestQuery{}, keeper)
+		}()
 	}
 
 	// empty block height
 	{
-		defer func() {
-			r := recover()
-			require.NotNil(t, r)
+		func() {
+			defer func() {
+				r := recover()
+				require.NotNil(t, r)
+			}()
+			_, _ = queryRawPrices(ctx, []string{input.stdAssetCode.String()}, abci.RequestQuery{}, keeper)
 		}()
-		_, _ = queryRawPrices(ctx, []string{input.stdAssetCode.String()}, abci.RequestQuery{}, keeper)
 	}
 }
 
