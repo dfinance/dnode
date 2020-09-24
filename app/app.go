@@ -192,7 +192,7 @@ func MakeCodec() *codec.Codec {
 func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, restrictions config.AppRestrictions, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
-	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), restrictions.MsgDeniedList, baseAppOptions...)
+	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), restrictions.MsgDeniedList, restrictions.CustomMsgVerifiers, baseAppOptions...)
 	bApp.SetAppVersion(version.Version)
 
 	keys := sdk.NewKVStoreKeys(
