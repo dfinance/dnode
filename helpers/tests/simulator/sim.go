@@ -389,7 +389,7 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 	}
 
 	// set application
-	s.app = app.NewDnServiceApp(logger, db, vmConfig, s.invariantCheckPeriod, config.AppRestrictions{})
+	s.app = app.NewDnServiceApp(logger, db, vmConfig, s.invariantCheckPeriod, config.GetEmptyAppRestriction())
 
 	return s
 }

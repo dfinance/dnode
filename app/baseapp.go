@@ -15,15 +15,12 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/dfinance/dnode/cmd/config"
 	"github.com/dfinance/dnode/x/vm"
 )
 
@@ -114,6 +111,9 @@ type BaseApp struct { // nolint: maligned
 
 	// list of denied messages, e.g.: moduleName: {msgType},
 	msgsDeniedList map[string][]string
+
+	// custom Tx msg verifier
+	msgsCustomVerifier func(msg sdk.Msg) error
 }
 
 // NewBaseApp returns a reference to an initialized BaseApp. It accepts a
@@ -122,21 +122,24 @@ type BaseApp struct { // nolint: maligned
 //
 // NOTE: The db is used to store the version number for now.
 func NewBaseApp(
-	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder, msgsDeniedList map[string][]string, options ...func(*BaseApp),
+	name string, logger log.Logger, db dbm.DB, txDecoder sdk.TxDecoder,
+	msgsDeniedList map[string][]string, msgsCustomVerifier func(msg sdk.Msg) error,
+	options ...func(*BaseApp),
 ) *BaseApp {
 
 	app := &BaseApp{
-		logger:         logger,
-		name:           name,
-		db:             db,
-		cms:            store.NewCommitMultiStore(db),
-		storeLoader:    DefaultStoreLoader,
-		router:         baseapp.NewRouter(),
-		queryRouter:    baseapp.NewQueryRouter(),
-		txDecoder:      txDecoder,
-		fauxMerkleMode: false,
-		trace:          false,
-		msgsDeniedList: msgsDeniedList,
+		logger:             logger,
+		name:               name,
+		db:                 db,
+		cms:                store.NewCommitMultiStore(db),
+		storeLoader:        DefaultStoreLoader,
+		router:             baseapp.NewRouter(),
+		queryRouter:        baseapp.NewQueryRouter(),
+		txDecoder:          txDecoder,
+		fauxMerkleMode:     false,
+		trace:              false,
+		msgsDeniedList:     msgsDeniedList,
+		msgsCustomVerifier: msgsCustomVerifier,
 	}
 	for _, option := range options {
 		option(app)
@@ -677,30 +680,8 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 
 	// NOTE: GasWanted is determined by the AnteHandler and GasUsed by the GasMeter.
 	for i, msg := range msgs {
-		// disallow sxfi bank transactions
-		if msg, ok := msg.(bank.MsgSend); ok {
-			for i := range msg.Amount {
-				if msg.Amount.GetDenomByIndex(i) == config.StakingDenom {
-					return nil, sdkerrors.Wrapf(
-						sdkerrors.ErrInvalidRequest,
-						"bank transactions is disallowed for %s token",
-						config.StakingDenom,
-					)
-				}
-			}
-		}
-
-		// allow just sxfi token for gov deposit
-		if msg, ok := msg.(gov.MsgDeposit); ok {
-			for i := range msg.Amount {
-				if msg.Amount.GetDenomByIndex(i) != config.StakingDenom {
-					return nil, sdkerrors.Wrapf(
-						sdkerrors.ErrInvalidRequest,
-						"gov deposit allowed just by %s token",
-						config.StakingDenom,
-					)
-				}
-			}
+		if err := app.msgsCustomVerifier(msg); err != nil {
+			return nil, err
 		}
 
 		// skip actual execution for (Re)CheckTx mode
