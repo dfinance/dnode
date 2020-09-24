@@ -31,7 +31,7 @@ func TestOrders_Ttl(t *testing.T) {
 	baseSupply, quoteSupply := sdk.NewInt(1000), sdk.NewInt(1000)
 
 	clientAddr := genValidators[0].Address
-	tester := NewOrderBookTester(t, app)
+	tester := NewOrderBookTester(t, app, true)
 
 	marketID := dnTypes.ID{}
 	// init currencies and clients
