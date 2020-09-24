@@ -7,7 +7,10 @@ import (
 	"path/filepath"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/spf13/viper"
@@ -64,10 +67,11 @@ type VMConfig struct {
 
 // Custom restriction params for application
 type AppRestrictions struct {
-	MsgDeniedList    map[string][]string
-	ParamsProposal   params.RestrictedParams
-	DisabledTxCmd    []string
-	DisabledQueryCmd []string
+	CustomMsgVerifiers func(msg sdk.Msg) error
+	MsgDeniedList      map[string][]string
+	ParamsProposal     params.RestrictedParams
+	DisabledTxCmd      []string
+	DisabledQueryCmd   []string
 }
 
 // Default VM configuration.
@@ -134,6 +138,17 @@ func init() {
 	GovMinDeposit = sdk.NewCoin(StakingDenom, minDepositAmount)
 }
 
+// GetEmptyAppRestriction returns AppRestrictions with no restrictions.
+func GetEmptyAppRestriction() AppRestrictions {
+	return AppRestrictions{
+		DisabledTxCmd:      []string{},
+		DisabledQueryCmd:   []string{},
+		MsgDeniedList:      map[string][]string{},
+		ParamsProposal:     params.RestrictedParams{},
+		CustomMsgVerifiers: func(msg sdk.Msg) error { return nil },
+	}
+}
+
 //GetAppRestrictions returns predefined parameter for remove or restrict standard app parameters.
 func GetAppRestrictions() AppRestrictions {
 	return AppRestrictions{
@@ -156,6 +171,24 @@ func GetAppRestrictions() AppRestrictions {
 			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyHARPTax)},
 			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyFoundationNominees)},
 			params.RestrictedParam{Subspace: mint.ModuleName, Key: string(mint.KeyFoundationAllocationRatio)},
+		},
+		CustomMsgVerifiers: func(msg sdk.Msg) error {
+			switch msg := msg.(type) {
+			case bank.MsgSend:
+				for i := range msg.Amount {
+					if msg.Amount.GetDenomByIndex(i) == StakingDenom {
+						return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "bank transactions are disallowed for %s token", StakingDenom)
+					}
+				}
+			case gov.MsgDeposit:
+				for i := range msg.Amount {
+					if msg.Amount.GetDenomByIndex(i) != StakingDenom {
+						return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "gov deposit only allowed for %s token", StakingDenom)
+					}
+				}
+			}
+
+			return nil
 		},
 	}
 }
