@@ -12,9 +12,9 @@ func (k Keeper) UnstakeCurrency(ctx sdk.Context, staker sdk.AccAddress) error {
 	stakingDenom := k.stakingKeeper.BondDenom(ctx)
 
 	// Call ForceRemoveDelegator to remove all delegations.
-	err := k.stakingKeeper.ForceRemoveDelegator(ctx, staker)
-	if err != nil {
+	if err := k.stakingKeeper.ForceRemoveDelegator(ctx, staker); err != nil {
 		return sdkErrors.Wrapf(types.ErrForceUnstake, "error during force unstake delegations for %s: %v", staker, err)
+
 	}
 
 	// Check balance and remove sxfi.
@@ -22,10 +22,21 @@ func (k Keeper) UnstakeCurrency(ctx sdk.Context, staker sdk.AccAddress) error {
 
 	for _, balance := range balances {
 		if balance.Denom == stakingDenom {
-			err := k.bankKeeper.SetCoins(ctx, staker, balances.Sub(sdk.Coins{balance}))
-			if err != nil {
+			// Remove sxfi from balance.
+			if err := k.bankKeeper.SetCoins(ctx, staker, balances.Sub(sdk.Coins{balance})); err != nil {
 				return sdkErrors.Wrapf(types.ErrNulifyBalance, "error during nullify user sxfi balance for %s: %v", staker, err)
+
 			}
+
+			// Reducing supply.
+			// Both keepers (ccs and supply).
+			if err := k.ccsKeeper.DecreaseCurrencySupply(ctx, balance); err != nil {
+				return sdkErrors.Wrapf(types.ErrInternal, "can't decrease supply with ccsKeeper for %s: %v", staker, err)
+			}
+
+			curSupply := k.supplyKeeper.GetSupply(ctx)
+			curSupply = curSupply.SetTotal(curSupply.GetTotal().Sub(sdk.Coins{balance}))
+			k.supplyKeeper.SetSupply(ctx, curSupply)
 		}
 	}
 
