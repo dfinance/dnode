@@ -176,56 +176,57 @@ func TestCurrencies_CLI(t *testing.T) {
 	}
 
 	// check withdraw currency Tx
-	{
-		// reduce amount
-		withdrawAmount := sdk.NewInt(100)
-		{
-			ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, withdrawAmount).CheckSucceeded()
-			ccCurAmount = ccCurAmount.Sub(withdrawAmount)
-		}
-
-		// check withdraw appeared
-		{
-			id := dnTypes.NewIDFromUint64(0)
-			q, withdraw := ct.QueryCurrenciesWithdraw(id)
-			q.CheckSucceeded()
-
-			require.True(t, withdraw.ID.Equal(id))
-			require.Equal(t, ccDenom, withdraw.Coin.Denom)
-			require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
-			require.Equal(t, ccRecipient, withdraw.PegZoneSpender)
-			require.Equal(t, ccRecipient, withdraw.Spender.String())
-			require.True(t, withdrawAmount.Equal(withdraw.Coin.Amount))
-		}
-
-		// incorrect inputs
-		{
-			// wrong number of args
-			{
-				coin := sdk.NewCoin(ccDenom, sdk.OneInt())
-				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, sdk.OneInt())
-				tx.RemoveCmdArg(coin.String())
-				tx.CheckFailedWithErrorSubstring("arg(s)")
-			}
-			// from non-existing account
-			{
-				tx := ct.TxCurrenciesWithdraw(ccRecipient, nonExistingAddress.String(), ccDenom, sdk.OneInt())
-				tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
-			}
-			// invalid amount
-			{
-				coin := sdk.NewCoin(ccDenom, ccCurAmount)
-				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, ccCurAmount)
-				tx.ChangeCmdArg(coin.String(), "invalid_amount"+ccDenom)
-				tx.CheckFailedWithErrorSubstring("parsing coin")
-			}
-			// MsgWithdrawCurrency ValidateBasic
-			{
-				tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, sdk.ZeroInt())
-				tx.CheckFailedWithErrorSubstring("wrong amount")
-			}
-		}
-	}
+	// TODO: disabled as MsgWithdraw disabled in the baseapp
+	//{
+	//	// reduce amount
+	//	withdrawAmount := sdk.NewInt(100)
+	//	{
+	//		ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, withdrawAmount).CheckSucceeded()
+	//		ccCurAmount = ccCurAmount.Sub(withdrawAmount)
+	//	}
+	//
+	//	// check withdraw appeared
+	//	{
+	//		id := dnTypes.NewIDFromUint64(0)
+	//		q, withdraw := ct.QueryCurrenciesWithdraw(id)
+	//		q.CheckSucceeded()
+	//
+	//		require.True(t, withdraw.ID.Equal(id))
+	//		require.Equal(t, ccDenom, withdraw.Coin.Denom)
+	//		require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
+	//		require.Equal(t, ccRecipient, withdraw.PegZoneSpender)
+	//		require.Equal(t, ccRecipient, withdraw.Spender.String())
+	//		require.True(t, withdrawAmount.Equal(withdraw.Coin.Amount))
+	//	}
+	//
+	//	// incorrect inputs
+	//	{
+	//		// wrong number of args
+	//		{
+	//			coin := sdk.NewCoin(ccDenom, sdk.OneInt())
+	//			tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, sdk.OneInt())
+	//			tx.RemoveCmdArg(coin.String())
+	//			tx.CheckFailedWithErrorSubstring("arg(s)")
+	//		}
+	//		// from non-existing account
+	//		{
+	//			tx := ct.TxCurrenciesWithdraw(ccRecipient, nonExistingAddress.String(), ccDenom, sdk.OneInt())
+	//			tx.CheckFailedWithErrorSubstring(NotFoundErrSubString)
+	//		}
+	//		// invalid amount
+	//		{
+	//			coin := sdk.NewCoin(ccDenom, ccCurAmount)
+	//			tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, ccCurAmount)
+	//			tx.ChangeCmdArg(coin.String(), "invalid_amount"+ccDenom)
+	//			tx.CheckFailedWithErrorSubstring("parsing coin")
+	//		}
+	//		// MsgWithdrawCurrency ValidateBasic
+	//		{
+	//			tx := ct.TxCurrenciesWithdraw(ccRecipient, ccRecipient, ccDenom, sdk.ZeroInt())
+	//			tx.CheckFailedWithErrorSubstring("wrong amount")
+	//		}
+	//	}
+	//}
 
 	// check issue Query
 	{
@@ -259,29 +260,32 @@ func TestCurrencies_CLI(t *testing.T) {
 	}
 
 	// check withdraw Query
-	{
-		// incorrect inputs
-		{
-			// invalid number of args
-			{
-				q, _ := ct.QueryCurrenciesCurrency(ccDenom)
-				q.RemoveCmdArg(ccDenom)
-				q.CheckFailedWithErrorSubstring("arg(s)")
-			}
-			// non-existing withdrawID
-			{
-				q, _ := ct.QueryCurrenciesWithdraw(dnTypes.NewIDFromUint64(1))
-				q.ChangeCmdArg("1", "non_int")
-				q.CheckFailedWithErrorSubstring("")
-			}
-		}
-	}
+	// TODO: disabled as MsgWithdraw disabled in the baseapp
+	//{
+	//	// incorrect inputs
+	//	{
+	//		// invalid number of args
+	//		{
+	//			q, _ := ct.QueryCurrenciesCurrency(ccDenom)
+	//			q.RemoveCmdArg(ccDenom)
+	//			q.CheckFailedWithErrorSubstring("arg(s)")
+	//		}
+	//		// non-existing withdrawID
+	//		{
+	//			q, _ := ct.QueryCurrenciesWithdraw(dnTypes.NewIDFromUint64(1))
+	//			q.ChangeCmdArg("1", "non_int")
+	//			q.CheckFailedWithErrorSubstring("")
+	//		}
+	//	}
+	//}
 
 	// check withdraws Query
 	{
 		q, withdraws := ct.QueryCurrenciesWithdraws(1, 10)
 		q.CheckSucceeded()
-		require.Len(t, *withdraws, 1)
+		// TODO: changed as MsgWithdraw disabled in the baseapp
+		//require.Len(t, *withdraws, 1)
+		require.Len(t, *withdraws, 0)
 
 		// incorrect inputs
 		{

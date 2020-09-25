@@ -242,32 +242,33 @@ func TestCurrencyMultisig_REST(t *testing.T) {
 	}
 
 	// check currencies withdraw currency endpoint
-	{
-		t.Logf("withdraw 0: check withdrawCurrency stdTx")
-
-		withdrawCoin := sdk.NewCoin("eth", sdk.NewInt(50))
-		pzAddress, pzChainID := "pz_addr", "pz_chainID"
-
-		// get stdTx from PUT endpoint
-		q, stdTx := ct.RestQueryCurrenciesWithdrawStdTx(issuePayeeName, pzAddress, pzChainID, withdrawCoin, "")
-		q.CheckSucceeded()
-
-		// verify stdTx
-		{
-			require.Len(t, stdTx.Msgs, 1)
-			require.IsType(t, currencies.MsgWithdrawCurrency{}, stdTx.Msgs[0])
-			withdrawMsg := stdTx.Msgs[0].(currencies.MsgWithdrawCurrency)
-			require.True(t, withdrawCoin.IsEqual(withdrawMsg.Coin))
-			require.Equal(t, ct.Accounts[issuePayeeName].Address, withdrawMsg.Payer.String())
-			require.Equal(t, pzAddress, withdrawMsg.PegZonePayee)
-			require.Equal(t, pzChainID, withdrawMsg.PegZoneChainID)
-		}
-
-		t.Logf("withdraw 0: check withdrawCurrency request")
-
-		r, _ := ct.NewRestStdTxRequest(issuePayeeName, *stdTx, false)
-		r.CheckSucceeded()
-	}
+	// TODO: disabled as MsgWithdraw disabled in the baseapp
+	//{
+	//	t.Logf("withdraw 0: check withdrawCurrency stdTx")
+	//
+	//	withdrawCoin := sdk.NewCoin("eth", sdk.NewInt(50))
+	//	pzAddress, pzChainID := "pz_addr", "pz_chainID"
+	//
+	//	// get stdTx from PUT endpoint
+	//	q, stdTx := ct.RestQueryCurrenciesWithdrawStdTx(issuePayeeName, pzAddress, pzChainID, withdrawCoin, "")
+	//	q.CheckSucceeded()
+	//
+	//	// verify stdTx
+	//	{
+	//		require.Len(t, stdTx.Msgs, 1)
+	//		require.IsType(t, currencies.MsgWithdrawCurrency{}, stdTx.Msgs[0])
+	//		withdrawMsg := stdTx.Msgs[0].(currencies.MsgWithdrawCurrency)
+	//		require.True(t, withdrawCoin.IsEqual(withdrawMsg.Coin))
+	//		require.Equal(t, ct.Accounts[issuePayeeName].Address, withdrawMsg.Payer.String())
+	//		require.Equal(t, pzAddress, withdrawMsg.PegZonePayee)
+	//		require.Equal(t, pzChainID, withdrawMsg.PegZoneChainID)
+	//	}
+	//
+	//	t.Logf("withdraw 0: check withdrawCurrency request")
+	//
+	//	r, _ := ct.NewRestStdTxRequest(issuePayeeName, *stdTx, false)
+	//	r.CheckSucceeded()
+	//}
 }
 
 // Trying to recreate bug from Damir: validator reads submitted call by uniqueID, but the following confirm return "not found".
@@ -344,7 +345,7 @@ func TestCurrency_REST(t *testing.T) {
 	ccDecimals := ct.Currencies[ccDenom].Decimals
 	recipientAddr := ct.Accounts["validator1"].Address
 	curAmount, issueId := sdk.NewInt(100), "issue1"
-	withdrawAmounts := make([]sdk.Int, 0)
+	//withdrawAmounts := make([]sdk.Int, 0)
 
 	// issue currency
 	ct.TxCurrenciesIssue(recipientAddr, recipientAddr, issueId, ccDenom, curAmount).CheckSucceeded()
@@ -397,80 +398,84 @@ func TestCurrency_REST(t *testing.T) {
 	}
 
 	// withdraw currency
-	newAmount := sdk.NewInt(50)
-	curAmount = curAmount.Sub(newAmount)
-	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, ccDenom, newAmount).CheckSucceeded()
-	withdrawAmounts = append(withdrawAmounts, newAmount)
+	// TODO: disabled as MsgWithdraw disabled in the baseapp
+	//newAmount := sdk.NewInt(50)
+	//curAmount = curAmount.Sub(newAmount)
+	//ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, ccDenom, newAmount).CheckSucceeded()
+	//withdrawAmounts = append(withdrawAmounts, newAmount)
 
 	// check getWithdraw endpoint
-	{
-		req, respMsg := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(0))
-		req.CheckSucceeded()
-
-		require.Equal(t, ct.IDs.ChainID, respMsg.PegZoneChainID)
-		require.Equal(t, ccDenom, respMsg.Coin.Denom)
-		require.True(t, newAmount.Equal(respMsg.Coin.Amount))
-		require.Equal(t, recipientAddr, respMsg.Spender.String())
-		require.Equal(t, recipientAddr, respMsg.PegZoneSpender)
-
-		// incorrect inputs
-		{
-			// invalid withdrawID
-			{
-				req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(0))
-				req.ModifySubPath("0", "abc")
-				req.CheckFailed(http.StatusBadRequest, nil)
-			}
-
-			// non-existing withdrawID
-			{
-				req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(1))
-				req.CheckFailed(http.StatusInternalServerError, currencies.ErrWrongWithdrawID)
-			}
-		}
-	}
+	// TODO: disabled as MsgWithdraw disabled in the baseapp
+	//{
+	//	req, respMsg := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(0))
+	//	req.CheckSucceeded()
+	//
+	//	require.Equal(t, ct.IDs.ChainID, respMsg.PegZoneChainID)
+	//	require.Equal(t, ccDenom, respMsg.Coin.Denom)
+	//	require.True(t, newAmount.Equal(respMsg.Coin.Amount))
+	//	require.Equal(t, recipientAddr, respMsg.Spender.String())
+	//	require.Equal(t, recipientAddr, respMsg.PegZoneSpender)
+	//
+	//	// incorrect inputs
+	//	{
+	//		// invalid withdrawID
+	//		{
+	//			req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(0))
+	//			req.ModifySubPath("0", "abc")
+	//			req.CheckFailed(http.StatusBadRequest, nil)
+	//		}
+	//
+	//		// non-existing withdrawID
+	//		{
+	//			req, _ := ct.RestQueryCurrenciesWithdraw(sdk.NewInt(1))
+	//			req.CheckFailed(http.StatusInternalServerError, currencies.ErrWrongWithdrawID)
+	//		}
+	//	}
+	//}
 
 	// withdraw currency once more
-	newAmount = sdk.NewInt(25)
-	curAmount = curAmount.Sub(newAmount)
-	ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, ccDenom, newAmount).CheckSucceeded()
-	withdrawAmounts = append(withdrawAmounts, newAmount)
+	// TODO: disabled as MsgWithdraw disabled in the baseapp
+	//newAmount = sdk.NewInt(25)
+	//curAmount = curAmount.Sub(newAmount)
+	//ct.TxCurrenciesWithdraw(recipientAddr, recipientAddr, ccDenom, newAmount).CheckSucceeded()
+	//withdrawAmounts = append(withdrawAmounts, newAmount)
 
 	// check getWithdraws endpoint
-	{
-		page := 1
-		req, respMsg := ct.RestQueryCurrenciesWithdraws(&page, nil)
-		req.CheckSucceeded()
-
-		require.Len(t, *respMsg, len(withdrawAmounts))
-		for i, amount := range withdrawAmounts {
-			withdraw := (*respMsg)[i]
-			require.Equal(t, uint64(i), withdraw.ID.UInt64())
-			require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
-			require.Equal(t, ccDenom, withdraw.Coin.Denom)
-			require.True(t, amount.Equal(withdraw.Coin.Amount))
-			require.Equal(t, recipientAddr, withdraw.Spender.String())
-			require.Equal(t, recipientAddr, withdraw.PegZoneSpender)
-		}
-
-		// incorrect inputs
-		{
-			// invalid "page" value
-			{
-				req, _ := ct.RestQueryCurrenciesWithdraws(&page, nil)
-				req.ModifyUrlValues("page", "abc")
-				req.CheckFailed(http.StatusBadRequest, nil)
-			}
-
-			// invalid "limit" value
-			{
-				limit := 1
-				req, _ := ct.RestQueryCurrenciesWithdraws(&page, &limit)
-				req.ModifyUrlValues("limit", "-1")
-				req.CheckFailed(http.StatusBadRequest, nil)
-			}
-		}
-	}
+	// TODO: disabled as MsgWithdraw disabled in the baseapp
+	//{
+	//	page := 1
+	//	req, respMsg := ct.RestQueryCurrenciesWithdraws(&page, nil)
+	//	req.CheckSucceeded()
+	//
+	//	require.Len(t, *respMsg, len(withdrawAmounts))
+	//	for i, amount := range withdrawAmounts {
+	//		withdraw := (*respMsg)[i]
+	//		require.Equal(t, uint64(i), withdraw.ID.UInt64())
+	//		require.Equal(t, ct.IDs.ChainID, withdraw.PegZoneChainID)
+	//		require.Equal(t, ccDenom, withdraw.Coin.Denom)
+	//		require.True(t, amount.Equal(withdraw.Coin.Amount))
+	//		require.Equal(t, recipientAddr, withdraw.Spender.String())
+	//		require.Equal(t, recipientAddr, withdraw.PegZoneSpender)
+	//	}
+	//
+	//	// incorrect inputs
+	//	{
+	//		// invalid "page" value
+	//		{
+	//			req, _ := ct.RestQueryCurrenciesWithdraws(&page, nil)
+	//			req.ModifyUrlValues("page", "abc")
+	//			req.CheckFailed(http.StatusBadRequest, nil)
+	//		}
+	//
+	//		// invalid "limit" value
+	//		{
+	//			limit := 1
+	//			req, _ := ct.RestQueryCurrenciesWithdraws(&page, &limit)
+	//			req.ModifyUrlValues("limit", "-1")
+	//			req.CheckFailed(http.StatusBadRequest, nil)
+	//		}
+	//	}
+	//}
 }
 
 func TestMS_REST(t *testing.T) {

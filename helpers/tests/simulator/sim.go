@@ -23,6 +23,7 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/poa"
 )
@@ -389,7 +390,7 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 	}
 
 	// set application
-	s.app = app.NewDnServiceApp(logger, db, vmConfig, s.invariantCheckPeriod, config.GetEmptyAppRestriction())
+	s.app = app.NewDnServiceApp(logger, db, vmConfig, s.invariantCheckPeriod, restrictions.GetEmptyAppRestriction())
 
 	return s
 }

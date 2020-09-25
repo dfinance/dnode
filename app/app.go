@@ -36,6 +36,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/perms"
 	"github.com/dfinance/dnode/x/ccstorage"
@@ -189,7 +190,7 @@ func MakeCodec() *codec.Codec {
 }
 
 // NewDnServiceApp is a constructor function for dfinance blockchain.
-func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, restrictions config.AppRestrictions, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
+func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invCheckPeriod uint, restrictions restrictions.AppRestrictions, baseAppOptions ...func(*BaseApp)) *DnServiceApp {
 	cdc := MakeCodec()
 
 	bApp := NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc), restrictions.MsgDeniedList, restrictions.CustomMsgVerifiers, baseAppOptions...)
