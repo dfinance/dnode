@@ -73,6 +73,34 @@ script {
 }
 `
 
+const mathDoubleModule = `
+module DblMathAdd {
+    public fun add(a: u64, b: u64): u64 {
+		a + b
+    }
+}
+
+module DblMathSub {
+	public fun sub(a: u64, b: u64): u64 {
+		a - b
+    }
+}
+`
+
+const mathDoubleScript = `
+script {
+	use 0x1::Event;
+	use {{sender}}::DblMathAdd;
+	use {{sender}}::DblMathSub;
+	
+	fun main(account: &signer, a: u64, b: u64, c: u64) {
+		let ab = DblMathAdd::add(a, b);
+		let res = DblMathSub::sub(ab, c);
+		Event::emit<u64>(account, res);
+	}
+}
+`
+
 const oraclePriceScript = `
 script {
 	use 0x1::Event;
@@ -130,7 +158,11 @@ script {
 func printEvent(event sdk.Event, t *testing.T) {
 	t.Logf("Event: %s\n", event.Type)
 	for _, attr := range event.Attributes {
-		t.Logf("%s = %s\n", attr.Key, attr.Value)
+		t.Logf("  %s = %s\n", attr.Key, attr.Value)
+		if string(attr.Key) == types.AttributeErrMajorStatus {
+			errMsg := types.GetStrCode(string(attr.Value))
+			t.Logf("  %s description: %s\n", attr.Key, errMsg)
+		}
 	}
 }
 
@@ -375,6 +407,175 @@ func TestVMKeeper_DeployModule(t *testing.T) {
 		binary.LittleEndian.PutUint64(uintBz, uint64(110))
 		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventData)
 		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, hex.EncodeToString(uintBz))
+	}
+}
+
+// Test deploy the same module twice.
+func TestVMKeeper_DeployModuleTwice(t *testing.T) {
+	config := sdk.GetConfig()
+	dnodeConfig.InitBechPrefixes(config)
+
+	input := newTestInput(false)
+
+	// launch docker
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
+
+	// create accounts.
+	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
+
+	input.ak.SetAccount(input.ctx, acc1)
+
+	gs := getGenesis(t)
+	input.vk.InitGenesis(input.ctx, gs)
+	input.vk.SetDSContext(input.ctx)
+	input.vk.StartDSServer(input.ctx)
+	time.Sleep(2 * time.Second)
+
+	checkModuleCompiled := func(msg string, srcCode string) []byte {
+		byteCode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
+			Text:    srcCode,
+			Address: common_vm.Bech32ToLibra(addr1),
+		})
+		require.NoError(t, err, "%s: can't get code for module", msg)
+		return byteCode
+	}
+
+	checkMsgCreate := func(msg string, byteCode []byte) types.MsgDeployModule {
+		deployMsg := types.NewMsgDeployModule(addr1, byteCode)
+		require.NoError(t, deployMsg.ValidateBasic(), "%s: can't validate err: %v", msg)
+		return deployMsg
+	}
+
+	checkDeployOK := func(msg string, byteCode []byte) {
+		deployMsg := checkMsgCreate(msg, byteCode)
+
+		ctx, writeCtx := input.ctx.CacheContext()
+		err := input.vk.DeployContract(ctx, deployMsg)
+		require.NoError(t, err, "%s: can't deploy contract", msg)
+
+		events := ctx.EventManager().Events()
+		checkNoEventErrors(events, t)
+
+		writeCtx()
+	}
+
+	checkDeployFailed := func(msg string, byteCode []byte) {
+		deployMsg := checkMsgCreate(msg, byteCode)
+
+		ctx, _ := input.ctx.CacheContext()
+		err := input.vk.DeployContract(ctx, deployMsg)
+		require.NoError(t, err, "%s: can't deploy contract", msg)
+
+		events := ctx.EventManager().Events()
+		checkEventsContainsEvery(t, events, sdk.Events{
+			sdk.NewEvent(
+				types.EventTypeContractStatus,
+				sdk.NewAttribute(types.AttributeStatus, types.AttributeValueStatusDiscard),
+				sdk.NewAttribute(types.AttributeErrMajorStatus, "1095"),
+				sdk.NewAttribute(types.AttributeErrSubStatus, "0"),
+			),
+		})
+	}
+
+	checkScriptCompiled := func(msg, srcCode string) []byte {
+		srcCode = strings.Replace(srcCode, "{{sender}}", addr1.String(), -1)
+		byteCode, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
+			Text:    srcCode,
+			Address: common_vm.Bech32ToLibra(addr1),
+		})
+		require.NoError(t, err, "%s: can't compiler script", msg)
+		return byteCode
+	}
+
+	checkScriptNotCompiled := func(msg, srcCode string) {
+		srcCode = strings.Replace(srcCode, "{{sender}}", addr1.String(), -1)
+		_, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
+			Text:    srcCode,
+			Address: common_vm.Bech32ToLibra(addr1),
+		})
+		require.Error(t, err, msg)
+	}
+
+	checkScriptExecuteOK := func(msg string, byteCode []byte, args []types.ScriptArg) {
+		ctx, _ := input.ctx.CacheContext()
+		executeMsg := types.NewMsgExecuteScript(addr1, byteCode, args)
+		err := input.vk.ExecuteScript(ctx, executeMsg)
+		require.NoError(t, err, "%s: can't execute script", msg)
+	}
+
+	var mathScriptArgs []types.ScriptArg
+	{
+		arg, err := vm_client.NewU64ScriptArg("10")
+		require.NoError(t, err)
+		mathScriptArgs = append(mathScriptArgs, arg)
+	}
+	{
+		arg, err := vm_client.NewU64ScriptArg("100")
+		require.NoError(t, err)
+		mathScriptArgs = append(mathScriptArgs, arg)
+	}
+
+	// test case 1
+	{
+		moduleByteCode := checkModuleCompiled("TestCase 1", mathModule)
+		checkDeployOK("TestCase 1: 1st deploy", moduleByteCode)
+		checkDeployFailed("TestCase 1: 2nd deploy", moduleByteCode)
+
+		scriptByteCode := checkScriptCompiled("TestCase 1", mathScript)
+		checkScriptExecuteOK("TestCase 1", scriptByteCode, mathScriptArgs)
+	}
+
+	// test case 2: module with "address 0x... {}" prefix
+	{
+		moduleSrcCode := fmt.Sprintf("address %s {\n%s\n}", addr1, strings.Replace(mathModule, "Math", "Math2", 1))
+		scriptSrcCode := strings.Replace(mathScript, "Math", "Math2", -1)
+
+		moduleByteCode := checkModuleCompiled("TestCase 2", moduleSrcCode)
+		checkDeployOK("TestCase 2: 1st deploy", moduleByteCode)
+		checkDeployFailed("TestCase 2: 2nd deploy", moduleByteCode)
+
+		scriptByteCode := checkScriptCompiled("TestCase 2", scriptSrcCode)
+		checkScriptExecuteOK("TestCase 2", scriptByteCode, mathScriptArgs)
+	}
+
+	//var dblMathScriptArgs []types.ScriptArg
+	//{
+	//	arg, err := vm_client.NewU64ScriptArg("10")
+	//	require.NoError(t, err)
+	//	mathScriptArgs = append(mathScriptArgs, arg)
+	//}
+	//{
+	//	arg, err := vm_client.NewU64ScriptArg("100")
+	//	require.NoError(t, err)
+	//	mathScriptArgs = append(mathScriptArgs, arg)
+	//}
+	//{
+	//	arg, err := vm_client.NewU64ScriptArg("20")
+	//	require.NoError(t, err)
+	//	mathScriptArgs = append(mathScriptArgs, arg)
+	//}
+
+	// test case 3: two module in one
+	{
+		moduleByteCode := checkModuleCompiled("TestCase 3", mathDoubleModule)
+		checkDeployOK("TestCase 3: 1st deploy", moduleByteCode)
+		checkDeployFailed("TestCase 3: 2nd deploy", moduleByteCode)
+
+		checkScriptNotCompiled("TestCase 3", mathDoubleScript)
+	}
+
+	// test case 4: two module in one, module srcCode with "address 0x... {}" prefix
+	{
+		moduleSrcCode := fmt.Sprintf("address %s {\n%s\n}", addr1, strings.Replace(mathDoubleModule, "DblMath", "DblMath2", 2))
+		scriptSrcCode := strings.Replace(mathDoubleScript, "DblMath", "DblMath2", -1)
+
+		moduleByteCode := checkModuleCompiled("TestCase 4", moduleSrcCode)
+		checkDeployOK("TestCase 4: 1st deploy", moduleByteCode)
+		checkDeployFailed("TestCase 4: 2nd deploy", moduleByteCode)
+
+		checkScriptNotCompiled("TestCase 4", scriptSrcCode)
 	}
 }
 
