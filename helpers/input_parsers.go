@@ -113,6 +113,16 @@ func ParseSdkIntParam(argName, argValue string, paramType ParamType) (sdk.Int, e
 	return v, nil
 }
 
+// ParseSdkDecParam parses sdk.Dec param.
+func ParseSdkDecParam(argName, argValue string, paramType ParamType) (sdk.Dec, error) {
+	v, err := sdk.NewDecFromStr(argValue)
+	if err != nil {
+		return sdk.Dec{}, fmt.Errorf("%s %s %q: parsing Dec: failed(%s)", argName, paramType, argValue, err.Error())
+	}
+
+	return v, nil
+}
+
 // ParseSdkIntParam parses sdk.Uint param.
 func ParseSdkUintParam(argName, argValue string, paramType ParamType) (sdk.Uint, error) {
 	vInt, ok := sdk.NewIntFromString(argValue)
@@ -227,7 +237,7 @@ func ParseHexStringParam(argName, argValue string, paramType ParamType) (string,
 	argValueNorm := strings.TrimPrefix(argValue, "0x")
 	argValueBytes, err := hex.DecodeString(argValueNorm)
 	if err != nil {
-		return "", nil,  fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+		return "", nil, fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
 	}
 
 	return argValueNorm, argValueBytes, nil

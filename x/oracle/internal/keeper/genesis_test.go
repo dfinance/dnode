@@ -42,7 +42,7 @@ func TestOracleKeeper_Genesis_Init(t *testing.T) {
 			}
 
 			cpList := types.CurrentPrices{
-				NewMockCurrentPrice("btc_xfi", 100),
+				NewMockCurrentPrice("btc_xfi", 100, 99),
 			}
 
 			state := types.GenesisState{
@@ -79,10 +79,10 @@ func TestOracleKeeper_Genesis_Init(t *testing.T) {
 		}
 
 		cpList := types.CurrentPrices{
-			NewMockCurrentPrice("btc_xfi", 100),
-			NewMockCurrentPrice("eth_xfi", 200),
-			NewMockCurrentPrice("xfi_btc", 300),
-			NewMockCurrentPrice("usdt_xfi", 400),
+			NewMockCurrentPrice("btc_xfi", 100, 99),
+			NewMockCurrentPrice("eth_xfi", 200, 199),
+			NewMockCurrentPrice("xfi_btc", 300, 298),
+			NewMockCurrentPrice("usdt_xfi", 400, 389),
 		}
 
 		state := types.GenesisState{
@@ -111,16 +111,19 @@ func TestOracleKeeper_Genesis_Init(t *testing.T) {
 		require.Equal(t, len(exportedState.CurrentPrices), len(state.CurrentPrices))
 
 		// checking all of items existing in the export
-		sumPrices := sdk.NewIntFromUint64(0)
+		sumAskPrices, sumBidPrices := sdk.NewDec(0), sdk.NewDec(0)
 		for _, i := range exportedState.CurrentPrices {
-			sumPrices = sumPrices.Add(i.Price)
+			sumAskPrices = sumAskPrices.Add(i.AskPrice)
+			sumBidPrices = sumBidPrices.Add(i.BidPrice)
 		}
 
-		sumPricesInitial := sdk.NewIntFromUint64(0)
+		sumAskPricesInitial, sumBidPricesInitial := sdk.NewDec(0), sdk.NewDec(0)
 		for _, i := range state.CurrentPrices {
-			sumPricesInitial = sumPricesInitial.Add(i.Price)
+			sumAskPricesInitial = sumAskPricesInitial.Add(i.AskPrice)
+			sumBidPricesInitial = sumBidPricesInitial.Add(i.BidPrice)
 		}
 
-		require.Equal(t, sumPrices, sumPricesInitial)
+		require.Equal(t, sumAskPrices, sumAskPricesInitial)
+		require.Equal(t, sumBidPrices, sumBidPricesInitial)
 	}
 }

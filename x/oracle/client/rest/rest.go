@@ -23,8 +23,10 @@ type PostPriceReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// AssetCode
 	AssetCode string `json:"asset_code" example:"btc_xfi"`
-	// Price in big.Int format
-	Price string `json:"price" example:"100"`
+	// AskPrice in sdk.Dec format
+	AskPrice string `json:"ask_price" example:"100.05"`
+	// BidPrice in sdk.Dec format
+	BidPrice string `json:"bid_price" example:"99.95"`
 	// Timestamp price createdAt
 	ReceivedAt string `json:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
@@ -75,7 +77,13 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		price, err := helpers.ParseSdkIntParam("price", req.Price, helpers.ParamTypeRestRequest)
+		askPrice, err := helpers.ParseSdkDecParam("askPrice", req.AskPrice, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		bidPrice, err := helpers.ParseSdkDecParam("bidPrice", req.BidPrice, helpers.ParamTypeRestRequest)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -88,7 +96,7 @@ func postPriceHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		// create the message
-		msg := types.NewMsgPostPrice(addr, assetCode, price, receivedAt)
+		msg := types.NewMsgPostPrice(addr, assetCode, askPrice, bidPrice, receivedAt)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

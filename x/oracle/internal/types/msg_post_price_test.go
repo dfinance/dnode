@@ -3,7 +3,6 @@
 package types
 
 import (
-	"math/big"
 	"testing"
 	"time"
 
@@ -19,13 +18,13 @@ func TestOracleMsg_PostPrice(t *testing.T) {
 
 	from := sdk.AccAddress([]byte("someName"))
 	assetCode := dnTypes.AssetCode("btc_xfi")
-	price := sdk.NewInt(30050000)
+	askPrice := sdk.NewDec(30050005)
+	bidPrice := sdk.NewDec(30050000)
 	expiry := time.Now()
-	negativePrice, _ := sdk.NewIntFromString("-1")
-	bigInt := sdk.NewIntFromBigInt(big.NewInt(0).SetBit(big.NewInt(0), PriceBytesLimit*8, 1))
+	negativePrice := sdk.NewDec(-1)
 
 	t.Run("GetSign", func(t *testing.T) {
-		target := NewMsgPostPrice(from, assetCode, price, expiry)
+		target := NewMsgPostPrice(from, assetCode, askPrice, bidPrice, expiry)
 		require.Equal(t, "post_price", target.Type())
 		require.Equal(t, RouterKey, target.Route())
 		require.True(t, len(target.GetSignBytes()) > 0)
@@ -35,29 +34,24 @@ func TestOracleMsg_PostPrice(t *testing.T) {
 	t.Run("GetSign", func(t *testing.T) {
 		// ok
 		{
-			msg := NewMsgPostPrice(from, assetCode, price, expiry)
+			msg := NewMsgPostPrice(from, assetCode, askPrice, bidPrice, expiry)
 			require.NoError(t, msg.ValidateBasic())
 		}
 
 		// fail: invalid from
 		{
-			msg := NewMsgPostPrice(sdk.AccAddress{}, assetCode, price, expiry)
+			msg := NewMsgPostPrice(sdk.AccAddress{}, assetCode, askPrice, bidPrice, expiry)
 			require.Error(t, msg.ValidateBasic())
 		}
 
 		// fail: invalid assetCode
 		{
-			msg := NewMsgPostPrice(from, "", price, expiry)
-			require.Error(t, msg.ValidateBasic())
-		}
-		// fail: invalid price over limit
-		{
-			msg := NewMsgPostPrice(from, assetCode, bigInt, expiry)
+			msg := NewMsgPostPrice(from, "", askPrice, bidPrice, expiry)
 			require.Error(t, msg.ValidateBasic())
 		}
 		// fail: invalid price negative
 		{
-			msg := NewMsgPostPrice(from, assetCode, negativePrice, expiry)
+			msg := NewMsgPostPrice(from, assetCode, negativePrice, negativePrice, expiry)
 			require.Error(t, msg.ValidateBasic())
 		}
 	})

@@ -16,8 +16,10 @@ type MsgPostPrice struct {
 	From sdk.AccAddress `json:"from" yaml:"from"`
 	// Asset code
 	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code"`
-	// RawPrice
-	Price sdk.Int `json:"price" yaml:"price"`
+	// AskPrice
+	AskPrice sdk.Dec `json:"ask_price" yaml:"ask_price"`
+	// BidPrice
+	BidPrice sdk.Dec `json:"bid_price" yaml:"bid_price"`
 	// ReceivedAt time in UNIX timestamp format [seconds]
 	ReceivedAt time.Time `json:"received_at" yaml:"received_at"`
 }
@@ -36,11 +38,11 @@ func (msg MsgPostPrice) ValidateBasic() error {
 	if err := msg.AssetCode.Validate(); err != nil {
 		return sdkErrors.Wrapf(ErrInternal, "invalid assetCode: value (%s), error (%v)", msg.AssetCode, err)
 	}
-	if msg.Price.IsNegative() {
-		return sdkErrors.Wrap(ErrInternal, "invalid (negative) price")
+	if msg.AskPrice.IsNegative() {
+		return sdkErrors.Wrap(ErrInternal, "invalid (negative) ask price")
 	}
-	if msg.Price.BigInt().BitLen() > PriceBytesLimit*8 {
-		return sdkErrors.Wrapf(ErrInternal, "out of %d bytes limit for price", PriceBytesLimit)
+	if msg.BidPrice.IsNegative() {
+		return sdkErrors.Wrap(ErrInternal, "invalid (negative) bid price")
 	}
 
 	return nil
@@ -57,11 +59,12 @@ func (msg MsgPostPrice) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgPostPrice creates a new PostPrice message.
-func NewMsgPostPrice(from sdk.AccAddress, assetCode dnTypes.AssetCode, price sdk.Int, receivedAt time.Time) MsgPostPrice {
+func NewMsgPostPrice(from sdk.AccAddress, assetCode dnTypes.AssetCode, askPrice, bidPrice sdk.Dec, receivedAt time.Time) MsgPostPrice {
 	return MsgPostPrice{
 		From:       from,
 		AssetCode:  assetCode,
-		Price:      price,
+		AskPrice:   askPrice,
+		BidPrice:   bidPrice,
 		ReceivedAt: receivedAt,
 	}
 }

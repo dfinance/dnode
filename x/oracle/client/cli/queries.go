@@ -58,7 +58,7 @@ func GetCmdCurrentPrice(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			var out types.CurrentPrice
+			var out types.CurrentAssetPrice
 			cdc.MustUnmarshalJSON(res, &out)
 
 			return cliCtx.PrintOutput(out)

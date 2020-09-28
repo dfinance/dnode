@@ -33,13 +33,13 @@ func GetAssetCodePath(assetCode dnTypes.AssetCode) (*vm_grpc.VMAccessPath, error
 }
 
 // NewResPriceStorageValuesPanic returns VM storage key/value for current oracle price DVM resource, panics on error.
-func NewResPriceStorageValuesPanic(assetCode dnTypes.AssetCode, price sdk.Int) (*vm_grpc.VMAccessPath, []byte) {
+func NewResPriceStorageValuesPanic(assetCode dnTypes.AssetCode, price sdk.Dec) (*vm_grpc.VMAccessPath, []byte) {
 	key, err := GetAssetCodePath(assetCode)
 	if err != nil {
 		panic(err)
 	}
 
-	res := ResPrice{Value: price.BigInt()}
+	res := ResPrice{Value: price.BigInt()} //TODO: dec to dvm
 	value, err := lcs.Marshal(res)
 	if err != nil {
 		panic(fmt.Errorf("oracle ResPrice value for %q (%s) lcs.Marshal: %w", assetCode.String(), price.String(), err))

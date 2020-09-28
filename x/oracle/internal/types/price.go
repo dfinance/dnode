@@ -14,12 +14,24 @@ const (
 	PriceBytesLimit = 8
 )
 
-// CurrentPrice contains meta of the current price for the particular asset.
+// CurrentPrice contains meta of the current price for the particular asset with ask and bid prices.
 type CurrentPrice struct {
 	// Asset code
 	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_xfi"`
+	// AskPrice
+	AskPrice sdk.Dec `json:"ask_price" yaml:"ask_price" swaggertype:"string" example:"1000"`
+	// BidPrice
+	BidPrice sdk.Dec `json:"bid_price" yaml:"bid_price" swaggertype:"string" example:"1000"`
+	// UNIX Timestamp price createdAt [sec]
+	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
+}
+
+// CurrentAssetPrice contains meta of the current price for the particular asset.
+type CurrentAssetPrice struct {
+	// Asset code
+	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_xfi"`
 	// Price
-	Price sdk.Int `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
+	Price sdk.Dec `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
 	// UNIX Timestamp price createdAt [sec]
 	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
@@ -29,11 +41,17 @@ func (cp CurrentPrice) Valid() error {
 	if err := cp.AssetCode.Validate(); err != nil {
 		return fmt.Errorf("asset_code: %w", err)
 	}
-	if cp.Price.IsZero() {
-		return fmt.Errorf("price: is zero")
+	if cp.AskPrice.IsZero() {
+		return fmt.Errorf("askPrice: is zero")
 	}
-	if cp.Price.IsNegative() {
-		return fmt.Errorf("price: is negative")
+	if cp.AskPrice.IsNegative() {
+		return fmt.Errorf("askPrice: is negative")
+	}
+	if cp.BidPrice.IsZero() {
+		return fmt.Errorf("bidPrice: is zero")
+	}
+	if cp.BidPrice.IsNegative() {
+		return fmt.Errorf("bidPrice: is negative")
 	}
 	if cp.ReceivedAt.IsZero() {
 		return fmt.Errorf("received_at: is zero")
@@ -44,9 +62,10 @@ func (cp CurrentPrice) Valid() error {
 func (cp CurrentPrice) String() string {
 	return fmt.Sprintf("CurrentPrice:\n"+
 		"AssetCode: %s\n"+
-		"Price: %s\n"+
+		"AskPrice: %s\n"+
+		"BidPrice: %s\n"+
 		"ReceivedAt: %s",
-		cp.AssetCode, cp.Price, cp.ReceivedAt,
+		cp.AssetCode, cp.AskPrice, cp.BidPrice, cp.ReceivedAt,
 	)
 }
 
@@ -58,8 +77,10 @@ type PostedPrice struct {
 	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_xfi"`
 	// Source oracle address
 	OracleAddress sdk.AccAddress `json:"oracle_address" yaml:"oracle_address" swaggertype:"string" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
-	// Price
-	Price sdk.Int `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
+	// AskPrice
+	AskPrice sdk.Dec `json:"ask_price" yaml:"ask_price" swaggertype:"string" example:"1000"`
+	// BidPrice
+	BidPrice sdk.Dec `json:"bid_price" yaml:"bid_price" swaggertype:"string" example:"1000"`
 	// UNIX Timestamp price receivedAt [sec]
 	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
@@ -68,10 +89,11 @@ type PostedPrice struct {
 func (pp PostedPrice) String() string {
 	return strings.TrimSpace(
 		fmt.Sprintf(
-			"AssetCode: %s\nOracleAddress: %s\nPrice: %s\nReceivedAt: %s",
+			"AssetCode: %s\nOracleAddress: %s\nAskPrice: %s\nBidPrice: %s\nReceivedAt: %s",
 			pp.AssetCode,
 			pp.OracleAddress,
-			pp.Price,
+			pp.AskPrice,
+			pp.BidPrice,
 			pp.ReceivedAt,
 		),
 	)

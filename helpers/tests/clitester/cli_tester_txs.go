@@ -156,14 +156,15 @@ func (ct *CLITester) TxOracleSetOracles(nomineeAddress string, assetCode dnTypes
 	return r
 }
 
-func (ct *CLITester) TxOraclePostPrice(nomineeAddress string, assetCode dnTypes.AssetCode, price sdk.Int, receivedAt time.Time) *TxRequest {
+func (ct *CLITester) TxOraclePostPrice(nomineeAddress string, assetCode dnTypes.AssetCode, askPrice, bidPrice sdk.Dec, receivedAt time.Time) *TxRequest {
 	r := ct.newTxRequest()
 	r.SetCmd(
 		"oracle",
 		nomineeAddress,
 		"postprice",
 		assetCode.String(),
-		price.String(),
+		askPrice.String(),
+		bidPrice.String(),
 		strconv.FormatInt(receivedAt.Unix(), 10),
 	)
 

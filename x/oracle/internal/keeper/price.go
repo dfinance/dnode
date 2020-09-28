@@ -68,60 +68,85 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 		assetCode := v.AssetCode
 		rawPrices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
 
+		var (
+			medianAskPrice   sdk.Dec
+			medianBidPrice   sdk.Dec
+			medianReceivedAt time.Time
+		)
+
 		l := len(rawPrices)
-		var medianPrice sdk.Int
-		var medianReceivedAt time.Time
+
 		// TODO make threshold for acceptance (ie. require 51% of oracles to have posted valid prices
 		if l == 0 {
 			// Error if there are no valid prices in the raw oracle
 			//return types.ErrNoValidPrice(k.codespace)
-			medianPrice = sdk.ZeroInt()
+			medianAskPrice, medianBidPrice = sdk.ZeroDec(), sdk.ZeroDec()
 		} else if l == 1 {
 			// Return immediately if there's only one price
-			medianPrice, medianReceivedAt = rawPrices[0].Price, rawPrices[0].ReceivedAt
+			medianAskPrice, medianBidPrice = rawPrices[0].AskPrice, rawPrices[0].BidPrice
+			medianReceivedAt = rawPrices[0].ReceivedAt
 		} else {
-			// sort the prices
-			sort.Slice(rawPrices, func(i, j int) bool {
-				return rawPrices[i].Price.LT(rawPrices[j].Price)
+			bidRawPrices := make([]types.PostedPrice, len(rawPrices))
+			copy(bidRawPrices, rawPrices)
+			askRawPrices := rawPrices
+
+			// sort the prices by ask and bid
+			sort.Slice(askRawPrices, func(i, j int) bool {
+				return askRawPrices[i].AskPrice.LT(askRawPrices[j].AskPrice)
+			})
+			sort.Slice(bidRawPrices, func(i, j int) bool {
+				return bidRawPrices[i].BidPrice.LT(bidRawPrices[j].BidPrice)
 			})
 			// If there's an even number of prices
 			if l%2 == 0 {
 				// TODO make sure this is safe.
 				// Since it's a price and not a balance, division with precision loss is OK.
-				price1 := rawPrices[l/2-1].Price
-				price2 := rawPrices[l/2].Price
-				sum := price1.Add(price2)
-				divsor := sdk.NewInt(2)
-				medianPrice = sum.Quo(divsor)
+				a1 := askRawPrices[l/2-1].AskPrice
+				a2 := askRawPrices[l/2].AskPrice
+				sumA := a1.Add(a2)
+
+				b1 := bidRawPrices[l/2-1].BidPrice
+				b2 := bidRawPrices[l/2].BidPrice
+				sumB := b1.Add(b2)
+
+				divsor := sdk.NewDec(2)
+				medianAskPrice = sumA.Quo(divsor)
+				medianBidPrice = sumB.Quo(divsor)
 				medianReceivedAt = ctx.BlockTime().UTC()
 			} else {
 				// integer division, so we'll get an integer back, rounded down
-				medianPrice, medianReceivedAt = rawPrices[l/2].Price, rawPrices[l/2].ReceivedAt
+				medianAskPrice, medianBidPrice = askRawPrices[l/2].AskPrice, bidRawPrices[l/2].BidPrice
+				medianReceivedAt = rawPrices[l/2].ReceivedAt
 			}
 		}
 
 		// check if there is no rawPrices or medianPrice is invalid
-		if medianPrice.IsZero() {
+		if medianAskPrice.IsZero() || medianBidPrice.IsZero() {
 			continue
 		}
 
 		// check new price for the asset appeared, no need to update after every block
 		oldPrice := k.GetCurrentPrice(ctx, assetCode)
-		if oldPrice.AssetCode != "" && oldPrice.Price.Equal(medianPrice) {
+		if oldPrice.AssetCode != "" && oldPrice.AskPrice.Equal(medianAskPrice) && oldPrice.BidPrice.Equal(medianBidPrice) {
 			continue
 		}
 
 		// set the new price for the asset
 		newPrice := types.CurrentPrice{
 			AssetCode:  assetCode,
-			Price:      medianPrice,
+			AskPrice:   medianAskPrice,
+			BidPrice:   medianBidPrice,
 			ReceivedAt: medianReceivedAt,
 		}
 
 		k.addCurrentPrice(ctx, newPrice)
 
 		// save price to VM storage
-		priceVmAccessPath, priceVmValue := types.NewResPriceStorageValuesPanic(newPrice.AssetCode, newPrice.Price)
+		priceVmAccessPath, priceVmValue := types.NewResPriceStorageValuesPanic(newPrice.AssetCode, newPrice.AskPrice)
+		k.vmKeeper.SetValue(ctx, priceVmAccessPath, priceVmValue)
+
+		reversedAsset, _ := newPrice.AssetCode.ReverseCode()
+		priceVmAccessPath, priceVmValue = types.NewResPriceStorageValuesPanic(reversedAsset, sdk.OneDec().Quo(newPrice.BidPrice))
 		k.vmKeeper.SetValue(ctx, priceVmAccessPath, priceVmValue)
 
 		// emit event
@@ -154,7 +179,8 @@ func (k Keeper) SetPrice(
 	ctx sdk.Context,
 	oracle sdk.AccAddress,
 	assetCode dnTypes.AssetCode,
-	price sdk.Int,
+	askPrice sdk.Dec,
+	bidPrice sdk.Dec,
 	receivedAt time.Time) (types.PostedPrice, error) {
 
 	k.modulePerms.AutoCheck(types.PermWrite)
@@ -181,11 +207,13 @@ func (k Keeper) SetPrice(
 	if found {
 		prices[index] = types.PostedPrice{
 			AssetCode: assetCode, OracleAddress: oracle,
-			Price: price, ReceivedAt: receivedAt}
+			AskPrice: askPrice, BidPrice: bidPrice,
+			ReceivedAt: receivedAt}
 	} else {
 		prices = append(prices, types.PostedPrice{
 			AssetCode: assetCode, OracleAddress: oracle,
-			Price: price, ReceivedAt: receivedAt})
+			AskPrice: askPrice, BidPrice: bidPrice,
+			ReceivedAt: receivedAt})
 		index = len(prices) - 1
 	}
 

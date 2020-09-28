@@ -220,9 +220,9 @@ func (ct *CLITester) RestQueryOracleRawPrices(assetCode dnTypes.AssetCode, block
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryOraclePrice(assetCode dnTypes.AssetCode) (*RestRequest, *oracle.CurrentPrice) {
+func (ct *CLITester) RestQueryOraclePrice(assetCode dnTypes.AssetCode) (*RestRequest, *oracle.CurrentAssetPrice) {
 	reqSubPath := fmt.Sprintf("%s/currentprice/%s", oracle.ModuleName, assetCode.String())
-	respMsg := &oracle.CurrentPrice{}
+	respMsg := &oracle.CurrentAssetPrice{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, nil, respMsg)
 
@@ -437,14 +437,14 @@ func (ct *CLITester) RestQueryVMLcsView(address, movePath, viewRequest string) (
 	return r, respMsg
 }
 
-func (ct *CLITester) RestTxOraclePostPrice(accName string, assetCode dnTypes.AssetCode, price sdk.Int, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
+func (ct *CLITester) RestTxOraclePostPrice(accName string, assetCode dnTypes.AssetCode, askPrice, bidPrice sdk.Dec, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
 	accInfo := ct.Accounts[accName]
 	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
 
 	accQuery, acc := ct.QueryAccount(accInfo.Address)
 	accQuery.CheckSucceeded()
 
-	msg := oracle.NewMsgPostPrice(acc.Address, assetCode, price, receivedAt)
+	msg := oracle.NewMsgPostPrice(acc.Address, assetCode, askPrice, bidPrice, receivedAt)
 
 	return ct.newRestTxRequest(accName, acc, msg, false)
 }

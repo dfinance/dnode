@@ -42,7 +42,7 @@ func handleMsgPostPrice(ctx sdk.Context, k Keeper, msg MsgPostPrice) (*sdk.Resul
 		return nil, sdkErrors.Wrap(ErrInvalidOracle, msg.From.String())
 	}
 
-	if _, err := k.SetPrice(ctx, msg.From, msg.AssetCode, msg.Price, msg.ReceivedAt); err != nil {
+	if _, err := k.SetPrice(ctx, msg.From, msg.AssetCode, msg.AskPrice, msg.BidPrice, msg.ReceivedAt); err != nil {
 		return nil, err
 	}
 

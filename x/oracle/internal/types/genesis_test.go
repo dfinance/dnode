@@ -12,16 +12,16 @@ import (
 func getTestGenesisState() GenesisState {
 	return GenesisState{
 		Params:        DefaultParams(),
-		CurrentPrices: CurrentPrices{NewMockCurrentPrice("btc_xfi", 10000)},
+		CurrentPrices: CurrentPrices{NewMockCurrentPrice("btc_xfi", 10001, 1000)},
 	}
 }
 
 func TestOracles_Genesis_Valid(t *testing.T) {
 	//validateGenesis ok
 	{
-		order1 := NewMockCurrentPrice("btc_xfi", 10000)
-		order2 := NewMockCurrentPrice("eth_xfi", 20000)
-		order3 := NewMockCurrentPrice("xfi_btc", 30000)
+		order1 := NewMockCurrentPrice("btc_xfi", 10001, 1000)
+		order2 := NewMockCurrentPrice("eth_xfi", 20002, 2000)
+		order3 := NewMockCurrentPrice("xfi_btc", 30003, 3000)
 		orderT := &order3
 		order4 := *orderT
 

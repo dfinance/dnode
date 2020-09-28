@@ -422,26 +422,29 @@ func TestOracle_CLI(t *testing.T) {
 		postPrices := []struct {
 			assetCode  dnTypes.AssetCode
 			sender     string
-			price      sdk.Int
+			askPrice   sdk.Dec
+			bidPrice   sdk.Dec
 			receivedAt time.Time
 		}{
 			{
 				assetCode:  assetCode,
 				sender:     assetOracle1,
-				price:      sdk.NewInt(100),
+				askPrice:   sdk.NewDec(100),
+				bidPrice:   sdk.NewDec(95),
 				receivedAt: now,
 			},
 			{
 				assetCode:  assetCode,
 				sender:     assetOracle2,
-				price:      sdk.NewInt(150),
+				askPrice:   sdk.NewDec(150),
+				bidPrice:   sdk.NewDec(149),
 				receivedAt: now.Add(1 * time.Second),
 			},
 		}
 
 		startBlockHeight := ct.WaitForNextBlocks(1)
 		for _, postPrice := range postPrices {
-			tx := ct.TxOraclePostPrice(postPrice.sender, postPrice.assetCode, postPrice.price, postPrice.receivedAt)
+			tx := ct.TxOraclePostPrice(postPrice.sender, postPrice.assetCode, postPrice.askPrice, postPrice.bidPrice, postPrice.receivedAt)
 			tx.CheckSucceeded()
 		}
 		endBlockHeight := ct.WaitForNextBlocks(1)
@@ -460,7 +463,8 @@ func TestOracle_CLI(t *testing.T) {
 			rawPrice := rawPricesRange[i]
 			require.Equal(t, postPrice.assetCode, rawPrice.AssetCode)
 			require.Equal(t, postPrice.sender, rawPrice.OracleAddress.String())
-			require.True(t, postPrice.price.Equal(rawPrice.Price))
+			require.True(t, postPrice.askPrice.Equal(rawPrice.AskPrice))
+			require.True(t, postPrice.bidPrice.Equal(rawPrice.BidPrice))
 			require.True(t, postPrice.receivedAt.Equal(rawPrice.ReceivedAt))
 		}
 
@@ -468,27 +472,23 @@ func TestOracle_CLI(t *testing.T) {
 		{
 			// invalid number of args
 			{
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewDec(3), sdk.NewDec(2), time.Now())
 				tx.RemoveCmdArg(assetCode.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid price
 			{
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), time.Now())
-				tx.ChangeCmdArg(sdk.OneInt().String(), "not_int")
-				tx.CheckFailedWithErrorSubstring("parsing Int")
+				ask := sdk.NewDec(3)
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, ask, sdk.NewDec(2), time.Now())
+				tx.ChangeCmdArg(ask.String(), "not_int")
+				tx.CheckFailedWithErrorSubstring("parsing Dec")
 			}
 			// invalid receivedAt
 			{
 				now := time.Now()
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.OneInt(), now)
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewDec(3), sdk.NewDec(2), now)
 				tx.ChangeCmdArg(strconv.FormatInt(now.Unix(), 10), "not_time.Time")
 				tx.CheckFailedWithErrorSubstring("parsing Int")
-			}
-			// MsgPostPrice ValidateBasic
-			{
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewIntWithDecimal(1, 20), time.Now())
-				tx.CheckFailedWithErrorSubstring("bytes limit")
 			}
 		}
 	}

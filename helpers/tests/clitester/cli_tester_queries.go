@@ -98,8 +98,8 @@ func (ct *CLITester) QueryOracleRawPrices(assetCode dnTypes.AssetCode, blockHeig
 	return q, resObj
 }
 
-func (ct *CLITester) QueryOraclePrice(assetCode dnTypes.AssetCode) (*QueryRequest, *oracle.CurrentPrice) {
-	resObj := &oracle.CurrentPrice{}
+func (ct *CLITester) QueryOraclePrice(assetCode dnTypes.AssetCode) (*QueryRequest, *oracle.CurrentAssetPrice) {
+	resObj := &oracle.CurrentAssetPrice{}
 	q := ct.newQueryRequest(resObj)
 	q.SetCmd(
 		"oracle",

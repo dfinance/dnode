@@ -16,6 +16,7 @@ type (
 	Oracle             = types.Oracle
 	Oracles            = types.Oracles
 	CurrentPrice       = types.CurrentPrice
+	CurrentAssetPrice  = types.CurrentAssetPrice
 	CurrentPrices      = types.CurrentPrices
 	PostedPrice        = types.PostedPrice
 	Keeper             = keeper.Keeper
@@ -39,7 +40,8 @@ const (
 	EventTypePrice = types.EventTypePrice
 	//
 	AttributeAssetCode  = types.AttributeAssetCode
-	AttributePrice      = types.AttributePrice
+	AttributeAskPrice   = types.AttributeAskPrice
+	AttributeBidPrice   = types.AttributeBidPrice
 	AttributeReceivedAt = types.AttributeReceivedAt
 )
 
