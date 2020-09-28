@@ -22,6 +22,7 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/helpers/logger"
 	ccsCli "github.com/dfinance/dnode/x/ccstorage/client/cli"
 	"github.com/dfinance/dnode/x/genaccounts"
@@ -103,7 +104,7 @@ func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application
 		panic(err)
 	}
 
-	return app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod, dnConfig.GetAppRestrictions())
+	return app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod, restrictions.GetAppRestrictions())
 }
 
 // Exports genesis data and validators.
@@ -116,7 +117,7 @@ func exportAppStateAndTMValidators(
 	}
 
 	if height != -1 {
-		dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod, dnConfig.GetAppRestrictions())
+		dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod, restrictions.GetAppRestrictions())
 		err := dnApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -124,7 +125,7 @@ func exportAppStateAndTMValidators(
 		return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod, dnConfig.GetAppRestrictions())
+	dnApp := app.NewDnServiceApp(logger, db, config, dnConfig.DefInvCheckPeriod, restrictions.GetAppRestrictions())
 	return dnApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }
 

@@ -37,6 +37,7 @@ func GetTxCmd(cdc *amino.Codec) *cobra.Command {
 
 	txCmd.AddCommand(sdkClient.PostCommands(
 		cli.PostMsIssueCurrency(cdc),
+		cli.PostMsUnstakeCurrency(cdc),
 		cli.PostWithdrawCurrency(cdc),
 		cli.AddCurrencyProposal(cdc),
 	)...)

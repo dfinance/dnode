@@ -19,6 +19,10 @@ func (k Keeper) IssueCurrency(ctx sdk.Context, id string, coin sdk.Coin, payee s
 		}
 	}()
 
+	if k.stakingKeeper.IsAccountBanned(ctx, payee) {
+		return sdkErrors.Wrapf(types.ErrAccountBanned, "account banned: %s", payee.String())
+	}
+
 	if k.HasIssue(ctx, id) {
 		return sdkErrors.Wrapf(types.ErrWrongIssueID, "issue with ID %q: already exists", id)
 	}

@@ -31,6 +31,14 @@ type SubmitIssueReq struct {
 	Payee string `json:"payee" yaml:"payee" format:"bech32/hex" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 }
 
+type UnstakeReq struct {
+	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+	// Unstake unique ID (could be txHash of transaction in another blockchain)
+	ID string `json:"id" yaml:"id"`
+	// Staker account (whose balance is increased)
+	Staker string `json:"staker" yaml:"staker" format:"bech32/hex" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
+}
+
 type WithdrawReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// Target currency withdraw coin
@@ -49,6 +57,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc(fmt.Sprintf("/%s/withdraw/{%s}", types.ModuleName, WithdrawID), getWithdraw(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/withdraws", types.ModuleName), getWithdraws(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/issue", types.ModuleName), submitIssue(cliCtx)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("/%s/unstake", types.ModuleName), submitUnstake(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/withdraw", types.ModuleName), withdraw(cliCtx)).Methods("PUT")
 }
 
@@ -235,7 +244,7 @@ func getWithdraw(cliCtx context.CLIContext) http.HandlerFunc {
 // @Tags Currencies
 // @Summary Submit issue
 // @Description Get submit new issue multi signature message stdTx object
-// @ID currenciesSubmitIssue
+// @ID currenciesSubmitUnstake
 // @Accept  json
 // @Produce json
 // @Param request body SubmitIssueReq true "Submit issue request"
@@ -279,6 +288,62 @@ func submitIssue(cliCtx context.CLIContext) http.HandlerFunc {
 
 		// create the message
 		msg := types.NewMsgIssueCurrency(issueID, coin, payeeAddr)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		callMsg := msClient.NewMsgSubmitCall(msg, issueID, fromAddr)
+		if err := callMsg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{callMsg})
+	}
+}
+
+// Submit unstake godoc
+// @Tags Currencies
+// @Summary Unstake tx
+// @Description Get new unstake multi signature message stdTx object
+// @ID currenciesSubmitIssue
+// @Accept  json
+// @Produce json
+// @Param request body UnstakeReq true "Submit unstake request"
+// @Success 200 {object} CCRespStdTx
+// @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
+// @Failure 500 {object} rest.ErrorResponse "Returned on server error"
+// @Router /currencies/unstake [put]
+func submitUnstake(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// parse inputs
+		var req UnstakeReq
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		fromAddr, err := helpers.ParseSdkAddressParam("from", baseReq.From, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		stakerAddr, err := helpers.ParseSdkAddressParam("staker", req.Staker, helpers.ParamTypeRestRequest)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		issueID := req.ID
+
+		// create the message
+		msg := types.NewMsgUnstakeCurrency(issueID, stakerAddr)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

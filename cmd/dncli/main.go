@@ -23,6 +23,7 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/helpers/logger"
 	"github.com/dfinance/dnode/helpers/swagger"
 	vmauthCli "github.com/dfinance/dnode/x/vmauth/client/cli"
@@ -112,7 +113,7 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 	)
 
 	app.ModuleBasics.AddQueryCommands(queryCmd, cdc)
-	DisableCommands(queryCmd, dnConfig.GetAppRestrictions().DisabledQueryCmd)
+	DisableCommands(queryCmd, restrictions.GetAppRestrictions().DisabledQueryCmd)
 
 	return queryCmd
 }
@@ -184,7 +185,7 @@ func txCmd(cdc *amino.Codec) *cobra.Command {
 
 	app.ModuleBasics.AddTxCommands(txCmd, cdc)
 	SetDefaultFeeForTxCmd(txCmd)
-	DisableCommands(txCmd, dnConfig.GetAppRestrictions().DisabledTxCmd)
+	DisableCommands(txCmd, restrictions.GetAppRestrictions().DisabledTxCmd)
 
 	return txCmd
 }

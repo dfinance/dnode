@@ -25,8 +25,6 @@ Then let's create accounts:
     dncli keys add bank
     dncli keys add nominee
     dncli keys add validator1
-    dncli keys add validator2
-    dncli keys add validator3
     dncli keys add orders
     dncli keys add gov
 
@@ -41,18 +39,14 @@ Copy addresses and private keys from output, they would be used later.
 
 Now let's add genesis accounts and initiate genesis PoA validators.
 
-    dnode add-genesis-account [pos-address]  1000000000000000000000000xfi
+    dnode add-genesis-account [pos-address]  1000000000000000000000000sxfi
     dnode add-genesis-account [bank-address] 95000000000000000000000000xfi,100000000000000btc,10000000000000usdt
     dnode add-genesis-account [nominee]      1000000000000000000000000xfi
     dnode add-genesis-account [validator-1-address] 1000000000000000000000000xfi
-    dnode add-genesis-account [validator-2-address] 1000000000000000000000000xfi
-    dnode add-genesis-account [validator-3-address] 1000000000000000000000000xfi
     dnode add-genesis-account [orders-address] 1000000000000000000000000xfi --module-name orders
     dnode add-genesis-account [gov-address] 1000000000000000000000000xfi --module-name gov
 
     dnode add-genesis-poa-validator [validator-1-address] [validator-1-eth-address]
-    dnode add-genesis-poa-validator [validator-2-address] [validator-2-eth-address]
-    dnode add-genesis-poa-validator [validator-3-address] [validator-3-eth-address]
 
 Replace expressions in brackets with correct addresses, include Ethereum addresses.
 
@@ -62,9 +56,10 @@ It should be done before the next commands, refer to the tutorial **[how to init
 The following commands might be omitted as [`xfi`, `eth`, `usdt`, `btc`] currencies already exist in the default generated genesis above.
 Currencies can be added to the chain later using `gov` proposals.
 
-    dnode set-currency xfi  18
-    dnode set-currency eth  18
-    dnode set-currency usdt 6
+    dnode set-currency sxfi  18
+    dnode set-currency xfi  18 
+    dnode set-currency eth  18 
+    dnode set-currency usdt 6  
     dnode set-currency btc  8
 
 We can also add DEX markets to genesis (markets can be added later via non-genesis Tx command as well):
@@ -75,7 +70,7 @@ We can also add DEX markets to genesis (markets can be added later via non-genes
 
 Time to prepare `pos` account (if you're using custom keyring-backend, add `--keyring-backend file` flag):
 
-    dnode gentx --name pos --amount 1000000000000000000000000xfi
+    dnode gentx --name pos --amount 1000000000000000000000000sxfi --min-self-delegation 1000000000000000000000000 --keyring-backend file
 
 The output like:
 

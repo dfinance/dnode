@@ -33,6 +33,7 @@ import (
 
 	dnConfig "github.com/dfinance/dnode/cmd/config"
 	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/currencies"
 	"github.com/dfinance/dnode/x/genaccounts"
@@ -213,7 +214,9 @@ func NewTestDnAppMockVM(logOpts ...log.Option) (*DnServiceApp, func()) {
 	logger = log.NewFilter(logger, logOpts...)
 
 	// use invariants check period 1 for high pressure tests
-	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1, vmConfig.GetAppRestrictions())
+	customRestrictions := restrictions.GetAppRestrictions()
+	delete(customRestrictions.MsgDeniedList, currencies.ModuleName)
+	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1, customRestrictions)
 
 	stopFunc := func() {
 		app.CloseConnections()
@@ -248,7 +251,9 @@ func NewTestDnAppDVM(t *testing.T, logOpts ...log.Option) (*DnServiceApp, string
 	logger = log.NewFilter(logger, logOpts...)
 
 	// use invariants check period 1 for high pressure tests
-	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1, vmConfig.GetAppRestrictions())
+	customRestrictions := restrictions.GetAppRestrictions()
+	delete(customRestrictions.MsgDeniedList, currencies.ModuleName)
+	app := NewDnServiceApp(logger, dbm.NewMemDB(), config, 1, customRestrictions)
 
 	// start DS server
 	dsContext := app.GetDSContext()

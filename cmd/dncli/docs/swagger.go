@@ -1004,6 +1004,20 @@ definitions:
         format: bech32/hex
         type: string
     type: object
+  rest.UnstakeReq:
+    properties:
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      id:
+        description: Unstake unique ID (could be txHash of transaction in another blockchain)
+        type: string
+      staker:
+        description: Staker account (whose balance is increased)
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32/hex
+        type: string
+    type: object
   rest.VmData:
     properties:
       height:
@@ -1186,9 +1200,6 @@ definitions:
     type: array
   types.Currency:
     properties:
-      balance_path_hex:
-        description: Path used to store account balance for currency denom (0x1::Dfinance::T<Coin>)
-        type: string
       decimals:
         description: Number of currency decimals
         example: 0
@@ -1196,9 +1207,6 @@ definitions:
       denom:
         description: Currency denom (symbol)
         example: xfi
-        type: string
-      info_path_hex:
-        description: Path used to store CurrencyInfo for currency denom (0x1::Dfinance::Info<Coin>)
         type: string
       supply:
         description: Total amount of currency coins in Bank
@@ -1281,7 +1289,7 @@ definitions:
         format: string representation for big.Uint
         type: string
       quote_asset_denom:
-        description: Quote asset denomination (for ex. dfi)
+        description: Quote asset denomination (for ex. xfi)
         example: xfi
         type: string
     type: object
@@ -1298,7 +1306,7 @@ definitions:
         type: string
       quote_currency:
         $ref: '#/definitions/ccstorage.Currency'
-        description: Quote asset currency (for ex. dfi)
+        description: Quote asset currency (for ex. xfi)
         type: object
     type: object
   types.Markets:
@@ -1786,7 +1794,7 @@ paths:
       consumes:
       - application/json
       description: Get submit new issue multi signature message stdTx object
-      operationId: currenciesSubmitIssue
+      operationId: currenciesSubmitUnstake
       parameters:
       - description: Submit issue request
         in: body
@@ -1836,6 +1844,37 @@ paths:
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Get currency issue
+      tags:
+      - Currencies
+  /currencies/unstake:
+    put:
+      consumes:
+      - application/json
+      description: Get new unstake multi signature message stdTx object
+      operationId: currenciesSubmitIssue
+      parameters:
+      - description: Submit unstake request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/rest.UnstakeReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.CCRespStdTx'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Unstake tx
       tags:
       - Currencies
   /currencies/withdraw:
