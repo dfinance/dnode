@@ -14,7 +14,7 @@ ARG CI_COMMIT_REF_NAME
 ARG CI_COMMIT_SHA
 RUN apk add --no-cache ca-certificates jq bash && \
     addgroup -g 1000 user && \
-    adduser -D -u 1000 -h /home/user -s /bin/bash -G user user
+    adduser -D -u 1000 -h /home/user -s /bin/bash -g "user" -G user user
 USER user
 RUN echo "${CI_PIPELINE_ID}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}" > version
 COPY --from=build \
