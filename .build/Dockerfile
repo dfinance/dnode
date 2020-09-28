@@ -12,7 +12,10 @@ WORKDIR /opt/app
 ARG CI_PIPELINE_ID
 ARG CI_COMMIT_REF_NAME
 ARG CI_COMMIT_SHA
-RUN apk add --no-cache ca-certificates jq bash
+RUN apk add --no-cache ca-certificates jq bash && \
+    addgroup -g 1000 user && \
+    adduser -D -u 1000 -h /home/user -s /bin/bash -G user user
+USER user
 RUN echo "${CI_PIPELINE_ID}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}" > version
 COPY --from=build \
             /go/bin/dnode \
