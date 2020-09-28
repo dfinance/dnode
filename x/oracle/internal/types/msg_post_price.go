@@ -17,9 +17,9 @@ type MsgPostPrice struct {
 	// Asset code
 	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code"`
 	// AskPrice
-	AskPrice sdk.Dec `json:"ask_price" yaml:"ask_price"`
+	AskPrice sdk.Int `json:"ask_price" yaml:"ask_price"`
 	// BidPrice
-	BidPrice sdk.Dec `json:"bid_price" yaml:"bid_price"`
+	BidPrice sdk.Int `json:"bid_price" yaml:"bid_price"`
 	// ReceivedAt time in UNIX timestamp format [seconds]
 	ReceivedAt time.Time `json:"received_at" yaml:"received_at"`
 }
@@ -59,7 +59,7 @@ func (msg MsgPostPrice) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgPostPrice creates a new PostPrice message.
-func NewMsgPostPrice(from sdk.AccAddress, assetCode dnTypes.AssetCode, askPrice, bidPrice sdk.Dec, receivedAt time.Time) MsgPostPrice {
+func NewMsgPostPrice(from sdk.AccAddress, assetCode dnTypes.AssetCode, askPrice, bidPrice sdk.Int, receivedAt time.Time) MsgPostPrice {
 	return MsgPostPrice{
 		From:       from,
 		AssetCode:  assetCode,

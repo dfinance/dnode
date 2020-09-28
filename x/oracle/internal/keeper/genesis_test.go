@@ -111,13 +111,13 @@ func TestOracleKeeper_Genesis_Init(t *testing.T) {
 		require.Equal(t, len(exportedState.CurrentPrices), len(state.CurrentPrices))
 
 		// checking all of items existing in the export
-		sumAskPrices, sumBidPrices := sdk.NewDec(0), sdk.NewDec(0)
+		sumAskPrices, sumBidPrices := sdk.NewInt(0), sdk.NewInt(0)
 		for _, i := range exportedState.CurrentPrices {
 			sumAskPrices = sumAskPrices.Add(i.AskPrice)
 			sumBidPrices = sumBidPrices.Add(i.BidPrice)
 		}
 
-		sumAskPricesInitial, sumBidPricesInitial := sdk.NewDec(0), sdk.NewDec(0)
+		sumAskPricesInitial, sumBidPricesInitial := sdk.NewInt(0), sdk.NewInt(0)
 		for _, i := range state.CurrentPrices {
 			sumAskPricesInitial = sumAskPricesInitial.Add(i.AskPrice)
 			sumBidPricesInitial = sumBidPricesInitial.Add(i.BidPrice)

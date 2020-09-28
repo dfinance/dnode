@@ -17,8 +17,8 @@ import (
 func NewMockCurrentPrice(assetCode string, ask, bid int64) types.CurrentPrice {
 	return types.CurrentPrice{
 		AssetCode:  dnTypes.AssetCode(assetCode),
-		AskPrice:   sdk.NewDec(ask),
-		BidPrice:   sdk.NewDec(bid),
+		AskPrice:   sdk.NewInt(ask),
+		BidPrice:   sdk.NewInt(bid),
 		ReceivedAt: time.Now(),
 	}
 }
@@ -66,45 +66,45 @@ func TestOracleKeeper_SetPrice(t *testing.T) {
 	{
 		_, err := keeper.SetPrice(
 			ctx, input.addresses[0], input.stdAssetCode,
-			sdk.NewDec(33000001),
-			sdk.NewDec(33000000),
+			sdk.NewInt(33000001),
+			sdk.NewInt(33000000),
 			header.Time)
 		require.NoError(t, err)
 
 		// Get raw prices
 		rawPrices := keeper.GetRawPrices(ctx, input.stdAssetCode, header.Height)
 		require.Equal(t, len(rawPrices), 1)
-		require.Equal(t, rawPrices[0].AskPrice.Equal(sdk.NewDec(33000001)), true)
-		require.Equal(t, rawPrices[0].BidPrice.Equal(sdk.NewDec(33000000)), true)
+		require.Equal(t, rawPrices[0].AskPrice.Equal(sdk.NewInt(33000001)), true)
+		require.Equal(t, rawPrices[0].BidPrice.Equal(sdk.NewInt(33000000)), true)
 	}
 
 	// Set price by oracle 2
 	{
 		_, err := keeper.SetPrice(
 			ctx, input.addresses[1], input.stdAssetCode,
-			sdk.NewDec(35000005),
-			sdk.NewDec(35000000),
+			sdk.NewInt(35000005),
+			sdk.NewInt(35000000),
 			header.Time)
 		require.NoError(t, err)
 
 		rawPrices := keeper.GetRawPrices(ctx, input.stdAssetCode, header.Height)
 		require.Equal(t, len(rawPrices), 2)
-		require.Equal(t, rawPrices[1].AskPrice.Equal(sdk.NewDec(35000005)), true)
-		require.Equal(t, rawPrices[1].BidPrice.Equal(sdk.NewDec(35000000)), true)
+		require.Equal(t, rawPrices[1].AskPrice.Equal(sdk.NewInt(35000005)), true)
+		require.Equal(t, rawPrices[1].BidPrice.Equal(sdk.NewInt(35000000)), true)
 	}
 
 	// Update Price by oracle 1
 	{
 		_, err := keeper.SetPrice(
 			ctx, input.addresses[0], input.stdAssetCode,
-			sdk.NewDec(37000007),
-			sdk.NewDec(37000000),
+			sdk.NewInt(37000007),
+			sdk.NewInt(37000000),
 			header.Time)
 		require.NoError(t, err)
 
 		rawPrices := keeper.GetRawPrices(ctx, input.stdAssetCode, header.Height)
-		require.Equal(t, rawPrices[0].AskPrice.Equal(sdk.NewDec(37000007)), true)
-		require.Equal(t, rawPrices[0].BidPrice.Equal(sdk.NewDec(37000000)), true)
+		require.Equal(t, rawPrices[0].AskPrice.Equal(sdk.NewInt(37000007)), true)
+		require.Equal(t, rawPrices[0].BidPrice.Equal(sdk.NewInt(37000000)), true)
 	}
 }
 
@@ -121,16 +121,16 @@ func TestOracleKeeper_GetRawPrice(t *testing.T) {
 	{
 		_, err := keeper.SetPrice(
 			ctx, input.addresses[0], input.stdAssetCode,
-			sdk.NewDec(33000033),
-			sdk.NewDec(33000000),
+			sdk.NewInt(33000033),
+			sdk.NewInt(33000000),
 			header.Time)
 		require.NoError(t, err)
 
 		// Get raw prices
 		rawPrices := keeper.GetRawPrices(ctx, input.stdAssetCode, header.Height)
 		require.Equal(t, len(rawPrices), 1)
-		require.Equal(t, rawPrices[0].AskPrice.Equal(sdk.NewDec(33000033)), true)
-		require.Equal(t, rawPrices[0].BidPrice.Equal(sdk.NewDec(33000000)), true)
+		require.Equal(t, rawPrices[0].AskPrice.Equal(sdk.NewInt(33000033)), true)
+		require.Equal(t, rawPrices[0].BidPrice.Equal(sdk.NewInt(33000000)), true)
 	}
 }
 
@@ -145,47 +145,47 @@ func TestOracleKeeper_CurrentPrice(t *testing.T) {
 
 	_, _ = keeper.SetPrice(
 		ctx, input.addresses[0], input.stdAssetCode,
-		sdk.NewDec(33000001),
-		sdk.NewDec(33000000),
+		sdk.NewInt(33000001),
+		sdk.NewInt(33000000),
 		header.Time)
 	_, _ = keeper.SetPrice(
 		ctx, input.addresses[1], input.stdAssetCode,
-		sdk.NewDec(35000005),
-		sdk.NewDec(35000000),
+		sdk.NewInt(35000005),
+		sdk.NewInt(35000000),
 		header.Time)
 	_, _ = keeper.SetPrice(
 		ctx, input.addresses[2], input.stdAssetCode,
-		sdk.NewDec(34000004),
-		sdk.NewDec(34000000),
+		sdk.NewInt(34000004),
+		sdk.NewInt(34000000),
 		header.Time)
 	// Set current price
 	err := keeper.SetCurrentPrices(ctx)
 	require.NoError(t, err)
 	// Get Current price
 	price := keeper.GetCurrentPrice(ctx, input.stdAssetCode)
-	require.Equal(t, price.AskPrice.Equal(sdk.NewDec(34000004)), true)
-	require.Equal(t, price.BidPrice.Equal(sdk.NewDec(34000000)), true)
+	require.Equal(t, price.AskPrice.Equal(sdk.NewInt(34000004)), true)
+	require.Equal(t, price.BidPrice.Equal(sdk.NewInt(34000000)), true)
 
 	// Even number of oracles
 	_, _ = keeper.SetPrice(
 		ctx, input.addresses[0], input.stdAssetCode,
-		sdk.NewDec(33000003),
-		sdk.NewDec(33000000),
+		sdk.NewInt(33000003),
+		sdk.NewInt(33000000),
 		header.Time)
 	_, _ = keeper.SetPrice(
 		ctx, input.addresses[1], input.stdAssetCode,
-		sdk.NewDec(35000005),
-		sdk.NewDec(35000000),
+		sdk.NewInt(35000005),
+		sdk.NewInt(35000000),
 		header.Time)
 	_, _ = keeper.SetPrice(
 		ctx, input.addresses[2], input.stdAssetCode,
-		sdk.NewDec(34000004),
-		sdk.NewDec(34000000),
+		sdk.NewInt(34000004),
+		sdk.NewInt(34000000),
 		header.Time)
 	_, _ = keeper.SetPrice(
 		ctx, input.addresses[3], input.stdAssetCode,
-		sdk.NewDec(36000006),
-		sdk.NewDec(36000000),
+		sdk.NewInt(36000006),
+		sdk.NewInt(36000000),
 		header.Time)
 
 	// Checking SetCurrentPrices method
@@ -194,18 +194,18 @@ func TestOracleKeeper_CurrentPrice(t *testing.T) {
 
 	// Checking GetCurrentPrice method
 	price = keeper.GetCurrentPrice(ctx, input.stdAssetCode)
-	ask, err := sdk.NewDecFromStr("34500004.5")
-	require.NoError(t, err)
+	ask, ok := sdk.NewIntFromString("34500004")
+	require.True(t, ok)
 	require.Equal(t, price.AskPrice.Equal(ask), true)
 
-	bid, err := sdk.NewDecFromStr("34500000")
-	require.NoError(t, err)
+	bid, ok := sdk.NewIntFromString("34500000")
+	require.True(t, ok)
 	require.Equal(t, price.BidPrice.Equal(bid), true)
 
 	price2 := types.CurrentPrice{
 		AssetCode:  dnTypes.AssetCode("usdt_xfi"),
-		AskPrice:   sdk.NewDec(1000001),
-		BidPrice:   sdk.NewDec(1000000),
+		AskPrice:   sdk.NewInt(1000001),
+		BidPrice:   sdk.NewInt(1000000),
 		ReceivedAt: time.Now().Add(-1 * time.Hour),
 	}
 

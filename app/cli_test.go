@@ -422,22 +422,22 @@ func TestOracle_CLI(t *testing.T) {
 		postPrices := []struct {
 			assetCode  dnTypes.AssetCode
 			sender     string
-			askPrice   sdk.Dec
-			bidPrice   sdk.Dec
+			askPrice   sdk.Int
+			bidPrice   sdk.Int
 			receivedAt time.Time
 		}{
 			{
 				assetCode:  assetCode,
 				sender:     assetOracle1,
-				askPrice:   sdk.NewDec(100),
-				bidPrice:   sdk.NewDec(95),
+				askPrice:   sdk.NewInt(100),
+				bidPrice:   sdk.NewInt(95),
 				receivedAt: now,
 			},
 			{
 				assetCode:  assetCode,
 				sender:     assetOracle2,
-				askPrice:   sdk.NewDec(150),
-				bidPrice:   sdk.NewDec(149),
+				askPrice:   sdk.NewInt(150),
+				bidPrice:   sdk.NewInt(149),
 				receivedAt: now.Add(1 * time.Second),
 			},
 		}
@@ -472,21 +472,21 @@ func TestOracle_CLI(t *testing.T) {
 		{
 			// invalid number of args
 			{
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewDec(3), sdk.NewDec(2), time.Now())
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewInt(3), sdk.NewInt(2), time.Now())
 				tx.RemoveCmdArg(assetCode.String())
 				tx.CheckFailedWithErrorSubstring("arg(s)")
 			}
 			// invalid price
 			{
-				ask := sdk.NewDec(3)
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, ask, sdk.NewDec(2), time.Now())
+				ask := sdk.NewInt(3)
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, ask, sdk.NewInt(2), time.Now())
 				tx.ChangeCmdArg(ask.String(), "not_int")
-				tx.CheckFailedWithErrorSubstring("parsing Dec")
+				tx.CheckFailedWithErrorSubstring("parsing Int:")
 			}
 			// invalid receivedAt
 			{
 				now := time.Now()
-				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewDec(3), sdk.NewDec(2), now)
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewInt(3), sdk.NewInt(2), now)
 				tx.ChangeCmdArg(strconv.FormatInt(now.Unix(), 10), "not_time.Time")
 				tx.CheckFailedWithErrorSubstring("parsing Int")
 			}

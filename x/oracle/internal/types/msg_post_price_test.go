@@ -18,10 +18,10 @@ func TestOracleMsg_PostPrice(t *testing.T) {
 
 	from := sdk.AccAddress([]byte("someName"))
 	assetCode := dnTypes.AssetCode("btc_xfi")
-	askPrice := sdk.NewDec(30050005)
-	bidPrice := sdk.NewDec(30050000)
+	askPrice := sdk.NewInt(30050005)
+	bidPrice := sdk.NewInt(30050000)
 	expiry := time.Now()
-	negativePrice := sdk.NewDec(-1)
+	negativePrice := sdk.NewInt(-1)
 
 	t.Run("GetSign", func(t *testing.T) {
 		target := NewMsgPostPrice(from, assetCode, askPrice, bidPrice, expiry)

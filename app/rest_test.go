@@ -596,8 +596,8 @@ func TestOracle_REST(t *testing.T) {
 		SenderIdx     uint
 		OracleName    string
 		OracleAddress string
-		AskPrice      sdk.Dec
-		BidPrice      sdk.Dec
+		AskPrice      sdk.Int
+		BidPrice      sdk.Int
 		ReceivedAt    time.Time
 		BlockHeight   int64
 	}{
@@ -606,8 +606,8 @@ func TestOracle_REST(t *testing.T) {
 			SenderIdx:     0,
 			OracleName:    oracleName1,
 			OracleAddress: oracleAddr1,
-			AskPrice:      sdk.NewDec(100),
-			BidPrice:      sdk.NewDec(99),
+			AskPrice:      sdk.NewInt(100),
+			BidPrice:      sdk.NewInt(99),
 			ReceivedAt:    now,
 			BlockHeight:   0,
 		},
@@ -616,8 +616,8 @@ func TestOracle_REST(t *testing.T) {
 			SenderIdx:     1,
 			OracleName:    oracleName2,
 			OracleAddress: oracleAddr2,
-			AskPrice:      sdk.NewDec(200),
-			BidPrice:      sdk.NewDec(199),
+			AskPrice:      sdk.NewInt(200),
+			BidPrice:      sdk.NewInt(199),
 			ReceivedAt:    now.Add(5 * time.Second),
 		},
 	}

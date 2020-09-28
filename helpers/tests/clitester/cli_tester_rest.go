@@ -437,7 +437,7 @@ func (ct *CLITester) RestQueryVMLcsView(address, movePath, viewRequest string) (
 	return r, respMsg
 }
 
-func (ct *CLITester) RestTxOraclePostPrice(accName string, assetCode dnTypes.AssetCode, askPrice, bidPrice sdk.Dec, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
+func (ct *CLITester) RestTxOraclePostPrice(accName string, assetCode dnTypes.AssetCode, askPrice, bidPrice sdk.Int, receivedAt time.Time) (*RestRequest, *sdk.TxResponse) {
 	accInfo := ct.Accounts[accName]
 	require.NotNil(ct.t, accInfo, "account %s: not found", accName)
 

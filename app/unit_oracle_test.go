@@ -84,8 +84,8 @@ func TestOracle_Queries(t *testing.T) {
 	}
 
 	now := time.Now()
-	priceAskValues := []sdk.Dec{sdk.NewDec(1001), sdk.NewDec(2002), sdk.NewDec(1501)}
-	priceBidValues := []sdk.Dec{sdk.NewDec(1000), sdk.NewDec(2000), sdk.NewDec(1500)}
+	priceAskValues := []sdk.Int{sdk.NewInt(1001), sdk.NewInt(2002), sdk.NewInt(1501)}
+	priceBidValues := []sdk.Int{sdk.NewInt(1000), sdk.NewInt(2000), sdk.NewInt(1500)}
 	priceTimestamps := []time.Time{now.Add(1 * time.Second), now.Add(2 * time.Second), now.Add(3 * time.Second)}
 
 	// post prices
@@ -523,8 +523,8 @@ func TestOracle_PostPrices(t *testing.T) {
 		msg := oracle.MsgPostPrice{
 			From:       senderAcc.GetAddress(),
 			AssetCode:  assetCode,
-			AskPrice:   sdk.OneDec(),
-			BidPrice:   sdk.OneDec(),
+			AskPrice:   sdk.OneInt(),
+			BidPrice:   sdk.OneInt(),
 			ReceivedAt: time.Now(),
 		}
 
@@ -540,8 +540,8 @@ func TestOracle_PostPrices(t *testing.T) {
 		msg := oracle.MsgPostPrice{
 			From:       senderAcc.GetAddress(),
 			AssetCode:  "non-existing-asset",
-			AskPrice:   sdk.OneDec(),
-			BidPrice:   sdk.OneDec(),
+			AskPrice:   sdk.OneInt(),
+			BidPrice:   sdk.OneInt(),
 			ReceivedAt: time.Now(),
 		}
 
@@ -567,8 +567,8 @@ func TestOracle_PostPrices(t *testing.T) {
 	// check posting price few times from the same oracle
 	{
 		now := time.Now()
-		priceAskAmount1, priceAskAmount2 := sdk.NewDec(200000002), sdk.NewDec(100000002)
-		priceBidAmount1, priceBidAmount2 := sdk.NewDec(200000000), sdk.NewDec(100000000)
+		priceAskAmount1, priceAskAmount2 := sdk.NewInt(200000002), sdk.NewInt(100000002)
+		priceBidAmount1, priceBidAmount2 := sdk.NewInt(200000000), sdk.NewInt(100000000)
 		priceTimestamp1, priceTimestamp2 := now.Add(1*time.Second), now.Add(2*time.Second)
 
 		// post prices
@@ -630,8 +630,8 @@ func TestOracle_PostPrices(t *testing.T) {
 	// check posting prices from different oracles
 	{
 		now := time.Now()
-		priceAskValues := []sdk.Dec{sdk.NewDec(200000002), sdk.NewDec(100000001), sdk.NewDec(300000003)}
-		priceBidValues := []sdk.Dec{sdk.NewDec(200000000), sdk.NewDec(100000000), sdk.NewDec(300000000)}
+		priceAskValues := []sdk.Int{sdk.NewInt(200000002), sdk.NewInt(100000001), sdk.NewInt(300000003)}
+		priceBidValues := []sdk.Int{sdk.NewInt(200000000), sdk.NewInt(100000000), sdk.NewInt(300000000)}
 		priceTimestamps := []time.Time{now.Add(1 * time.Second), now.Add(2 * time.Second), now.Add(3 * time.Second)}
 
 		// post prices

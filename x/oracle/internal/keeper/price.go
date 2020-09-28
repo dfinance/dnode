@@ -69,8 +69,8 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 		rawPrices := k.GetRawPrices(ctx, assetCode, ctx.BlockHeight())
 
 		var (
-			medianAskPrice   sdk.Dec
-			medianBidPrice   sdk.Dec
+			medianAskPrice   sdk.Int
+			medianBidPrice   sdk.Int
 			medianReceivedAt time.Time
 		)
 
@@ -80,7 +80,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 		if l == 0 {
 			// Error if there are no valid prices in the raw oracle
 			//return types.ErrNoValidPrice(k.codespace)
-			medianAskPrice, medianBidPrice = sdk.ZeroDec(), sdk.ZeroDec()
+			medianAskPrice, medianBidPrice = sdk.ZeroInt(), sdk.ZeroInt()
 		} else if l == 1 {
 			// Return immediately if there's only one price
 			medianAskPrice, medianBidPrice = rawPrices[0].AskPrice, rawPrices[0].BidPrice
@@ -109,7 +109,7 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 				b2 := bidRawPrices[l/2].BidPrice
 				sumB := b1.Add(b2)
 
-				divsor := sdk.NewDec(2)
+				divsor := sdk.NewInt(2)
 				medianAskPrice = sumA.Quo(divsor)
 				medianBidPrice = sumB.Quo(divsor)
 				medianReceivedAt = ctx.BlockTime().UTC()
@@ -145,8 +145,9 @@ func (k Keeper) SetCurrentPrices(ctx sdk.Context) error {
 		priceVmAccessPath, priceVmValue := types.NewResPriceStorageValuesPanic(newPrice.AssetCode, newPrice.AskPrice)
 		k.vmKeeper.SetValue(ctx, priceVmAccessPath, priceVmValue)
 
-		reversedAsset, _ := newPrice.AssetCode.ReverseCode()
-		priceVmAccessPath, priceVmValue = types.NewResPriceStorageValuesPanic(reversedAsset, sdk.OneDec().Quo(newPrice.BidPrice))
+		// also save reversed asset code price to VM storage
+		newPriceReversed := newPrice.GetReversedAssetCurrentPrice()
+		priceVmAccessPath, priceVmValue = types.NewResPriceStorageValuesPanic(newPriceReversed.AssetCode, newPriceReversed.AskPrice)
 		k.vmKeeper.SetValue(ctx, priceVmAccessPath, priceVmValue)
 
 		// emit event
@@ -179,8 +180,8 @@ func (k Keeper) SetPrice(
 	ctx sdk.Context,
 	oracle sdk.AccAddress,
 	assetCode dnTypes.AssetCode,
-	askPrice sdk.Dec,
-	bidPrice sdk.Dec,
+	askPrice sdk.Int,
+	bidPrice sdk.Int,
 	receivedAt time.Time) (types.PostedPrice, error) {
 
 	k.modulePerms.AutoCheck(types.PermWrite)

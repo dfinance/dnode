@@ -18,10 +18,11 @@ func (a AssetCode) String() string {
 }
 
 // ReverseCode reverses asset code.
-func (a AssetCode) ReverseCode() (AssetCode, error) {
+// Will panic if use it with the wrong format asset code.
+func (a AssetCode) ReverseCode() AssetCode {
 	parts := strings.Split(a.String(), "_")
 	if len(parts) != 2 {
-		return "", fmt.Errorf("wrong asset code format: %s", a)
+		panic(fmt.Errorf("wrong asset code format: %s", a))
 	}
-	return AssetCode(parts[1] + "_" + parts[0]), nil
+	return AssetCode(parts[1] + "_" + parts[0])
 }

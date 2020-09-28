@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"github.com/shopspring/decimal"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 const (
 	PriceBytesLimit = 8
+	PricePrecision  = 8
 )
 
 // CurrentPrice contains meta of the current price for the particular asset with ask and bid prices.
@@ -19,11 +21,28 @@ type CurrentPrice struct {
 	// Asset code
 	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_xfi"`
 	// AskPrice
-	AskPrice sdk.Dec `json:"ask_price" yaml:"ask_price" swaggertype:"string" example:"1000"`
+	AskPrice sdk.Int `json:"ask_price" yaml:"ask_price" swaggertype:"string" example:"1000"`
 	// BidPrice
-	BidPrice sdk.Dec `json:"bid_price" yaml:"bid_price" swaggertype:"string" example:"1000"`
+	BidPrice sdk.Int `json:"bid_price" yaml:"bid_price" swaggertype:"string" example:"1000"`
 	// UNIX Timestamp price createdAt [sec]
 	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
+}
+
+// GetReversedAssetCurrentPrice returns CurrentPrice for reverted
+func (cp CurrentPrice) GetReversedAssetCurrentPrice() CurrentPrice {
+	revertInt := func(p sdk.Int) sdk.Int {
+		decP := decimal.NewFromBigInt(p.BigInt(), -PricePrecision)
+		decP = decimal.NewFromInt(1).Div(decP)
+		decP = decP.Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(PricePrecision)))
+		return sdk.NewIntFromBigInt(decP.BigInt())
+	}
+
+	return CurrentPrice{
+		AssetCode:  cp.AssetCode.ReverseCode(),
+		AskPrice:   revertInt(cp.BidPrice),
+		BidPrice:   revertInt(cp.AskPrice),
+		ReceivedAt: cp.ReceivedAt,
+	}
 }
 
 // CurrentAssetPrice contains meta of the current price for the particular asset.
@@ -31,7 +50,7 @@ type CurrentAssetPrice struct {
 	// Asset code
 	AssetCode dnTypes.AssetCode `json:"asset_code" yaml:"asset_code" example:"btc_xfi"`
 	// Price
-	Price sdk.Dec `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
+	Price sdk.Int `json:"price" yaml:"price" swaggertype:"string" example:"1000"`
 	// UNIX Timestamp price createdAt [sec]
 	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }
@@ -78,9 +97,9 @@ type PostedPrice struct {
 	// Source oracle address
 	OracleAddress sdk.AccAddress `json:"oracle_address" yaml:"oracle_address" swaggertype:"string" example:"wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h"`
 	// AskPrice
-	AskPrice sdk.Dec `json:"ask_price" yaml:"ask_price" swaggertype:"string" example:"1000"`
+	AskPrice sdk.Int `json:"ask_price" yaml:"ask_price" swaggertype:"string" example:"1000"`
 	// BidPrice
-	BidPrice sdk.Dec `json:"bid_price" yaml:"bid_price" swaggertype:"string" example:"1000"`
+	BidPrice sdk.Int `json:"bid_price" yaml:"bid_price" swaggertype:"string" example:"1000"`
 	// UNIX Timestamp price receivedAt [sec]
 	ReceivedAt time.Time `json:"received_at" yaml:"received_at" format:"RFC 3339" example:"2020-03-27T13:45:15.293426Z"`
 }

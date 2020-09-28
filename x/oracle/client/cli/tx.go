@@ -33,12 +33,12 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			askPrice, err := helpers.ParseSdkDecParam("askPrice", args[1], helpers.ParamTypeCliArg)
+			askPrice, err := helpers.ParseSdkIntParam("askPrice", args[1], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
-			bidPrice, err := helpers.ParseSdkDecParam("bidPrice", args[2], helpers.ParamTypeCliArg)
+			bidPrice, err := helpers.ParseSdkIntParam("bidPrice", args[2], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
@@ -59,8 +59,8 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 	}
 	helpers.BuildCmdHelp(cmd, []string{
 		"asset code symbol",
-		"askPrice [float]",
-		"bidPrice [float]",
+		"askPrice [int]",
+		"bidPrice [int]",
 		"price received at UNIX timestamp in seconds [int]",
 	})
 

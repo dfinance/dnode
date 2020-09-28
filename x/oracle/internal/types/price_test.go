@@ -15,8 +15,8 @@ import (
 func NewMockCurrentPrice(assetCode string, ask, bid int64) CurrentPrice {
 	return CurrentPrice{
 		AssetCode:  dnTypes.AssetCode(assetCode),
-		AskPrice:   sdk.NewDec(ask),
-		BidPrice:   sdk.NewDec(bid),
+		AskPrice:   sdk.NewInt(ask),
+		BidPrice:   sdk.NewInt(bid),
 		ReceivedAt: time.Now(),
 	}
 }
@@ -63,5 +63,17 @@ func TestOracle_Price_Valid(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "received_at")
 		require.Contains(t, err.Error(), "zero")
+	}
+}
+
+func TestOracle_Price_GetReversedAssetCurrentPrice(t *testing.T) {
+	// calculate reverse price ask: 10900.55, bid: 10889.95
+	{
+		price := NewMockCurrentPrice("btc_xfi", 1090055000000, 1088995000000)
+		rp := price.GetReversedAssetCurrentPrice()
+
+		require.Equal(t, rp.AssetCode.String(), "xfi_btc")
+		require.Equal(t, rp.AskPrice.String(), "9182") // (1/bid/10^8) * 10^8
+		require.Equal(t, rp.BidPrice.String(), "9173") // (1/ask/10^8) * 10^8
 	}
 }

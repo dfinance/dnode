@@ -415,7 +415,7 @@ func TestVMKeeper_ScriptOracle(t *testing.T) {
 	}
 
 	input.ok.SetParams(input.ctx, okInitParams)
-	input.ok.SetPrice(input.ctx, addr1, assetCode, sdk.NewDec(100), sdk.NewDec(100), time.Now())
+	input.ok.SetPrice(input.ctx, addr1, assetCode, sdk.NewInt(100), sdk.NewInt(100), time.Now())
 	input.ok.SetCurrentPrices(input.ctx)
 
 	gs := getGenesis(t)
@@ -462,7 +462,7 @@ func TestVMKeeper_ScriptOracle(t *testing.T) {
 	// data
 	{
 		attrIdx := 3
-		price := sdk.NewIntFromBigInt(sdk.NewDec(100).BigInt())
+		price := sdk.NewIntFromBigInt(sdk.NewInt(100).BigInt())
 		priceBz := helpers.BigToBytes(price, 16) // u128
 		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventData)
 		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, hex.EncodeToString(priceBz))

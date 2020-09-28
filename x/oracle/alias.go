@@ -43,6 +43,8 @@ const (
 	AttributeAskPrice   = types.AttributeAskPrice
 	AttributeBidPrice   = types.AttributeBidPrice
 	AttributeReceivedAt = types.AttributeReceivedAt
+	//
+	PricePrecision = types.PricePrecision
 )
 
 var (
