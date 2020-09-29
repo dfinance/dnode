@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"testing"
@@ -80,6 +81,17 @@ script {
 
 	fun main(account: &signer) {
 		let price = Coins::get_price<Coins::ETH, Coins::USDT>();
+		Event::emit<u128>(account, price);
+	}
+}
+`
+const oracleReverseAssetPriceScript = `
+script {
+	use 0x1::Event;
+	use 0x1::Coins;
+
+	fun main(account: &signer) {
+		let price = Coins::get_price<Coins::USDT, Coins::ETH>();
 		Event::emit<u128>(account, price);
 	}
 }
@@ -382,6 +394,7 @@ func TestVMKeeper_DeployModule(t *testing.T) {
 func TestVMKeeper_ScriptOracle(t *testing.T) {
 	config := sdk.GetConfig()
 	dnodeConfig.InitBechPrefixes(config)
+	price := sdk.NewInt(10).Mul(sdk.NewInt(int64(math.Pow10(oracle.PricePrecision))))
 
 	input := newTestInput(false)
 
@@ -415,7 +428,7 @@ func TestVMKeeper_ScriptOracle(t *testing.T) {
 	}
 
 	input.ok.SetParams(input.ctx, okInitParams)
-	input.ok.SetPrice(input.ctx, addr1, assetCode, sdk.NewInt(100), sdk.NewInt(100), time.Now())
+	input.ok.SetPrice(input.ctx, addr1, assetCode, price, price, time.Now())
 	input.ok.SetCurrentPrices(input.ctx)
 
 	gs := getGenesis(t)
@@ -424,48 +437,103 @@ func TestVMKeeper_ScriptOracle(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	bytecodeScript, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
-		Text:    oraclePriceScript,
-		Address: common_vm.Bech32ToLibra(addr1),
-	})
-	require.NoErrorf(t, err, "can't get code for oracle script: %v", err)
+	// compile direct asset
+	{
+		bytecodeScript, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
+			Text:    oraclePriceScript,
+			Address: common_vm.Bech32ToLibra(addr1),
+		})
+		require.NoErrorf(t, err, "can't get code for oracle direct asset script: %v", err)
 
-	msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript, nil)
-	err = input.vk.ExecuteScript(input.ctx, msgScript)
-	require.NoError(t, err)
+		msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript, nil)
+		err = input.vk.ExecuteScript(input.ctx, msgScript)
+		require.NoError(t, err)
 
-	events := input.ctx.EventManager().Events()
-	checkNoEventErrors(events, t)
+		events := input.ctx.EventManager().Events()
+		checkNoEventErrors(events, t)
 
-	checkEventsContainsEvery(t, events, newKeepEvents())
-	require.Len(t, events, 5)
-	vmEvent := events[4]
-	require.Len(t, vmEvent.Attributes, 4)
-	// sender
-	{
-		attrIdx := 0
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSender)
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifySenderAddress(addr1))
+		checkEventsContainsEvery(t, events, newKeepEvents())
+		require.Len(t, events, 5)
+		vmEvent := events[4]
+		require.Len(t, vmEvent.Attributes, 4)
+		// sender
+		{
+			attrIdx := 0
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSender)
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifySenderAddress(addr1))
+		}
+		// source
+		{
+			attrIdx := 1
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSource)
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.GetEventSourceAttribute(nil))
+		}
+		// type
+		{
+			attrIdx := 2
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventType)
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU128}))
+		}
+		// data
+		{
+			attrIdx := 3
+			price := sdk.NewIntFromBigInt(price.BigInt())
+			priceBz := helpers.BigToBytes(price, 16) // u128
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventData)
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, hex.EncodeToString(priceBz))
+		}
 	}
-	// source
+
+	// compile reverse asset
 	{
-		attrIdx := 1
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSource)
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.GetEventSourceAttribute(nil))
-	}
-	// type
-	{
-		attrIdx := 2
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventType)
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU128}))
-	}
-	// data
-	{
-		attrIdx := 3
-		price := sdk.NewIntFromBigInt(sdk.NewInt(100).BigInt())
-		priceBz := helpers.BigToBytes(price, 16) // u128
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventData)
-		require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, hex.EncodeToString(priceBz))
+		events := input.ctx.EventManager().Events()
+		bytecodeReverseScript, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
+			Text:    oracleReverseAssetPriceScript,
+			Address: common_vm.Bech32ToLibra(addr1),
+		})
+		require.NoErrorf(t, err, "can't get code for oracle reverse asset script: %v", err)
+
+		msgScript := types.NewMsgExecuteScript(addr1, bytecodeReverseScript, nil)
+		err = input.vk.ExecuteScript(input.ctx, msgScript)
+		require.NoError(t, err)
+
+		events = input.ctx.EventManager().Events()
+		checkNoEventErrors(events, t)
+
+		checkEventsContainsEvery(t, events, newKeepEvents())
+		require.Len(t, events, 8)
+		vmEvent := events[7]
+		require.Len(t, vmEvent.Attributes, 4)
+		// sender
+		{
+			attrIdx := 0
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSender)
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifySenderAddress(addr1))
+		}
+		// source
+		{
+			attrIdx := 1
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventSource)
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.GetEventSourceAttribute(nil))
+		}
+		// type
+		{
+			attrIdx := 2
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventType)
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, types.StringifyEventTypePanic(sdk.NewInfiniteGasMeter(), &vm_grpc.LcsTag{TypeTag: vm_grpc.LcsType_LcsU128}))
+		}
+		// data
+		{
+			attrIdx := 3
+			// price calculation for price 10.0000 in float: 1/10.000 => 0.0100 (10/100 => 0.0100)
+			// in test for the Int with 8 digit precision
+			// 10 0000 0000 reverse price is 1000 0000,
+			// so 10 0000 0000 / 100 => 1000 0000
+			clcPrice := price.Quo(sdk.NewInt(100))
+			priceBz := helpers.BigToBytes(clcPrice, 16) // u128
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Key, types.AttributeVmEventData)
+			require.EqualValues(t, vmEvent.Attributes[attrIdx].Value, hex.EncodeToString(priceBz))
+		}
 	}
 }
 

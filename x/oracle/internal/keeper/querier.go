@@ -46,12 +46,12 @@ func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	}
 
 	currentPrice := keeper.GetCurrentPrice(ctx, currentAsset)
-	if isReversedAsset {
+	if isReversedAsset && currentPrice.AssetCode != "" {
 		currentPrice = currentPrice.GetReversedAssetCurrentPrice()
 	}
 
 	out := types.CurrentAssetPrice{
-		AssetCode:  currentPrice.AssetCode,
+		AssetCode:  assetCode,
 		Price:      currentPrice.AskPrice,
 		ReceivedAt: currentPrice.ReceivedAt,
 	}

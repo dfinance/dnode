@@ -41,10 +41,15 @@ func (msg MsgPostPrice) ValidateBasic() error {
 	if msg.AskPrice.IsNegative() {
 		return sdkErrors.Wrap(ErrInternal, "invalid (negative) ask price")
 	}
+	if msg.AskPrice.BigInt().BitLen() > PriceBytesLimit*8 {
+		return sdkErrors.Wrapf(ErrInternal, "out of %d bytes limit for AskPrice", PriceBytesLimit)
+	}
 	if msg.BidPrice.IsNegative() {
 		return sdkErrors.Wrap(ErrInternal, "invalid (negative) bid price")
 	}
-
+	if msg.BidPrice.BigInt().BitLen() > PriceBytesLimit*8 {
+		return sdkErrors.Wrapf(ErrInternal, "out of %d bytes limit for BidPrice", PriceBytesLimit)
+	}
 	return nil
 }
 

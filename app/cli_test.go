@@ -490,6 +490,12 @@ func TestOracle_CLI(t *testing.T) {
 				tx.ChangeCmdArg(strconv.FormatInt(now.Unix(), 10), "not_time.Time")
 				tx.CheckFailedWithErrorSubstring("parsing Int")
 			}
+
+			// MsgPostPrice ValidateBasic
+			{
+				tx := ct.TxOraclePostPrice(assetOracle1, assetCode, sdk.NewIntWithDecimal(1, 20), sdk.NewIntWithDecimal(1, 20), time.Now())
+				tx.CheckFailedWithErrorSubstring("bytes limit")
+			}
 		}
 	}
 
@@ -585,6 +591,16 @@ func TestOracle_CLI(t *testing.T) {
 
 		require.Equal(t, assetCode, price.AssetCode)
 		require.False(t, price.Price.IsZero())
+
+		// query reversed asset
+		{
+			rvAsset := assetCode.ReverseCode()
+			q, price := ct.QueryOraclePrice(rvAsset)
+			q.CheckSucceeded()
+
+			require.Equal(t, rvAsset, price.AssetCode)
+			require.False(t, price.Price.IsZero())
+		}
 
 		// check incorrect inputs
 		{
