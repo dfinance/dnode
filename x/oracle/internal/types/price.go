@@ -30,7 +30,7 @@ type CurrentPrice struct {
 
 // GetReversedAssetCurrentPrice returns CurrentPrice for reverted
 func (cp CurrentPrice) GetReversedAssetCurrentPrice() CurrentPrice {
-	revertInt := func(p sdk.Int) sdk.Int {
+	reverseInt := func(p sdk.Int) sdk.Int {
 		decP := decimal.NewFromBigInt(p.BigInt(), -PricePrecision)
 		decP = decimal.NewFromInt(1).Div(decP)
 		decP = decP.Mul(decimal.NewFromInt(10).Pow(decimal.NewFromInt(PricePrecision)))
@@ -39,8 +39,8 @@ func (cp CurrentPrice) GetReversedAssetCurrentPrice() CurrentPrice {
 
 	return CurrentPrice{
 		AssetCode:  cp.AssetCode.ReverseCode(),
-		AskPrice:   revertInt(cp.BidPrice),
-		BidPrice:   revertInt(cp.AskPrice),
+		AskPrice:   reverseInt(cp.BidPrice),
+		BidPrice:   reverseInt(cp.AskPrice),
 		ReceivedAt: cp.ReceivedAt,
 	}
 }
