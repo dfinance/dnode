@@ -51,7 +51,7 @@ func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	}
 
 	out := types.CurrentAssetPrice{
-		AssetCode:  assetCode,
+		AssetCode:  currentPrice.AssetCode,
 		Price:      currentPrice.AskPrice,
 		ReceivedAt: currentPrice.ReceivedAt,
 	}
