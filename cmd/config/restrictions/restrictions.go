@@ -63,8 +63,8 @@ func GetAppRestrictions() AppRestrictions {
 			switch msg := msg.(type) {
 			case bank.MsgSend:
 				for i := range msg.Amount {
-					if msg.Amount.GetDenomByIndex(i) == config.StakingDenom {
-						return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "bank transactions are disallowed for %s token", config.StakingDenom)
+					if msg.Amount.GetDenomByIndex(i) == config.StakingDenom || msg.Amount.GetDenomByIndex(i) == config.LiquidityProviderDenom {
+						return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "bank transactions are disallowed for %s token", msg.Amount.GetDenomByIndex(i))
 					}
 				}
 			case gov.MsgDeposit:
