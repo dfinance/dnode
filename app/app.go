@@ -94,10 +94,10 @@ var (
 	)
 
 	maccPerms = map[string][]string{
-		staking.LiquidityPoolName:        {supply.Staking},
 		auth.FeeCollectorName:            {supply.Burner},
 		staking.BondedPoolName:           {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName:        {supply.Burner, supply.Staking},
+		staking.LiquidityPoolName:        {supply.Staking},
 		mint.ModuleName:                  {supply.Minter},
 		distribution.ModuleName:          nil,
 		distribution.RewardsBankPoolName: nil,
@@ -327,15 +327,6 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		app.paramsKeeper.Subspace(staking.DefaultParamspace),
 	)
 
-	// MintKeeper adds inflation.
-	app.mintKeeper = mint.NewKeeper(
-		cdc, keys[mint.StoreKey],
-		app.paramsKeeper.Subspace(mint.DefaultParamspace),
-		&stakingKeeper,
-		app.supplyKeeper,
-		auth.FeeCollectorName,
-	)
-
 	// DistributionKeeper distributes rewards between Proof-of-Stake validators and delegators.
 	app.distrKeeper = distribution.NewKeeper(
 		cdc,
@@ -345,6 +336,16 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 		app.supplyKeeper,
 		auth.FeeCollectorName,
 		app.ModuleAccountAddrs(),
+	)
+
+	// MintKeeper adds inflation.
+	app.mintKeeper = mint.NewKeeper(
+		cdc, keys[mint.StoreKey],
+		app.paramsKeeper.Subspace(mint.DefaultParamspace),
+		&stakingKeeper,
+		app.distrKeeper,
+		app.supplyKeeper,
+		auth.FeeCollectorName,
 	)
 
 	// SlashingKeeper adds disincentivize and penalty to Proof-of_Stake mechanism.
