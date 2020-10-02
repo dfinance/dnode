@@ -275,7 +275,7 @@ func TestCurrencyMultisig_REST(t *testing.T) {
 func TestMS_Damir(t *testing.T) {
 	t.Parallel()
 
-	ct := cliTester.New(t, false)
+	ct := cliTester.New(t, true)
 	defer ct.Close()
 	ct.StartRestServer(false)
 
@@ -297,12 +297,12 @@ func TestMS_Damir(t *testing.T) {
 	// wait for call to appear (poll by uniqueID)
 	var callID dnTypes.ID
 	for i := 0; i < 100; i++ {
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		// call by uniqueID
 		req, callByUnique := ct.RestQueryMultiSigUnique(issueID)
 		if err := req.Execute(); err != nil {
-			t.Logf("call receive skipped")
+			t.Logf("call receive skipped: %v", err)
 			continue
 		}
 		callID = callByUnique.Call.ID

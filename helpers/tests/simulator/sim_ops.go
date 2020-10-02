@@ -48,7 +48,7 @@ func NewCreateValidatorOp(period time.Duration) *SimOperation {
 		s.UpdateAccount(simAcc)
 		simAcc.OperatedValidator = &validator
 
-		s.logger.Info(fmt.Sprintf("ValidatorOp: %s (%s) created for %s", validator.OperatorAddress, validator.ConsAddress(), simAcc.Address))
+		s.logger.Info(fmt.Sprintf("ValidatorOp: %s (%s) created for %s", validator.OperatorAddress, validator.GetConsAddr(), simAcc.Address))
 
 		return true
 	}
@@ -179,14 +179,14 @@ func NewRedelegateOp(period time.Duration, redelegateRatio sdk.Dec) *SimOperatio
 				}
 
 				// estimate redelegation amount
-				rdAmtDec := sdk.NewDecFromInt(delegation.Balance.Amount)
+				rdAmtDec := sdk.NewDecFromInt(delegation.BondingBalance.Amount)
 				rdAmt := rdAmtDec.Mul(redelegateRatio).TruncateInt()
 				if rdAmt.IsZero() {
 					continue
 				}
 
 				// redelegate
-				coin := sdk.NewCoin(delegation.Balance.Denom, rdAmt)
+				coin := sdk.NewCoin(delegation.BondingBalance.Denom, rdAmt)
 				s.TxStakingRedelegate(acc, srcValidator.OperatorAddress, dstValidator.OperatorAddress, coin)
 
 				// update validators
@@ -246,14 +246,14 @@ func NewUndelegateOp(period time.Duration, undelegateRatio sdk.Dec) *SimOperatio
 				}
 
 				// estimate undelegation amount
-				udAmtDec := sdk.NewDecFromInt(delegation.Balance.Amount)
+				udAmtDec := sdk.NewDecFromInt(delegation.BondingBalance.Amount)
 				udAmt := udAmtDec.Mul(undelegateRatio).TruncateInt()
 				if udAmt.IsZero() {
 					continue
 				}
 
 				// undelegate
-				coin := sdk.NewCoin(delegation.Balance.Denom, udAmt)
+				coin := sdk.NewCoin(delegation.BondingBalance.Denom, udAmt)
 				s.TxStakingUndelegate(acc, validator.OperatorAddress, coin)
 
 				// update validator
