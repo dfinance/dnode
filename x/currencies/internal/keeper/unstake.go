@@ -10,16 +10,12 @@ import (
 func (k Keeper) UnstakeCurrency(ctx sdk.Context, staker sdk.AccAddress) error {
 	// Get staking denom (usually sxfi).
 	stakingDenom := k.stakingKeeper.BondDenom(ctx)
-
-	// TODO: k.stakingKeeper must support LiquidityBondDenom or something, so we don't .
-	liquidityDenom := "lpt"
+	liquidityDenom := k.stakingKeeper.LPDenom(ctx)
 
 	// Call ForceRemoveDelegator to remove all delegations.
 	if err := k.stakingKeeper.ForceRemoveDelegator(ctx, staker); err != nil {
 		return sdkErrors.Wrapf(types.ErrForceUnstake, "error during force unstake delegations for %s: %v", staker, err)
 	}
-
-	// TODO: unstake operations with liquidity tokens.
 
 	// Check balance and remove staking/liquidity coins.
 	balances := k.bankKeeper.GetCoins(ctx, staker)

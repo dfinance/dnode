@@ -94,6 +94,7 @@ var (
 	)
 
 	maccPerms = map[string][]string{
+		staking.LiquidityPoolName:        {supply.Staking},
 		auth.FeeCollectorName:            {supply.Burner},
 		staking.BondedPoolName:           {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName:        {supply.Burner, supply.Staking},
