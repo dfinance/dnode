@@ -56,7 +56,8 @@ It should be done before the next commands, refer to the tutorial **[how to init
 The following commands might be omitted as [`xfi`, `eth`, `usdt`, `btc`] currencies already exist in the default generated genesis above.
 Currencies can be added to the chain later using `gov` proposals.
 
-    dnode set-currency sxfi  18
+    dnode set-currency sxfi 18
+    dnode set-currency lpt  18
     dnode set-currency xfi  18 
     dnode set-currency eth  18 
     dnode set-currency usdt 6  

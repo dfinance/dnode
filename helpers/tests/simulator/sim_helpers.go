@@ -1,12 +1,13 @@
 package simulator
 
 import (
+	"math/rand"
+	"sort"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/require"
-	"math/rand"
-	"sort"
 )
 
 func (s *Simulator) GetRandomAccount() *SimAccount {
@@ -43,8 +44,8 @@ func (s *Simulator) UpdateValidator(val *staking.Validator) {
 	updVal := s.QueryStakeValidator(val.OperatorAddress)
 	val.Status = updVal.Status
 	val.Jailed = updVal.Jailed
-	val.Tokens = updVal.Tokens
-	val.DelegatorShares = updVal.DelegatorShares
+	val.Bonding = updVal.Bonding
+	val.LP = updVal.LP
 	val.UnbondingHeight = updVal.UnbondingHeight
 	val.UnbondingCompletionTime = updVal.UnbondingCompletionTime
 }
@@ -130,7 +131,7 @@ func (s *Simulator) FormatDecDecimals(value sdk.Dec, decRatio sdk.Dec) string {
 // GetSortedByStakeValidator returns validators sorted by stake.
 func GetSortedByStakeValidator(validators []*staking.Validator, desc bool) []*staking.Validator {
 	sort.Slice(validators, func(i, j int) bool {
-		if validators[i].Tokens.GT(validators[j].Tokens) {
+		if validators[i].Bonding.Tokens.GT(validators[j].Bonding.Tokens) {
 			return desc
 		}
 		return !desc
@@ -142,7 +143,7 @@ func GetSortedByStakeValidator(validators []*staking.Validator, desc bool) []*st
 // GetSortedDelegation returns delegation sorted list.
 func GetSortedDelegation(responses staking.DelegationResponses, desc bool) staking.DelegationResponses {
 	sort.Slice(responses, func(i, j int) bool {
-		if responses[i].Balance.Amount.GT(responses[j].Balance.Amount) {
+		if responses[i].BondingBalance.Amount.GT(responses[j].BondingBalance.Amount) {
 			return desc
 		}
 		return !desc

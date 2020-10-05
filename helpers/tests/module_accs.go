@@ -13,6 +13,7 @@ var (
 		"orders":                  {supply.Burner},
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		staking.LiquidityPoolName: {supply.Staking},
 	}
 )
 

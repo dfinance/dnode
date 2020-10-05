@@ -106,6 +106,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 
 			cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
 			stakingGenState.Params.BondDenom = StakingDenom
+			stakingGenState.Params.LPDenom = LiquidityProviderDenom
 			stakingGenState.Params.MinSelfDelegationLvl = minSelfDelegation
 			appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
 

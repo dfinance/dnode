@@ -12,17 +12,18 @@ import (
 )
 
 const (
-	MainDenom            = "xfi"
-	StakingDenom         = "sxfi"
-	DefaultFeeAmount     = "100000000000000"
-	DefaultFee           = DefaultFeeAmount + MainDenom
-	MainPrefix           = "wallet"                                                                  // Main prefix for all addresses.
-	Bech32PrefixAccAddr  = MainPrefix                                                                // Bech32 prefix for account addresses.
-	Bech32PrefixAccPub   = MainPrefix + sdk.PrefixPublic                                             // Bech32 prefix for accounts pub keys.
-	Bech32PrefixValAddr  = MainPrefix + sdk.PrefixValidator + sdk.PrefixOperator                     // Bech32 prefix for validators addresses.
-	Bech32PrefixValPub   = MainPrefix + sdk.PrefixValidator + sdk.PrefixOperator + sdk.PrefixPublic  // Bech32 prefix for validator pub keys.
-	Bech32PrefixConsAddr = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus                    // Bech32 prefix for consensus addresses.
-	Bech32PrefixConsPub  = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic // Bech32 prefix for consensus pub keys.
+	LiquidityProviderDenom = "lpt"
+	MainDenom              = "xfi"
+	StakingDenom           = "sxfi"
+	DefaultFeeAmount       = "100000000000000"
+	DefaultFee             = DefaultFeeAmount + MainDenom
+	MainPrefix             = "wallet"                                                                  // Main prefix for all addresses.
+	Bech32PrefixAccAddr    = MainPrefix                                                                // Bech32 prefix for account addresses.
+	Bech32PrefixAccPub     = MainPrefix + sdk.PrefixPublic                                             // Bech32 prefix for accounts pub keys.
+	Bech32PrefixValAddr    = MainPrefix + sdk.PrefixValidator + sdk.PrefixOperator                     // Bech32 prefix for validators addresses.
+	Bech32PrefixValPub     = MainPrefix + sdk.PrefixValidator + sdk.PrefixOperator + sdk.PrefixPublic  // Bech32 prefix for validator pub keys.
+	Bech32PrefixConsAddr   = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus                    // Bech32 prefix for consensus addresses.
+	Bech32PrefixConsPub    = MainPrefix + sdk.PrefixValidator + sdk.PrefixConsensus + sdk.PrefixPublic // Bech32 prefix for consensus pub keys.
 
 	VMConfigFile = "vm.toml" // Default file to store config.
 	ConfigDir    = "config"  // Default directory to store all configurations.

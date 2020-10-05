@@ -39,18 +39,18 @@ func (r SimDebugReportItem) String() string {
 		}
 
 		str.WriteString(fmt.Sprintf("[%03d] %s\n", i, valData.Validator.OperatorAddress))
-		str.WriteString(fmt.Sprintf("  Address:   %s\n", valData.Validator.OperatorAddress))
-		str.WriteString(fmt.Sprintf("  Status:    %s\n", valData.Validator.Status))
-		str.WriteString(fmt.Sprintf("  Jailed:    %v\n", valData.Validator.Jailed))
-		str.WriteString(fmt.Sprintf("  Tokens:    %s\n", valData.Validator.Tokens))
-		str.WriteString(fmt.Sprintf("  MinSDel:   %s\n", valData.Validator.MinSelfDelegation))
-		str.WriteString(fmt.Sprintf("  DelShares: %s\n", valData.Validator.DelegatorShares))
-		str.WriteString(fmt.Sprintf("  UBTime:    %s\n", valData.Validator.UnbondingCompletionTime))
+		str.WriteString(fmt.Sprintf("  Address:    %s\n", valData.Validator.OperatorAddress))
+		str.WriteString(fmt.Sprintf("  Status:     %s\n", valData.Validator.Status))
+		str.WriteString(fmt.Sprintf("  Jailed:     %v\n", valData.Validator.Jailed))
+		str.WriteString(fmt.Sprintf("  BTokens:    %s\n", valData.Validator.Bonding.Tokens))
+		str.WriteString(fmt.Sprintf("  BDelShares: %s\n", valData.Validator.Bonding.DelegatorShares))
+		str.WriteString(fmt.Sprintf("  MinSDel:    %s\n", valData.Validator.MinSelfDelegation))
+		str.WriteString(fmt.Sprintf("  UBTime:     %s\n", valData.Validator.UnbondingCompletionTime))
 		//
 		str.WriteString(fmt.Sprintf("    Dels: count:   %d\n", len(valData.Delegations)))
 		if selfDelegation != nil {
-			str.WriteString(fmt.Sprintf("    Dels: SelfAmt: %s\n", selfDelegation.Balance.Amount))
-			str.WriteString(fmt.Sprintf("    Dels: SelfShr: %s\n", selfDelegation.Shares))
+			str.WriteString(fmt.Sprintf("    Dels: SelfAmt: %s\n", selfDelegation.BondingBalance.Amount))
+			str.WriteString(fmt.Sprintf("    Dels: SelfShr: %s\n", selfDelegation.BondingShares))
 			str.WriteString(fmt.Sprintf("    Dels: SelfAdr: %s\n", selfDelegation.DelegatorAddress))
 		} else {
 			str.WriteString("    Dels: SelfAmt: nil\n")
