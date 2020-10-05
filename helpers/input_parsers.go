@@ -49,8 +49,10 @@ func GetTxCmdCtx(cdc *codec.Codec, cmdInputBuf io.Reader) (cliCtx cliCtx.CLICont
 func ParseFromFlag(cliCtx cliCtx.CLIContext) (sdk.AccAddress, error) {
 	accGetter := authTypes.NewAccountRetriever(cliCtx)
 
-	if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
-		return sdk.AccAddress{}, fmt.Errorf("%s %s: %w", flags.FlagFrom, ParamTypeCliFlag, err)
+	if !cliCtx.GenerateOnly {
+		if err := accGetter.EnsureExists(cliCtx.FromAddress); err != nil {
+			return sdk.AccAddress{}, fmt.Errorf("%s %s: %w", flags.FlagFrom, ParamTypeCliFlag, err)
+		}
 	}
 
 	return cliCtx.FromAddress, nil
@@ -227,7 +229,7 @@ func ParseHexStringParam(argName, argValue string, paramType ParamType) (string,
 	argValueNorm := strings.TrimPrefix(argValue, "0x")
 	argValueBytes, err := hex.DecodeString(argValueNorm)
 	if err != nil {
-		return "", nil,  fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+		return "", nil, fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
 	}
 
 	return argValueNorm, argValueBytes, nil
