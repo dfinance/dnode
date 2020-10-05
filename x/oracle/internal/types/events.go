@@ -11,7 +11,8 @@ const (
 	EventTypePrice    = ModuleName + ".price"
 	//
 	AttributeAssetCode  = "asset_code"
-	AttributePrice      = "price"
+	AttributeAskPrice   = "ask_price"
+	AttributeBidPrice   = "bid_price"
 	AttributeReceivedAt = "received_at"
 )
 
@@ -26,7 +27,8 @@ func NewAssetAddedEvent(asset Asset) sdk.Event {
 func NewPriceEvent(price CurrentPrice) sdk.Event {
 	return sdk.NewEvent(EventTypePrice,
 		sdk.NewAttribute(AttributeAssetCode, price.AssetCode.String()),
-		sdk.NewAttribute(AttributePrice, price.Price.String()),
+		sdk.NewAttribute(AttributeAskPrice, price.AskPrice.String()),
+		sdk.NewAttribute(AttributeBidPrice, price.BidPrice.String()),
 		sdk.NewAttribute(AttributeReceivedAt, strconv.FormatInt(price.ReceivedAt.Unix(), 10)),
 	)
 }

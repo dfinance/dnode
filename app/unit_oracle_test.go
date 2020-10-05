@@ -76,7 +76,7 @@ func TestOracle_Queries(t *testing.T) {
 
 	// getCurrentPrice query check (no inputs yet)
 	{
-		response := oracle.CurrentPrice{}
+		response := oracle.CurrentAssetPrice{}
 		CheckRunQuery(t, app, nil, fmt.Sprintf(queryOracleGetCurrentPricePathFmt, assetCode), &response)
 		require.Empty(t, response.AssetCode)
 		require.True(t, response.Price.IsZero())
@@ -84,7 +84,8 @@ func TestOracle_Queries(t *testing.T) {
 	}
 
 	now := time.Now()
-	priceValues := []sdk.Int{sdk.NewInt(1000), sdk.NewInt(2000), sdk.NewInt(1500)}
+	priceAskValues := []sdk.Int{sdk.NewInt(1001), sdk.NewInt(2002), sdk.NewInt(1501)}
+	priceBidValues := []sdk.Int{sdk.NewInt(1000), sdk.NewInt(2000), sdk.NewInt(1500)}
 	priceTimestamps := []time.Time{now.Add(1 * time.Second), now.Add(2 * time.Second), now.Add(3 * time.Second)}
 
 	// post prices
@@ -97,7 +98,8 @@ func TestOracle_Queries(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceValues[0],
+				AskPrice:   priceAskValues[0],
+				BidPrice:   priceBidValues[0],
 				ReceivedAt: priceTimestamps[0],
 			}
 
@@ -111,7 +113,8 @@ func TestOracle_Queries(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceValues[1],
+				AskPrice:   priceAskValues[1],
+				BidPrice:   priceBidValues[1],
 				ReceivedAt: priceTimestamps[1],
 			}
 
@@ -125,7 +128,8 @@ func TestOracle_Queries(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceValues[2],
+				AskPrice:   priceAskValues[2],
+				BidPrice:   priceBidValues[2],
 				ReceivedAt: priceTimestamps[2],
 			}
 
@@ -151,7 +155,8 @@ func TestOracle_Queries(t *testing.T) {
 		CheckRunQuery(t, app, nil, fmt.Sprintf(queryOracleGetRawPricesPathFmt, assetCode, GetContext(app, true).BlockHeight()-1), &response)
 		require.Len(t, response, 3)
 		for i, rawPrice := range response {
-			require.True(t, priceValues[i].Equal(rawPrice.Price))
+			require.True(t, priceAskValues[i].Equal(rawPrice.AskPrice))
+			require.True(t, priceBidValues[i].Equal(rawPrice.BidPrice))
 			require.True(t, priceTimestamps[i].Equal(rawPrice.ReceivedAt))
 			require.Equal(t, assetCode, rawPrice.AssetCode)
 			require.Equal(t, genAddrs[i], rawPrice.OracleAddress)
@@ -160,10 +165,10 @@ func TestOracle_Queries(t *testing.T) {
 
 	// getCurrentPrice query check (value should be calculated after BlockEnd)
 	{
-		response := oracle.CurrentPrice{}
+		response := oracle.CurrentAssetPrice{}
 		CheckRunQuery(t, app, nil, fmt.Sprintf(queryOracleGetCurrentPricePathFmt, assetCode), &response)
 		require.Equal(t, assetCode, response.AssetCode)
-		require.True(t, response.Price.Equal(priceValues[2]))
+		require.True(t, response.Price.Equal(priceAskValues[2]))
 		require.True(t, response.ReceivedAt.Equal(priceTimestamps[2]))
 	}
 }
@@ -518,7 +523,8 @@ func TestOracle_PostPrices(t *testing.T) {
 		msg := oracle.MsgPostPrice{
 			From:       senderAcc.GetAddress(),
 			AssetCode:  assetCode,
-			Price:      sdk.OneInt(),
+			AskPrice:   sdk.OneInt(),
+			BidPrice:   sdk.OneInt(),
 			ReceivedAt: time.Now(),
 		}
 
@@ -534,7 +540,8 @@ func TestOracle_PostPrices(t *testing.T) {
 		msg := oracle.MsgPostPrice{
 			From:       senderAcc.GetAddress(),
 			AssetCode:  "non-existing-asset",
-			Price:      sdk.OneInt(),
+			AskPrice:   sdk.OneInt(),
+			BidPrice:   sdk.OneInt(),
 			ReceivedAt: time.Now(),
 		}
 
@@ -560,7 +567,8 @@ func TestOracle_PostPrices(t *testing.T) {
 	// check posting price few times from the same oracle
 	{
 		now := time.Now()
-		priceAmount1, priceAmount2 := sdk.NewInt(200000000), sdk.NewInt(100000000)
+		priceAskAmount1, priceAskAmount2 := sdk.NewInt(200000002), sdk.NewInt(100000002)
+		priceBidAmount1, priceBidAmount2 := sdk.NewInt(200000000), sdk.NewInt(100000000)
 		priceTimestamp1, priceTimestamp2 := now.Add(1*time.Second), now.Add(2*time.Second)
 
 		// post prices
@@ -571,7 +579,8 @@ func TestOracle_PostPrices(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceAmount1,
+				AskPrice:   priceAskAmount1,
+				BidPrice:   priceBidAmount1,
 				ReceivedAt: priceTimestamp1,
 			}
 
@@ -585,7 +594,8 @@ func TestOracle_PostPrices(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceAmount2,
+				AskPrice:   priceAskAmount2,
+				BidPrice:   priceBidAmount2,
 				ReceivedAt: priceTimestamp2,
 			}
 
@@ -599,7 +609,8 @@ func TestOracle_PostPrices(t *testing.T) {
 		// check the last price is the current price
 		{
 			price := app.oracleKeeper.GetCurrentPrice(GetContext(app, true), assetCode)
-			require.True(t, price.Price.Equal(priceAmount2))
+			require.True(t, price.AskPrice.Equal(priceAskAmount2))
+			require.True(t, price.BidPrice.Equal(priceBidAmount2))
 			require.True(t, price.ReceivedAt.Equal(priceTimestamp2))
 		}
 
@@ -608,7 +619,8 @@ func TestOracle_PostPrices(t *testing.T) {
 			ctx := GetContext(app, true)
 			rawPrices := app.oracleKeeper.GetRawPrices(ctx, assetCode, ctx.BlockHeight()-1)
 			require.Len(t, rawPrices, 1)
-			require.True(t, priceAmount2.Equal(rawPrices[0].Price))
+			require.True(t, priceAskAmount2.Equal(rawPrices[0].AskPrice))
+			require.True(t, priceBidAmount2.Equal(rawPrices[0].BidPrice))
 			require.True(t, priceTimestamp2.Equal(rawPrices[0].ReceivedAt))
 			require.Equal(t, assetCode, rawPrices[0].AssetCode)
 			require.Equal(t, genAddrs[0], rawPrices[0].OracleAddress)
@@ -618,7 +630,8 @@ func TestOracle_PostPrices(t *testing.T) {
 	// check posting prices from different oracles
 	{
 		now := time.Now()
-		priceValues := []sdk.Int{sdk.NewInt(200000000), sdk.NewInt(100000000), sdk.NewInt(300000000)}
+		priceAskValues := []sdk.Int{sdk.NewInt(200000002), sdk.NewInt(100000001), sdk.NewInt(300000003)}
+		priceBidValues := []sdk.Int{sdk.NewInt(200000000), sdk.NewInt(100000000), sdk.NewInt(300000000)}
 		priceTimestamps := []time.Time{now.Add(1 * time.Second), now.Add(2 * time.Second), now.Add(3 * time.Second)}
 
 		// post prices
@@ -629,7 +642,8 @@ func TestOracle_PostPrices(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceValues[0],
+				AskPrice:   priceAskValues[0],
+				BidPrice:   priceBidValues[0],
 				ReceivedAt: priceTimestamps[0],
 			}
 
@@ -643,7 +657,8 @@ func TestOracle_PostPrices(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceValues[1],
+				AskPrice:   priceAskValues[1],
+				BidPrice:   priceBidValues[1],
 				ReceivedAt: priceTimestamps[1],
 			}
 
@@ -657,7 +672,8 @@ func TestOracle_PostPrices(t *testing.T) {
 			msg := oracle.MsgPostPrice{
 				From:       senderAcc.GetAddress(),
 				AssetCode:  assetCode,
-				Price:      priceValues[2],
+				AskPrice:   priceAskValues[2],
+				BidPrice:   priceBidValues[2],
 				ReceivedAt: priceTimestamps[2],
 			}
 
@@ -671,7 +687,8 @@ func TestOracle_PostPrices(t *testing.T) {
 		// check the last price is the median price
 		{
 			price := app.oracleKeeper.GetCurrentPrice(GetContext(app, true), assetCode)
-			require.True(t, price.Price.Equal(priceValues[0]))
+			require.True(t, price.AskPrice.Equal(priceAskValues[0]))
+			require.True(t, price.BidPrice.Equal(priceBidValues[0]))
 			require.True(t, price.ReceivedAt.Equal(priceTimestamps[0]))
 		}
 
@@ -681,7 +698,8 @@ func TestOracle_PostPrices(t *testing.T) {
 			rawPrices := app.oracleKeeper.GetRawPrices(ctx, assetCode, ctx.BlockHeight()-1)
 			require.Len(t, rawPrices, 3)
 			for i, rawPrice := range rawPrices {
-				require.True(t, priceValues[i].Equal(rawPrice.Price))
+				require.True(t, priceAskValues[i].Equal(rawPrice.AskPrice))
+				require.True(t, priceBidValues[i].Equal(rawPrice.BidPrice))
 				require.True(t, priceTimestamps[i].Equal(rawPrice.ReceivedAt))
 				require.Equal(t, assetCode, rawPrice.AssetCode)
 				require.Equal(t, genAddrs[i], rawPrice.OracleAddress)

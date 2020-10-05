@@ -24,6 +24,12 @@ func TestOracleKeeper_QueryCurrentPrice(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	// get current reversed price ok
+	{
+		_, err := queryCurrentPrice(ctx, []string{input.stdAssetCode.ReverseCode().String()}, abci.RequestQuery{}, keeper)
+		require.NoError(t, err)
+	}
+
 	// wrong asset code
 	{
 		_, err := queryCurrentPrice(ctx, []string{"wrong_asset"}, abci.RequestQuery{}, keeper)

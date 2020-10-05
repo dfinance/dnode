@@ -601,7 +601,8 @@ func TestOracle_REST(t *testing.T) {
 		SenderIdx     uint
 		OracleName    string
 		OracleAddress string
-		Price         sdk.Int
+		AskPrice      sdk.Int
+		BidPrice      sdk.Int
 		ReceivedAt    time.Time
 		BlockHeight   int64
 	}{
@@ -610,7 +611,8 @@ func TestOracle_REST(t *testing.T) {
 			SenderIdx:     0,
 			OracleName:    oracleName1,
 			OracleAddress: oracleAddr1,
-			Price:         sdk.NewInt(100),
+			AskPrice:      sdk.NewInt(100),
+			BidPrice:      sdk.NewInt(99),
 			ReceivedAt:    now,
 			BlockHeight:   0,
 		},
@@ -619,7 +621,8 @@ func TestOracle_REST(t *testing.T) {
 			SenderIdx:     1,
 			OracleName:    oracleName2,
 			OracleAddress: oracleAddr2,
-			Price:         sdk.NewInt(200),
+			AskPrice:      sdk.NewInt(200),
+			BidPrice:      sdk.NewInt(199),
 			ReceivedAt:    now.Add(5 * time.Second),
 		},
 	}
@@ -630,7 +633,7 @@ func TestOracle_REST(t *testing.T) {
 		//   it's not easy to find out when those TXs are Delivered
 		prevBlockHeight := ct.WaitForNextBlocks(1)
 		for _, postPrice := range postPrices {
-			req, _ := ct.RestTxOraclePostPrice(postPrice.OracleName, postPrice.AssetCode, postPrice.Price, postPrice.ReceivedAt)
+			req, _ := ct.RestTxOraclePostPrice(postPrice.OracleName, postPrice.AssetCode, postPrice.AskPrice, postPrice.BidPrice, postPrice.ReceivedAt)
 			req.CheckSucceeded()
 		}
 		curBlockHeight := ct.WaitForNextBlocks(1)
@@ -651,7 +654,8 @@ func TestOracle_REST(t *testing.T) {
 			postPrice := postPrices[i]
 			require.Equal(t, rawPrice.AssetCode, postPrice.AssetCode)
 			require.Equal(t, postPrice.OracleAddress, rawPrice.OracleAddress.String())
-			require.True(t, rawPrice.Price.Equal(postPrice.Price))
+			require.True(t, rawPrice.AskPrice.Equal(postPrice.AskPrice))
+			require.True(t, rawPrice.BidPrice.Equal(postPrice.BidPrice))
 			require.True(t, rawPrice.ReceivedAt.Equal(postPrice.ReceivedAt))
 		}
 	}
@@ -685,7 +689,7 @@ func TestOracle_REST(t *testing.T) {
 		req, respMsg := ct.RestQueryOraclePrice(ct.DefAssetCode)
 		req.CheckSucceeded()
 
-		require.True(t, respMsg.Price.Equal(postPrices[1].Price))
+		require.True(t, respMsg.Price.Equal(postPrices[1].AskPrice))
 		require.True(t, respMsg.ReceivedAt.Equal(postPrices[1].ReceivedAt))
 
 		// check invalid inputs

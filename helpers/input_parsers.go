@@ -115,6 +115,16 @@ func ParseSdkIntParam(argName, argValue string, paramType ParamType) (sdk.Int, e
 	return v, nil
 }
 
+// ParseSdkDecParam parses sdk.Dec param.
+func ParseSdkDecParam(argName, argValue string, paramType ParamType) (sdk.Dec, error) {
+	v, err := sdk.NewDecFromStr(argValue)
+	if err != nil {
+		return sdk.Dec{}, fmt.Errorf("%s %s %q: parsing Dec: failed(%s)", argName, paramType, argValue, err.Error())
+	}
+
+	return v, nil
+}
+
 // ParseSdkIntParam parses sdk.Uint param.
 func ParseSdkUintParam(argName, argValue string, paramType ParamType) (sdk.Uint, error) {
 	vInt, ok := sdk.NewIntFromString(argValue)

@@ -15,10 +15,10 @@ import (
 // GetCmdPostPrice returns tx command for posting price for a particular asset.
 func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "postprice [assetCode] [price] [receivedAt]",
+		Use:     "postprice [assetCode] [askPrice] [bidPrice] [receivedAt]",
 		Short:   "Post the latest price for a particular asset",
-		Example: "postprice eth_usdt 100 1594732456",
-		Args:    cobra.ExactArgs(3),
+		Example: "postprice eth_usdt 100 95 1594732456",
+		Args:    cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
@@ -33,18 +33,23 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			price, err := helpers.ParseSdkIntParam("price", args[1], helpers.ParamTypeCliArg)
+			askPrice, err := helpers.ParseSdkIntParam("askPrice", args[1], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
-			receivedAt, err := helpers.ParseUnixTimestamp("receivedAt", args[2], helpers.ParamTypeCliArg)
+			bidPrice, err := helpers.ParseSdkIntParam("bidPrice", args[2], helpers.ParamTypeCliArg)
+			if err != nil {
+				return err
+			}
+
+			receivedAt, err := helpers.ParseUnixTimestamp("receivedAt", args[3], helpers.ParamTypeCliArg)
 			if err != nil {
 				return err
 			}
 
 			// prepare and send message
-			msg := types.NewMsgPostPrice(fromAddr, assetCode, price, receivedAt)
+			msg := types.NewMsgPostPrice(fromAddr, assetCode, askPrice, bidPrice, receivedAt)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -54,7 +59,8 @@ func GetCmdPostPrice(cdc *codec.Codec) *cobra.Command {
 	}
 	helpers.BuildCmdHelp(cmd, []string{
 		"asset code symbol",
-		"price [int]",
+		"askPrice [int]",
+		"bidPrice [int]",
 		"price received at UNIX timestamp in seconds [int]",
 	})
 

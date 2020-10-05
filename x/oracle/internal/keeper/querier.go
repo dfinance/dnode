@@ -31,12 +31,32 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 // queryCurrentPrice handles currentPrice query. Takes an [assetCode] and returns CurrentPrice for that asset.
 func queryCurrentPrice(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, error) {
 	assetCode := dnTypes.AssetCode(path[0])
-	if _, found := keeper.GetAsset(ctx, assetCode); !found {
-		return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "asset not found")
-	}
-	currentPrice := keeper.GetCurrentPrice(ctx, assetCode)
+	var isReversedAsset bool
 
-	bz, err := codec.MarshalJSONIndent(keeper.cdc, currentPrice)
+	currentAsset := assetCode
+	if _, found := keeper.GetAsset(ctx, assetCode); !found {
+		reversedAssetCode := assetCode.ReverseCode()
+
+		if _, found := keeper.GetAsset(ctx, reversedAssetCode); !found {
+			return []byte{}, sdkErrors.Wrap(sdkErrors.ErrUnknownRequest, "reversed asset not found")
+		}
+
+		currentAsset = reversedAssetCode
+		isReversedAsset = true
+	}
+
+	currentPrice := keeper.GetCurrentPrice(ctx, currentAsset)
+	if isReversedAsset && currentPrice.AssetCode != "" {
+		currentPrice = currentPrice.GetReversedAssetCurrentPrice()
+	}
+
+	out := types.CurrentAssetPrice{
+		AssetCode:  currentPrice.AssetCode,
+		Price:      currentPrice.AskPrice,
+		ReceivedAt: currentPrice.ReceivedAt,
+	}
+
+	bz, err := codec.MarshalJSONIndent(keeper.cdc, out)
 	if err != nil {
 		return nil, sdkErrors.Wrapf(types.ErrInternal, "currentPrice marshal: %v", err)
 	}
