@@ -78,7 +78,7 @@ func BuildDebugReportItem(s *Simulator) SimDebugReportItem {
 		})
 	}
 
-	for _, acc := range s.GetAccountsSortedByBalance(true) {
+	for _, acc := range s.GetAllAccounts().GetSortedByBalance(s.stakingDenom, true) {
 		r.Accounts = append(r.Accounts, DebugAccoutData{
 			Address:            acc.Address,
 			MainCoinBalance:    acc.Coins.AmountOf(s.mainDenom),

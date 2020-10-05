@@ -44,7 +44,7 @@ func OperationsOption(ops ...*SimOperation) SimOption {
 	}
 }
 
-func GenerateWalletAccountsOption(walletsQuantity, poaValidatorsQuantity, tmValidatorQuantity uint, genCoins sdk.Coins) SimOption {
+func GenerateWalletAccountsOption(walletsQuantity, poaValidatorsQuantity uint, genCoins sdk.Coins) SimOption {
 	return func(s *Simulator) {
 		for i := uint(0); i < walletsQuantity; i++ {
 			acc := &SimAccount{
@@ -54,9 +54,6 @@ func GenerateWalletAccountsOption(walletsQuantity, poaValidatorsQuantity, tmVali
 			if poaValidatorsQuantity > 0 {
 				acc.IsPoAValidator = true
 				poaValidatorsQuantity--
-			}
-			if tmValidatorQuantity > 0 {
-				acc.CreateValidator = true
 			}
 
 			s.accounts = append(s.accounts, acc)

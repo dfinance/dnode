@@ -40,7 +40,7 @@ type Simulator struct {
 	minSelfDelegationLvl sdk.Int
 	nodeValidatorConfig  SimValidatorConfig
 	operations           []*SimOperation
-	accounts             []*SimAccount
+	accounts             SimAccounts
 	useInMemDB           bool
 	minBlockDur          time.Duration
 	maxBlockDur          time.Duration
@@ -53,6 +53,7 @@ type Simulator struct {
 	unbondingDur               time.Duration
 	mainDenom                  string
 	stakingDenom               string
+	lpDenom                    string
 	mainDenomDecimals          uint8
 	stakingDenomDecimals       uint8
 	workingDir                 string
@@ -70,13 +71,17 @@ type Simulator struct {
 }
 
 type Counter struct {
-	Delegations          int64
-	Undelegations        int64
-	Redelegations        int64
+	BDelegations         int64
+	BUndelegations       int64
+	BRedelegations       int64
+	LPDelegations        int64
+	LPUndelegations      int64
+	LPRedelegations      int64
+	LockedRewards        int64
 	Rewards              int64
 	Commissions          int64
-	RewardsCollected     sdk.Int
-	CommissionsCollected sdk.Int
+	RewardsCollected     sdk.Coins
+	CommissionsCollected sdk.Coins
 }
 
 // BuildTmpFilePath builds file name inside of the Simulator working dir.
@@ -90,7 +95,7 @@ func (s *Simulator) Start() {
 
 	// generate wallet accounts
 	genAccs := make(genaccounts.GenesisState, 0)
-	poaAccs := make([]*SimAccount, 0)
+	poaAccs := make(SimAccounts, 0)
 	for accIdx := 0; accIdx < len(s.accounts); accIdx++ {
 		acc := s.accounts[accIdx]
 
@@ -158,6 +163,7 @@ func (s *Simulator) Start() {
 		s.cdc.MustUnmarshalJSON(s.genesisState[staking.ModuleName], &state)
 
 		state.Params.BondDenom = s.stakingDenom
+		state.Params.LPDenom = s.lpDenom
 		state.Params.MinSelfDelegationLvl = s.minSelfDelegationLvl
 
 		s.genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
@@ -223,11 +229,10 @@ func (s *Simulator) Start() {
 	// get node validator
 	validators := s.QueryStakeValidators(1, 10, sdk.BondStatusBonded)
 	require.Len(s.t, validators, 1)
-	s.accounts[0].OperatedValidator = &validators[0]
+	s.accounts[0].OperatedValidator = NewSimValidator(validators[0])
 
 	// update node account delegations
-	delegation := s.QueryStakeDelegation(s.accounts[0], s.accounts[0].OperatedValidator)
-	s.accounts[0].Delegations = append(s.accounts[0].Delegations, delegation)
+	s.UpdateAccount(s.accounts[0])
 
 	s.t.Logf("Simulator working / output directory: %s", s.workingDir)
 }
@@ -281,8 +286,8 @@ func (s *Simulator) beginBlock() {
 	for _, val := range validators {
 		lastCommitInfo.Votes = append(lastCommitInfo.Votes, abci.VoteInfo{
 			Validator: abci.Validator{
-				Address: val.ConsPubKey.Address(),
-				Power:   val.GetConsensusPower(),
+				Address: val.Validator.ConsPubKey.Address(),
+				Power:   val.Validator.GetConsensusPower(),
 			},
 			SignedLastBlock: true,
 		})
@@ -293,7 +298,7 @@ func (s *Simulator) beginBlock() {
 			ChainID:         s.chainID,
 			Height:          nextHeight,
 			Time:            nextBlockTime,
-			ProposerAddress: proposer.ConsPubKey.Address(),
+			ProposerAddress: proposer.Validator.ConsPubKey.Address(),
 		},
 		LastCommitInfo: lastCommitInfo,
 	})
@@ -332,16 +337,17 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 				MaxChangeRate: nodeValCommissionMaxChangeRate,
 			},
 		},
-		accounts:    make([]*SimAccount, 0),
+		accounts:    make(SimAccounts, 0),
 		minBlockDur: 5 * time.Second,
 		maxBlockDur: 6 * time.Second,
 		//
 		chainID:   "simChainID",
 		monikerID: "simMoniker",
-		defGas:    500000,
+		defGas:    1000000,
 		//
 		mainDenom:                  config.MainDenom,
 		stakingDenom:               config.StakingDenom,
+		lpDenom:                    config.LiquidityProviderDenom,
 		mainDenomDecimals:          18,
 		stakingDenomDecimals:       18,
 		mainAmountDecimalsRatio:    sdk.NewDecWithPrec(1, 0),
@@ -354,8 +360,8 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 		cdc:           app.MakeCodec(),
 		defferQueue:   defferQueue,
 	}
-	s.counter.RewardsCollected = sdk.ZeroInt()
-	s.counter.CommissionsCollected = sdk.ZeroInt()
+	s.counter.RewardsCollected = sdk.NewCoins()
+	s.counter.CommissionsCollected = sdk.NewCoins()
 
 	for _, option := range options {
 		option(s)

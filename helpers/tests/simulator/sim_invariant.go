@@ -10,11 +10,11 @@ import (
 func NewSimInvariantsOp(period time.Duration) *SimOperation {
 	handler := func(s *Simulator) bool {
 		// check validator owner has exactly one self-delegation
-		for _, acc := range s.accounts {
-			if acc.OperatedValidator != nil {
+		for _, acc := range s.GetAllAccounts() {
+			if acc.IsValOperator() {
 				selfDelCnt := 0
 				for _, del := range acc.Delegations {
-					if del.ValidatorAddress.Equals(acc.OperatedValidator.OperatorAddress) {
+					if del.ValidatorAddress.Equals(acc.OperatedValidator.GetAddress()) {
 						selfDelCnt++
 					}
 				}
@@ -25,14 +25,12 @@ func NewSimInvariantsOp(period time.Duration) *SimOperation {
 
 		// check for duplicated validators
 		validatorsMap := make(map[string]bool, len(s.accounts))
-		for _, acc := range s.accounts {
-			if acc.OperatedValidator != nil {
-				valAddrStr := acc.OperatedValidator.OperatorAddress.String()
-				found := validatorsMap[valAddrStr]
-				require.False(s.t, found, "duplicated validator found: %s", valAddrStr)
+		for _, val := range s.GetAllValidators() {
+			valAddrStr := val.GetAddress().String()
+			found := validatorsMap[valAddrStr]
+			require.False(s.t, found, "duplicated validator found: %s", valAddrStr)
 
-				validatorsMap[valAddrStr] = true
-			}
+			validatorsMap[valAddrStr] = true
 		}
 
 		return true
@@ -44,14 +42,11 @@ func NewSimInvariantsOp(period time.Duration) *SimOperation {
 // NewForceUpdateOp updates various simulator states for consistency.
 func NewForceUpdateOp(period time.Duration) *SimOperation {
 	handler := func(s *Simulator) bool {
-		for _, acc := range s.accounts {
-			accValidator := acc.OperatedValidator
-			if accValidator == nil {
-				continue
-			}
-
-			s.UpdateValidator(accValidator)
+		for _, val := range s.GetAllValidators() {
+			s.UpdateValidator(val)
 		}
+
+		s.counter.LockedRewards = int64(len(s.GetAllValidators().GetLocked()))
 
 		return true
 	}

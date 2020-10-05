@@ -1,6 +1,11 @@
 package simulator
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 // SimOperationNextExecFn returns next execution time for SimOperation.
 type SimOperationNextExecFn func(curTime time.Time, period time.Duration) time.Time
@@ -55,5 +60,16 @@ func NewSimOperation(period time.Duration, nextExecFn SimOperationNextExecFn, ha
 		handlerFn:  handlerFn,
 		nextExecFn: nextExecFn,
 		period:     period,
+	}
+}
+
+// checkRatioArg checks SimOperation ratio coef input (0 < value <= 1.0).
+func checkRatioArg(opName, argName string, argValue sdk.Dec) {
+	errMsgPrefix := fmt.Sprintf("%s: %s: ", opName, argName)
+	if argValue.LTE(sdk.ZeroDec()) {
+		panic(fmt.Errorf("%s: LTE 0", errMsgPrefix))
+	}
+	if argValue.GT(sdk.OneDec()) {
+		panic(fmt.Errorf("%s: GE 1", errMsgPrefix))
 	}
 }
