@@ -72,6 +72,10 @@ func DefaultGenesisState() GenesisState {
 				Denom:    "btc",
 				Decimals: 8,
 			},
+			{
+				Denom:    "lpt",
+				Decimals: 18,
+			},
 		},
 	}
 

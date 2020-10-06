@@ -22,6 +22,7 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis"
 	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/helpers/logger"
 	ccsCli "github.com/dfinance/dnode/x/ccstorage/client/cli"
@@ -76,7 +77,6 @@ func main() {
 		oracleCli.AddAssetGenCmd(ctx, cdc, app.DefaultNodeHome, app.DefaultCLIHome),
 		marketsCli.AddMarketGenCmd(ctx, cdc, app.DefaultNodeHome),
 		migrationCli.MigrateGenesisCmd(ctx, cdc),
-		testnetCmd(ctx, cdc, app.ModuleBasics, genaccounts.AppModuleBasic{}),
 	)
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp, exportAppStateAndTMValidators)
@@ -132,7 +132,7 @@ func exportAppStateAndTMValidators(
 // Init cmd together with VM configruation.
 // nolint
 func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager, defaultNodeHome string) *cobra.Command { // nolint: golint
-	cmd := dnConfig.InitCmd(ctx, cdc, mbm, defaultNodeHome)
+	cmd := genesis.InitCmd(ctx, cdc, mbm, defaultNodeHome)
 
 	cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {
 		dnConfig.ReadVMConfig(viper.GetString(cli.HomeFlag))

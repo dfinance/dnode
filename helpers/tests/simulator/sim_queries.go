@@ -261,13 +261,27 @@ func (s *Simulator) QueryDistDelRewards(acc sdk.AccAddress) (res distribution.Qu
 	return
 }
 
-// QueryDistrValCommission queries current validator commission rewards.
-func (s *Simulator) QueryDistrValCommission(val sdk.ValAddress) (res distribution.ValidatorAccumulatedCommission) {
+// QueryDistValCommission queries current validator commission rewards.
+func (s *Simulator) QueryDistValCommission(val sdk.ValAddress) (res distribution.ValidatorAccumulatedCommission) {
 	resp := s.RunQuery(
 		distribution.QueryValidatorCommissionParams{
 			ValidatorAddress: val,
 		},
 		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryValidatorCommission,
+		&res,
+	)
+	require.True(s.t, resp.IsOK())
+
+	return res
+}
+
+// QueryDistLockState queries current validator locked rewards state.
+func (s *Simulator) QueryDistLockState(val sdk.ValAddress) (res distribution.QueryLockedRewardsStateResponse) {
+	resp := s.RunQuery(
+		distribution.QueryLockedRewardsStateParams{
+			ValidatorAddress: val,
+		},
+		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryLockedRewardsState,
 		&res,
 	)
 	require.True(s.t, resp.IsOK())

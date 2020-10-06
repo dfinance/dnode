@@ -11,7 +11,7 @@ import (
 	"github.com/dfinance/glav"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/helpers/tests"
 	cliTester "github.com/dfinance/dnode/helpers/tests/clitester"
 	"github.com/dfinance/dnode/x/common_vm"
@@ -136,22 +136,22 @@ func TestIntegGov_StdlibUpdate(t *testing.T) {
 	{
 		// invalid from
 		{
-			tx := ct.TxVmStdlibUpdateProposal("invalid_address", moduleV1BytecodePath, "http://ya.ru", "Desc", 50, config.GovMinDeposit)
+			tx := ct.TxVmStdlibUpdateProposal("invalid_address", moduleV1BytecodePath, "http://ya.ru", "Desc", 50, defaults.GovMinDepositCoin)
 			tx.CheckFailedWithErrorSubstring("keyring")
 		}
 
 		// invalid file path
 		{
-			tx := ct.TxVmStdlibUpdateProposal(senderAddr, "invalid_path", "http://ya.ru", "Desc", 50, config.GovMinDeposit)
+			tx := ct.TxVmStdlibUpdateProposal(senderAddr, "invalid_path", "http://ya.ru", "Desc", 50, defaults.GovMinDepositCoin)
 			tx.CheckFailedWithErrorSubstring("moveFile")
 		}
 
 		// invalid blockHeight
 		{
-			tx1 := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV1BytecodePath, "http://ya.ru", "Desc", 0, config.GovMinDeposit)
+			tx1 := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV1BytecodePath, "http://ya.ru", "Desc", 0, defaults.GovMinDepositCoin)
 			tx1.CheckFailedWithErrorSubstring("height")
 
-			tx2 := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV1BytecodePath, "http://ya.ru", "Desc", 0, config.GovMinDeposit)
+			tx2 := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV1BytecodePath, "http://ya.ru", "Desc", 0, defaults.GovMinDepositCoin)
 			tx2.ChangeCmdArg("0", "abc")
 			tx2.CheckFailedWithErrorSubstring("ParseInt")
 		}
@@ -159,7 +159,7 @@ func TestIntegGov_StdlibUpdate(t *testing.T) {
 
 	// Add DVM stdlib update proposal for module version 1 (cover the min deposit)
 	{
-		tx := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV1BytecodePath, "http://ya.ru", "Foo module V1 added", -1, config.GovMinDeposit)
+		tx := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV1BytecodePath, "http://ya.ru", "Foo module V1 added", -1, defaults.GovMinDepositCoin)
 		ct.SubmitAndConfirmProposal(tx, true)
 	}
 
@@ -182,7 +182,7 @@ func TestIntegGov_StdlibUpdate(t *testing.T) {
 
 	// Add DVM stdlib update proposal for module version 2
 	{
-		tx := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV2BytecodePath, "http://ya.ru", "Foo module V2 added", -1, config.GovMinDeposit)
+		tx := ct.TxVmStdlibUpdateProposal(senderAddr, moduleV2BytecodePath, "http://ya.ru", "Foo module V2 added", -1, defaults.GovMinDepositCoin)
 		ct.SubmitAndConfirmProposal(tx, true)
 	}
 
@@ -222,27 +222,27 @@ func TestIntegGov_RegisterCurrency(t *testing.T) {
 	{
 		// invalid from
 		{
-			tx := ct.TxCCAddCurrencyProposal("invalid_from", crDenom, crBalancePathHex, crInfoPathHex, crDecimals, config.GovMinDeposit)
+			tx := ct.TxCCAddCurrencyProposal("invalid_from", crDenom, crBalancePathHex, crInfoPathHex, crDecimals, defaults.GovMinDepositCoin)
 			tx.CheckFailedWithErrorSubstring("keyring")
 		}
 
 		// invalid denom
 		{
-			tx := ct.TxCCAddCurrencyProposal(senderAddr, "invalid1", crBalancePathHex, crInfoPathHex, crDecimals, config.GovMinDeposit)
+			tx := ct.TxCCAddCurrencyProposal(senderAddr, "invalid1", crBalancePathHex, crInfoPathHex, crDecimals, defaults.GovMinDepositCoin)
 			tx.CheckFailedWithErrorSubstring("denom")
 		}
 
 		// invalid path
 		{
-			tx1 := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, "zzvv", crInfoPathHex, crDecimals, config.GovMinDeposit)
+			tx1 := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, "zzvv", crInfoPathHex, crDecimals, defaults.GovMinDepositCoin)
 			tx1.CheckFailedWithErrorSubstring("vmBalancePathHex")
-			tx2 := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, "abc", crDecimals, config.GovMinDeposit)
+			tx2 := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, "abc", crDecimals, defaults.GovMinDepositCoin)
 			tx2.CheckFailedWithErrorSubstring("vmInfoPathHex")
 		}
 
 		// invalid decimals
 		{
-			tx := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, crInfoPathHex, crDecimals, config.GovMinDeposit)
+			tx := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, crInfoPathHex, crDecimals, defaults.GovMinDepositCoin)
 			tx.ChangeCmdArg("8", "abc")
 			tx.CheckFailedWithErrorSubstring("decimals")
 		}
@@ -250,7 +250,7 @@ func TestIntegGov_RegisterCurrency(t *testing.T) {
 
 	// Add proposal
 	{
-		tx := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, crInfoPathHex, crDecimals, config.GovMinDeposit)
+		tx := ct.TxCCAddCurrencyProposal(senderAddr, crDenom, crBalancePathHex, crInfoPathHex, crDecimals, defaults.GovMinDepositCoin)
 		ct.SubmitAndConfirmProposal(tx, false)
 	}
 

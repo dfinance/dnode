@@ -14,7 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/dfinance/glav"
 
-	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/orders"
 )
@@ -131,91 +131,91 @@ func NewAccountMap() (accounts map[string]*CLIAccount, retErr error) {
 
 	accounts["pos"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			DenomSXFI:        sdk.NewCoin(DenomSXFI, bigAmount),
-			config.MainDenom: sdk.NewCoin(config.MainDenom, bigAmount),
+			DenomSXFI:          sdk.NewCoin(DenomSXFI, bigAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, bigAmount),
 		},
 	}
 	accounts["bank"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, bigAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, bigAmount),
 		},
 	}
 	accounts["validator1"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-			DenomSXFI:        sdk.NewCoin(DenomSXFI, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
+			DenomSXFI:          sdk.NewCoin(DenomSXFI, smallAmount),
 		},
 		IsPOAValidator: true,
 	}
 	accounts["validator2"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsPOAValidator: true,
 	}
 	accounts["validator3"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsPOAValidator: true,
 	}
 	accounts["validator4"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsPOAValidator: true,
 	}
 	accounts["validator5"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsPOAValidator: true,
 	}
 	accounts["nominee"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsOracleNominee: true,
 	}
 	accounts["oracle1"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsOracle: true,
 	}
 	accounts["oracle2"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsOracle: false,
 	}
 	accounts["oracle3"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsOracle: false,
 	}
 	accounts["plain"] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 	}
 	accounts[orders.ModuleName] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsModuleAcc: true,
 	}
 	accounts[gov.ModuleName] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
 		},
 		IsModuleAcc: true,
 	}
 	accounts[DenomSXFI] = &CLIAccount{
 		Coins: map[string]sdk.Coin{
-			config.MainDenom: sdk.NewCoin(config.MainDenom, smallAmount),
-			DenomSXFI:        sdk.NewCoin(DenomSXFI, smallAmount),
+			defaults.MainDenom: sdk.NewCoin(defaults.MainDenom, smallAmount),
+			DenomSXFI:          sdk.NewCoin(DenomSXFI, smallAmount),
 		},
 	}
 

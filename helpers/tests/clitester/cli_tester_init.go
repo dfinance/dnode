@@ -6,13 +6,12 @@ import (
 	"strings"
 
 	sdkKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dnode/cmd/config"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 )
 
 func (ct *CLITester) initChain() {
@@ -161,18 +160,15 @@ func (ct *CLITester) initChain() {
 
 	// validator genTX
 	{
-		minSelfDelegation, ok := sdk.NewIntFromString(dnConfig.DefMinSelfDelegation)
-		require.True(ct.t, ok, "DefMinSelfDelegation conversion failed")
-
-		stakingCoin := ct.Accounts["pos"].Coins[config.StakingDenom]
-		stakingCoin.Amount = minSelfDelegation
+		stakingCoin := ct.Accounts["pos"].Coins[defaults.StakingDenom]
+		stakingCoin.Amount = defaults.MinSelfDelegationCoin.Amount
 
 		cmd := ct.newWbdCmd().
 			AddArg("", "gentx").
 			AddArg("home-client", ct.Dirs.DncliDir).
 			AddArg("name", "pos").
 			AddArg("amount", stakingCoin.String()).
-			AddArg("min-self-delegation", minSelfDelegation.String()).
+			AddArg("min-self-delegation", defaults.MinSelfDelegationCoin.Amount.String()).
 			AddArg("keyring-backend", string(ct.keyringBackend))
 
 		cmd.CheckSuccessfulExecute(nil, ct.AccountPassphrase, ct.AccountPassphrase, ct.AccountPassphrase)

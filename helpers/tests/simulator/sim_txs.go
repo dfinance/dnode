@@ -47,6 +47,20 @@ func (s *Simulator) GenTx(msg sdk.Msg, simAcc *SimAccount) auth.StdTx {
 	return s.GenTxAdvanced(msg, acc.GetAccountNumber(), acc.GetSequence(), simAcc.PublicKey, simAcc.PrivateKey)
 }
 
+// CheckTx checks Tx and parses the result.
+func (s *Simulator) CheckTx(tx auth.StdTx, responseValue interface{}) error {
+	_, res, err := s.app.Check(tx)
+	if err != nil {
+		return err
+	}
+
+	if responseValue != nil {
+		s.cdc.MustUnmarshalJSON(res.Data, responseValue)
+	}
+
+	return nil
+}
+
 // DeliverTx delivers Tx and parses the result.
 func (s *Simulator) DeliverTx(tx auth.StdTx, responseValue interface{}) {
 	s.beginBlock()
@@ -61,37 +75,48 @@ func (s *Simulator) DeliverTx(tx auth.StdTx, responseValue interface{}) {
 	}
 }
 
-// TxStakingCreateValidator creates a new validator operated by simAcc with min self delegation.
-func (s *Simulator) TxStakingCreateValidator(simAcc *SimAccount, commissions staking.CommissionRates) {
+// TxStakeCreateValidator creates a new validator operated by simAcc with min self delegation.
+func (s *Simulator) TxStakeCreateValidator(simAcc *SimAccount, commissions staking.CommissionRates) {
 	require.NotNil(s.t, simAcc)
 
-	selfDelegation := sdk.NewCoin(s.stakingDenom, s.minSelfDelegationLvl)
 	msg := staking.NewMsgCreateValidator(
 		simAcc.Address.Bytes(),
 		simAcc.PublicKey,
-		selfDelegation,
+		s.minSelfDelegationCoin,
 		staking.NewDescription(simAcc.Address.String(), "", "", "", ""),
 		commissions,
-		s.minSelfDelegationLvl,
+		s.minSelfDelegationCoin.Amount,
 	)
 	s.DeliverTx(s.GenTx(msg, simAcc), nil)
 }
 
-// TxStakingDelegate delegates amount from delegator to validator.
-func (s *Simulator) TxStakingDelegate(simAcc *SimAccount, validator *staking.Validator, amount sdk.Coin) {
+// TxStakeDelegate delegates amount from delegator to validator.
+func (s *Simulator) TxStakeDelegate(simAcc *SimAccount, simVal *SimValidator, amount sdk.Coin) (delegationsOverflow bool) {
 	require.NotNil(s.t, simAcc)
-	require.NotNil(s.t, validator)
+	require.NotNil(s.t, simVal)
 
 	msg := staking.MsgDelegate{
 		DelegatorAddress: simAcc.Address,
-		ValidatorAddress: validator.OperatorAddress,
+		ValidatorAddress: simVal.GetAddress(),
 		Amount:           amount,
 	}
-	s.DeliverTx(s.GenTx(msg, simAcc), nil)
+	tx := s.GenTx(msg, simAcc)
+
+	if err := s.CheckTx(tx, nil); err != nil {
+		if staking.ErrMaxDelegationsLimit.Is(err) {
+			delegationsOverflow = true
+			return
+		}
+		require.NoError(s.t, err)
+	}
+
+	s.DeliverTx(tx, nil)
+
+	return
 }
 
-// TxStakingRedelegate redelegates amount from one validator to other.
-func (s *Simulator) TxStakingRedelegate(simAcc *SimAccount, valSrc, valDst sdk.ValAddress, amount sdk.Coin) {
+// TxStakeRedelegate redelegates amount from one validator to other.
+func (s *Simulator) TxStakeRedelegate(simAcc *SimAccount, valSrc, valDst sdk.ValAddress, amount sdk.Coin) {
 	require.NotNil(s.t, simAcc)
 
 	msg := staking.MsgBeginRedelegate{
@@ -103,8 +128,8 @@ func (s *Simulator) TxStakingRedelegate(simAcc *SimAccount, valSrc, valDst sdk.V
 	s.DeliverTx(s.GenTx(msg, simAcc), nil)
 }
 
-// TxStakingUndelegate undelegates amount from validator.
-func (s *Simulator) TxStakingUndelegate(simAcc *SimAccount, validatorAddr sdk.ValAddress, amount sdk.Coin) {
+// TxStakeUndelegate undelegates amount from validator.
+func (s *Simulator) TxStakeUndelegate(simAcc *SimAccount, validatorAddr sdk.ValAddress, amount sdk.Coin) {
 	require.NotNil(s.t, simAcc)
 
 	msg := staking.MsgUndelegate{
@@ -115,8 +140,8 @@ func (s *Simulator) TxStakingUndelegate(simAcc *SimAccount, validatorAddr sdk.Va
 	s.DeliverTx(s.GenTx(msg, simAcc), nil)
 }
 
-// TxDistributionReward taking reward.
-func (s *Simulator) TxDistributionReward(simAcc *SimAccount, validatorAddr sdk.ValAddress) {
+// TxDistDelegatorRewards withdraws delegator rewards.
+func (s *Simulator) TxDistDelegatorRewards(simAcc *SimAccount, validatorAddr sdk.ValAddress) {
 	require.NotNil(s.t, simAcc)
 
 	msg := distribution.MsgWithdrawDelegatorReward{
@@ -127,12 +152,47 @@ func (s *Simulator) TxDistributionReward(simAcc *SimAccount, validatorAddr sdk.V
 	s.DeliverTx(s.GenTx(msg, simAcc), nil)
 }
 
-// TxDistributionReward taking reward.
-func (s *Simulator) TxDistributionCommission(simAcc *SimAccount, validatorAddr sdk.ValAddress) {
+// TxDistValidatorCommission withdraws validator commission rewards.
+func (s *Simulator) TxDistValidatorCommission(simAcc *SimAccount, validatorAddr sdk.ValAddress) (noCommission bool) {
 	require.NotNil(s.t, simAcc)
 
 	msg := distribution.MsgWithdrawValidatorCommission{
 		ValidatorAddress: validatorAddr,
+	}
+	tx := s.GenTx(msg, simAcc)
+
+	if err := s.CheckTx(tx, nil); err != nil {
+		if distribution.ErrNoValidatorCommission.Is(err) {
+			noCommission = true
+			return
+		}
+		require.NoError(s.t, err)
+	}
+
+	s.DeliverTx(s.GenTx(msg, simAcc), nil)
+
+	return
+}
+
+// TxDistLockRewards locks validator rewards.
+func (s *Simulator) TxDistLockRewards(simAcc *SimAccount, validatorAddr sdk.ValAddress) {
+	require.NotNil(s.t, simAcc)
+
+	msg := distribution.MsgLockValidatorRewards{
+		ValidatorAddress: validatorAddr,
+		SenderAddress:    simAcc.Address,
+	}
+
+	s.DeliverTx(s.GenTx(msg, simAcc), nil)
+}
+
+// TxDistDisableAutoRenewal disables validator rewards lock auto-renewal.
+func (s *Simulator) TxDistDisableAutoRenewal(simAcc *SimAccount, validatorAddr sdk.ValAddress) {
+	require.NotNil(s.t, simAcc)
+
+	msg := distribution.MsgDisableLockedRewardsAutoRenewal{
+		ValidatorAddress: validatorAddr,
+		SenderAddress:    simAcc.Address,
 	}
 
 	s.DeliverTx(s.GenTx(msg, simAcc), nil)

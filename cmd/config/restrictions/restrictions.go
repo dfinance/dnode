@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/x/currencies"
 )
 
@@ -58,19 +58,20 @@ func GetAppRestrictions() AppRestrictions {
 			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyHARPTax)},
 			params.RestrictedParam{Subspace: distribution.ModuleName, Key: string(distribution.ParamKeyFoundationNominees)},
 			params.RestrictedParam{Subspace: mint.ModuleName, Key: string(mint.KeyFoundationAllocationRatio)},
+			params.RestrictedParam{Subspace: mint.ModuleName, Key: string(mint.KeyStakingTotalSupplyShift)},
 		},
 		CustomMsgVerifiers: func(msg sdk.Msg) error {
 			switch msg := msg.(type) {
 			case bank.MsgSend:
 				for i := range msg.Amount {
-					if msg.Amount.GetDenomByIndex(i) == config.StakingDenom || msg.Amount.GetDenomByIndex(i) == config.LiquidityProviderDenom {
+					if msg.Amount.GetDenomByIndex(i) == defaults.StakingDenom || msg.Amount.GetDenomByIndex(i) == defaults.LiquidityProviderDenom {
 						return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "bank transactions are disallowed for %s token", msg.Amount.GetDenomByIndex(i))
 					}
 				}
 			case gov.MsgDeposit:
 				for i := range msg.Amount {
-					if msg.Amount.GetDenomByIndex(i) != config.StakingDenom {
-						return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "gov deposit only allowed for %s token", config.StakingDenom)
+					if msg.Amount.GetDenomByIndex(i) != defaults.StakingDenom {
+						return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "gov deposit only allowed for %s token", defaults.StakingDenom)
 					}
 				}
 			}
