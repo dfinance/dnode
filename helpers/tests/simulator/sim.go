@@ -13,7 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -152,6 +151,7 @@ func (s *Simulator) Start() {
 				EthAddress: "0x17f7D1087971dF1a0E6b8Dae7428E97484E32615",
 			})
 		}
+
 		s.genesisState[poa.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, poa.GenesisState{
 			Parameters: poa.DefaultParams(),
 			Validators: validators,
@@ -162,37 +162,17 @@ func (s *Simulator) Start() {
 		state := staking.GenesisState{}
 		s.cdc.MustUnmarshalJSON(s.genesisState[staking.ModuleName], &state)
 
-		state.Params.BondDenom = s.stakingDenom
-		state.Params.LPDenom = s.lpDenom
 		state.Params.MinSelfDelegationLvl = s.minSelfDelegationLvl
 
 		s.genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
-
 		s.unbondingDur = state.Params.UnbondingTime
-	}
-	// mint
-	{
-		state := mint.GenesisState{}
-		s.cdc.MustUnmarshalJSON(s.genesisState[mint.ModuleName], &state)
-
-		state.Params.MintDenom = s.stakingDenom
-
-		s.genesisState[mint.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
 	}
 	// crisis
 	{
 		state := crisis.GenesisState{}
 		s.cdc.MustUnmarshalJSON(s.genesisState[crisis.ModuleName], &state)
 
-		defFeeAmount, ok := sdk.NewIntFromString(config.DefaultFeeAmount)
-		require.True(s.t, ok)
-
-		state.ConstantFee.Denom = s.mainDenom
-		state.ConstantFee.Amount = defFeeAmount
-
-		s.genesisState[crisis.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
-
-		s.defFee = sdk.NewCoin(s.mainDenom, defFeeAmount)
+		s.defFee = sdk.NewCoin(state.ConstantFee.Denom, state.ConstantFee.Amount)
 	}
 	// genutil, create node validator
 	{
@@ -337,7 +317,6 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 	require.NoError(t, err)
 
 	s := &Simulator{
-		genesisState:         app.ModuleBasics.DefaultGenesis(),
 		invariantCheckPeriod: 1,
 		logOptions:           make([]log.Option, 0),
 		minSelfDelegationLvl: minSelfDelegation,
@@ -373,6 +352,10 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 	}
 	s.counter.RewardsCollected = sdk.NewCoins()
 	s.counter.CommissionsCollected = sdk.NewCoins()
+
+	defaultGenesis, err := config.OverrideGenesisStateDefaults(s.cdc, app.ModuleBasics.DefaultGenesis())
+	require.NoError(t, err)
+	s.genesisState = defaultGenesis
 
 	for _, option := range options {
 		option(s)

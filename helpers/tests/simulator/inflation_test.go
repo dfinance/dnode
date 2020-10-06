@@ -14,7 +14,6 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
@@ -124,16 +123,6 @@ func simulate(t *testing.T, profile SimProfile) {
 		sdk.NewCoin(config.LiquidityProviderDenom, sdk.NewInt(profile.LPTokensBalanceWODec).Mul(amtDecimals)),
 	)
 
-	// custom distribution params
-	treasuryCapacity := sdk.NewInt(250000).Mul(amtDecimals)
-	distParams := distribution.DefaultParams()
-	distParams.PublicTreasuryPoolCapacity = treasuryCapacity
-
-	// custom staking params
-	stakingParams := staking.DefaultParams()
-	stakingParams.UnbondingTime = 24 * time.Hour
-	stakingParams.MaxValidators = uint16(profile.TMValidatorsActive)
-
 	// write profile to file
 	{
 		f, err := os.Create(path.Join(workingDir, "profile.txt"))
@@ -157,8 +146,10 @@ func simulate(t *testing.T, profile SimProfile) {
 		LogOption(log.AllowInfoWith("module", "x/distribution")),
 		LogOption(log.AllowInfoWith("module", "x/slashing")),
 		LogOption(log.AllowInfoWith("module", "x/evidence")),
-		StakingParamsOption(stakingParams),
-		DistributionParamsOption(distParams),
+		StakingParamsOption(func(state *staking.GenesisState) {
+			state.Params.UnbondingTime = 24 * time.Hour
+			state.Params.MaxValidators = uint16(profile.TMValidatorsActive)
+		}),
 		InvariantCheckPeriodOption(1000),
 		OperationsOption(
 			NewSimInvariantsOp(1*time.Hour),

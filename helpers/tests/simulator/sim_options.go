@@ -67,35 +67,35 @@ func NodeValidatorConfigOption(config SimValidatorConfig) SimOption {
 	}
 }
 
-func MintParamsOption(params mint.Params) SimOption {
+func MintParamsOption(modifier func(state *mint.GenesisState)) SimOption {
 	return func(s *Simulator) {
 		state := mint.GenesisState{}
 		stateBz := s.genesisState[mint.ModuleName]
 		s.cdc.MustUnmarshalJSON(stateBz, &state)
 
-		state.Params = params
+		modifier(&state)
 		s.genesisState[mint.ModuleName] = s.cdc.MustMarshalJSON(state)
 	}
 }
 
-func StakingParamsOption(params staking.Params) SimOption {
+func StakingParamsOption(modifier func(state *staking.GenesisState)) SimOption {
 	return func(s *Simulator) {
 		state := staking.GenesisState{}
 		stateBz := s.genesisState[staking.ModuleName]
 		s.cdc.MustUnmarshalJSON(stateBz, &state)
 
-		state.Params = params
+		modifier(&state)
 		s.genesisState[staking.ModuleName] = s.cdc.MustMarshalJSON(state)
 	}
 }
 
-func DistributionParamsOption(params distribution.Params) SimOption {
+func DistributionParamsOption(modifier func(state *distribution.GenesisState)) SimOption {
 	return func(s *Simulator) {
 		state := distribution.GenesisState{}
 		stateBz := s.genesisState[distribution.ModuleName]
 		s.cdc.MustUnmarshalJSON(stateBz, &state)
 
-		state.Params = params
+		modifier(&state)
 		s.genesisState[distribution.ModuleName] = s.cdc.MustMarshalJSON(state)
 	}
 }

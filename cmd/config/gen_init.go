@@ -88,85 +88,21 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 
 			config.Moniker = args[0]
 
+			// Prepare genesis state
+			appGenState, err := OverrideGenesisStateDefaults(cdc, mbm.DefaultGenesis())
+			if err != nil {
+				return fmt.Errorf("app genesis state overwrite: %v", err)
+			}
+
+			appState, err := codec.MarshalJSONIndent(cdc, appGenState)
+			if err != nil {
+				return errors.Wrap(err, "failed to marshall app genesis state")
+			}
+
+			// Prepare genesis file
 			genFile := config.GenesisFile()
 			if !viper.GetBool(flagOverwrite) && tmos.FileExists(genFile) {
 				return fmt.Errorf("genesis.json file already exists: %v", genFile)
-			}
-
-			appGenState := mbm.DefaultGenesis()
-
-			// Change default staking params: denom, minSelfDelegation
-			minSelfDelegation, ok := sdk.NewIntFromString(DefMinSelfDelegation)
-			if !ok {
-				return fmt.Errorf("staking genState: default minSelfDelegation convertion failed: %s", DefMinSelfDelegation)
-			}
-
-			stakingDataBz := appGenState[staking.ModuleName]
-			var stakingGenState staking.GenesisState
-
-			cdc.MustUnmarshalJSON(stakingDataBz, &stakingGenState)
-			stakingGenState.Params.BondDenom = StakingDenom
-			stakingGenState.Params.LPDenom = LiquidityProviderDenom
-			stakingGenState.Params.MinSelfDelegationLvl = minSelfDelegation
-			appGenState[staking.ModuleName] = cdc.MustMarshalJSON(stakingGenState)
-
-			// Change default mint params
-			mintDataBz := appGenState[mint.ModuleName]
-			var mintGenState mint.GenesisState
-
-			cdc.MustUnmarshalJSON(mintDataBz, &mintGenState)
-			mintGenState.Params.MintDenom = StakingDenom
-			//
-			mintGenState.Params.InflationMax = sdk.NewDecWithPrec(50, 2)   // 50%
-			mintGenState.Params.InflationMin = sdk.NewDecWithPrec(1776, 4) // 17.76%
-			//
-			mintGenState.Params.FeeBurningRatio = sdk.NewDecWithPrec(50, 2)           // 50%
-			mintGenState.Params.InfPwrBondedLockedRatio = sdk.NewDecWithPrec(4, 1)    // 40%
-			mintGenState.Params.FoundationAllocationRatio = sdk.NewDecWithPrec(45, 2) // 45%
-			//
-			mintGenState.Params.AvgBlockTimeWindow = 100 // 100 blocks
-			appGenState[mint.ModuleName] = cdc.MustMarshalJSON(mintGenState)
-
-			// Change default distribution params
-			distDataBz := appGenState[distribution.ModuleName]
-			var distGenState distribution.GenesisState
-
-			cdc.MustUnmarshalJSON(distDataBz, &distGenState)
-			distGenState.Params.ValidatorsPoolTax = sdk.NewDecWithPrec(4825, 4)         // 48.25%
-			distGenState.Params.LiquidityProvidersPoolTax = sdk.NewDecWithPrec(4825, 4) // 48.25%
-			distGenState.Params.PublicTreasuryPoolTax = sdk.NewDecWithPrec(15, 3)       // 1.5%
-			distGenState.Params.HARPTax = sdk.NewDecWithPrec(2, 2)                      // 2%
-			//
-			distGenState.Params.PublicTreasuryPoolCapacity = sdk.NewInt(250000) // 250K (doesn't include currency decimals)
-			//
-			distGenState.Params.BaseProposerReward = sdk.NewDecWithPrec(1, 2)  // 1%
-			distGenState.Params.BonusProposerReward = sdk.NewDecWithPrec(4, 2) // 4%
-			//
-			distGenState.Params.WithdrawAddrEnabled = true
-			appGenState[distribution.ModuleName] = cdc.MustMarshalJSON(distGenState)
-
-			// Change default minimal governance deposit coin
-			govDataBz := appGenState[gov.ModuleName]
-			var govGenState gov.GenesisState
-
-			cdc.MustUnmarshalJSON(govDataBz, &govGenState)
-			govGenState.DepositParams.MinDeposit = sdk.NewCoins(GovMinDeposit)
-			appGenState[gov.ModuleName] = cdc.MustMarshalJSON(govGenState)
-
-			// Change default crisis constant fee
-			crisisDataBz := appGenState[crisis.ModuleName]
-			var crisisGenState crisis.GenesisState
-
-			cdc.MustUnmarshalJSON(crisisDataBz, &crisisGenState)
-			defFeeAmount, _ := sdk.NewIntFromString(DefaultFeeAmount)
-			crisisGenState.ConstantFee.Denom = MainDenom
-			crisisGenState.ConstantFee.Amount = defFeeAmount
-			appGenState[crisis.ModuleName] = cdc.MustMarshalJSON(crisisGenState)
-
-			// Prepare genesis state
-			appState, err := codec.MarshalJSONIndent(cdc, appGenState)
-			if err != nil {
-				return errors.Wrap(err, "Failed to marshall default genesis state")
 			}
 
 			genDoc := &tmTypes.GenesisDoc{}
@@ -177,7 +113,7 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			} else {
 				genDoc, err = tmTypes.GenesisDocFromFile(genFile)
 				if err != nil {
-					return errors.Wrap(err, "Failed to read genesis doc from file")
+					return errors.Wrap(err, "failed to read genesis doc from file")
 				}
 			}
 
@@ -189,7 +125,6 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 			if genDoc.ConsensusParams == nil {
 				genDoc.ConsensusParams = tmTypes.DefaultConsensusParams()
 			}
-
 			genDoc.ConsensusParams.Block.MaxGas = maxGas
 
 			if err = genutil.ExportGenesisFile(genDoc, genFile); err != nil {
@@ -208,4 +143,121 @@ func InitCmd(ctx *server.Context, cdc *codec.Codec, mbm module.BasicManager,
 	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
 
 	return cmd
+}
+
+// OverrideGenesisStateDefaults takes default app genesis state and overwrites Cosmos SDK / Dfinance params.
+func OverrideGenesisStateDefaults(cdc *codec.Codec, genState map[string]json.RawMessage) (map[string]json.RawMessage, error) {
+	// Staking module params
+	{
+		moduleName, moduleState := staking.ModuleName, staking.GenesisState{}
+		if err := cdc.UnmarshalJSON(genState[moduleName], &moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON unmarshal: %v", moduleName, err)
+		}
+
+		minSelfDelegation, ok := sdk.NewIntFromString(DefMinSelfDelegation)
+		if !ok {
+			return nil, fmt.Errorf("%s module: default minSelfDelegation convertion failed: %s", moduleName, DefMinSelfDelegation)
+		}
+
+		moduleState.Params.BondDenom = StakingDenom
+		moduleState.Params.LPDenom = LiquidityProviderDenom
+		moduleState.Params.MinSelfDelegationLvl = minSelfDelegation
+
+		if moduleStateBz, err := cdc.MarshalJSON(moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON marshal: %v", err)
+		} else {
+			genState[moduleName] = moduleStateBz
+		}
+	}
+
+	// Mint module params
+	{
+		moduleName, moduleState := mint.ModuleName, mint.GenesisState{}
+		if err := cdc.UnmarshalJSON(genState[moduleName], &moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON unmarshal: %v", moduleName, err)
+		}
+
+		moduleState.Params.MintDenom = StakingDenom
+		//
+		moduleState.Params.InflationMax = sdk.NewDecWithPrec(50, 2)   // 50%
+		moduleState.Params.InflationMin = sdk.NewDecWithPrec(1776, 4) // 17.76%
+		//
+		moduleState.Params.FeeBurningRatio = sdk.NewDecWithPrec(50, 2)           // 50%
+		moduleState.Params.InfPwrBondedLockedRatio = sdk.NewDecWithPrec(4, 1)    // 40%
+		moduleState.Params.FoundationAllocationRatio = sdk.NewDecWithPrec(45, 2) // 45%
+		//
+		moduleState.Params.AvgBlockTimeWindow = 100 // 100 blocks
+
+		if moduleStateBz, err := cdc.MarshalJSON(moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON marshal: %v", err)
+		} else {
+			genState[moduleName] = moduleStateBz
+		}
+	}
+
+	// Distribution module params
+	{
+		moduleName, moduleState := distribution.ModuleName, distribution.GenesisState{}
+		if err := cdc.UnmarshalJSON(genState[moduleName], &moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON unmarshal: %v", moduleName, err)
+		}
+
+		moduleState.Params.ValidatorsPoolTax = sdk.NewDecWithPrec(4825, 4)         // 48.25%
+		moduleState.Params.LiquidityProvidersPoolTax = sdk.NewDecWithPrec(4825, 4) // 48.25%
+		moduleState.Params.PublicTreasuryPoolTax = sdk.NewDecWithPrec(15, 3)       // 1.5%
+		moduleState.Params.HARPTax = sdk.NewDecWithPrec(2, 2)                      // 2%
+		//
+		moduleState.Params.PublicTreasuryPoolCapacity = sdk.NewInt(250000) // 250K (doesn't include currency decimals)
+		//
+		moduleState.Params.BaseProposerReward = sdk.NewDecWithPrec(1, 2)  // 1%
+		moduleState.Params.BonusProposerReward = sdk.NewDecWithPrec(4, 2) // 4%
+		//
+		moduleState.Params.WithdrawAddrEnabled = true
+
+		if moduleStateBz, err := cdc.MarshalJSON(moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON marshal: %v", err)
+		} else {
+			genState[moduleName] = moduleStateBz
+		}
+	}
+
+	// Gov module params
+	{
+		moduleName, moduleState := gov.ModuleName, gov.GenesisState{}
+		if err := cdc.UnmarshalJSON(genState[moduleName], &moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON unmarshal: %v", moduleName, err)
+		}
+
+		moduleState.DepositParams.MinDeposit = sdk.NewCoins(GovMinDeposit)
+
+		if moduleStateBz, err := cdc.MarshalJSON(moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON marshal: %v", err)
+		} else {
+			genState[moduleName] = moduleStateBz
+		}
+	}
+
+	// Crisis module params
+	{
+		moduleName, moduleState := crisis.ModuleName, crisis.GenesisState{}
+		if err := cdc.UnmarshalJSON(genState[moduleName], &moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON unmarshal: %v", moduleName, err)
+		}
+
+		invariantCheckFeeAmount, ok := sdk.NewIntFromString(DefaultFeeAmount)
+		if !ok {
+			return nil, fmt.Errorf("%s module: invariant check fee convertion failed: %s", moduleName, DefaultFeeAmount)
+		}
+
+		moduleState.ConstantFee.Denom = MainDenom
+		moduleState.ConstantFee.Amount = invariantCheckFeeAmount
+
+		if moduleStateBz, err := cdc.MarshalJSON(moduleState); err != nil {
+			return nil, fmt.Errorf("%s module: JSON marshal: %v", err)
+		} else {
+			genState[moduleName] = moduleStateBz
+		}
+	}
+
+	return genState, nil
 }
