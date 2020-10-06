@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	flagGet             = "get"
-	DefaultCompilerAddr = "tcp://127.0.0.1:50051"
+	flagGet = "get"
 )
 
 var configDefaults = map[string]string{

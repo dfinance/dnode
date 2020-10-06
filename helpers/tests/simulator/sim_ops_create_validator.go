@@ -38,8 +38,6 @@ func createValidatorOpCheckInput(s *Simulator, maxValidators uint) (stop bool) {
 }
 
 func createValidatorOpFindTarget(s *Simulator) (targetAcc *SimAccount) {
-	selfDelegationAmt := s.minSelfDelegationLvl
-
 	// pick an account without a validator
 	for _, acc := range s.GetAllAccounts().GetShuffled() {
 		if acc.IsValOperator() {
@@ -47,7 +45,7 @@ func createValidatorOpFindTarget(s *Simulator) (targetAcc *SimAccount) {
 		}
 
 		// check balance
-		if acc.Coins.AmountOf(s.stakingDenom).LT(selfDelegationAmt) {
+		if acc.Coins.AmountOf(s.stakingDenom).LT(s.minSelfDelegationCoin.Amount) {
 			continue
 		}
 

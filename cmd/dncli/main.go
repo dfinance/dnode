@@ -23,6 +23,7 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/helpers/logger"
 	"github.com/dfinance/dnode/helpers/swagger"
@@ -121,11 +122,11 @@ func queryCmd(cdc *amino.Codec) *cobra.Command {
 // Set default gas for tx commands.
 func SetDefaultFeeForTxCmd(cmd *cobra.Command) {
 	if feesFlag := cmd.Flag(flags.FlagFees); feesFlag != nil {
-		feesFlag.DefValue = dnConfig.DefaultFee
-		feesFlag.Usage = "Fees to pay along with transaction; eg: " + dnConfig.DefaultFee
+		feesFlag.DefValue = defaults.FeeCoin.String()
+		feesFlag.Usage = "Fees to pay along with transaction; eg: " + defaults.FeeCoin.String()
 
 		if feesFlag.Value.String() == "" {
-			err := feesFlag.Value.Set(dnConfig.DefaultFee)
+			err := feesFlag.Value.Set(defaults.FeeCoin.String())
 			if err != nil {
 				panic(err)
 			}
@@ -137,8 +138,8 @@ func SetDefaultFeeForTxCmd(cmd *cobra.Command) {
 				return fmt.Errorf("can't parse fees value to coins: %v", err)
 			}
 
-			if coin.Denom != dnConfig.MainDenom {
-				return fmt.Errorf("fees must be paid only in %q, current fees in are %q", dnConfig.MainDenom, coin.Denom)
+			if coin.Denom != defaults.MainDenom {
+				return fmt.Errorf("fees must be paid only in %q, current fees in are %q", defaults.MainDenom, coin.Denom)
 			}
 
 			return nil

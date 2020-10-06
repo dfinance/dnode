@@ -5,7 +5,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 
-	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 )
 
 // DenomDecorator catches and prevents transactions without fees and fees not in "xfi" currency
@@ -30,7 +30,7 @@ func (dd DenomDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, n
 		}
 
 		if !stdTx.Fee.Amount.DenomsSubsetOf(DefaultFees) {
-			return auth.SetGasMeter(simulate, ctx, 0), sdkErrors.Wrap(ErrWrongFeeDenom, config.MainDenom)
+			return auth.SetGasMeter(simulate, ctx, 0), sdkErrors.Wrap(ErrWrongFeeDenom, defaults.MainDenom)
 		}
 	}
 

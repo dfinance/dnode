@@ -79,14 +79,13 @@ func (s *Simulator) DeliverTx(tx auth.StdTx, responseValue interface{}) {
 func (s *Simulator) TxStakeCreateValidator(simAcc *SimAccount, commissions staking.CommissionRates) {
 	require.NotNil(s.t, simAcc)
 
-	selfDelegation := sdk.NewCoin(s.stakingDenom, s.minSelfDelegationLvl)
 	msg := staking.NewMsgCreateValidator(
 		simAcc.Address.Bytes(),
 		simAcc.PublicKey,
-		selfDelegation,
+		s.minSelfDelegationCoin,
 		staking.NewDescription(simAcc.Address.String(), "", "", "", ""),
 		commissions,
-		s.minSelfDelegationLvl,
+		s.minSelfDelegationCoin.Amount,
 	)
 	s.DeliverTx(s.GenTx(msg, simAcc), nil)
 }

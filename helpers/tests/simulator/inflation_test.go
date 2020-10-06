@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 )
 
 type SimProfile struct {
@@ -74,9 +74,9 @@ func (p SimProfile) String() string {
 	str.WriteString(fmt.Sprintf("  - BlockTimeMin: %s\n", FormatDuration(p.BlockTimeMin)))
 	str.WriteString(fmt.Sprintf("  - BlockTimeMax: %s\n", FormatDuration(p.BlockTimeMax)))
 	str.WriteString("Initial balances:\n")
-	str.WriteString(fmt.Sprintf("  - MainTokens:    %d.0%s\n", p.MainTokensBalanceWODec, config.MainDenom))
-	str.WriteString(fmt.Sprintf("  - StakingTokens: %d.0%s\n", p.BondingTokensBalanceWODec, config.StakingDenom))
-	str.WriteString(fmt.Sprintf("  - LPTokens:      %d.0%s\n", p.LPTokensBalanceWODec, config.LiquidityProviderDenom))
+	str.WriteString(fmt.Sprintf("  - MainTokens:    %d.0%s\n", p.MainTokensBalanceWODec, defaults.MainDenom))
+	str.WriteString(fmt.Sprintf("  - StakingTokens: %d.0%s\n", p.BondingTokensBalanceWODec, defaults.StakingDenom))
+	str.WriteString(fmt.Sprintf("  - LPTokens:      %d.0%s\n", p.LPTokensBalanceWODec, defaults.LiquidityProviderDenom))
 	str.WriteString("Total number of:\n")
 	str.WriteString(fmt.Sprintf("  - Account:                %d\n", p.Accounts))
 	str.WriteString(fmt.Sprintf("  - PoA validators:         %d\n", p.POAValidators))
@@ -118,9 +118,9 @@ func simulate(t *testing.T, profile SimProfile) {
 	// genesis accounts balance
 	amtDecimals := sdk.NewInt(1000000000000000000)
 	genCoins := sdk.NewCoins(
-		sdk.NewCoin(config.MainDenom, sdk.NewInt(profile.MainTokensBalanceWODec).Mul(amtDecimals)),
-		sdk.NewCoin(config.StakingDenom, sdk.NewInt(profile.BondingTokensBalanceWODec).Mul(amtDecimals)),
-		sdk.NewCoin(config.LiquidityProviderDenom, sdk.NewInt(profile.LPTokensBalanceWODec).Mul(amtDecimals)),
+		sdk.NewCoin(defaults.MainDenom, sdk.NewInt(profile.MainTokensBalanceWODec).Mul(amtDecimals)),
+		sdk.NewCoin(defaults.StakingDenom, sdk.NewInt(profile.BondingTokensBalanceWODec).Mul(amtDecimals)),
+		sdk.NewCoin(defaults.LiquidityProviderDenom, sdk.NewInt(profile.LPTokensBalanceWODec).Mul(amtDecimals)),
 	)
 
 	// write profile to file
@@ -149,6 +149,7 @@ func simulate(t *testing.T, profile SimProfile) {
 		StakingParamsOption(func(state *staking.GenesisState) {
 			state.Params.UnbondingTime = 24 * time.Hour
 			state.Params.MaxValidators = uint16(profile.TMValidatorsActive)
+			state.Params.MaxDelegationsRatio = sdk.NewDecWithPrec(1000, 0)
 		}),
 		InvariantCheckPeriodOption(1000),
 		OperationsOption(

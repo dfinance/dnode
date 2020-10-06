@@ -11,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/stretchr/testify/require"
@@ -22,6 +21,8 @@ import (
 
 	"github.com/dfinance/dnode/app"
 	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/x/genaccounts"
 	"github.com/dfinance/dnode/x/poa"
@@ -33,16 +34,16 @@ var (
 
 type Simulator struct {
 	// configurable settings
-	genesisState         map[string]json.RawMessage
-	invariantCheckPeriod uint
-	logOptions           []log.Option
-	minSelfDelegationLvl sdk.Int
-	nodeValidatorConfig  SimValidatorConfig
-	operations           []*SimOperation
-	accounts             SimAccounts
-	useInMemDB           bool
-	minBlockDur          time.Duration
-	maxBlockDur          time.Duration
+	genesisState          map[string]json.RawMessage
+	invariantCheckPeriod  uint
+	logOptions            []log.Option
+	minSelfDelegationCoin sdk.Coin
+	nodeValidatorConfig   SimValidatorConfig
+	operations            []*SimOperation
+	accounts              SimAccounts
+	useInMemDB            bool
+	minBlockDur           time.Duration
+	maxBlockDur           time.Duration
 	// predefined settings
 	chainID   string
 	monikerID string
@@ -162,30 +163,19 @@ func (s *Simulator) Start() {
 		state := staking.GenesisState{}
 		s.cdc.MustUnmarshalJSON(s.genesisState[staking.ModuleName], &state)
 
-		state.Params.MinSelfDelegationLvl = s.minSelfDelegationLvl
-
-		s.genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(s.cdc, state)
 		s.unbondingDur = state.Params.UnbondingTime
-	}
-	// crisis
-	{
-		state := crisis.GenesisState{}
-		s.cdc.MustUnmarshalJSON(s.genesisState[crisis.ModuleName], &state)
-
-		s.defFee = sdk.NewCoin(state.ConstantFee.Denom, state.ConstantFee.Amount)
 	}
 	// genutil, create node validator
 	{
 		nodeAcc := s.accounts[0]
 
-		selfDelegation := sdk.NewCoin(s.stakingDenom, s.minSelfDelegationLvl)
 		msg := staking.NewMsgCreateValidator(
 			nodeAcc.Address.Bytes(),
 			nodeAcc.PublicKey,
-			selfDelegation,
+			s.minSelfDelegationCoin,
 			staking.NewDescription(s.monikerID, "", "", "", ""),
 			s.nodeValidatorConfig.Commission,
-			s.minSelfDelegationLvl,
+			s.minSelfDelegationCoin.Amount,
 		)
 		tx := s.GenTxAdvanced(msg, 0, 0, nodeAcc.PublicKey, nodeAcc.PrivateKey)
 
@@ -304,9 +294,6 @@ func (s *Simulator) endBlock() {
 // NewSimulator creates a new Simulator.
 func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, options ...SimOption) *Simulator {
 	// defaults init
-	minSelfDelegation, ok := sdk.NewIntFromString(config.DefMinSelfDelegation)
-	require.True(t, ok)
-
 	nodeValCommissionRate, err := sdk.NewDecFromStr("0.100000000000000000")
 	require.NoError(t, err)
 
@@ -317,9 +304,9 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 	require.NoError(t, err)
 
 	s := &Simulator{
-		invariantCheckPeriod: 1,
-		logOptions:           make([]log.Option, 0),
-		minSelfDelegationLvl: minSelfDelegation,
+		invariantCheckPeriod:  1,
+		logOptions:            make([]log.Option, 0),
+		minSelfDelegationCoin: defaults.MinSelfDelegationCoin,
 		nodeValidatorConfig: SimValidatorConfig{
 			Commission: staking.CommissionRates{
 				Rate:          nodeValCommissionRate,
@@ -333,11 +320,12 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 		//
 		chainID:   "simChainID",
 		monikerID: "simMoniker",
-		defGas:    1000000,
+		defFee:    defaults.FeeCoin,
+		defGas:    defaults.MaxGas,
 		//
-		mainDenom:                  config.MainDenom,
-		stakingDenom:               config.StakingDenom,
-		lpDenom:                    config.LiquidityProviderDenom,
+		mainDenom:                  defaults.MainDenom,
+		stakingDenom:               defaults.StakingDenom,
+		lpDenom:                    defaults.LiquidityProviderDenom,
 		mainDenomDecimals:          18,
 		stakingDenomDecimals:       18,
 		mainAmountDecimalsRatio:    sdk.NewDecWithPrec(1, 0),
@@ -353,7 +341,7 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 	s.counter.RewardsCollected = sdk.NewCoins()
 	s.counter.CommissionsCollected = sdk.NewCoins()
 
-	defaultGenesis, err := config.OverrideGenesisStateDefaults(s.cdc, app.ModuleBasics.DefaultGenesis())
+	defaultGenesis, err := genesis.OverrideGenesisStateDefaults(s.cdc, app.ModuleBasics.DefaultGenesis())
 	require.NoError(t, err)
 	s.genesisState = defaultGenesis
 

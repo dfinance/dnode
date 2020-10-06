@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	tmCoreTypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	dnTypes "github.com/dfinance/dnode/helpers/types"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/currencies"
@@ -34,17 +34,13 @@ import (
 
 // buildBaseReq returns BaseReq used to prepare REST Tx send.
 func (ct *CLITester) buildBaseReq(accName, memo string) restTypes.BaseReq {
-	feeAmount, ok := sdk.NewIntFromString(dnConfig.DefaultFeeAmount)
-	require.True(ct.t, ok, "fee coin amount parsing")
-	feeCoin := sdk.NewCoin(dnConfig.MainDenom, feeAmount)
-
 	accInfo, ok := ct.Accounts[accName]
 	require.True(ct.t, ok, "account %q: not found", accName)
 
 	return restTypes.BaseReq{
 		ChainID: ct.IDs.ChainID,
 		From:    accInfo.Address,
-		Fees:    sdk.Coins{feeCoin},
+		Fees:    sdk.Coins{defaults.FeeCoin},
 		Gas:     strconv.Itoa(DefaultGas),
 		Memo:    memo,
 	}
@@ -57,7 +53,7 @@ func (ct *CLITester) newRestTxRequest(accName string, acc *auth.BaseAccount, msg
 func (ct *CLITester) newRestTxRequestRaw(accName string, accNumber, accSequence uint64, msg sdk.Msg, isSync bool) (r *RestRequest, txResp *sdk.TxResponse) {
 	// build broadcast Tx request
 	txFee := auth.StdFee{
-		Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
+		Amount: sdk.Coins{{Denom: defaults.MainDenom, Amount: sdk.NewInt(1)}},
 		Gas:    DefaultGas,
 	}
 	txMemo := "restTxMemo"
