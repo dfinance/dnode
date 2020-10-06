@@ -99,11 +99,8 @@ func delegateOpCheckInput(s *Simulator, bondingD bool, maxRatio sdk.Dec) (stop b
 
 	// check staking pool total supply to all tokens supply ratio
 	curRatio := stakingSupply.ToDec().Quo(totalSupply.ToDec())
-	if curRatio.GT(maxRatio) {
-		return true
-	}
 
-	return false
+	return curRatio.GT(maxRatio)
 }
 
 func delegateOpFindTarget(s *Simulator, bondingD bool, delegateRatio sdk.Dec) (targetVal *SimValidator, targetAcc *SimAccount, delCoin sdk.Coin) {

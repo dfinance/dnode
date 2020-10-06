@@ -69,7 +69,7 @@ func (op *SimOperation) Exec(s *Simulator, curTime time.Time) (report SimOperati
 	if curTime.After(op.nextExecTime) {
 		opStart := time.Now()
 		report.Executed, report.LogMessage = op.handlerFn(s)
-		report.Duration = time.Now().Sub(opStart)
+		report.Duration = time.Since(opStart)
 	}
 
 	return

@@ -34,11 +34,7 @@ func NewCreateValidatorOp(period time.Duration, maxValidators uint) *SimOperatio
 
 func createValidatorOpCheckInput(s *Simulator, maxValidators uint) (stop bool) {
 	// check limit is reached
-	if len(s.GetAllValidators()) >= int(maxValidators) {
-		return true
-	}
-
-	return false
+	return len(s.GetAllValidators()) >= int(maxValidators)
 }
 
 func createValidatorOpFindTarget(s *Simulator) (targetAcc *SimAccount) {
