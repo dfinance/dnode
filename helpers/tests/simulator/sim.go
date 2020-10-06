@@ -257,7 +257,18 @@ func (s *Simulator) Next() {
 	blockCreated := false
 
 	for _, op := range s.operations {
-		blockCreated = op.Exec(s, s.prevBlockTime)
+		opReport := op.Exec(s, s.prevBlockTime)
+		if msg := opReport.String(); msg != "" {
+			if opReport.Executed {
+				s.logger.Info(msg)
+			} else {
+				s.logger.Error(msg)
+			}
+		}
+
+		if opReport.Executed {
+			blockCreated = true
+		}
 	}
 
 	if !blockCreated {

@@ -20,31 +20,31 @@ import (
 //     - highest bonding tokens balance;
 //     - enough coins;
 func NewDelegateBondingOp(period time.Duration, delegateRatio, maxBondingRatio sdk.Dec) *SimOperation {
-	checkRatioArg("DelegateBondingOp", "delegateRatio", delegateRatio)
-	checkRatioArg("DelegateBondingOp", "maxBondingRatio", maxBondingRatio)
+	id := "DelegateBondingOp"
+	checkRatioArg(id, "delegateRatio", delegateRatio)
+	checkRatioArg(id, "maxBondingRatio", maxBondingRatio)
 
-	handler := func(s *Simulator) bool {
+	handler := func(s *Simulator) (bool, string) {
 		if delegateOpCheckInput(s, true, maxBondingRatio) {
-			return true
+			return true, ""
 		}
 
 		targetVal, targetAcc, delCoin := delegateOpFindTarget(s, true, delegateRatio)
 		if targetVal == nil || targetAcc == nil {
-			return false
+			return false, "target not found"
 		}
 
 		if delegateOpHandle(s, targetVal, targetAcc, delCoin) {
-			s.logger.Error(fmt.Sprintf("DelegateBondingOp: %s: overflow", targetVal.GetAddress()))
-			return false
+			return false, fmt.Sprintf("DelegateBondingOp: %s: overflow", targetVal.GetAddress())
 		}
 
 		delegateOpPost(s, targetVal, targetAcc, true)
-		s.logger.Info(fmt.Sprintf("DelegateBondingOp: %s: %s -> %s", targetAcc.Address, s.FormatCoin(delCoin), targetVal.GetAddress()))
+		msg := fmt.Sprintf("%s: %s -> %s", targetAcc.Address, s.FormatCoin(delCoin), targetVal.GetAddress())
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 // NewDelegateLPOp picks a validator and searches for an account to delegate LP tokens.
@@ -58,17 +58,18 @@ func NewDelegateBondingOp(period time.Duration, delegateRatio, maxBondingRatio s
 //     - highest LP tokens balance;
 //     - enough coins;
 func NewDelegateLPOp(period time.Duration, delegateRatio, maxBondingRatio sdk.Dec) *SimOperation {
-	checkRatioArg("DelegateLPOp", "delegateRatio", delegateRatio)
-	checkRatioArg("DelegateLPOp", "maxBondingRatio", maxBondingRatio)
+	id := "DelegateLPOp"
+	checkRatioArg(id, "delegateRatio", delegateRatio)
+	checkRatioArg(id, "maxBondingRatio", maxBondingRatio)
 
-	handler := func(s *Simulator) bool {
+	handler := func(s *Simulator) (bool, string) {
 		if delegateOpCheckInput(s, false, maxBondingRatio) {
-			return true
+			return true, ""
 		}
 
 		targetVal, targetAcc, delCoin := delegateOpFindTarget(s, false, delegateRatio)
 		if targetVal == nil || targetAcc == nil {
-			return false
+			return false, "target not found"
 		}
 
 		if overflow := delegateOpHandle(s, targetVal, targetAcc, delCoin); overflow {
@@ -76,12 +77,12 @@ func NewDelegateLPOp(period time.Duration, delegateRatio, maxBondingRatio sdk.De
 		}
 
 		delegateOpPost(s, targetVal, targetAcc, false)
-		s.logger.Info(fmt.Sprintf("DelegateLPOp: %s: %s -> %s", targetAcc.Address, s.FormatCoin(delCoin), targetVal.GetAddress()))
+		msg := fmt.Sprintf("%s: %s -> %s", targetAcc.Address, s.FormatCoin(delCoin), targetVal.GetAddress())
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 func delegateOpCheckInput(s *Simulator, bondingD bool, maxRatio sdk.Dec) (stop bool) {

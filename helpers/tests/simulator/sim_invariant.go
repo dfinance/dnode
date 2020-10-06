@@ -8,7 +8,9 @@ import (
 
 // NewSimInvariantsOp checks inner simulator state integrity.
 func NewSimInvariantsOp(period time.Duration) *SimOperation {
-	handler := func(s *Simulator) bool {
+	id := "InvariantsOp"
+
+	handler := func(s *Simulator) (bool, string) {
 		// check validator owner has exactly one self-delegation
 		for _, acc := range s.GetAllAccounts() {
 			if acc.IsValOperator() {
@@ -19,7 +21,7 @@ func NewSimInvariantsOp(period time.Duration) *SimOperation {
 					}
 				}
 
-				require.Equal(s.t, 1, selfDelCnt, "simInvariants: invalid number of selfDelegations found for: %s", acc.Address)
+				require.Equal(s.t, 1, selfDelCnt, "%s: invalid number of selfDelegations found for: %s", id, acc.Address)
 			}
 		}
 
@@ -28,28 +30,30 @@ func NewSimInvariantsOp(period time.Duration) *SimOperation {
 		for _, val := range s.GetAllValidators() {
 			valAddrStr := val.GetAddress().String()
 			found := validatorsMap[valAddrStr]
-			require.False(s.t, found, "duplicated validator found: %s", valAddrStr)
+			require.False(s.t, found, "%s: duplicated validator found: %s", id, valAddrStr)
 
 			validatorsMap[valAddrStr] = true
 		}
 
-		return true
+		return true, ""
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 // NewForceUpdateOp updates various simulator states for consistency.
 func NewForceUpdateOp(period time.Duration) *SimOperation {
-	handler := func(s *Simulator) bool {
+	id := "ForceUpdateOp"
+
+	handler := func(s *Simulator) (bool, string) {
 		for _, val := range s.GetAllValidators() {
 			s.UpdateValidator(val)
 		}
 
 		s.counter.LockedRewards = int64(len(s.GetAllValidators().GetLocked()))
 
-		return true
+		return true, ""
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }

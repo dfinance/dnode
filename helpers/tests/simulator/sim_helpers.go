@@ -2,8 +2,16 @@ package simulator
 
 import (
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+)
+
+const (
+	Day   = 24 * time.Hour
+	Week  = 7 * Day
+	Month = 4 * Week
+	Year  = 12 * Month
 )
 
 // GetAllAccounts returns all known to Simulator accounts.
@@ -63,7 +71,7 @@ func (s *Simulator) FormatCoin(coin sdk.Coin) string {
 func (s *Simulator) FormatCoins(coins sdk.Coins) string {
 	out := make([]string, 0, len(coins))
 	for _, coin := range coins {
-		out = append(out, s.FormatIntDecimals(coin.Amount, s.stakingAmountDecimalsRatio) + coin.Denom)
+		out = append(out, s.FormatIntDecimals(coin.Amount, s.stakingAmountDecimalsRatio)+coin.Denom)
 	}
 
 	return strings.Join(out, ",")

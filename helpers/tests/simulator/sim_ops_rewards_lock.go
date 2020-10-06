@@ -11,24 +11,26 @@ import (
 // Op priority:
 //   validator - random;
 func NewLockValidatorRewardsOp(period time.Duration, maxLockedRatio sdk.Dec) *SimOperation {
-	handler := func(s *Simulator) bool {
+	id := "LockValidatorRewardsOp"
+
+	handler := func(s *Simulator) (bool, string) {
 		if lockValidatorRewardsOpCheckInput(s, maxLockedRatio) {
-			return true
+			return true, ""
 		}
 
 		targetAcc, targetVal := lockValidatorRewardsOpFindTarget(s)
 		if targetAcc == nil || targetVal == nil {
-			return false
+			return false, "target not found"
 		}
 		lockValidatorRewardsOpHandle(s, targetAcc, targetVal)
 
 		lockValidatorRewardsOpPost(s, targetVal)
-		s.logger.Info(fmt.Sprintf("LockValidatorRewardsOp: %s for %s", targetVal.GetAddress(), targetAcc.Address))
+		msg := fmt.Sprintf("%s for %s", targetVal.GetAddress(), targetAcc.Address)
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 func lockValidatorRewardsOpCheckInput(s *Simulator, maxRatio sdk.Dec) (stop bool) {

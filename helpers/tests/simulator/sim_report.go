@@ -54,9 +54,10 @@ type SimReportItem struct {
 
 // NewReportOp captures report.
 func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *SimOperation {
+	id := "ReportOp"
 	reportItemIdx := 1
 
-	handler := func(s *Simulator) bool {
+	handler := func(s *Simulator) (bool, string) {
 		// gather the data
 
 		// simulation
@@ -137,7 +138,7 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 		}
 
 		// calculate statistics
-		item.StatsBondedRatio = sdk.NewDecFromInt(item.StakingBonded).Quo(sdk.NewDecFromInt(item.SupplyTotalStaking))
+		item.StatsBondedRatio = sdk.NewDecFromInt(item.StakingBonded.Add(item.StakingNotBonded)).Quo(sdk.NewDecFromInt(item.SupplyTotalStaking))
 		item.StatsLPRatio = sdk.NewDecFromInt(item.StakingLPs).Quo(sdk.NewDecFromInt(item.SupplyTotalLP))
 		reportItemIdx++
 
@@ -150,10 +151,10 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 			fmt.Println(debugItem.String())
 		}
 
-		return true
+		return true, ""
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 type SimReportConsoleWriter struct {
@@ -218,23 +219,16 @@ func NewSimReportConsoleWriter() *SimReportConsoleWriter {
 // 1.2.1 years -> 1 year, 2 months and 1 week
 // 5.30 hours -> 5 hours and 30 minutes
 func FormatDuration(dur time.Duration) string {
-	const (
-		dayDur   = 24 * time.Hour
-		weekDur  = 7 * dayDur
-		monthDur = 4 * weekDur
-		yearDur  = 12 * monthDur
-	)
-
 	dur = dur.Round(time.Minute)
 
-	years := dur / yearDur
-	dur -= years * yearDur
-	months := dur / monthDur
-	dur -= months * monthDur
-	weeks := dur / weekDur
-	dur -= weeks * weekDur
-	days := dur / dayDur
-	dur -= days * dayDur
+	years := dur / Year
+	dur -= years * Year
+	months := dur / Month
+	dur -= months * Month
+	weeks := dur / Week
+	dur -= weeks * Week
+	days := dur / Day
+	dur -= days * Day
 	hours := dur / time.Hour
 	dur -= hours * time.Hour
 	mins := dur / time.Minute

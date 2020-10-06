@@ -20,22 +20,23 @@ import (
 //     - has enough bonding coins;
 //     - not a dstValidator owner;
 func NewRedelegateBondingOp(period time.Duration, redelegateRatio sdk.Dec) *SimOperation {
-	checkRatioArg("RedelegateBondingOp", "redelegateRatio", redelegateRatio)
+	id := "RedelegateBondingOp"
+	checkRatioArg(id, "redelegateRatio", redelegateRatio)
 
-	handler := func(s *Simulator) bool {
+	handler := func(s *Simulator) (bool, string) {
 		targetAcc, srcValidator, dstValidator, rdCoin := redelegateOpFindTarget(s, true, redelegateRatio)
 		if srcValidator == nil || dstValidator == nil {
-			return false
+			return false, "target not found"
 		}
 		redelegateOpHandle(s, targetAcc, srcValidator, dstValidator, rdCoin)
 
 		redelegateOpPost(s, targetAcc, srcValidator, dstValidator, true)
-		s.logger.Info(fmt.Sprintf("RedelegateBondingOp: %s: %s -> %s -> %s", targetAcc.Address, srcValidator.GetAddress(), s.FormatCoin(rdCoin), dstValidator.GetAddress()))
+		msg := fmt.Sprintf("%s: %s -> %s -> %s", targetAcc.Address, srcValidator.GetAddress(), s.FormatCoin(rdCoin), dstValidator.GetAddress())
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 // NewRedelegateLPOp picks a validator and redelegate LP tokens to an other validator.
@@ -51,22 +52,23 @@ func NewRedelegateBondingOp(period time.Duration, redelegateRatio sdk.Dec) *SimO
 //     - has enough LP coins;
 //     - not a dstValidator owner;
 func NewRedelegateLPOp(period time.Duration, redelegateRatio sdk.Dec) *SimOperation {
-	checkRatioArg("RedelegateLPOp", "redelegateRatio", redelegateRatio)
+	id := "RedelegateLPOp"
+	checkRatioArg(id, "redelegateRatio", redelegateRatio)
 
-	handler := func(s *Simulator) bool {
+	handler := func(s *Simulator) (bool, string) {
 		targetAcc, srcValidator, dstValidator, rdCoin := redelegateOpFindTarget(s, false, redelegateRatio)
 		if srcValidator == nil || dstValidator == nil {
-			return false
+			return false, "target not found"
 		}
 		redelegateOpHandle(s, targetAcc, srcValidator, dstValidator, rdCoin)
 
 		redelegateOpPost(s, targetAcc, srcValidator, dstValidator, false)
-		s.logger.Info(fmt.Sprintf("RedelegateLPOp: %s: %s -> %s -> %s", targetAcc.Address, srcValidator.GetAddress(), s.FormatCoin(rdCoin), dstValidator.GetAddress()))
+		msg := fmt.Sprintf("%s: %s -> %s -> %s", targetAcc.Address, srcValidator.GetAddress(), s.FormatCoin(rdCoin), dstValidator.GetAddress())
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 func redelegateOpFindTarget(s *Simulator, bondingRD bool, rdRatio sdk.Dec) (targetAcc *SimAccount, srcValidator, dstValidator *SimValidator, rdCoin sdk.Coin) {
@@ -110,6 +112,11 @@ func redelegateOpFindTarget(s *Simulator, bondingRD bool, rdRatio sdk.Dec) (targ
 		// pick a delegation with the highest share
 		for _, delegation := range acc.GetSortedDelegations(bondingRD, true) {
 			srcValidatorApplicant := validators.GetByAddress(delegation.ValidatorAddress)
+
+			// check if applicant was found (that validator can be unbonded by now)
+			if srcValidatorApplicant == nil {
+				continue
+			}
 
 			// check not the one picked above
 			if srcValidatorApplicant.GetAddress().Equals(dstValidator.GetAddress()) {

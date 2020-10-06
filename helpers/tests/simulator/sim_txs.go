@@ -154,14 +154,25 @@ func (s *Simulator) TxDistDelegatorRewards(simAcc *SimAccount, validatorAddr sdk
 }
 
 // TxDistValidatorCommission withdraws validator commission rewards.
-func (s *Simulator) TxDistValidatorCommission(simAcc *SimAccount, validatorAddr sdk.ValAddress) {
+func (s *Simulator) TxDistValidatorCommission(simAcc *SimAccount, validatorAddr sdk.ValAddress) (noCommission bool) {
 	require.NotNil(s.t, simAcc)
 
 	msg := distribution.MsgWithdrawValidatorCommission{
 		ValidatorAddress: validatorAddr,
 	}
+	tx := s.GenTx(msg, simAcc)
+
+	if err := s.CheckTx(tx, nil); err != nil {
+		if distribution.ErrNoValidatorCommission.Is(err) {
+			noCommission = true
+			return
+		}
+		require.NoError(s.t, err)
+	}
 
 	s.DeliverTx(s.GenTx(msg, simAcc), nil)
+
+	return
 }
 
 // TxDistLockRewards locks validator rewards.

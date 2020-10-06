@@ -110,6 +110,8 @@ func (p SimProfile) String() string {
 func simulate(t *testing.T, profile SimProfile) {
 	go http.ListenAndServe(":8090", nil)
 
+	t.Logf(profile.String())
+
 	// create a tmp directory
 	workingDir, err := ioutil.TempDir("/tmp", fmt.Sprintf("dnode-simulator-%s-", profile.ID))
 	require.NoError(t, err)
@@ -184,54 +186,55 @@ func simulate(t *testing.T, profile SimProfile) {
 	_, simDur := s.SimulatedDur()
 	for simDur < profile.SimDuration {
 		s.Next()
-
 		_, simDur = s.SimulatedDur()
 	}
+
+	t.Logf("Simulation is done, output dir: %s", s.workingDir)
 }
 
 func TestSimInflation(t *testing.T) {
 	profile := SimProfile{
 		ID:           "low_staking",
-		SimDuration:  1 * 12 * 31 * 24 * time.Hour, // 1 year
-		BlockTimeMin: 60 * time.Second,
-		BlockTimeMax: 65 * time.Second,
+		SimDuration:  1*Year + 6*Month,
+		BlockTimeMin: 120 * time.Second,
+		BlockTimeMax: 125 * time.Second,
 		//
 		MainTokensBalanceWODec:    50000,
 		BondingTokensBalanceWODec: 500000,
 		LPTokensBalanceWODec:      100000,
 		//
-		Accounts:           500,
+		Accounts:           300,
 		POAValidators:      3,
 		TMValidatorsTotal:  150,
 		TMValidatorsActive: 100,
 		//
-		OpCreateValidator: 2 * 24 * time.Hour, // 2 days
+		OpCreateValidator: 3 * time.Hour,
 		//
-		OpDelegateBonding:               1 * 24 * time.Hour,       // 1 day
-		OpDelegateBondingAmountRatio:    sdk.NewDecWithPrec(3, 1), // 30 %
-		OpDelegateBondingMaxSupplyRatio: sdk.NewDecWithPrec(3, 1), // 30 %
+		OpDelegateBonding:               6 * time.Hour,
+		OpDelegateBondingAmountRatio:    sdk.NewDecWithPrec(40, 2),
+		OpDelegateBondingMaxSupplyRatio: sdk.NewDecWithPrec(30, 2),
 		//
-		OpDelegateLP:               3 * 24 * time.Hour,       // 3 day
-		OpDelegateLPAmountRatio:    sdk.NewDecWithPrec(3, 1), // 30 %
-		OpDelegateLPMaxSupplyRatio: sdk.NewDecWithPrec(3, 1), // 30 %
+		OpDelegateLP:               1 * Day,
+		OpDelegateLPAmountRatio:    sdk.NewDecWithPrec(40, 2),
+		OpDelegateLPMaxSupplyRatio: sdk.NewDecWithPrec(30, 2),
 		//
-		OpRedelegateBonding:            4 * 24 * time.Hour,       // 4 days
-		OpRedelegateBondingAmountRatio: sdk.NewDecWithPrec(3, 1), // 30 %
+		OpRedelegateBonding:            4 * Day,
+		OpRedelegateBondingAmountRatio: sdk.NewDecWithPrec(30, 2),
 		//
-		OpRedelegateLP:            8 * 24 * time.Hour,       // 8 days
-		OpRedelegateLPAmountRatio: sdk.NewDecWithPrec(3, 1), // 30 %
+		OpRedelegateLP:            8 * Day,
+		OpRedelegateLPAmountRatio: sdk.NewDecWithPrec(30, 2),
 		//
-		OpUndelegateBonding:            2 * 24 * time.Hour,        // 2 days
-		OpUndelegateBondingAmountRatio: sdk.NewDecWithPrec(15, 2), // 15 %
+		OpUndelegateBonding:            2 * Day,
+		OpUndelegateBondingAmountRatio: sdk.NewDecWithPrec(15, 2),
 		//
-		OpUndelegateLP:            4 * 24 * time.Hour,        // 4 days
-		OpUndelegateLPAmountRatio: sdk.NewDecWithPrec(15, 2), // 15 %
+		OpUndelegateLP:            4 * Day,
+		OpUndelegateLPAmountRatio: sdk.NewDecWithPrec(15, 2),
 		//
-		OpGetValidatorRewards: 14 * 24 * time.Hour, // 2 weeks
-		OpGetDelegatorRewards: 30 * 24 * time.Hour, // 1 month
+		OpGetValidatorRewards: 1 * Week,
+		OpGetDelegatorRewards: 1 * Day,
 		//
-		OpLockRewards:      7 * 24 * time.Hour,       // 1 week
-		OpLockRewardsRatio: sdk.NewDecWithPrec(3, 1), // 30 %
+		OpLockRewards:      1 * Week,
+		OpLockRewardsRatio: sdk.NewDecWithPrec(30, 2),
 	}
 
 	simulate(t, profile)

@@ -16,22 +16,23 @@ import (
 //     - has a validators bonding delegation;
 //     - not a validator owner;
 func NewUndelegateBondingOp(period time.Duration, undelegateRatio sdk.Dec) *SimOperation {
-	checkRatioArg("UndelegateBondingOp", "undelegateRatio", undelegateRatio)
+	id := "UndelegateBondingOp"
+	checkRatioArg(id, "undelegateRatio", undelegateRatio)
 
-	handler := func(s *Simulator) bool {
+	handler := func(s *Simulator) (bool, string) {
 		targetAcc, targetVal, udCoin := undelegateOpFindTarget(s, true, undelegateRatio)
 		if targetAcc == nil || targetVal == nil {
-			return false
+			return false, "target not found"
 		}
 		undelegateOpHandle(s, targetAcc, targetVal, udCoin)
 
 		undelegateOpPost(s, targetAcc, targetVal, true)
-		s.logger.Info(fmt.Sprintf("UndelegateBondingOp: %s: %s -> %s", targetAcc.Address, targetVal.GetAddress(), s.FormatCoin(udCoin)))
+		msg := fmt.Sprintf("%s: %s -> %s", targetAcc.Address, targetVal.GetAddress(), s.FormatCoin(udCoin))
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 // NewUndelegateLPOp picks a validator and undelegates LP tokens.
@@ -43,22 +44,23 @@ func NewUndelegateBondingOp(period time.Duration, undelegateRatio sdk.Dec) *SimO
 //     - has a validators LP delegation;
 //     - not a validator owner;
 func NewUndelegateLPOp(period time.Duration, undelegateRatio sdk.Dec) *SimOperation {
-	checkRatioArg("UndelegateLPOp", "undelegateRatio", undelegateRatio)
+	id := "UndelegateLPOp"
+	checkRatioArg(id, "undelegateRatio", undelegateRatio)
 
-	handler := func(s *Simulator) bool {
+	handler := func(s *Simulator) (bool, string) {
 		targetAcc, targetVal, udCoin := undelegateOpFindTarget(s, false, undelegateRatio)
 		if targetAcc == nil || targetVal == nil {
-			return false
+			return false, "target not found"
 		}
 		undelegateOpHandle(s, targetAcc, targetVal, udCoin)
 
 		undelegateOpPost(s, targetAcc, targetVal, false)
-		s.logger.Info(fmt.Sprintf("UndelegateLPOp: %s: %s -> %s", targetAcc.Address, targetVal.GetAddress(), s.FormatCoin(udCoin)))
+		msg := fmt.Sprintf("%s: %s -> %s", targetAcc.Address, targetVal.GetAddress(), s.FormatCoin(udCoin))
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 func undelegateOpFindTarget(s *Simulator, bondingUD bool, udRatio sdk.Dec) (targetAcc *SimAccount, targetVal *SimValidator, udCoin sdk.Coin) {
@@ -68,43 +70,42 @@ func undelegateOpFindTarget(s *Simulator, bondingUD bool, udRatio sdk.Dec) (targ
 	}
 
 	// pick a validator with the highest tokens amount (all statuses)
-	validators := s.GetAllValidators().GetSortedByTokens(bondingUD, true)
-	if len(validators) == 0 {
-		return
-	}
-	targetVal = validators[0]
-
-	for _, acc := range s.GetAllAccounts().GetShuffled() {
-		accValAddr := sdk.ValAddress{}
-		if acc.IsValOperator() {
-			accValAddr = acc.OperatedValidator.GetAddress()
-		}
-
-		for _, delegation := range acc.Delegations {
-			// check if account did delegate to the selected validator
-			if !targetVal.GetAddress().Equals(delegation.ValidatorAddress) {
-				continue
+	for _, val := range s.GetAllValidators().GetSortedByTokens(bondingUD, true) {
+		// pick a random account
+		for _, acc := range s.GetAllAccounts().GetShuffled() {
+			accValAddr := sdk.ValAddress{}
+			if acc.IsValOperator() {
+				accValAddr = acc.OperatedValidator.GetAddress()
 			}
 
-			// check not undelegating from the account owned validator
-			if accValAddr.Equals(targetVal.GetAddress()) {
-				continue
-			}
+			// pick a corresponding delegation (targetValidator)
+			for _, delegation := range acc.Delegations {
+				// check if account did delegate to the selected validator
+				if !val.GetAddress().Equals(delegation.ValidatorAddress) {
+					continue
+				}
 
-			// estimate undelegation amount
-			udAmtDec := sdk.NewDecFromInt(delegation.BondingBalance.Amount)
-			if !bondingUD {
-				udAmtDec = sdk.NewDecFromInt(delegation.LPBalance.Amount)
-			}
+				// check not undelegating from the account owned validator
+				if accValAddr.Equals(val.GetAddress()) {
+					continue
+				}
 
-			udAmt := udAmtDec.Mul(udRatio).TruncateInt()
-			if udAmt.IsZero() {
-				continue
-			}
+				// estimate undelegation amount
+				udAmtDec := sdk.NewDecFromInt(delegation.BondingBalance.Amount)
+				if !bondingUD {
+					udAmtDec = sdk.NewDecFromInt(delegation.LPBalance.Amount)
+				}
 
-			targetAcc = acc
-			udCoin = sdk.NewCoin(denom, udAmt)
-			return
+				udAmt := udAmtDec.Mul(udRatio).TruncateInt()
+				if udAmt.IsZero() {
+					continue
+				}
+
+				targetAcc = acc
+				targetVal = val
+				udCoin = sdk.NewCoin(denom, udAmt)
+				return
+			}
 		}
 	}
 

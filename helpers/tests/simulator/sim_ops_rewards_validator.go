@@ -11,46 +11,57 @@ import (
 // Op priority:
 //   validator - random;
 func NewGetValidatorRewardOp(period time.Duration) *SimOperation {
-	handler := func(s *Simulator) bool {
+	id := "ValidatorRewardOp"
+
+	handler := func(s *Simulator) (bool, string) {
 		targetAcc, targetVal, rewardCoins := getValidatorRewardOpFindTarget(s)
 		if targetAcc == nil || targetVal == nil {
-			return false
+			return false, "target not found"
 		}
-		getValidatorRewardOpHandle(s, targetAcc, targetVal)
+
+		if getValidatorRewardOpHandle(s, targetAcc, targetVal) {
+			msg := fmt.Sprintf("can't withdraw %s validator commission", targetVal.GetAddress())
+			return false, msg
+		}
 
 		getValidatorRewardOpPost(s, targetAcc, rewardCoins)
-		s.logger.Info(fmt.Sprintf("ValidatorRewardOp: %s for %s: %s", targetVal.GetAddress(), targetAcc.Address, s.FormatCoins(rewardCoins)))
+		msg := fmt.Sprintf("%s for %s: %s", targetVal.GetAddress(), targetAcc.Address, s.FormatCoins(rewardCoins))
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 func getValidatorRewardOpFindTarget(s *Simulator) (targetAcc *SimAccount, targetVal *SimValidator, rewardCoins sdk.Coins) {
 	rewardCoins = sdk.NewCoins()
 
 	for _, val := range s.GetAllValidators().GetShuffled() {
+		// check there are some commission rewards available
+		decCoins := s.QueryDistValCommission(val.GetAddress())
+		if decCoins.Empty() {
+			continue
+		}
+
 		// estimate reward coins
-		for _, decCoin := range s.QueryDistValCommission(val.GetAddress()) {
+		for _, decCoin := range decCoins {
 			coin, _ := decCoin.TruncateDecimal()
 			rewardCoins = rewardCoins.Add(coin)
 		}
 
-		// check there are some rewards
-		if rewardCoins.Empty() {
-			continue
-		}
-
 		targetVal = val
-		targetAcc = s.GetAllAccounts().GetByAddress(sdk.AccAddress(targetVal.GetAddress()))
+		targetAcc = s.GetAllAccounts().GetByAddress(targetVal.GetOperatorAddress())
 	}
 
 	return
 }
 
-func getValidatorRewardOpHandle(s *Simulator, targetAcc *SimAccount, targetVal *SimValidator) {
-	s.TxDistValidatorCommission(targetAcc, targetVal.GetAddress())
+func getValidatorRewardOpHandle(s *Simulator, targetAcc *SimAccount, targetVal *SimValidator) (stop bool) {
+	if s.TxDistValidatorCommission(targetAcc, targetVal.GetAddress()) {
+		stop = true
+	}
+
+	return
 }
 
 func getValidatorRewardOpPost(s *Simulator, targetAcc *SimAccount, rewardCoins sdk.Coins) {

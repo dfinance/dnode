@@ -11,24 +11,25 @@ import (
 
 // NewCreateValidatorOp creates validator for an account which is not an operator yet and has enough coins.
 func NewCreateValidatorOp(period time.Duration, maxValidators uint) *SimOperation {
-	handler := func(s *Simulator) bool {
+	id := "ValidatorOp"
+	handler := func(s *Simulator) (bool, string) {
 		if createValidatorOpCheckInput(s, maxValidators) {
-			return true
+			return true, ""
 		}
 
 		targetAcc := createValidatorOpFindTarget(s)
 		if targetAcc == nil {
-			return true
+			return true, "target not found"
 		}
 		createValidatorOpHandle(s, targetAcc)
 
 		createdVal := createValidatorOpPost(s, targetAcc)
-		s.logger.Info(fmt.Sprintf("ValidatorOp: %s (%s) created for %s", createdVal.GetAddress(), createdVal.Validator.GetConsAddr(), targetAcc.Address))
+		msg := fmt.Sprintf("%s (%s) created for %s", createdVal.GetAddress(), createdVal.Validator.GetConsAddr(), targetAcc.Address)
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 func createValidatorOpCheckInput(s *Simulator, maxValidators uint) (stop bool) {

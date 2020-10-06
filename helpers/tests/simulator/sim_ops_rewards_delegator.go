@@ -16,20 +16,22 @@ import (
 //     - random account delegation;
 //     - rewards are not locked;
 func NewGetDelegatorRewardOp(period time.Duration) *SimOperation {
-	handler := func(s *Simulator) bool {
+	id := "DelegatorRewardOp"
+
+	handler := func(s *Simulator) (bool, string) {
 		targetAcc, targetVal, rewardCoins := getDelegatorRewardOpFindTarget(s)
 		if targetAcc == nil || targetVal == nil {
-			return false
+			return false, "target not found"
 		}
 		getDelegatorRewardOpHandle(s, targetAcc, targetVal)
 
 		getDelegatorRewardOpPost(s, targetAcc, rewardCoins)
-		s.logger.Info(fmt.Sprintf("DelegatorRewardOp: %s from %s: %s", targetAcc.Address, targetVal.GetAddress(), s.FormatCoins(rewardCoins)))
+		msg := fmt.Sprintf("%s from %s: %s", targetAcc.Address, targetVal.GetAddress(), s.FormatCoins(rewardCoins))
 
-		return true
+		return true, msg
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 func getDelegatorRewardOpFindTarget(s *Simulator) (targetAcc *SimAccount, targetVal *SimValidator, rewardCoins sdk.Coins) {
