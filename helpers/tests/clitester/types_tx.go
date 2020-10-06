@@ -11,7 +11,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 )
 
 type TxRequest struct {
@@ -36,7 +36,7 @@ func (r *TxRequest) SetCmd(module, fromAddress string, args ...string) {
 	}
 	r.cmd.AddArg("broadcast-mode", "block")
 	r.cmd.AddArg("node", r.nodeRpcAddress)
-	r.cmd.AddArg("fees", config.DefaultFee)
+	r.cmd.AddArg("fees", defaults.FeeCoin.String())
 	r.cmd.AddArg("gas", strconv.FormatUint(r.gas, 10))
 	r.cmd.AddArg("", "--yes")
 }

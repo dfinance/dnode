@@ -25,6 +25,7 @@ type SimReportItem struct {
 	//
 	StakingBonded          sdk.Int // bonded tokens (staking pool)
 	StakingNotBonded       sdk.Int // not bonded tokens (staking pool)
+	StakingLPs             sdk.Int // bonded LP tokens (LPs pool)
 	RedelegationsInProcess int     // redelegations in progress
 	//
 	MintMinInflation     sdk.Dec // annual min inflation
@@ -39,20 +40,24 @@ type SimReportItem struct {
 	//
 	SupplyTotalMain    sdk.Int // total supply [main denom]
 	SupplyTotalStaking sdk.Int // total supply [staking denom]
+	SupplyTotalLP      sdk.Int // total supply [LP denom]
 	//
 	StatsBondedRatio sdk.Dec // BondedTokens / TotalSupply ratio [staking denom]
+	StatsLPRatio     sdk.Dec // BondedTokens / TotalSupply ratio [LP denom]
 	//
 	Counters Counter
 	//
-	formatIntDecimals func(value sdk.Int) string
-	formatDecDecimals func(value sdk.Dec) string
+	formatIntDecimals   func(value sdk.Int) string
+	formatDecDecimals   func(value sdk.Dec) string
+	formatCoinsDecimals func(coins sdk.Coins) string
 }
 
 // NewReportOp captures report.
 func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *SimOperation {
+	id := "ReportOp"
 	reportItemIdx := 1
 
-	handler := func(s *Simulator) bool {
+	handler := func(s *Simulator) (bool, string) {
 		// gather the data
 
 		// simulation
@@ -102,6 +107,7 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 			//
 			StakingBonded:          stakingPool.BondedTokens,
 			StakingNotBonded:       stakingPool.NotBondedTokens,
+			StakingLPs:             stakingPool.LiquidityTokens,
 			RedelegationsInProcess: acitveRedelegations,
 			//
 			MintMinInflation:     mintParams.InflationMin,
@@ -116,6 +122,7 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 			//
 			SupplyTotalMain:    totalSupply.AmountOf(s.mainDenom),
 			SupplyTotalStaking: totalSupply.AmountOf(s.stakingDenom),
+			SupplyTotalLP:      totalSupply.AmountOf(s.lpDenom),
 			//
 			Counters: s.counter,
 			//
@@ -125,10 +132,14 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 			formatDecDecimals: func(value sdk.Dec) string {
 				return s.FormatDecDecimals(value, s.mainAmountDecimalsRatio)
 			},
+			formatCoinsDecimals: func(coins sdk.Coins) string {
+				return s.FormatCoins(coins)
+			},
 		}
 
 		// calculate statistics
-		item.StatsBondedRatio = sdk.NewDecFromInt(item.StakingBonded).Quo(sdk.NewDecFromInt(item.SupplyTotalStaking))
+		item.StatsBondedRatio = sdk.NewDecFromInt(item.StakingBonded.Add(item.StakingNotBonded)).Quo(sdk.NewDecFromInt(item.SupplyTotalStaking))
+		item.StatsLPRatio = sdk.NewDecFromInt(item.StakingLPs).Quo(sdk.NewDecFromInt(item.SupplyTotalLP))
 		reportItemIdx++
 
 		for _, writer := range writers {
@@ -140,10 +151,10 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 			fmt.Println(debugItem.String())
 		}
 
-		return true
+		return true, ""
 	}
 
-	return NewSimOperation(period, NewPeriodicNextExecFn(), handler)
+	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
 type SimReportConsoleWriter struct {
@@ -175,15 +186,23 @@ func (w *SimReportConsoleWriter) Write(item SimReportItem) {
 	str.WriteString(fmt.Sprintf("      Dist: HARP:            %s\n", item.formatDecDecimals(item.DistHARP)))
 	str.WriteString(fmt.Sprintf("       Supply: TotalMain:    %s\n", item.formatIntDecimals(item.SupplyTotalMain)))
 	str.WriteString(fmt.Sprintf("       Supply: TotalStaking: %s\n", item.formatIntDecimals(item.SupplyTotalStaking)))
-	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply: %s\n", item.StatsBondedRatio))
+	str.WriteString(fmt.Sprintf("       Supply: LPs:          %s\n", item.formatIntDecimals(item.SupplyTotalLP)))
+	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply [B]:  %s\n", item.StatsBondedRatio))
+	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply [LP]: %s\n", item.StatsLPRatio))
 	str.WriteString("  Counters:\n")
-	str.WriteString(fmt.Sprintf("    Delegations:             %d\n", item.Counters.Delegations))
-	str.WriteString(fmt.Sprintf("    Redelegations:           %d\n", item.Counters.Redelegations))
-	str.WriteString(fmt.Sprintf("    Undelegations:           %d\n", item.Counters.Undelegations))
+	str.WriteString("    Bonding:\n")
+	str.WriteString(fmt.Sprintf("      Delegations:           %d\n", item.Counters.BDelegations))
+	str.WriteString(fmt.Sprintf("      Redelegations:         %d\n", item.Counters.BRedelegations))
+	str.WriteString(fmt.Sprintf("      Undelegations:         %d\n", item.Counters.BUndelegations))
+	str.WriteString("    LP:\n")
+	str.WriteString(fmt.Sprintf("      Delegations:           %d\n", item.Counters.LPDelegations))
+	str.WriteString(fmt.Sprintf("      Redelegations:         %d\n", item.Counters.LPRedelegations))
+	str.WriteString(fmt.Sprintf("      Undelegations:         %d\n", item.Counters.LPUndelegations))
 	str.WriteString(fmt.Sprintf("    Rewards:                 %d\n", item.Counters.Rewards))
-	str.WriteString(fmt.Sprintf("    RewardsCollected:        %s\n", item.formatIntDecimals(item.Counters.RewardsCollected)))
+	str.WriteString(fmt.Sprintf("    RewardsCollected:        %s\n", item.formatCoinsDecimals(item.Counters.RewardsCollected)))
 	str.WriteString(fmt.Sprintf("    Commissions:             %d\n", item.Counters.Commissions))
-	str.WriteString(fmt.Sprintf("    CommissionsCollected:    %s\n", item.formatIntDecimals(item.Counters.CommissionsCollected)))
+	str.WriteString(fmt.Sprintf("    CommissionsCollected:    %s\n", item.formatCoinsDecimals(item.Counters.CommissionsCollected)))
+	str.WriteString(fmt.Sprintf("    Locked rewards:          %d\n", item.Counters.LockedRewards))
 
 	fmt.Println(str.String())
 }
@@ -200,27 +219,22 @@ func NewSimReportConsoleWriter() *SimReportConsoleWriter {
 // 1.2.1 years -> 1 year, 2 months and 1 week
 // 5.30 hours -> 5 hours and 30 minutes
 func FormatDuration(dur time.Duration) string {
-	const (
-		dayDur   = 24 * time.Hour
-		weekDur  = 7 * dayDur
-		monthDur = 4 * weekDur
-		yearDur  = 12 * monthDur
-	)
-
 	dur = dur.Round(time.Minute)
 
-	years := dur / yearDur
-	dur -= years * yearDur
-	months := dur / monthDur
-	dur -= months * monthDur
-	weeks := dur / weekDur
-	dur -= weeks * weekDur
+	years := dur / Year
+	dur -= years * Year
+	months := dur / Month
+	dur -= months * Month
+	weeks := dur / Week
+	dur -= weeks * Week
+	days := dur / Day
+	dur -= days * Day
 	hours := dur / time.Hour
 	dur -= hours * time.Hour
 	mins := dur / time.Minute
 
 	str := strings.Builder{}
-	str.WriteString(fmt.Sprintf("%d.%d.%d years ", years, months, weeks))
+	str.WriteString(fmt.Sprintf("%d years %d months %d weeks %d days ", years, months, weeks, days))
 	str.WriteString(fmt.Sprintf("%d.%d hours", hours, mins))
 
 	return str.String()

@@ -12,7 +12,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
-	dnConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm"
 	"github.com/dfinance/dnode/x/vm/client/vm_client"
@@ -138,7 +138,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 	}
 
 	getXfiBtcAccCoins := func(addr sdk.AccAddress) (sdk.Coin, sdk.Coin) {
-		xfiCoin := sdk.NewCoin(dnConfig.MainDenom, sdk.ZeroInt())
+		xfiCoin := sdk.NewCoin(defaults.MainDenom, sdk.ZeroInt())
 		btcCoin := sdk.NewCoin("btc", sdk.ZeroInt())
 		acc := GetAccountCheckTx(app, addr)
 		for _, coin := range acc.GetCoins() {

@@ -31,8 +31,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	dnConfig "github.com/dfinance/dnode/cmd/config"
 	vmConfig "github.com/dfinance/dnode/cmd/config"
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/helpers/tests"
 	"github.com/dfinance/dnode/x/currencies"
@@ -369,13 +369,13 @@ func GetGenesis(app *DnServiceApp, chainID, monikerID string, nodeAccPrivKey sec
 
 		stakingGenesis := staking.GenesisState{}
 		app.cdc.MustUnmarshalJSON(genesisState[staking.ModuleName], &stakingGenesis)
-		stakingGenesis.Params.BondDenom = dnConfig.MainDenom
+		stakingGenesis.Params.BondDenom = defaults.MainDenom
 		genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, stakingGenesis)
 
 		// update mint denom
 		mintGenesis := mint.GenesisState{}
 		app.cdc.MustUnmarshalJSON(genesisState[mint.ModuleName], &mintGenesis)
-		mintGenesis.Params.MintDenom = dnConfig.MainDenom
+		mintGenesis.Params.MintDenom = defaults.MainDenom
 		genesisState[mint.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, mintGenesis)
 
 		oracleGenesis := oracle.GenesisState{
@@ -408,14 +408,14 @@ func GetGenesis(app *DnServiceApp, chainID, monikerID string, nodeAccPrivKey sec
 		msg := staking.NewMsgCreateValidator(
 			nodeAcc.Address.Bytes(),
 			nodeAcc.PubKey,
-			sdk.NewCoin(dnConfig.MainDenom, tokenAmount),
+			sdk.NewCoin(defaults.MainDenom, tokenAmount),
 			staking.NewDescription(monikerID, "", "", "", ""),
 			staking.NewCommissionRates(commissionRate, commissionMaxRate, commissionChangeRate),
 			minSelfDelegation,
 		)
 
 		txFee := auth.StdFee{
-			Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
+			Amount: sdk.Coins{{Denom: defaults.MainDenom, Amount: sdk.NewInt(1)}},
 			Gas:    defGasAmount,
 		}
 		txMemo := "testmemo"
@@ -503,7 +503,7 @@ func GenTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 	memo := "testmemotestmemo"
 
 	fee := auth.StdFee{
-		Amount: sdk.Coins{{Denom: dnConfig.MainDenom, Amount: sdk.NewInt(1)}},
+		Amount: sdk.Coins{{Denom: defaults.MainDenom, Amount: sdk.NewInt(1)}},
 		Gas:    defGasAmount,
 	}
 
@@ -524,7 +524,7 @@ func GenTx(msgs []sdk.Msg, accnums []uint64, seq []uint64, priv ...crypto.PrivKe
 
 // GenDefCoins returns Coins with xfi amount.
 func GenDefCoins(t *testing.T) sdk.Coins {
-	coins, err := sdk.ParseCoins("1000000000000000000000" + dnConfig.MainDenom)
+	coins, err := sdk.ParseCoins("1000000000000000000000" + defaults.MainDenom)
 	if t != nil {
 		require.NoError(t, err)
 	}
