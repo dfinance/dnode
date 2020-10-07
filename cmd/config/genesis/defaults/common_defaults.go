@@ -11,19 +11,26 @@ const (
 	StakingDenom           = "sxfi"
 	LiquidityProviderDenom = "lpt"
 
-	FeeAmount               = "100000000000000"        // 0.0001
-	GovMinDepositAmount     = "1000000000000000000000" // 1000.0
+	// Min TX fee
+	FeeAmount = "100000000000000" // 0.0001
+	// Governance: deposit amount
+	GovMinDepositAmount = "1000000000000000000000" // 1000.0
+	// Staking: min self-delegation amount
 	MinSelfDelegationAmount = "2500000000000000000000" // 2500.0
-	InvariantCheckAmount    = "1000000000000000000000" // 1000.0
+	// Crisis: invariants check TX fee
+	InvariantCheckAmount = "1000000000000000000000" // 1000.0
+	// Distribution: PublicTreasuryPool capacity
+	PublicTreasuryPoolAmount = "250000000000000000000000" // 250000.0
 
 	MaxGas = 10000000
 )
 
 var (
-	FeeCoin               sdk.Coin
-	GovMinDepositCoin     sdk.Coin
-	MinSelfDelegationCoin sdk.Coin
-	InvariantCheckCoin    sdk.Coin
+	FeeCoin                    sdk.Coin
+	GovMinDepositCoin          sdk.Coin
+	MinSelfDelegationCoin      sdk.Coin
+	InvariantCheckCoin         sdk.Coin
+	PublicTreasuryPoolCapacity sdk.Int
 )
 
 func init() {
@@ -49,5 +56,11 @@ func init() {
 		panic("crisis defaults: InvariantCheckAmount conversion failed")
 	} else {
 		InvariantCheckCoin = sdk.NewCoin(MainDenom, value)
+	}
+
+	if value, ok := sdk.NewIntFromString(PublicTreasuryPoolAmount); !ok {
+		panic("distribution defaults: PublicTreasuryPoolAmount conversion failed")
+	} else {
+		PublicTreasuryPoolCapacity = value
 	}
 }
