@@ -67,7 +67,7 @@ func OverrideGenesisStateDefaults(cdc *codec.Codec, genState map[string]json.Raw
 		moduleState.Params.PublicTreasuryPoolTax = sdk.NewDecWithPrec(15, 3)       // 1.5%
 		moduleState.Params.HARPTax = sdk.NewDecWithPrec(2, 2)                      // 2%
 		//
-		moduleState.Params.PublicTreasuryPoolCapacity = sdk.NewInt(250000) // 250000.0
+		moduleState.Params.PublicTreasuryPoolCapacity = defaults.PublicTreasuryPoolCapacity // 250000.0
 		//
 		moduleState.Params.BaseProposerReward = sdk.NewDecWithPrec(1, 2)  // 1%
 		moduleState.Params.BonusProposerReward = sdk.NewDecWithPrec(4, 2) // 4%
@@ -101,6 +101,7 @@ func OverrideGenesisStateDefaults(cdc *codec.Codec, genState map[string]json.Raw
 		//
 		moduleState.Params.BondDenom = defaults.StakingDenom
 		moduleState.Params.LPDenom = defaults.LiquidityProviderDenom
+		moduleState.Params.LPDistrRatio = sdk.NewDecWithPrec(1, 0) // 100%
 		//
 		moduleState.Params.MinSelfDelegationLvl = defaults.MinSelfDelegationCoin.Amount // 2500.0
 		moduleState.Params.MaxDelegationsRatio = sdk.NewDecWithPrec(10, 0)              // 10.0
