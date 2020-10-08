@@ -70,9 +70,11 @@ func undelegateOpFindTarget(s *Simulator, bondingUD bool, udRatio sdk.Dec) (targ
 	}
 
 	// pick a validator with the highest tokens amount (all statuses)
-	for _, val := range s.GetAllValidators().GetSortedByTokens(bondingUD, true) {
+	vals := s.GetAllValidators().GetSortedByTokens(bondingUD, true)
+	for _, val := range vals {
 		// pick a random account
-		for _, acc := range s.GetAllAccounts().GetShuffled() {
+		accs := s.GetAllAccounts().GetShuffled()
+		for _, acc := range accs {
 			accValAddr := sdk.ValAddress{}
 			if acc.IsValOperator() {
 				accValAddr = acc.OperatedValidator.GetAddress()

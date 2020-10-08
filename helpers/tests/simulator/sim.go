@@ -71,17 +71,19 @@ type Simulator struct {
 }
 
 type Counter struct {
-	BDelegations         int64
-	BUndelegations       int64
-	BRedelegations       int64
-	LPDelegations        int64
-	LPUndelegations      int64
-	LPRedelegations      int64
-	LockedRewards        int64
-	Rewards              int64
-	Commissions          int64
-	RewardsCollected     sdk.Coins
-	CommissionsCollected sdk.Coins
+	BDelegations                int64
+	BUndelegations              int64
+	BRedelegations              int64
+	LPDelegations               int64
+	LPUndelegations             int64
+	LPRedelegations             int64
+	LockedRewards               int64
+	RewardsWithdraws            int64
+	CommissionWithdraws         int64
+	RewardsCollectedMain        sdk.Int
+	RewardsCollectedStaking     sdk.Int
+	CommissionsCollectedMain    sdk.Int
+	CommissionsCollectedStaking sdk.Int
 }
 
 // BuildTmpFilePath builds file name inside of the Simulator working dir.
@@ -338,8 +340,10 @@ func NewSimulator(t *testing.T, workingDir string, defferQueue *DefferOps, optio
 		cdc:           app.MakeCodec(),
 		defferQueue:   defferQueue,
 	}
-	s.counter.RewardsCollected = sdk.NewCoins()
-	s.counter.CommissionsCollected = sdk.NewCoins()
+	s.counter.RewardsCollectedMain = sdk.ZeroInt()
+	s.counter.RewardsCollectedStaking = sdk.ZeroInt()
+	s.counter.CommissionsCollectedMain = sdk.ZeroInt()
+	s.counter.CommissionsCollectedStaking = sdk.ZeroInt()
 
 	defaultGenesis, err := genesis.OverrideGenesisStateDefaults(s.cdc, app.ModuleBasics.DefaultGenesis())
 	require.NoError(t, err)
