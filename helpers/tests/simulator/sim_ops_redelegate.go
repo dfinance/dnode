@@ -98,7 +98,8 @@ func redelegateOpFindTarget(s *Simulator, bondingRD bool, rdRatio sdk.Dec) (targ
 	}
 
 	// pick a target account
-	for _, acc := range s.GetAllAccounts().GetShuffled() {
+	accs := s.GetAllAccounts().GetShuffled()
+	for _, acc := range accs {
 		accValAddr := sdk.ValAddress{}
 		if acc.IsValOperator() {
 			accValAddr = acc.OperatedValidator.GetAddress()
@@ -110,7 +111,8 @@ func redelegateOpFindTarget(s *Simulator, bondingRD bool, rdRatio sdk.Dec) (targ
 		}
 
 		// pick a delegation with the highest share
-		for _, delegation := range acc.GetSortedDelegations(bondingRD, true) {
+		delegations := acc.GetSortedDelegations(bondingRD, true)
+		for _, delegation := range delegations {
 			srcValidatorApplicant := validators.GetByAddress(delegation.ValidatorAddress)
 
 			// check if applicant was found (that validator can be unbonded by now)

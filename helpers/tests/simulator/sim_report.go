@@ -37,6 +37,11 @@ type SimReportItem struct {
 	DistFoundationPool         sdk.Dec // FoundationPool funds
 	DistLiquidityProvidersPool sdk.Dec // LiquidityProvidersPool funds
 	DistHARP                   sdk.Dec // HARP funds
+	DistModuleBalanceMain      sdk.Int // Distribution module balance [main]
+	DistModuleBalanceStaking   sdk.Int // Distribution module balance [staking]
+	DistBankBalanceMain        sdk.Int // Distribution bank balance [main]
+	DistBankBalanceStaking     sdk.Int // Distribution bank balance [staking]
+	DistLockedRatio            sdk.Dec // Current locked ratio
 	//
 	SupplyTotalMain    sdk.Int // total supply [main denom]
 	SupplyTotalStaking sdk.Int // total supply [staking denom]
@@ -44,6 +49,9 @@ type SimReportItem struct {
 	//
 	StatsBondedRatio sdk.Dec // BondedTokens / TotalSupply ratio [staking denom]
 	StatsLPRatio     sdk.Dec // BondedTokens / TotalSupply ratio [LP denom]
+	//
+	AccsBalanceMain    sdk.Int
+	AccsBalanceStaking sdk.Int
 	//
 	Counters Counter
 	//
@@ -92,8 +100,18 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 		foundationPool := s.QueryDistPool(distribution.FoundationPoolName)
 		liquidityPool := s.QueryDistPool(distribution.LiquidityProvidersPoolName)
 		harpPool := s.QueryDistPool(distribution.HARPName)
+		distrMAccBalance := s.QuerySupplyModuleBalance(distribution.ModuleName)
+		distrBankBalance := s.QuerySupplyModuleBalance(distribution.RewardsBankPoolName)
+
 		// supply
 		totalSupply := s.QuerySupplyTotal()
+
+		// accounts
+		accsTotalMain, accsTotalStaking := sdk.ZeroInt(), sdk.ZeroInt()
+		for _, acc := range s.GetAllAccounts() {
+			accsTotalMain = accsTotalMain.Add(acc.Coins.AmountOf(s.mainDenom))
+			accsTotalStaking = accsTotalStaking.Add(acc.Coins.AmountOf(s.stakingDenom))
+		}
 
 		item := SimReportItem{
 			Index:         reportItemIdx,
@@ -119,10 +137,18 @@ func NewReportOp(period time.Duration, debug bool, writers ...SimReportWriter) *
 			DistFoundationPool:         foundationPool.AmountOf(s.stakingDenom),
 			DistLiquidityProvidersPool: liquidityPool.AmountOf(s.stakingDenom),
 			DistHARP:                   harpPool.AmountOf(s.stakingDenom),
+			DistModuleBalanceMain:      distrMAccBalance.AmountOf(s.mainDenom),
+			DistModuleBalanceStaking:   distrMAccBalance.AmountOf(s.stakingDenom),
+			DistBankBalanceMain:        distrBankBalance.AmountOf(s.mainDenom),
+			DistBankBalanceStaking:     distrBankBalance.AmountOf(s.stakingDenom),
+			DistLockedRatio:            s.QueryDistLockedRatio(),
 			//
 			SupplyTotalMain:    totalSupply.AmountOf(s.mainDenom),
 			SupplyTotalStaking: totalSupply.AmountOf(s.stakingDenom),
 			SupplyTotalLP:      totalSupply.AmountOf(s.lpDenom),
+			//
+			AccsBalanceMain:    accsTotalMain,
+			AccsBalanceStaking: accsTotalStaking,
 			//
 			Counters: s.counter,
 			//
@@ -184,25 +210,34 @@ func (w *SimReportConsoleWriter) Write(item SimReportItem) {
 	str.WriteString(fmt.Sprintf("      Dist: PTreasuryPool:   %s\n", item.formatDecDecimals(item.DistPublicTreasuryPool)))
 	str.WriteString(fmt.Sprintf("      Dist: LiquidityPPool:  %s\n", item.formatDecDecimals(item.DistLiquidityProvidersPool)))
 	str.WriteString(fmt.Sprintf("      Dist: HARP:            %s\n", item.formatDecDecimals(item.DistHARP)))
+	str.WriteString(fmt.Sprintf("      Dist: MAccBalance [m]  %s\n", item.formatIntDecimals(item.DistModuleBalanceMain)))
+	str.WriteString(fmt.Sprintf("      Dist: MAccBalance [s]  %s\n", item.formatIntDecimals(item.DistModuleBalanceStaking)))
+	str.WriteString(fmt.Sprintf("      Dist: BankBalance [m]  %s\n", item.formatIntDecimals(item.DistBankBalanceMain)))
+	str.WriteString(fmt.Sprintf("      Dist: BankBalance [s]  %s\n", item.formatIntDecimals(item.DistBankBalanceStaking)))
+	str.WriteString(fmt.Sprintf("      Dist: LockedRatio      %s\n", item.DistLockedRatio))
 	str.WriteString(fmt.Sprintf("       Supply: TotalMain:    %s\n", item.formatIntDecimals(item.SupplyTotalMain)))
 	str.WriteString(fmt.Sprintf("       Supply: TotalStaking: %s\n", item.formatIntDecimals(item.SupplyTotalStaking)))
 	str.WriteString(fmt.Sprintf("       Supply: LPs:          %s\n", item.formatIntDecimals(item.SupplyTotalLP)))
-	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply [B]:  %s\n", item.StatsBondedRatio))
+	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply [s]:  %s\n", item.StatsBondedRatio))
 	str.WriteString(fmt.Sprintf("  Stats: Bonded/TotalSupply [LP]: %s\n", item.StatsLPRatio))
+	str.WriteString(fmt.Sprintf("   Accounts: Balance [m]:         %s\n", item.formatIntDecimals(item.AccsBalanceMain)))
+	str.WriteString(fmt.Sprintf("   Accounts: Balance [s]:         %s\n", item.formatIntDecimals(item.AccsBalanceStaking)))
 	str.WriteString("  Counters:\n")
 	str.WriteString("    Bonding:\n")
-	str.WriteString(fmt.Sprintf("      Delegations:           %d\n", item.Counters.BDelegations))
-	str.WriteString(fmt.Sprintf("      Redelegations:         %d\n", item.Counters.BRedelegations))
-	str.WriteString(fmt.Sprintf("      Undelegations:         %d\n", item.Counters.BUndelegations))
+	str.WriteString(fmt.Sprintf("      Delegations:            %d\n", item.Counters.BDelegations))
+	str.WriteString(fmt.Sprintf("      Redelegations:          %d\n", item.Counters.BRedelegations))
+	str.WriteString(fmt.Sprintf("      Undelegations:          %d\n", item.Counters.BUndelegations))
 	str.WriteString("    LP:\n")
-	str.WriteString(fmt.Sprintf("      Delegations:           %d\n", item.Counters.LPDelegations))
-	str.WriteString(fmt.Sprintf("      Redelegations:         %d\n", item.Counters.LPRedelegations))
-	str.WriteString(fmt.Sprintf("      Undelegations:         %d\n", item.Counters.LPUndelegations))
-	str.WriteString(fmt.Sprintf("    Rewards:                 %d\n", item.Counters.Rewards))
-	str.WriteString(fmt.Sprintf("    RewardsCollected:        %s\n", item.formatCoinsDecimals(item.Counters.RewardsCollected)))
-	str.WriteString(fmt.Sprintf("    Commissions:             %d\n", item.Counters.Commissions))
-	str.WriteString(fmt.Sprintf("    CommissionsCollected:    %s\n", item.formatCoinsDecimals(item.Counters.CommissionsCollected)))
-	str.WriteString(fmt.Sprintf("    Locked rewards:          %d\n", item.Counters.LockedRewards))
+	str.WriteString(fmt.Sprintf("      Delegations:            %d\n", item.Counters.LPDelegations))
+	str.WriteString(fmt.Sprintf("      Redelegations:          %d\n", item.Counters.LPRedelegations))
+	str.WriteString(fmt.Sprintf("      Undelegations:          %d\n", item.Counters.LPUndelegations))
+	str.WriteString(fmt.Sprintf("    RewardWithdraws:          %d\n", item.Counters.RewardsWithdraws))
+	str.WriteString(fmt.Sprintf("    RewardsCollected [m]:     %s\n", item.formatIntDecimals(item.Counters.RewardsCollectedMain)))
+	str.WriteString(fmt.Sprintf("    RewardsCollected [s]:     %s\n", item.formatIntDecimals(item.Counters.RewardsCollectedStaking)))
+	str.WriteString(fmt.Sprintf("    CommissionWithdraws:      %d\n", item.Counters.CommissionWithdraws))
+	str.WriteString(fmt.Sprintf("    CommissionsCollected [m]: %s\n", item.formatIntDecimals(item.Counters.CommissionsCollectedMain)))
+	str.WriteString(fmt.Sprintf("    CommissionsCollected [s]: %s\n", item.formatIntDecimals(item.Counters.CommissionsCollectedStaking)))
+	str.WriteString(fmt.Sprintf("    Locked rewards:           %d\n", item.Counters.LockedRewards))
 
 	fmt.Println(str.String())
 }
