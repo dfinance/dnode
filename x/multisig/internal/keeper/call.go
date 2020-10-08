@@ -29,7 +29,9 @@ func (k Keeper) SubmitCall(ctx sdk.Context, msg msmodule.MsMsg, uniqueID string,
 		return sdkErrors.Wrapf(types.ErrWrongMsgRoute, "%q not found", msg.Route())
 	}
 
+	// TODO: solve do we need it at all during mainnet, probably we don't.
 	cacheCtx, _ := ctx.CacheContext()
+	cacheCtx = cacheCtx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	handler := k.router.GetRoute(msg.Route())
 	if err := handler(cacheCtx, msg); err != nil {
 		return err
