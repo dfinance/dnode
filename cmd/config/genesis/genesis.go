@@ -101,7 +101,7 @@ func OverrideGenesisStateDefaults(cdc *codec.Codec, genState map[string]json.Raw
 		//
 		moduleState.Params.BondDenom = defaults.StakingDenom
 		moduleState.Params.LPDenom = defaults.LiquidityProviderDenom
-		moduleState.Params.LPDistrRatio = sdk.NewDecWithPrec(1, 0) // 100%
+		moduleState.Params.LPDistrRatio = sdk.NewDecWithPrec(2, 0) // 200%
 		//
 		moduleState.Params.MinSelfDelegationLvl = defaults.MinSelfDelegationCoin.Amount // 2500.0
 		moduleState.Params.MaxDelegationsRatio = sdk.NewDecWithPrec(10, 0)              // 10.0
