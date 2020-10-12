@@ -49,7 +49,8 @@ func lockValidatorRewardsOpCheckInput(s *Simulator, maxRatio sdk.Dec) (stop bool
 }
 
 func lockValidatorRewardsOpFindTarget(s *Simulator) (targetAcc *SimAccount, targetVal *SimValidator) {
-	for _, val := range s.GetAllValidators().GetShuffled() {
+	vals := s.GetAllValidators().GetShuffled()
+	for _, val := range vals {
 		if val.RewardsLocked() {
 			continue
 		}
