@@ -118,7 +118,8 @@ func delegateOpFindTarget(s *Simulator, bondingD bool, delegateRatio sdk.Dec) (t
 
 	// pick an account with max tokens
 	var delAmt sdk.Int
-	for _, acc := range s.GetAllAccounts().GetSortedByBalance(denom, true) {
+	accs := s.GetAllAccounts().GetSortedByBalance(denom, true)
+	for _, acc := range accs {
 		// estimate delegation amount
 		accCoinAmtDec := sdk.NewDecFromInt(acc.Coins.AmountOf(denom))
 		delAmt = accCoinAmtDec.Mul(delegateRatio).TruncateInt()
@@ -128,6 +129,7 @@ func delegateOpFindTarget(s *Simulator, bondingD bool, delegateRatio sdk.Dec) (t
 
 		targetAcc = acc
 		delCoin = sdk.NewCoin(denom, delAmt)
+		return
 	}
 
 	return

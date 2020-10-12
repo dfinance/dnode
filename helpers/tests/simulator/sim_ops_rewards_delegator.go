@@ -7,26 +7,24 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// NewGetDelegatorRewardOp takes delegator rewards.
-// Op priority:
-//   account;
-//     - random;
-//     - has delegations;
-//   validator
-//     - random account delegation;
-//     - rewards are not locked;
+type delegatorRewardOpTarget struct {
+	Acc *SimAccount
+	Val *SimValidator
+}
+
+// NewGetDelegatorRewardOp takes all delegators rewards (excluding locked ones).
 func NewGetDelegatorRewardOp(period time.Duration) *SimOperation {
 	id := "DelegatorRewardOp"
 
 	handler := func(s *Simulator) (bool, string) {
-		targetAcc, targetVal, rewardCoins := getDelegatorRewardOpFindTarget(s)
-		if targetAcc == nil || targetVal == nil {
+		targets, rewardCoins := getDelegatorRewardOpFindTarget(s)
+		if len(targets) == 0 {
 			return false, "target not found"
 		}
-		getDelegatorRewardOpHandle(s, targetAcc, targetVal)
+		getDelegatorRewardOpHandle(s, targets)
 
-		getDelegatorRewardOpPost(s, targetAcc, rewardCoins)
-		msg := fmt.Sprintf("%s from %s: %s", targetAcc.Address, targetVal.GetAddress(), s.FormatCoins(rewardCoins))
+		getDelegatorRewardOpPost(s, targets, rewardCoins)
+		msg := fmt.Sprintf("total from %d targets: %s", len(targets), s.FormatCoins(rewardCoins))
 
 		return true, msg
 	}
@@ -34,11 +32,11 @@ func NewGetDelegatorRewardOp(period time.Duration) *SimOperation {
 	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
-func getDelegatorRewardOpFindTarget(s *Simulator) (targetAcc *SimAccount, targetVal *SimValidator, rewardCoins sdk.Coins) {
+func getDelegatorRewardOpFindTarget(s *Simulator) (targets []delegatorRewardOpTarget, rewardCoins sdk.Coins) {
 	rewardCoins = sdk.NewCoins()
 	validators := s.GetAllValidators()
 
-	for _, acc := range s.GetAllAccounts().GetShuffled() {
+	for _, acc := range s.GetAllAccounts() {
 		for _, delegation := range acc.GetShuffledDelegations(true) {
 			validator := validators.GetByAddress(delegation.ValidatorAddress)
 			if validator.RewardsLocked() {
@@ -46,33 +44,41 @@ func getDelegatorRewardOpFindTarget(s *Simulator) (targetAcc *SimAccount, target
 			}
 
 			// estimate reward coins
+			curRewardCoins := sdk.NewCoins()
 			for _, decCoin := range s.QueryDistDelReward(acc.Address, delegation.ValidatorAddress) {
 				coin, _ := decCoin.TruncateDecimal()
-				rewardCoins = rewardCoins.Add(coin)
+				curRewardCoins = curRewardCoins.Add(coin)
 			}
 
 			// check there are some rewards
-			if rewardCoins.Empty() {
+			if curRewardCoins.Empty() {
 				continue
 			}
 
-			targetAcc = acc
-			targetVal = validator
-			return
+			targets = append(targets, delegatorRewardOpTarget{
+				Acc: acc,
+				Val: validator,
+			})
+			rewardCoins = rewardCoins.Add(curRewardCoins...)
 		}
 	}
 
 	return
 }
 
-func getDelegatorRewardOpHandle(s *Simulator, targetAcc *SimAccount, targetVal *SimValidator) {
-	s.TxDistDelegatorRewards(targetAcc, targetVal.GetAddress())
+func getDelegatorRewardOpHandle(s *Simulator, targets []delegatorRewardOpTarget) {
+	for _, target := range targets {
+		s.TxDistDelegatorRewards(target.Acc, target.Val.GetAddress())
+	}
 }
 
-func getDelegatorRewardOpPost(s *Simulator, targetAcc *SimAccount, rewardCoins sdk.Coins) {
-	// update account
-	s.UpdateAccount(targetAcc)
+func getDelegatorRewardOpPost(s *Simulator, targets []delegatorRewardOpTarget, rewardCoins sdk.Coins) {
+	// update accounts
+	for _, target := range targets {
+		s.UpdateAccount(target.Acc)
+	}
 	// update stats
-	s.counter.Rewards++
-	s.counter.RewardsCollected = s.counter.RewardsCollected.Add(rewardCoins...)
+	s.counter.RewardsWithdraws += int64(len(targets))
+	s.counter.RewardsCollectedMain = s.counter.RewardsCollectedMain.Add(rewardCoins.AmountOf(s.mainDenom))
+	s.counter.RewardsCollectedStaking = s.counter.RewardsCollectedStaking.Add(rewardCoins.AmountOf(s.stakingDenom))
 }
