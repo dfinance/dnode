@@ -70,38 +70,38 @@ func (p SimProfile) String() string {
 	str := strings.Builder{}
 	str.WriteString("Simulation:\n")
 	str.WriteString(fmt.Sprintf("  - ID: %s\n", p.ID))
-	str.WriteString(fmt.Sprintf("  - SimDuration:  %s\n", FormatDuration(p.SimDuration)))
-	str.WriteString(fmt.Sprintf("  - BlockTimeMin: %s\n", FormatDuration(p.BlockTimeMin)))
-	str.WriteString(fmt.Sprintf("  - BlockTimeMax: %s\n", FormatDuration(p.BlockTimeMax)))
+	str.WriteString(fmt.Sprintf("  - SimDuration:  %v\n", p.SimDuration))
+	str.WriteString(fmt.Sprintf("  - BlockTimeMin: %v\n", p.BlockTimeMin))
+	str.WriteString(fmt.Sprintf("  - BlockTimeMax: %v\n", p.BlockTimeMax))
 	str.WriteString("Initial balances:\n")
 	str.WriteString(fmt.Sprintf("  - MainTokens:    %d.0%s\n", p.MainTokensBalanceWODec, defaults.MainDenom))
 	str.WriteString(fmt.Sprintf("  - StakingTokens: %d.0%s\n", p.BondingTokensBalanceWODec, defaults.StakingDenom))
 	str.WriteString(fmt.Sprintf("  - LPTokens:      %d.0%s\n", p.LPTokensBalanceWODec, defaults.LiquidityProviderDenom))
 	str.WriteString("Total number of:\n")
-	str.WriteString(fmt.Sprintf("  - Account:                %d\n", p.Accounts))
+	str.WriteString(fmt.Sprintf("  - Accounts:               %d\n", p.Accounts))
 	str.WriteString(fmt.Sprintf("  - PoA validators:         %d\n", p.POAValidators))
 	str.WriteString(fmt.Sprintf("  - TM validators (total):  %d\n", p.TMValidatorsTotal))
 	str.WriteString(fmt.Sprintf("  - TM validators (active): %d\n", p.TMValidatorsActive))
 	str.WriteString("Operations:\n")
-	str.WriteString(fmt.Sprintf("  - Create validators:            %s\n", FormatDuration(p.OpCreateValidator)))
-	str.WriteString(fmt.Sprintf("  - Delegate bonding tokens:      %s\n", FormatDuration(p.OpDelegateBonding)))
-	str.WriteString(fmt.Sprintf("      Amount ratio:               %s\n", p.OpDelegateBondingAmountRatio))
-	str.WriteString(fmt.Sprintf("      Max limit ratio:            %s\n", p.OpDelegateBondingMaxSupplyRatio))
-	str.WriteString(fmt.Sprintf("  - Delegate LP tokens:           %s\n", FormatDuration(p.OpDelegateLP)))
-	str.WriteString(fmt.Sprintf("      Amount ratio:               %s\n", p.OpDelegateLPAmountRatio))
-	str.WriteString(fmt.Sprintf("      Max limit ratio:            %s\n", p.OpDelegateLPMaxSupplyRatio))
-	str.WriteString(fmt.Sprintf("  - Redelegate bonding tokens:    %s\n", FormatDuration(p.OpRedelegateBonding)))
-	str.WriteString(fmt.Sprintf("      Amount ratio:               %s\n", p.OpRedelegateBondingAmountRatio))
-	str.WriteString(fmt.Sprintf("  - Redelegate LP tokens:         %s\n", FormatDuration(p.OpRedelegateLP)))
-	str.WriteString(fmt.Sprintf("      Amount ratio:               %s\n", p.OpRedelegateLPAmountRatio))
-	str.WriteString(fmt.Sprintf("  - Undelegate bonding tokens:    %s\n", FormatDuration(p.OpUndelegateBonding)))
-	str.WriteString(fmt.Sprintf("      Amount ratio:               %s\n", p.OpUndelegateBondingAmountRatio))
-	str.WriteString(fmt.Sprintf("  - Undelegate LP tokens:         %s\n", FormatDuration(p.OpUndelegateLP)))
-	str.WriteString(fmt.Sprintf("      Amount ratio:               %s\n", p.OpUndelegateLPAmountRatio))
-	str.WriteString(fmt.Sprintf("  - Withdraw validator comission: %s\n", FormatDuration(p.OpGetValidatorRewards)))
-	str.WriteString(fmt.Sprintf("  - Withdraw delegator reward:    %s\n", FormatDuration(p.OpGetDelegatorRewards)))
-	str.WriteString(fmt.Sprintf("  - Lock rewards:                 %s\n", FormatDuration(p.OpLockRewards)))
-	str.WriteString(fmt.Sprintf("      Ratio:                      %s\n", p.OpLockRewardsRatio))
+	str.WriteString(fmt.Sprintf("  - Create validator every:                    %s\n", FormatDuration(p.OpCreateValidator)))
+	str.WriteString(fmt.Sprintf("  - Delegate bonding tokens every:             %s\n", FormatDuration(p.OpDelegateBonding)))
+	str.WriteString(fmt.Sprintf("      Delegate amount ratio (of acc balance):  %s\n", p.OpDelegateBondingAmountRatio))
+	str.WriteString(fmt.Sprintf("      Max limit ratio (staked ratio):          %s\n", p.OpDelegateBondingMaxSupplyRatio))
+	str.WriteString(fmt.Sprintf("  - Delegate LP tokens every:                  %s\n", FormatDuration(p.OpDelegateLP)))
+	str.WriteString(fmt.Sprintf("      Delegate amount ratio (of acc balance):  %s\n", p.OpDelegateLPAmountRatio))
+	str.WriteString(fmt.Sprintf("      Max limit ratio (staked ratio):          %s\n", p.OpDelegateLPMaxSupplyRatio))
+	str.WriteString(fmt.Sprintf("  - Redelegate bonding tokens every:           %s\n", FormatDuration(p.OpRedelegateBonding)))
+	str.WriteString(fmt.Sprintf("      Redelegate amount ratio (of del shares): %s\n", p.OpRedelegateBondingAmountRatio))
+	str.WriteString(fmt.Sprintf("  - Redelegate LP tokens every:                %s\n", FormatDuration(p.OpRedelegateLP)))
+	str.WriteString(fmt.Sprintf("      Redelegate amount ratio (of del shares): %s\n", p.OpRedelegateLPAmountRatio))
+	str.WriteString(fmt.Sprintf("  - Undelegate bonding tokens every:           %s\n", FormatDuration(p.OpUndelegateBonding)))
+	str.WriteString(fmt.Sprintf("      Undelegate amount ratio (of del shares): %s\n", p.OpUndelegateBondingAmountRatio))
+	str.WriteString(fmt.Sprintf("  - Undelegate LP tokens every:                %s\n", FormatDuration(p.OpUndelegateLP)))
+	str.WriteString(fmt.Sprintf("      Undelegate amount ratio (of del shares): %s\n", p.OpUndelegateLPAmountRatio))
+	str.WriteString(fmt.Sprintf("  - Withdraw all validators comissions every:  %s\n", FormatDuration(p.OpGetValidatorRewards)))
+	str.WriteString(fmt.Sprintf("  - Withdraw all delegators rewards every:     %s\n", FormatDuration(p.OpGetDelegatorRewards)))
+	str.WriteString(fmt.Sprintf("  - Lock rewards every:                        %s\n", FormatDuration(p.OpLockRewards)))
+	str.WriteString(fmt.Sprintf("      Ratio of all validators:                 %s\n", p.OpLockRewardsRatio))
 
 	return str.String()
 }
@@ -187,27 +187,27 @@ func simulate(t *testing.T, profile SimProfile) {
 func TestSimInflation(t *testing.T) {
 	profile := SimProfile{
 		ID:           "low_staking",
-		SimDuration:  1*Year + 6*Month,
-		BlockTimeMin: 120 * time.Second,
-		BlockTimeMax: 125 * time.Second,
+		SimDuration:  3*Month,
+		BlockTimeMin: 300 * time.Second,
+		BlockTimeMax: 305 * time.Second,
 		//
 		MainTokensBalanceWODec:    50000,
 		BondingTokensBalanceWODec: 500000,
 		LPTokensBalanceWODec:      100000,
 		//
-		Accounts:           300,
+		Accounts:           150,
 		POAValidators:      3,
-		TMValidatorsTotal:  150,
+		TMValidatorsTotal:  110,
 		TMValidatorsActive: 100,
 		//
 		OpCreateValidator: 3 * time.Hour,
 		//
-		OpDelegateBonding:               6 * time.Hour,
-		OpDelegateBondingAmountRatio:    sdk.NewDecWithPrec(40, 2),
+		OpDelegateBonding:               2 * time.Hour,
+		OpDelegateBondingAmountRatio:    sdk.NewDecWithPrec(50, 2),
 		OpDelegateBondingMaxSupplyRatio: sdk.NewDecWithPrec(30, 2),
 		//
-		OpDelegateLP:               1 * Day,
-		OpDelegateLPAmountRatio:    sdk.NewDecWithPrec(40, 2),
+		OpDelegateLP:               4 * time.Hour,
+		OpDelegateLPAmountRatio:    sdk.NewDecWithPrec(50, 2),
 		OpDelegateLPMaxSupplyRatio: sdk.NewDecWithPrec(30, 2),
 		//
 		OpRedelegateBonding:            4 * Day,
@@ -222,10 +222,10 @@ func TestSimInflation(t *testing.T) {
 		OpUndelegateLP:            4 * Day,
 		OpUndelegateLPAmountRatio: sdk.NewDecWithPrec(15, 2),
 		//
-		OpGetValidatorRewards: 1 * Week,
-		OpGetDelegatorRewards: 1 * Day,
+		OpGetValidatorRewards: 1 * Month,
+		OpGetDelegatorRewards: 1 * Month,
 		//
-		OpLockRewards:      1 * Week,
+		OpLockRewards:      4 * Day,
 		OpLockRewardsRatio: sdk.NewDecWithPrec(30, 2),
 	}
 

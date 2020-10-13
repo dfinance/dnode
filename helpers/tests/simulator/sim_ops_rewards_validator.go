@@ -7,25 +7,28 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// NewGetValidatorRewardOp takes validator commissions rewards.
-// Op priority:
-//   validator - random;
+type validatorRewardOp struct {
+	Acc *SimAccount
+	Val *SimValidator
+}
+
+// NewGetValidatorRewardOp takes all validators commissions rewards.
 func NewGetValidatorRewardOp(period time.Duration) *SimOperation {
 	id := "ValidatorRewardOp"
 
 	handler := func(s *Simulator) (bool, string) {
-		targetAcc, targetVal, rewardCoins := getValidatorRewardOpFindTarget(s)
-		if targetAcc == nil || targetVal == nil {
+		targets, rewardCoins := getValidatorRewardOpFindTarget(s)
+		if len(targets) == 0 {
 			return false, "target not found"
 		}
 
-		if getValidatorRewardOpHandle(s, targetAcc, targetVal) {
-			msg := fmt.Sprintf("can't withdraw %s validator commission", targetVal.GetAddress())
+		if stopMsg := getValidatorRewardOpHandle(s, targets); stopMsg != "" {
+			msg := fmt.Sprintf("withdraw validator commission failed: %s", stopMsg)
 			return false, msg
 		}
 
-		getValidatorRewardOpPost(s, targetAcc, rewardCoins)
-		msg := fmt.Sprintf("%s for %s: %s", targetVal.GetAddress(), targetAcc.Address, s.FormatCoins(rewardCoins))
+		getValidatorRewardOpPost(s, targets, rewardCoins)
+		msg := fmt.Sprintf("total from %d targets: %s", len(targets), s.FormatCoins(rewardCoins))
 
 		return true, msg
 	}
@@ -33,7 +36,7 @@ func NewGetValidatorRewardOp(period time.Duration) *SimOperation {
 	return NewSimOperation(id, period, NewPeriodicNextExecFn(), handler)
 }
 
-func getValidatorRewardOpFindTarget(s *Simulator) (targetAcc *SimAccount, targetVal *SimValidator, rewardCoins sdk.Coins) {
+func getValidatorRewardOpFindTarget(s *Simulator) (targets []validatorRewardOp, rewardCoins sdk.Coins) {
 	rewardCoins = sdk.NewCoins()
 
 	for _, val := range s.GetAllValidators().GetShuffled() {
@@ -44,30 +47,40 @@ func getValidatorRewardOpFindTarget(s *Simulator) (targetAcc *SimAccount, target
 		}
 
 		// estimate reward coins
+		curRewardCoins := sdk.NewCoins()
 		for _, decCoin := range decCoins {
 			coin, _ := decCoin.TruncateDecimal()
-			rewardCoins = rewardCoins.Add(coin)
+			curRewardCoins = curRewardCoins.Add(coin)
 		}
 
-		targetVal = val
-		targetAcc = s.GetAllAccounts().GetByAddress(targetVal.GetOperatorAddress())
+		targets = append(targets, validatorRewardOp{
+			Acc: s.GetAllAccounts().GetByAddress(val.GetOperatorAddress()),
+			Val: val,
+		})
+		rewardCoins = rewardCoins.Add(curRewardCoins...)
 	}
 
 	return
 }
 
-func getValidatorRewardOpHandle(s *Simulator, targetAcc *SimAccount, targetVal *SimValidator) (stop bool) {
-	if s.TxDistValidatorCommission(targetAcc, targetVal.GetAddress()) {
-		stop = true
+func getValidatorRewardOpHandle(s *Simulator, targets []validatorRewardOp) (stopMsg string) {
+	for _, target := range targets {
+		if s.TxDistValidatorCommission(target.Acc, target.Val.GetAddress()) {
+			stopMsg = fmt.Sprintf("targetVal %s", target.Val.GetAddress())
+			return
+		}
 	}
 
 	return
 }
 
-func getValidatorRewardOpPost(s *Simulator, targetAcc *SimAccount, rewardCoins sdk.Coins) {
+func getValidatorRewardOpPost(s *Simulator, targets []validatorRewardOp, rewardCoins sdk.Coins) {
 	// update account
-	s.UpdateAccount(targetAcc)
+	for _, target := range targets {
+		s.UpdateAccount(target.Acc)
+	}
 	// update stats
-	s.counter.Commissions++
-	s.counter.CommissionsCollected = s.counter.CommissionsCollected.Add(rewardCoins...)
+	s.counter.CommissionWithdraws += int64(len(targets))
+	s.counter.CommissionsCollectedMain = s.counter.CommissionsCollectedMain.Add(rewardCoins.AmountOf(s.mainDenom))
+	s.counter.CommissionsCollectedStaking = s.counter.CommissionsCollectedStaking.Add(rewardCoins.AmountOf(s.stakingDenom))
 }

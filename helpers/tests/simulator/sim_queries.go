@@ -289,6 +289,18 @@ func (s *Simulator) QueryDistLockState(val sdk.ValAddress) (res distribution.Que
 	return res
 }
 
+// QueryDistLockedRatio queries current locked ratio.
+func (s *Simulator) QueryDistLockedRatio() (res sdk.Dec) {
+	resp := s.RunQuery(
+		nil,
+		"/custom/"+distribution.QuerierRoute+"/"+distribution.QueryLockedRatio,
+		&res,
+	)
+	require.True(s.t, resp.IsOK())
+
+	return res
+}
+
 // QueryDistPool queries supply total supply.
 func (s *Simulator) QuerySupplyTotal() (res sdk.Coins) {
 	resp := s.RunQuery(
@@ -297,6 +309,18 @@ func (s *Simulator) QuerySupplyTotal() (res sdk.Coins) {
 			Limit: 50,
 		},
 		"/custom/"+supply.QuerierRoute+"/"+supply.QueryTotalSupply,
+		&res,
+	)
+	require.True(s.t, resp.IsOK())
+
+	return res
+}
+
+// QuerySupplyModuleBalance queries module account balance.
+func (s *Simulator) QuerySupplyModuleBalance(moduleName string) (res sdk.Coins) {
+	resp := s.RunQuery(
+		nil,
+		"/custom/"+supply.QuerierRoute+"/"+supply.QueryModuleBalance+"/"+moduleName,
 		&res,
 	)
 	require.True(s.t, resp.IsOK())
