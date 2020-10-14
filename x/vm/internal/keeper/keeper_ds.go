@@ -59,6 +59,8 @@ func (k Keeper) CloseConnections() {
 // retryExecReq sends request with retry mechanism and waits for connection and execution.
 // Contract: either RawModule or RawScript must be specified for RetryExecReq.
 func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grpc.VMExecuteResponse, retErr error) {
+	const failedRetryLogPeriod = 100
+
 	doneCh := make(chan bool)
 	curAttempt := uint(0)
 	reqTimeout := time.Duration(req.ReqTimeoutInMs) * time.Millisecond
@@ -98,13 +100,18 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 				return
 			}
 
-			if curAttempt == req.MaxAttempts {
+			if req.MaxAttempts != 0 && curAttempt == req.MaxAttempts {
 				retResp, retErr = nil, err
 				return
 			}
 
 			if curReqDur < reqTimeout {
 				time.Sleep(reqTimeout - curReqDur)
+			}
+
+			if curAttempt % failedRetryLogPeriod == 0 {
+				msg := fmt.Sprintf("Failing VM request: attempt %d / %d with %v timeout: %v", curAttempt, req.MaxAttempts, reqTimeout, time.Since(reqStartedAt))
+				k.GetLogger(ctx).Info(msg)
 			}
 		}
 	}()
