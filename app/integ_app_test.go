@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/compiler_grpc"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -155,10 +155,16 @@ func TestIntegApp_Crisis(t *testing.T) {
 	// compile and deploy module
 	{
 		// compile
-		byteCode, compileErr := vm_client.Compile(dvmAddr, &vm_grpc.SourceFile{
-			Text:    swapModuleSrc,
+		byteCode, compileErr := vm_client.Compile(dvmAddr, &compiler_grpc.SourceFiles{
+			Units: []*compiler_grpc.CompilationUnit{
+				{
+					Text: swapModuleSrc,
+					Name: "swapModuleSrc",
+				},
+			},
 			Address: client1LibraAddr,
 		})
+
 		require.NoError(t, compileErr)
 
 		// deploy using helper func
@@ -199,10 +205,16 @@ func TestIntegApp_Crisis(t *testing.T) {
 
 		// compile
 		createSwapScriptSrc := strings.ReplaceAll(createSwapScriptSrcFmt, "{{sender}}", client1Addr.String())
-		byteCode, compileErr := vm_client.Compile(dvmAddr, &vm_grpc.SourceFile{
-			Text:    createSwapScriptSrc,
+		byteCode, compileErr := vm_client.Compile(dvmAddr, &compiler_grpc.SourceFiles{
+			Units: []*compiler_grpc.CompilationUnit{
+				{
+					Text: createSwapScriptSrc,
+					Name: "createSwapScriptSrc",
+				},
+			},
 			Address: client1LibraAddr,
 		})
+
 		require.NoError(t, compileErr)
 
 		// prepare execute Tx
@@ -258,10 +270,16 @@ func TestIntegApp_Crisis(t *testing.T) {
 		suppliesBefore := GetAllSupplies(t, app, GetContext(app, true))
 
 		createSwapScriptSrc := strings.ReplaceAll(swapSwapScriptSrcFmt, "{{sender}}", client1Addr.String())
-		byteCode, compileErr := vm_client.Compile(dvmAddr, &vm_grpc.SourceFile{
-			Text:    createSwapScriptSrc,
+		byteCode, compileErr := vm_client.Compile(dvmAddr, &compiler_grpc.SourceFiles{
+			Units: []*compiler_grpc.CompilationUnit{
+				{
+					Text: createSwapScriptSrc,
+					Name: "createSwapScriptSrc",
+				},
+			},
 			Address: client1LibraAddr,
 		})
+
 		require.NoError(t, compileErr)
 
 		sellerAddrArg, sellerArgErr := vm_client.NewAddressScriptArg(client1Addr.String())

@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/compiler_grpc"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
@@ -50,7 +50,7 @@ type PublishModuleReq struct {
 
 type LcsViewReq struct {
 	// Resource address
-	Account  string `json:"address" format:"bech32/hex" example:"0x0000000000000000000000000000000000000001"`
+	Account string `json:"address" format:"bech32/hex" example:"0x0000000000000000000000000000000000000001"`
 	// Move formatted path (ModuleName::StructName, where ::StructName is optional)
 	MovePath string `json:"move_path" example:"Block::BlockMetadata"`
 	// LCS view JSON formatted request (refer to docs for specs)
@@ -100,8 +100,13 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		sourceFile := &vm_grpc.SourceFile{
-			Text:    req.Code,
+		sourceFile := &compiler_grpc.SourceFiles{
+			Units: []*compiler_grpc.CompilationUnit{
+				{
+					Text: req.Code,
+					Name: "script", //TODO: implement it
+				},
+			},
 			Address: common_vm.Bech32ToLibra(address),
 		}
 

@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/compiler_grpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -157,8 +157,13 @@ func Compile(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// prepare request
-			sourceFile := &vm_grpc.SourceFile{
-				Text:    string(moveContent),
+			sourceFile := &compiler_grpc.SourceFiles{
+				Units: []*compiler_grpc.CompilationUnit{
+					{
+						Text: string(moveContent),
+						Name: "script", //TODO: implement it
+					},
+				},
 				Address: common_vm.Bech32ToLibra(address),
 			}
 

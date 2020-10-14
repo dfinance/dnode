@@ -3,8 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
-
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/types_grpc"
 )
 
 const MsgExecuteScriptType = "execute_script"
@@ -71,12 +70,12 @@ func NewMsgExecuteScript(signer sdk.AccAddress, script Contract, args []ScriptAr
 
 // ScriptArg defines VM script argument.
 type ScriptArg struct {
-	Type  vm_grpc.VMTypeTag `json:"type" yaml:"type"`
-	Value []byte            `json:"value" yaml:"value"`
+	Type  types_grpc.VMTypeTag `json:"type" yaml:"type"`
+	Value []byte               `json:"value" yaml:"value"`
 }
 
 // NewScriptArg creates a new ScriptArg object.
-func NewScriptArg(typeTag vm_grpc.VMTypeTag, value []byte) ScriptArg {
+func NewScriptArg(typeTag types_grpc.VMTypeTag, value []byte) ScriptArg {
 	return ScriptArg{
 		Type:  typeTag,
 		Value: value,

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/compiler_grpc"
+	"github.com/dfinance/dvm-proto/go/metadata_grpc"
+	"github.com/dfinance/dvm-proto/go/types_grpc"
 	"google.golang.org/grpc"
 
 	"github.com/dfinance/dnode/cmd/config"
@@ -29,36 +31,36 @@ func CreateConnection(addr string) (*grpc.ClientConn, error) {
 }
 
 // Extract arguments from bytecode with compiler.
-func ExtractArguments(addr string, bytecode []byte) ([]vm_grpc.VMTypeTag, error) {
+func ExtractArguments(addr string, bytecode []byte) ([]types_grpc.VMTypeTag, error) {
 	conn, err := CreateConnection(addr)
 	if err != nil {
 		return nil, fmt.Errorf("Can't extract contract metadata because of error during connection to VM: %s\n", err.Error())
 	}
 	defer conn.Close()
 
-	client := vm_grpc.NewVMScriptMetadataClient(conn)
+	client := metadata_grpc.NewDVMBytecodeMetadataClient(conn)
 	connCtx := context.Background()
 
-	res, err := client.GetSignature(connCtx, &vm_grpc.VMScript{Code: bytecode})
+	res, err := client.GetMetadata(connCtx, &metadata_grpc.Bytecode{Code: bytecode})
 	if err != nil {
 		return nil, fmt.Errorf("Can't extract contract metadata because of error during connection to VM: %s\n", err.Error())
 	}
 
-	return res.Arguments, nil
+	return res.GetScript().Arguments, nil
 }
 
 // Compile script via grpc compiler.
-func Compile(addr string, sourceFile *vm_grpc.SourceFile) ([]byte, error) {
+func Compile(addr string, sourceFiles *compiler_grpc.SourceFiles) ([]byte, error) {
 	conn, err := CreateConnection(addr)
 	if err != nil {
 		return nil, fmt.Errorf("compilation failed because of error during connection to VM (%s): %w", addr, err)
 	}
 	defer conn.Close()
 
-	client := vm_grpc.NewVMCompilerClient(conn)
+	client := compiler_grpc.NewDvmCompilerClient(conn)
 	connCtx := context.Background()
 
-	resp, err := client.Compile(connCtx, sourceFile)
+	resp, err := client.Compile(connCtx, sourceFiles)
 	if err != nil {
 		return nil, fmt.Errorf("compilation failed because of error during compilation and connection to VM (%s): %w", addr, err)
 	}
@@ -68,5 +70,5 @@ func Compile(addr string, sourceFile *vm_grpc.SourceFile) ([]byte, error) {
 		return nil, fmt.Errorf("compilation failed because of errors from compiler: %s", strings.Join(resp.Errors, "\n"))
 	}
 
-	return resp.Bytecode, nil
+	return resp.Units[0].Bytecode, nil
 }

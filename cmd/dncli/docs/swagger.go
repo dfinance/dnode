@@ -279,6 +279,61 @@ definitions:
       proposal_id:
         type: string
     type: object
+  DistributionParams:
+    properties:
+      base_proposer_reward:
+        description: Block proposer base reward ratio
+        example: "0.123"
+        format: number
+        type: string
+      bonus_proposer_reward:
+        description: Block proposer bonus reward ratio
+        example: "0.123"
+        format: number
+        type: string
+      foundation_nominees:
+        example:
+        - wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        items:
+          type: string
+        type: array
+      harp_tax:
+        description: Rewards distribution ratio for HARP
+        example: "0.123"
+        format: number
+        type: string
+      liquidity_providers_pool_tax:
+        description: Rewards distribution ratio for LiquidityProvidersPool
+        example: "0.123"
+        format: number
+        type: string
+      locked_dur:
+        description: Rewards lock duration
+        type: string
+      locked_ratio:
+        description: Validator distribution power calculation coefficient
+        example: "0.123"
+        format: number
+        type: string
+      public_treasury_pool_capacity:
+        description: PublicTreasuryPool max amount limit
+        example: "100"
+        format: integer
+        type: string
+      public_treasury_pool_tax:
+        description: Rewards distribution ratio for PublicTreasuryPool
+        example: "0.123"
+        format: number
+        type: string
+      validators_pool_tax:
+        description: Rewards distribution ratio for ValidatorsPool
+        example: "0.123"
+        format: number
+        type: string
+      withdraw_addr_enabled:
+        type: boolean
+    type: object
   Hash:
     example: EE5F3404034C524501629B56E0DDC38FAD651F04
     type: string
@@ -287,6 +342,46 @@ definitions:
       key:
         type: string
       value:
+        type: string
+    type: object
+  MintParams:
+    properties:
+      avg_block_time_window:
+        description: Avg block time filter window size
+        type: integer
+      fee_burning_ratio:
+        description: '% of fees burned (per block)'
+        example: "0.123"
+        format: number
+        type: string
+      foundation_allocation_ratio:
+        description: Extra Foundation pool allocation inflation ratio
+        example: "0.123"
+        format: number
+        type: string
+      inflation_max:
+        description: Maximum inflation rate (annual)
+        example: "0.123"
+        format: number
+        type: string
+      inflation_min:
+        description: Minimum inflation rate (annual)
+        example: "0.123"
+        format: number
+        type: string
+      infpwr_bondedlocked_ratio:
+        description: Bonded, locked shoulders relation for inflation power calculation
+        example: "0.123"
+        format: number
+        type: string
+      mint_denom:
+        description: Type of coin to mint
+        example: stake
+        type: string
+      staking_total_supply_shift:
+        description: BondedRatio denominator (TotalSupply) shift coefficient
+        example: "100"
+        format: integer
         type: string
     type: object
   Msg:
@@ -376,6 +471,47 @@ definitions:
       missed_blocks_counter:
         type: string
       start_height:
+        type: string
+    type: object
+  StakingParams:
+    properties:
+      bond_denom:
+        description: Bondable coin denomination
+        example: stake
+        type: string
+      historical_entries:
+        description: Number of historical entries to persist
+        type: integer
+      lp_denom:
+        description: Liquidity coin denomination
+        example: liqd
+        type: string
+      lp_distr_ratio:
+        description: Gov voting and distribution ratio between bonding tokens and liquidity tokens (BTokens + LPDistrRatio * LPTokens)
+        example: "0.123"
+        format: number
+        type: string
+      max_delegations_ratio:
+        description: Max delegations per validator is limited by (CurrentSelfDelegation * KeyMaxDelegationsRatio)
+        example: "0.123"
+        format: number
+        type: string
+      max_entries:
+        description: Max entries for either unbonding delegation or redelegation (per pair/trio)
+        type: integer
+      max_validators:
+        description: Maximum number of validators (max uint16 = 65535)
+        type: integer
+      min_self_delegation_lvl:
+        description: Min self delegation level for validator creation
+        example: "100"
+        format: integer
+        type: string
+      scheduled_unbond_delay:
+        description: Time duration of validator.ScheduledToUnbond to be raised up before forced unbonding is done
+        type: string
+      unbonding_time:
+        description: Time duration of unbonding
         type: string
     type: object
   StdTx:
@@ -627,8 +763,6 @@ definitions:
     $ref: '#/definitions/types.Currencies'
   ccstorage.Currency:
     $ref: '#/definitions/types.Currency'
-  crypto.PubKey:
-    type: object
   markets.MarketExtended:
     $ref: '#/definitions/types.MarketExtended'
   msmodule.MsMsg:
@@ -726,6 +860,25 @@ definitions:
         description: Confirming CallID
         example: "0"
         format: string representation for big.Uint
+        type: string
+    type: object
+  rest.DelegateRequest:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Coin'
+        type: object
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      delegator_address:
+        description: in bech32
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      validator_address:
+        description: in bech32
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
         type: string
     type: object
   rest.ErrorResponse:
@@ -931,6 +1084,10 @@ definitions:
     type: object
   rest.PostPriceReq:
     properties:
+      ask_price:
+        description: AskPrice in sdk.Int format
+        example: "100"
+        type: string
       asset_code:
         description: AssetCode
         example: btc_xfi
@@ -938,9 +1095,9 @@ definitions:
       base_req:
         $ref: '#/definitions/rest.BaseReq'
         type: object
-      price:
-        description: Price in big.Int format
-        example: "100"
+      bid_price:
+        description: BidPrice in sdk.Int format
+        example: "99"
         type: string
       received_at:
         description: Timestamp price createdAt
@@ -956,6 +1113,168 @@ definitions:
       move_code:
         description: Compiled Move code
         format: HEX encoded byte code
+        type: string
+    type: object
+  rest.QueryAddressResp:
+    properties:
+      height:
+        type: integer
+      result:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+    type: object
+  rest.QueryDecCoinsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        items:
+          $ref: '#/definitions/types.DecCoin'
+        type: array
+    type: object
+  rest.QueryDecResp:
+    properties:
+      height:
+        type: integer
+      result:
+        example: "0.123"
+        format: number
+        type: string
+    type: object
+  rest.QueryDelegationDelegatorRewardsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        items:
+          $ref: '#/definitions/types.DelegationDelegatorReward'
+        type: array
+    type: object
+  rest.QueryDelegationResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.Delegation'
+        type: object
+    type: object
+  rest.QueryDelegationsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        items:
+          $ref: '#/definitions/types.DelegationResponse'
+        type: array
+    type: object
+  rest.QueryHistoricalInfoResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.HistoricalInfo'
+        type: object
+    type: object
+  rest.QueryParamsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/StakingParams'
+        type: object
+    type: object
+  rest.QueryPoolResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.Pool'
+        type: object
+    type: object
+  rest.QueryRedelegationsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        items:
+          $ref: '#/definitions/types.RedelegationResponse'
+        type: array
+    type: object
+  rest.QuerySwaggerValidatorDistInfoResp:
+    properties:
+      height:
+        type: integer
+      result:
+        properties:
+          operator_address:
+            example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+            format: bech32
+            type: string
+          self_bond_rewards:
+            $ref: '#/definitions/types.DecCoins'
+            type: object
+          validator_commission:
+            $ref: '#/definitions/types.DecCoins'
+            type: object
+        type: object
+    type: object
+  rest.QueryUnbondingDelegationResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.UnbondingDelegation'
+        type: object
+    type: object
+  rest.QueryUnbondingDelegationsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        items:
+          $ref: '#/definitions/types.UnbondingDelegation'
+        type: array
+    type: object
+  rest.QueryValidatorResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.Validator'
+        type: object
+    type: object
+  rest.QueryValidatorsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        items:
+          $ref: '#/definitions/types.Validator'
+        type: array
+    type: object
+  rest.RedelegateRequest:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Coin'
+        type: object
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      delegator_address:
+        description: in bech32
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      validator_dst_address:
+        description: in bech32
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      validator_src_address:
+        description: in bech32
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
         type: string
     type: object
   rest.RevokeOrderMsg:
@@ -1002,6 +1321,105 @@ definitions:
         description: Payee account (whose balance is increased)
         example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
         format: bech32/hex
+        type: string
+    type: object
+  rest.TxBeginRedelegate:
+    properties:
+      fee:
+        $ref: '#/definitions/types.StdFee'
+        type: object
+      memo:
+        type: string
+      msg:
+        items:
+          $ref: '#/definitions/types.MsgBeginRedelegate'
+        type: array
+      signatures:
+        items:
+          $ref: '#/definitions/types.StdSignature'
+        type: array
+    type: object
+  rest.TxFundPublicTreasuryPool:
+    properties:
+      fee:
+        $ref: '#/definitions/types.StdFee'
+        type: object
+      memo:
+        type: string
+      msg:
+        items:
+          $ref: '#/definitions/types.MsgFundPublicTreasuryPool'
+        type: array
+      signatures:
+        items:
+          $ref: '#/definitions/types.StdSignature'
+        type: array
+    type: object
+  rest.TxSetWithdrawAddress:
+    properties:
+      fee:
+        $ref: '#/definitions/types.StdFee'
+        type: object
+      memo:
+        type: string
+      msg:
+        items:
+          $ref: '#/definitions/types.MsgSetWithdrawAddress'
+        type: array
+      signatures:
+        items:
+          $ref: '#/definitions/types.StdSignature'
+        type: array
+    type: object
+  rest.TxUndelegate:
+    properties:
+      fee:
+        $ref: '#/definitions/types.StdFee'
+        type: object
+      memo:
+        type: string
+      msg:
+        items:
+          $ref: '#/definitions/types.MsgUndelegate'
+        type: array
+      signatures:
+        items:
+          $ref: '#/definitions/types.StdSignature'
+        type: array
+    type: object
+  rest.TxWithdrawDelegatorReward:
+    properties:
+      fee:
+        $ref: '#/definitions/types.StdFee'
+        type: object
+      memo:
+        type: string
+      msg:
+        items:
+          $ref: '#/definitions/types.MsgWithdrawDelegatorReward'
+        type: array
+      signatures:
+        items:
+          $ref: '#/definitions/types.StdSignature'
+        type: array
+    type: object
+  rest.UndelegateRequest:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Coin'
+        type: object
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      delegator_address:
+        description: in bech32
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      validator_address:
+        description: in bech32
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
         type: string
     type: object
   rest.UnstakeReq:
@@ -1074,6 +1492,47 @@ definitions:
         description: 'Second blockchain: payee account (whose balance is increased)'
         type: string
     type: object
+  rest.fundPublicTreasuryPoolReq:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Coins'
+        type: object
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+    type: object
+  rest.setWithdrawalAddrReq:
+    properties:
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+      withdraw_address:
+        $ref: '#/definitions/types.AccAddress'
+        type: object
+    type: object
+  rest.withdrawRewardsReq:
+    properties:
+      base_req:
+        $ref: '#/definitions/rest.BaseReq'
+        type: object
+    type: object
+  types.ABCIMessageLog:
+    properties:
+      events:
+        $ref: '#/definitions/types.StringEvents'
+        description: |-
+          Events contains a slice of Event objects that were emitted during some
+          execution.
+        type: object
+      log:
+        type: string
+      msg_index:
+        type: integer
+    type: object
+  types.ABCIMessageLogs:
+    items:
+      $ref: '#/definitions/types.ABCIMessageLog'
+    type: array
   types.AccAddress:
     items:
       type: integer
@@ -1096,6 +1555,13 @@ definitions:
     items:
       $ref: '#/definitions/types.Asset'
     type: array
+  types.Attribute:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
   types.Call:
     properties:
       approved:
@@ -1163,13 +1629,15 @@ definitions:
   types.Coin:
     properties:
       amount:
-        $ref: '#/definitions/types.Int'
         description: |-
           To allow the use of unsigned integers (see: #1273) a larger refactor will
           need to be made. So we use signed integers for now with safety measures in
           place preventing negative values being used.
-        type: object
+        example: "100"
+        format: number
+        type: string
       denom:
+        example: stake
         type: string
     type: object
   types.Coins:
@@ -1179,17 +1647,20 @@ definitions:
   types.Commission:
     properties:
       max_change_rate:
-        $ref: '#/definitions/types.Dec'
         description: maximum daily increase of the validator commission, as a fraction
-        type: object
+        example: "0.5"
+        format: number
+        type: string
       max_rate:
-        $ref: '#/definitions/types.Dec'
         description: maximum commission rate which validator can ever charge, as a fraction
-        type: object
+        example: "0.3"
+        format: number
+        type: string
       rate:
-        $ref: '#/definitions/types.Dec'
         description: the commission rate charged to delegators, as a fraction
-        type: object
+        example: "0.1"
+        format: number
+        type: string
       update_time:
         description: the last time the commission rate was changed
         type: string
@@ -1215,12 +1686,16 @@ definitions:
     type: object
   types.CurrentPrice:
     properties:
+      ask_price:
+        description: AskPrice
+        example: "1000"
+        type: string
       asset_code:
         description: Asset code
         example: btc_xfi
         type: string
-      price:
-        description: Price
+      bid_price:
+        description: BidPrice
         example: "1000"
         type: string
       received_at:
@@ -1234,15 +1709,69 @@ definitions:
   types.DecCoin:
     properties:
       amount:
-        $ref: '#/definitions/types.Dec'
-        type: object
+        example: "100"
+        format: number
+        type: string
       denom:
+        example: stake
         type: string
     type: object
   types.DecCoins:
     items:
       $ref: '#/definitions/types.DecCoin'
     type: array
+  types.Delegation:
+    properties:
+      bonding_shares:
+        example: "0.1"
+        format: number
+        type: string
+      delegator_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      lp_shares:
+        example: "0.5"
+        format: number
+        type: string
+      validator_address:
+        example: walletval13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+    type: object
+  types.DelegationDelegatorReward:
+    properties:
+      reward:
+        $ref: '#/definitions/types.DecCoins'
+        type: object
+      validator_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+    type: object
+  types.DelegationResponse:
+    properties:
+      bonding_balance:
+        type: string
+      bonding_shares:
+        example: "0.1"
+        format: number
+        type: string
+      delegator_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      lp_balance:
+        type: string
+      lp_shares:
+        example: "0.5"
+        format: number
+        type: string
+      validator_address:
+        example: walletval13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+    type: object
   types.Description:
     properties:
       details:
@@ -1260,6 +1789,15 @@ definitions:
       website:
         description: optional website link
         type: string
+    type: object
+  types.HistoricalInfo:
+    properties:
+      header:
+        type: string
+      valset:
+        items:
+          $ref: '#/definitions/types.Validator'
+        type: array
     type: object
   types.ID:
     $ref: '#/definitions/sdk.Uint'
@@ -1315,6 +1853,47 @@ definitions:
     type: array
   types.Msg:
     type: object
+  types.MsgBeginRedelegate:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Coin'
+        type: object
+      delegator_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      validator_dst_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      validator_src_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+    type: object
+  types.MsgDelegate:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Coin'
+        type: object
+      delegator_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      validator_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+    type: object
+  types.MsgFundPublicTreasuryPool:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Coins'
+        type: object
+      depositor:
+        $ref: '#/definitions/types.AccAddress'
+        type: object
+    type: object
   types.MsgPostOrder:
     properties:
       asset_code:
@@ -1341,6 +1920,38 @@ definitions:
         type: string
       owner:
         $ref: '#/definitions/types.AccAddress'
+        type: object
+    type: object
+  types.MsgSetWithdrawAddress:
+    properties:
+      delegator_address:
+        $ref: '#/definitions/types.AccAddress'
+        type: object
+      withdraw_address:
+        $ref: '#/definitions/types.AccAddress'
+        type: object
+    type: object
+  types.MsgUndelegate:
+    properties:
+      amount:
+        $ref: '#/definitions/types.Coin'
+        type: object
+      delegator_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      validator_address:
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+    type: object
+  types.MsgWithdrawDelegatorReward:
+    properties:
+      delegator_address:
+        $ref: '#/definitions/types.AccAddress'
+        type: object
+      validator_address:
+        $ref: '#/definitions/types.ValAddress'
         type: object
     type: object
   types.Oracle:
@@ -1402,25 +2013,141 @@ definitions:
     items:
       $ref: '#/definitions/types.Order'
     type: array
+  types.Pool:
+    properties:
+      bonded_tokens:
+        description: Bonding tokens which are currently bonded to a validators
+        example: "50000"
+        format: integer
+        type: string
+      liquidity_tokens:
+        description: Liquidity tokens which are currently bonded to a validators
+        example: "10000"
+        format: integer
+        type: string
+      not_bonded_tokens:
+        description: Bonding tokens which are not bonded to a validators (unbonded or unbonding)
+        example: "500"
+        format: integer
+        type: string
+    type: object
   types.PostedPrice:
     properties:
+      ask_price:
+        description: AskPrice
+        example: "1000"
+        type: string
       asset_code:
         description: Asset code
         example: btc_xfi
         type: string
+      bid_price:
+        description: BidPrice
+        example: "1000"
+        type: string
       oracle_address:
         description: Source oracle address
         example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
-        type: string
-      price:
-        description: Price
-        example: "1000"
         type: string
       received_at:
         description: UNIX Timestamp price receivedAt [sec]
         example: "2020-03-27T13:45:15.293426Z"
         format: RFC 3339
         type: string
+    type: object
+  types.RedelegationEntry:
+    properties:
+      completion_time:
+        description: Time at which the redelegation will complete
+        type: string
+      creation_height:
+        description: Height at which the redelegation took place
+        type: integer
+      initial_balance:
+        description: Initial balance when redelegation started
+        example: "100"
+        format: integer
+        type: string
+      op_type:
+        description: Operation type
+        example: bonding
+        type: string
+      shares_dst:
+        description: Amount of destination-validator shares created by redelegation
+        example: "0.1"
+        format: number
+        type: string
+    type: object
+  types.RedelegationEntryResponse:
+    properties:
+      balance:
+        format: integer
+        type: string
+      completion_time:
+        description: Time at which the redelegation will complete
+        type: string
+      creation_height:
+        description: Height at which the redelegation took place
+        type: integer
+      initial_balance:
+        description: Initial balance when redelegation started
+        example: "100"
+        format: integer
+        type: string
+      op_type:
+        description: Operation type
+        example: bonding
+        type: string
+      shares_dst:
+        description: Amount of destination-validator shares created by redelegation
+        example: "0.1"
+        format: number
+        type: string
+    type: object
+  types.RedelegationResponse:
+    properties:
+      delegator_address:
+        description: delegator
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      entries:
+        items:
+          $ref: '#/definitions/types.RedelegationEntryResponse'
+        type: array
+      validator_dst_address:
+        description: validator redelegation destination operator addr
+        example: walletval13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      validator_src_address:
+        description: validator redelegation source operator addr
+        example: walletval13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+    type: object
+  types.SearchTxsResult:
+    properties:
+      count:
+        description: Count of txs in current page
+        type: integer
+      limit:
+        description: Max count txs per page
+        type: integer
+      page_number:
+        description: Index of current page, start from 1
+        type: integer
+      page_total:
+        description: Count of total pages
+        type: integer
+      total_count:
+        description: Count of all txs
+        type: integer
+      txs:
+        description: List of txs in current page
+        items:
+          $ref: '#/definitions/types.TxResponse'
+        type: array
     type: object
   types.StdFee:
     properties:
@@ -1453,6 +2180,50 @@ definitions:
           $ref: '#/definitions/types.StdSignature'
         type: array
     type: object
+  types.StringEvent:
+    properties:
+      attributes:
+        items:
+          $ref: '#/definitions/types.Attribute'
+        type: array
+      type:
+        type: string
+    type: object
+  types.StringEvents:
+    items:
+      $ref: '#/definitions/types.StringEvent'
+    type: array
+  types.Tx:
+    type: object
+  types.TxResponse:
+    properties:
+      code:
+        type: integer
+      codespace:
+        type: string
+      data:
+        type: string
+      gas_used:
+        type: integer
+      gas_wanted:
+        type: integer
+      height:
+        type: integer
+      info:
+        type: string
+      logs:
+        $ref: '#/definitions/types.ABCIMessageLogs'
+        type: object
+      raw_log:
+        type: string
+      timestamp:
+        type: string
+      tx:
+        $ref: '#/definitions/types.Tx'
+        type: object
+      txhash:
+        type: string
+    type: object
   types.TxVMStatus:
     properties:
       hash:
@@ -1462,6 +2233,47 @@ definitions:
         type: object
     type: object
   types.Uint:
+    type: object
+  types.UnbondingDelegation:
+    properties:
+      delegator_address:
+        description: delegator
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      entries:
+        description: unbonding delegation entries
+        items:
+          $ref: '#/definitions/types.UnbondingDelegationEntry'
+        type: array
+      validator_address:
+        description: validator unbonding from operator addr
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+    type: object
+  types.UnbondingDelegationEntry:
+    properties:
+      balance:
+        description: Tokens to receive at completion
+        example: "1000"
+        format: integer
+        type: string
+      completion_time:
+        description: Time at which the unbonding delegation will complete
+        type: string
+      creation_height:
+        description: Height which the unbonding took place
+        type: integer
+      initial_balance:
+        description: Tokens initially scheduled to receive at completion
+        example: "1000"
+        format: integer
+        type: string
+      op_type:
+        description: Operation type
+        example: bonding
+        type: string
     type: object
   types.VMStatus:
     properties:
@@ -1491,45 +2303,69 @@ definitions:
     type: array
   types.Validator:
     properties:
+      bonding:
+        $ref: '#/definitions/types.ValidatorTokens'
+        description: Delegated bonding tokens (incl. self-delegation)
+        type: object
       commission:
         $ref: '#/definitions/types.Commission'
-        description: commission parameters
+        description: Commission parameters
         type: object
       consensus_pubkey:
-        $ref: '#/definitions/crypto.PubKey'
-        description: the consensus public key of the validator; bech encoded in JSON
-        type: object
-      delegator_shares:
-        $ref: '#/definitions/types.Dec'
-        description: total shares issued to a validator's delegators
-        type: object
+        description: Consensus public key of the validator; bech encoded in JSON
+        type: string
       description:
         $ref: '#/definitions/types.Description'
-        description: description terms for the validator
+        description: Description terms for the validator
         type: object
       jailed:
-        description: has the validator been jailed from bonded status?
+        description: Has the validator been jailed from bonded status?
         type: boolean
+      lp:
+        $ref: '#/definitions/types.ValidatorTokens'
+        description: Delegated liquidity tokens
+        type: object
       min_self_delegation:
-        $ref: '#/definitions/types.Int'
-        description: validator's self declared minimum self delegation
-        type: object
-      operator_address:
-        $ref: '#/definitions/types.ValAddress'
-        description: address of the validator's operator; bech encoded in JSON
-        type: object
-      status:
-        description: validator status (bonded/unbonding/unbonded)
+        description: Validator's self declared minimum self delegation
+        example: "1000"
+        format: integer
         type: string
-      tokens:
-        $ref: '#/definitions/types.Int'
-        description: delegated tokens (incl. self-delegation)
-        type: object
+      operator_address:
+        description: Address of the validator's operator; bech encoded in JSON
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      scheduled_to_unbond:
+        description: Has the validator been scheduled to force unbond due to low SelfStake amount compared to TotalDelegationsAmount
+        type: boolean
+      scheduled_unbond_height:
+        description: If ScheduledToUnbond, height at which this schedule started
+        type: integer
+      scheduled_unbond_time:
+        description: Is ScheduledToUnbond, min time for the validator to begin force unbond
+        type: string
+      status:
+        description: Validator status (bonded/unbonding/unbonded)
+        example: bonded
+        type: string
       unbonding_height:
-        description: if unbonding, height at which this validator has begun unbonding
+        description: If unbonding, height at which this validator has begun unbonding
         type: integer
       unbonding_time:
-        description: if unbonding, min time for the validator to complete unbonding
+        description: If unbonding, min time for the validator to complete unbonding
+        type: string
+    type: object
+  types.ValidatorTokens:
+    properties:
+      delegator_shares:
+        description: Total shares issued to a validator's delegators
+        example: "0.123"
+        format: number
+        type: string
+      tokens:
+        description: Delegated tokens (incl. self-delegation for bonding tokens)
+        example: "100"
+        format: integer
         type: string
     type: object
   types.Validators:
@@ -1989,58 +2825,128 @@ paths:
       - Distribution
   /distribution/delegators/{delegatorAddr}/rewards:
     get:
+      consumes:
+      - application/json
       description: Get the sum of all the rewards earned by delegations by a single delegator
+      operationId: distributionGetDelegatorRewards
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/DelegatorTotalRewards'
+            $ref: '#/definitions/rest.QueryDelegationDelegatorRewardsResp'
         "400":
-          description: Invalid delegator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Get the total rewards balance from all delegations
       tags:
       - Distribution
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos167w96tdvmazakdwkw2u57227eduula2cy572lf
     post:
       consumes:
       - application/json
       description: Withdraw all the delegator's delegation rewards
+      operationId: distributionPostWithdrawDelegatorRewards
       parameters:
-      - in: body
-        name: Withdraw request body
+      - description: WithdrawRewardsReq request with signed transaction
+        in: body
+        name: postRequest
+        required: true
         schema:
-          properties:
-            base_req:
-              $ref: '#/definitions/BaseReq'
+          $ref: '#/definitions/rest.withdrawRewardsReq'
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BroadcastTxCommitResult'
+            items:
+              $ref: '#/definitions/rest.TxWithdrawDelegatorReward'
+            type: array
         "400":
-          description: Invalid delegator address
-        "401":
-          description: Key password is wrong
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Withdraw all the delegator's delegation rewards
       tags:
       - Distribution
   /distribution/delegators/{delegatorAddr}/rewards/{validatorAddr}:
     get:
+      consumes:
+      - application/json
       description: Query a single delegation reward by a delegator
+      operationId: distributionGetDelegationRewards
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
+      - description: Bech32 OperatorAddress of validator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.QueryDecCoinsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Query a delegation reward
+      tags:
+      - Distribution
+    post:
+      consumes:
+      - application/json
+      description: Withdraw a delegator's delegation reward from a single validator
+      operationId: distributionPostWithdrawDelegationRewards
+      parameters:
+      - description: WithdrawRewardsReq request with signed transaction
+        in: body
+        name: postRequest
+        required: true
+        schema:
+          $ref: '#/definitions/rest.withdrawRewardsReq'
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
+      - description: Bech32 OperatorAddress of validator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -2048,225 +2954,297 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/Coin'
+              $ref: '#/definitions/rest.TxWithdrawDelegatorReward'
             type: array
         "400":
-          description: Invalid delegator address
-        "500":
-          description: Internal Server Error
-      summary: Query a delegation reward
-      tags:
-      - Distribution
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos16xyempempp92x9hyzz9wrgf94r6j9h5f06pxxv
-    - description: Bech32 OperatorAddress of validator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
-    post:
-      consumes:
-      - application/json
-      description: Withdraw a delegator's delegation reward from a single validator
-      parameters:
-      - in: body
-        name: Withdraw request body
-        schema:
-          properties:
-            base_req:
-              $ref: '#/definitions/BaseReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
+          description: Returned if the request doesn't have valid query params
           schema:
-            $ref: '#/definitions/BroadcastTxCommitResult'
-        "400":
-          description: Invalid delegator address or delegation body
-        "401":
-          description: Key password is wrong
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Withdraw a delegation reward
       tags:
       - Distribution
   /distribution/delegators/{delegatorAddr}/withdraw_address:
     get:
+      consumes:
+      - application/json
       description: Get the delegations' rewards withdrawal address. This is the address in which the user will receive the reward funds
+      operationId: distributionGetDelegatorWithdrawalAddr
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Address'
+            $ref: '#/definitions/rest.QueryAddressResp'
         "400":
-          description: Invalid delegator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Get the rewards withdrawal address
       tags:
       - Distribution
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos167w96tdvmazakdwkw2u57227eduula2cy572lf
     post:
       consumes:
       - application/json
-      description: Replace the delegations' rewards withdrawal address for a new one.
+      description: Withdraw a delegator's delegation reward from a single validator
+      operationId: distributionPostSetDelegatorWithdrawalAddr
       parameters:
-      - in: body
-        name: Withdraw request body
+      - description: SetWithdrawalAddrReq request with signed transaction
+        in: body
+        name: postRequest
+        required: true
         schema:
-          properties:
-            base_req:
-              $ref: '#/definitions/BaseReq'
-            withdraw_address:
-              $ref: '#/definitions/Address'
+          $ref: '#/definitions/rest.setWithdrawalAddrReq'
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BroadcastTxCommitResult'
+            items:
+              $ref: '#/definitions/rest.TxSetWithdrawAddress'
+            type: array
         "400":
-          description: Invalid delegator or withdraw address
-        "401":
-          description: Key password is wrong
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
-      summary: Replace the rewards withdrawal address
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Withdraw a delegation reward
       tags:
       - Distribution
   /distribution/parameters:
     get:
+      consumes:
+      - application/json
+      description: Fee distribution parameters
+      operationId: distributionGetParams
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            properties:
-              base_proposer_reward:
-                type: string
-              bonus_proposer_reward:
-                type: string
-              community_tax:
-                type: string
+            $ref: '#/definitions/rest.QueryParamsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Fee distribution parameters
+      tags:
+      - Distribution
+  /distribution/pool/{poolName}:
+    get:
+      consumes:
+      - application/json
+      description: Get the amount held in the specified pool
+      operationId: distributionPool
+      parameters:
+      - description: 'PoolName: LiquidityProvidersPool, FoundationPool, PublicTreasuryPool, HARP'
+        in: path
+        name: poolName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.QueryDecCoinsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get the amount held in the specified pool
+      tags:
+      - Distribution
+  /distribution/public_treasury_pool:
+    post:
+      consumes:
+      - application/json
+      description: Fund the public treasury pool
+      operationId: distributionPostFundPublicTreasuryPool
+      parameters:
+      - description: FundPublicTreasuryPoolReq request with signed transaction
+        in: body
+        name: postRequest
+        required: true
+        schema:
+          $ref: '#/definitions/rest.fundPublicTreasuryPoolReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/rest.TxFundPublicTreasuryPool'
+            type: array
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Fund the public treasury pool
       tags:
       - Distribution
   /distribution/validators/{validatorAddr}:
     get:
+      consumes:
+      - application/json
       description: Query the distribution information of a single validator
+      operationId: distributionGetValidatorInfo
+      parameters:
+      - description: Bech32 OperatorAddress of validator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ValidatorDistInfo'
+            $ref: '#/definitions/rest.QuerySwaggerValidatorDistInfoResp'
         "400":
-          description: Invalid validator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Validator distribution information
       tags:
       - Distribution
-    parameters:
-    - description: Bech32 OperatorAddress of validator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
   /distribution/validators/{validatorAddr}/outstanding_rewards:
     get:
+      consumes:
+      - application/json
+      description: Fee distribution outstanding rewards of a single validator
+      operationId: distributionOutstandingRewards
+      parameters:
+      - description: Bech32 OperatorAddress of validator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/Coin'
-            type: array
+            $ref: '#/definitions/rest.QueryDecCoinsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Fee distribution outstanding rewards of a single validator
       tags:
       - Distribution
-    parameters:
-    - description: Bech32 OperatorAddress of validator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
   /distribution/validators/{validatorAddr}/rewards:
     get:
-      description: Query the commission and self-delegation rewards of validator.
+      consumes:
+      - application/json
+      description: Query the commission and self-delegation rewards of validator
+      operationId: distributionGetValidatorRewards
+      parameters:
+      - description: Bech32 OperatorAddress of validator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/Coin'
-            type: array
+            $ref: '#/definitions/rest.QueryDecCoinsResp'
         "400":
-          description: Invalid validator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Commission and self-delegation rewards of a single validator
       tags:
       - Distribution
-    parameters:
-    - description: Bech32 OperatorAddress of validator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
     post:
       consumes:
       - application/json
       description: Withdraw the validator's self-delegation and commissions rewards
+      operationId: distributionPostWithdrawValidatorRewards
       parameters:
-      - in: body
-        name: Withdraw request body
+      - description: WithdrawRewardsReq request with signed transaction
+        in: body
+        name: postRequest
+        required: true
         schema:
-          properties:
-            base_req:
-              $ref: '#/definitions/BaseReq'
+          $ref: '#/definitions/rest.withdrawRewardsReq'
+      - description: Bech32 OperatorAddress of validator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BroadcastTxCommitResult'
+            items:
+              $ref: '#/definitions/types.StdTx'
+            type: array
         "400":
-          description: Invalid validator address
-        "401":
-          description: Key password is wrong
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Withdraw the validator's rewards
       tags:
       - Distribution
@@ -2809,55 +3787,73 @@ paths:
       - Markets
   /minting/annual-provisions:
     get:
+      consumes:
+      - application/json
+      description: Current minting annual provisions value
+      operationId: mintingGetAnnualProvisions
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/rest.QueryDecResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Current minting annual provisions value
       tags:
       - Mint
   /minting/inflation:
     get:
+      consumes:
+      - application/json
+      description: Current minting inflation value
+      operationId: mintingGetInflation
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/rest.QueryDecResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Current minting inflation value
       tags:
       - Mint
   /minting/parameters:
     get:
+      consumes:
+      - application/json
+      description: Minting module parameters
+      operationId: mintingGetParams
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            properties:
-              blocks_per_year:
-                type: string
-              goal_bonded:
-                type: string
-              inflation_max:
-                type: string
-              inflation_min:
-                type: string
-              inflation_rate_change:
-                type: string
-              mint_denom:
-                type: string
+            $ref: '#/definitions/rest.QueryParamsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Minting module parameters
       tags:
       - Mint
@@ -3458,6 +4454,51 @@ paths:
       - Slashing
   /staking/delegators/{delegatorAddr}/delegations:
     get:
+      consumes:
+      - application/json
+      description: Get all delegations from a delegator
+      operationId: stakingGetDelegatorDelegations
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.QueryDelegationsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get all delegations from a delegator
+      tags:
+      - Staking
+    post:
+      consumes:
+      - application/json
+      description: Submit delegation
+      operationId: stakingPostDelegatorDelegations
+      parameters:
+      - description: DelegateRequest request with signed transaction
+        in: body
+        name: postRequest
+        required: true
+        schema:
+          $ref: '#/definitions/rest.DelegateRequest'
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -3465,130 +4506,72 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/Delegation'
+              $ref: '#/definitions/types.MsgDelegate'
             type: array
         "400":
-          description: Invalid delegator address
-        "500":
-          description: Internal Server Error
-      summary: Get all delegations from a delegator
-      tags:
-      - Staking
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos16xyempempp92x9hyzz9wrgf94r6j9h5f06pxxv
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: The password of the account to remove from the KMS
-        in: body
-        name: delegation
-        schema:
-          properties:
-            base_req:
-              $ref: '#/definitions/BaseReq'
-            delegation:
-              $ref: '#/definitions/Coin'
-            delegator_address:
-              $ref: '#/definitions/Address'
-            validator_address:
-              $ref: '#/definitions/ValidatorAddress'
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
+          description: Returned if the request doesn't have valid query params
           schema:
-            $ref: '#/definitions/BroadcastTxCommitResult'
-        "400":
-          description: Invalid delegator address or delegation request body
-        "401":
-          description: Key password is wrong
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Submit delegation
       tags:
       - Staking
   /staking/delegators/{delegatorAddr}/delegations/{validatorAddr}:
     get:
+      consumes:
+      - application/json
+      description: Query the current delegation between a delegator and a validator
+      operationId: stakingGetDelegaton
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
+      - description: Bech32 OperatorAddress of validator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Delegation'
+            $ref: '#/definitions/rest.QueryDelegationResp'
         "400":
-          description: Invalid delegator address or validator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Query the current delegation between a delegator and a validator
       tags:
       - Staking
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos16xyempempp92x9hyzz9wrgf94r6j9h5f06pxxv
-    - description: Bech32 OperatorAddress of validator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
   /staking/delegators/{delegatorAddr}/redelegations:
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos16xyempempp92x9hyzz9wrgf94r6j9h5f06pxxv
     post:
       consumes:
       - application/json
+      description: Submit a redelegation
+      operationId: stakingPostRedelegations
       parameters:
-      - description: The sender and tx information
+      - description: RedelegateRequest request with signed transaction
         in: body
-        name: delegation
+        name: postRequest
+        required: true
         schema:
-          properties:
-            base_req:
-              $ref: '#/definitions/BaseReq'
-            delegator_address:
-              $ref: '#/definitions/Address'
-            shares:
-              example: "100"
-              type: string
-            validator_dst_address:
-              $ref: '#/definitions/ValidatorAddress'
-            validator_src_addressess:
-              $ref: '#/definitions/ValidatorAddress'
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Tx was succesfully generated
-          schema:
-            $ref: '#/definitions/StdTx'
-        "400":
-          description: Invalid delegator address or redelegation request body
-        "500":
-          description: Internal Server Error
-      summary: Submit a redelegation
-      tags:
-      - Staking
-  /staking/delegators/{delegatorAddr}/unbonding_delegations:
-    get:
+          $ref: '#/definitions/rest.RedelegateRequest'
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -3596,333 +4579,464 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/UnbondingDelegation'
+              $ref: '#/definitions/rest.TxBeginRedelegate'
             type: array
         "400":
-          description: Invalid delegator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
-      summary: Get all unbonding delegations from a delegator
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Submit a redelegation
       tags:
       - Staking
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos16xyempempp92x9hyzz9wrgf94r6j9h5f06pxxv
-    post:
+  /staking/delegators/{delegatorAddr}/txs:
+    get:
       consumes:
       - application/json
+      description: Query all staking txs (msgs) from a delegator
+      operationId: stakingGetDelegatorTxs
       parameters:
-      - description: The password of the account to remove from the KMS
-        in: body
-        name: delegation
-        schema:
-          properties:
-            base_req:
-              $ref: '#/definitions/BaseReq'
-            delegator_address:
-              $ref: '#/definitions/Address'
-            shares:
-              example: "100"
-              type: string
-            validator_address:
-              $ref: '#/definitions/ValidatorAddress'
-          type: object
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
+      - description: 'Unbonding types via space: bond unbond redelegate'
+        in: query
+        name: type
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BroadcastTxCommitResult'
+            items:
+              $ref: '#/definitions/types.SearchTxsResult'
+            type: array
         "400":
-          description: Invalid delegator address or unbonding delegation request body
-        "401":
-          description: Key password is wrong
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Query all staking txs (msgs) from a delegator
+      tags:
+      - Staking
+  /staking/delegators/{delegatorAddr}/unbonding_delegations:
+    get:
+      consumes:
+      - application/json
+      description: Get all unbonding delegations from a delegator
+      operationId: stakingGetDelegatorUnbondingDelegations
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.QueryUnbondingDelegationsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get all unbonding delegations from a delegator
+      tags:
+      - Staking
+    post:
+      consumes:
+      - application/json
+      description: Submit an unbonding delegation
+      operationId: stakingPostUnbondingDelegations
+      parameters:
+      - description: RedelegateRequest request with signed transaction
+        in: body
+        name: postRequest
+        required: true
+        schema:
+          $ref: '#/definitions/rest.UndelegateRequest'
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/rest.TxUndelegate'
+            type: array
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Submit an unbonding delegation
       tags:
       - Staking
   /staking/delegators/{delegatorAddr}/unbonding_delegations/{validatorAddr}:
     get:
+      consumes:
+      - application/json
+      description: Query all unbonding delegations between a delegator and a validator
+      operationId: stakingGetUnbondingDelegation
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
+      - description: Bech32 OperatorAddress of validator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/UnbondingDelegationPair'
+            $ref: '#/definitions/rest.QueryUnbondingDelegationResp'
         "400":
-          description: Invalid delegator address or validator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Query all unbonding delegations between a delegator and a validator
       tags:
       - Staking
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos16xyempempp92x9hyzz9wrgf94r6j9h5f06pxxv
-    - description: Bech32 OperatorAddress of validator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
   /staking/delegators/{delegatorAddr}/validators:
     get:
+      consumes:
+      - application/json
+      description: Query all validators that a delegator is bonded to
+      operationId: stakingGetDelegatorValidators
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/Validator'
-            type: array
+            $ref: '#/definitions/rest.QueryValidatorsResp'
         "400":
-          description: Invalid delegator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Query all validators that a delegator is bonded to
       tags:
       - Staking
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos16xyempempp92x9hyzz9wrgf94r6j9h5f06pxxv
   /staking/delegators/{delegatorAddr}/validators/{validatorAddr}:
     get:
+      consumes:
+      - application/json
+      description: Query a validator that a delegator is bonded to
+      operationId: stakingGetDelegatorValidator
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: path
+        name: delegatorAddr
+        required: true
+        type: string
+      - description: Bech32 ValAddress of Delegator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Validator'
+            $ref: '#/definitions/rest.QueryValidatorResp'
         "400":
-          description: Invalid delegator address or validator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Query a validator that a delegator is bonded to
       tags:
       - Staking
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: path
-      name: delegatorAddr
-      required: true
-      type: string
-      x-example: cosmos16xyempempp92x9hyzz9wrgf94r6j9h5f06pxxv
-    - description: Bech32 ValAddress of Delegator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
-  /staking/parameters:
+  /staking/historical_info/{height}:
     get:
+      consumes:
+      - application/json
+      description: Query historical info at a given height
+      operationId: stakingGetHistoricalInfo
+      parameters:
+      - description: block height
+        in: path
+        name: height
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            properties:
-              bond_denom:
-                type: string
-              goal_bonded:
-                type: string
-              inflation_max:
-                type: string
-              inflation_min:
-                type: string
-              inflation_rate_change:
-                type: string
-              max_validators:
-                type: integer
-              unbonding_time:
-                type: string
-            type: object
+            $ref: '#/definitions/rest.QueryHistoricalInfoResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Query historical info at a given height
+      tags:
+      - Staking
+  /staking/parameters:
+    get:
+      consumes:
+      - application/json
+      description: Get the current staking parameter values
+      operationId: stakingGetParams
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.QueryParamsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Get the current staking parameter values
       tags:
       - Staking
   /staking/pool:
     get:
+      consumes:
+      - application/json
+      description: Get the current state of the staking pool
+      operationId: stakingGetPool
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            properties:
-              bonded_tokens:
-                type: string
-              date_last_commission_reset:
-                type: string
-              inflation:
-                type: string
-              inflation_last_time:
-                type: string
-              loose_tokens:
-                type: string
-              prev_bonded_shares:
-                type: string
-            type: object
+            $ref: '#/definitions/rest.QueryPoolResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Get the current state of the staking pool
       tags:
       - Staking
   /staking/redelegations:
     get:
+      consumes:
+      - application/json
+      description: Get all redelegations (filter by query params)
+      operationId: stakingGetRedelegations
+      parameters:
+      - description: Bech32 AccAddress of Delegator
+        in: query
+        name: delegator
+        type: string
+      - description: Bech32 AccAddress of SrcValidator
+        in: query
+        name: validator_from
+        type: string
+      - description: Bech32 AccAddress of DstValidator
+        in: query
+        name: validator_to
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/Redelegation'
-            type: array
+            $ref: '#/definitions/rest.QueryRedelegationsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Get all redelegations (filter by query params)
       tags:
       - Staking
-    parameters:
-    - description: Bech32 AccAddress of Delegator
-      in: query
-      name: delegator
-      required: false
-      type: string
-    - description: Bech32 ValAddress of SrcValidator
-      in: query
-      name: validator_from
-      required: false
-      type: string
-    - description: Bech32 ValAddress of DstValidator
-      in: query
-      name: validator_to
-      required: false
-      type: string
   /staking/validators:
     get:
+      consumes:
+      - application/json
+      description: Get all validator candidates. By default it returns only the bonded validators
+      operationId: stakingGetValidators
       parameters:
-      - description: The validator bond status. Must be either 'bonded', 'unbonded', or 'unbonding'.
+      - description: The validator bond status. Must be either 'bonded', 'unbonded', or 'unbonding'
         in: query
         name: status
         type: string
-        x-example: bonded
-      - description: The page number.
+      - description: The page number
         in: query
         name: page
-        type: integer
-        x-example: 1
-      - description: The maximum number of items per page.
+        type: string
+      - description: The maximum number of items per page
         in: query
         name: limit
-        type: integer
-        x-example: 1
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/Validator'
-            type: array
+            $ref: '#/definitions/rest.QueryValidatorsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
-      summary: Get all validator candidates. By default it returns only the bonded validators.
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get all validator candidates. By default it returns only the bonded validators
       tags:
       - Staking
   /staking/validators/{validatorAddr}:
     get:
+      consumes:
+      - application/json
+      description: Query the information from a single validator
+      operationId: stakingGetValidator
+      parameters:
+      - description: Bech32 ValAddress
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Validator'
+            $ref: '#/definitions/rest.QueryValidatorResp'
         "400":
-          description: Invalid validator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
       summary: Query the information from a single validator
       tags:
       - Staking
-    parameters:
-    - description: Bech32 OperatorAddress of validator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
   /staking/validators/{validatorAddr}/delegations:
     get:
+      consumes:
+      - application/json
+      description: Get the current delegations for the validator
+      operationId: stakingGetValidatorDelegations
+      parameters:
+      - description: Bech32 ValAddress
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/Delegation'
-            type: array
+            $ref: '#/definitions/rest.QueryDelegationsResp'
         "400":
-          description: Invalid validator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
-      summary: Get all delegations from a validator
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get the current delegations for the validator
       tags:
       - Staking
-    parameters:
-    - description: Bech32 OperatorAddress of validator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
   /staking/validators/{validatorAddr}/unbonding_delegations:
     get:
+      consumes:
+      - application/json
+      description: Get the current unbonding information for the validator
+      operationId: stakingGetValidatorUnbondingDelegation
+      parameters:
+      - description: Bech32 ValAddress
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/UnbondingDelegation'
-            type: array
+            $ref: '#/definitions/rest.QueryUnbondingDelegationsResp'
         "400":
-          description: Invalid validator address
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
         "500":
-          description: Internal Server Error
-      summary: Get all unbonding delegations from a validator
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Get the current unbonding information for the validator
       tags:
       - Staking
-    parameters:
-    - description: Bech32 OperatorAddress of validator
-      in: path
-      name: validatorAddr
-      required: true
-      type: string
-      x-example: cosmosvaloper16xyempempp92x9hyzz9wrgf94r6j9h5f2w4n2l
   /supply/total:
     get:
       produces:
