@@ -172,7 +172,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client1Addr), client1PrivKey
 		deployMsg := vm.MsgDeployModule{
 			Signer: client1Addr,
-			Module: byteCode[0],
+			Module: byteCode[0].ByteCode,
 		}
 		tx := GenTx([]sdk.Msg{deployMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)
@@ -227,7 +227,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client1Addr), client1PrivKey
 		executeMsg := vm.MsgExecuteScript{
 			Signer: client1Addr,
-			Script: byteCode[0],
+			Script: byteCode[0].ByteCode,
 			Args:   []vm.ScriptArg{swapAmountArg, swapPriceArg},
 		}
 		tx := GenTx([]sdk.Msg{executeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -291,7 +291,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client2Addr), client2PrivKey
 		executeMsg := vm.MsgExecuteScript{
 			Signer: client2Addr,
-			Script: byteCode[0],
+			Script: byteCode[0].ByteCode,
 			Args:   []vm.ScriptArg{sellerAddrArg, swapPriceArg},
 		}
 		tx := GenTx([]sdk.Msg{executeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)

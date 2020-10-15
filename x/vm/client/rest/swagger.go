@@ -10,8 +10,8 @@ import (
 //nolint:deadcode,unused
 type (
 	VmRespCompile struct {
-		Height int64              `json:"height"`
-		Result vm_client.MoveFile `json:"result"`
+		Height int64                   `json:"height"`
+		Result vm_client.CompiledItems `json:"result"`
 	}
 
 	VmData struct {

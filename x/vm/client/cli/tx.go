@@ -181,7 +181,7 @@ func getMoveCodeFromFileArg(argValue string) (moveCode []byte, retErr error) {
 		return
 	}
 
-	var moveFile vm_client.MoveFile
+	var moveFile vm_client.CompiledItems
 	if err := json.Unmarshal(jsonContent, &moveFile); err != nil {
 		retErr = helpers.BuildError(
 			argName,
@@ -192,17 +192,15 @@ func getMoveCodeFromFileArg(argValue string) (moveCode []byte, retErr error) {
 		return
 	}
 
-	code, err := hex.DecodeString(moveFile.Code[0]) //TODO: fix this
-	if err != nil {
+	if len(moveFile) != 1 {
 		retErr = helpers.BuildError(
 			argName,
 			argValue,
 			helpers.ParamTypeCliArg,
-			fmt.Sprintf("Move file code HEX decode: %v", err),
+			fmt.Sprintf("Allowed only one script, sent : %d", len(moveFile)),
 		)
 		return
 	}
-	moveCode = code
 
-	return
+	return hex.DecodeString(moveFile[0].Code)
 }

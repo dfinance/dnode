@@ -379,14 +379,14 @@ func (ct *CLITester) RestQueryMultisigRevokeStdTx(validatorAccName string, callI
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryVMCompile(address, code string) (*RestRequest, *vm_client.MoveFile) {
+func (ct *CLITester) RestQueryVMCompile(address, code string) (*RestRequest, *vm_client.CompiledItems) {
 	req := vmRest.CompileReq{
 		Code:    code,
 		Account: address,
 	}
 
 	reqSubPath := fmt.Sprintf("%s/%s", vm.ModuleName, "compile")
-	respMsg := &vm_client.MoveFile{}
+	respMsg := &vm_client.CompiledItems{}
 
 	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, req, respMsg)
 

@@ -169,11 +169,12 @@ func Compile(cdc *codec.Codec) *cobra.Command {
 
 			// compile Move file
 			bytecode, err := vm_client.Compile(compilerAddr, sourceFile)
+
 			if err != nil {
 				return err
 			}
 
-			if err := saveOutput(bytecode[0], cdc); err != nil { //TODO: fix this
+			if err := saveOutput(bytecode, cdc); err != nil { //TODO: fix this
 				return fmt.Errorf("error during compiled bytes print: %v", err)
 			}
 			fmt.Println("Compilation successfully done")
@@ -221,12 +222,10 @@ func GetTxVMStatus(cdc *codec.Codec) *cobra.Command {
 }
 
 // saveOutput prints compilation output to stdout or file.
-func saveOutput(bytecode []byte, cdc *codec.Codec) error {
-	code := hex.EncodeToString(bytecode)
+func saveOutput(items []vm_client.CompiledItem, cdc *codec.Codec) error {
 	output := viper.GetString(vm_client.FlagOutput)
 
-	mvFile := vm_client.MoveFile{Code: []string{code}}
-	mvBytes, err := cdc.MarshalJSONIndent(mvFile, "", "    ")
+	mvBytes, err := cdc.MarshalJSONIndent(items, "", "    ")
 	if err != nil {
 		return err
 	}

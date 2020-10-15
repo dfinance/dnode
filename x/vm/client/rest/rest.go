@@ -117,16 +117,7 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		code := make([]string, len(byteCodes))
-		for i, item := range byteCodes {
-			code[i] = hex.EncodeToString(item)
-		}
-
-		resp := vm_client.MoveFile{
-			Code: code,
-		}
-
-		rest.PostProcessResponse(w, cliCtx, resp)
+		rest.PostProcessResponse(w, cliCtx, byteCodes)
 	}
 }
 

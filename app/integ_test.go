@@ -59,8 +59,16 @@ func TestInteg_ConsensusFailure(t *testing.T) {
 	require.NoError(t, err, "write script file")
 	require.NoError(t, moveFile.Close(), "close script file")
 
+	dat, _ := ioutil.ReadFile(movePath)
+
+	_ = dat
+
 	// Compile .move script file
 	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
+
+	dat, _ = ioutil.ReadFile(compiledPath)
+
+	_ = dat
 
 	// Execute .json script file
 	// Should panic as there is no local VM running
@@ -130,6 +138,10 @@ func TestIntegVM_ExecuteScriptViaCLI(t *testing.T) {
 	// Compile .move script file
 	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
 
+	dat, _ := ioutil.ReadFile(movePath)
+	dat2, _ := ioutil.ReadFile(compiledPath)
+
+	_, _ = dat, dat2
 	// Check compile query cmd with invalid inputs
 	{
 		// invalid source path
@@ -213,9 +225,11 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 		r, resp := ct.RestQueryVMCompile(senderAddress, script)
 		r.CheckSucceeded()
 
-		require.NotEmpty(t, resp.Code)
+		require.NotEmpty(t, resp)
 
-		byteCode = resp.Code
+		for _, item := range *resp {
+			byteCode = append(byteCode, item.Code)
+		}
 	}
 
 	// Check compile endpoint with invalid inputs
@@ -376,9 +390,11 @@ func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 		r, resp := ct.RestQueryVMCompile(senderAddress, module)
 		r.CheckSucceeded()
 
-		require.NotEmpty(t, resp.Code)
+		require.NotEmpty(t, resp)
 
-		byteCode = resp.Code
+		for _, item := range *resp {
+			byteCode = append(byteCode, item.Code)
+		}
 	}
 
 	// Deploy script
