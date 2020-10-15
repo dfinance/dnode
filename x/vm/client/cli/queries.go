@@ -173,7 +173,7 @@ func Compile(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			if err := saveOutput(bytecode, cdc); err != nil {
+			if err := saveOutput(bytecode[0], cdc); err != nil { //TODO: fix this
 				return fmt.Errorf("error during compiled bytes print: %v", err)
 			}
 			fmt.Println("Compilation successfully done")
@@ -225,7 +225,7 @@ func saveOutput(bytecode []byte, cdc *codec.Codec) error {
 	code := hex.EncodeToString(bytecode)
 	output := viper.GetString(vm_client.FlagOutput)
 
-	mvFile := vm_client.MoveFile{Code: code}
+	mvFile := vm_client.MoveFile{Code: []string{code}}
 	mvBytes, err := cdc.MarshalJSONIndent(mvFile, "", "    ")
 	if err != nil {
 		return err

@@ -166,12 +166,13 @@ func TestIntegApp_Crisis(t *testing.T) {
 		})
 
 		require.NoError(t, compileErr)
+		require.Len(t, byteCode, 1)
 
 		// deploy using helper func
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client1Addr), client1PrivKey
 		deployMsg := vm.MsgDeployModule{
 			Signer: client1Addr,
-			Module: byteCode,
+			Module: byteCode[0],
 		}
 		tx := GenTx([]sdk.Msg{deployMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)
@@ -214,8 +215,8 @@ func TestIntegApp_Crisis(t *testing.T) {
 			},
 			Address: client1LibraAddr,
 		})
-
 		require.NoError(t, compileErr)
+		require.Len(t, byteCode, 1)
 
 		// prepare execute Tx
 		swapAmountArg, amountArgErr := vm_client.NewU128ScriptArg(offerAmount.String())
@@ -226,7 +227,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client1Addr), client1PrivKey
 		executeMsg := vm.MsgExecuteScript{
 			Signer: client1Addr,
-			Script: byteCode,
+			Script: byteCode[0],
 			Args:   []vm.ScriptArg{swapAmountArg, swapPriceArg},
 		}
 		tx := GenTx([]sdk.Msg{executeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -279,8 +280,8 @@ func TestIntegApp_Crisis(t *testing.T) {
 			},
 			Address: client1LibraAddr,
 		})
-
 		require.NoError(t, compileErr)
+		require.Len(t, byteCode, 1)
 
 		sellerAddrArg, sellerArgErr := vm_client.NewAddressScriptArg(client1Addr.String())
 		require.NoError(t, sellerArgErr)
@@ -290,7 +291,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client2Addr), client2PrivKey
 		executeMsg := vm.MsgExecuteScript{
 			Signer: client2Addr,
-			Script: byteCode,
+			Script: byteCode[0],
 			Args:   []vm.ScriptArg{sellerAddrArg, swapPriceArg},
 		}
 		tx := GenTx([]sdk.Msg{executeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)

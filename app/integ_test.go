@@ -208,7 +208,7 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 	senderAddress := ct.Accounts[senderName].Address
 
 	// Compile script
-	byteCode := ""
+	var byteCode []string
 	{
 		r, resp := ct.RestQueryVMCompile(senderAddress, script)
 		r.CheckSucceeded()
@@ -230,7 +230,7 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 	// Execute script
 	{
 		arg := "100"
-		q, stdTx := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "", arg)
+		q, stdTx := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode[0], "", arg)
 		q.CheckSucceeded()
 
 		// verify stdTx
@@ -238,7 +238,7 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 			scriptArg, err := vm_client.NewU128ScriptArg(arg)
 			require.NoError(t, err)
 
-			code, err := hex.DecodeString(byteCode)
+			code, err := hex.DecodeString(byteCode[0])
 			require.NoError(t, err)
 
 			require.Len(t, stdTx.Msgs, 1)
@@ -264,17 +264,17 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 		}
 		// invalid args len (no args)
 		{
-			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "")
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode[0], "")
 			q.CheckFailed(400, nil)
 		}
 		// invalid args len (more than needed)
 		{
-			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "", "100", "200")
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode[0], "", "100", "200")
 			q.CheckFailed(400, nil)
 		}
 		// invalid args (wrong type)
 		{
-			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "", "true")
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode[0], "", "true")
 			q.CheckFailed(400, nil)
 		}
 	}
@@ -371,7 +371,7 @@ func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 	senderAddress := ct.Accounts[senderName].Address
 
 	// Compile module
-	byteCode := ""
+	var byteCode []string
 	{
 		r, resp := ct.RestQueryVMCompile(senderAddress, module)
 		r.CheckSucceeded()
@@ -383,12 +383,12 @@ func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 
 	// Deploy script
 	{
-		q, stdTx := ct.RestQueryVMPublishModuleStdTx(senderName, byteCode, "")
+		q, stdTx := ct.RestQueryVMPublishModuleStdTx(senderName, byteCode[0], "")
 		q.CheckSucceeded()
 
 		// verify stdTx
 		{
-			code, err := hex.DecodeString(byteCode)
+			code, err := hex.DecodeString(byteCode[0])
 			require.NoError(t, err)
 
 			require.Len(t, stdTx.Msgs, 1)

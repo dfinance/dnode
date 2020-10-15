@@ -185,10 +185,10 @@ func MockVMConfig() *vmConfig.VMConfig {
 
 // VMServer aggregates gRPC VM services.
 type VMServer struct {
-	VMCompilerServer        compiler_grpc.DvmCompilerServer
-	VMMetaDataServer        metadata_grpc.DVMBytecodeMetadataServer
-	VMModulePublisherServer vm_grpc.VMModulePublisherServer
-	VMScriptExecutorServer  vm_grpc.VMScriptExecutorServer
+	VMCompilerServer        compiler_grpc.UnimplementedDvmCompilerServer
+	VMMetaDataServer        metadata_grpc.UnimplementedDVMBytecodeMetadataServer
+	VMModulePublisherServer vm_grpc.UnimplementedVMModulePublisherServer
+	VMScriptExecutorServer  vm_grpc.UnimplementedVMScriptExecutorServer
 }
 
 // NewTestDnAppMockVM creates dnode app and mock VM server.
@@ -200,10 +200,10 @@ func NewTestDnAppMockVM(logOpts ...log.Option) (*DnServiceApp, func()) {
 	vmServer := VMServer{}
 	server := grpc.NewServer()
 
-	compiler_grpc.RegisterDvmCompilerServer(server, vmServer.VMCompilerServer)
-	metadata_grpc.RegisterDVMBytecodeMetadataServer(server, vmServer.VMMetaDataServer)
-	vm_grpc.RegisterVMModulePublisherServer(server, vmServer.VMModulePublisherServer)
-	vm_grpc.RegisterVMScriptExecutorServer(server, vmServer.VMScriptExecutorServer)
+	compiler_grpc.RegisterDvmCompilerServer(server, &vmServer.VMCompilerServer)
+	metadata_grpc.RegisterDVMBytecodeMetadataServer(server, &vmServer.VMMetaDataServer)
+	vm_grpc.RegisterVMModulePublisherServer(server, &vmServer.VMModulePublisherServer)
+	vm_grpc.RegisterVMScriptExecutorServer(server, &vmServer.VMScriptExecutorServer)
 
 	go func() {
 		if err := server.Serve(vmListener); err != nil {

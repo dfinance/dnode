@@ -192,7 +192,7 @@ func getMoveCodeFromFileArg(argValue string) (moveCode []byte, retErr error) {
 		return
 	}
 
-	code, err := hex.DecodeString(moveFile.Code)
+	code, err := hex.DecodeString(moveFile.Code[0]) //TODO: fix this
 	if err != nil {
 		retErr = helpers.BuildError(
 			argName,

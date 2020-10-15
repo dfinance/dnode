@@ -22,7 +22,7 @@ const (
 
 // MVFile struct contains code from file in hex.
 type MoveFile struct {
-	Code string `json:"code"`
+	Code []string `json:"code"`
 }
 
 // Create connection to vm.
@@ -50,7 +50,7 @@ func ExtractArguments(addr string, bytecode []byte) ([]types_grpc.VMTypeTag, err
 }
 
 // Compile script via grpc compiler.
-func Compile(addr string, sourceFiles *compiler_grpc.SourceFiles) ([]byte, error) {
+func Compile(addr string, sourceFiles *compiler_grpc.SourceFiles) ([][]byte, error) {
 	conn, err := CreateConnection(addr)
 	if err != nil {
 		return nil, fmt.Errorf("compilation failed because of error during connection to VM (%s): %w", addr, err)
@@ -70,5 +70,11 @@ func Compile(addr string, sourceFiles *compiler_grpc.SourceFiles) ([]byte, error
 		return nil, fmt.Errorf("compilation failed because of errors from compiler: %s", strings.Join(resp.Errors, "\n"))
 	}
 
-	return resp.Units[0].Bytecode, nil
+	respBytes := make([][]byte, len(resp.Units))
+
+	for i, unit := range resp.Units {
+		respBytes[i] = unit.Bytecode
+	}
+
+	return respBytes, nil
 }

@@ -101,6 +101,18 @@ script {
 		Event::emit<u64>(account, res);
 	}
 }
+
+script {
+	use 0x1::Event;
+	use {{sender}}::DblMathAdd;
+	use {{sender}}::DblMathSub;
+	
+	fun main(account: &signer, a: u64, b: u64, c: u64) {
+		let ab = DblMathSub::sub(a, b);
+		let res = DblMathAdd::add(ab, c);
+		Event::emit<u64>(account, res);
+	}
+}
 `
 
 const oraclePriceScript = `
@@ -262,7 +274,7 @@ func TestVMKeeper_DeployContractTransfer(t *testing.T) {
 		toSend[denoms[i]] = sdk.NewInt(100 - int64(i)*10)
 	}
 
-	acc1.SetCoins(putCoins)
+	_ = acc1.SetCoins(putCoins)
 
 	addr2 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	acc2 := input.ak.NewAccountWithAddress(input.ctx, addr2)
@@ -288,6 +300,7 @@ func TestVMKeeper_DeployContractTransfer(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "can't get code for send script: %v", err)
+	require.Len(t, bytecode, 1)
 
 	// execute contract.
 	var args []types.ScriptArg
@@ -303,7 +316,7 @@ func TestVMKeeper_DeployContractTransfer(t *testing.T) {
 	}
 
 	t.Logf("Execute send script")
-	msgScript := types.NewMsgExecuteScript(addr1, bytecode, args)
+	msgScript := types.NewMsgExecuteScript(addr1, bytecode[0], args)
 	err = input.vk.ExecuteScript(input.ctx, msgScript)
 	require.NoError(t, err)
 
@@ -361,8 +374,9 @@ func TestVMKeeper_DeployModule(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "can't get code for math module: %v", err)
+	require.Len(t, bytecodeModule, 1)
 
-	msg := types.NewMsgDeployModule(addr1, bytecodeModule)
+	msg := types.NewMsgDeployModule(addr1, bytecodeModule[0])
 	err = msg.ValidateBasic()
 	require.NoErrorf(t, err, "can't validate err: %v", err)
 
@@ -385,6 +399,7 @@ func TestVMKeeper_DeployModule(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "can't compiler script for math module: %v", err)
+	require.Len(t, bytecodeScript, 1)
 
 	var args []types.ScriptArg
 	{
@@ -399,7 +414,7 @@ func TestVMKeeper_DeployModule(t *testing.T) {
 	}
 
 	ctx, _ = input.ctx.CacheContext()
-	msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript, args)
+	msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript[0], args)
 	err = input.vk.ExecuteScript(ctx, msgScript)
 	require.NoError(t, err)
 
@@ -461,7 +476,7 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 	input.vk.StartDSServer(input.ctx)
 	time.Sleep(2 * time.Second)
 
-	checkModuleCompiled := func(msg string, srcCode string) []byte {
+	checkModuleCompiled := func(msg string, srcCode string) [][]byte {
 		byteCode, err := vm_client.Compile(*vmCompiler, &compiler_grpc.SourceFiles{
 			Units: []*compiler_grpc.CompilationUnit{
 				{
@@ -512,7 +527,7 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 		})
 	}
 
-	checkScriptCompiled := func(msg, srcCode string) []byte {
+	checkScriptCompiled := func(msg, srcCode string) [][]byte {
 		srcCode = strings.Replace(srcCode, "{{sender}}", addr1.String(), -1)
 		byteCode, err := vm_client.Compile(*vmCompiler, &compiler_grpc.SourceFiles{
 			Units: []*compiler_grpc.CompilationUnit{
@@ -541,6 +556,8 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 		require.Error(t, err, msg)
 	}
 
+	_ = checkScriptNotCompiled
+
 	checkScriptExecuteOK := func(msg string, byteCode []byte, args []types.ScriptArg) {
 		ctx, _ := input.ctx.CacheContext()
 		executeMsg := types.NewMsgExecuteScript(addr1, byteCode, args)
@@ -563,11 +580,13 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 	// test case 1
 	{
 		moduleByteCode := checkModuleCompiled("TestCase 1", mathModule)
-		checkDeployOK("TestCase 1: 1st deploy", moduleByteCode)
-		checkDeployFailed("TestCase 1: 2nd deploy", moduleByteCode)
+		require.Len(t, moduleByteCode, 1)
+		checkDeployOK("TestCase 1: 1st deploy", moduleByteCode[0])
+		checkDeployFailed("TestCase 1: 2nd deploy", moduleByteCode[0])
 
 		scriptByteCode := checkScriptCompiled("TestCase 1", mathScript)
-		checkScriptExecuteOK("TestCase 1", scriptByteCode, mathScriptArgs)
+		require.Len(t, scriptByteCode, 1)
+		checkScriptExecuteOK("TestCase 1", scriptByteCode[0], mathScriptArgs)
 	}
 
 	// test case 2: module with "address 0x... {}" prefix
@@ -576,11 +595,13 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 		scriptSrcCode := strings.Replace(mathScript, "Math", "Math2", -1)
 
 		moduleByteCode := checkModuleCompiled("TestCase 2", moduleSrcCode)
-		checkDeployOK("TestCase 2: 1st deploy", moduleByteCode)
-		checkDeployFailed("TestCase 2: 2nd deploy", moduleByteCode)
+		require.Len(t, moduleByteCode, 1)
+		checkDeployOK("TestCase 2: 1st deploy", moduleByteCode[0])
+		checkDeployFailed("TestCase 2: 2nd deploy", moduleByteCode[0])
 
 		scriptByteCode := checkScriptCompiled("TestCase 2", scriptSrcCode)
-		checkScriptExecuteOK("TestCase 2", scriptByteCode, mathScriptArgs)
+		require.Len(t, scriptByteCode, 1)
+		checkScriptExecuteOK("TestCase 2", scriptByteCode[0], mathScriptArgs)
 	}
 
 	//var dblMathScriptArgs []types.ScriptArg
@@ -603,10 +624,13 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 	// test case 3: two module in one
 	{
 		moduleByteCode := checkModuleCompiled("TestCase 3", mathDoubleModule)
-		checkDeployOK("TestCase 3: 1st deploy", moduleByteCode)
-		checkDeployFailed("TestCase 3: 2nd deploy", moduleByteCode)
+		require.Len(t, moduleByteCode, 2)
+		checkDeployOK("TestCase 3: 1st deploy", moduleByteCode[0])
+		checkDeployOK("TestCase 3: 2nd deploy", moduleByteCode[1])
 
-		checkScriptNotCompiled("TestCase 3", mathDoubleScript)
+		scriptByteCode := checkScriptCompiled("TestCase 3", mathDoubleScript)
+		require.Len(t, scriptByteCode, 2)
+		checkScriptExecuteOK("TestCase 3: execute", scriptByteCode[0], mathScriptArgs)
 	}
 
 	// test case 4: two module in one, module srcCode with "address 0x... {}" prefix
@@ -615,10 +639,13 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 		scriptSrcCode := strings.Replace(mathDoubleScript, "DblMath", "DblMath2", -1)
 
 		moduleByteCode := checkModuleCompiled("TestCase 4", moduleSrcCode)
-		checkDeployOK("TestCase 4: 1st deploy", moduleByteCode)
-		checkDeployFailed("TestCase 4: 2nd deploy", moduleByteCode)
+		require.Len(t, moduleByteCode, 2)
+		checkDeployOK("TestCase 4: 1st deploy", moduleByteCode[0])
+		checkDeployOK("TestCase 4: 2nd deploy", moduleByteCode[1])
 
-		checkScriptNotCompiled("TestCase 4", scriptSrcCode)
+		scriptByteCode := checkScriptCompiled("TestCase 4", scriptSrcCode)
+		require.Len(t, scriptByteCode, 2)
+		checkScriptExecuteOK("TestCase 4: execute", scriptByteCode[0], mathScriptArgs)
 	}
 }
 
@@ -660,8 +687,8 @@ func TestVMKeeper_ScriptOracle(t *testing.T) {
 	}
 
 	input.ok.SetParams(input.ctx, okInitParams)
-	input.ok.SetPrice(input.ctx, addr1, assetCode, price, price, time.Now())
-	input.ok.SetCurrentPrices(input.ctx)
+	_, _ = input.ok.SetPrice(input.ctx, addr1, assetCode, price, price, time.Now())
+	_ = input.ok.SetCurrentPrices(input.ctx)
 
 	gs := getGenesis(t)
 	input.vk.InitGenesis(input.ctx, gs)
@@ -681,8 +708,9 @@ func TestVMKeeper_ScriptOracle(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "can't get code for oracle direct asset script: %v", err)
+		require.Len(t, bytecodeScript, 1)
 
-		msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript, nil)
+		msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript[0], nil)
 		err = input.vk.ExecuteScript(input.ctx, msgScript)
 		require.NoError(t, err)
 
@@ -735,7 +763,7 @@ func TestVMKeeper_ScriptOracle(t *testing.T) {
 		})
 		require.NoErrorf(t, err, "can't get code for oracle reverse asset script: %v", err)
 
-		msgScript := types.NewMsgExecuteScript(addr1, bytecodeReverseScript, nil)
+		msgScript := types.NewMsgExecuteScript(addr1, bytecodeReverseScript[0], nil)
 		err = input.vk.ExecuteScript(input.ctx, msgScript)
 		require.NoError(t, err)
 
@@ -798,7 +826,7 @@ func TestVMKeeper_ErrorScript(t *testing.T) {
 		sdk.NewCoin("btc", sdk.NewInt(1)),
 	)
 
-	acc1.SetCoins(coins)
+	_ = acc1.SetCoins(coins)
 	input.ak.SetAccount(input.ctx, acc1)
 
 	gs := getGenesis(t)
@@ -817,6 +845,7 @@ func TestVMKeeper_ErrorScript(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "can't get code for error script: %v", err)
+	require.Len(t, bytecodeScript, 1)
 
 	var args []types.ScriptArg
 	{
@@ -825,7 +854,7 @@ func TestVMKeeper_ErrorScript(t *testing.T) {
 		args = append(args, arg)
 	}
 
-	msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript, args)
+	msgScript := types.NewMsgExecuteScript(addr1, bytecodeScript[0], args)
 	err = input.vk.ExecuteScript(input.ctx, msgScript)
 	require.NoError(t, err)
 
@@ -850,7 +879,7 @@ func TestVMKeeper_AllArgsTypes(t *testing.T) {
 	accCoins := sdk.NewCoins(sdk.NewCoin("xfi", sdk.NewInt(1000)))
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
-	acc1.SetCoins(accCoins)
+	_ = acc1.SetCoins(accCoins)
 	input.ak.SetAccount(input.ctx, acc1)
 
 	// Init genesis and start DS
@@ -875,6 +904,7 @@ func TestVMKeeper_AllArgsTypes(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "script compile error")
+	require.Len(t, bytecode, 1)
 
 	// Add all args and execute
 	var args []types.ScriptArg
@@ -914,7 +944,7 @@ func TestVMKeeper_AllArgsTypes(t *testing.T) {
 		args = append(args, arg)
 	}
 
-	scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, args)
+	scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], args)
 	require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "script execute error")
 
 	checkNoEventErrors(input.ctx.EventManager().Events(), t)
@@ -939,7 +969,7 @@ func TestVMKeeper_Path(t *testing.T) {
 
 	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
-	acc1.SetCoins(accCoins)
+	_ = acc1.SetCoins(accCoins)
 	input.ak.SetAccount(input.ctx, acc1)
 
 	// Init genesis and start DS
@@ -976,9 +1006,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1008,9 +1039,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1041,9 +1073,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1074,9 +1107,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1107,9 +1141,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1140,9 +1175,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1173,9 +1209,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1206,9 +1243,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1239,9 +1277,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1272,9 +1311,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, bytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, bytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1302,9 +1342,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: module compile error", testID)
+		require.Len(t, moduleBytecode, 1)
 
 		t.Logf("%s: module deploy", testID)
-		moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+		moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0])
 		require.NoErrorf(t, moduleMsg.ValidateBasic(), "%s: module deploy message validation failed", testID)
 		ctx, writeCtx := input.ctx.CacheContext()
 		require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "%s: module deploy error", testID)
@@ -1334,9 +1375,10 @@ func TestVMKeeper_Path(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "%s: script compile error", testID)
+		require.Len(t, scriptBytecode, 1)
 
 		t.Logf("%s: script execute", testID)
-		scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+		scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode[0], nil)
 		require.NoErrorf(t, input.vk.ExecuteScript(input.ctx, scriptMsg), "%s: script execute error", testID)
 
 		t.Logf("%s: checking script events", testID)
@@ -1417,8 +1459,9 @@ func TestVMKeeper_EventTypeSerialization(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "module compile error")
+	require.Len(t, moduleBytecode, 1)
 
-	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0])
 	require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
 	ctx, writeCtx := input.ctx.CacheContext()
 	require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "module deploy error")
@@ -1439,8 +1482,9 @@ func TestVMKeeper_EventTypeSerialization(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "script compile error")
+	require.Len(t, scriptBytecode, 1)
 
-	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode[0], nil)
 	resp, err := input.vk.ExecuteScriptNoProcessing(input.ctx, scriptMsg)
 	require.NoErrorf(t, err, "script execute error")
 
@@ -1541,8 +1585,9 @@ func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "module compile error")
+	require.Len(t, moduleBytecode, 1)
 
-	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0])
 	require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
 	ctx, writeCtx := input.ctx.CacheContext()
 	require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "module deploy error")
@@ -1563,9 +1608,10 @@ func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "script compile error")
+	require.Len(t, scriptBytecode, 1)
 
 	gasMeter := sdk.NewGasMeter(100000)
-	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode[0], nil)
 	scriptErr := input.vk.ExecuteScript(input.ctx.WithGasMeter(gasMeter), scriptMsg)
 	require.NoError(t, scriptErr, "script execute error")
 
@@ -1682,8 +1728,9 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "module compile error")
+	require.Len(t, moduleBytecode, 1)
 
-	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0])
 	require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
 	ctx, writeCtx := input.ctx.CacheContext()
 	require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "module deploy error")
@@ -1704,11 +1751,12 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 		Address: common_vm.Bech32ToLibra(addr1),
 	})
 	require.NoErrorf(t, err, "script compile error")
+	require.Len(t, scriptBytecode, 1)
 
-	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+	scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode[0], nil)
 
 	require.PanicsWithValue(t, sdk.ErrorOutOfGas{"event type processing"}, func() {
-		input.vk.ExecuteScript(input.ctx.WithGasMeter(sdk.NewGasMeter(100000)), scriptMsg)
+		_ = input.vk.ExecuteScript(input.ctx.WithGasMeter(sdk.NewGasMeter(100000)), scriptMsg)
 	})
 }
 
@@ -1732,7 +1780,7 @@ func TestResearch_LCS(t *testing.T) {
 
 		addr1 = sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 		acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
-		acc1.SetCoins(accCoins)
+		_ = acc1.SetCoins(accCoins)
 		input.ak.SetAccount(input.ctx, acc1)
 
 		copy(addr1Libra[:], common_vm.Bech32ToLibra(addr1)[:20])
@@ -1766,10 +1814,11 @@ func TestResearch_LCS(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "module compile error")
+		require.Len(t, moduleBytecode, 1)
 
 		// publish
 		{
-			moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode)
+			moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0])
 			require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
 
 			cacheCtx, writeCtx := input.ctx.CacheContext()
@@ -1791,10 +1840,11 @@ func TestResearch_LCS(t *testing.T) {
 			Address: common_vm.Bech32ToLibra(addr1),
 		})
 		require.NoErrorf(t, err, "script compile error")
+		require.Len(t, scriptBytecode, 1)
 
 		// execute
 		{
-			scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode, nil)
+			scriptMsg := types.NewMsgExecuteScript(addr1, scriptBytecode[0], nil)
 			require.NoErrorf(t, scriptMsg.ValidateBasic(), "script execute message validation failed")
 
 			cacheCtx, writeCtx := input.ctx.CacheContext()

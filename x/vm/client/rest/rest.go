@@ -111,14 +111,19 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		// compile and process response
-		byteCode, err := vm_client.Compile(compilerAddr, sourceFile)
+		byteCodes, err := vm_client.Compile(compilerAddr, sourceFile)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
+		code := make([]string, len(byteCodes))
+		for i, item := range byteCodes {
+			code[i] = hex.EncodeToString(item)
+		}
+
 		resp := vm_client.MoveFile{
-			Code: hex.EncodeToString(byteCode),
+			Code: code,
 		}
 
 		rest.PostProcessResponse(w, cliCtx, resp)
