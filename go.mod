@@ -2,10 +2,7 @@ module github.com/dfinance/dnode
 
 go 1.14
 
-replace (
-	github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.38.4-0.20201006151646-1ac22b3a4a09
-	github.com/dfinance/dvm-proto/go => /home/valera/work/dfinance/dvm-proto/go
-)
+replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.38.4-0.20201006151646-1ac22b3a4a09
 
 // Local development option
 //replace github.com/cosmos/cosmos-sdk => /Users/boris/go/src/github.com/dfinance/cosmos-sdk
