@@ -28,11 +28,32 @@ const (
 type CompiledItems []CompiledItem
 
 type CompiledItem struct {
-	Code     string                    `json:"code"`
-	ByteCode []byte                    `json:"-"`
-	Methods  []*metadata_grpc.Function `json:"methods,omitempty"`
-	Types    []*metadata_grpc.Struct   `json:"types,omitempty"`
-	CodeType string                    `json:"code_type"`
+	Code     string         `json:"code"`
+	ByteCode []byte         `json:"-"`
+	Methods  []ModuleMethod `json:"methods,omitempty"`
+	Types    []ModuleType   `json:"types,omitempty"`
+	CodeType string         `json:"code_type"`
+}
+
+type ModuleType struct {
+	Name           string            `json:"name"`
+	IsResource     bool              `json:"resource"`
+	TypeParameters []string          `json:"type_parameters"`
+	Field          []ModuleTypeField `json:"properties"`
+}
+
+type ModuleTypeField struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type ModuleMethod struct {
+	Name           string   `json:"name"`
+	IsPublic       bool     `json:"public"`
+	IsNative       bool     `json:"native"`
+	TypeParameters []string `json:"type_parameters"`
+	Arguments      []string `json:"arguments"`
+	Returns        []string `json:"returns"`
 }
 
 // Create connection to vm.
@@ -104,10 +125,45 @@ func Compile(addr string, sourceFiles *compiler_grpc.SourceFiles) ([]CompiledIte
 
 		if moduleMeta := meta.GetModule(); moduleMeta != nil {
 			resp[i].CodeType = CodeTypeModule
-			resp[i].Types = moduleMeta.Types
-			resp[i].Methods = moduleMeta.Functions
+			resp[i].Types, resp[i].Methods = MatchProtoFields(moduleMeta)
 		}
 	}
 
 	return resp, nil
+}
+
+// MatchProtoFields decorates protobuf structures for using custom fields.
+func MatchProtoFields(meta *metadata_grpc.ModuleMeta) (types []ModuleType, methods []ModuleMethod) {
+	if meta == nil {
+		panic("received metadata is nil")
+	}
+
+	methods = make([]ModuleMethod, len(meta.GetFunctions()))
+	for i, item := range meta.GetFunctions() {
+		methods[i] = ModuleMethod{
+			Name:           item.Name,
+			IsPublic:       item.IsPublic,
+			IsNative:       item.IsNative,
+			TypeParameters: item.TypeParameters,
+			Arguments:      item.Arguments,
+			Returns:        item.Returns,
+		}
+	}
+
+	types = make([]ModuleType, len(meta.GetTypes()))
+	for i, item := range meta.GetTypes() {
+		types[i] = ModuleType{
+			Name:           item.Name,
+			IsResource:     item.IsResource,
+			TypeParameters: item.TypeParameters,
+			Field:          make([]ModuleTypeField, len(item.Field)),
+		}
+
+		for fi, filed := range item.Field {
+			types[i].Field[fi].Name = filed.Name
+			types[i].Field[fi].Type = filed.Type
+		}
+	}
+
+	return
 }
