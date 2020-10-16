@@ -501,14 +501,14 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 		return byteCode
 	}
 
-	checkScriptNotCompiled := func(msg, srcCode string) {
-		srcCode = strings.Replace(srcCode, "{{sender}}", addr1.String(), -1)
-		_, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
-			Text:    srcCode,
-			Address: common_vm.Bech32ToLibra(addr1),
-		})
-		require.Error(t, err, msg)
-	}
+	//checkScriptNotCompiled := func(msg, srcCode string) {
+	//	srcCode = strings.Replace(srcCode, "{{sender}}", addr1.String(), -1)
+	//	_, err := vm_client.Compile(*vmCompiler, &vm_grpc.SourceFile{
+	//		Text:    srcCode,
+	//		Address: common_vm.Bech32ToLibra(addr1),
+	//	})
+	//	require.Error(t, err, msg)
+	//}
 
 	checkScriptExecuteOK := func(msg string, byteCode []byte, args []types.ScriptArg) {
 		ctx, _ := input.ctx.CacheContext()
@@ -570,25 +570,25 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 	//}
 
 	// test case 3: two module in one
-	{
-		moduleByteCode := checkModuleCompiled("TestCase 3", mathDoubleModule)
-		checkDeployOK("TestCase 3: 1st deploy", moduleByteCode)
-		checkDeployFailed("TestCase 3: 2nd deploy", moduleByteCode)
-
-		checkScriptNotCompiled("TestCase 3", mathDoubleScript)
-	}
+	//{
+	//	moduleByteCode := checkModuleCompiled("TestCase 3", mathDoubleModule)
+	//	checkDeployOK("TestCase 3: 1st deploy", moduleByteCode)
+	//	checkDeployFailed("TestCase 3: 2nd deploy", moduleByteCode)
+	//
+	//	checkScriptNotCompiled("TestCase 3", mathDoubleScript)
+	//}
 
 	// test case 4: two module in one, module srcCode with "address 0x... {}" prefix
-	{
-		moduleSrcCode := fmt.Sprintf("address %s {\n%s\n}", addr1, strings.Replace(mathDoubleModule, "DblMath", "DblMath2", 2))
-		scriptSrcCode := strings.Replace(mathDoubleScript, "DblMath", "DblMath2", -1)
-
-		moduleByteCode := checkModuleCompiled("TestCase 4", moduleSrcCode)
-		checkDeployOK("TestCase 4: 1st deploy", moduleByteCode)
-		checkDeployFailed("TestCase 4: 2nd deploy", moduleByteCode)
-
-		checkScriptNotCompiled("TestCase 4", scriptSrcCode)
-	}
+	//{
+	//	moduleSrcCode := fmt.Sprintf("address %s {\n%s\n}", addr1, strings.Replace(mathDoubleModule, "DblMath", "DblMath2", 2))
+	//	scriptSrcCode := strings.Replace(mathDoubleScript, "DblMath", "DblMath2", -1)
+	//
+	//	moduleByteCode := checkModuleCompiled("TestCase 4", moduleSrcCode)
+	//	checkDeployOK("TestCase 4: 1st deploy", moduleByteCode)
+	//	checkDeployFailed("TestCase 4: 2nd deploy", moduleByteCode)
+	//
+	//	checkScriptNotCompiled("TestCase 4", scriptSrcCode)
+	//}
 }
 
 // Test oracle price return.
