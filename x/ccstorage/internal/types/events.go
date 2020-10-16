@@ -9,9 +9,10 @@ import (
 const (
 	EventTypesCreate = ModuleName + ".create"
 	//
-	AttributeDenom    = "denom"
-	AttributeDecimals = "decimals"
-	AttributeInfoPath = "info_path"
+	AttributeDenom           = "denom"
+	AttributeDecimals        = "decimals"
+	AttributeInfoPath        = "info_path"
+	AttributeContractAddress = "contract_address"
 )
 
 // NewCCCreatedEvent creates an Event on currency creation.
@@ -21,5 +22,6 @@ func NewCCCreatedEvent(currency Currency) sdk.Event {
 		sdk.NewAttribute(AttributeDenom, currency.Denom),
 		sdk.NewAttribute(AttributeDecimals, strconv.FormatUint(uint64(currency.Decimals), 10)),
 		sdk.NewAttribute(AttributeInfoPath, currency.InfoPathHex()),
+		sdk.NewAttribute(AttributeContractAddress, currency.ContractAddress),
 	)
 }

@@ -17,9 +17,9 @@ import (
 // AddGenesisCurrencyInfo return genesis cmd which adds currency into node genesis state.
 func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHome string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "set-currency [denom] [decimals]",
-		Short: "Set currency to genesis state (non-token)",
-		Args:  cobra.ExactArgs(2),
+		Use:   "set-currency [denom] [decimals] [ERC20ContractAddress]",
+		Short: "Set currency to genesis state",
+		Args:  cobra.ExactArgs(3),
 		RunE: func(_ *cobra.Command, args []string) error {
 			// setup viper config
 			config := ctx.Config
@@ -36,6 +36,14 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 				return err
 			}
 
+			contractAddress := args[2]
+			if contractAddress != "" {
+				_, err := helpers.ParseEthereumAddressParam("ERC20ContractAddress", contractAddress, helpers.ParamTypeCliArg)
+				if err != nil {
+					return err
+				}
+			}
+
 			// retrieve the app state
 			genFile := config.GenesisFile()
 			appState, genDoc, err := genutil.GenesisStateFromGenFile(cdc, genFile)
@@ -48,8 +56,9 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 
 			// update the state
 			params := types.CurrencyParams{
-				Denom:    denom,
-				Decimals: decimals,
+				Denom:           denom,
+				Decimals:        decimals,
+				ContractAddress: contractAddress,
 			}
 			if err := params.Validate(); err != nil {
 				return fmt.Errorf("invalid params: %w", err)
@@ -85,6 +94,7 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 	helpers.BuildCmdHelp(cmd, []string{
 		"currency denomination symbol",
 		"currency decimals count",
+		"ERC20 contract address",
 	})
 
 	return cmd
