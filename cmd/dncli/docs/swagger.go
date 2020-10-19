@@ -757,12 +757,22 @@ definitions:
       voter:
         type: string
     type: object
+  auth.StdFee:
+    $ref: '#/definitions/types.StdFee'
+  auth.StdSignature:
+    $ref: '#/definitions/types.StdSignature'
   auth.StdTx:
     $ref: '#/definitions/types.StdTx'
+  bytes.HexBytes:
+    items:
+      type: integer
+    type: array
   ccstorage.Currencies:
     $ref: '#/definitions/types.Currencies'
   ccstorage.Currency:
     $ref: '#/definitions/types.Currency'
+  crypto.PubKey:
+    type: object
   markets.MarketExtended:
     $ref: '#/definitions/types.MarketExtended'
   msmodule.MsMsg:
@@ -1168,12 +1178,37 @@ definitions:
           $ref: '#/definitions/types.DelegationResponse'
         type: array
     type: object
+  rest.QueryExtendedValidatorResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.ValidatorResp'
+        type: object
+    type: object
+  rest.QueryExtendedValidatorsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        items:
+          $ref: '#/definitions/types.ValidatorResp'
+        type: array
+    type: object
   rest.QueryHistoricalInfoResp:
     properties:
       height:
         type: integer
       result:
         $ref: '#/definitions/types.HistoricalInfo'
+        type: object
+    type: object
+  rest.QueryMinterExtendedResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.MintInfo'
         type: object
     type: object
   rest.QueryParamsResp:
@@ -1516,6 +1551,10 @@ definitions:
         $ref: '#/definitions/rest.BaseReq'
         type: object
     type: object
+  staking.Commission:
+    $ref: '#/definitions/types.Commission'
+  staking.Description:
+    $ref: '#/definitions/types.Description'
   types.ABCIMessageLog:
     properties:
       events:
@@ -1537,6 +1576,8 @@ definitions:
     items:
       type: integer
     type: array
+  types.Address:
+    type: object
   types.Asset:
     properties:
       active:
@@ -1561,6 +1602,15 @@ definitions:
         type: string
       value:
         type: string
+    type: object
+  types.BlockID:
+    properties:
+      hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        type: object
+      parts:
+        $ref: '#/definitions/types.PartSetHeader'
+        type: object
     type: object
   types.Call:
     properties:
@@ -1790,6 +1840,59 @@ definitions:
         description: optional website link
         type: string
     type: object
+  types.Header:
+    properties:
+      app_hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        description: state after txs from the previous block
+        type: object
+      chain_id:
+        type: string
+      consensus_hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        description: consensus params for current block
+        type: object
+      data_hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        description: transactions
+        type: object
+      evidence_hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        description: consensus info
+        type: object
+      height:
+        type: integer
+      last_block_id:
+        $ref: '#/definitions/types.BlockID'
+        description: prev block info
+        type: object
+      last_commit_hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        description: hashes of block data
+        type: object
+      last_results_hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        description: root hash of all results from the txs from the previous block
+        type: object
+      next_validators_hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        description: validators for the next block
+        type: object
+      proposer_address:
+        $ref: '#/definitions/types.Address'
+        description: original proposer of the block
+        type: object
+      time:
+        type: string
+      validators_hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        description: hashes from the app output from the prev block
+        type: object
+      version:
+        $ref: '#/definitions/version.Consensus'
+        description: basic block info
+        type: object
+    type: object
   types.HistoricalInfo:
     properties:
       header:
@@ -1851,6 +1954,46 @@ definitions:
     items:
       $ref: '#/definitions/types.Market'
     type: array
+  types.MintInfo:
+    properties:
+      annual_provision_foundation:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      annual_provision_main:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      blocks_per_year_estimation:
+        type: integer
+      bonded_ratio:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      foundation_allocation_ratio:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      inflation_foundation:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      inflation_main:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      infpwr_bondedlocked_ratio:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      locked_ratio:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      max_inflation:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      min_inflation:
+        $ref: '#/definitions/types.Dec'
+        type: object
+      next_annual_update:
+        type: string
+      staking_total_supply_shift:
+        $ref: '#/definitions/types.Int'
+        type: object
+    type: object
   types.Msg:
     type: object
   types.MsgBeginRedelegate:
@@ -2013,6 +2156,14 @@ definitions:
     items:
       $ref: '#/definitions/types.Order'
     type: array
+  types.PartSetHeader:
+    properties:
+      hash:
+        $ref: '#/definitions/bytes.HexBytes'
+        type: object
+      total:
+        type: integer
+    type: object
   types.Pool:
     properties:
       bonded_tokens:
@@ -2355,6 +2506,87 @@ definitions:
         description: If unbonding, min time for the validator to complete unbonding
         type: string
     type: object
+  types.ValidatorResp:
+    properties:
+      bonding_delegator_shares:
+        description: 'Bondable tokens: total shares issued to a validator''s delegators'
+        example: "0.123"
+        format: number
+        type: string
+      bonding_distribution_power:
+        description: Bonding tokens rewards distribution power
+        type: integer
+      bonding_tokens:
+        description: 'Bondable tokens: delegated tokens (incl. self-delegation)'
+        example: "100"
+        format: integer
+        type: string
+      commission:
+        description: Commission parameters
+        type: string
+      consensus_pubkey:
+        description: Consensus public key of the validator; bech encoded in JSON
+        type: string
+      description:
+        description: Description terms for the validator
+        type: string
+      jailed:
+        description: Has the validator been jailed from bonded status?
+        type: boolean
+      lp_delegator_shares:
+        description: 'Liquidity tokens: total shares issued to a validator''s delegators'
+        example: "0.123"
+        format: number
+        type: string
+      lp_distribution_power:
+        description: LP tokens rewards distribution power
+        type: integer
+      lp_tokens:
+        description: 'Liquidity tokens: delegated tokens'
+        example: "100"
+        format: integer
+        type: string
+      max_bonding_delegations_lvl:
+        description: Max bonding delegations level
+        example: "1000"
+        format: integer
+        type: string
+      min_self_delegation:
+        description: Validator's self declared minimum self delegation
+        example: "1000"
+        format: integer
+        type: string
+      operator_address:
+        description: Address of the validator's operator; bech encoded in JSON
+        example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
+        format: bech32
+        type: string
+      rewards_locked:
+        description: Rewards locked flag
+        type: boolean
+      rewards_unlock_time:
+        description: Rewards unlock time (if locked)
+        type: string
+      scheduled_to_unbond:
+        description: Has the validator been scheduled to force unbond due to low SelfStake amount compared to TotalDelegationsAmount
+        type: boolean
+      scheduled_unbond_height:
+        description: If ScheduledToUnbond, height at which this schedule started
+        type: integer
+      scheduled_unbond_time:
+        description: Is ScheduledToUnbond, min time for the validator to begin force unbond
+        type: string
+      status:
+        description: Validator status (bonded/unbonding/unbonded)
+        example: bonded
+        type: string
+      unbonding_height:
+        description: If unbonding, height at which this validator has begun unbonding
+        type: integer
+      unbonding_time:
+        description: If unbonding, min time for the validator to complete unbonding
+        type: string
+    type: object
   types.ValidatorTokens:
     properties:
       delegator_shares:
@@ -2428,6 +2660,13 @@ definitions:
     items:
       $ref: '#/definitions/types.Withdraw'
     type: array
+  version.Consensus:
+    properties:
+      app:
+        type: integer
+      block:
+        type: integer
+    type: object
   vm_client.MoveFile:
     properties:
       code:
@@ -3121,6 +3360,36 @@ paths:
       summary: Fund the public treasury pool
       tags:
       - Distribution
+  /distribution/validator_extended/{validatorAddr}:
+    get:
+      consumes:
+      - application/json
+      description: Query the extended information from a single validator containing distribution params
+      operationId: distributionValidatorExtended
+      parameters:
+      - description: Bech32 OperatorAddress of validator
+        in: path
+        name: validatorAddr
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.QueryExtendedValidatorResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Query the extended information from a single validator
+      tags:
+      - Distribution
   /distribution/validators/{validatorAddr}:
     get:
       consumes:
@@ -3246,6 +3515,43 @@ paths:
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Withdraw the validator's rewards
+      tags:
+      - Distribution
+  /distribution/validators_extended:
+    get:
+      consumes:
+      - application/json
+      description: Query the extended information from multiple validators containing distribution params
+      operationId: distributionValidatorsExtended
+      parameters:
+      - description: The validator bond status. Must be either 'bonded', 'unbonded', or 'unbonding'
+        in: query
+        name: status
+        type: string
+      - description: The page number
+        in: query
+        name: page
+        type: string
+      - description: The maximum number of items per page
+        in: query
+        name: limit
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.QueryExtendedValidatorsResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Query the extended information from multiple validators
       tags:
       - Distribution
   /gov/parameters/deposit:
@@ -3831,6 +4137,30 @@ paths:
           schema:
             $ref: '#/definitions/rest.ErrorResponse'
       summary: Current minting inflation value
+      tags:
+      - Mint
+  /minting/minter-extended:
+    get:
+      consumes:
+      - application/json
+      description: Current minting extended state
+      operationId: mintingGetExtendedState
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rest.QueryMinterExtendedResp'
+        "400":
+          description: Returned if the request doesn't have valid query params
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+        "500":
+          description: Returned on server error
+          schema:
+            $ref: '#/definitions/rest.ErrorResponse'
+      summary: Current minting extended state
       tags:
       - Mint
   /minting/parameters:
