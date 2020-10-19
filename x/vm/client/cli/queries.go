@@ -174,7 +174,7 @@ func Compile(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			if err := saveOutput(bytecode, cdc); err != nil { //TODO: fix this
+			if err := saveOutput(bytecode, cdc); err != nil {
 				return fmt.Errorf("error during compiled bytes print: %v", err)
 			}
 			fmt.Println("Compilation successfully done")

@@ -26,7 +26,7 @@ func TestVMKeeper_DeployContractMock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	msg := types.NewMsgDeployModule(acc, codeBytes)
+	msg := types.NewMsgDeployModule(acc, []types.Contract{codeBytes})
 
 	err = input.vk.DeployContract(input.ctx, msg)
 	if err != nil {

@@ -88,18 +88,25 @@ func (k Keeper) ExecuteScriptNoProcessing(ctx sdk.Context, msg types.MsgExecuteS
 func (k Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) error {
 	k.modulePerms.AutoCheck(types.PermVmExec)
 
-	req, sdkErr := NewDeployRequest(ctx, msg)
-	if sdkErr != nil {
-		return sdkErr
+	execList := make([]*vm_grpc.VMExecuteResponse, len(msg.Module))
+	var intErr error
+
+	for i, contact := range msg.Module {
+		req, sdkErr := NewDeployRequest(ctx, msg.Signer, contact)
+		if sdkErr != nil {
+			return sdkErr
+		}
+
+		execList[i], intErr = k.sendExecuteReq(ctx, req, nil)
+		if intErr != nil {
+			k.GetLogger(ctx).Error(fmt.Sprintf("grpc error: %s", intErr.Error()))
+			panic(sdkErrors.Wrap(types.ErrVMCrashed, intErr.Error()))
+		}
 	}
 
-	exec, err := k.sendExecuteReq(ctx, req, nil)
-	if err != nil {
-		k.GetLogger(ctx).Error(fmt.Sprintf("grpc error: %s", err.Error()))
-		panic(sdkErrors.Wrap(types.ErrVMCrashed, err.Error()))
+	for _, exec := range execList {
+		k.processExecution(ctx, exec)
 	}
-
-	k.processExecution(ctx, exec)
 
 	return nil
 }
@@ -108,19 +115,21 @@ func (k Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) error
 func (k Keeper) DeployContractDryRun(ctx sdk.Context, msg types.MsgDeployModule) error {
 	k.modulePerms.AutoCheck(types.PermVmExec)
 
-	req, sdkErr := NewDeployRequest(ctx, msg)
-	if sdkErr != nil {
-		return sdkErr
-	}
+	for _, contact := range msg.Module {
+		req, sdkErr := NewDeployRequest(ctx, msg.Signer, contact)
+		if sdkErr != nil {
+			return sdkErr
+		}
 
-	exec, dvmErr := k.sendExecuteReq(ctx, req, nil)
-	if dvmErr != nil {
-		return sdkErrors.Wrap(types.ErrVMCrashed, dvmErr.Error())
-	}
+		exec, dvmErr := k.sendExecuteReq(ctx, req, nil)
+		if dvmErr != nil {
+			return sdkErrors.Wrap(types.ErrVMCrashed, dvmErr.Error())
+		}
 
-	if exec.GetStatus().GetError() != nil {
-		statusMsg := types.StringifyVMExecStatus(exec.Status)
-		return sdkErrors.Wrap(types.ErrWrongExecutionResponse, statusMsg)
+		if exec.GetStatus().GetError() != nil {
+			statusMsg := types.StringifyVMExecStatus(exec.Status)
+			return sdkErrors.Wrap(types.ErrWrongExecutionResponse, statusMsg)
+		}
 	}
 
 	return nil

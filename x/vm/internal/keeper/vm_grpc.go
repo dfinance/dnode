@@ -79,8 +79,8 @@ func NewExecuteContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, arg
 }
 
 // NewDeployRequest is a NewDeployContract wrapper: create deploy request.
-func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMPublishModule, error) {
-	return NewDeployContract(msg.Signer, GetFreeGas(ctx), msg.Module), nil
+func NewDeployRequest(ctx sdk.Context, signer sdk.AccAddress, contract types.Contract) (*vm_grpc.VMPublishModule, error) {
+	return NewDeployContract(signer, GetFreeGas(ctx), contract), nil
 }
 
 // NewExecuteRequest is a NewExecuteContract wrapper: create execute request.

@@ -19,6 +19,8 @@ import (
 	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
+const argName = "moveFile"
+
 // ExecuteScript returns tx command which executed VM script.
 func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
@@ -36,13 +38,13 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			code, err := getMoveCodeFromFileArg(args[0])
+			code, err := getMoveCodeFromFileArg(args[0], true)
 			if err != nil {
 				return err
 			}
 
 			strArgs := args[1:]
-			typedArgs, err := vm_client.ExtractArguments(compilerAddr, code)
+			typedArgs, err := vm_client.ExtractArguments(compilerAddr, code[0].ByteCode)
 			if err != nil {
 				return fmt.Errorf("extracting typed args from the code: %w", err)
 			}
@@ -56,7 +58,7 @@ func ExecuteScript(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// prepare and send message
-			msg := types.NewMsgExecuteScript(fromAddr, code, scriptArgs)
+			msg := types.NewMsgExecuteScript(fromAddr, code[0].ByteCode, scriptArgs)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -90,13 +92,13 @@ func DeployContract(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			code, err := getMoveCodeFromFileArg(args[0])
+			code, err := getMoveCodeFromFileArg(args[0], false)
 			if err != nil {
 				return err
 			}
 
 			// prepare and send message
-			msg := types.NewMsgDeployModule(fromAddr, code)
+			msg := types.NewMsgDeployModule(fromAddr, getContractsFromCompiledItems(code))
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -134,7 +136,7 @@ func UpdateStdlibProposal(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			code, err := getMoveCodeFromFileArg(args[0])
+			code, err := getMoveCodeFromFileArg(args[0], true)
 			if err != nil {
 				return err
 			}
@@ -147,7 +149,7 @@ func UpdateStdlibProposal(cdc *codec.Codec) *cobra.Command {
 			sourceUrl, updateDesc := args[2], args[3]
 
 			// prepare and send message
-			content := types.NewStdlibUpdateProposal(types.NewPlan(plannedBlockHeight), sourceUrl, updateDesc, code)
+			content := types.NewStdlibUpdateProposal(types.NewPlan(plannedBlockHeight), sourceUrl, updateDesc, code[0].ByteCode)
 			if err := content.ValidateBasic(); err != nil {
 				return err
 			}
@@ -172,17 +174,14 @@ func UpdateStdlibProposal(cdc *codec.Codec) *cobra.Command {
 }
 
 // getMoveCodeFromFileArg reads .move file and converts its code field.
-func getMoveCodeFromFileArg(argValue string) (moveCode []byte, retErr error) {
-	const argName = "moveFile"
-
+func getMoveCodeFromFileArg(argValue string, oneItem bool) (items vm_client.CompiledItems, retErr error) {
 	jsonContent, err := helpers.ParseFilePath(argName, argValue, helpers.ParamTypeCliArg)
 	if err != nil {
 		retErr = err
 		return
 	}
 
-	var moveFile vm_client.CompiledItems
-	if err := json.Unmarshal(jsonContent, &moveFile); err != nil {
+	if err := json.Unmarshal(jsonContent, &items); err != nil {
 		retErr = helpers.BuildError(
 			argName,
 			argValue,
@@ -192,15 +191,49 @@ func getMoveCodeFromFileArg(argValue string) (moveCode []byte, retErr error) {
 		return
 	}
 
-	if len(moveFile) != 1 {
+	if len(items) == 0 || (oneItem && len(items) != 1) {
 		retErr = helpers.BuildError(
 			argName,
 			argValue,
 			helpers.ParamTypeCliArg,
-			fmt.Sprintf("Allowed only one script, sent : %d", len(moveFile)),
+			fmt.Sprintf("Move file contains wrong quantity of items: %d", len(items)),
 		)
 		return
 	}
 
-	return hex.DecodeString(moveFile[0].Code)
+	itemsCodeType := items[0].CodeType
+	for i, item := range items {
+		if itemsCodeType != item.CodeType {
+			retErr = helpers.BuildError(
+				argName,
+				argValue,
+				helpers.ParamTypeCliArg,
+				fmt.Sprintf("Move file contains different code types, allowed only similar types in one file"),
+			)
+			return
+		}
+		items[i].ByteCode, err = hex.DecodeString(item.Code)
+		if err != nil {
+			retErr = helpers.BuildError(
+				argName,
+				argValue,
+				helpers.ParamTypeCliArg,
+				fmt.Sprintf("Move file code HEX decode: %v", err),
+			)
+			return
+		}
+	}
+
+	return
+}
+
+// getContractsFromCompiledItems converts CompiledItems to the []Contract format for publish.
+func getContractsFromCompiledItems(items vm_client.CompiledItems) []types.Contract {
+	contracts := make([]types.Contract, len(items))
+
+	for i, item := range items {
+		contracts[i] = item.ByteCode
+	}
+
+	return contracts
 }

@@ -406,7 +406,7 @@ func (ct *CLITester) RestQueryVMExecuteScriptStdTx(senderAccName string, byteCod
 	return r, respMsg
 }
 
-func (ct *CLITester) RestQueryVMPublishModuleStdTx(senderAccName string, byteCode, memo string) (*RestRequest, *auth.StdTx) {
+func (ct *CLITester) RestQueryVMPublishModuleStdTx(senderAccName string, byteCode []string, memo string) (*RestRequest, *auth.StdTx) {
 	rq := vmRest.PublishModuleReq{
 		BaseReq:  ct.buildBaseReq(senderAccName, memo),
 		MoveCode: byteCode,

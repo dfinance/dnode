@@ -23,6 +23,8 @@ type (
 	PlannedProposal      = types.PlannedProposal
 	TestProposal         = types.TestProposal
 	StdlibUpdateProposal = types.StdlibUpdateProposal
+	//
+	Contract = types.Contract
 )
 
 const (

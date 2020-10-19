@@ -427,7 +427,7 @@ func TestVMKeeper_DeployModule(t *testing.T) {
 	require.NoErrorf(t, err, "can't get code for math module: %v", err)
 	require.Len(t, bytecodeModule, 1)
 
-	msg := types.NewMsgDeployModule(addr1, bytecodeModule[0].ByteCode)
+	msg := types.NewMsgDeployModule(addr1, []types.Contract{bytecodeModule[0].ByteCode})
 	err = msg.ValidateBasic()
 	require.NoErrorf(t, err, "can't validate err: %v", err)
 
@@ -582,7 +582,7 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 	}
 
 	checkMsgCreate := func(msg string, byteCode []byte) types.MsgDeployModule {
-		deployMsg := types.NewMsgDeployModule(addr1, byteCode)
+		deployMsg := types.NewMsgDeployModule(addr1, []types.Contract{byteCode})
 		require.NoError(t, deployMsg.ValidateBasic(), "%s: can't validate err: %v", msg)
 		return deployMsg
 	}
@@ -1471,7 +1471,7 @@ func TestVMKeeper_Path(t *testing.T) {
 		require.Len(t, moduleBytecode, 1)
 
 		t.Logf("%s: module deploy", testID)
-		moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0].ByteCode)
+		moduleMsg := types.NewMsgDeployModule(addr1, []types.Contract{moduleBytecode[0].ByteCode})
 		require.NoErrorf(t, moduleMsg.ValidateBasic(), "%s: module deploy message validation failed", testID)
 		ctx, writeCtx := input.ctx.CacheContext()
 		require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "%s: module deploy error", testID)
@@ -1587,7 +1587,7 @@ func TestVMKeeper_EventTypeSerialization(t *testing.T) {
 	require.NoErrorf(t, err, "module compile error")
 	require.Len(t, moduleBytecode, 1)
 
-	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0].ByteCode)
+	moduleMsg := types.NewMsgDeployModule(addr1, []types.Contract{moduleBytecode[0].ByteCode})
 	require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
 	ctx, writeCtx := input.ctx.CacheContext()
 	require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "module deploy error")
@@ -1713,7 +1713,7 @@ func TestVMKeeper_EventTypeSerializationGas(t *testing.T) {
 	require.NoErrorf(t, err, "module compile error")
 	require.Len(t, moduleBytecode, 1)
 
-	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0].ByteCode)
+	moduleMsg := types.NewMsgDeployModule(addr1, []types.Contract{moduleBytecode[0].ByteCode})
 	require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
 	ctx, writeCtx := input.ctx.CacheContext()
 	require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "module deploy error")
@@ -1856,7 +1856,7 @@ func TestVMKeeper_EventTypeSerializationOutOfGas(t *testing.T) {
 	require.NoErrorf(t, err, "module compile error")
 	require.Len(t, moduleBytecode, 1)
 
-	moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0].ByteCode)
+	moduleMsg := types.NewMsgDeployModule(addr1, []types.Contract{moduleBytecode[0].ByteCode})
 	require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
 	ctx, writeCtx := input.ctx.CacheContext()
 	require.NoErrorf(t, input.vk.DeployContract(ctx, moduleMsg), "module deploy error")
@@ -1944,7 +1944,7 @@ func TestResearch_LCS(t *testing.T) {
 
 		// publish
 		{
-			moduleMsg := types.NewMsgDeployModule(addr1, moduleBytecode[0].ByteCode)
+			moduleMsg := types.NewMsgDeployModule(addr1, []types.Contract{moduleBytecode[0].ByteCode})
 			require.NoErrorf(t, moduleMsg.ValidateBasic(), "module deploy message validation failed")
 
 			cacheCtx, writeCtx := input.ctx.CacheContext()

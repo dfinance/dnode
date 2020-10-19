@@ -415,7 +415,8 @@ func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 
 	// Deploy script
 	{
-		q, stdTx := ct.RestQueryVMPublishModuleStdTx(senderName, byteCode[0], "")
+		require.Equal(t, 1, len(byteCode))
+		q, stdTx := ct.RestQueryVMPublishModuleStdTx(senderName, byteCode, "")
 		q.CheckSucceeded()
 
 		// verify stdTx
@@ -426,7 +427,7 @@ func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 			require.Len(t, stdTx.Msgs, 1)
 			require.IsType(t, vm.MsgDeployModule{}, stdTx.Msgs[0])
 			deployMsg := stdTx.Msgs[0].(vm.MsgDeployModule)
-			require.EqualValues(t, code, deployMsg.Module)
+			require.EqualValues(t, []vm.Contract{code}, deployMsg.Module)
 			require.Equal(t, ct.Accounts[senderName].Address, deployMsg.Signer.String())
 		}
 
@@ -439,7 +440,7 @@ func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 	{
 		// invalid code (non-hex string)
 		{
-			q, _ := ct.RestQueryVMPublishModuleStdTx(senderName, "zxy", "")
+			q, _ := ct.RestQueryVMPublishModuleStdTx(senderName, []string{"zxy"}, "")
 			q.CheckFailed(400, nil)
 		}
 	}

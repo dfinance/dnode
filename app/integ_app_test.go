@@ -172,7 +172,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client1Addr), client1PrivKey
 		deployMsg := vm.MsgDeployModule{
 			Signer: client1Addr,
-			Module: byteCode[0].ByteCode,
+			Module: []vm.Contract{byteCode[0].ByteCode},
 		}
 		tx := GenTx([]sdk.Msg{deployMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)

@@ -45,7 +45,7 @@ type ExecuteScriptReq struct {
 type PublishModuleReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// Compiled Move code
-	MoveCode string `json:"move_code" yaml:"move_code" format:"HEX encoded byte code"`
+	MoveCode []string `json:"move_code" yaml:"move_code" format:"HEX encoded byte code array"`
 }
 
 type LcsViewReq struct {
@@ -395,14 +395,17 @@ func deployModule(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		_, code, err := helpers.ParseHexStringParam("move_code", req.MoveCode, helpers.ParamTypeRestRequest)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
+		contracts := make([]types.Contract, len(req.MoveCode))
+		for i, code := range req.MoveCode {
+			_, contracts[i], err = helpers.ParseHexStringParam("move_code", code, helpers.ParamTypeRestRequest)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
 		}
 
 		// create the message
-		msg := types.NewMsgDeployModule(fromAddr, code)
+		msg := types.NewMsgDeployModule(fromAddr, contracts)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
