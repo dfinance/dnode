@@ -718,8 +718,8 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 		require.Len(t, moduleByteCode, 4)
 		checkDeployOK("TestCase 3: 1st deploy", moduleByteCode[0].ByteCode)
 		checkDeployOK("TestCase 3: 2nd deploy", moduleByteCode[1].ByteCode)
-		checkDeployOK("TestCase 3: 3rd deploy", moduleByteCode[3].ByteCode)
-		checkDeployOK("TestCase 3: 4ur deploy", moduleByteCode[4].ByteCode)
+		checkDeployOK("TestCase 3: 3rd deploy", moduleByteCode[2].ByteCode)
+		checkDeployOK("TestCase 3: 4ur deploy", moduleByteCode[3].ByteCode)
 
 		scriptByteCode := checkScriptCompiled("TestCase 3", mathDoubleScript)
 		require.Len(t, scriptByteCode, 2)
@@ -729,13 +729,15 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 
 	// test case 4: two module in one, module srcCode with "address 0x... {}" prefix
 	{
-		moduleSrcCode := fmt.Sprintf("address %s {\n%s\n}", addr1, strings.Replace(mathQuadModule, "DblMath", "DblMath2", 2))
+		moduleSrcCode := fmt.Sprintf("address %s {\n%s\n}", addr1, strings.Replace(mathQuadModule, "DblMath", "DblMath2", -1))
 		scriptSrcCode := strings.Replace(mathDoubleScript, "DblMath", "DblMath2", -1)
 
 		moduleByteCode := checkModuleCompiled("TestCase 4", moduleSrcCode)
-		require.Len(t, moduleByteCode, 2)
+		require.Len(t, moduleByteCode, 4)
 		checkDeployOK("TestCase 4: 1st deploy", moduleByteCode[0].ByteCode)
 		checkDeployOK("TestCase 4: 2nd deploy", moduleByteCode[1].ByteCode)
+		checkDeployOK("TestCase 4: 3rd deploy", moduleByteCode[2].ByteCode)
+		checkDeployOK("TestCase 4: 4ur deploy", moduleByteCode[3].ByteCode)
 
 		scriptByteCode := checkScriptCompiled("TestCase 4", scriptSrcCode)
 		require.Len(t, scriptByteCode, 2)
