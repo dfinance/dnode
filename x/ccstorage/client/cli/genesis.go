@@ -19,7 +19,7 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 	cmd := &cobra.Command{
 		Use:   "set-currency [denom] [decimals] [ERC20ContractAddress]",
 		Short: "Set currency to genesis state",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.RangeArgs(2, 3),
 		RunE: func(_ *cobra.Command, args []string) error {
 			// setup viper config
 			config := ctx.Config
@@ -36,11 +36,14 @@ func AddGenesisCurrencyInfo(ctx *server.Context, cdc *codec.Codec, defaultNodeHo
 				return err
 			}
 
-			contractAddress := args[2]
-			if contractAddress != "" {
-				_, err := helpers.ParseEthereumAddressParam("ERC20ContractAddress", contractAddress, helpers.ParamTypeCliArg)
-				if err != nil {
-					return err
+			var contractAddress string
+			if len(args) > 2 {
+				contractAddress = args[2]
+				if contractAddress != "" {
+					_, err := helpers.ParseEthereumAddressParam("ERC20ContractAddress", contractAddress, helpers.ParamTypeCliArg)
+					if err != nil {
+						return err
+					}
 				}
 			}
 
