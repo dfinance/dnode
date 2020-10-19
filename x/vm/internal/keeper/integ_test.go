@@ -581,14 +581,14 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 		return byteCode
 	}
 
-	checkMsgCreate := func(msg string, byteCode []byte) types.MsgDeployModule {
-		deployMsg := types.NewMsgDeployModule(addr1, []types.Contract{byteCode})
+	checkMsgCreate := func(msg string, contracts []types.Contract) types.MsgDeployModule {
+		deployMsg := types.NewMsgDeployModule(addr1, contracts)
 		require.NoError(t, deployMsg.ValidateBasic(), "%s: can't validate err: %v", msg)
 		return deployMsg
 	}
 
-	checkDeployOK := func(msg string, byteCode []byte) {
-		deployMsg := checkMsgCreate(msg, byteCode)
+	checkDeployOK := func(msg string, contracts []types.Contract) {
+		deployMsg := checkMsgCreate(msg, contracts)
 
 		ctx, writeCtx := input.ctx.CacheContext()
 		err := input.vk.DeployContract(ctx, deployMsg)
@@ -600,8 +600,8 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 		writeCtx()
 	}
 
-	checkDeployFailed := func(msg string, byteCode []byte) {
-		deployMsg := checkMsgCreate(msg, byteCode)
+	checkDeployFailed := func(msg string, contracts []types.Contract) {
+		deployMsg := checkMsgCreate(msg, contracts)
 
 		ctx, _ := input.ctx.CacheContext()
 		err := input.vk.DeployContract(ctx, deployMsg)
@@ -672,8 +672,8 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 	{
 		moduleByteCode := checkModuleCompiled("TestCase 1", mathModule)
 		require.Len(t, moduleByteCode, 1)
-		checkDeployOK("TestCase 1: 1st deploy", moduleByteCode[0].ByteCode)
-		checkDeployFailed("TestCase 1: 2nd deploy", moduleByteCode[0].ByteCode)
+		checkDeployOK("TestCase 1: 1st deploy", []types.Contract{moduleByteCode[0].ByteCode})
+		checkDeployFailed("TestCase 1: 2nd deploy", []types.Contract{moduleByteCode[0].ByteCode})
 
 		scriptByteCode := checkScriptCompiled("TestCase 1", mathScript)
 		require.Len(t, scriptByteCode, 1)
@@ -687,8 +687,8 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 
 		moduleByteCode := checkModuleCompiled("TestCase 2", moduleSrcCode)
 		require.Len(t, moduleByteCode, 1)
-		checkDeployOK("TestCase 2: 1st deploy", moduleByteCode[0].ByteCode)
-		checkDeployFailed("TestCase 2: 2nd deploy", moduleByteCode[0].ByteCode)
+		checkDeployOK("TestCase 2: 1st deploy", []types.Contract{moduleByteCode[0].ByteCode})
+		checkDeployFailed("TestCase 2: 2nd deploy", []types.Contract{moduleByteCode[0].ByteCode})
 
 		scriptByteCode := checkScriptCompiled("TestCase 2", scriptSrcCode)
 		require.Len(t, scriptByteCode, 1)
@@ -716,10 +716,12 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 	{
 		moduleByteCode := checkModuleCompiled("TestCase 3", mathQuadModule)
 		require.Len(t, moduleByteCode, 4)
-		checkDeployOK("TestCase 3: 1st deploy", moduleByteCode[0].ByteCode)
-		checkDeployOK("TestCase 3: 2nd deploy", moduleByteCode[1].ByteCode)
-		checkDeployOK("TestCase 3: 3rd deploy", moduleByteCode[2].ByteCode)
-		checkDeployOK("TestCase 3: 4ur deploy", moduleByteCode[3].ByteCode)
+		checkDeployOK("TestCase 3: deploy few modules", []types.Contract{
+			moduleByteCode[0].ByteCode,
+			moduleByteCode[1].ByteCode,
+			moduleByteCode[2].ByteCode,
+			moduleByteCode[3].ByteCode,
+		})
 
 		scriptByteCode := checkScriptCompiled("TestCase 3", mathDoubleScript)
 		require.Len(t, scriptByteCode, 2)
@@ -734,10 +736,12 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 
 		moduleByteCode := checkModuleCompiled("TestCase 4", moduleSrcCode)
 		require.Len(t, moduleByteCode, 4)
-		checkDeployOK("TestCase 4: 1st deploy", moduleByteCode[0].ByteCode)
-		checkDeployOK("TestCase 4: 2nd deploy", moduleByteCode[1].ByteCode)
-		checkDeployOK("TestCase 4: 3rd deploy", moduleByteCode[2].ByteCode)
-		checkDeployOK("TestCase 4: 4ur deploy", moduleByteCode[3].ByteCode)
+		checkDeployOK("TestCase 4: deploy few modules", []types.Contract{
+			moduleByteCode[0].ByteCode,
+			moduleByteCode[1].ByteCode,
+			moduleByteCode[2].ByteCode,
+			moduleByteCode[3].ByteCode,
+		})
 
 		scriptByteCode := checkScriptCompiled("TestCase 4", scriptSrcCode)
 		require.Len(t, scriptByteCode, 2)
