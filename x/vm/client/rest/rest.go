@@ -104,7 +104,7 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 			Units: []*compiler_grpc.CompilationUnit{
 				{
 					Text: req.Code,
-					Name: "script", //TODO: implement it
+					Name: "CompilationUnit",
 				},
 			},
 			Address: common_vm.Bech32ToLibra(address),

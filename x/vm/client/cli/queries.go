@@ -161,7 +161,7 @@ func Compile(cdc *codec.Codec) *cobra.Command {
 				Units: []*compiler_grpc.CompilationUnit{
 					{
 						Text: string(moveContent),
-						Name: "script", //TODO: implement it
+						Name: "CompilationUnit",
 					},
 				},
 				Address: common_vm.Bech32ToLibra(address),
