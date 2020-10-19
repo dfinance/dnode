@@ -59,7 +59,7 @@ func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "add-currency-proposal [denom] [decimals] [vmBalancePathHex] [vmInfoPathHex] [ERC20ContractAddress]",
-		Args:    cobra.ExactArgs(4),
+		Args:    cobra.ExactArgs(5),
 		Short:   "Submit currency add proposal, creating currency",
 		Example: "add-currency-proposal xfi 18 {balancePath} {infoPath} --deposit 100xfi --fees 1xfi",
 		RunE: func(cmd *cobra.Command, args []string) error {
