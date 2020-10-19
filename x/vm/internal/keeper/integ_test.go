@@ -75,7 +75,7 @@ script {
 }
 `
 
-const mathDoubleModule = `
+const mathQuadModule = `
 module DblMathAdd {
     public fun add(a: u64, b: u64): u64 {
 		a + b
@@ -85,6 +85,18 @@ module DblMathAdd {
 module DblMathSub {
 	public fun sub(a: u64, b: u64): u64 {
 		a - b
+    }
+}
+
+module DblMathMul {
+	public fun sub(a: u64, b: u64): u64 {
+		a * b
+    }
+}
+
+module DblMathQuo {
+	public fun sub(a: u64, b: u64): u64 {
+		a / b
     }
 }
 `
@@ -111,6 +123,23 @@ script {
 		let ab = DblMathSub::sub(a, b);
 		let res = DblMathAdd::add(ab, c);
 		Event::emit<u64>(account, res);
+	}
+}
+`
+
+const mixedFileModuleAndScript = `
+module DblMathAdd {
+    public fun add(a: u64, b: u64): u64 {
+		a + b
+    }
+}
+
+script {
+	use 0x1::Event;
+	
+	fun main(account: &signer, a: u64, b: u64) {
+		let c = a + b;
+		Event::emit<u64>(account, c);
 	}
 }
 `
@@ -175,6 +204,28 @@ script {
         assert(Vector::length<u8>(&mut arg_vector) == 2, 40);
         assert(Vector::pop_back<u8>(&mut arg_vector) == 1, 41);
         assert(Vector::pop_back<u8>(&mut arg_vector) == 0, 42);
+	}
+}
+`
+
+const moduleWithResources = `
+address 0x1 {
+	module Foo {
+		resource struct U64 {val: u64}
+		resource struct Obj {val: u64, o: U64}
+
+		public fun add(sender: &signer, a: u64, b: u64): u64 {
+			let sum = a + b;
+			let value = U64 {val: sum};
+			move_to<U64>(sender, value);
+			sum
+		}
+
+		public fun build_obj(sender: &signer, a: u64) {
+			let u64val = U64 {val: a};
+			let value = Obj {val: a, o: u64val};
+			move_to<Obj>(sender, value);
+		}
 	}
 }
 `
@@ -453,6 +504,46 @@ func TestVMKeeper_DeployModule(t *testing.T) {
 	}
 }
 
+// Test compile module with few methods and types
+func TestVMKeeper_CheckMetaData(t *testing.T) {
+	config := sdk.GetConfig()
+	dnodeConfig.InitBechPrefixes(config)
+
+	input := newTestInput(false)
+
+	// launch docker
+	stopContainer := startDVMContainer(t, input.dsPort)
+	defer stopContainer()
+
+	// create accounts.
+	addr1 := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	acc1 := input.ak.NewAccountWithAddress(input.ctx, addr1)
+
+	input.ak.SetAccount(input.ctx, acc1)
+
+	gs := getGenesis(t)
+	input.vk.InitGenesis(input.ctx, gs)
+	input.vk.SetDSContext(input.ctx)
+	input.vk.StartDSServer(input.ctx)
+	time.Sleep(2 * time.Second)
+
+	bytecodeModule, err := vm_client.Compile(*vmCompiler, &compiler_grpc.SourceFiles{
+		Units: []*compiler_grpc.CompilationUnit{
+			{
+				Text: moduleWithResources,
+				Name: "ModuleWithResources",
+			},
+		},
+		Address: common_vm.Bech32ToLibra(addr1),
+	})
+	require.NoErrorf(t, err, "can't get code for ModuleWithResources: %v", err)
+	require.Len(t, bytecodeModule, 1)
+	require.Len(t, bytecodeModule[0].Methods, 2)
+	require.Len(t, bytecodeModule[0].Types, 2)
+	require.Equal(t, bytecodeModule[0].CodeType, vm_client.CodeTypeModule)
+
+}
+
 // Test deploy the same module twice.
 func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 	config := sdk.GetConfig()
@@ -623,19 +714,22 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 
 	// test case 3: two module in one
 	{
-		moduleByteCode := checkModuleCompiled("TestCase 3", mathDoubleModule)
-		require.Len(t, moduleByteCode, 2)
+		moduleByteCode := checkModuleCompiled("TestCase 3", mathQuadModule)
+		require.Len(t, moduleByteCode, 4)
 		checkDeployOK("TestCase 3: 1st deploy", moduleByteCode[0].ByteCode)
 		checkDeployOK("TestCase 3: 2nd deploy", moduleByteCode[1].ByteCode)
+		checkDeployOK("TestCase 3: 3rd deploy", moduleByteCode[3].ByteCode)
+		checkDeployOK("TestCase 3: 4ur deploy", moduleByteCode[4].ByteCode)
 
 		scriptByteCode := checkScriptCompiled("TestCase 3", mathDoubleScript)
 		require.Len(t, scriptByteCode, 2)
-		checkScriptExecuteOK("TestCase 3: execute", scriptByteCode[0].ByteCode, mathScriptArgs)
+		checkScriptExecuteOK("TestCase 3: execute 1st", scriptByteCode[0].ByteCode, mathScriptArgs)
+		checkScriptExecuteOK("TestCase 3: execute 2nd", scriptByteCode[1].ByteCode, mathScriptArgs)
 	}
 
 	// test case 4: two module in one, module srcCode with "address 0x... {}" prefix
 	{
-		moduleSrcCode := fmt.Sprintf("address %s {\n%s\n}", addr1, strings.Replace(mathDoubleModule, "DblMath", "DblMath2", 2))
+		moduleSrcCode := fmt.Sprintf("address %s {\n%s\n}", addr1, strings.Replace(mathQuadModule, "DblMath", "DblMath2", 2))
 		scriptSrcCode := strings.Replace(mathDoubleScript, "DblMath", "DblMath2", -1)
 
 		moduleByteCode := checkModuleCompiled("TestCase 4", moduleSrcCode)
@@ -645,7 +739,37 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 
 		scriptByteCode := checkScriptCompiled("TestCase 4", scriptSrcCode)
 		require.Len(t, scriptByteCode, 2)
-		checkScriptExecuteOK("TestCase 4: execute", scriptByteCode[0].ByteCode, mathScriptArgs)
+		checkScriptExecuteOK("TestCase 4: execute 1st", scriptByteCode[0].ByteCode, mathScriptArgs)
+		checkScriptExecuteOK("TestCase 4: execute 2nd", scriptByteCode[1].ByteCode, mathScriptArgs)
+	}
+
+	// test case 5: mixed file with module and script
+	{
+		moduleByteCode, err := vm_client.Compile(*vmCompiler, &compiler_grpc.SourceFiles{
+			Units: []*compiler_grpc.CompilationUnit{
+				{
+					Text: mixedFileModuleAndScript,
+					Name: "MathScript",
+				},
+			},
+			Address: common_vm.Bech32ToLibra(addr1),
+		})
+
+		require.NoError(t, err, "%s: can't compiler script TestCase 5")
+		require.Len(t, moduleByteCode, 2)
+		var hasScript, hasModule bool
+		for _, item := range moduleByteCode {
+			if item.CodeType == vm_client.CodeTypeModule {
+				hasModule = true
+			}
+
+			if item.CodeType == vm_client.CodeTypeScript {
+				hasScript = true
+			}
+		}
+
+		require.True(t, hasModule)
+		require.True(t, hasScript)
 	}
 }
 

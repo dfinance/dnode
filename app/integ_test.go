@@ -203,6 +203,20 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 		}
 	`
 
+	const dualScript = `
+		script {
+			fun main(x: u64, y: u64) {
+				x - y;
+			}
+		}
+
+		script {
+			fun main(a: u64, b: u64) {
+				a + b;
+			}
+		}
+	`
+
 	ct := cliTester.New(
 		t,
 		false,
@@ -219,18 +233,20 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 	senderName := "validator1"
 	senderAddress := ct.Accounts[senderName].Address
 
-	// Compile script
-	var byteCode []string
+	// Compile 2 scripts in the one request
 	{
-		r, resp := ct.RestQueryVMCompile(senderAddress, script)
+		r, resp := ct.RestQueryVMCompile(senderAddress, dualScript)
 		r.CheckSucceeded()
-
 		require.NotEmpty(t, resp)
-
-		for _, item := range *resp {
-			byteCode = append(byteCode, item.Code)
-		}
+		require.Len(t, *resp, 2)
 	}
+
+	r, resp := ct.RestQueryVMCompile(senderAddress, script)
+	r.CheckSucceeded()
+
+	require.NotEmpty(t, resp)
+	require.Len(t, *resp, 1)
+	byteCode := (*resp)[0].Code
 
 	// Check compile endpoint with invalid inputs
 	{
@@ -244,7 +260,7 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 	// Execute script
 	{
 		arg := "100"
-		q, stdTx := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode[0], "", arg)
+		q, stdTx := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "", arg)
 		q.CheckSucceeded()
 
 		// verify stdTx
@@ -252,7 +268,7 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 			scriptArg, err := vm_client.NewU128ScriptArg(arg)
 			require.NoError(t, err)
 
-			code, err := hex.DecodeString(byteCode[0])
+			code, err := hex.DecodeString(byteCode)
 			require.NoError(t, err)
 
 			require.Len(t, stdTx.Msgs, 1)
@@ -278,17 +294,17 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 		}
 		// invalid args len (no args)
 		{
-			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode[0], "")
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "")
 			q.CheckFailed(400, nil)
 		}
 		// invalid args len (more than needed)
 		{
-			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode[0], "", "100", "200")
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "", "100", "200")
 			q.CheckFailed(400, nil)
 		}
 		// invalid args (wrong type)
 		{
-			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode[0], "", "true")
+			q, _ := ct.RestQueryVMExecuteScriptStdTx(senderName, byteCode, "", "true")
 			q.CheckFailed(400, nil)
 		}
 	}
