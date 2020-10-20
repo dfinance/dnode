@@ -776,6 +776,11 @@ func TestVMKeeper_DeployModuleTwice(t *testing.T) {
 
 		require.True(t, hasModule)
 		require.True(t, hasScript)
+
+		checkDeployFailed("TestCase 5: deploy module and script", []types.Contract{
+			moduleByteCode[0].ByteCode,
+			moduleByteCode[1].ByteCode,
+		})
 	}
 }
 
