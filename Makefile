@@ -14,7 +14,7 @@ cosmos_dir=$(swagger_dir)/cosmos-sdk
 dnode = ./cmd/dnode
 dncli =./cmd/dncli
 
-cosmos_version = dfinance/launchpad
+cosmos_version = $(shell awk '/replace github.com\/cosmos\/cosmos-sdk => github.com\/dfinance\/cosmos-sdk/ {print $$NF}' < go.mod)
 
 all: install
 install: go.sum install-dnode install-dncli
@@ -51,17 +51,17 @@ go.sum: go.mod
 	GO111MODULE=on go mod verify
 
 swagger-ui-deps:
-	@echo "--> Preparing deps fro building Swagger API specificaion"
+	@echo "--> Preparing deps for building Swagger API specificaion"
 
 	@echo "-> Make tmp build folder"
 	rm -rf $(swagger_dir)
 	mkdir -p $(cosmos_dir)
 
 	@echo "-> Cosmos-SDK $(cosmos_version) checkout"
-	git -C $(swagger_dir) clone --branch $(cosmos_version) https://github.com/dfinance/cosmos-sdk.git
+	git -C $(swagger_dir) clone --depth 1 --branch $(cosmos_version) https://github.com/dfinance/cosmos-sdk.git
 
 	@echo "-> Fetching Golang libraries: swag, statik"
-	go get -u github.com/swaggo/swag/cmd/swag
+	go get -u github.com/swaggo/swag/cmd/swag@v1.6.7
 	go get github.com/g3co/go-swagger-merger
 
 swagger-ui-build:
