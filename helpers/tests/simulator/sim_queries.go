@@ -233,7 +233,7 @@ func (s *Simulator) QueryDistPool(poolName distribution.RewardPoolName) (res sdk
 }
 
 // QueryDistDelReward queries current delegator rewards for specified validator.
-func (s *Simulator) QueryDistDelReward(accAddr sdk.AccAddress, valAddr sdk.ValAddress) (res sdk.DecCoins) {
+func (s *Simulator) QueryDistDelReward(accAddr sdk.AccAddress, valAddr sdk.ValAddress) (res distribution.QueryDelegationRewardsResponse) {
 	resp := s.RunQuery(
 		distribution.QueryDelegationRewardsParams{
 			DelegatorAddress: accAddr,
