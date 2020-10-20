@@ -8,6 +8,10 @@ replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.39.1-0
 //replace github.com/cosmos/cosmos-sdk => /Users/boris/go/src/github.com/dfinance/cosmos-sdk
 //replace github.com/cosmos/cosmos-sdk => /Users/tiky/Go_Projects/src/github.com/dfinance/cosmos-sdk
 
+// Fix of OS X hostmachine test runs
+// Source: https://github.com/ory/dockertest/issues/208
+replace golang.org/x/sys => golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6
+
 require (
 	github.com/99designs/keyring v1.1.3
 	github.com/OneOfOne/xxhash v1.2.7
