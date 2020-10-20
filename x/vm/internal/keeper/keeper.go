@@ -91,11 +91,8 @@ func (k Keeper) DeployContract(ctx sdk.Context, msg types.MsgDeployModule) error
 	execList := make([]*vm_grpc.VMExecuteResponse, len(msg.Module))
 	var intErr error
 
-	for i, contact := range msg.Module {
-		req, sdkErr := NewDeployRequest(ctx, msg.Signer, contact)
-		if sdkErr != nil {
-			return sdkErr
-		}
+	for i, contract := range msg.Module {
+		req := NewDeployRequest(ctx, msg.Signer, contract)
 
 		execList[i], intErr = k.sendExecuteReq(ctx, req, nil)
 		if intErr != nil {
@@ -116,19 +113,17 @@ func (k Keeper) DeployContractDryRun(ctx sdk.Context, msg types.MsgDeployModule)
 	k.modulePerms.AutoCheck(types.PermVmExec)
 
 	for _, contact := range msg.Module {
-		req, sdkErr := NewDeployRequest(ctx, msg.Signer, contact)
-		if sdkErr != nil {
-			return sdkErr
-		}
-
+		req := NewDeployRequest(ctx, msg.Signer, contact)
 		exec, dvmErr := k.sendExecuteReq(ctx, req, nil)
 		if dvmErr != nil {
-			return sdkErrors.Wrap(types.ErrVMCrashed, dvmErr.Error())
+			cErr := fmt.Sprintf("contract: %s error: %s", contact, dvmErr.Error())
+			return sdkErrors.Wrap(types.ErrVMCrashed, cErr)
 		}
 
 		if exec.GetStatus().GetError() != nil {
 			statusMsg := types.StringifyVMExecStatus(exec.Status)
-			return sdkErrors.Wrap(types.ErrWrongExecutionResponse, statusMsg)
+			cErr := fmt.Sprintf("contract: %s error: %s", contact, statusMsg)
+			return sdkErrors.Wrap(types.ErrWrongExecutionResponse, cErr)
 		}
 	}
 

@@ -142,10 +142,7 @@ func TestVMKeeper_NewDeployRequest(t *testing.T) {
 	ctx := sdk.NewContext(mstore, abci.Header{ChainID: "dn-testnet-vm-keeper-test"}, false, log.NewNopLogger())
 	ctx = ctx.WithGasMeter(sdk.NewGasMeter(gasLimit))
 
-	req, err := NewDeployRequest(ctx, addr, code)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req := NewDeployRequest(ctx, addr, code)
 
 	require.EqualValues(t, common_vm.Bech32ToLibra(addr), req.Sender)
 	require.EqualValues(t, gasLimit, req.MaxGasAmount)
