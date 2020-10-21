@@ -771,8 +771,8 @@ definitions:
     $ref: '#/definitions/types.Currencies'
   ccstorage.Currency:
     $ref: '#/definitions/types.Currency'
-  crypto.PubKey:
-    type: object
+  crypto.Address:
+    $ref: '#/definitions/bytes.HexBytes'
   markets.MarketExtended:
     $ref: '#/definitions/types.MarketExtended'
   msmodule.MsMsg:
@@ -1152,21 +1152,20 @@ definitions:
         format: number
         type: string
     type: object
-  rest.QueryDelegationDelegatorRewardsResp:
-    properties:
-      height:
-        type: integer
-      result:
-        items:
-          $ref: '#/definitions/types.DelegationDelegatorReward'
-        type: array
-    type: object
   rest.QueryDelegationResp:
     properties:
       height:
         type: integer
       result:
         $ref: '#/definitions/types.Delegation'
+        type: object
+    type: object
+  rest.QueryDelegationRewardsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.QueryDelegationRewardsResponse'
         type: object
     type: object
   rest.QueryDelegationsResp:
@@ -1177,6 +1176,14 @@ definitions:
         items:
           $ref: '#/definitions/types.DelegationResponse'
         type: array
+    type: object
+  rest.QueryDelegatorRewardsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/types.QueryDelegatorTotalRewardsResponse'
+        type: object
     type: object
   rest.QueryExtendedValidatorResp:
     properties:
@@ -1577,7 +1584,7 @@ definitions:
       type: integer
     type: array
   types.Address:
-    type: object
+    $ref: '#/definitions/crypto.Address'
   types.Asset:
     properties:
       active:
@@ -2159,8 +2166,9 @@ definitions:
   types.PartSetHeader:
     properties:
       hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        type: object
+        items:
+          type: integer
+        type: array
       total:
         type: integer
     type: object
@@ -2205,6 +2213,31 @@ definitions:
         example: "2020-03-27T13:45:15.293426Z"
         format: RFC 3339
         type: string
+    type: object
+  types.QueryDelegationRewardsResponse:
+    properties:
+      rewards:
+        $ref: '#/definitions/types.DelegationDelegatorReward'
+        description: Current rewards for a specific validator
+        type: object
+      total:
+        $ref: '#/definitions/types.DecCoins'
+        description: |-
+          All validators rewards accumulated on delegation modification events (shares change, undelegation, redelegation)
+          This truncated Int value would be transferred to the delegator account on withdraw_delegator_reward Tx
+        type: object
+    type: object
+  types.QueryDelegatorTotalRewardsResponse:
+    properties:
+      rewards:
+        description: Current rewards for all delegated validators
+        items:
+          $ref: '#/definitions/types.DelegationDelegatorReward'
+        type: array
+      total:
+        $ref: '#/definitions/types.DecCoins'
+        description: All validators rewards accumulated on delegations modification events (shares change, undelegation, redelegation)
+        type: object
     type: object
   types.RedelegationEntry:
     properties:
@@ -3080,7 +3113,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rest.QueryDelegationDelegatorRewardsResp'
+            $ref: '#/definitions/rest.QueryDelegatorRewardsResp'
         "400":
           description: Returned if the request doesn't have valid query params
           schema:
@@ -3152,7 +3185,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rest.QueryDecCoinsResp'
+            $ref: '#/definitions/rest.QueryDelegationRewardsResp'
         "400":
           description: Returned if the request doesn't have valid query params
           schema:
