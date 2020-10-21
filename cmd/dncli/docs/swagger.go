@@ -761,6 +761,26 @@ definitions:
       voter:
         type: string
     type: object
+  auth.StdFee:
+    $ref: '#/definitions/types.StdFee'
+  auth.StdSignature:
+    $ref: '#/definitions/types.StdSignature'
+  auth.StdTx:
+    $ref: '#/definitions/types.StdTx'
+  bytes.HexBytes:
+    items:
+      type: integer
+    type: array
+  ccstorage.Currencies:
+    $ref: '#/definitions/types.Currencies'
+  ccstorage.Currency:
+    $ref: '#/definitions/types.Currency'
+  crypto.Address:
+    $ref: '#/definitions/bytes.HexBytes'
+  markets.MarketExtended:
+    $ref: '#/definitions/types.MarketExtended'
+  msmodule.MsMsg:
+    type: object
   rest.BaseReq:
     properties:
       account_number:
@@ -1577,6 +1597,8 @@ definitions:
     items:
       type: integer
     type: array
+  types.Address:
+    $ref: '#/definitions/crypto.Address'
   types.Asset:
     properties:
       active:
@@ -2059,6 +2081,15 @@ definitions:
     items:
       $ref: '#/definitions/types.Order'
     type: array
+  types.PartSetHeader:
+    properties:
+      hash:
+        items:
+          type: integer
+        type: array
+      total:
+        type: integer
+    type: object
   types.Pool:
     properties:
       bonded_tokens:
