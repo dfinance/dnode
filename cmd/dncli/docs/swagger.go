@@ -2134,9 +2134,15 @@ definitions:
     type: object
   types.QueryDelegationRewardsResponse:
     properties:
-      reward:
+      rewards:
         $ref: '#/definitions/types.DelegationDelegatorReward'
         description: Current rewards for a specific validator
+        type: object
+      total:
+        $ref: '#/definitions/types.DecCoins'
+        description: |-
+          All validators rewards accumulated on delegation modification events (shares change, undelegation, redelegation)
+          This truncated Int value would be transferred to the delegator account on withdraw_delegator_reward Tx
         type: object
     type: object
   types.QueryDelegatorTotalRewardsResponse:
