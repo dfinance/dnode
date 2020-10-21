@@ -5671,7 +5671,7 @@ paths:
       tags:
       - Tendermint RPC
   /vm/compile:
-    get:
+    post:
       consumes:
       - application/json
       description: Compile script / module code using VM and return byteCode

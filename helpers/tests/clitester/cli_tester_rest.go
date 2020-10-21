@@ -388,7 +388,7 @@ func (ct *CLITester) RestQueryVMCompile(address, code string) (*RestRequest, *vm
 	reqSubPath := fmt.Sprintf("%s/%s", vm.ModuleName, "compile")
 	respMsg := &vm_client.MoveFile{}
 
-	r := ct.newRestRequest().SetQuery("GET", reqSubPath, nil, req, respMsg)
+	r := ct.newRestRequest().SetQuery("POST", reqSubPath, nil, req, respMsg)
 
 	return r, respMsg
 }
