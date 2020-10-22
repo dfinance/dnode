@@ -63,7 +63,7 @@ type LcsViewResp struct {
 
 // Registering routes for REST API.
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
-	r.HandleFunc(fmt.Sprintf("/%s/compile", types.ModuleName), compile(cliCtx)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/compile", types.ModuleName), compile(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/data/{%s}/{%s}", types.ModuleName, accountAddrName, vmPathName), getData(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/view", types.ModuleName), lcsView(cliCtx)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", types.ModuleName, txHash), getTxVMStatus(cliCtx)).Methods("GET")
@@ -82,7 +82,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router) {
 // @Success 200 {object} VmRespCompile
 // @Failure 400 {object} rest.ErrorResponse "Returned if the request doesn't have valid query params"
 // @Failure 500 {object} rest.ErrorResponse "Returned on server error"
-// @Router /vm/compile [get]
+// @Router /vm/compile [post]
 func compile(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		compilerAddr := viper.GetString(vm_client.FlagCompilerAddr)
