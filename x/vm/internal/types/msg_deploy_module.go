@@ -12,7 +12,7 @@ var _ sdk.Msg = MsgDeployModule{}
 // Client message to deploy a module (contract) to VM.
 type MsgDeployModule struct {
 	Signer sdk.AccAddress `json:"signer" yaml:"signer"`
-	Module Contract       `json:"module" yaml:"module"`
+	Module []Contract     `json:"module" yaml:"module"`
 }
 
 // Implements sdk.Msg interface.
@@ -49,9 +49,9 @@ func (msg MsgDeployModule) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgDeployModule creates a new MsgDeployModule message.
-func NewMsgDeployModule(signer sdk.AccAddress, module Contract) MsgDeployModule {
+func NewMsgDeployModule(signer sdk.AccAddress, modules []Contract) MsgDeployModule {
 	return MsgDeployModule{
 		Signer: signer,
-		Module: module,
+		Module: modules,
 	}
 }

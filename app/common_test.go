@@ -21,6 +21,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/dfinance/dvm-proto/go/compiler_grpc"
+	"github.com/dfinance/dvm-proto/go/metadata_grpc"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -183,9 +185,10 @@ func MockVMConfig() *vmConfig.VMConfig {
 
 // VMServer aggregates gRPC VM services.
 type VMServer struct {
-	vm_grpc.UnimplementedVMCompilerServer
-	vm_grpc.UnimplementedVMModulePublisherServer
-	vm_grpc.UnimplementedVMScriptExecutorServer
+	VMCompilerServer        compiler_grpc.UnimplementedDvmCompilerServer
+	VMMetaDataServer        metadata_grpc.UnimplementedDVMBytecodeMetadataServer
+	VMModulePublisherServer vm_grpc.UnimplementedVMModulePublisherServer
+	VMScriptExecutorServer  vm_grpc.UnimplementedVMScriptExecutorServer
 }
 
 // NewTestDnAppMockVM creates dnode app and mock VM server.
@@ -197,9 +200,10 @@ func NewTestDnAppMockVM(logOpts ...log.Option) (*DnServiceApp, func()) {
 	vmServer := VMServer{}
 	server := grpc.NewServer()
 
-	vm_grpc.RegisterVMCompilerServer(server, &vmServer.UnimplementedVMCompilerServer)
-	vm_grpc.RegisterVMModulePublisherServer(server, &vmServer.UnimplementedVMModulePublisherServer)
-	vm_grpc.RegisterVMScriptExecutorServer(server, &vmServer.UnimplementedVMScriptExecutorServer)
+	compiler_grpc.RegisterDvmCompilerServer(server, &vmServer.VMCompilerServer)
+	metadata_grpc.RegisterDVMBytecodeMetadataServer(server, &vmServer.VMMetaDataServer)
+	vm_grpc.RegisterVMModulePublisherServer(server, &vmServer.VMModulePublisherServer)
+	vm_grpc.RegisterVMScriptExecutorServer(server, &vmServer.VMScriptExecutorServer)
 
 	go func() {
 		if err := server.Serve(vmListener); err != nil {

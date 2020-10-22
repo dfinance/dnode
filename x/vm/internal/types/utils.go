@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/dfinance/dvm-proto/go/types_grpc"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 	"github.com/tendermint/tendermint/libs/log"
 
@@ -15,11 +16,11 @@ import (
 )
 
 // GetVMTypeByString converts {typeTag} gRPC enum string representation to gRPC VMTypeTag.
-func GetVMTypeByString(typeTag string) (vm_grpc.VMTypeTag, error) {
-	if val, ok := vm_grpc.VMTypeTag_value[typeTag]; !ok {
+func GetVMTypeByString(typeTag string) (types_grpc.VMTypeTag, error) {
+	if val, ok := types_grpc.VMTypeTag_value[typeTag]; !ok {
 		return VmUnknownTagType, fmt.Errorf("can't find tag VMTypeTag %s, check correctness of type value", typeTag)
 	} else {
-		return vm_grpc.VMTypeTag(val), nil
+		return types_grpc.VMTypeTag(val), nil
 	}
 }
 
@@ -39,9 +40,9 @@ func StringifyVMPath(path *vm_grpc.VMAccessPath) string {
 	)
 }
 
-// StringifyVMTypeTag convert vm_grpc.VMTypeTag to string representation.
-func StringifyVMTypeTag(tag vm_grpc.VMTypeTag) (string, error) {
-	if val, ok := vm_grpc.VMTypeTag_name[int32(tag)]; !ok {
+// StringifyVMTypeTag convert types_grpc.VMTypeTag to string representation.
+func StringifyVMTypeTag(tag types_grpc.VMTypeTag) (string, error) {
+	if val, ok := types_grpc.VMTypeTag_name[int32(tag)]; !ok {
 		return "", fmt.Errorf("can't find string representation of VMTypeTag %d, check correctness of type value", tag)
 	} else {
 		return val, nil
@@ -49,7 +50,7 @@ func StringifyVMTypeTag(tag vm_grpc.VMTypeTag) (string, error) {
 }
 
 // StringifyVMTypeTagPanic wraps StringifyVMTypeTag and panics on error.
-func StringifyVMTypeTagPanic(tag vm_grpc.VMTypeTag) string {
+func StringifyVMTypeTagPanic(tag types_grpc.VMTypeTag) string {
 	val, err := StringifyVMTypeTag(tag)
 	if err != nil {
 		panic(err)
