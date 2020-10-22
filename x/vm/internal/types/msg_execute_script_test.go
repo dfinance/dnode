@@ -9,7 +9,7 @@ import (
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/types_grpc"
 
 	"github.com/dfinance/dnode/helpers/tests/utils"
 	"github.com/dfinance/dnode/x/common_vm"
@@ -23,9 +23,9 @@ func TestVM_MsgExecuteScript(t *testing.T) {
 	code := make(Contract, 128)
 
 	args := []ScriptArg{
-		{Type: vm_grpc.VMTypeTag_U64, Value: []byte{0x1, 0x2, 0x3, 0x4}},
-		{Type: vm_grpc.VMTypeTag_Vector, Value: []byte{0x0}},
-		{Type: vm_grpc.VMTypeTag_Address, Value: common_vm.Bech32ToLibra(acc)},
+		{Type: types_grpc.VMTypeTag_U64, Value: []byte{0x1, 0x2, 0x3, 0x4}},
+		{Type: types_grpc.VMTypeTag_Vector, Value: []byte{0x0}},
+		{Type: types_grpc.VMTypeTag_Address, Value: common_vm.Bech32ToLibra(acc)},
 	}
 
 	msg := NewMsgExecuteScript(acc, code, args)
@@ -59,7 +59,7 @@ func TestVM_NewScriptArg(t *testing.T) {
 	t.Parallel()
 
 	value := []byte{0, 1}
-	tagType := vm_grpc.VMTypeTag_U64
+	tagType := types_grpc.VMTypeTag_U64
 	arg := NewScriptArg(tagType, value)
 	require.Equal(t, tagType, arg.Type)
 	require.Equal(t, value, arg.Value)

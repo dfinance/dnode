@@ -9,16 +9,15 @@ import (
 
 	"github.com/OneOfOne/xxhash"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
-
 	"github.com/dfinance/dnode/x/common_vm"
 	"github.com/dfinance/dnode/x/vm/internal/types"
+	"github.com/dfinance/dvm-proto/go/types_grpc"
 )
 
 // NewAddressScriptArg convert string to address ScriptTag.
 func NewAddressScriptArg(value string) (types.ScriptArg, error) {
-	argTypeCode := vm_grpc.VMTypeTag_Address
-	argTypeName := vm_grpc.VMTypeTag_name[int32(argTypeCode)]
+	argTypeCode := types_grpc.VMTypeTag_Address
+	argTypeName := types_grpc.VMTypeTag_name[int32(argTypeCode)]
 
 	if value == "" {
 		return types.ScriptArg{}, fmt.Errorf("parsing argument %q of type %q: empty", value, argTypeName)
@@ -37,8 +36,8 @@ func NewAddressScriptArg(value string) (types.ScriptArg, error) {
 
 // NewU8ScriptArg convert string to U8 ScriptTag.
 func NewU8ScriptArg(value string) (types.ScriptArg, error) {
-	argTypeCode := vm_grpc.VMTypeTag_U8
-	argTypeName := vm_grpc.VMTypeTag_name[int32(argTypeCode)]
+	argTypeCode := types_grpc.VMTypeTag_U8
+	argTypeName := types_grpc.VMTypeTag_name[int32(argTypeCode)]
 
 	hashParsedValue, err := parseXxHashUint(value)
 	if err != nil {
@@ -58,8 +57,8 @@ func NewU8ScriptArg(value string) (types.ScriptArg, error) {
 
 // NewU64ScriptArg convert string to U64 ScriptTag.
 func NewU64ScriptArg(value string) (types.ScriptArg, error) {
-	argTypeCode := vm_grpc.VMTypeTag_U64
-	argTypeName := vm_grpc.VMTypeTag_name[int32(argTypeCode)]
+	argTypeCode := types_grpc.VMTypeTag_U64
+	argTypeName := types_grpc.VMTypeTag_name[int32(argTypeCode)]
 
 	hashParsedValue, err := parseXxHashUint(value)
 	if err != nil {
@@ -81,8 +80,8 @@ func NewU64ScriptArg(value string) (types.ScriptArg, error) {
 
 // NewU128ScriptArg convert string to U128 ScriptTag.
 func NewU128ScriptArg(value string) (retTag types.ScriptArg, retErr error) {
-	argTypeCode := vm_grpc.VMTypeTag_U128
-	argTypeName := vm_grpc.VMTypeTag_name[int32(argTypeCode)]
+	argTypeCode := types_grpc.VMTypeTag_U128
+	argTypeName := types_grpc.VMTypeTag_name[int32(argTypeCode)]
 
 	defer func() {
 		if recover() != nil {
@@ -121,8 +120,8 @@ func NewU128ScriptArg(value string) (retTag types.ScriptArg, retErr error) {
 
 // NewVectorScriptArg convert string to Vector ScriptTag.
 func NewVectorScriptArg(value string) (types.ScriptArg, error) {
-	argTypeCode := vm_grpc.VMTypeTag_Vector
-	argTypeName := vm_grpc.VMTypeTag_name[int32(argTypeCode)]
+	argTypeCode := types_grpc.VMTypeTag_Vector
+	argTypeName := types_grpc.VMTypeTag_name[int32(argTypeCode)]
 
 	if value == "" {
 		return types.ScriptArg{}, fmt.Errorf("parsing argument %q of type %q: empty", value, argTypeName)
@@ -141,8 +140,8 @@ func NewVectorScriptArg(value string) (types.ScriptArg, error) {
 
 // NewBoolScriptArg convert string to Bool ScriptTag.
 func NewBoolScriptArg(value string) (types.ScriptArg, error) {
-	argTypeCode := vm_grpc.VMTypeTag_Bool
-	argTypeName := vm_grpc.VMTypeTag_name[int32(argTypeCode)]
+	argTypeCode := types_grpc.VMTypeTag_Bool
+	argTypeName := types_grpc.VMTypeTag_name[int32(argTypeCode)]
 
 	valueBool, err := strconv.ParseBool(value)
 	if err != nil {
@@ -182,7 +181,7 @@ func parseXxHashUint(value string) (string, error) {
 }
 
 // ConvertStringScriptArguments convert string client argument to ScriptArgs using compiler meta data (arg types).
-func ConvertStringScriptArguments(argStrs []string, argTypes []vm_grpc.VMTypeTag) ([]types.ScriptArg, error) {
+func ConvertStringScriptArguments(argStrs []string, argTypes []types_grpc.VMTypeTag) ([]types.ScriptArg, error) {
 	if len(argStrs) != len(argTypes) {
 		return nil, fmt.Errorf("strArgs / typedArgs length mismatch: %d / %d", len(argStrs), len(argTypes))
 	}
@@ -194,17 +193,17 @@ func ConvertStringScriptArguments(argStrs []string, argTypes []vm_grpc.VMTypeTag
 		var err error
 
 		switch argType {
-		case vm_grpc.VMTypeTag_Address:
+		case types_grpc.VMTypeTag_Address:
 			scriptArg, err = NewAddressScriptArg(argStr)
-		case vm_grpc.VMTypeTag_U8:
+		case types_grpc.VMTypeTag_U8:
 			scriptArg, err = NewU8ScriptArg(argStr)
-		case vm_grpc.VMTypeTag_U64:
+		case types_grpc.VMTypeTag_U64:
 			scriptArg, err = NewU64ScriptArg(argStr)
-		case vm_grpc.VMTypeTag_U128:
+		case types_grpc.VMTypeTag_U128:
 			scriptArg, err = NewU128ScriptArg(argStr)
-		case vm_grpc.VMTypeTag_Bool:
+		case types_grpc.VMTypeTag_Bool:
 			scriptArg, err = NewBoolScriptArg(argStr)
-		case vm_grpc.VMTypeTag_Vector:
+		case types_grpc.VMTypeTag_Vector:
 			scriptArg, err = NewVectorScriptArg(argStr)
 		default:
 			return nil, fmt.Errorf("argument[%d]: parsing argument %q: unsupported argType code: %v", argIdx, argStr, argType)

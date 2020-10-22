@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/compiler_grpc"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -155,17 +155,24 @@ func TestIntegApp_Crisis(t *testing.T) {
 	// compile and deploy module
 	{
 		// compile
-		byteCode, compileErr := vm_client.Compile(dvmAddr, &vm_grpc.SourceFile{
-			Text:    swapModuleSrc,
+		byteCode, compileErr := vm_client.Compile(dvmAddr, &compiler_grpc.SourceFiles{
+			Units: []*compiler_grpc.CompilationUnit{
+				{
+					Text: swapModuleSrc,
+					Name: "swapModuleSrc",
+				},
+			},
 			Address: client1LibraAddr,
 		})
+
 		require.NoError(t, compileErr)
+		require.Len(t, byteCode, 1)
 
 		// deploy using helper func
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client1Addr), client1PrivKey
 		deployMsg := vm.MsgDeployModule{
 			Signer: client1Addr,
-			Module: byteCode,
+			Module: []vm.Contract{byteCode[0].ByteCode},
 		}
 		tx := GenTx([]sdk.Msg{deployMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
 		CheckDeliverTx(t, app, tx)
@@ -199,11 +206,17 @@ func TestIntegApp_Crisis(t *testing.T) {
 
 		// compile
 		createSwapScriptSrc := strings.ReplaceAll(createSwapScriptSrcFmt, "{{sender}}", client1Addr.String())
-		byteCode, compileErr := vm_client.Compile(dvmAddr, &vm_grpc.SourceFile{
-			Text:    createSwapScriptSrc,
+		byteCode, compileErr := vm_client.Compile(dvmAddr, &compiler_grpc.SourceFiles{
+			Units: []*compiler_grpc.CompilationUnit{
+				{
+					Text: createSwapScriptSrc,
+					Name: "createSwapScriptSrc",
+				},
+			},
 			Address: client1LibraAddr,
 		})
 		require.NoError(t, compileErr)
+		require.Len(t, byteCode, 1)
 
 		// prepare execute Tx
 		swapAmountArg, amountArgErr := vm_client.NewU128ScriptArg(offerAmount.String())
@@ -214,7 +227,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client1Addr), client1PrivKey
 		executeMsg := vm.MsgExecuteScript{
 			Signer: client1Addr,
-			Script: byteCode,
+			Script: byteCode[0].ByteCode,
 			Args:   []vm.ScriptArg{swapAmountArg, swapPriceArg},
 		}
 		tx := GenTx([]sdk.Msg{executeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)
@@ -258,11 +271,17 @@ func TestIntegApp_Crisis(t *testing.T) {
 		suppliesBefore := GetAllSupplies(t, app, GetContext(app, true))
 
 		createSwapScriptSrc := strings.ReplaceAll(swapSwapScriptSrcFmt, "{{sender}}", client1Addr.String())
-		byteCode, compileErr := vm_client.Compile(dvmAddr, &vm_grpc.SourceFile{
-			Text:    createSwapScriptSrc,
+		byteCode, compileErr := vm_client.Compile(dvmAddr, &compiler_grpc.SourceFiles{
+			Units: []*compiler_grpc.CompilationUnit{
+				{
+					Text: createSwapScriptSrc,
+					Name: "createSwapScriptSrc",
+				},
+			},
 			Address: client1LibraAddr,
 		})
 		require.NoError(t, compileErr)
+		require.Len(t, byteCode, 1)
 
 		sellerAddrArg, sellerArgErr := vm_client.NewAddressScriptArg(client1Addr.String())
 		require.NoError(t, sellerArgErr)
@@ -272,7 +291,7 @@ func TestIntegApp_Crisis(t *testing.T) {
 		senderAcc, senderPrivKey := GetAccountCheckTx(app, client2Addr), client2PrivKey
 		executeMsg := vm.MsgExecuteScript{
 			Signer: client2Addr,
-			Script: byteCode,
+			Script: byteCode[0].ByteCode,
 			Args:   []vm.ScriptArg{sellerAddrArg, swapPriceArg},
 		}
 		tx := GenTx([]sdk.Msg{executeMsg}, []uint64{senderAcc.GetAccountNumber()}, []uint64{senderAcc.GetSequence()}, senderPrivKey)

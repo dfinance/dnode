@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/compiler_grpc"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 
@@ -45,12 +45,12 @@ type ExecuteScriptReq struct {
 type PublishModuleReq struct {
 	BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
 	// Compiled Move code
-	MoveCode string `json:"move_code" yaml:"move_code" format:"HEX encoded byte code"`
+	MoveCode []string `json:"move_code" yaml:"move_code" format:"HEX encoded byte code array"`
 }
 
 type LcsViewReq struct {
 	// Resource address
-	Account  string `json:"address" format:"bech32/hex" example:"0x0000000000000000000000000000000000000001"`
+	Account string `json:"address" format:"bech32/hex" example:"0x0000000000000000000000000000000000000001"`
 	// Move formatted path (ModuleName::StructName, where ::StructName is optional)
 	MovePath string `json:"move_path" example:"Block::BlockMetadata"`
 	// LCS view JSON formatted request (refer to docs for specs)
@@ -100,23 +100,24 @@ func compile(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		sourceFile := &vm_grpc.SourceFile{
-			Text:    req.Code,
+		sourceFile := &compiler_grpc.SourceFiles{
+			Units: []*compiler_grpc.CompilationUnit{
+				{
+					Text: req.Code,
+					Name: "CompilationUnit",
+				},
+			},
 			Address: common_vm.Bech32ToLibra(address),
 		}
 
 		// compile and process response
-		byteCode, err := vm_client.Compile(compilerAddr, sourceFile)
+		byteCodes, err := vm_client.Compile(compilerAddr, sourceFile)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		resp := vm_client.MoveFile{
-			Code: hex.EncodeToString(byteCode),
-		}
-
-		rest.PostProcessResponse(w, cliCtx, resp)
+		rest.PostProcessResponse(w, cliCtx, byteCodes)
 	}
 }
 
@@ -394,14 +395,17 @@ func deployModule(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		_, code, err := helpers.ParseHexStringParam("move_code", req.MoveCode, helpers.ParamTypeRestRequest)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
+		contracts := make([]types.Contract, len(req.MoveCode))
+		for i, code := range req.MoveCode {
+			_, contracts[i], err = helpers.ParseHexStringParam("move_code", code, helpers.ParamTypeRestRequest)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
 		}
 
 		// create the message
-		msg := types.NewMsgDeployModule(fromAddr, code)
+		msg := types.NewMsgDeployModule(fromAddr, contracts)
 		if err := msg.ValidateBasic(); err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return

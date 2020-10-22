@@ -153,6 +153,8 @@ github.com/dfinance/cosmos-sdk v0.39.1-0.3 h1:avPQ8i4mDItGcBsfTLyq4kQE0HsiClgf7G
 github.com/dfinance/cosmos-sdk v0.39.1-0.3/go.mod h1:2sfZJgnTxx4j5VycscAUaaI3P7ay5v0AfaO/UZXTFr0=
 github.com/dfinance/dvm-proto/go v0.0.0-20200819065410-6b70956c85de h1:PZfrjeOs9epAU0n+FpX/JAr/e+5m5/GdfUsgtO8gCOY=
 github.com/dfinance/dvm-proto/go v0.0.0-20200819065410-6b70956c85de/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
+github.com/dfinance/dvm-proto/go v0.0.0-20201007122036-27be7297df4e h1:PT57lhHduRU0zBUO1zPHlXj48rpocTRclcAx0HLwLfQ=
+github.com/dfinance/dvm-proto/go v0.0.0-20201007122036-27be7297df4e/go.mod h1:Vt1T0G56AYXbsduNKzSkq1RDTNa8PFraSqB9DaTCV0U=
 github.com/dfinance/glav v0.0.0-20200814081332-c4701f6c12a6 h1:fZIYncA5BRad0+YnP88cfBfo0ZPgxPSVeuh/jvoGrLc=
 github.com/dfinance/glav v0.0.0-20200814081332-c4701f6c12a6/go.mod h1:/0gr38+QzVxCNSNKc/WjGKtdTfV8NtMagCNO0/VjOQU=
 github.com/dfinance/lcs v0.1.7-big h1:z+Pvxcxvr6lKSy1vjYJtM5MnCTQ7DBjPitTywoWO9X0=

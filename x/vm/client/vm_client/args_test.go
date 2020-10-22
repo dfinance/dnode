@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/types_grpc"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
@@ -20,7 +20,7 @@ func Test_NewAddressScriptArg(t *testing.T) {
 	{
 		tag, err := NewAddressScriptArg(addr.String())
 		require.NoError(t, err)
-		require.Equal(t, vm_grpc.VMTypeTag_Address, tag.Type)
+		require.Equal(t, types_grpc.VMTypeTag_Address, tag.Type)
 		require.Equal(t, common_vm.Bech32ToLibra(addr), tag.Value)
 	}
 
@@ -42,7 +42,7 @@ func Test_NewU8ScriptArg(t *testing.T) {
 	{
 		tag, err := NewU8ScriptArg("128")
 		require.NoError(t, err)
-		require.Equal(t, vm_grpc.VMTypeTag_U8, tag.Type)
+		require.Equal(t, types_grpc.VMTypeTag_U8, tag.Type)
 		require.Equal(t, []byte{0x80}, tag.Value)
 	}
 
@@ -70,7 +70,7 @@ func Test_NewU64ScriptArg(t *testing.T) {
 	{
 		tag, err := NewU64ScriptArg("305441741")
 		require.NoError(t, err)
-		require.Equal(t, vm_grpc.VMTypeTag_U64, tag.Type)
+		require.Equal(t, types_grpc.VMTypeTag_U64, tag.Type)
 		require.Equal(t, []byte{0xCD, 0xAB, 0x34, 0x12, 0x00, 0x00, 0x00, 0x00}, tag.Value)
 	}
 
@@ -98,7 +98,7 @@ func Test_NewU128ScriptArg(t *testing.T) {
 	{
 		tag, err := NewU128ScriptArg("1339673755198158349044581307228491775")
 		require.NoError(t, err)
-		require.Equal(t, vm_grpc.VMTypeTag_U128, tag.Type)
+		require.Equal(t, types_grpc.VMTypeTag_U128, tag.Type)
 		require.Equal(t, []byte{0xFF, 0xF, 0xE, 0xD, 0xC, 0xB, 0xA, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1}, tag.Value)
 	}
 
@@ -106,7 +106,7 @@ func Test_NewU128ScriptArg(t *testing.T) {
 	{
 		tag, err := NewU128ScriptArg("18591708106338011145")
 		require.NoError(t, err)
-		require.Equal(t, vm_grpc.VMTypeTag_U128, tag.Type)
+		require.Equal(t, types_grpc.VMTypeTag_U128, tag.Type)
 		require.Equal(t, []byte{0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, tag.Value)
 	}
 
@@ -135,19 +135,19 @@ func Test_NewBoolScriptArg(t *testing.T) {
 		{
 			tag, err := NewBoolScriptArg("true")
 			require.NoError(t, err)
-			require.Equal(t, vm_grpc.VMTypeTag_Bool, tag.Type)
+			require.Equal(t, types_grpc.VMTypeTag_Bool, tag.Type)
 			require.Equal(t, []byte{1}, tag.Value)
 		}
 		{
 			tag, err := NewBoolScriptArg("True")
 			require.NoError(t, err)
-			require.Equal(t, vm_grpc.VMTypeTag_Bool, tag.Type)
+			require.Equal(t, types_grpc.VMTypeTag_Bool, tag.Type)
 			require.Equal(t, []byte{1}, tag.Value)
 		}
 		{
 			tag, err := NewBoolScriptArg("TRUE")
 			require.NoError(t, err)
-			require.Equal(t, vm_grpc.VMTypeTag_Bool, tag.Type)
+			require.Equal(t, types_grpc.VMTypeTag_Bool, tag.Type)
 			require.Equal(t, []byte{1}, tag.Value)
 		}
 	}
@@ -157,19 +157,19 @@ func Test_NewBoolScriptArg(t *testing.T) {
 		{
 			tag, err := NewBoolScriptArg("false")
 			require.NoError(t, err)
-			require.Equal(t, vm_grpc.VMTypeTag_Bool, tag.Type)
+			require.Equal(t, types_grpc.VMTypeTag_Bool, tag.Type)
 			require.Equal(t, []byte{0}, tag.Value)
 		}
 		{
 			tag, err := NewBoolScriptArg("False")
 			require.NoError(t, err)
-			require.Equal(t, vm_grpc.VMTypeTag_Bool, tag.Type)
+			require.Equal(t, types_grpc.VMTypeTag_Bool, tag.Type)
 			require.Equal(t, []byte{0}, tag.Value)
 		}
 		{
 			tag, err := NewBoolScriptArg("FALSE")
 			require.NoError(t, err)
-			require.Equal(t, vm_grpc.VMTypeTag_Bool, tag.Type)
+			require.Equal(t, types_grpc.VMTypeTag_Bool, tag.Type)
 			require.Equal(t, []byte{0}, tag.Value)
 		}
 	}
@@ -192,7 +192,7 @@ func Test_NewVectorScriptArg(t *testing.T) {
 	{
 		tag, err := NewVectorScriptArg("01020304")
 		require.NoError(t, err)
-		require.Equal(t, vm_grpc.VMTypeTag_Vector, tag.Type)
+		require.Equal(t, types_grpc.VMTypeTag_Vector, tag.Type)
 		require.Equal(t, []byte{0x1, 0x2, 0x3, 0x4}, tag.Value)
 	}
 
@@ -200,7 +200,7 @@ func Test_NewVectorScriptArg(t *testing.T) {
 	{
 		tag, err := NewVectorScriptArg("0xFFFEFD")
 		require.NoError(t, err)
-		require.Equal(t, vm_grpc.VMTypeTag_Vector, tag.Type)
+		require.Equal(t, types_grpc.VMTypeTag_Vector, tag.Type)
 		require.Equal(t, []byte{0xFF, 0xFE, 0xFD}, tag.Value)
 	}
 

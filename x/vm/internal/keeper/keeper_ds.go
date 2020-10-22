@@ -86,9 +86,9 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 
 			curReqStartedAt := time.Now()
 			if req.RawModule != nil {
-				resp, err = k.client.PublishModule(connCtx, req.RawModule)
+				resp, err = k.client.VMModulePublisherClient.PublishModule(connCtx, req.RawModule)
 			} else if req.RawScript != nil {
-				resp, err = k.client.ExecuteScript(connCtx, req.RawScript)
+				resp, err = k.client.VMScriptExecutorClient.ExecuteScript(connCtx, req.RawScript)
 			}
 			if connCancel != nil {
 				connCancel()
@@ -109,7 +109,7 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 				time.Sleep(reqTimeout - curReqDur)
 			}
 
-			if curAttempt % failedRetryLogPeriod == 0 {
+			if curAttempt%failedRetryLogPeriod == 0 {
 				msg := fmt.Sprintf("Failing VM request: attempt %d / %d with %v timeout: %v", curAttempt, req.MaxAttempts, reqTimeout, time.Since(reqStartedAt))
 				k.GetLogger(ctx).Info(msg)
 			}

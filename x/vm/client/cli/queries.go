@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	"github.com/dfinance/dvm-proto/go/vm_grpc"
+	"github.com/dfinance/dvm-proto/go/compiler_grpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -157,13 +157,19 @@ func Compile(cdc *codec.Codec) *cobra.Command {
 			}
 
 			// prepare request
-			sourceFile := &vm_grpc.SourceFile{
-				Text:    string(moveContent),
+			sourceFile := &compiler_grpc.SourceFiles{
+				Units: []*compiler_grpc.CompilationUnit{
+					{
+						Text: string(moveContent),
+						Name: "CompilationUnit",
+					},
+				},
 				Address: common_vm.Bech32ToLibra(address),
 			}
 
 			// compile Move file
 			bytecode, err := vm_client.Compile(compilerAddr, sourceFile)
+
 			if err != nil {
 				return err
 			}
@@ -216,12 +222,10 @@ func GetTxVMStatus(cdc *codec.Codec) *cobra.Command {
 }
 
 // saveOutput prints compilation output to stdout or file.
-func saveOutput(bytecode []byte, cdc *codec.Codec) error {
-	code := hex.EncodeToString(bytecode)
+func saveOutput(items []vm_client.CompiledItem, cdc *codec.Codec) error {
 	output := viper.GetString(vm_client.FlagOutput)
 
-	mvFile := vm_client.MoveFile{Code: code}
-	mvBytes, err := cdc.MarshalJSONIndent(mvFile, "", "    ")
+	mvBytes, err := cdc.MarshalJSONIndent(items, "", "    ")
 	if err != nil {
 		return err
 	}

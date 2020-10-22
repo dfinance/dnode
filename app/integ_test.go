@@ -4,6 +4,7 @@ package app
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path"
@@ -58,10 +59,8 @@ func TestInteg_ConsensusFailure(t *testing.T) {
 	_, err = moveFile.WriteString(script)
 	require.NoError(t, err, "write script file")
 	require.NoError(t, moveFile.Close(), "close script file")
-
 	// Compile .move script file
 	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
-
 	// Execute .json script file
 	// Should panic as there is no local VM running
 	ct.TxVmExecuteScript(senderAddr, compiledPath, senderAddr, "100").DisableBroadcastMode().CheckSucceeded()
@@ -100,6 +99,26 @@ func TestIntegVM_ExecuteScriptViaCLI(t *testing.T) {
 			fun main(account: &signer, amount: u128) {
 				let xfi = Account::withdraw_from_sender<XFI::T>(account, amount);
 				Account::deposit_to_sender<XFI::T>(account, xfi);
+			}
+		}
+	`
+
+	const multiScript = `
+		script {
+			use 0x1::Account;
+			use 0x1::XFI;
+
+			fun main(account: &signer, amount: u128) {
+				let xfi = Account::withdraw_from_sender<XFI::T>(account, amount);
+				Account::deposit_to_sender<XFI::T>(account, xfi);
+			}
+		}
+
+		script {
+			use 0x1::Event;
+			
+			fun main(account: &signer, a: u64) {
+				Event::emit<u64>(account, a);
 			}
 		}
 	`
@@ -175,6 +194,28 @@ func TestIntegVM_ExecuteScriptViaCLI(t *testing.T) {
 			r.CheckFailedWithErrorSubstring("true")
 		}
 	}
+
+	// Check multi script compile and execution
+	{
+		movePath := path.Join(ct.Dirs.RootDir, "mscript.move")
+		compiledPath := path.Join(ct.Dirs.RootDir, "mscript.json")
+
+		// Create .move script file
+		moveFile, err := os.Create(movePath)
+		require.NoError(t, err, "creating script file")
+		_, err = moveFile.WriteString(multiScript)
+		require.NoError(t, err, "write script file")
+		require.NoError(t, moveFile.Close(), "close script file")
+
+		// Compile .move script file
+		ct.QueryVmCompile(movePath, compiledPath, senderAddr).
+			CheckSucceeded()
+
+		// Execute compiled script file
+		ct.TxVmExecuteScript(senderAddr, compiledPath, "100").
+			CheckFailedWithErrorSubstring("wrong quantity of items")
+	}
+
 }
 
 // Test Move compile and execute Move script with arg via REST interface.
@@ -187,6 +228,20 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 			fun main(account: &signer, amount: u128) {
 				let xfi = Account::withdraw_from_sender<XFI::T>(account, amount);
 				Account::deposit_to_sender<XFI::T>(account, xfi);
+			}
+		}
+	`
+
+	const dualScript = `
+		script {
+			fun main(x: u64, y: u64) {
+				x - y;
+			}
+		}
+
+		script {
+			fun main(a: u64, b: u64) {
+				a + b;
 			}
 		}
 	`
@@ -207,16 +262,20 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 	senderName := "validator1"
 	senderAddress := ct.Accounts[senderName].Address
 
-	// Compile script
-	byteCode := ""
+	// Compile 2 scripts in the one request
 	{
-		r, resp := ct.RestQueryVMCompile(senderAddress, script)
+		r, resp := ct.RestQueryVMCompile(senderAddress, dualScript)
 		r.CheckSucceeded()
-
-		require.NotEmpty(t, resp.Code)
-
-		byteCode = resp.Code
+		require.NotEmpty(t, resp)
+		require.Len(t, *resp, 2)
 	}
+
+	r, resp := ct.RestQueryVMCompile(senderAddress, script)
+	r.CheckSucceeded()
+
+	require.NotEmpty(t, resp)
+	require.Len(t, *resp, 1)
+	byteCode := (*resp)[0].Code
 
 	// Check compile endpoint with invalid inputs
 	{
@@ -280,18 +339,23 @@ func TestIntegVM_ExecuteScriptViaREST(t *testing.T) {
 	}
 }
 
-// Deploy Move module via CLI interface.
+// Deploy multiple Move modules via CLI interface.
 func TestIntegVM_DeployModuleViaCLI(t *testing.T) {
 	const module = `
 		address 0x1 {
-		module Foo {
-		    resource struct U64 {val: u64}
-			
-		    public fun store_u64(sender: &signer) {
-				let value = U64 {val: 1};
-		        move_to<U64>(sender, value);
-		    }
-		}
+			module Foo {
+				resource struct U64 {val: u64}
+				public fun store_u64(sender: &signer) {
+					let value = U64 {val: 1};
+					move_to<U64>(sender, value);
+				}
+			}
+
+			module Bar {
+				public fun sub(a: u64, b: u64): u64 {
+					a - b
+				}
+			}
 		}
 	`
 
@@ -321,6 +385,12 @@ func TestIntegVM_DeployModuleViaCLI(t *testing.T) {
 	// Compile .move module file
 	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
 
+	compiledPathContent, _ := ioutil.ReadFile(compiledPath)
+	var modules vm_client.CompiledItems
+	jsonErr := json.Unmarshal(compiledPathContent, &modules)
+	require.NoError(t, jsonErr, "parse move file")
+	require.Len(t, modules, 2)
+
 	// Execute .json script file
 	ct.TxVmDeployModule(senderAddr, compiledPath).CheckSucceeded()
 
@@ -343,14 +413,20 @@ func TestIntegVM_DeployModuleViaCLI(t *testing.T) {
 func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 	const module = `
 		address 0x1 {
-		module Foo {
-		    resource struct U64 {val: u64}
-			
-		    public fun store_u64(sender: &signer) {
-				let value = U64 {val: 1};
-		        move_to<U64>(sender, value);
-		    }
-		}
+			module Foo {
+				resource struct U64 {val: u64}
+				
+				public fun store_u64(sender: &signer) {
+					let value = U64 {val: 1};
+					move_to<U64>(sender, value);
+				}
+			}
+
+			module Bar {
+				public fun sub(a: u64, b: u64): u64 {
+					a - b
+				}
+			}
 		}
 	`
 
@@ -371,30 +447,34 @@ func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 	senderAddress := ct.Accounts[senderName].Address
 
 	// Compile module
-	byteCode := ""
+	var byteCode []string
 	{
 		r, resp := ct.RestQueryVMCompile(senderAddress, module)
 		r.CheckSucceeded()
 
-		require.NotEmpty(t, resp.Code)
+		require.NotEmpty(t, resp)
 
-		byteCode = resp.Code
+		for _, item := range *resp {
+			byteCode = append(byteCode, item.Code)
+		}
 	}
 
 	// Deploy script
 	{
+		require.Equal(t, 2, len(byteCode))
 		q, stdTx := ct.RestQueryVMPublishModuleStdTx(senderName, byteCode, "")
 		q.CheckSucceeded()
 
 		// verify stdTx
 		{
-			code, err := hex.DecodeString(byteCode)
+			code1, err := hex.DecodeString(byteCode[0])
+			code2, err := hex.DecodeString(byteCode[1])
 			require.NoError(t, err)
 
 			require.Len(t, stdTx.Msgs, 1)
 			require.IsType(t, vm.MsgDeployModule{}, stdTx.Msgs[0])
 			deployMsg := stdTx.Msgs[0].(vm.MsgDeployModule)
-			require.EqualValues(t, code, deployMsg.Module)
+			require.EqualValues(t, []vm.Contract{code1, code2}, deployMsg.Module)
 			require.Equal(t, ct.Accounts[senderName].Address, deployMsg.Signer.String())
 		}
 
@@ -407,10 +487,74 @@ func TestIntegVM_DeployModuleViaREST(t *testing.T) {
 	{
 		// invalid code (non-hex string)
 		{
-			q, _ := ct.RestQueryVMPublishModuleStdTx(senderName, "zxy", "")
+			q, _ := ct.RestQueryVMPublishModuleStdTx(senderName, []string{"zxy"}, "")
 			q.CheckFailed(400, nil)
 		}
 	}
+}
+
+// Tries execute and deploy mixed content (module and script) in one file
+func TestIntegVM_DeployModuleAndScriptViaCLI(t *testing.T) {
+	const module = `
+		address 0x1 {
+			module Foo {
+				resource struct U64 {val: u64}
+				public fun store_u64(sender: &signer) {
+					let value = U64 {val: 1};
+					move_to<U64>(sender, value);
+				}
+			}
+		}
+
+		script {
+			use 0x1::Event;
+			
+			fun main(account: &signer, a: u64, b: u64) {
+				let c = a + b;
+				Event::emit<u64>(account, c);
+			}
+		}
+	`
+
+	ct := cliTester.New(
+		t,
+		false,
+		cliTester.VMCommunicationOption(5, 1000),
+		cliTester.VMCommunicationBaseAddressNetOption("tcp://127.0.0.1"),
+	)
+	defer ct.Close()
+
+	// Start DVM container
+	dvmStop := tests.LaunchDVMWithNetTransport(t, ct.VMConnection.ConnectPort, ct.VMConnection.ListenPort, false)
+	defer dvmStop()
+
+	senderAddr := ct.Accounts["validator1"].Address
+	movePath := path.Join(ct.Dirs.RootDir, "module.move")
+	compiledPath := path.Join(ct.Dirs.RootDir, "module.json")
+
+	// Create .move module file
+	moveFile, err := os.Create(movePath)
+	require.NoError(t, err, "creating module file")
+	_, err = moveFile.WriteString(module)
+	require.NoError(t, err, "write module file")
+	require.NoError(t, moveFile.Close(), "close module file")
+
+	// Compile .move module file
+	ct.QueryVmCompile(movePath, compiledPath, senderAddr).CheckSucceeded()
+
+	compiledPathContent, _ := ioutil.ReadFile(compiledPath)
+	var modules vm_client.CompiledItems
+	jsonErr := json.Unmarshal(compiledPathContent, &modules)
+	require.NoError(t, jsonErr, "parse move file")
+	require.Len(t, modules, 2)
+
+	// Deploy .json script file
+	ct.TxVmDeployModule(senderAddr, compiledPath).
+		CheckFailedWithErrorSubstring("contains different code types")
+
+	// Execute .json script file
+	ct.TxVmExecuteScript(senderAddr, compiledPath).
+		CheckFailedWithErrorSubstring("contains wrong quantity of items")
 }
 
 // Test dnode <-> dvm request-retry mechanism.

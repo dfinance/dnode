@@ -12,7 +12,6 @@ import (
 	"github.com/dfinance/dnode/helpers"
 	"github.com/dfinance/dnode/helpers/tests/mockdvm"
 	"github.com/dfinance/dnode/x/common_vm"
-	"github.com/dfinance/dnode/x/vm/internal/types"
 )
 
 func TestVMKeeper_RetryMechanism(t *testing.T) {
@@ -38,11 +37,7 @@ func TestVMKeeper_RetryMechanism(t *testing.T) {
 	keeper.rawClient = mockDvmCLient
 	keeper.client = NewVMClient(mockDvmCLient)
 
-	deployReq, err := NewDeployRequest(ctx, types.MsgDeployModule{
-		Signer: common_vm.StdLibAddress,
-		Module: []byte{0x01, 0x02, 0x03, 0x04, 0x05},
-	})
-	require.NoError(t, err, "creating deployRequest")
+	deployReq := NewDeployRequest(ctx, common_vm.StdLibAddress, []byte{0x01, 0x02, 0x03, 0x04, 0x05})
 
 	// ok: in one attempt (infinite settings)
 	{

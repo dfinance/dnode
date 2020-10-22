@@ -2,9 +2,11 @@
 package keeper
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/dfinance/dvm-proto/go/compiler_grpc"
+	"github.com/dfinance/dvm-proto/go/metadata_grpc"
 	"github.com/dfinance/dvm-proto/go/vm_grpc"
 
 	"github.com/dfinance/dnode/x/common_vm"
@@ -17,15 +19,17 @@ const (
 
 // VMClient is an aggregated gRPC VM services client.
 type VMClient struct {
-	vm_grpc.VMCompilerClient
-	vm_grpc.VMModulePublisherClient
-	vm_grpc.VMScriptExecutorClient
+	VMCompilerClient        compiler_grpc.DvmCompilerClient
+	VMMetaDataClient        metadata_grpc.DVMBytecodeMetadataClient
+	VMModulePublisherClient vm_grpc.VMModulePublisherClient
+	VMScriptExecutorClient  vm_grpc.VMScriptExecutorClient
 }
 
 // NewVMClient creates VMClient using connection.
 func NewVMClient(connection *grpc.ClientConn) VMClient {
 	return VMClient{
-		VMCompilerClient:        vm_grpc.NewVMCompilerClient(connection),
+		VMCompilerClient:        compiler_grpc.NewDvmCompilerClient(connection),
+		VMMetaDataClient:        metadata_grpc.NewDVMBytecodeMetadataClient(connection),
 		VMModulePublisherClient: vm_grpc.NewVMModulePublisherClient(connection),
 		VMScriptExecutorClient:  vm_grpc.NewVMScriptExecutorClient(connection),
 	}
@@ -75,8 +79,8 @@ func NewExecuteContract(address sdk.AccAddress, maxGas sdk.Gas, code []byte, arg
 }
 
 // NewDeployRequest is a NewDeployContract wrapper: create deploy request.
-func NewDeployRequest(ctx sdk.Context, msg types.MsgDeployModule) (*vm_grpc.VMPublishModule, error) {
-	return NewDeployContract(msg.Signer, GetFreeGas(ctx), msg.Module), nil
+func NewDeployRequest(ctx sdk.Context, signer sdk.AccAddress, contract types.Contract) *vm_grpc.VMPublishModule {
+	return NewDeployContract(signer, GetFreeGas(ctx), contract)
 }
 
 // NewExecuteRequest is a NewExecuteContract wrapper: create execute request.

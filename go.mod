@@ -17,7 +17,7 @@ require (
 	github.com/OneOfOne/xxhash v1.2.7
 	github.com/atlassian/go-sentry-api v0.0.0-20200117001222-a9ccec16c98b
 	github.com/cosmos/cosmos-sdk v0.0.1
-	github.com/dfinance/dvm-proto/go v0.0.0-20200819065410-6b70956c85de
+	github.com/dfinance/dvm-proto/go v0.0.0-20201007122036-27be7297df4e
 	github.com/dfinance/glav v0.0.0-20200814081332-c4701f6c12a6
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.6-0.20200910033347-214a51d9a1e5
