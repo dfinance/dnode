@@ -1,6 +1,6 @@
 include Makefile.ledger
 
-git_tag=$(shell git describe --tags $(git rev-list --tags --max-count=1))
+git_tag=$(shell git describe --tags --abbrev=0)
 git_commit=$(shell git rev-list -1 HEAD)
 tags = -X github.com/cosmos/cosmos-sdk/version.Name=dfinance \
 	   -X github.com/cosmos/cosmos-sdk/version.ServerName=dnode \
@@ -82,9 +82,15 @@ swagger-ui-build:
 
 ## binaries builds (xgo required: https://github.com/karalabe/xgo)
 binaries: go.sum
+	@echo ${git_tag}
+	@echo "Prepare XGO dependencies"
 	mkdir -p ./builds
-	GOOS=darwin GOARCH=amd64 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-darwin-amd64 ${dncli}
-	#GOOS=linux GOARCH=386 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-linux-386 ${dncli}
-	GOOS=linux GOARCH=amd64 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-linux-amd64 ${dncli}
-	GOOS=windows GOARCH=amd64 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-windows-amd64.exe ${dncli}
-	#GOOS=windows GOARCH=386 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-windows-386.exe ${dncli}
+	go get github.com/crazy-max/xgo
+
+	@echo "Build targets (Go 1.14): windows/amd64, linux/amd64, darwin/amd64"
+	xgo -go 1.14.x --ldflags='$(tags)' --tags='ledger' --out='./builds/dncli-${git_tag}' -targets='windows/amd64,linux/amd64,darwin/amd64' ${dncli}
+
+	## Legacy builds (as a reference)
+	#GOOS=darwin GOARCH=amd64 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-darwin-amd64 ${dncli}
+	#GOOS=linux GOARCH=amd64 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-linux-amd64 ${dncli}
+	#GOOS=windows GOARCH=amd64 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-windows-amd64.exe ${dncli}
