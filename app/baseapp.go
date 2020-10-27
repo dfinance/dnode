@@ -678,8 +678,13 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 	data := make([]byte, 0, len(msgs))
 	events := sdk.EmptyEvents()
 
+	ctxEvents := ctx.EventManager().Events()
 	// NOTE: GasWanted is determined by the AnteHandler and GasUsed by the GasMeter.
 	for i, msg := range msgs {
+		msgEventManager := sdk.NewEventManager()
+		msgEventManager.EmitEvents(ctxEvents)
+		msgCtx := ctx.WithEventManager(msgEventManager)
+
 		if err := app.msgsCustomVerifier(msg); err != nil {
 			return nil, err
 		}
@@ -700,12 +705,12 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 			}
 		}
 
-		handler := app.router.Route(ctx, msgRoute)
+		handler := app.router.Route(msgCtx, msgRoute)
 		if handler == nil {
 			return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized message route: %s; message index: %d", msgRoute, i)
 		}
 
-		msgResult, err := handler(ctx, msg)
+		msgResult, err := handler(msgCtx, msg)
 		if err != nil {
 			return nil, sdkerrors.Wrapf(err, "failed to execute message; message index: %d", i)
 		}
@@ -721,7 +726,7 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, mode runTxMode) (*s
 		// separate each result.
 		events = events.AppendEvents(msgEvents)
 		data = append(data, msgResult.Data...)
-		msgLogs = append(msgLogs, sdk.NewABCIMessageLog(uint16(i), msgResult.Log, msgEvents))
+		msgLogs = append(msgLogs, sdk.NewABCIMessageLog(uint16(i), msgResult.Log, msgResult.Events))
 	}
 
 	return &sdk.Result{
