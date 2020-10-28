@@ -17,6 +17,8 @@ const (
 	GovMinDepositAmount = "1000000000000000000000" // 1000.0
 	// Staking: min self-delegation amount
 	MinSelfDelegationAmount = "2500000000000000000000" // 2500.0
+	// Staking: max self-delegation amount
+	MaxSelfDelegationAmount = "10000000000000000000000" // 10000.0
 	// Crisis: invariants check TX fee
 	InvariantCheckAmount = "1000000000000000000000" // 1000.0
 	// Distribution: PublicTreasuryPool capacity
@@ -29,6 +31,7 @@ var (
 	FeeCoin                    sdk.Coin
 	GovMinDepositCoin          sdk.Coin
 	MinSelfDelegationCoin      sdk.Coin
+	MaxSelfDelegationCoin      sdk.Coin
 	InvariantCheckCoin         sdk.Coin
 	PublicTreasuryPoolCapacity sdk.Int
 )
@@ -50,6 +53,12 @@ func init() {
 		panic("staking defaults: MinSelfDelegationAmount conversion failed")
 	} else {
 		MinSelfDelegationCoin = sdk.NewCoin(StakingDenom, value)
+	}
+
+	if value, ok := sdk.NewIntFromString(MaxSelfDelegationAmount); !ok {
+		panic("staking defaults: MaxSelfDelegationCoin conversion failed")
+	} else {
+		MaxSelfDelegationCoin = sdk.NewCoin(StakingDenom, value)
 	}
 
 	if value, ok := sdk.NewIntFromString(InvariantCheckAmount); !ok {
