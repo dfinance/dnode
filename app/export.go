@@ -11,6 +11,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmTypes "github.com/tendermint/tendermint/types"
+
+	"github.com/dfinance/dnode/x/multisig"
+	"github.com/dfinance/dnode/x/orderbook"
 )
 
 // Exports genesis and validators.
@@ -73,6 +76,17 @@ func (app *DnServiceApp) prepareForZeroHeightGenesis(ctx sdk.Context) error {
 
 	moduleName = slashing.ModuleName
 	if err := app.slashingKeeper.PrepareForZeroHeight(ctx); err != nil {
+		return fmt.Errorf("module %s: %w", moduleName, err)
+	}
+
+	// Dnode modules
+	moduleName = multisig.ModuleName
+	if err := app.msKeeper.PrepareForZeroHeight(ctx); err != nil {
+		return fmt.Errorf("module %s: %w", moduleName, err)
+	}
+
+	moduleName = orderbook.ModuleName
+	if err := app.orderBookKeeper.PrepareForZeroHeight(ctx); err != nil {
 		return fmt.Errorf("module %s: %w", moduleName, err)
 	}
 
