@@ -11,6 +11,8 @@ import (
 // NewHandler handles all oracle type messages.
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
+
 		switch msg := msg.(type) {
 		case MsgPostPrice:
 			return handleMsgPostPrice(ctx, k, msg)

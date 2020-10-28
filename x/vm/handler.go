@@ -10,6 +10,7 @@ func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		// setup current (actual) DS context (that is also done in the BeginBlock
 		// TODO: move it to base app and set before transaction execution maybe? or find way to have actual context always
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		k.SetDSContext(ctx)
 
 		switch msg := msg.(type) {
