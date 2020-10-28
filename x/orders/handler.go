@@ -12,6 +12,8 @@ import (
 // NewHandler creates order type messages handler.
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
+
 		switch msg := msg.(type) {
 		case MsgPostOrder:
 			return handleMsgPostOrder(ctx, k, msg)

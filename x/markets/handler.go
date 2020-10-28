@@ -12,6 +12,8 @@ import (
 // NewHandler creates markets type messages handler.
 func NewHandler(k Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		ctx = ctx.WithEventManager(sdk.NewEventManager())
+
 		switch msg := msg.(type) {
 		case MsgCreateMarket:
 			return handleMsgCreateMarket(ctx, k, msg)
