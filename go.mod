@@ -2,11 +2,11 @@ module github.com/dfinance/dnode
 
 go 1.14
 
-//replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.39.1-0.3
+replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.39.2-0.20201029153914-af99ef80ec9f
 
 // Local development option
 //replace github.com/cosmos/cosmos-sdk => /Users/boris/go/src/github.com/dfinance/cosmos-sdk
-replace github.com/cosmos/cosmos-sdk => /Users/tiky/Go_Projects/src/github.com/dfinance/cosmos-sdk
+//replace github.com/cosmos/cosmos-sdk => /Users/tiky/Go_Projects/src/github.com/dfinance/cosmos-sdk
 
 // Fix of OS X hostmachine test runs
 // Source: https://github.com/ory/dockertest/issues/208
