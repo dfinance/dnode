@@ -6,12 +6,15 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/orderbook"
 )
@@ -27,8 +30,8 @@ func (app *DnServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhi
 
 	// zero-height squash
 	if forZeroHeight {
-		if err := app.prepareForZeroHeightGenesis(ctx); err != nil {
-			retErr = fmt.Errorf("preparing for zero-height: %w", err)
+		if err := app.prepareGenesisForZeroHeight(ctx, jailWhiteList); err != nil {
+			retErr = fmt.Errorf("preparing genesis for zero-height: %w", err)
 			return
 		}
 	}
@@ -57,37 +60,78 @@ func (app *DnServiceApp) checkInvariants(ctx sdk.Context) error {
 	return nil
 }
 
-func (app *DnServiceApp) prepareForZeroHeightGenesis(ctx sdk.Context) error {
+// prepareGenesisForZeroHeight updates current context to fit zero-height genesis.
+// Basically it "squashes" all height-dependent storage objects.
+func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteList []string) error {
 	// Check invariants before
 	if err := app.checkInvariants(ctx); err != nil {
 		return fmt.Errorf("pre invariants check failed: %w", err)
 	}
 
+	// Prepare PrepareForZeroHeight module functions options
+	optsMap, err := prepareDefaultZeroHeightOptions(jailWhiteList)
+	if err != nil {
+		return fmt.Errorf("prepareDefaultZeroHeightOptions: %w", err)
+	}
+	optsMap, err = setDebugZeroHeightOptions(optsMap)
+	if err != nil {
+		return fmt.Errorf("setDebugZeroHeightOptions: %w", err)
+	}
+
 	// Cosmos SDK modules
-	moduleName := distribution.ModuleName
-	if err := app.distrKeeper.PrepareForZeroHeight(ctx); err != nil {
-		return fmt.Errorf("module %s: %w", moduleName, err)
+	// Supply
+	{
+		moduleName := supply.ModuleName
+		opts := optsMap[moduleName].(supply.SquashOptions)
+		if err := app.supplyKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
 	}
-
-	moduleName = staking.ModuleName
-	if err := app.stakingKeeper.PrepareForZeroHeight(ctx); err != nil {
-		return fmt.Errorf("module %s: %w", moduleName, err)
+	// Auth
+	{
+		moduleName := auth.ModuleName
+		opts := optsMap[moduleName].(auth.SquashOptions)
+		if err := app.accountKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
 	}
-
-	moduleName = slashing.ModuleName
-	if err := app.slashingKeeper.PrepareForZeroHeight(ctx); err != nil {
-		return fmt.Errorf("module %s: %w", moduleName, err)
+	// Distribution
+	{
+		moduleName := distribution.ModuleName
+		if err := app.distrKeeper.PrepareForZeroHeight(ctx); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
+	}
+	// Staking
+	{
+		moduleName := staking.ModuleName
+		opts := optsMap[moduleName].(staking.SquashOptions)
+		if err := app.stakingKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
+	}
+	// Slashing
+	{
+		moduleName := slashing.ModuleName
+		if err := app.slashingKeeper.PrepareForZeroHeight(ctx); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
 	}
 
 	// Dnode modules
-	moduleName = multisig.ModuleName
-	if err := app.msKeeper.PrepareForZeroHeight(ctx); err != nil {
-		return fmt.Errorf("module %s: %w", moduleName, err)
+	// MultiSig
+	{
+		moduleName := multisig.ModuleName
+		if err := app.msKeeper.PrepareForZeroHeight(ctx); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
 	}
-
-	moduleName = orderbook.ModuleName
-	if err := app.orderBookKeeper.PrepareForZeroHeight(ctx); err != nil {
-		return fmt.Errorf("module %s: %w", moduleName, err)
+	// OrderBook
+	{
+		moduleName := orderbook.ModuleName
+		if err := app.orderBookKeeper.PrepareForZeroHeight(ctx); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
 	}
 
 	// Check invariants after
@@ -96,4 +140,109 @@ func (app *DnServiceApp) prepareForZeroHeightGenesis(ctx sdk.Context) error {
 	}
 
 	return nil
+}
+
+// prepareDefaultZeroHeightOptions returns base (default) options map per module for PrepareForZeroHeight functions.
+func prepareDefaultZeroHeightOptions(jailWhiteList []string) (map[string]interface{}, error) {
+	optsMap := make(map[string]interface{}, 0)
+
+	// Supply
+	{
+		moduleName := supply.ModuleName
+		opts := supply.NewEmptySquashOptions()
+		optsMap[moduleName] = opts
+	}
+	// Auth
+	{
+		moduleName := auth.ModuleName
+		opts := auth.NewEmptySquashOptions()
+		optsMap[moduleName] = opts
+	}
+	// Staking
+	{
+		moduleName := staking.ModuleName
+		opts := staking.NewEmptySquashOptions()
+		if err := opts.SetJailWhitelistSquashOption(jailWhiteList); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+
+	return optsMap, nil
+}
+
+// setDebugZeroHeightOptions updates options map per module for debug purposes.
+// Adds a fake validator jailing all the others.
+// This mod is helpful to run exported genesis locally with one up and running validator.
+func setDebugZeroHeightOptions(optsMap map[string]interface{}) (map[string]interface{}, error) {
+	const (
+		// Values below are hardcoded according to bootstrap init_single_w_genesis.sh script values
+		fakeValOperatorAddress      = "wallet17raernuazufad6q48uc5jdnqmuzsep5a03dc0n"
+		fakeValMoniker              = "fakeVal"
+		fakeValPubKey               = "walletvalconspub1zcjduepqu9mgrhdjfmwwalv86vdsavvvxfy8r4fmt4py8ehep252rs0acs5q93t5nm"
+		fakeValSelfDelegationAmount = "1000000000000000000000000"
+	)
+
+	// Supply
+	{
+		moduleName := supply.ModuleName
+		optsObj, found := optsMap[moduleName]
+		if !found {
+			return nil, fmt.Errorf("module %s: options not found", moduleName)
+		}
+		opts, ok := optsObj.(supply.SquashOptions)
+		if !ok {
+			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
+		}
+
+		if err := opts.SetDenomOp(defaults.StakingDenom, fakeValSelfDelegationAmount); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+	// Auth
+	{
+		moduleName := auth.ModuleName
+		optsObj, found := optsMap[moduleName]
+		if !found {
+			return nil, fmt.Errorf("module %s: options not found", moduleName)
+		}
+		opts, ok := optsObj.(auth.SquashOptions)
+		if !ok {
+			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
+		}
+
+		if err := opts.SetAddAccountOp(fakeValOperatorAddress, fakeValSelfDelegationAmount+defaults.StakingDenom); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+	// Staking
+	{
+		moduleName := staking.ModuleName
+		optsObj, found := optsMap[moduleName]
+		if !found {
+			return nil, fmt.Errorf("module %s: options not found", moduleName)
+		}
+		opts, ok := optsObj.(staking.SquashOptions)
+		if !ok {
+			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
+		}
+
+		accAddr, err := sdk.AccAddressFromBech32(fakeValOperatorAddress)
+		if err != nil {
+			return nil, fmt.Errorf("module %s: invalid fakeValOperatorAddress (%s): %w", moduleName, fakeValOperatorAddress, err)
+		}
+		valAddr := sdk.ValAddress(accAddr)
+
+		if err := opts.SetAddValidatorOp(fakeValOperatorAddress, fakeValMoniker, fakeValPubKey, fakeValSelfDelegationAmount); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		if err := opts.SetJailWhitelistSquashOption([]string{valAddr.String()}); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+
+	return optsMap, nil
 }
