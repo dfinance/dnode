@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -14,6 +15,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
+	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/orderbook"
@@ -138,6 +140,14 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
 	}
+	// Gov
+	{
+		moduleName := gov.ModuleName
+		opts := optsMap[moduleName].(gov.SquashOptions)
+		if err := app.govKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
+	}
 	// MultiSig
 	{
 		moduleName := multisig.ModuleName
@@ -202,6 +212,12 @@ func prepareDefaultZeroHeightOptions(jailWhiteList []string) (map[string]interfa
 	{
 		moduleName := mint.ModuleName
 		opts := mint.NewEmptySquashOptions()
+		optsMap[moduleName] = opts
+	}
+	// Gov
+	{
+		moduleName := gov.ModuleName
+		opts := gov.NewEmptySquashOptions()
 		optsMap[moduleName] = opts
 	}
 
@@ -310,6 +326,23 @@ func setMainnetZeroHeightOptionsV10(optsMap map[string]interface{}) (map[string]
 		}
 
 		if err := opts.SetParamsOp(newStakingDenom); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+	// Gov
+	{
+		moduleName := gov.ModuleName
+		optsObj, found := optsMap[moduleName]
+		if !found {
+			return nil, fmt.Errorf("module %s: options not found", moduleName)
+		}
+		opts, ok := optsObj.(gov.SquashOptions)
+		if !ok {
+			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
+		}
+
+		if err := opts.SetParamsOp(defaults.GovMinDepositAmount + newStakingDenom); err != nil {
 			return nil, fmt.Errorf("module %s: %w", moduleName, err)
 		}
 		optsMap[moduleName] = opts
