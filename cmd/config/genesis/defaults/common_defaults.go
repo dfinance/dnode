@@ -8,7 +8,7 @@ import (
 
 const (
 	MainDenom              = "xfi"
-	StakingDenom           = "sxfi"
+	StakingDenom           = "xfi"
 	LiquidityProviderDenom = "lpt"
 
 	// Min TX fee
