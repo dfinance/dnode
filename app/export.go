@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
+	"github.com/cosmos/cosmos-sdk/x/mint"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
@@ -129,6 +130,14 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
 	}
+	// Mint
+	{
+		moduleName := mint.ModuleName
+		opts := optsMap[moduleName].(mint.SquashOptions)
+		if err := app.mintKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
+	}
 	// MultiSig
 	{
 		moduleName := multisig.ModuleName
@@ -187,6 +196,12 @@ func prepareDefaultZeroHeightOptions(jailWhiteList []string) (map[string]interfa
 	{
 		moduleName := distribution.ModuleName
 		opts := distribution.NewEmptySquashOptions()
+		optsMap[moduleName] = opts
+	}
+	// Mint
+	{
+		moduleName := mint.ModuleName
+		opts := mint.NewEmptySquashOptions()
 		optsMap[moduleName] = opts
 	}
 
@@ -278,6 +293,23 @@ func setMainnetZeroHeightOptionsV10(optsMap map[string]interface{}) (map[string]
 			return nil, fmt.Errorf("module %s: %w", moduleName, err)
 		}
 		if err := opts.SetDecCoinOp(oldStakingDenom, false, newStakingDenom); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+	// Mint
+	{
+		moduleName := mint.ModuleName
+		optsObj, found := optsMap[moduleName]
+		if !found {
+			return nil, fmt.Errorf("module %s: options not found", moduleName)
+		}
+		opts, ok := optsObj.(mint.SquashOptions)
+		if !ok {
+			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
+		}
+
+		if err := opts.SetParamsOp(newStakingDenom); err != nil {
 			return nil, fmt.Errorf("module %s: %w", moduleName, err)
 		}
 		optsMap[moduleName] = opts
