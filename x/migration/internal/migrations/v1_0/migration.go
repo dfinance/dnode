@@ -15,53 +15,56 @@ import (
 	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 )
 
-// MigrateBase migrates exported state from Dfinance v0.7 Testnet to v1.0 Mainnet.
-// Migration uses base migration functions of Dfinance Cosmos SDK v0.2 -> v1.0 migration.
-func MigrateBase(appState genutil.AppMap) (genutil.AppMap, error) {
+// Migrate migrates exported genesis state from Dfinance v0.7 Testnet to v1.0 Mainnet.
+func Migrate(appState genutil.AppMap) (genutil.AppMap, error) {
 	cdcOld := codec.New()
 	codec.RegisterCrypto(cdcOld)
 
 	cdcNew := codec.New()
 	codec.RegisterCrypto(cdcNew)
 
-	// CSDK.staking module
-	moduleName := staking.ModuleName
-	if stateOldBz := appState[moduleName]; stateOldBz != nil {
-		migrationOpts := v03910staking.MigrateBaseOptions{
-			ParamsMaxSelfDelegationLvl: defaults.MaxSelfDelegationCoin.Amount,
-		}
+	// Cosmos SDK modules
+	// staking
+	{
+		moduleName := staking.ModuleName
+		if stateOldBz := appState[moduleName]; stateOldBz != nil {
+			migrationOpts := v03910staking.MigrateOptions{
+				ParamsMaxSelfDelegationLvl: defaults.MaxSelfDelegationCoin.Amount,
+			}
 
-		var oldState v03902staking.GenesisState
-		if err := cdcOld.UnmarshalJSON(stateOldBz, &oldState); err != nil {
-			return nil, fmt.Errorf("module %q: oldState JSON unmarshal: %w", moduleName, err)
-		}
+			var oldState v03902staking.GenesisState
+			if err := cdcOld.UnmarshalJSON(stateOldBz, &oldState); err != nil {
+				return nil, fmt.Errorf("module %q: oldState JSON unmarshal: %w", moduleName, err)
+			}
 
-		newState := v03910staking.MigrateBase(oldState, migrationOpts)
-		stateNewBz, err := cdcNew.MarshalJSON(newState)
-		if err != nil {
-			return nil, fmt.Errorf("module %q: newState JSON marshal: %w", moduleName, err)
-		}
+			newState := v03910staking.Migrate(oldState, migrationOpts)
+			stateNewBz, err := cdcNew.MarshalJSON(newState)
+			if err != nil {
+				return nil, fmt.Errorf("module %q: newState JSON marshal: %w", moduleName, err)
+			}
 
-		delete(appState, moduleName)
-		appState[moduleName] = stateNewBz
+			delete(appState, moduleName)
+			appState[moduleName] = stateNewBz
+		}
 	}
+	// distribution
+	{
+		moduleName := distribution.ModuleName
+		if stateOldBz := appState[moduleName]; stateOldBz != nil {
+			var oldState v03902distribution.GenesisState
+			if err := cdcOld.UnmarshalJSON(stateOldBz, &oldState); err != nil {
+				return nil, fmt.Errorf("module %q: oldState JSON unmarshal: %w", moduleName, err)
+			}
 
-	// CSDK.distribution module
-	moduleName = distribution.ModuleName
-	if stateOldBz := appState[moduleName]; stateOldBz != nil {
-		var oldState v03902distribution.GenesisState
-		if err := cdcOld.UnmarshalJSON(stateOldBz, &oldState); err != nil {
-			return nil, fmt.Errorf("module %q: oldState JSON unmarshal: %w", moduleName, err)
+			newState := v03910distribution.Migrate(oldState)
+			stateNewBz, err := cdcNew.MarshalJSON(newState)
+			if err != nil {
+				return nil, fmt.Errorf("module %q: newState JSON marshal: %w", moduleName, err)
+			}
+
+			delete(appState, moduleName)
+			appState[moduleName] = stateNewBz
 		}
-
-		newState := v03910distribution.MigrateBase(oldState)
-		stateNewBz, err := cdcNew.MarshalJSON(newState)
-		if err != nil {
-			return nil, fmt.Errorf("module %q: newState JSON marshal: %w", moduleName, err)
-		}
-
-		delete(appState, moduleName)
-		appState[moduleName] = stateNewBz
 	}
 
 	return appState, nil

@@ -14,5 +14,5 @@ type TargetMigrationMap map[string]MigrationHandler
 
 // MigrationMap is a registered migrations map.
 var MigrationMap = TargetMigrationMap{
-	"v1.0base": v1_0.MigrateBase,
+	"v1.0": v1_0.Migrate,
 }
