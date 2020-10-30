@@ -6,7 +6,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
@@ -14,9 +13,10 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
-	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
+	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/orderbook"
+	"github.com/dfinance/dnode/x/vmauth"
 )
 
 // Exports genesis and validators.
@@ -77,8 +77,19 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	if err != nil {
 		return fmt.Errorf("setDebugZeroHeightOptions: %w", err)
 	}
+	optsMap, err = setMainnetZeroHeightOptionsV10(optsMap)
+	if err != nil {
+		return fmt.Errorf("setMainnetZeroHeightOptionsV10: %w", err)
+	}
 
-	// Cosmos SDK modules
+	// CCStorage
+	{
+		moduleName := ccstorage.ModuleName
+		opts := optsMap[moduleName].(ccstorage.SquashOptions)
+		if err := app.ccsKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
+	}
 	// Supply
 	{
 		moduleName := supply.ModuleName
@@ -87,18 +98,11 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
 	}
-	// Auth
+	// VMAuth
 	{
-		moduleName := auth.ModuleName
-		opts := optsMap[moduleName].(auth.SquashOptions)
+		moduleName := vmauth.ModuleName
+		opts := optsMap[moduleName].(vmauth.SquashOptions)
 		if err := app.accountKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
-			return fmt.Errorf("module %s: %w", moduleName, err)
-		}
-	}
-	// Distribution
-	{
-		moduleName := distribution.ModuleName
-		if err := app.distrKeeper.PrepareForZeroHeight(ctx); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
 	}
@@ -110,6 +114,14 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
 	}
+	// Distribution
+	{
+		moduleName := distribution.ModuleName
+		opts := optsMap[moduleName].(distribution.SquashOptions)
+		if err := app.distrKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
+			return fmt.Errorf("module %s: %w", moduleName, err)
+		}
+	}
 	// Slashing
 	{
 		moduleName := slashing.ModuleName
@@ -117,8 +129,6 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
 	}
-
-	// Dnode modules
 	// MultiSig
 	{
 		moduleName := multisig.ModuleName
@@ -146,16 +156,22 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 func prepareDefaultZeroHeightOptions(jailWhiteList []string) (map[string]interface{}, error) {
 	optsMap := make(map[string]interface{}, 0)
 
+	// CCStorage
+	{
+		moduleName := ccstorage.ModuleName
+		opts := ccstorage.NewEmptySquashOptions()
+		optsMap[moduleName] = opts
+	}
 	// Supply
 	{
 		moduleName := supply.ModuleName
 		opts := supply.NewEmptySquashOptions()
 		optsMap[moduleName] = opts
 	}
-	// Auth
+	// VMAuth
 	{
-		moduleName := auth.ModuleName
-		opts := auth.NewEmptySquashOptions()
+		moduleName := vmauth.ModuleName
+		opts := vmauth.NewEmptySquashOptions()
 		optsMap[moduleName] = opts
 	}
 	// Staking
@@ -163,6 +179,105 @@ func prepareDefaultZeroHeightOptions(jailWhiteList []string) (map[string]interfa
 		moduleName := staking.ModuleName
 		opts := staking.NewEmptySquashOptions()
 		if err := opts.SetJailWhitelistSquashOption(jailWhiteList); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+	// Distribution
+	{
+		moduleName := distribution.ModuleName
+		opts := distribution.NewEmptySquashOptions()
+		optsMap[moduleName] = opts
+	}
+
+	return optsMap, nil
+}
+
+// setMainnetZeroHeightOptionsV10 updates options map per module for Testnet v0.7 -> Mainnet v1.0 migration.
+// Options removes all XFI tokens and renames SXFI -> XFI.
+func setMainnetZeroHeightOptionsV10(optsMap map[string]interface{}) (map[string]interface{}, error) {
+	const (
+		denomToRemove   = "xfi"
+		oldStakingDenom = "sxfi"
+		newStakingDenom = "xfi"
+	)
+
+	// Supply
+	{
+		moduleName := supply.ModuleName
+		optsObj, found := optsMap[moduleName]
+		if !found {
+			return nil, fmt.Errorf("module %s: options not found", moduleName)
+		}
+		opts, ok := optsObj.(supply.SquashOptions)
+		if !ok {
+			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
+		}
+
+		if err := opts.SetDenomOp(denomToRemove, true, "", "0"); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		if err := opts.SetDenomOp(oldStakingDenom, false, newStakingDenom, "0"); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+	// VMAuth
+	{
+		moduleName := vmauth.ModuleName
+		optsObj, found := optsMap[moduleName]
+		if !found {
+			return nil, fmt.Errorf("module %s: options not found", moduleName)
+		}
+		opts, ok := optsObj.(vmauth.SquashOptions)
+		if !ok {
+			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
+		}
+
+		if err := opts.SetAccountBalanceOp(denomToRemove, true, ""); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		if err := opts.SetAccountBalanceOp(oldStakingDenom, false, newStakingDenom); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+	// Staking
+	{
+		moduleName := staking.ModuleName
+		optsObj, found := optsMap[moduleName]
+		if !found {
+			return nil, fmt.Errorf("module %s: options not found", moduleName)
+		}
+		opts, ok := optsObj.(staking.SquashOptions)
+		if !ok {
+			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
+		}
+
+		if err := opts.SetParamsOp(newStakingDenom); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		optsMap[moduleName] = opts
+	}
+	// Distribution
+	{
+		moduleName := distribution.ModuleName
+		optsObj, found := optsMap[moduleName]
+		if !found {
+			return nil, fmt.Errorf("module %s: options not found", moduleName)
+		}
+		opts, ok := optsObj.(distribution.SquashOptions)
+		if !ok {
+			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
+		}
+
+		if err := opts.SetSlashOp(true); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		if err := opts.SetDecCoinOp(denomToRemove, true, ""); err != nil {
+			return nil, fmt.Errorf("module %s: %w", moduleName, err)
+		}
+		if err := opts.SetDecCoinOp(oldStakingDenom, false, newStakingDenom); err != nil {
 			return nil, fmt.Errorf("module %s: %w", moduleName, err)
 		}
 		optsMap[moduleName] = opts
@@ -181,6 +296,8 @@ func setDebugZeroHeightOptions(optsMap map[string]interface{}) (map[string]inter
 		fakeValMoniker              = "fakeVal"
 		fakeValPubKey               = "walletvalconspub1zcjduepqu9mgrhdjfmwwalv86vdsavvvxfy8r4fmt4py8ehep252rs0acs5q93t5nm"
 		fakeValSelfDelegationAmount = "1000000000000000000000000"
+		//
+		stakingDenom = "sxfi"
 	)
 
 	// Supply
@@ -195,24 +312,24 @@ func setDebugZeroHeightOptions(optsMap map[string]interface{}) (map[string]inter
 			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
 		}
 
-		if err := opts.SetDenomOp(defaults.StakingDenom, fakeValSelfDelegationAmount); err != nil {
+		if err := opts.SetDenomOp(stakingDenom, false, "", fakeValSelfDelegationAmount); err != nil {
 			return nil, fmt.Errorf("module %s: %w", moduleName, err)
 		}
 		optsMap[moduleName] = opts
 	}
-	// Auth
+	// VMAuth
 	{
-		moduleName := auth.ModuleName
+		moduleName := vmauth.ModuleName
 		optsObj, found := optsMap[moduleName]
 		if !found {
 			return nil, fmt.Errorf("module %s: options not found", moduleName)
 		}
-		opts, ok := optsObj.(auth.SquashOptions)
+		opts, ok := optsObj.(vmauth.SquashOptions)
 		if !ok {
 			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
 		}
 
-		if err := opts.SetAddAccountOp(fakeValOperatorAddress, fakeValSelfDelegationAmount+defaults.StakingDenom); err != nil {
+		if err := opts.SetAddAccountOp(fakeValOperatorAddress, fakeValSelfDelegationAmount+stakingDenom); err != nil {
 			return nil, fmt.Errorf("module %s: %w", moduleName, err)
 		}
 		optsMap[moduleName] = opts
