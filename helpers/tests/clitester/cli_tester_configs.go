@@ -117,7 +117,7 @@ type CLIAccount struct {
 func NewAccountMap() (accounts map[string]*CLIAccount, retErr error) {
 	accounts = make(map[string]*CLIAccount)
 
-	smallAmount, ok := sdk.NewIntFromString("1000000000000000000000") // 1000xfi
+	smallAmount, ok := sdk.NewIntFromString("100000000000000000000000") // 100000xfi
 	if !ok {
 		retErr = fmt.Errorf("NewInt for smallAmount")
 		return
