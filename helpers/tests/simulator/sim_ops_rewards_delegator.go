@@ -45,7 +45,7 @@ func getDelegatorRewardOpFindTarget(s *Simulator) (targets []delegatorRewardOpTa
 
 			// estimate reward coins
 			curRewardCoins := sdk.NewCoins()
-			for _, decCoin := range s.QueryDistDelReward(acc.Address, delegation.ValidatorAddress).Total {
+			for _, decCoin := range s.QueryDistDelReward(acc.Address, delegation.ValidatorAddress).Reward.Total {
 				coin, _ := decCoin.TruncateDecimal()
 				curRewardCoins = curRewardCoins.Add(coin)
 			}

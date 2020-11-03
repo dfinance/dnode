@@ -15,6 +15,7 @@ import (
 
 // Check disabled distribution transactions.
 func TestDistribution_MessagesNotWorking(t *testing.T) {
+	t.Skip("skipped as dist limitations are disabled for the Mainnet")
 	t.Parallel()
 
 	app, appStop := NewTestDnAppMockVM()

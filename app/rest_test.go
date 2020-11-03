@@ -31,6 +31,7 @@ import (
 
 // TestSXFIBankTransaction_REST transfers for sxfi token must be disallowed
 func TestSXFIBankTransaction_REST(t *testing.T) {
+	t.Skip("skipped as dist limitations are disabled for the Mainnet")
 	t.Parallel()
 
 	ct := cliTester.New(t, false)
@@ -50,6 +51,7 @@ func TestSXFIBankTransaction_REST(t *testing.T) {
 
 // TestSXFIGovDeposit_REST gov deposit allowed just for sxfi token
 func TestSXFIGovDeposit_REST(t *testing.T) {
+	t.Skip("skipped as dist limitations are disabled for the Mainnet")
 	t.Parallel()
 
 	ct := cliTester.New(t, false)

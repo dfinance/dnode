@@ -177,7 +177,7 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 
 // prepareDefaultZeroHeightOptions returns base (default) options map per module for PrepareForZeroHeight functions.
 func prepareDefaultZeroHeightOptions(jailWhiteList []string) (map[string]interface{}, error) {
-	optsMap := make(map[string]interface{}, 0)
+	optsMap := make(map[string]interface{})
 
 	// CCStorage
 	{

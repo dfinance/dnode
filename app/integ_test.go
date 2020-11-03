@@ -560,7 +560,7 @@ func TestIntegVM_DeployModuleAndScriptViaCLI(t *testing.T) {
 // Test dnode <-> dvm request-retry mechanism.
 func TestIntegVM_RequestRetry(t *testing.T) {
 	// TODO: Test should be rewritten as its success / failure is Moon phase dependant (not repeatable)
-	t.Skip()
+	t.Skip("skipped as the current implementation is not stable")
 
 	const (
 		dsSocket      = "ds.sock"
@@ -641,7 +641,7 @@ func TestIntegVM_RequestRetry(t *testing.T) {
 
 // Test is skipped: should be used for dnode <-> dvm (uni-binary) communication over UDS debug locally (with DVM binaries).
 func TestIntegVM_CommunicationUDS(t *testing.T) {
-	t.Skip()
+	t.Skip("skipped as it is for local debug only")
 
 	const (
 		dsSocket  = "ds.sock"

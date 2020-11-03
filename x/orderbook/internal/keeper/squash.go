@@ -18,7 +18,7 @@ func (k Keeper) PrepareForZeroHeight(ctx sdk.Context) error {
 	}
 
 	// remove all but the latest history item for each market
-	historyItemsSet := make(map[string]types.HistoryItem, 0)
+	historyItemsSet := make(map[string]types.HistoryItem)
 	for _, curItem := range historyItems {
 		existingItem, found := historyItemsSet[curItem.MarketID.String()]
 		if !found || curItem.BlockHeight > existingItem.BlockHeight {
