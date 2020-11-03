@@ -79,10 +79,10 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	//if err != nil {
 	//	return fmt.Errorf("setDebugZeroHeightOptions: %w", err)
 	//}
-	optsMap, err = setMainnetZeroHeightOptionsV10(optsMap)
-	if err != nil {
-		return fmt.Errorf("setMainnetZeroHeightOptionsV10: %w", err)
-	}
+	//optsMap, err = setMainnetZeroHeightOptionsV10(optsMap)
+	//if err != nil {
+	//	return fmt.Errorf("setMainnetZeroHeightOptionsV10: %w", err)
+	//}
 
 	// CCStorage
 	{

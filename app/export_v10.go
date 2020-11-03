@@ -565,10 +565,13 @@ func (app *DnServiceApp) getMainnetSXFIBalanceReport(ctx sdk.Context,
 	}
 
 	// withdraw all rewards
-	// as all rewards were transferred to rewards bank before, we only query the bank coins
+	// as all rewards were transferred to rewards bank before, we only query the bank coins for each validator
 	for _, reportItem := range report {
 		accAddr := reportItem.AccAddress
-		reportItem.RewardCoins = app.distrKeeper.GetDelegatorRewardsBankCoins(cacheCtx, accAddr)
+		app.distrKeeper.IterateDelegatorRewardsBankCoins(ctx, accAddr, func(_ sdk.ValAddress, coins sdk.Coins) (stop bool) {
+			reportItem.RewardCoins = reportItem.RewardCoins.Add(coins...)
+			return false
+		})
 	}
 
 	// unbond all delegations
