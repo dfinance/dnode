@@ -75,10 +75,10 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	if err != nil {
 		return fmt.Errorf("prepareDefaultZeroHeightOptions: %w", err)
 	}
-	optsMap, err = setDebugZeroHeightOptions(optsMap)
-	if err != nil {
-		return fmt.Errorf("setDebugZeroHeightOptions: %w", err)
-	}
+	//optsMap, err = setDebugZeroHeightOptions(optsMap)
+	//if err != nil {
+	//	return fmt.Errorf("setDebugZeroHeightOptions: %w", err)
+	//}
 	optsMap, err = setMainnetZeroHeightOptionsV10(optsMap)
 	if err != nil {
 		return fmt.Errorf("setMainnetZeroHeightOptionsV10: %w", err)
