@@ -75,19 +75,8 @@ func (k Keeper) GetIssue(ctx sdk.Context, id string) (types.Issue, error) {
 	return k.getIssue(ctx, id), nil
 }
 
-// getIssue returns issue from the storage.
-func (k Keeper) getIssue(ctx sdk.Context, id string) types.Issue {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetIssuesKey(id))
-
-	issue := types.Issue{}
-	k.cdc.MustUnmarshalBinaryBare(bz, &issue)
-
-	return issue
-}
-
-// getGenesisIssues returns all registered issues with meta (GenesisIssue) from the storage.
-func (k Keeper) getGenesisIssues(ctx sdk.Context) []types.GenesisIssue {
+// GetGenesisIssues returns all registered issues with meta (GenesisIssue) from the storage.
+func (k Keeper) GetGenesisIssues(ctx sdk.Context) []types.GenesisIssue {
 	issues := make([]types.GenesisIssue, 0)
 
 	store := ctx.KVStore(k.storeKey)
@@ -106,6 +95,17 @@ func (k Keeper) getGenesisIssues(ctx sdk.Context) []types.GenesisIssue {
 	}
 
 	return issues
+}
+
+// getIssue returns issue from the storage.
+func (k Keeper) getIssue(ctx sdk.Context, id string) types.Issue {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.GetIssuesKey(id))
+
+	issue := types.Issue{}
+	k.cdc.MustUnmarshalBinaryBare(bz, &issue)
+
+	return issue
 }
 
 // storeIssue sets issue to the storage.

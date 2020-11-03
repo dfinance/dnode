@@ -15,7 +15,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmTypes "github.com/tendermint/tendermint/types"
 
-	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/x/ccstorage"
 	"github.com/dfinance/dnode/x/multisig"
 	"github.com/dfinance/dnode/x/orderbook"
@@ -168,6 +167,11 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 		return fmt.Errorf("post invariants check failed: %w", err)
 	}
 
+	//
+	if err := app.processMainnetSXFIBalance(ctx); err != nil {
+		return fmt.Errorf("mainnet v1.0 processing: %w", err)
+	}
+
 	return nil
 }
 
@@ -218,133 +222,6 @@ func prepareDefaultZeroHeightOptions(jailWhiteList []string) (map[string]interfa
 	{
 		moduleName := gov.ModuleName
 		opts := gov.NewEmptySquashOptions()
-		optsMap[moduleName] = opts
-	}
-
-	return optsMap, nil
-}
-
-// setMainnetZeroHeightOptionsV10 updates options map per module for Testnet v0.7 -> Mainnet v1.0 migration.
-// Options removes all XFI tokens and renames SXFI -> XFI.
-func setMainnetZeroHeightOptionsV10(optsMap map[string]interface{}) (map[string]interface{}, error) {
-	const (
-		denomToRemove   = "xfi"
-		oldStakingDenom = "sxfi"
-		newStakingDenom = "xfi"
-	)
-
-	// Supply
-	{
-		moduleName := supply.ModuleName
-		optsObj, found := optsMap[moduleName]
-		if !found {
-			return nil, fmt.Errorf("module %s: options not found", moduleName)
-		}
-		opts, ok := optsObj.(supply.SquashOptions)
-		if !ok {
-			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
-		}
-
-		if err := opts.SetDenomOp(denomToRemove, true, "", "0"); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
-		if err := opts.SetDenomOp(oldStakingDenom, false, newStakingDenom, "0"); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
-		optsMap[moduleName] = opts
-	}
-	// VMAuth
-	{
-		moduleName := vmauth.ModuleName
-		optsObj, found := optsMap[moduleName]
-		if !found {
-			return nil, fmt.Errorf("module %s: options not found", moduleName)
-		}
-		opts, ok := optsObj.(vmauth.SquashOptions)
-		if !ok {
-			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
-		}
-
-		if err := opts.SetAccountBalanceOp(denomToRemove, true, ""); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
-		if err := opts.SetAccountBalanceOp(oldStakingDenom, false, newStakingDenom); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
-		optsMap[moduleName] = opts
-	}
-	// Staking
-	{
-		moduleName := staking.ModuleName
-		optsObj, found := optsMap[moduleName]
-		if !found {
-			return nil, fmt.Errorf("module %s: options not found", moduleName)
-		}
-		opts, ok := optsObj.(staking.SquashOptions)
-		if !ok {
-			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
-		}
-
-		if err := opts.SetParamsOp(newStakingDenom); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
-		optsMap[moduleName] = opts
-	}
-	// Distribution
-	{
-		moduleName := distribution.ModuleName
-		optsObj, found := optsMap[moduleName]
-		if !found {
-			return nil, fmt.Errorf("module %s: options not found", moduleName)
-		}
-		opts, ok := optsObj.(distribution.SquashOptions)
-		if !ok {
-			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
-		}
-
-		if err := opts.SetSlashOp(true); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
-		if err := opts.SetDecCoinOp(denomToRemove, true, ""); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
-		if err := opts.SetDecCoinOp(oldStakingDenom, false, newStakingDenom); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
-		optsMap[moduleName] = opts
-	}
-	// Mint
-	{
-		moduleName := mint.ModuleName
-		optsObj, found := optsMap[moduleName]
-		if !found {
-			return nil, fmt.Errorf("module %s: options not found", moduleName)
-		}
-		opts, ok := optsObj.(mint.SquashOptions)
-		if !ok {
-			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
-		}
-
-		if err := opts.SetParamsOp(newStakingDenom); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
-		optsMap[moduleName] = opts
-	}
-	// Gov
-	{
-		moduleName := gov.ModuleName
-		optsObj, found := optsMap[moduleName]
-		if !found {
-			return nil, fmt.Errorf("module %s: options not found", moduleName)
-		}
-		opts, ok := optsObj.(gov.SquashOptions)
-		if !ok {
-			return nil, fmt.Errorf("module %s: options type assert failed: %T", moduleName, optsObj)
-		}
-
-		if err := opts.SetParamsOp(defaults.GovMinDepositAmount + newStakingDenom); err != nil {
-			return nil, fmt.Errorf("module %s: %w", moduleName, err)
-		}
 		optsMap[moduleName] = opts
 	}
 
