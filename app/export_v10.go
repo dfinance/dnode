@@ -541,7 +541,7 @@ func (app *DnServiceApp) getMainnetSXFIBalanceReport(ctx sdk.Context,
 	cacheCtx, _ := ctx.CacheContext()
 
 	// initialize report with genesis data
-	report := make(SXFIBalanceReport, 0)
+	report := make(SXFIBalanceReport)
 	if err := report.AppendGenesisBalances(ctx, app, issueBondingDenom, issueLPDenom, bondingDenom, lpDenom); err != nil {
 		return nil, fmt.Errorf("append genesis balances: %w", err)
 	}
