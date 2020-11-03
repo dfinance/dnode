@@ -455,6 +455,7 @@ func NewDnServiceApp(logger log.Logger, db dbm.DB, config *config.VMConfig, invC
 
 	// GovernanceKeeper allows changing chain module params.
 	app.govRouter = gov.NewRouter()
+	app.govRouter.AddRoute(gov.RouterKey, gov.ProposalHandler)
 	app.govRouter.AddRoute(vm.GovRouterKey, vm.NewGovHandler(app.vmKeeper))
 	app.govRouter.AddRoute(currencies.GovRouterKey, currencies.NewGovHandler(app.ccKeeper))
 	app.govRouter.AddRoute(distribution.RouterKey, distribution.NewProposalHandler(app.distrKeeper))
