@@ -76,8 +76,8 @@ func TestCurrenciesKeeper_Genesis(t *testing.T) {
 		// lastID
 		require.Equal(t, state.LastWithdrawID.String(), keeper.getLastWithdrawID(ctx).String())
 		// issues
-		require.Len(t, keeper.getGenesisIssues(ctx), len(state.Issues))
-		for i, getIssue := range keeper.getGenesisIssues(ctx) {
+		require.Len(t, keeper.GetGenesisIssues(ctx), len(state.Issues))
+		for i, getIssue := range keeper.GetGenesisIssues(ctx) {
 			require.EqualValues(t, state.Issues[i], getIssue)
 		}
 		// withdraws
@@ -96,8 +96,8 @@ func TestCurrenciesKeeper_Genesis(t *testing.T) {
 		require.NotNil(t, state.LastWithdrawID)
 		require.Equal(t, keeper.getLastWithdrawID(ctx).String(), state.LastWithdrawID.String())
 		// issues
-		require.Len(t, keeper.getGenesisIssues(ctx), len(state.Issues))
-		for i, getIssue := range keeper.getGenesisIssues(ctx) {
+		require.Len(t, keeper.GetGenesisIssues(ctx), len(state.Issues))
+		for i, getIssue := range keeper.GetGenesisIssues(ctx) {
 			require.EqualValues(t, getIssue, state.Issues[i])
 		}
 		// withdraws
