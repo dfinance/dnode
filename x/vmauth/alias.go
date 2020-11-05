@@ -13,6 +13,8 @@ import (
 type (
 	Keeper       = keeper.VMAccountKeeper
 	GenesisState = authTypes.GenesisState
+	//
+	SquashOptions = keeper.SquashOptions
 )
 
 const (
@@ -32,6 +34,8 @@ var (
 	GetTxCmd            = authClientCli.GetTxCmd
 	GetQueryCmd         = authClientCli.GetQueryCmd
 	DefaultGenesisState = authTypes.DefaultGenesisState
+	//
+	NewEmptySquashOptions = keeper.NewEmptySquashOptions
 	// perms requests
 	RequestCCStoragePerms = types.RequestCCStoragePerms
 )

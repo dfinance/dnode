@@ -15,6 +15,8 @@ type (
 	ResBalance      = types.ResBalance
 	Balance         = types.Balance
 	Balances        = types.Balances
+	//
+	SquashOptions = keeper.SquashOptions
 )
 
 const (
@@ -35,6 +37,8 @@ var (
 	// function aliases
 	NewKeeper           = keeper.NewKeeper
 	DefaultGenesisState = types.DefaultGenesisState
+	//
+	NewEmptySquashOptions = keeper.NewEmptySquashOptions
 	// perms requests
 	RequestVMStoragePerms = types.RequestVMStoragePerms
 	// errors

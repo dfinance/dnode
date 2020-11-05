@@ -3,7 +3,7 @@ package types
 import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 
-	v07 "github.com/dfinance/dnode/x/migration/internal/migrations/v0_7"
+	"github.com/dfinance/dnode/x/migration/internal/migrations/v1_0"
 )
 
 // MigrationHandler converts an appState (genesis map) from the previous version to the targeted one.
@@ -14,5 +14,5 @@ type TargetMigrationMap map[string]MigrationHandler
 
 // MigrationMap is a registered migrations map.
 var MigrationMap = TargetMigrationMap{
-	"v0.7": v07.Migrate,
+	"v1.0": v1_0.Migrate,
 }

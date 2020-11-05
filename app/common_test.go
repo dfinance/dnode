@@ -374,6 +374,8 @@ func GetGenesis(app *DnServiceApp, chainID, monikerID string, nodeAccPrivKey sec
 		stakingGenesis := staking.GenesisState{}
 		app.cdc.MustUnmarshalJSON(genesisState[staking.ModuleName], &stakingGenesis)
 		stakingGenesis.Params.BondDenom = defaults.MainDenom
+		maxStakingLvl, _ := sdk.NewIntFromString("1000000000000000000000000")
+		stakingGenesis.Params.MaxSelfDelegationLvl = maxStakingLvl
 		genesisState[staking.ModuleName] = codec.MustMarshalJSONIndent(app.cdc, stakingGenesis)
 
 		// update mint denom

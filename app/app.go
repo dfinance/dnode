@@ -31,7 +31,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmOs "github.com/tendermint/tendermint/libs/os"
-	tmTypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 	"google.golang.org/grpc"
 
@@ -618,22 +617,4 @@ func (app *DnServiceApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) a
 // Load app with specific height.
 func (app *DnServiceApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
-}
-
-// Exports genesis and validators.
-func (app *DnServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
-) (appState json.RawMessage, validators []tmTypes.GenesisValidator, err error) {
-
-	// as if they could withdraw from the start of the next block.
-	ctx := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
-
-	genState := app.mm.ExportGenesis(ctx)
-	appState, err = codec.MarshalJSONIndent(app.cdc, genState)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	validators = staking.WriteValidators(ctx, app.stakingKeeper)
-
-	return appState, validators, nil
 }

@@ -61,7 +61,7 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) json.RawMessage {
 	}
 
 	// issues
-	state.Issues = append(state.Issues, k.getGenesisIssues(ctx)...)
+	state.Issues = append(state.Issues, k.GetGenesisIssues(ctx)...)
 
 	// withdraws
 	state.Withdraws = append(state.Withdraws, k.getWithdraws(ctx)...)

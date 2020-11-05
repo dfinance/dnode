@@ -104,6 +104,7 @@ func OverrideGenesisStateDefaults(cdc *codec.Codec, genState map[string]json.Raw
 		moduleState.Params.LPDistrRatio = sdk.NewDecWithPrec(2, 0) // 200%
 		//
 		moduleState.Params.MinSelfDelegationLvl = defaults.MinSelfDelegationCoin.Amount // 2500.0
+		moduleState.Params.MaxSelfDelegationLvl = defaults.MaxSelfDelegationCoin.Amount // 10000.0
 		moduleState.Params.MaxDelegationsRatio = sdk.NewDecWithPrec(10, 0)              // 10.0
 
 		if moduleStateBz, err := cdc.MarshalJSON(moduleState); err != nil {

@@ -32,6 +32,7 @@ const (
 
 // TestBankSXFI_CLI transfers for sxfi token must be disallowed
 func TestBankSXFI_CLI(t *testing.T) {
+	t.Skip("skipped as dist limitations are disabled for the Mainnet")
 	t.Parallel()
 
 	ct := cliTester.New(t, false)
@@ -56,6 +57,7 @@ func TestBankSXFI_CLI(t *testing.T) {
 
 // TestGovSXFI_CLI gov deposit allowed just for sxfi token
 func TestGovSXFI_CLI(t *testing.T) {
+	t.Skip("test skipped as it is no longer relevant for Mainnet")
 	t.Parallel()
 
 	ct := cliTester.New(t, false)
@@ -71,6 +73,7 @@ func TestGovSXFI_CLI(t *testing.T) {
 
 // TestStakeSXFI_CLI staking allowed just for sxfi token
 func TestStakeSXFI_CLI(t *testing.T) {
+	t.Skip("skipped as dist limitations are disabled for the Mainnet")
 	t.Parallel()
 
 	ct := cliTester.New(t, false)
@@ -305,6 +308,7 @@ func TestCurrencies_CLI(t *testing.T) {
 
 // Check that distribution commands in CLI disabled.
 func TestDisableRewards_CLI(t *testing.T) {
+	t.Skip("skipped as dist limitations are disabled for the Mainnet")
 	t.Parallel()
 
 	ct := cliTester.New(t, false)

@@ -208,7 +208,7 @@ func getMoveCodeFromFileArg(argValue string, oneItem bool) (items vm_client.Comp
 				argName,
 				argValue,
 				helpers.ParamTypeCliArg,
-				fmt.Sprintf("Move file contains different code types, allowed only similar types in one file"),
+				"Move file contains different code types, allowed only similar types in one file",
 			)
 			return
 		}
