@@ -538,6 +538,7 @@ func TestVMKeeper_CheckMetaData(t *testing.T) {
 	})
 	require.NoErrorf(t, err, "can't get code for ModuleWithResources: %v", err)
 	require.Len(t, bytecodeModule, 1)
+	require.Equal(t, bytecodeModule[0].Name, "Foo")
 	require.Len(t, bytecodeModule[0].Methods, 2)
 	require.Len(t, bytecodeModule[0].Types, 2)
 	require.Equal(t, bytecodeModule[0].CodeType, vm_client.CodeTypeModule)

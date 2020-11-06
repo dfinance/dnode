@@ -77,6 +77,7 @@ func Compile(addr string, sourceFiles *compiler_grpc.SourceFiles) ([]CompiledIte
 		resp[i] = CompiledItem{
 			ByteCode: unit.Bytecode,
 			Code:     hex.EncodeToString(unit.Bytecode),
+			Name:     unit.Name,
 		}
 
 		meta, err := metadataClient.GetMetadata(connCtx, &metadata_grpc.Bytecode{Code: unit.Bytecode})
