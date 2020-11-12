@@ -62,6 +62,7 @@ func Test_SentryIntegration(t *testing.T) {
 
 	// prepare and send error message
 	logger := NewDNLogger()
+	rand.Seed(time.Now().UnixNano())
 	errMsg := fmt.Sprintf(errMsgFmt, rand.Int())
 
 	errMsgSendAt := time.Now()

@@ -12,6 +12,7 @@ type CompiledItems []CompiledItem
 type CompiledItem struct {
 	Code     string         `json:"code"`
 	ByteCode []byte         `json:"-"`
+	Name     string         `json:"name"`
 	Methods  []ModuleMethod `json:"methods,omitempty"`
 	Types    []ModuleType   `json:"types,omitempty"`
 	CodeType string         `json:"code_type"`
