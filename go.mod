@@ -10,7 +10,10 @@ replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.39.2-0
 
 // Fix of OS X hostmachine test runs
 // Source: https://github.com/ory/dockertest/issues/208
-replace golang.org/x/sys => golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6
+replace (
+	golang.org/x/sys => golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6
+	github.com/99designs/keyring => github.com/n11c/keyring v1.1.4-0.20200205101003-eb070b66369c
+)
 
 require (
 	github.com/99designs/keyring v1.1.3
