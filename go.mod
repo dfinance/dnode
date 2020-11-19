@@ -12,6 +12,7 @@ replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.39.2-0
 // Source: https://github.com/ory/dockertest/issues/208
 replace (
 	golang.org/x/sys => golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6
+	github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4
 )
 
 require (
