@@ -20,7 +20,7 @@ jobs:
     steps:
     - name: Set GOPATH
       run: |
-        echo "${{ github.workspace }}/go" >> $GOPATH
+        echo "${{ github.workspace }}/go" > $GOPATH
         echo "${{ github.workspace }}/go/bin" >> $GITHUB_PATH
 #        echo "::set-env name=GOPATH::${{ github.workspace }}/go"
 #        echo "::add-path::${{ github.workspace }}/go/bin"
