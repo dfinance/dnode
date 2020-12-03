@@ -150,7 +150,7 @@ func TestMSKeeper_SubmitCall_InvalidInputs(t *testing.T) {
 	// invalid: call
 	{
 		msg := NewMockMsMsg(true)
-		require.Error(t, keeper.SubmitCall(ctx, msg, uniqueID1, sdk.AccAddress{}))
+		require.NoError(t, keeper.SubmitCall(ctx, msg, uniqueID1, sdk.AccAddress{}))
 	}
 
 	// invalid: non-existing msg route

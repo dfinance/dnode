@@ -9,9 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v1
+        uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.26
+          version: v1.32
           args: --exclude 'unused' --timeout=10m
 
   test-build:
@@ -20,8 +20,8 @@ jobs:
     steps:
     - name: Set GOPATH
       run: |
-        echo "::set-env name=GOPATH::${{ github.workspace }}/go"
-        echo "::add-path::${{ github.workspace }}/go/bin"
+        echo "GOPATH=${{ github.workspace }}/go" >> $GITHUB_ENV
+        echo "${{ github.workspace }}/go/bin" >> $GITHUB_PATH
       shell: bash
 
     - name: Install Go 1.14.6
