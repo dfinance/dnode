@@ -176,7 +176,7 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 // @Tags VM
 // @Summary Get writeSet data from VM LCS string view
 // @Description Get writeSet data LCS string view for {address}::{moduleName}::{structName} Move path"
-// @ID vmGetData
+// @ID lcsView
 // @Accept  json
 // @Produce json
 // @Param request body LcsViewReq true "View request"

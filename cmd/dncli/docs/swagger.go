@@ -3,7 +3,6 @@
 package docs
 
 const Swagger = `
-basePath: /
 definitions:
   Address:
     description: bech32 encoded address
@@ -499,6 +498,11 @@ definitions:
       max_entries:
         description: Max entries for either unbonding delegation or redelegation (per pair/trio)
         type: integer
+      max_self_delegation_lvl:
+        description: Max self delegation level for self-delegation increment
+        example: "100"
+        format: integer
+        type: string
       max_validators:
         description: Maximum number of validators (max uint16 = 65535)
         type: integer
@@ -757,26 +761,6 @@ definitions:
       voter:
         type: string
     type: object
-  auth.StdFee:
-    $ref: '#/definitions/types.StdFee'
-  auth.StdSignature:
-    $ref: '#/definitions/types.StdSignature'
-  auth.StdTx:
-    $ref: '#/definitions/types.StdTx'
-  bytes.HexBytes:
-    items:
-      type: integer
-    type: array
-  ccstorage.Currencies:
-    $ref: '#/definitions/types.Currencies'
-  ccstorage.Currency:
-    $ref: '#/definitions/types.Currency'
-  crypto.Address:
-    $ref: '#/definitions/bytes.HexBytes'
-  markets.MarketExtended:
-    $ref: '#/definitions/types.MarketExtended'
-  msmodule.MsMsg:
-    type: object
   rest.BaseReq:
     properties:
       account_number:
@@ -807,16 +791,14 @@ definitions:
       height:
         type: integer
       result:
-        $ref: '#/definitions/ccstorage.Currencies'
-        type: object
+        type: string
     type: object
   rest.CCRespGetCurrency:
     properties:
       height:
         type: integer
       result:
-        $ref: '#/definitions/ccstorage.Currency'
-        type: object
+        type: string
     type: object
   rest.CCRespGetIssue:
     properties:
@@ -847,8 +829,7 @@ definitions:
       height:
         type: integer
       result:
-        $ref: '#/definitions/auth.StdTx'
-        type: object
+        type: string
     type: object
   rest.CompileReq:
     properties:
@@ -1122,8 +1103,10 @@ definitions:
         type: object
       move_code:
         description: Compiled Move code
-        format: HEX encoded byte code
-        type: string
+        format: HEX encoded byte code array
+        items:
+          type: string
+        type: array
     type: object
   rest.QueryAddressResp:
     properties:
@@ -1185,6 +1168,14 @@ definitions:
         $ref: '#/definitions/types.QueryDelegatorTotalRewardsResponse'
         type: object
     type: object
+  rest.QueryDistributionParamsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/DistributionParams'
+        type: object
+    type: object
   rest.QueryExtendedValidatorResp:
     properties:
       height:
@@ -1218,12 +1209,12 @@ definitions:
         $ref: '#/definitions/types.MintInfo'
         type: object
     type: object
-  rest.QueryParamsResp:
+  rest.QueryMinterParamsResp:
     properties:
       height:
         type: integer
       result:
-        $ref: '#/definitions/StakingParams'
+        $ref: '#/definitions/MintParams'
         type: object
     type: object
   rest.QueryPoolResp:
@@ -1242,6 +1233,14 @@ definitions:
         items:
           $ref: '#/definitions/types.RedelegationResponse'
         type: array
+    type: object
+  rest.QueryStakingParamsResp:
+    properties:
+      height:
+        type: integer
+      result:
+        $ref: '#/definitions/StakingParams'
+        type: object
     type: object
   rest.QuerySwaggerValidatorDistInfoResp:
     properties:
@@ -1491,7 +1490,7 @@ definitions:
       height:
         type: integer
       result:
-        $ref: '#/definitions/vm_client.MoveFile'
+        $ref: '#/definitions/vm_client.CompiledItems'
         type: object
     type: object
   rest.VmRespLcsView:
@@ -1507,8 +1506,7 @@ definitions:
       height:
         type: integer
       result:
-        $ref: '#/definitions/auth.StdTx'
-        type: object
+        type: string
     type: object
   rest.VmTxStatus:
     properties:
@@ -1558,10 +1556,6 @@ definitions:
         $ref: '#/definitions/rest.BaseReq'
         type: object
     type: object
-  staking.Commission:
-    $ref: '#/definitions/types.Commission'
-  staking.Description:
-    $ref: '#/definitions/types.Description'
   types.ABCIMessageLog:
     properties:
       events:
@@ -1583,8 +1577,6 @@ definitions:
     items:
       type: integer
     type: array
-  types.Address:
-    $ref: '#/definitions/crypto.Address'
   types.Asset:
     properties:
       active:
@@ -1609,15 +1601,6 @@ definitions:
         type: string
       value:
         type: string
-    type: object
-  types.BlockID:
-    properties:
-      hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        type: object
-      parts:
-        $ref: '#/definitions/types.PartSetHeader'
-        type: object
     type: object
   types.Call:
     properties:
@@ -1648,9 +1631,8 @@ definitions:
         format: string representation for big.Uint
         type: string
       msg_data:
-        $ref: '#/definitions/msmodule.MsMsg'
         description: 'Message: data'
-        type: object
+        type: string
       msg_route:
         description: 'Message: route'
         example: oracle
@@ -1722,25 +1704,6 @@ definitions:
         description: the last time the commission rate was changed
         type: string
     type: object
-  types.Currencies:
-    items:
-      $ref: '#/definitions/types.Currency'
-    type: array
-  types.Currency:
-    properties:
-      decimals:
-        description: Number of currency decimals
-        example: 0
-        type: integer
-      denom:
-        description: Currency denom (symbol)
-        example: xfi
-        type: string
-      supply:
-        description: Total amount of currency coins in Bank
-        example: "100"
-        type: string
-    type: object
   types.CurrentPrice:
     properties:
       ask_price:
@@ -1798,8 +1761,13 @@ definitions:
     type: object
   types.DelegationDelegatorReward:
     properties:
-      reward:
+      current:
         $ref: '#/definitions/types.DecCoins'
+        description: Current period reward amount
+        type: object
+      total:
+        $ref: '#/definitions/types.DecCoins'
+        description: Sum of current period reward amount and stored in rewards bank amount
         type: object
       validator_address:
         example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
@@ -1847,59 +1815,6 @@ definitions:
         description: optional website link
         type: string
     type: object
-  types.Header:
-    properties:
-      app_hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        description: state after txs from the previous block
-        type: object
-      chain_id:
-        type: string
-      consensus_hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        description: consensus params for current block
-        type: object
-      data_hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        description: transactions
-        type: object
-      evidence_hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        description: consensus info
-        type: object
-      height:
-        type: integer
-      last_block_id:
-        $ref: '#/definitions/types.BlockID'
-        description: prev block info
-        type: object
-      last_commit_hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        description: hashes of block data
-        type: object
-      last_results_hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        description: root hash of all results from the txs from the previous block
-        type: object
-      next_validators_hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        description: validators for the next block
-        type: object
-      proposer_address:
-        $ref: '#/definitions/types.Address'
-        description: original proposer of the block
-        type: object
-      time:
-        type: string
-      validators_hash:
-        $ref: '#/definitions/bytes.HexBytes'
-        description: hashes from the app output from the prev block
-        type: object
-      version:
-        $ref: '#/definitions/version.Consensus'
-        description: basic block info
-        type: object
-    type: object
   types.HistoricalInfo:
     properties:
       header:
@@ -1909,8 +1824,6 @@ definitions:
           $ref: '#/definitions/types.Validator'
         type: array
     type: object
-  types.ID:
-    $ref: '#/definitions/sdk.Uint'
   types.Int:
     type: object
   types.Issue:
@@ -1940,22 +1853,6 @@ definitions:
         description: Quote asset denomination (for ex. xfi)
         example: xfi
         type: string
-    type: object
-  types.MarketExtended:
-    properties:
-      base_currency:
-        $ref: '#/definitions/ccstorage.Currency'
-        description: Base asset currency (for ex. btc)
-        type: object
-      id:
-        description: Market unique ID
-        example: "0"
-        format: string representation for big.Uint
-        type: string
-      quote_currency:
-        $ref: '#/definitions/ccstorage.Currency'
-        description: Quote asset currency (for ex. xfi)
-        type: object
     type: object
   types.Markets:
     items:
@@ -2133,9 +2030,8 @@ definitions:
         format: string representation for big.Uint
         type: string
       market:
-        $ref: '#/definitions/markets.MarketExtended'
         description: Market order belong to
-        type: object
+        type: string
       owner:
         description: Order owner account address
         example: wallet13jyjuz3kkdvqw8u4qfkwd94emdl3vx394kn07h
@@ -2163,15 +2059,6 @@ definitions:
     items:
       $ref: '#/definitions/types.Order'
     type: array
-  types.PartSetHeader:
-    properties:
-      hash:
-        items:
-          type: integer
-        type: array
-      total:
-        type: integer
-    type: object
   types.Pool:
     properties:
       bonded_tokens:
@@ -2216,15 +2103,9 @@ definitions:
     type: object
   types.QueryDelegationRewardsResponse:
     properties:
-      rewards:
+      reward:
         $ref: '#/definitions/types.DelegationDelegatorReward'
         description: Current rewards for a specific validator
-        type: object
-      total:
-        $ref: '#/definitions/types.DecCoins'
-        description: |-
-          All validators rewards accumulated on delegation modification events (shares change, undelegation, redelegation)
-          This truncated Int value would be transferred to the delegator account on withdraw_delegator_reward Tx
         type: object
     type: object
   types.QueryDelegatorTotalRewardsResponse:
@@ -2693,16 +2574,68 @@ definitions:
     items:
       $ref: '#/definitions/types.Withdraw'
     type: array
-  version.Consensus:
-    properties:
-      app:
-        type: integer
-      block:
-        type: integer
-    type: object
-  vm_client.MoveFile:
+  vm_client.CompiledItem:
     properties:
       code:
+        type: string
+      code_type:
+        type: string
+      methods:
+        items:
+          $ref: '#/definitions/vm_client.ModuleMethod'
+        type: array
+      name:
+        type: string
+      types:
+        items:
+          $ref: '#/definitions/vm_client.ModuleType'
+        type: array
+    type: object
+  vm_client.CompiledItems:
+    items:
+      $ref: '#/definitions/vm_client.CompiledItem'
+    type: array
+  vm_client.ModuleMethod:
+    properties:
+      arguments:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      native:
+        type: boolean
+      public:
+        type: boolean
+      returns:
+        items:
+          type: string
+        type: array
+      type_parameters:
+        items:
+          type: string
+        type: array
+    type: object
+  vm_client.ModuleType:
+    properties:
+      name:
+        type: string
+      properties:
+        items:
+          $ref: '#/definitions/vm_client.ModuleTypeField'
+        type: array
+      resource:
+        type: boolean
+      type_parameters:
+        items:
+          type: string
+        type: array
+    type: object
+  vm_client.ModuleTypeField:
+    properties:
+      name:
+        type: string
+      type:
         type: string
     type: object
 host: stargate.cosmos.network
@@ -3318,7 +3251,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rest.QueryParamsResp'
+            $ref: '#/definitions/rest.QueryDistributionParamsResp'
         "400":
           description: Returned if the request doesn't have valid query params
           schema:
@@ -4208,7 +4141,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rest.QueryParamsResp'
+            $ref: '#/definitions/rest.QueryMinterParamsResp'
         "400":
           description: Returned if the request doesn't have valid query params
           schema:
@@ -5200,7 +5133,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rest.QueryParamsResp'
+            $ref: '#/definitions/rest.QueryStakingParamsResp'
         "400":
           description: Returned if the request doesn't have valid query params
           schema:
@@ -5837,7 +5770,7 @@ paths:
       consumes:
       - application/json
       description: Get writeSet data LCS string view for {address}::{moduleName}::{structName} Move path"
-      operationId: vmGetData
+      operationId: lcsView
       parameters:
       - description: View request
         in: body
