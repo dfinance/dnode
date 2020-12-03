@@ -13,9 +13,13 @@ import (
 func (k Keeper) SubmitCall(ctx sdk.Context, msg msmodule.MsMsg, uniqueID string, sender sdk.AccAddress) error {
 	k.modulePerms.AutoCheck(types.PermWrite)
 
-	// check call exists
+	// confirm call if exists
 	if k.HasCallByUniqueID(ctx, uniqueID) {
-		return sdkErrors.Wrapf(types.ErrWrongCallUniqueId, "%q exists", uniqueID)
+		id, err := k.GetCallIDByUniqueID(ctx, uniqueID)
+		if err != nil {
+			return err
+		}
+		return k.ConfirmCall(ctx, id, sender)
 	}
 
 	// create a new call and check its validity

@@ -162,13 +162,13 @@ func TestCurrenciesApp_Issue(t *testing.T) {
 		CheckResultError(t, currencies.ErrWrongIssueID, res, err)
 	}
 
-	// fail: currency issue with already existing uniqueMsgID
+	// fail: currency issue with already approved uniqueMsgID
 	{
 		msgId, issueId := "1", "non-existing-issue"
 		coin := sdk.NewCoin(denom, amount)
 
 		res, err := IssueCurrency(t, app, coin, msgId, issueId, recipientIdx, genAccs, genPrivKeys, false)
-		CheckResultError(t, multisig.ErrWrongCallUniqueId, res, err)
+		CheckResultError(t, multisig.ErrVoteAlreadyApproved, res, err)
 	}
 }
 
