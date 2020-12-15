@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/dfinance/dvm-proto/go/compiler_grpc"
@@ -29,6 +30,11 @@ func GetData(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			height := viper.GetInt64(flags.FlagHeight)
+
+			if height != 0 {
+				cliCtx = cliCtx.WithHeight(height)
+			}
 
 			// parse inputs
 			address, err := helpers.ParseSdkAddressParam("address", args[0], helpers.ParamTypeCliArg)

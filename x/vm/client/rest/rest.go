@@ -139,6 +139,11 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 		// parse inputs and prepare request
 		vars := mux.Vars(r)
 
+		cliCtx, ok := rest.ParseQueryHeightOrReturnBadRequest(w, cliCtx, r)
+		if !ok {
+			return
+		}
+
 		address, err := helpers.ParseSdkAddressParam(accountAddrName, vars[accountAddrName], helpers.ParamTypeRestPath)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
@@ -155,18 +160,23 @@ func getData(cliCtx context.CLIContext) http.HandlerFunc {
 			Address: common_vm.Bech32ToLibra(address),
 			Path:    path,
 		})
+
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// send request and process response
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryValue), bz)
+		res, height, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/%s", types.ModuleName, types.QueryValue), bz)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		resp := types.ValueResp{Value: hex.EncodeToString(res)}
+
+		if cliCtx.Height == 0 {
+			cliCtx = context.NewCLIContext().WithCodec(cliCtx.Codec).WithHeight(height)
+		}
 
 		rest.PostProcessResponse(w, cliCtx, resp)
 	}
