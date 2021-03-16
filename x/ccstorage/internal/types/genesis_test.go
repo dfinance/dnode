@@ -14,13 +14,13 @@ func TestCCS_GenesisParams_Validate(t *testing.T) {
 
 	// ok
 	{
-		param := CurrencyParams{"xfi", 0}
+		param := CurrencyParams{"xfi", 0, ""}
 		require.NoError(t, param.Validate())
 	}
 
 	// fail: invalid denom
 	{
-		param1 := CurrencyParams{"xfi1", 0}
+		param1 := CurrencyParams{"xfi1", 0, ""}
 		require.Error(t, param1.Validate())
 	}
 }

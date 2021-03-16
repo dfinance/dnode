@@ -58,9 +58,9 @@ func PostWithdrawCurrency(cdc *codec.Codec) *cobra.Command {
 // Send governance add currency proposal.
 func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "add-currency-proposal [denom] [decimals] [vmBalancePathHex] [vmInfoPathHex]",
-		Args:    cobra.ExactArgs(4),
-		Short:   "Submit currency add proposal, creating non-token currency",
+		Use:     "add-currency-proposal [denom] [decimals] [vmBalancePathHex] [vmInfoPathHex] [ERC20ContractAddress]",
+		Args:    cobra.RangeArgs(4, 5),
+		Short:   "Submit currency add proposal, creating currency",
 		Example: "add-currency-proposal xfi 18 {balancePath} {infoPath} --deposit 100xfi --fees 1xfi",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
@@ -96,8 +96,19 @@ func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
+			var contractAddress string
+			if len(args) > 4 {
+				contractAddress = args[4]
+				if contractAddress != "" {
+					_, err := helpers.ParseEthereumAddressParam("ERC20ContractAddress", contractAddress, helpers.ParamTypeCliArg)
+					if err != nil {
+						return err
+					}
+				}
+			}
+
 			// prepare and send message
-			content := types.NewAddCurrencyProposal(denom, decimals, balancePath, infoPath)
+			content := types.NewAddCurrencyProposal(denom, decimals, balancePath, infoPath, contractAddress)
 			if err := content.ValidateBasic(); err != nil {
 				return err
 			}
@@ -116,6 +127,7 @@ func AddCurrencyProposal(cdc *codec.Codec) *cobra.Command {
 		"new currency number of decimals",
 		"DVM path for balance resources [HEX string]",
 		"DVM path for currencyInfo resource [HEX string]",
+		"ERC20 contract address",
 	})
 
 	return cmd

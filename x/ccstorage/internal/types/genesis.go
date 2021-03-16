@@ -35,6 +35,8 @@ type CurrencyParams struct {
 	Denom string `json:"denom" yaml:"denom"`
 	// Currency decimals count
 	Decimals uint8 `json:"decimals" yaml:"decimals"`
+	// ERC20 contract address
+	ContractAddress string `json:"contract_address" yaml:"contract_address"`
 }
 
 // Validate check that params are valid.
@@ -53,28 +55,34 @@ func DefaultGenesisState() GenesisState {
 	state := GenesisState{
 		CurrenciesParams: CurrenciesParams{
 			{
-				Denom:    "xfi",
-				Decimals: 18,
+				Denom:           "xfi",
+				Decimals:        18,
+				ContractAddress: "",
 			},
 			{
-				Denom:    "sxfi",
-				Decimals: 18,
+				Denom:           "sxfi",
+				Decimals:        18,
+				ContractAddress: "",
 			},
 			{
-				Denom:    "eth",
-				Decimals: 18,
+				Denom:           "eth",
+				Decimals:        18,
+				ContractAddress: "",
 			},
 			{
-				Denom:    "usdt",
-				Decimals: 6,
+				Denom:           "usdt",
+				Decimals:        6,
+				ContractAddress: "",
 			},
 			{
-				Denom:    "btc",
-				Decimals: 8,
+				Denom:           "btc",
+				Decimals:        8,
+				ContractAddress: "",
 			},
 			{
-				Denom:    "lpt",
-				Decimals: 18,
+				Denom:           "lpt",
+				Decimals:        18,
+				ContractAddress: "",
 			},
 		},
 	}

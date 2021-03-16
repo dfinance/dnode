@@ -18,6 +18,8 @@ type Currency struct {
 	Decimals uint8 `json:"decimals" yaml:"decimals" example:"0"`
 	// Total amount of currency coins in Bank
 	Supply sdk.Int `json:"supply" yaml:"supply" swaggertype:"string" example:"100"`
+	// ERC20 contract address
+	ContractAddress string `json:"contract_address" yaml:"contract_address"`
 }
 
 // Valid checks that Currency is valid.
@@ -75,9 +77,11 @@ func (c Currency) String() string {
 	return fmt.Sprintf("Currency:\n"+
 		"  Denom:    %s\n"+
 		"  Decimals: %d\n"+
+		"  Contract Address: %s\n"+
 		"  Supply:   %s",
 		c.Denom,
 		c.Decimals,
+		c.ContractAddress,
 		c.Supply.String(),
 	)
 }
@@ -90,8 +94,9 @@ func (list Currencies) ToParams() CurrenciesParams {
 	var params CurrenciesParams
 	for _, currency := range list {
 		params = append(params, CurrencyParams{
-			Denom:    currency.Denom,
-			Decimals: currency.Decimals,
+			Denom:           currency.Denom,
+			Decimals:        currency.Decimals,
+			ContractAddress: currency.ContractAddress,
 		})
 	}
 
@@ -101,8 +106,9 @@ func (list Currencies) ToParams() CurrenciesParams {
 // NewCurrency creates a new Currency object.
 func NewCurrency(params CurrencyParams, supply sdk.Int) Currency {
 	return Currency{
-		Denom:    params.Denom,
-		Decimals: params.Decimals,
-		Supply:   supply,
+		Denom:           params.Denom,
+		Decimals:        params.Decimals,
+		Supply:          supply,
+		ContractAddress: params.ContractAddress,
 	}
 }

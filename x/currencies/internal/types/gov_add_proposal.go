@@ -24,6 +24,7 @@ type AddCurrencyProposal struct {
 	Decimals         uint8
 	VmBalancePathHex string
 	VmInfoPathHex    string
+	ContractAddress  string
 }
 
 func (p AddCurrencyProposal) GetTitle() string       { return "Add currency" }
@@ -58,15 +59,17 @@ func (p AddCurrencyProposal) String() string {
 	b.WriteString(fmt.Sprintf("  Decimals: %d\n", p.Decimals))
 	b.WriteString(fmt.Sprintf("  VmBalancePathHex: 0x%s\n", p.VmBalancePathHex))
 	b.WriteString(fmt.Sprintf("  VmInfoPathHex: %s", p.VmInfoPathHex))
+	b.WriteString(fmt.Sprintf("  ContractAddress: %s", p.ContractAddress))
 
 	return b.String()
 }
 
 // NewAddCurrencyProposal creates a AddCurrencyProposal object.
-func NewAddCurrencyProposal(denom string, decimals uint8, balancePath, infoPath string) AddCurrencyProposal {
+func NewAddCurrencyProposal(denom string, decimals uint8, balancePath, infoPath string, contractAddress string) AddCurrencyProposal {
 	return AddCurrencyProposal{
 		Denom:            denom,
 		Decimals:         decimals,
+		ContractAddress:  contractAddress,
 		VmBalancePathHex: balancePath,
 		VmInfoPathHex:    infoPath,
 	}
