@@ -14,7 +14,7 @@ cosmos_dir=$(swagger_dir)/cosmos-sdk
 dnode = ./cmd/dnode
 dncli =./cmd/dncli
 
-cosmos_version = $(shell awk '/replace github.com\/cosmos\/cosmos-sdk => github.com\/dfinance\/cosmos-sdk/ {print $$NF}' < go.mod)
+cosmos_version = dfinance/launchpad
 
 all: install
 install: go.sum install-dnode install-dncli
