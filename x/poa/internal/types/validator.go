@@ -58,7 +58,7 @@ func (list Validators) String() string {
 	strBuilder := strings.Builder{}
 	for i, v := range list {
 		strBuilder.WriteString(fmt.Sprintf("[%d] %s", i, v.String()))
-		if i < len(list) - 1 {
+		if i < len(list)-1 {
 			strBuilder.WriteString("\n")
 		}
 	}

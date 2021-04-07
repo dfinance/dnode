@@ -76,14 +76,14 @@ func GetGRpcClientConnection(addr string, keepAlivePeriod time.Duration) (*grpc.
 		kpParams := keepalive.ClientParameters{
 			Time:                keepAlivePeriod, // send pings every 1 second if there is no activity
 			Timeout:             keepAlivePeriod, // wait 1 second for ping ack before considering the connection dead
-			PermitWithoutStream: true,             // send pings even without active streams
+			PermitWithoutStream: true,            // send pings even without active streams
 		}
 
 		dialOptions = append(dialOptions, grpc.WithKeepaliveParams(kpParams))
 	}
 
 	// Bypass Rust h2 library UDS limitations: uri validation failure causing PROTOCOL_ERROR gRPC error
-	dialAddress :=  address
+	dialAddress := address
 	if schema == "unix" {
 		dialAddress = "127.0.0.1" // faking filePath with valid URL
 	}

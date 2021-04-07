@@ -40,7 +40,7 @@ func (w *Watcher) Work() {
 			w.history.ResetCurItem()
 		case <-botAddTicker.C:
 			if botsDiff := w.cfg.MaxBots - w.curBots; botsDiff > 0 {
-				w.logger.Info(fmt.Sprintf("adding client: %d left", botsDiff - 1))
+				w.logger.Info(fmt.Sprintf("adding client: %d left", botsDiff-1))
 				for _, m := range w.marketStates {
 					w.wg.Add(1)
 					go m.bots[w.curBots].Start(w.wg, w.stopCh)

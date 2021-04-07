@@ -58,7 +58,7 @@ func (m *MsManager) RegisterMsRoutes(router MsRouter) {
 
 // RegisterInvariants registers all module routes and module querier routes.
 // {blackList} allows to skip invariants register for specific module names.
-func (m *MsManager) RegisterInvariants(ir sdk.InvariantRegistry, blackList... string) {
+func (m *MsManager) RegisterInvariants(ir sdk.InvariantRegistry, blackList ...string) {
 	for _, module := range m.Modules {
 		blackListed := false
 		for _, disabledModuleName := range blackList {
