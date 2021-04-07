@@ -35,7 +35,7 @@ func GetEmptyAppRestriction() AppRestrictions {
 //GetAppRestrictions returns predefined parameter for remove or restrict standard app parameters.
 func GetAppRestrictions() AppRestrictions {
 	return AppRestrictions{
-		DisabledTxCmd: []string{},
+		DisabledTxCmd:    []string{},
 		DisabledQueryCmd: []string{},
 		MsgDeniedList: map[string][]string{
 			currencies.ModuleName: {

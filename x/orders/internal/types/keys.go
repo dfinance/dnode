@@ -10,7 +10,7 @@ import (
 
 // Storage keys.
 var (
-	KeyDelimiter = []byte(":")
+	KeyDelimiter   = []byte(":")
 	OrderKeyPrefix = []byte("order")
 	LastOrderIDKey = []byte("last_order_id")
 )
