@@ -9,7 +9,7 @@ var (
 	// Module account permissions
 	MAccPerms map[string][]string = map[string][]string{
 		auth.FeeCollectorName: nil,
-		"orders":     {supply.Burner},
+		"orders":              {supply.Burner},
 	}
 )
 

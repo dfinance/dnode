@@ -50,7 +50,7 @@ func (msg MsgSetOracles) GetSigners() []sdk.AccAddress {
 }
 
 // MsgAddOracle creates a new SetOracle message.
-func NewMsgSetOracles(nominee sdk.AccAddress, assetCode dnTypes.AssetCode, oracles Oracles, ) MsgSetOracles {
+func NewMsgSetOracles(nominee sdk.AccAddress, assetCode dnTypes.AssetCode, oracles Oracles) MsgSetOracles {
 	return MsgSetOracles{
 		Oracles:   oracles,
 		AssetCode: assetCode,

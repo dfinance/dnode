@@ -44,7 +44,7 @@ func TestOBKeeper_History_StoreIO(t *testing.T) {
 
 	// add history items
 	for i, inputItem := range inputItems {
-		blockHeight := int64(i)+1
+		blockHeight := int64(i) + 1
 		input.keeper.SetHistoryItem(input.ctx, inputItem)
 		require.True(t, input.keeper.HasHistoryItem(input.ctx, marketID, blockHeight))
 

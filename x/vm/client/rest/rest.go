@@ -50,7 +50,7 @@ type PublishModuleReq struct {
 
 type LcsViewReq struct {
 	// Resource address
-	Account  string `json:"address" format:"bech32/hex" example:"0x0000000000000000000000000000000000000001"`
+	Account string `json:"address" format:"bech32/hex" example:"0x0000000000000000000000000000000000000001"`
 	// Move formatted path (ModuleName::StructName, where ::StructName is optional)
 	MovePath string `json:"move_path" example:"Block::BlockMetadata"`
 	// LCS view JSON formatted request (refer to docs for specs)
