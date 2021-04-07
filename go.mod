@@ -14,21 +14,24 @@ require (
 	github.com/dfinance/glav v0.0.0-20200731202515-8e21f58877c8
 	github.com/dfinance/lcs v0.1.7-big
 	github.com/fsouza/go-dockerclient v1.6.3
-	github.com/g3co/go-swagger-merger v0.0.0-20200729134821-4edc8debe55f // indirect
+	github.com/g3co/go-swagger-merger v0.0.0-20200916115803-70f050d0cb09 // indirect
 	github.com/getsentry/sentry-go v0.5.1
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-openapi/spec v0.19.9 // indirect
-	github.com/go-openapi/swag v0.19.9 // indirect
+	github.com/go-openapi/spec v0.20.3 // indirect
+	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/mailru/easyjson v0.7.2 // indirect
+	github.com/kr/pty v1.1.5 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/pelletier/go-toml v1.6.0
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
@@ -39,9 +42,11 @@ require (
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.33.6
 	github.com/tendermint/tm-db v0.5.1
-	github.com/urfave/cli/v2 v2.2.0 // indirect
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
-	golang.org/x/tools v0.0.0-20200804011535-6c149bb5ef0d // indirect
+	github.com/urfave/cli/v2 v2.3.0 // indirect
+	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
+	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
+	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/grpc v1.30.0
 	google.golang.org/protobuf v1.24.0 // indirect
 	k8s.io/apimachinery v0.18.6 // indirect

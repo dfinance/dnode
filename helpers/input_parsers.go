@@ -227,7 +227,7 @@ func ParseHexStringParam(argName, argValue string, paramType ParamType) (string,
 	argValueNorm := strings.TrimPrefix(argValue, "0x")
 	argValueBytes, err := hex.DecodeString(argValueNorm)
 	if err != nil {
-		return "", nil,  fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
+		return "", nil, fmt.Errorf("%s %s %q: %v", argName, paramType, argValue, err)
 	}
 
 	return argValueNorm, argValueBytes, nil

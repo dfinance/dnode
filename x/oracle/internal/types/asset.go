@@ -58,7 +58,7 @@ func (list Assets) String() string {
 	strBuilder.WriteString("Assets:\n")
 	for i, asset := range list {
 		strBuilder.WriteString(asset.String())
-		if i < len(list) - 1 {
+		if i < len(list)-1 {
 			strBuilder.WriteString("\n")
 		}
 	}

@@ -20,10 +20,10 @@ const (
 type BinaryCmdOption func(*BinaryCmd) error
 
 type BinaryCmd struct {
-	cmd          string
-	proc         *tests.Process
-	args         []string
-	printLogs    bool
+	cmd       string
+	proc      *tests.Process
+	args      []string
+	printLogs bool
 }
 
 func (c *BinaryCmd) String() string {
@@ -32,7 +32,7 @@ func (c *BinaryCmd) String() string {
 
 func NewBinaryCmd(cmd string, options ...BinaryCmdOption) (*BinaryCmd, error) {
 	c := &BinaryCmd{
-		cmd:     cmd,
+		cmd: cmd,
 	}
 
 	for _, option := range options {

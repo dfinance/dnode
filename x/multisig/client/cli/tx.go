@@ -15,10 +15,10 @@ import (
 // PostConfirmCall returns tx command which confirms an existing call.
 func PostConfirmCall(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "confirm-call [callID]",
-		Short: "Confirm call by multi signature",
+		Use:     "confirm-call [callID]",
+		Short:   "Confirm call by multi signature",
 		Example: "confirm-call 100",
-		Args:  cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 
@@ -51,10 +51,10 @@ func PostConfirmCall(cdc *codec.Codec) *cobra.Command {
 // PostRevokeConfirm returns tx command which revokes an existing call's vote.
 func PostRevokeConfirm(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "revoke-confirm [callID]",
-		Short: "Revoke confirmation for call by ID",
+		Use:     "revoke-confirm [callID]",
+		Short:   "Revoke confirmation for call by ID",
 		Example: "revoke-confirm 100",
-		Args:  cobra.ExactArgs(1),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, txBuilder := helpers.GetTxCmdCtx(cdc, cmd.InOrStdin())
 

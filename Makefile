@@ -14,7 +14,7 @@ cosmos_dir=$(swagger_dir)/cosmos-sdk
 dnode = ./cmd/dnode
 dncli =./cmd/dncli
 
-cosmos_version = backport/v0.39.x
+cosmos_version=v0.39.0
 
 all: install
 install: go.sum install-dnode install-dncli
@@ -58,7 +58,7 @@ swagger-ui-deps:
 	git -C $(swagger_dir) clone --branch $(cosmos_version) https://github.com/cosmos/cosmos-sdk.git
 
 	@echo "-> Fetching Golang libraries: swag, statik"
-	go get -u github.com/swaggo/swag/cmd/swag
+	go get -u github.com/swaggo/swag/cmd/swag@v1.6.7
 	go get github.com/g3co/go-swagger-merger
 
 swagger-ui-build:
@@ -75,7 +75,6 @@ swagger-ui-build:
 	echo "package docs\n\nconst Swagger = \`" >> ./cmd/dncli/docs/swagger.go
 	cat ./cmd/dncli/docs/swagger.yaml | sed "s/\`/'/g" >> ./cmd/dncli/docs/swagger.go
 	echo "\`" >> ./cmd/dncli/docs/swagger.go
-	rm ./cmd/dncli/docs/swagger.yaml
 
 ## binaries builds (xgo required: https://github.com/karalabe/xgo)
 binaries: go.sum

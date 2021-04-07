@@ -18,13 +18,13 @@ func NewAnteHandler(ak vmauth.Keeper, supplyKeeper types.SupplyKeeper, sigGasCon
 		ante.NewSetUpContextDecorator(),
 		ante.NewMempoolFeeDecorator(),
 		ante.NewValidateBasicDecorator(),
-		ante.NewValidateMemoDecorator(ak.AccountKeeper),      // as is: only uses ak.GetParams()
-		NewConsumeGasForTxSizeDecorator(ak),                  // copy: uses ak.GetAccount()
-		NewSetPubKeyDecorator(ak),                            // copy: uses ak.GetAccount()
-		ante.NewValidateSigCountDecorator(ak.AccountKeeper),  // as is: only uses ak.GetParams()
-		NewDeductFeeDecorator(ak, supplyKeeper),              // copy: uses ak.GetAccount()
-		NewSigGasConsumeDecorator(ak, sigGasConsumer),        // copy: uses ak.GetAccount()
-		NewSigVerificationDecorator(ak),                      // copy: uses ak.GetAccount()
-		NewIncrementSequenceDecorator(ak),                    // copy: uses ak.GetAccount(), ak.SetAccount()
+		ante.NewValidateMemoDecorator(ak.AccountKeeper),     // as is: only uses ak.GetParams()
+		NewConsumeGasForTxSizeDecorator(ak),                 // copy: uses ak.GetAccount()
+		NewSetPubKeyDecorator(ak),                           // copy: uses ak.GetAccount()
+		ante.NewValidateSigCountDecorator(ak.AccountKeeper), // as is: only uses ak.GetParams()
+		NewDeductFeeDecorator(ak, supplyKeeper),             // copy: uses ak.GetAccount()
+		NewSigGasConsumeDecorator(ak, sigGasConsumer),       // copy: uses ak.GetAccount()
+		NewSigVerificationDecorator(ak),                     // copy: uses ak.GetAccount()
+		NewIncrementSequenceDecorator(ak),                   // copy: uses ak.GetAccount(), ak.SetAccount()
 	)
 }
