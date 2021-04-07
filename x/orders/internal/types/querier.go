@@ -19,7 +19,7 @@ type OrderReq struct {
 // Client request for markets.
 type OrdersReq struct {
 	// Page number
-	Page  sdk.Uint `json:"page" yaml:"page"`
+	Page sdk.Uint `json:"page" yaml:"page"`
 	// Items per page
 	Limit sdk.Uint `json:"limit" yaml:"limit"`
 	// Owner filter
