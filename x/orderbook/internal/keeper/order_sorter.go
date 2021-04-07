@@ -47,4 +47,3 @@ func (s ByPriceAscIDAsc) Less(i, j int) bool {
 func (s ByPriceAscIDAsc) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
-

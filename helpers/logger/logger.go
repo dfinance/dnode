@@ -23,7 +23,6 @@ func (l *DNLogger) Error(msg string, keyvals ...interface{}) {
 	sentryCaptureMessage(msg, keyvals...)
 }
 
-
 // Method overwrite
 func (l *DNLogger) With(keyvals ...interface{}) log.Logger {
 	return &DNLogger{

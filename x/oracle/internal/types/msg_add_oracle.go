@@ -51,7 +51,7 @@ func (msg MsgAddOracle) GetSigners() []sdk.AccAddress {
 }
 
 // MsgAddOracle creates a new AddOracle message.
-func NewMsgAddOracle(nominee sdk.AccAddress, assetCode dnTypes.AssetCode, oracle sdk.AccAddress, ) MsgAddOracle {
+func NewMsgAddOracle(nominee sdk.AccAddress, assetCode dnTypes.AssetCode, oracle sdk.AccAddress) MsgAddOracle {
 	return MsgAddOracle{
 		Oracle:    oracle,
 		AssetCode: assetCode,

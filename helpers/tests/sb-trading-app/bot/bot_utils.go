@@ -22,8 +22,8 @@ func (b *Bot) dampPriceDown(price, randomBase sdk.Uint) sdk.Uint {
 	return price.Sub(b.percentOfPrice(randomBase, b.randomDampingPercent()))
 }
 
-func(b *Bot) dampPriceRandom(price, randomBase sdk.Uint) sdk.Uint {
-	if rand.Uint64() % 2 == 0 {
+func (b *Bot) dampPriceRandom(price, randomBase sdk.Uint) sdk.Uint {
+	if rand.Uint64()%2 == 0 {
 		return b.dampPriceUp(price, randomBase)
 	}
 

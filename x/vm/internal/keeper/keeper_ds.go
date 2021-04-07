@@ -109,7 +109,7 @@ func (k Keeper) retryExecReq(ctx sdk.Context, req RetryExecReq) (retResp *vm_grp
 				time.Sleep(reqTimeout - curReqDur)
 			}
 
-			if curAttempt % failedRetryLogPeriod == 0 {
+			if curAttempt%failedRetryLogPeriod == 0 {
 				msg := fmt.Sprintf("Failing VM request: attempt %d / %d with %v timeout: %v", curAttempt, req.MaxAttempts, reqTimeout, time.Since(reqStartedAt))
 				k.GetLogger(ctx).Info(msg)
 			}

@@ -111,7 +111,6 @@ func (k Keeper) GetReverseIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStoreReversePrefixIterator(store, types.OrderKeyPrefix)
 }
 
-
 // set creates / overwrites order object.
 func (k Keeper) set(ctx sdk.Context, order types.Order) {
 	store := ctx.KVStore(k.storeKey)

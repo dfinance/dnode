@@ -187,7 +187,7 @@ func simulate(t *testing.T, profile SimProfile) {
 func TestSimInflation(t *testing.T) {
 	profile := SimProfile{
 		ID:           "low_staking",
-		SimDuration:  3*Month,
+		SimDuration:  3 * Month,
 		BlockTimeMin: 300 * time.Second,
 		BlockTimeMax: 305 * time.Second,
 		//

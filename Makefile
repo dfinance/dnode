@@ -14,7 +14,7 @@ cosmos_dir=$(swagger_dir)/cosmos-sdk
 dnode = ./cmd/dnode
 dncli =./cmd/dncli
 
-cosmos_version = $(shell awk '/replace github.com\/cosmos\/cosmos-sdk => github.com\/dfinance\/cosmos-sdk/ {print $$NF}' < go.mod)
+cosmos_version = dfinance/launchpad
 
 all: install
 install: go.sum install-dnode install-dncli
@@ -98,7 +98,6 @@ swagger-ui-build: $(modules_dir)/*
 	echo "package docs\n\nconst Swagger = \`" >> ./cmd/dncli/docs/swagger.go
 	cat ./cmd/dncli/docs/swagger.yaml | sed "s/\`/'/g" >> ./cmd/dncli/docs/swagger.go
 	echo "\`" >> ./cmd/dncli/docs/swagger.go
-	rm ./cmd/dncli/docs/swagger.yaml
 
 ## binaries builds (xgo required: https://github.com/karalabe/xgo)
 binaries: go.sum

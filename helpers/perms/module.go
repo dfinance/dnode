@@ -97,7 +97,7 @@ func (m *ModulePermissions) AutoCheck(expectedPerm Permission) {
 		return
 	}
 
-	if err :=  m.Check(caller.Module, expectedPerm); err != nil {
+	if err := m.Check(caller.Module, expectedPerm); err != nil {
 		panic(err)
 	}
 }

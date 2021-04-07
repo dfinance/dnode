@@ -42,7 +42,7 @@ func (msg MsgSetAsset) GetSigners() []sdk.AccAddress {
 }
 
 // NewMsgSetAsset creates a new SetAsset message.
-func NewMsgSetAsset(nominee sdk.AccAddress, asset Asset, ) MsgSetAsset {
+func NewMsgSetAsset(nominee sdk.AccAddress, asset Asset) MsgSetAsset {
 	return MsgSetAsset{
 		Asset:   asset,
 		Nominee: nominee,

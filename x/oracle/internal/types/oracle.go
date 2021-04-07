@@ -33,7 +33,7 @@ func (list Oracles) String() string {
 	strBuilder.WriteString("Oracles:\n")
 	for i, oracle := range list {
 		strBuilder.WriteString(oracle.String())
-		if i < len(list) - 1 {
+		if i < len(list)-1 {
 			strBuilder.WriteString("\n")
 		}
 	}

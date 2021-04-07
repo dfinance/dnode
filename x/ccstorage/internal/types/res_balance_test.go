@@ -79,12 +79,12 @@ func TestCCS_Balances(t *testing.T) {
 		Balance{
 			Denom:      "testa",
 			AccessPath: nil,
-			Resource:   ResBalance{ Value: sdk.NewIntFromUint64(1).BigInt()},
+			Resource:   ResBalance{Value: sdk.NewIntFromUint64(1).BigInt()},
 		},
 		Balance{
 			Denom:      "testb",
 			AccessPath: nil,
-			Resource:   ResBalance{ Value: sdk.NewIntFromUint64(2).BigInt()},
+			Resource:   ResBalance{Value: sdk.NewIntFromUint64(2).BigInt()},
 		},
 	}
 

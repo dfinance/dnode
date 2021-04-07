@@ -59,11 +59,11 @@ func (b *Bot) onMarketPriceChangeMarketMaking() {
 	if sellOrdersCount == 0 && buyOrdersCount == 0 {
 		b.logger.Info(fmt.Sprintf("market making on %q: [%s:%s]: skipped", lowerPriceDec, upperPriceDec, "marketPrice change"))
 	} else {
-		b.logger.Info(fmt.Sprintf("market making on %q: [%s:%s]: Sells / Buys: %d / %d", "marketPrice change",  lowerPriceDec, upperPriceDec, sellOrdersCount, buyOrdersCount))
+		b.logger.Info(fmt.Sprintf("market making on %q: [%s:%s]: Sells / Buys: %d / %d", "marketPrice change", lowerPriceDec, upperPriceDec, sellOrdersCount, buyOrdersCount))
 	}
 }
 
-func (b *Bot) newBalanceBasedOrder() (posted bool, retDirection string){
+func (b *Bot) newBalanceBasedOrder() (posted bool, retDirection string) {
 	var direction orders.Direction
 
 	defer func() {

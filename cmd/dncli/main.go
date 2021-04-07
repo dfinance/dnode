@@ -26,7 +26,6 @@ import (
 	"github.com/dfinance/dnode/cmd/config/genesis/defaults"
 	"github.com/dfinance/dnode/cmd/config/restrictions"
 	"github.com/dfinance/dnode/helpers/logger"
-	"github.com/dfinance/dnode/helpers/swagger"
 	vmauthCli "github.com/dfinance/dnode/x/vmauth/client/cli"
 )
 
@@ -92,7 +91,6 @@ func registerRoutes(rs *lcd.RestServer) {
 	client.RegisterRoutes(rs.CliCtx, rs.Mux)
 	authrest.RegisterTxRoutes(rs.CliCtx, rs.Mux)
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
-	swagger.RegisterRESTRoute(rs.Mux)
 }
 
 // Add query subcommands to CLI.
