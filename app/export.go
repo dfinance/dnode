@@ -32,13 +32,39 @@ func (app *DnServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhi
 
 	// zero-height squash
 	if forZeroHeight {
-		if err := app.prepareGenesisForZeroHeight(ctx, jailWhiteList); err != nil {
-			retErr = fmt.Errorf("preparing genesis for zero-height: %w", err)
+		// build options
+		opts, err := prepareDefaultZeroHeightOptions(jailWhiteList)
+		if err != nil {
+			retErr = fmt.Errorf("prepareDefaultZeroHeightOptions: %w", err)
+			return
+		}
+
+		opts, err = mainnetExportAddZeroHeightOptions(opts)
+		if err != nil {
+			retErr = fmt.Errorf("mainnetExportAddZeroHeightOptions: %w", err)
+			return
+		}
+
+		// base prepare
+		if err := app.prepareGenesisForZeroHeight(ctx, jailWhiteList, opts); err != nil {
+			retErr = fmt.Errorf("prepareGenesisForZeroHeight: %w", err)
+			return
+		}
+
+		// Mainnet handlers
+		if err := mainnetExportRemoveAllValidators(ctx, app); err != nil {
+			retErr = fmt.Errorf("mainnetExportRemoveAllValidators: %w", err)
+			return
+		}
+
+		if err := mainnetExportProcessBalances(ctx, app); err != nil {
+			retErr = fmt.Errorf("mainnetExportProcessBalances: %w", err)
 			return
 		}
 	}
 
 	// genesis export
+	app.Logger().Info("Exporting genesis")
 	genState := app.mm.ExportGenesis(ctx)
 	appState, err = codec.MarshalJSONIndent(app.cdc, genState)
 	if err != nil {
@@ -64,30 +90,20 @@ func (app *DnServiceApp) checkInvariants(ctx sdk.Context) error {
 
 // prepareGenesisForZeroHeight updates current context to fit zero-height genesis.
 // Basically it "squashes" all height-dependent storage objects.
-func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteList []string) error {
+func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteList []string, opts map[string]interface{}) error {
+	app.Logger().Info("Preparing genesis for zero-height (for each module):")
+
 	// Check invariants before
+	app.Logger().Info("  Checking invariants (before)")
 	if err := app.checkInvariants(ctx); err != nil {
 		return fmt.Errorf("pre invariants check failed: %w", err)
-	}
-
-	// Prepare PrepareForZeroHeight module functions options
-	optsMap, err := prepareDefaultZeroHeightOptions(jailWhiteList)
-	if err != nil {
-		return fmt.Errorf("prepareDefaultZeroHeightOptions: %w", err)
-	}
-	//optsMap, err = setDebugZeroHeightOptions(optsMap)
-	//if err != nil {
-	//	return fmt.Errorf("setDebugZeroHeightOptions: %w", err)
-	//}
-	optsMap, err = setMainnetZeroHeightOptionsV10(optsMap)
-	if err != nil {
-		return fmt.Errorf("setMainnetZeroHeightOptionsV10: %w", err)
 	}
 
 	// CCStorage
 	{
 		moduleName := ccstorage.ModuleName
-		opts := optsMap[moduleName].(ccstorage.SquashOptions)
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
+		opts := opts[moduleName].(ccstorage.SquashOptions)
 		if err := app.ccsKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
@@ -95,7 +111,8 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	// Supply
 	{
 		moduleName := supply.ModuleName
-		opts := optsMap[moduleName].(supply.SquashOptions)
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
+		opts := opts[moduleName].(supply.SquashOptions)
 		if err := app.supplyKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
@@ -103,7 +120,8 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	// VMAuth
 	{
 		moduleName := vmauth.ModuleName
-		opts := optsMap[moduleName].(vmauth.SquashOptions)
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
+		opts := opts[moduleName].(vmauth.SquashOptions)
 		if err := app.accountKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
@@ -111,7 +129,8 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	// Staking
 	{
 		moduleName := staking.ModuleName
-		opts := optsMap[moduleName].(staking.SquashOptions)
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
+		opts := opts[moduleName].(staking.SquashOptions)
 		if err := app.stakingKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
@@ -119,7 +138,8 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	// Distribution
 	{
 		moduleName := distribution.ModuleName
-		opts := optsMap[moduleName].(distribution.SquashOptions)
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
+		opts := opts[moduleName].(distribution.SquashOptions)
 		if err := app.distrKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
@@ -127,6 +147,7 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	// Slashing
 	{
 		moduleName := slashing.ModuleName
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
 		if err := app.slashingKeeper.PrepareForZeroHeight(ctx); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
@@ -134,7 +155,8 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	// Mint
 	{
 		moduleName := mint.ModuleName
-		opts := optsMap[moduleName].(mint.SquashOptions)
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
+		opts := opts[moduleName].(mint.SquashOptions)
 		if err := app.mintKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
@@ -142,7 +164,8 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	// Gov
 	{
 		moduleName := gov.ModuleName
-		opts := optsMap[moduleName].(gov.SquashOptions)
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
+		opts := opts[moduleName].(gov.SquashOptions)
 		if err := app.govKeeper.PrepareForZeroHeight(ctx, opts); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
@@ -150,6 +173,7 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	// MultiSig
 	{
 		moduleName := multisig.ModuleName
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
 		if err := app.msKeeper.PrepareForZeroHeight(ctx); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
@@ -157,20 +181,18 @@ func (app *DnServiceApp) prepareGenesisForZeroHeight(ctx sdk.Context, jailWhiteL
 	// OrderBook
 	{
 		moduleName := orderbook.ModuleName
+		app.Logger().Info(fmt.Sprintf("  Module: %s", moduleName))
 		if err := app.orderBookKeeper.PrepareForZeroHeight(ctx); err != nil {
 			return fmt.Errorf("module %s: %w", moduleName, err)
 		}
 	}
 
 	// Check invariants after
+	app.Logger().Info("  Checking invariants (after)")
 	if err := app.checkInvariants(ctx); err != nil {
 		return fmt.Errorf("post invariants check failed: %w", err)
 	}
-
-	//
-	if err := app.processMainnetSXFIBalance(ctx); err != nil {
-		return fmt.Errorf("mainnet v1.0 processing: %w", err)
-	}
+	app.Logger().Info("Done")
 
 	return nil
 }

@@ -2,7 +2,7 @@ module github.com/dfinance/dnode
 
 go 1.14
 
-replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.39.2-0.20201103114952-6e10e3e0ab85
+replace github.com/cosmos/cosmos-sdk => github.com/dfinance/cosmos-sdk v0.39.2-0.20210526161633-d89e846acf82
 
 // Local development option
 //replace github.com/cosmos/cosmos-sdk => /Users/boris/go/src/github.com/dfinance/cosmos-sdk
@@ -17,6 +17,7 @@ require (
 	github.com/OneOfOne/xxhash v1.2.7
 	github.com/atlassian/go-sentry-api v0.0.0-20200117001222-a9ccec16c98b
 	github.com/cosmos/cosmos-sdk v0.0.1
+	github.com/crazy-max/xgo v0.6.5 // indirect
 	github.com/dfinance/dvm-proto/go v0.0.0-20200819065410-6b70956c85de
 	github.com/dfinance/glav v0.0.0-20200814081332-c4701f6c12a6
 	github.com/dfinance/lcs v0.1.7-big

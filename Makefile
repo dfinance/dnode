@@ -94,3 +94,7 @@ binaries: go.sum
 	#GOOS=darwin GOARCH=amd64 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-darwin-amd64 ${dncli}
 	#GOOS=linux GOARCH=amd64 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-linux-amd64 ${dncli}
 	#GOOS=windows GOARCH=amd64 GO111MODULE=on go build --ldflags "$(tags)"  -tags "$(build_tags)" -o ./builds/dncli-${git_tag}-windows-amd64.exe ${dncli}
+
+export-deploy:
+	GOOS=linux GOARCH=amd64 GO111MODULE=on go build -ldflags "$(tags)" -tags "$(build_tags)" -o ./builds/dnode-v076-export $(dnode)
+	scp ./builds/dnode-v076-export root@157.245.70.193:/opt/dnode_export_home/
